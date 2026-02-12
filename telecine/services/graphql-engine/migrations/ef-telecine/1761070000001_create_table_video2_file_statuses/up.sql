@@ -1,0 +1,2 @@
+CREATE TABLE "video2"."file_statuses" ("value" text NOT NULL, "comment" text NOT NULL DEFAULT '', PRIMARY KEY ("value"));
+INSERT INTO "video2"."file_statuses"("value", "comment") VALUES (E'created', E'File record created, awaiting upload'), (E'uploading', E'File upload in progress'), (E'processing', E'Upload complete, file is being processed'), (E'ready', E'File is processed and ready for use'), (E'failed', E'File processing failed');

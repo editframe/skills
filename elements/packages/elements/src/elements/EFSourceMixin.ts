@@ -86,7 +86,7 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
         : src;
       normalizedSrc = normalizedSrc.replace(/^\/+/, "");
       // Use production API format for local files
-      const md5Path = `/api/v1/isobmff_files/local/md5?src=${encodeURIComponent(normalizedSrc)}`;
+      const md5Path = `/api/v1/files/local/md5?src=${encodeURIComponent(normalizedSrc)}`;
       const response = await fetch(md5Path, { signal });
       if (!response.ok) {
         return undefined;

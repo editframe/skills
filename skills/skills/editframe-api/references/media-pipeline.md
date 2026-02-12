@@ -1,6 +1,6 @@
 ---
 title: Media Pipeline
-description: Complete workflow from uploading a video file to using it in a composition
+description: Complete workflow from uploading a media file to using it in a composition
 type: how-to
 nav:
   parent: "Guides"
@@ -9,46 +9,43 @@ nav:
 
 # Media Pipeline
 
-Upload a video file and use it in a composition.
+Upload a media file and use it in a composition.
 
 ## Overview
 
-The complete pipeline:
+The unified files API handles all media types with a single set of endpoints:
 
-1. Upload raw file → unprocessed file
-2. Process to ISOBMFF → streamable format
-3. Upload tracks → video and audio data
-4. Use in composition → reference in `<ef-video>`
+1. **Create** a file record (specifying type: video, image, or caption)
+2. **Upload** the file content via chunked transfer
+3. **Wait for processing** (video files are auto-processed to ISOBMFF)
+4. **Use in composition** via `file-id` attribute
 
-## Step 1: Upload Raw File
+## Step 1: Upload a Video File
 
 ```typescript
-import { Client, createUnprocessedFile, uploadUnprocessedReadableStream } from "@editframe/api";
-import { md5 } from "@editframe/assets";
+import { Client, createFile, uploadFile, getFileProcessingProgress } from "@editframe/api";
 import { createReadStream } from "node:fs";
-import { readFile, stat } from "node:fs/promises";
+import { stat } from "node:fs/promises";
 
 const client = new Client(process.env.EDITFRAME_API_KEY);
 
-// Read file metadata
 const filePath = "video.mp4";
-const fileData = await readFile(filePath);
 const fileStats = await stat(filePath);
-const hash = md5(fileData);
 
-// Create unprocessed file record
-const unprocessedFile = await createUnprocessedFile(client, {
-  md5: hash,
+// Create file record
+const file = await createFile(client, {
   filename: "video.mp4",
+  type: "video",
   byte_size: fileStats.size,
+  mime_type: "video/mp4",
 });
 
 // Upload file content
 const fileStream = createReadStream(filePath);
 
-for await (const event of uploadUnprocessedReadableStream(
+for await (const event of uploadFile(
   client,
-  { id: unprocessedFile.id, byte_size: fileStats.size },
+  { id: file.id, byte_size: fileStats.size, type: "video" },
   fileStream
 )) {
   if (event.type === "progress") {
@@ -59,16 +56,12 @@ for await (const event of uploadUnprocessedReadableStream(
 console.log("Upload complete");
 ```
 
-## Step 2: Process to ISOBMFF
+## Step 2: Wait for Processing
+
+Video files are automatically processed to ISOBMFF format after upload. Monitor progress:
 
 ```typescript
-import { processIsobmffFile, getIsobmffProcessProgress } from "@editframe/api";
-
-// Start processing
-const isobmffFile = await processIsobmffFile(client, unprocessedFile.id);
-
-// Monitor progress
-for await (const event of await getIsobmffProcessProgress(client, isobmffFile.id)) {
+for await (const event of await getFileProcessingProgress(client, file.id)) {
   if (event.type === "progress") {
     console.log(`Processing: ${event.progress.toFixed(1)}%`);
   } else if (event.type === "complete") {
@@ -78,14 +71,13 @@ for await (const event of await getIsobmffProcessProgress(client, isobmffFile.id
 }
 ```
 
-Processing converts the raw file to ISOBMFF format, which enables:
-- Frame-accurate seeking
-- Adaptive bitrate streaming
-- Efficient composition rendering
+Processing enables frame-accurate seeking, adaptive bitrate streaming, and efficient composition rendering.
+
+Image and caption files skip processing and are immediately ready after upload.
 
 ## Step 3: Use in Composition
 
-Once processed, reference the file in your composition:
+Reference the file by its `file-id`:
 
 ```typescript
 import { createRender, getRenderProgress, downloadRender } from "@editframe/api";
@@ -94,11 +86,11 @@ import { writeFileSync } from "node:fs";
 const html = `
   <ef-configuration api-host="https://editframe.com">
     <ef-timegroup mode="contain" class="w-[1920px] h-[1080px] bg-black">
-      <ef-video 
-        asset-id="${isobmffFile.id}"
+      <ef-video
+        file-id="${file.id}"
         class="size-full object-contain">
       </ef-video>
-      <ef-text 
+      <ef-text
         class="absolute bottom-10 left-10 text-white text-6xl font-bold">
         My Video
       </ef-text>
@@ -106,7 +98,6 @@ const html = `
   </ef-configuration>
 `;
 
-// Create render
 const render = await createRender(client, {
   html,
   width: 1920,
@@ -114,7 +105,6 @@ const render = await createRender(client, {
   fps: 30,
 });
 
-// Wait for completion
 for await (const event of await getRenderProgress(client, render.id)) {
   if (event.type === "progress") {
     console.log(`Render: ${event.progress.toFixed(1)}%`);
@@ -123,76 +113,63 @@ for await (const event of await getRenderProgress(client, render.id)) {
   }
 }
 
-// Download result
 const response = await downloadRender(client, render.id);
 const buffer = await response.arrayBuffer();
 writeFileSync("output.mp4", Buffer.from(buffer));
-
-console.log("Render saved to output.mp4");
 ```
+
+The `file-id` is a stable UUID assigned when the file record is created. It remains the same throughout upload, processing, and playback.
 
 ## Deduplication
 
 Check if a file already exists before uploading:
 
 ```typescript
-import { lookupUnprocessedFileByMd5 } from "@editframe/api";
+import { lookupFileByMd5 } from "@editframe/api";
 
-const hash = md5(fileData);
-const existing = await lookupUnprocessedFileByMd5(client, hash);
+const existing = await lookupFileByMd5(client, "your-file-md5-hash");
 
-if (existing && existing.complete) {
-  console.log("File already uploaded");
-  // Process existing file
-  const isobmffFile = await processIsobmffFile(client, existing.id);
+if (existing && existing.status === "ready") {
+  console.log("File already uploaded and processed");
+  // Use existing.id directly
 } else {
-  // Upload new file
-  const unprocessedFile = await createUnprocessedFile(client, {
-    md5: hash,
-    filename: "video.mp4",
-    byte_size: fileStats.size,
-  });
-  // ... continue upload
+  // Create and upload new file
 }
 ```
 
-This saves upload time and bandwidth when the same file is used multiple times.
-
 ## Image Pipeline
 
-Images have a simpler pipeline:
+Images use the same API with `type: "image"`:
 
 ```typescript
-import { createImageFile, uploadImageFile, lookupImageFileByMd5 } from "@editframe/api";
+import { createFile, uploadFile } from "@editframe/api";
 import { createReadStream } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { stat } from "node:fs/promises";
 
-const imageData = await readFile("thumbnail.jpg");
-const hash = md5(imageData);
+const imageStats = await stat("thumbnail.jpg");
 
-// Check for existing image
-const existing = await lookupImageFileByMd5(client, hash);
+const imageFile = await createFile(client, {
+  filename: "thumbnail.jpg",
+  type: "image",
+  byte_size: imageStats.size,
+  mime_type: "image/jpeg",
+});
 
-if (existing) {
-  console.log("Image already uploaded");
-} else {
-  // Create and upload
-  const imageFile = await createImageFile(client, {
-    md5: hash,
-    filename: "thumbnail.jpg",
-    mime_type: "image/jpeg",
-  });
-
-  const imageStream = createReadStream("thumbnail.jpg");
-  await uploadImageFile(client, imageFile.id, imageStream);
+const imageStream = createReadStream("thumbnail.jpg");
+for await (const event of uploadFile(
+  client,
+  { id: imageFile.id, byte_size: imageStats.size, type: "image" },
+  imageStream
+)) {
+  // Images are ready immediately after upload
 }
 
 // Use in composition
 const html = `
   <ef-configuration api-host="https://editframe.com">
     <ef-timegroup mode="contain" class="w-[1920px] h-[1080px]">
-      <ef-image 
-        asset-id="${imageFile.id}"
+      <ef-image
+        file-id="${imageFile.id}"
         class="size-full object-cover">
       </ef-image>
     </ef-timegroup>
@@ -200,36 +177,34 @@ const html = `
 `;
 ```
 
-## Helper: Node.js File Upload
+## Node.js Helper
 
-For Node.js environments, use the `@editframe/api/node` subpackage:
+For Node.js environments, use the `@editframe/api/node` subpackage for a simplified upload:
 
 ```typescript
-import { createUnprocessedFileFromPath, uploadUnprocessedFile } from "@editframe/api/node";
+import { upload } from "@editframe/api/node";
 
-// One-step upload from file path
-const unprocessedFile = await createUnprocessedFileFromPath(client, "video.mp4");
+const { file, uploadIterator } = await upload(client, "video.mp4");
 
-// Upload with progress
-for await (const event of uploadUnprocessedFile(client, unprocessedFile, "video.mp4")) {
+for await (const event of uploadIterator) {
   if (event.type === "progress") {
     console.log(`Upload: ${event.progress.toFixed(1)}%`);
   }
 }
+
+console.log(`File ${file.id} uploaded (type: ${file.type})`);
 ```
 
-This handles file reading, MD5 calculation, and chunked upload automatically.
+This handles file type detection, MD5 calculation, and chunked upload automatically.
 
 ## Error Handling
 
-Handle common errors:
-
 ```typescript
 try {
-  const unprocessedFile = await createUnprocessedFile(client, payload);
+  const file = await createFile(client, payload);
 } catch (error) {
   if (error.message.includes("413")) {
-    console.error("File too large (max 1GB)");
+    console.error("File too large");
   } else if (error.message.includes("401")) {
     console.error("Invalid API key");
   } else {
@@ -238,13 +213,10 @@ try {
 }
 ```
 
-File size limit: 1GB for unprocessed files.
+Size limits by type: video 1GB, image 16MB, caption 2MB.
 
 ## Next Steps
 
-- [Unprocessed Files](references/unprocessed-files.md) — raw file upload API
-- [ISOBMFF Files](references/isobmff-files.md) — processed file API
-- [Image Files](references/image-files.md) — image upload API
-- [Caption Files](references/caption-files.md) — caption upload API
+- [Files](references/files.md) — unified file API reference
 - [Transcription](references/transcription.md) — add captions to uploaded videos
 - Elements Composition skill — composition syntax and element reference

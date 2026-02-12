@@ -1,0 +1,126 @@
+table:
+  name: files
+  schema: video2
+object_relationships:
+  - name: api_key
+    using:
+      foreign_key_constraint_on: api_key_id
+  - name: org
+    using:
+      foreign_key_constraint_on: org_id
+  - name: user
+    using:
+      foreign_key_constraint_on: creator_id
+select_permissions:
+  - role: org-admin
+    permission:
+      columns:
+        - api_key_id
+        - byte_size
+        - completed_at
+        - created_at
+        - creator_id
+        - expires_at
+        - filename
+        - height
+        - id
+        - md5
+        - mime_type
+        - org_id
+        - status
+        - type
+        - width
+      filter:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _in:
+                    - admin
+                    - editor
+                    - reader
+              - user_id:
+                  _eq: X-Hasura-User-Id
+    comment: ""
+  - role: org-editor
+    permission:
+      columns:
+        - api_key_id
+        - byte_size
+        - completed_at
+        - created_at
+        - creator_id
+        - expires_at
+        - filename
+        - height
+        - id
+        - md5
+        - mime_type
+        - next_byte
+        - org_id
+        - remote_uri
+        - status
+        - type
+        - width
+      filter:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _in:
+                    - admin
+                    - editor
+              - user_id:
+                  _eq: X-Hasura-User-Id
+    comment: ""
+  - role: org-reader
+    permission:
+      columns:
+        - byte_size
+        - completed_at
+        - created_at
+        - creator_id
+        - expires_at
+        - filename
+        - height
+        - id
+        - md5
+        - mime_type
+        - org_id
+        - status
+        - type
+        - width
+      filter:
+        org:
+          memberships:
+            user_id:
+              _eq: X-Hasura-User-Id
+      limit: 50
+      allow_aggregations: true
+    comment: ""
+delete_permissions:
+  - role: org-admin
+    permission:
+      filter:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _in:
+                    - admin
+              - user_id:
+                  _eq: X-Hasura-User-Id
+    comment: ""
+  - role: org-editor
+    permission:
+      filter:
+        org:
+          memberships:
+            _and:
+              - role:
+                  _in:
+                    - admin
+                    - editor
+              - user_id:
+                  _eq: X-Hasura-User-Id
+    comment: ""

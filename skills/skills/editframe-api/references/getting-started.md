@@ -112,4 +112,5 @@ Supported formats: `mp4`, `jpeg`, `png`, `webp`. See [references/renders.md](ref
 - [Authentication](references/authentication.md) — understand API key format and Client behavior
 - [Renders](references/renders.md) — explore render configuration options
 - [URL Signing](references/url-signing.md) — set up browser-based playback
-- [Media Pipeline](references/media-pipeline.md) — upload and process your own video files
+- [Media Pipeline](references/media-pipeline.md) — upload and process your own media files
+- [Files](references/files.md) — unified files API reference

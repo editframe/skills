@@ -114,14 +114,14 @@ program
           await readFile(path.join(distDir, "index.html"), "utf-8"),
         );
 
-        log("Building asset IDs");
+        log("Building file IDs");
         for (const element of doc.querySelectorAll(
           "ef-image, ef-audio, ef-video",
         )) {
           log(`Processing ${element.tagName}`);
-          if (element.hasAttribute("asset-id")) {
+          if (element.hasAttribute("file-id") || element.hasAttribute("asset-id")) {
             log(
-              `Asset ID for ${element.tagName} ${element.getAttribute("src")} is ${element.getAttribute("asset-id")}`,
+              `File ID for ${element.tagName} ${element.getAttribute("src")} is ${element.getAttribute("file-id") || element.getAttribute("asset-id")}`,
             );
             continue;
           }
@@ -134,14 +134,14 @@ program
           switch (element.tagName) {
             case "EF-IMAGE":
               element.setAttribute(
-                "asset-id",
+                "file-id",
                 await buildAssetId(srcDir, src, basename(src)),
               );
               break;
             case "EF-AUDIO":
             case "EF-VIDEO":
               element.setAttribute(
-                "asset-id",
+                "file-id",
                 await buildAssetId(srcDir, src, "isobmff"),
               );
               break;

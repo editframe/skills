@@ -1,58 +1,58 @@
 ---
 title: Transcription
-description: Generate audio transcriptions from processed video files
+description: Generate audio transcriptions from uploaded video files
 type: reference
 nav:
   parent: "API Reference"
   priority: 30
 api:
   functions:
-    - name: transcribeISOBMFFFile
-      signature: "transcribeISOBMFFFile(client, id, payload)"
-      description: Start audio transcription for processed file
-      returns: TranscribeISOBMFFFileResult
-    - name: getISOBMFFFileTranscription
-      signature: "getISOBMFFFileTranscription(client, id)"
-      description: Get transcription metadata for processed file
-      returns: GetISOBMFFFileTranscriptionResult | null
+    - name: transcribeFile
+      signature: "transcribeFile(client, id, options?)"
+      description: Start audio transcription for a video file
+      returns: TranscribeFileResult
+    - name: getFileTranscription
+      signature: "getFileTranscription(client, id)"
+      description: Get transcription status for a file
+      returns: FileTranscriptionResult | null
 ---
 
 # Transcription
 
-Generate audio transcriptions from processed video files.
+Generate audio transcriptions from uploaded video files.
 
-## transcribeISOBMFFFile
+## transcribeFile
 
-Start audio transcription for a processed file.
+Start audio transcription for a video file.
 
 ```typescript
-import { transcribeISOBMFFFile } from "@editframe/api";
+import { transcribeFile } from "@editframe/api";
 
-// After uploading and processing a video file
-const transcription = await transcribeISOBMFFFile(client, processedFile.id, {
-  trackId: "2", // Optional: specify audio track ID
+const transcription = await transcribeFile(client, file.id, {
+  trackId: 1, // Optional: specify audio track ID
 });
 
 console.log(transcription.id);       // Transcription job ID
-console.log(transcription.file_id);  // Processed file ID
+console.log(transcription.file_id);  // File ID
 console.log(transcription.track_id); // Audio track ID
 ```
 
 If you don't specify `trackId`, Editframe uses the first audio track in the file.
 
-## getISOBMFFFileTranscription
+## getFileTranscription
 
-Get transcription metadata for a processed file.
+Get transcription status for a file.
 
 ```typescript
-import { getISOBMFFFileTranscription } from "@editframe/api";
+import { getFileTranscription } from "@editframe/api";
 
-const transcription = await getISOBMFFFileTranscription(client, processedFile.id);
+const transcription = await getFileTranscription(client, file.id);
 
 if (transcription) {
   console.log(transcription.id);
+  console.log(transcription.status);       // "completed"
   console.log(transcription.work_slice_ms);
-  console.log(transcription.isobmff_track.duration_ms);
+  console.log(transcription.completed_at);
 }
 ```
 
@@ -63,33 +63,31 @@ Returns `null` if the file has no transcription.
 ```typescript
 import {
   Client,
-  createUnprocessedFile,
-  uploadUnprocessedReadableStream,
-  processIsobmffFile,
-  getIsobmffProcessProgress,
-  transcribeISOBMFFFile,
-  getISOBMFFFileTranscription,
+  createFile,
+  uploadFile,
+  getFileProcessingProgress,
+  transcribeFile,
+  getFileTranscription,
 } from "@editframe/api";
-import { md5 } from "@editframe/assets";
-import { createReadStream, readFile, stat } from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { stat } from "node:fs/promises";
 
 const client = new Client(process.env.EDITFRAME_API_KEY);
 
-// 1. Upload file
+// 1. Upload video file
 const filePath = "video.mp4";
-const fileData = await readFile(filePath);
 const fileStats = await stat(filePath);
 
-const unprocessedFile = await createUnprocessedFile(client, {
-  md5: md5(fileData),
+const file = await createFile(client, {
   filename: "video.mp4",
+  type: "video",
   byte_size: fileStats.size,
 });
 
 const fileStream = createReadStream(filePath);
-for await (const event of uploadUnprocessedReadableStream(
+for await (const event of uploadFile(
   client,
-  { id: unprocessedFile.id, byte_size: fileStats.size },
+  { id: file.id, byte_size: fileStats.size, type: "video" },
   fileStream
 )) {
   if (event.type === "progress") {
@@ -97,10 +95,8 @@ for await (const event of uploadUnprocessedReadableStream(
   }
 }
 
-// 2. Process to ISOBMFF
-const isobmffFile = await processIsobmffFile(client, unprocessedFile.id);
-
-for await (const event of await getIsobmffProcessProgress(client, isobmffFile.id)) {
+// 2. Wait for processing
+for await (const event of await getFileProcessingProgress(client, file.id)) {
   if (event.type === "progress") {
     console.log(`Processing: ${event.progress.toFixed(1)}%`);
   } else if (event.type === "complete") {
@@ -109,35 +105,30 @@ for await (const event of await getIsobmffProcessProgress(client, isobmffFile.id
 }
 
 // 3. Start transcription
-const transcription = await transcribeISOBMFFFile(client, isobmffFile.id, {
-  trackId: "2", // Optional: specify audio track ID
-});
-
+const transcription = await transcribeFile(client, file.id);
 console.log("Transcription started:", transcription.id);
 
-// 4. Get transcription metadata
-const result = await getISOBMFFFileTranscription(client, isobmffFile.id);
+// 4. Check transcription status
+const result = await getFileTranscription(client, file.id);
 if (result) {
-  console.log("Transcription metadata:", result);
+  console.log("Status:", result.status);
 }
 ```
 
 ## Using Transcriptions in Compositions
 
-Once transcribed, use the `<ef-captions>` element with `target` to display captions:
+Once transcribed, use `<ef-captions>` with `target` to display captions:
 
-```typescript
-const html = `
-  <ef-configuration api-host="https://editframe.com">
-    <ef-timegroup mode="contain" class="w-[1920px] h-[1080px]">
-      <ef-video asset-id="${isobmffFile.id}"></ef-video>
-      <ef-captions 
-        target="ef-video"
-        class="absolute bottom-10 left-10 right-10 text-white text-4xl text-center">
-      </ef-captions>
-    </ef-timegroup>
-  </ef-configuration>
-`;
+```html
+<ef-configuration api-host="https://editframe.com">
+  <ef-timegroup mode="contain" class="w-[1920px] h-[1080px]">
+    <ef-video file-id="${file.id}"></ef-video>
+    <ef-captions
+      target="ef-video"
+      class="absolute bottom-10 left-10 right-10 text-white text-4xl text-center">
+    </ef-captions>
+  </ef-timegroup>
+</ef-configuration>
 ```
 
-The `<ef-captions>` element with `target="ef-video"` automatically fetches transcription data from the video's asset. See the elements-composition skill for complete `<ef-captions>` documentation.
+The `<ef-captions>` element with `target="ef-video"` automatically fetches transcription data from the video file. See the elements-composition skill for complete `<ef-captions>` documentation.

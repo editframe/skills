@@ -4,6 +4,25 @@ export type {
   ProgressIterator,
 } from "./ProgressIterator.js";
 export {
+  CreateFilePayload,
+  type CreateFileResult,
+  createFile,
+  type FileDetail,
+  type FileRecord,
+  FileStatus,
+  FileType,
+  type FileTranscriptionResult,
+  getFileDetail,
+  getFileProcessingProgress,
+  getFileTranscription,
+  type LookupFileByMd5Result,
+  lookupFileByMd5,
+  type TranscribeFileResult,
+  transcribeFile,
+  deleteFile,
+  uploadFile,
+} from "./resources/file.js";
+export {
   CreateCaptionFilePayload,
   type CreateCaptionFileResult,
   createCaptionFile,

@@ -16,14 +16,14 @@ export interface AssetsMetadataBundle {
 }
 
 /**
- * Extract media asset IDs from getRenderInfo assets array
+ * Extract media file IDs from getRenderInfo assets array
  * Only extracts video/audio assets that need fragment indexes
- * Assets are in format "asset-id=uuid" or "src=url"
+ * Assets are in format "file-id=uuid", "asset-id=uuid" (legacy), or "src=url"
  */
 function extractMediaAssetIds(assetSrcs: string[]): string[] {
   return assetSrcs
-    .filter((src) => src.startsWith("asset-id="))
-    .map((src) => src.replace("asset-id=", ""));
+    .filter((src) => src.startsWith("file-id=") || src.startsWith("asset-id="))
+    .map((src) => src.replace("file-id=", "").replace("asset-id=", ""));
 }
 
 /**

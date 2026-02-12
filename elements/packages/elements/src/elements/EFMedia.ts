@@ -257,6 +257,7 @@ export class EFMedia extends EFTargetable(
       "fft-decay",
       "fft-gain",
       "interpolate-frequencies",
+      "file-id",
       "asset-id",
       "audio-buffer-duration",
       "max-audio-buffer-fetches",
@@ -275,6 +276,14 @@ export class EFMedia extends EFTargetable(
       }
     `,
   ];
+
+  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
+    if (name === "asset-id") {
+      this.fileId = newValue;
+      return;
+    }
+    super.attributeChangedCallback(name, oldValue, newValue);
+  }
 
   /**
    * Duration in milliseconds for audio buffering ahead of current time
@@ -388,10 +397,10 @@ export class EFMedia extends EFTargetable(
 
   /**
    * Get or create the MediaEngine for this element.
-   * Uses caching based on src/assetId to avoid redundant fetches.
+   * Uses caching based on src/fileId to avoid redundant fetches.
    */
   async getMediaEngine(signal?: AbortSignal): Promise<MediaEngine | undefined> {
-    const srcKey = `${this.src}|${this.assetId}`;
+    const srcKey = `${this.src}|${this.fileId}`;
     
     // Return cached if src hasn't changed
     if (this.#mediaEngineSrcKey === srcKey && this.#mediaEngine) {
@@ -446,19 +455,19 @@ export class EFMedia extends EFTargetable(
   }
 
   async #createMediaEngine(signal?: AbortSignal): Promise<MediaEngine | undefined> {
-    const { src, assetId, apiHost, requiredTracks } = this;
+    const { src, fileId, apiHost, requiredTracks } = this;
     const urlGenerator = this.getUrlGenerator();
 
-    // Check for AssetID mode first
-    if (assetId !== null && assetId !== undefined && assetId.trim() !== "") {
+    // Check for file-id mode first
+    if (fileId !== null && fileId !== undefined && fileId.trim() !== "") {
       if (!apiHost) {
-        throw new Error("API host is required for AssetID mode");
+        throw new Error("API host is required for file-id mode");
       }
-      const { AssetIdMediaEngine } = await import("./EFMedia/AssetIdMediaEngine.js");
-      const engine = await AssetIdMediaEngine.fetchByAssetId(
+      const { FileMediaEngine } = await import("./EFMedia/FileMediaEngine.js");
+      const engine = await FileMediaEngine.fetchByFileId(
         this,
         urlGenerator,
-        assetId,
+        fileId,
         apiHost,
         requiredTracks,
         signal,
@@ -835,12 +844,21 @@ export class EFMedia extends EFTargetable(
   audioBufferTask = new AsyncValue<any>();
 
   /**
-   * The unique identifier for the media asset.
-   * This property can be set programmatically or via the "asset-id" attribute.
-   * @domAttribute "asset-id"
+   * The unique identifier for the media file.
+   * This property can be set programmatically or via the "file-id" attribute.
+   * The "asset-id" attribute is also supported for backward compatibility.
+   * @domAttribute "file-id"
    */
-  @property({ type: String, attribute: "asset-id", reflect: true })
-  assetId: string | null = null;
+  @property({ type: String, attribute: "file-id", reflect: true })
+  fileId: string | null = null;
+
+  /** @deprecated Use fileId instead */
+  get assetId(): string | null {
+    return this.fileId;
+  }
+  set assetId(value: string | null) {
+    this.fileId = value;
+  }
 
   get intrinsicDurationMs(): number | undefined {
     return this.#mediaEngine?.durationMs;
@@ -851,11 +869,11 @@ export class EFMedia extends EFTargetable(
   ): void {
     super.updated(changedProperties);
 
-    // Trigger media engine load when src or assetId changes
-    if (changedProperties.has("src") || changedProperties.has("assetId")) {
+    // Trigger media engine load when src or fileId changes
+    if (changedProperties.has("src") || changedProperties.has("fileId")) {
       this.getMediaEngine().catch(() => {});
       // Source identity changed — cached renderable output is stale
-      if (changedProperties.get("src") !== undefined || changedProperties.get("assetId") !== undefined) {
+      if (changedProperties.get("src") !== undefined || changedProperties.get("fileId") !== undefined) {
         this.emitContentChange("source");
       }
     }

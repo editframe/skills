@@ -232,6 +232,17 @@ export async function processHTML(options: ProcessHTMLOptions) {
     source_type: "url";
     url: string;
   }[] = [];
+  const fileRows: {
+    id: string;
+    org_id: string;
+    creator_id: string;
+    api_key_id: string | null;
+    filename: string;
+    type: "video" | "image" | "caption";
+    status: "processing";
+    expires_at: Date;
+  }[] = [];
+
   for (const media of mediaElements) {
     const src = media.getAttribute("src");
     if (src?.startsWith("http")) {
@@ -247,6 +258,18 @@ export async function processHTML(options: ProcessHTMLOptions) {
         url: src,
       });
 
+      fileRows.push({
+        id: isobmffId,
+        org_id: options.org_id,
+        creator_id: options.creator_id,
+        api_key_id: options.api_key_id,
+        filename: src,
+        type: "video",
+        status: "processing",
+        expires_at: new Date(Date.now() + ONE_HOUR),
+      });
+
+      media.setAttribute("file-id", isobmffId);
       media.setAttribute("asset-id", isobmffId);
       media.removeAttribute("src");
     }
@@ -291,9 +314,26 @@ export async function processHTML(options: ProcessHTMLOptions) {
         workflowId: options.process_html_id,
         jobId: imageId,
       });
+
+      fileRows.push({
+        id: imageId,
+        org_id: options.org_id,
+        creator_id: options.creator_id,
+        api_key_id: options.api_key_id,
+        filename: src,
+        type: "image",
+        status: "processing",
+        expires_at: new Date(Date.now() + ONE_HOUR),
+      });
+
+      image.setAttribute("file-id", imageId);
       image.setAttribute("asset-id", imageId);
       image.removeAttribute("src");
     }
+  }
+
+  if (fileRows.length > 0) {
+    await db.insertInto("video2.files").values(fileRows).execute();
   }
 
   await ProcessHTMLWorkflow.enqueueJobs(...workflowJobs);

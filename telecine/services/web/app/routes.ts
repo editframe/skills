@@ -202,6 +202,19 @@ const routes = [
       v1.route("/:file_id/:track_id.json", "isobmff_tracks/detail.json.ts"),
     ]),
 
+    ...v1.prefix("/files", [
+      v1.route("/", "files/index.ts"),
+      v1.route("/:id", "files/detail.ts"),
+      v1.route("/:id/upload", "files/upload.ts"),
+      v1.route("/:id/delete", "files/delete.ts"),
+      v1.route("/:id/index", "files/indexFile.ts"),
+      v1.route("/:id/tracks/:trackId", "files/tracks.ts"),
+      v1.route("/:id/transcribe", "files/transcribe.ts"),
+      v1.route("/:id/transcription", "files/transcription.ts"),
+      v1.route("/:id/progress", "files/progress.ts"),
+      v1.route("/md5/:md5", "files/md5.ts"),
+    ]),
+
     ...v1.prefix("/unprocessed_files", [
       v1.route("", "unprocessed_files/index.ts"),
       // TODO: add detail route

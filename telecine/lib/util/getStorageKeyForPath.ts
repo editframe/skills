@@ -1,6 +1,7 @@
 import { logger } from "@/logging";
 import {
   captionsFilePath,
+  dataFilePath,
   imageFilePath,
   isobmffIndexFilePath,
   isobmffTrackFilePath,
@@ -11,6 +12,37 @@ export function getStorageKeyForPath(path: string, orgId: string) {
   logger.trace({ path, orgId }, "getStorageKeyForPath");
   const matches = matchRoutes(
     [
+      // New unified /api/v1/files routes
+      {
+        path: "/api/v1/files/:id/index",
+        buildFilePath: (params: Params<string>, orgId: string) => {
+          return isobmffIndexFilePath({ org_id: orgId, id: params.id! });
+        },
+      },
+      {
+        path: "/api/v1/files/:id/tracks/:trackId",
+        buildFilePath: (params: Params<string>, orgId: string) => {
+          return isobmffTrackFilePath({
+            org_id: orgId,
+            id: params.id!,
+            track_id: Number(params.trackId!),
+          });
+        },
+      },
+      {
+        path: "/api/v1/files/:id/transcription",
+        buildFilePath: (params: Params<string>, orgId: string) => {
+          return captionsFilePath({ org_id: orgId, id: params.id! });
+        },
+      },
+      {
+        path: "/api/v1/files/:id",
+        buildFilePath: (params: Params<string>, orgId: string) => {
+          return dataFilePath({ org_id: orgId, id: params.id! });
+        },
+      },
+
+      // Legacy routes (backward compatibility)
       {
         path: "/api/v1/isobmff_files/:id/index",
         buildFilePath: (params: Params<string>, orgId: string) => {
@@ -30,7 +62,6 @@ export function getStorageKeyForPath(path: string, orgId: string) {
         },
       },
       {
-        // In other parts of the system the track id is treated as a query param.
         path: "/api/v1/isobmff_tracks/:id/:trackId",
         buildFilePath: (params: Params<string>, orgId: string) => {
           return isobmffTrackFilePath({

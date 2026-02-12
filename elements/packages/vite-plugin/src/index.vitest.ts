@@ -165,7 +165,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
       };
       server.middlewares.use(assetsLocalApiMiddleware);
 
-      // Handle production API format for local files: /api/v1/isobmff_files/local/*
+      // Handle production API format for local files: /api/v1/files/local/* and /api/v1/isobmff_files/local/*
       const isobmffLocalApiMiddleware = async (
         req: IncomingMessage,
         res: ServerResponse,
@@ -174,7 +174,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
         const log = debug("ef:vite-plugin:isobmff");
         const reqUrl = req.url || "";
         
-        if (!reqUrl.startsWith("/api/v1/isobmff_files/local/")) {
+        if (!reqUrl.startsWith("/api/v1/files/local/") && !reqUrl.startsWith("/api/v1/isobmff_files/local/")) {
           return next();
         }
         
@@ -196,16 +196,16 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
         log(`Handling local isobmff API: ${urlPath} for ${absolutePath}`);
         
         try {
-          // Handle /api/v1/isobmff_files/local/index - fragment index
-          if (urlPath === "/api/v1/isobmff_files/local/index") {
+          // Handle /api/v1/files/local/index or /api/v1/isobmff_files/local/index - fragment index
+          if (urlPath === "/api/v1/files/local/index" || urlPath === "/api/v1/isobmff_files/local/index") {
             log(`Serving track fragment index for ${absolutePath}`);
             const taskResult = await generateTrackFragmentIndex(options.cacheRoot, absolutePath);
             sendTaskResult(req, res, taskResult);
             return;
           }
           
-          // Handle /api/v1/isobmff_files/local/md5 - get MD5 hash for a file
-          if (urlPath === "/api/v1/isobmff_files/local/md5") {
+          // Handle /api/v1/files/local/md5 or /api/v1/isobmff_files/local/md5 - get MD5 hash for a file
+          if (urlPath === "/api/v1/files/local/md5" || urlPath === "/api/v1/isobmff_files/local/md5") {
             log(`Getting MD5 for ${absolutePath}`);
             try {
               const md5 = await md5FilePath(absolutePath);
@@ -223,8 +223,8 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
             return;
           }
           
-          // Handle /api/v1/isobmff_files/local/track - track segments
-          if (urlPath === "/api/v1/isobmff_files/local/track") {
+          // Handle /api/v1/files/local/track or /api/v1/isobmff_files/local/track - track segments
+          if (urlPath === "/api/v1/files/local/track" || urlPath === "/api/v1/isobmff_files/local/track") {
             const trackIdStr = url.searchParams.get("trackId");
             const segmentIdStr = url.searchParams.get("segmentId");
             

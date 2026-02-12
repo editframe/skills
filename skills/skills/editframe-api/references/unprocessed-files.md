@@ -1,138 +1,119 @@
 ---
-title: Unprocessed Files
-description: Upload raw media files before processing to ISOBMFF format
+title: Video Files
+description: Upload video files using the unified files API with automatic ISOBMFF processing
 type: reference
 nav:
   parent: "API Reference / Files"
   priority: 20
 api:
   functions:
-    - name: createUnprocessedFile
-      signature: "createUnprocessedFile(client, payload)"
-      description: Register a raw media file
-      returns: CreateUnprocessedFileResult
-    - name: uploadUnprocessedReadableStream
-      signature: "uploadUnprocessedReadableStream(client, uploadDetails, fileStream)"
-      description: Upload raw file content with progress reporting
+    - name: createFile
+      signature: "createFile(client, { type: 'video', ... })"
+      description: Register a video file
+      returns: CreateFileResult
+    - name: uploadFile
+      signature: "uploadFile(client, uploadDetails, fileStream)"
+      description: Upload video data with chunked transfer and progress
       returns: IteratorWithPromise<UploadChunkEvent>
-    - name: lookupUnprocessedFileByMd5
-      signature: "lookupUnprocessedFileByMd5(client, md5)"
-      description: Find existing unprocessed file by hash
-      returns: LookupUnprocessedFileByMd5Result | null
-    - name: processIsobmffFile
-      signature: "processIsobmffFile(client, id)"
-      description: Process raw file into ISOBMFF format
-      returns: ProcessIsobmffFileResult
+    - name: getFileProcessingProgress
+      signature: "getFileProcessingProgress(client, id)"
+      description: Stream ISOBMFF processing progress via SSE
+      returns: ProgressIterator
+    - name: getFileDetail
+      signature: "getFileDetail(client, id)"
+      description: Get video metadata and track information
+      returns: FileDetail
 ---
 
-# Unprocessed Files
+# Video Files
 
-Upload raw media files before processing to streamable ISOBMFF format.
+Upload video files with automatic processing to streamable ISOBMFF format.
 
-## Workflow
+Video files use the unified files API with `type: "video"`. After upload, they are automatically processed to ISOBMFF format.
 
-1. **createUnprocessedFile** — register the raw file
-2. **uploadUnprocessedReadableStream** — stream the file content
-3. **processIsobmffFile** — convert to ISOBMFF format
-
-## createUnprocessedFile
-
-Register a raw media file.
+## Upload and Process
 
 ```typescript
-import { createUnprocessedFile } from "@editframe/api";
-import { md5 } from "@editframe/assets";
-import { stat, readFile } from "node:fs/promises";
+import { createFile, uploadFile, getFileProcessingProgress } from "@editframe/api";
+import { createReadStream } from "node:fs";
+import { stat } from "node:fs/promises";
 
-const filePath = "video.mp4";
-const fileData = await readFile(filePath);
-const fileStats = await stat(filePath);
+const fileStats = await stat("video.mp4");
 
-const unprocessedFile = await createUnprocessedFile(client, {
-  md5: md5(fileData),
+// 1. Create file record
+const file = await createFile(client, {
   filename: "video.mp4",
+  type: "video",
   byte_size: fileStats.size,
+  md5: "optional-md5-hash",
 });
 
-console.log(unprocessedFile.id);
-```
-
-## uploadUnprocessedReadableStream
-
-Upload the raw file content with progress reporting.
-
-```typescript
-import { uploadUnprocessedReadableStream } from "@editframe/api";
-import { createReadStream } from "node:fs";
-
+// 2. Upload content
 const fileStream = createReadStream("video.mp4");
 
-for await (const event of uploadUnprocessedReadableStream(
+for await (const event of uploadFile(
   client,
-  { id: unprocessedFile.id, byte_size: fileStats.size },
+  { id: file.id, byte_size: fileStats.size, type: "video" },
   fileStream
 )) {
   if (event.type === "progress") {
-    console.log(`Upload progress: ${event.progress.toFixed(1)}%`);
+    console.log(`Upload: ${event.progress.toFixed(1)}%`);
   }
 }
 
-console.log("Upload complete");
-```
-
-The upload uses chunked transfer with progress reporting. Maximum file size: 1GB.
-
-## lookupUnprocessedFileByMd5
-
-Check if a file already exists before uploading.
-
-```typescript
-import { lookupUnprocessedFileByMd5 } from "@editframe/api";
-
-const hash = md5(fileData);
-const existing = await lookupUnprocessedFileByMd5(client, hash);
-
-if (existing && existing.complete) {
-  console.log("File already uploaded");
-  // Process existing file
-  const isobmffFile = await processIsobmffFile(client, existing.id);
-} else {
-  // Upload new file
-  const unprocessedFile = await createUnprocessedFile(client, {
-    md5: hash,
-    filename: "video.mp4",
-    byte_size: fileStats.size,
-  });
-  // ... continue upload
-}
-```
-
-This saves upload time and bandwidth when the same file is used multiple times.
-
-## processIsobmffFile
-
-Convert the raw file to ISOBMFF format for streaming.
-
-```typescript
-import { processIsobmffFile, getIsobmffProcessProgress } from "@editframe/api";
-
-// Start processing
-const isobmffFile = await processIsobmffFile(client, unprocessedFile.id);
-
-// Monitor progress
-for await (const event of await getIsobmffProcessProgress(client, isobmffFile.id)) {
+// 3. Wait for processing (automatic after upload)
+for await (const event of await getFileProcessingProgress(client, file.id)) {
   if (event.type === "progress") {
     console.log(`Processing: ${event.progress.toFixed(1)}%`);
   } else if (event.type === "complete") {
-    console.log("Processing complete");
+    console.log("Ready");
     break;
   }
 }
 ```
 
-Processing converts the raw file to ISOBMFF format, which enables:
+Processing converts the raw file to ISOBMFF format, enabling:
 - Frame-accurate seeking
 - Adaptive bitrate streaming
 - Efficient composition rendering
 
-Once processing completes, the file is ready to use in compositions. See [media-pipeline.md](media-pipeline.md) for the complete workflow.
+Maximum file size: 1GB.
+
+## Get Video Details
+
+After processing, retrieve track information:
+
+```typescript
+import { getFileDetail } from "@editframe/api";
+
+const detail = await getFileDetail(client, file.id);
+
+console.log(detail.status);  // "ready"
+console.log(detail.width);   // 1920
+console.log(detail.height);  // 1080
+
+if (detail.tracks) {
+  for (const track of detail.tracks) {
+    console.log(`Track ${track.track_id}: ${track.type} ${track.codec_name} (${track.duration_ms}ms)`);
+  }
+}
+```
+
+## Using in Compositions
+
+Reference videos by their `file-id`:
+
+```html
+<ef-configuration api-host="https://editframe.com">
+  <ef-timegroup mode="contain" class="w-[1920px] h-[1080px]">
+    <ef-video
+      file-id="${file.id}"
+      class="size-full object-contain">
+    </ef-video>
+  </ef-timegroup>
+</ef-configuration>
+```
+
+The `file-id` is a stable UUID that remains the same from creation through processing and playback.
+
+See [files.md](files.md) for the complete files API reference and [media-pipeline.md](media-pipeline.md) for the end-to-end workflow.

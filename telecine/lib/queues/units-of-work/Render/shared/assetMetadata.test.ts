@@ -94,7 +94,7 @@ describe("assetMetadata", () => {
   });
 
   describe("createAssetsMetadataBundle", () => {
-    test("extracts media asset IDs and ignores image assets", async () => {
+    test("extracts media asset IDs from asset-id= prefix and ignores image assets", async () => {
       const { createAssetsMetadataBundle } = await import("./assetMetadata");
       const { storageProvider } = await import("@/util/storageProvider.server");
 
@@ -129,6 +129,28 @@ describe("assetMetadata", () => {
       );
     });
 
+    test("extracts media asset IDs from file-id= prefix", async () => {
+      const { createAssetsMetadataBundle } = await import("./assetMetadata");
+      const { storageProvider } = await import("@/util/storageProvider.server");
+
+      const mockFragmentIndex = {
+        1: { type: "video", duration_ms: 30000 },
+      };
+
+      vi.mocked(storageProvider.readFile).mockResolvedValue(
+        Buffer.from(JSON.stringify(mockFragmentIndex)),
+      );
+
+      const assets = {
+        efMediaSrcs: [`file-id=${mockAssetId}`],
+        efImageSrcs: [],
+      };
+
+      const bundle = await createAssetsMetadataBundle(assets, mockOrgId);
+
+      expect(bundle.fragmentIndexes[mockAssetId]).toBeDefined();
+    });
+
     test("handles empty asset arrays", async () => {
       const { createAssetsMetadataBundle } = await import("./assetMetadata");
 
@@ -142,7 +164,7 @@ describe("assetMetadata", () => {
       expect(bundle.fragmentIndexes).toEqual({});
     });
 
-    test("filters out src= entries and keeps only asset-id entries", async () => {
+    test("filters out src= entries and keeps only asset-id and file-id entries", async () => {
       const { createAssetsMetadataBundle } = await import("./assetMetadata");
       const { storageProvider } = await import("@/util/storageProvider.server");
 
@@ -154,10 +176,13 @@ describe("assetMetadata", () => {
         Buffer.from(JSON.stringify(mockFragmentIndex)),
       );
 
+      const secondAssetId = "334e5678-e89b-12d3-a456-426614174002";
+
       const assets = {
         efMediaSrcs: [
           "src=https://example.com/video1.mp4",
           `asset-id=${mockAssetId}`,
+          `file-id=${secondAssetId}`,
           "src=https://example.com/video2.mp4",
         ],
         efImageSrcs: [],
@@ -165,9 +190,10 @@ describe("assetMetadata", () => {
 
       const bundle = await createAssetsMetadataBundle(assets, mockOrgId);
 
-      // Should only have the asset-id entry
-      expect(Object.keys(bundle.fragmentIndexes)).toHaveLength(1);
+      // Should have both the asset-id and file-id entries
+      expect(Object.keys(bundle.fragmentIndexes)).toHaveLength(2);
       expect(bundle.fragmentIndexes[mockAssetId]).toBeDefined();
+      expect(bundle.fragmentIndexes[secondAssetId]).toBeDefined();
     });
 
     test("handles fragment index loading errors gracefully", async () => {

@@ -207,6 +207,63 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
     });
   });
 
+  describe("file-id attribute (unified API)", () => {
+    const strategy = strategies[0]!;
+    const renderOpts = {
+      renderMode: strategy.renderMode,
+      canvasMode: strategy.canvasMode,
+      testAgent: undefined as any,
+      electronRpc: undefined as any,
+    };
+
+    test("ef-image renders with file-id", async () => {
+      const result = await render(
+        `
+        <ef-timegroup class="w-[640px] h-[360px]" mode="fixed" duration="100ms">
+          <ef-image file-id="${testImage.id}" class="w-full h-full object-cover" />
+        </ef-timegroup>
+      `,
+        { ...renderOpts, testAgent, electronRpc, testName: "file-id-ef-image" },
+      );
+
+      expect(result.durationMs).toBeCloseTo(100, 20);
+      const validation = validateMP4(result.videoBuffer);
+      expect(validation.isValid).toBe(true);
+    });
+
+    test("ef-video renders with file-id", async () => {
+      const result = await render(
+        `
+        <ef-timegroup class="w-[480px] h-[270px]" mode="fixed" duration="200ms">
+          <ef-video file-id="${barsNTone.id}" class="w-full" source-out="200ms"></ef-video>
+        </ef-timegroup>
+      `,
+        { ...renderOpts, testAgent, electronRpc, testName: "file-id-ef-video" },
+      );
+
+      expect(result.durationMs).toBeCloseTo(200, 20);
+      const validation = validateMP4(result.videoPath);
+      expect(validation.isValid).toBe(true);
+      expect(validation.hasVideoTrack).toBe(true);
+    });
+
+    test("ef-audio renders with file-id", async () => {
+      const result = await render(
+        `
+        <ef-timegroup class="w-[640px] h-[360px]" mode="fixed" duration="100ms">
+          <ef-audio file-id="${barsNTone.id}"></ef-audio>
+          <div class="w-full h-full bg-green-500"></div>
+        </ef-timegroup>
+      `,
+        { ...renderOpts, testAgent, electronRpc, testName: "file-id-ef-audio" },
+      );
+
+      expect(result.durationMs).toBeCloseTo(100, 20);
+      const validation = validateMP4(result.videoPath);
+      expect(validation.isValid).toBe(true);
+    });
+  });
+
   // Only run strategy comparisons if we're testing multiple strategies
   if (strategies.length > 1) {
     describe("Strategy Consistency", () => {

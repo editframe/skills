@@ -107,6 +107,61 @@ describe("Render", () => {
   );
 
   test(
+    "renders a video with file-id attribute",
+    testSpan(async ({ expect }) => {
+      const testAgent = await makeTestAgent("render-fileid-test@example.org");
+      const barsNTone = await processTestVideoAsset(
+        "bars-n-tone.mp4",
+        testAgent,
+      );
+      const template = /* HTML */ `
+      <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="4s">
+        <ef-video file-id="${barsNTone.id}" class="w-full"></ef-video>
+      </ef-timegroup>
+    `;
+      const [electronRPC, bundleInfo] = await Promise.all([
+        createElectronRPC(),
+        bundleTestTemplate(template, "video-file-id"),
+      ]);
+
+      try {
+        const ctx = await electronRPC.rpc.call("createContext", {
+          location: `file://${bundleInfo.indexPath}`,
+          orgId: testAgent.org.id,
+        });
+
+        const renderInfo = await electronRPC.rpc.call("getRenderInfo", {
+          location: `file://${bundleInfo.indexPath}`,
+          orgId: testAgent.org.id,
+          contextId: ctx.contextId,
+        });
+
+        const assetsBundle = await createAssetsMetadataBundle(
+          renderInfo.assets,
+          testAgent.org.id,
+        );
+
+        // Verify that getRenderInfo extracts file-id correctly
+        expect(renderInfo.assets.efMediaSrcs.length).toBeGreaterThan(0);
+        const fileIdEntry = renderInfo.assets.efMediaSrcs.find(
+          (s: string) => s.startsWith("file-id=") || s.startsWith("asset-id="),
+        );
+        expect(fileIdEntry).toBeDefined();
+
+        // Verify fragment indexes were fetched
+        expect(
+          Object.keys(assetsBundle.fragmentIndexes).length,
+        ).toBeGreaterThan(0);
+
+        await electronRPC.rpc.call("disposeContext", ctx.contextId);
+      } finally {
+        await electronRPC.rpc.call("terminate");
+      }
+    }),
+    20000,
+  );
+
+  test(
     "renders a simple still",
     testSpan(async ({ expect }) => {
       const [electronRPC, testAgent] = await Promise.all([

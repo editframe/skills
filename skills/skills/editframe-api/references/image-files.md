@@ -1,70 +1,57 @@
 ---
 title: Image Files
-description: Upload and manage static images (JPEG, PNG, WebP, SVG)
+description: Upload and manage static images using the unified files API
 type: reference
 nav:
   parent: "API Reference / Files"
   priority: 22
 api:
   functions:
-    - name: createImageFile
-      signature: "createImageFile(client, payload)"
-      description: Register image file
-      returns: CreateImageFileResult
-    - name: uploadImageFile
-      signature: "uploadImageFile(client, uploadDetails, fileStream, chunkSizeBytes?)"
-      description: Upload image data with progress reporting
+    - name: createFile
+      signature: "createFile(client, { type: 'image', ... })"
+      description: Register an image file
+      returns: CreateFileResult
+    - name: uploadFile
+      signature: "uploadFile(client, uploadDetails, fileStream)"
+      description: Upload image data with progress
       returns: IteratorWithPromise<UploadChunkEvent>
-    - name: getImageFileMetadata
-      signature: "getImageFileMetadata(client, id)"
-      description: Get image dimensions and format
-      returns: GetImageFileMetadataResult | null
-    - name: lookupImageFileByMd5
-      signature: "lookupImageFileByMd5(client, md5)"
+    - name: getFileDetail
+      signature: "getFileDetail(client, id)"
+      description: Get image dimensions and metadata
+      returns: FileDetail
+    - name: lookupFileByMd5
+      signature: "lookupFileByMd5(client, md5)"
       description: Find existing image by hash
-      returns: LookupImageFileByMd5Result | null
+      returns: LookupFileByMd5Result | null
 ---
 
 # Image Files
 
 Upload and manage static images for use in compositions.
 
-## createImageFile
+Images use the unified files API with `type: "image"`. They are ready immediately after upload (no processing step).
 
-Register an image file.
-
-```typescript
-import { createImageFile } from "@editframe/api";
-import { md5 } from "@editframe/assets";
-import { readFile, stat } from "node:fs/promises";
-
-const imagePath = "thumbnail.jpg";
-const imageData = await readFile(imagePath);
-const imageStats = await stat(imagePath);
-
-const imageFile = await createImageFile(client, {
-  md5: md5(imageData),
-  filename: "thumbnail.jpg",
-  byte_size: imageStats.size,
-  mime_type: "image/jpeg",  // Optional if filename has known extension
-});
-```
-
-Supported formats: JPEG, PNG, WebP, SVG. Maximum size: 16MB.
-
-## uploadImageFile
-
-Upload image data with progress reporting.
+## Upload an Image
 
 ```typescript
-import { uploadImageFile } from "@editframe/api";
+import { createFile, uploadFile } from "@editframe/api";
 import { createReadStream } from "node:fs";
+import { stat } from "node:fs/promises";
+
+const imageStats = await stat("thumbnail.jpg");
+
+const imageFile = await createFile(client, {
+  filename: "thumbnail.jpg",
+  type: "image",
+  byte_size: imageStats.size,
+  mime_type: "image/jpeg",
+});
 
 const imageStream = createReadStream("thumbnail.jpg");
 
-for await (const event of uploadImageFile(
+for await (const event of uploadFile(
   client,
-  { id: imageFile.id, byte_size: imageStats.size },
+  { id: imageFile.id, byte_size: imageStats.size, type: "image" },
   imageStream
 )) {
   if (event.type === "progress") {
@@ -73,65 +60,48 @@ for await (const event of uploadImageFile(
 }
 ```
 
-The `uploadDetails` parameter requires both `id` and `byte_size`.
+Supported formats: JPEG, PNG, WebP, SVG. Maximum size: 16MB.
 
-## getImageFileMetadata
-
-Get image dimensions and format.
+## Get Image Metadata
 
 ```typescript
-import { getImageFileMetadata } from "@editframe/api";
+import { getFileDetail } from "@editframe/api";
 
-const metadata = await getImageFileMetadata(client, imageFile.id);
+const detail = await getFileDetail(client, imageFile.id);
 
-if (metadata) {
-  console.log(metadata.width);      // 1920
-  console.log(metadata.height);     // 1080
-  console.log(metadata.mime_type);  // "image/jpeg"
-}
+console.log(detail.width);      // 1920
+console.log(detail.height);     // 1080
+console.log(detail.mime_type);  // "image/jpeg"
+console.log(detail.status);    // "ready"
 ```
 
-Returns `null` if the image file doesn't exist.
-
-## lookupImageFileByMd5
-
-Check if an image already exists before uploading.
+## Deduplication
 
 ```typescript
-import { lookupImageFileByMd5 } from "@editframe/api";
+import { lookupFileByMd5 } from "@editframe/api";
 
-const hash = md5(imageData);
-const existing = await lookupImageFileByMd5(client, hash);
+const existing = await lookupFileByMd5(client, "image-md5-hash");
 
-if (existing && existing.complete) {
+if (existing && existing.status === "ready") {
   console.log("Image already uploaded");
 } else {
   // Upload new image
-  const imageFile = await createImageFile(client, {
-    md5: hash,
-    filename: "thumbnail.jpg",
-    byte_size: imageStats.size,
-    mime_type: "image/jpeg",
-  });
-  // ... continue upload
 }
 ```
 
 ## Using in Compositions
 
-Reference images by their asset ID:
+Reference images by their `file-id`:
 
-```typescript
-const html = `
-  <ef-configuration api-host="https://editframe.com">
-    <ef-timegroup mode="contain" class="w-[1920px] h-[1080px]">
-      <ef-image 
-        asset-id="${imageFile.id}"
-        class="size-full object-cover">
-      </ef-image>
-    </ef-timegroup>
-  </ef-configuration>
-`;
+```html
+<ef-configuration api-host="https://editframe.com">
+  <ef-timegroup mode="contain" class="w-[1920px] h-[1080px]">
+    <ef-image
+      file-id="${imageFile.id}"
+      class="size-full object-cover">
+    </ef-image>
+  </ef-timegroup>
+</ef-configuration>
 ```
 
-The `asset-id` attribute tells the element to fetch from the Editframe API. The `api-host` on `ef-configuration` sets the API base URL for all child elements.
+See [files.md](files.md) for the complete files API reference.

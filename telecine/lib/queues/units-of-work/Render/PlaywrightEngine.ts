@@ -114,18 +114,19 @@ export class PlaywrightEngine {
       const requestUrl = request.url();
 
       // Check if this is a fragment index request that can be served from bundle
+      // Supports both new /api/v1/files/:id/index and legacy /api/v1/isobmff_files/:id/index
       const fragmentIndexMatch = requestUrl.match(
-        /\/api\/v1\/isobmff_files\/([^/]+)\/index$/,
+        /\/api\/v1\/(?:files|isobmff_files)\/([^/]+)\/index$/,
       );
       if (fragmentIndexMatch && assetsBundle) {
-        const assetId = fragmentIndexMatch[1] ?? null;
-        const fragmentIndex = assetId
-          ? assetsBundle.fragmentIndexes[assetId]
+        const fileId = fragmentIndexMatch[1] ?? null;
+        const fragmentIndex = fileId
+          ? assetsBundle.fragmentIndexes[fileId]
           : null;
 
         if (fragmentIndex) {
           logger.debug(
-            { assetId, requestUrl },
+            { fileId, requestUrl },
             "Serving fragment index from bundle",
           );
 
@@ -354,14 +355,20 @@ export class PlaywrightEngineContext implements FramegenEngine {
           switch (element.tagName) {
             case "EF-AUDIO":
             case "EF-VIDEO": {
-              if (element.src) {
-                assets.efMedia.add(element.src);
+              const fileId = element.fileId || element.assetId;
+              if (fileId) {
+                assets.efMedia.add("file-id=" + fileId);
+              } else if (element.src) {
+                assets.efMedia.add("src=" + element.src);
               }
               break;
             }
             case "EF-IMAGE": {
-              if (element.src) {
-                assets.efImage.add(element.src);
+              const imgFileId = element.fileId || element.assetId;
+              if (imgFileId) {
+                assets.efImage.add("file-id=" + imgFileId);
+              } else if (element.src) {
+                assets.efImage.add("src=" + element.src);
               }
               break;
             }

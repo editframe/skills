@@ -23,6 +23,7 @@ import { createWriteStream } from "node:fs";
 import { writeReadableStreamToWritable } from "@/util/writeReadableStreamToWritable";
 import { md5FilePath } from "@editframe/assets";
 import { dataFilePath } from "@/util/filePaths";
+import { db } from "@/sql-client.server";
 import { storageProvider } from "@/util/storageProvider.server";
 
 const QUEUE_URL = envString(
@@ -56,29 +57,35 @@ export const ProcessISOBMFFQueue = new Queue<ProcessISOBMFFPayload>({
 
   processFailures: async (messages, db) => {
     logger.info({ messages }, "Processing isobmff workflow failures");
+    const jobIds = messages.map((m) => m.jobId);
     await db
       .updateTable("video2.process_isobmff")
       .set({
         failed_at: new Date(),
       })
-      .where(
-        "id",
-        "in",
-        messages.map((m) => m.jobId),
-      )
+      .where("id", "in", jobIds)
+      .execute();
+
+    await db
+      .updateTable("video2.files")
+      .set({ status: "failed" })
+      .where("id", "in", jobIds)
       .execute();
   },
   processCompletions: async (messages, db) => {
+    const jobIds = messages.map((m) => m.jobId);
     await db
       .updateTable("video2.process_isobmff")
       .set({
         completed_at: new Date(),
       })
-      .where(
-        "id",
-        "in",
-        messages.map((m) => m.jobId),
-      )
+      .where("id", "in", jobIds)
+      .execute();
+
+    await db
+      .updateTable("video2.files")
+      .set({ status: "ready" })
+      .where("id", "in", jobIds)
       .execute();
   },
 });
@@ -118,6 +125,8 @@ class ProcessISOBMFFExecutor {
         return this.loadURL();
       case "unprocessed_file":
         return this.loadUnprocessedFile();
+      case "file":
+        return this.loadFile();
       default:
         throw new Error(`Unknown source type: ${this.sourceType}`);
     }
@@ -281,6 +290,68 @@ class ProcessISOBMFFExecutor {
       md5: unprocessedFile.md5,
       byte_size: unprocessedFile.byte_size,
       filename: unprocessedFile.filename,
+      dispose: async () => {
+        logger.trace({ tempDirPath }, "Disposing of temp dir");
+        await rmdir(tempDirPath, { recursive: true });
+      },
+    };
+  }
+
+  async loadFile(): Promise<SourceDescriptor> {
+    const fileId = this.payload.id;
+
+    const file = await db
+      .selectFrom("video2.files")
+      .where("id", "=", fileId)
+      .select(["id", "org_id", "md5", "filename", "byte_size", "status"])
+      .executeTakeFirstOrThrow();
+
+    if (file.status === "created" || file.status === "uploading") {
+      throw new Error("File upload not completed, skipping processing");
+    }
+
+    if (!file.byte_size) {
+      throw new Error("File byte_size is not set");
+    }
+
+    const filePath = dataFilePath({
+      org_id: file.org_id,
+      id: file.id,
+    });
+
+    const readStream = await storageProvider.createReadStream(filePath);
+    const tempDirPath = join(tmpdir(), file.id);
+
+    await mkdir(tempDirPath, { recursive: true });
+    const localFilePath = join(tempDirPath, file.id);
+    const writeStream = createWriteStream(localFilePath, {
+      encoding: "binary",
+    });
+
+    let bytesWritten = 0;
+    const fileLength = await storageProvider.getLength(filePath);
+
+    readStream.on("data", (chunk: Buffer) => {
+      bytesWritten += chunk.length;
+      const copyProgress = Math.min(bytesWritten / fileLength, 1);
+      this.tracker.writeProgress(copyProgress * 0.2);
+    });
+
+    const fileWritten = new Promise<void>((resolve, reject) => {
+      writeStream.on("finish", () => resolve());
+      writeStream.on("error", reject);
+    });
+
+    readStream.pipe(writeStream);
+    logger.trace(`Writing file to ${localFilePath}`);
+    await fileWritten;
+    logger.trace(`File written to ${localFilePath}`);
+
+    return {
+      path: localFilePath,
+      md5: file.md5 ?? await md5FilePath(localFilePath),
+      byte_size: file.byte_size,
+      filename: file.filename,
       dispose: async () => {
         logger.trace({ tempDirPath }, "Disposing of temp dir");
         await rmdir(tempDirPath, { recursive: true });

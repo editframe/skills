@@ -554,21 +554,21 @@ export class ElectronEngineContext implements FramegenEngine {
           switch (element.tagName) {
             case "EF-AUDIO":
             case "EF-VIDEO": {
-              if (element.src) {
+              const fileId = element.fileId || element.assetId;
+              if (fileId) {
+                assets.efMedia.add("file-id=" + fileId);
+              } else if (element.src) {
                 assets.efMedia.add("src=" + element.src);
-              }
-              if (element.assetId) {
-                assets.efMedia.add("asset-id=" + element.assetId);
               }
               
               break;
             }
             case "EF-IMAGE": {
-              if (element.src) {
+              const imgFileId = element.fileId || element.assetId;
+              if (imgFileId) {
+                assets.efImage.add("file-id=" + imgFileId);
+              } else if (element.src) {
                 assets.efImage.add("src=" + element.src);
-              }
-              if (element.assetId) {
-                assets.efImage.add("asset-id=" + element.assetId);
               }
               break;
             }

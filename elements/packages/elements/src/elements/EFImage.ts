@@ -33,6 +33,20 @@ export class EFImage extends EFTemporal(
     `,
   ];
 
+  static get observedAttributes() {
+    // biome-ignore lint/complexity/noThisInStatic: We need to access super
+    const parentAttributes = super.observedAttributes || [];
+    return [...parentAttributes, "asset-id"];
+  }
+
+  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
+    if (name === "asset-id") {
+      this.fileId = newValue;
+      return;
+    }
+    super.attributeChangedCallback(name, oldValue, newValue);
+  }
+
   imageRef = createRef<HTMLImageElement>();
   canvasRef = createRef<HTMLCanvasElement>();
 
@@ -44,7 +58,7 @@ export class EFImage extends EFTemporal(
 
   /**
    * Get the current render version.
-   * Version increments when src or assetId changes.
+   * Version increments when src or fileId changes.
    * @public
    */
   get renderVersion(): number {
@@ -66,14 +80,23 @@ export class EFImage extends EFTemporal(
     return this.#hasAlpha;
   }
 
-  #assetId: string | null = null;
-  @property({ type: String, attribute: "asset-id", reflect: true })
-  set assetId(value: string | null) {
-    this.#assetId = value;
+  #fileId: string | null = null;
+
+  @property({ type: String, attribute: "file-id", reflect: true })
+  set fileId(value: string | null) {
+    this.#fileId = value;
   }
 
-  get assetId() {
-    return this.#assetId ?? this.getAttribute("asset-id");
+  get fileId() {
+    return this.#fileId ?? this.getAttribute("file-id") ?? this.getAttribute("asset-id");
+  }
+
+  /** @deprecated Use fileId instead */
+  get assetId(): string | null {
+    return this.fileId;
+  }
+  set assetId(value: string | null) {
+    this.fileId = value;
   }
 
   render() {
@@ -85,17 +108,17 @@ export class EFImage extends EFTemporal(
   }
 
   private isDirectUrl(src: string): boolean {
-    // For asset-id based URLs (via apiHost), always use fetch+canvas instead of img element
+    // For file-id based URLs (via apiHost), always use fetch+canvas instead of img element
     // This ensures proper rendering in all contexts (server, browser-full-video, browser-frame-by-frame)
-    if (this.assetId) {
+    if (this.fileId) {
       return false;
     }
     return src.startsWith("http://") || src.startsWith("https://") || src.startsWith("data:");
   }
 
   assetPath() {
-    if (this.assetId) {
-      const path = `${this.apiHost}/api/v1/image_files/${this.assetId}`;
+    if (this.fileId) {
+      const path = `${this.apiHost}/api/v1/files/${this.fileId}`;
       return path;
     }
     if (this.isDirectUrl(this.src)) {
@@ -124,7 +147,7 @@ export class EFImage extends EFTemporal(
   #currentObjectUrl: string | null = null;
 
   override shouldAutoReady(): boolean {
-    return !this.src && !this.assetId;
+    return !this.src && !this.fileId;
   }
 
   /**
@@ -134,7 +157,7 @@ export class EFImage extends EFTemporal(
     const assetPath = this.assetPath();
 
     // Skip if no source
-    if (!this.src && !this.assetId) {
+    if (!this.src && !this.fileId) {
       return;
     }
 
@@ -368,9 +391,9 @@ export class EFImage extends EFTemporal(
   protected updated(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     super.updated(changedProperties);
     
-    if (changedProperties.has("src") || changedProperties.has("assetId")) {
+    if (changedProperties.has("src") || changedProperties.has("fileId")) {
       this.#imageLoaded = false;
-      if (changedProperties.get("src") !== undefined || changedProperties.get("assetId") !== undefined) {
+      if (changedProperties.get("src") !== undefined || changedProperties.get("fileId") !== undefined) {
         this.emitContentChange("source");
       }
       this.loadImage().catch(() => {});

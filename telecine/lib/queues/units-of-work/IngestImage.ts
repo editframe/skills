@@ -4,6 +4,7 @@ import { Queue } from "../Queue";
 import { Worker } from "../Worker";
 import { ConnectionURLMap } from "../WorkerConnection";
 import { logger } from "@/logging";
+import { db } from "@/sql-client.server";
 
 // Required to ensure the workflow is registered
 import "@/queues/units-of-work/ProcessHtml/Workflow";
@@ -75,5 +76,11 @@ export const IngestImageWorker = new Worker({
       next_byte: byteSize,
       expires_at: new Date(Date.now() + ONE_HOUR),
     });
+
+    await db
+      .updateTable("video2.files")
+      .set({ status: "ready" })
+      .where("id", "=", job.payload.imageId)
+      .execute();
   },
 });

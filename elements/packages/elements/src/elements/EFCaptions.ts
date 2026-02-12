@@ -222,8 +222,9 @@ export class EFCaptions extends EFSourceMixin(
     if (!this.targetElement) {
       return null;
     }
-    if (this.targetElement.assetId) {
-      return `${this.apiHost}/api/v1/isobmff_files/${this.targetElement.assetId}/transcription`;
+    const fileId = this.targetElement.fileId ?? this.targetElement.assetId;
+    if (fileId) {
+      return `${this.apiHost}/api/v1/files/${fileId}/transcription`;
     }
     return null;
   }
@@ -232,8 +233,9 @@ export class EFCaptions extends EFSourceMixin(
     if (!this.targetElement) {
       return null;
     }
-    if (this.targetElement.assetId) {
-      return `${this.apiHost}/api/v1/caption_files/${this.targetElement.assetId}`;
+    const fileId = this.targetElement.fileId ?? this.targetElement.assetId;
+    if (fileId) {
+      return `${this.apiHost}/api/v1/files/${fileId}`;
     }
     const targetSrc = this.targetElement.src;
     // Normalize the path: remove leading slash and any double slashes

@@ -22,15 +22,29 @@ vi.mock("@react-router/node", () => ({
 
 vi.mock("@/util/getStorageKeyForPath", () => ({
   getStorageKeyForPath: vi.fn((path: string) => {
-    // Mock file path resolution
+    // Mock file path resolution - unified /api/v1/files/ routes
+    if (path.includes("/files/") && path.includes("/tracks/")) {
+      return `video2/org123/id456/track-1.mp4`;
+    }
+    if (path.includes("/files/") && path.includes("/index")) {
+      return `video2/org123/id456/tracks.json`;
+    }
+    if (path.includes("/files/") && path.includes("/transcription")) {
+      return `video2/org123/id101/captions.json`;
+    }
+    // Legacy routes
     if (path.includes("isobmff_tracks")) {
       return `video2/org123/id456/track-1.mp4`;
     }
     if (path.includes("image_files")) {
-      return `video2/org123/id789/data`; // Image files use "data" without extension
+      return `video2/org123/id789/data`;
     }
     if (path.includes("caption_files")) {
       return `video2/org123/id101/captions.json`;
+    }
+    // Unified files data path
+    if (path.includes("/files/")) {
+      return `video2/org123/id789/data`;
     }
     return null;
   }),

@@ -537,8 +537,8 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   ): void {
     super.updated(changedProperties);
 
-    // Invalidate upgrade state on src/assetId change
-    if (changedProperties.has("src") || changedProperties.has("assetId")) {
+    // Invalidate upgrade state on src/fileId change
+    if (changedProperties.has("src") || changedProperties.has("fileId")) {
       this.#invalidateUpgradeState("src-change");
     }
 

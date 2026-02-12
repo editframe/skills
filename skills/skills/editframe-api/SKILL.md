@@ -1,10 +1,10 @@
 ---
 name: editframe-api
-description: JavaScript/TypeScript SDK for Editframe's video rendering API. Create renders, upload media, manage files, and sign URLs for browser-based playback. Use when working with the @editframe/api package, rendering videos programmatically, or integrating Editframe into applications.
+description: JavaScript/TypeScript SDK for Editframe's video rendering API. Create renders, upload media files (video, image, caption), manage files, and sign URLs for browser-based playback. Use when working with the @editframe/api package, rendering videos programmatically, or integrating Editframe into applications.
 license: MIT
 metadata:
   author: editframe
-  version: "1.0"
+  version: "2.0"
 ---
 
 # Editframe API
@@ -49,37 +49,58 @@ const buffer = await response.arrayBuffer();
 - `lookupRenderByMd5(client, md5)` → `LookupRenderByMd5Result | null` — Find existing render by hash
 - `downloadRender(client, id)` → `Response` — Download completed render
 
-### Video Files
-- `createUnprocessedFile(client, payload)` → `CreateUnprocessedFileResult` — Register a raw media file
-- `uploadUnprocessedReadableStream(client, uploadDetails, fileStream)` → `IteratorWithPromise<UploadChunkEvent>` — Upload raw file content
-- `lookupUnprocessedFileByMd5(client, md5)` → `LookupUnprocessedFileByMd5Result | null` — Find existing file by hash
-- `processIsobmffFile(client, id)` → `ProcessIsobmffFileResult` — Process raw file for streaming
-- `lookupISOBMFFFileByMd5(client, md5)` → `LookupISOBMFFFileByMd5Result | null` — Find existing processed file
-- `getISOBMFFFileTranscription(client, id)` → `GetISOBMFFFileTranscriptionResult | null` — Get transcription metadata
-- `transcribeISOBMFFFile(client, id, payload)` → `TranscribeISOBMFFFileResult` — Start audio transcription
+### Files (Unified API)
+- `createFile(client, payload)` → `CreateFileResult` — Register a file (video, image, or caption)
+- `uploadFile(client, uploadDetails, fileStream)` → `IteratorWithPromise<UploadChunkEvent>` — Upload file content with progress
+- `getFileDetail(client, id)` → `FileDetail` — Get file metadata and tracks
+- `lookupFileByMd5(client, md5)` → `LookupFileByMd5Result | null` — Find existing file by hash
+- `deleteFile(client, id)` → `{ success: boolean }` — Delete a file
+- `getFileProcessingProgress(client, id)` → `ProgressIterator` — Stream processing progress for video files
+- `transcribeFile(client, id, options?)` → `TranscribeFileResult` — Start audio transcription
+- `getFileTranscription(client, id)` → `FileTranscriptionResult | null` — Get transcription status
 
-### Image Files
-- `createImageFile(client, payload)` → `CreateImageFileResult` — Register image file
-- `uploadImageFile(client, uploadDetails, fileStream, chunkSizeBytes?)` → `IteratorWithPromise<UploadChunkEvent>` — Upload image data
-- `getImageFileMetadata(client, id)` → `GetImageFileMetadataResult | null` — Get image dimensions and format
-- `lookupImageFileByMd5(client, md5)` → `LookupImageFileByMd5Result | null` — Find existing image
-
-### Caption Files
-- `createCaptionFile(client, payload)` → `CreateCaptionFileResult` — Register caption file (VTT/SRT)
-- `uploadCaptionFile(client, fileId, fileStream, fileSize)` → `Promise<void>` — Upload caption data
-- `lookupCaptionFileByMd5(client, md5)` → `LookupCaptionFileByMd5Result | null` — Find existing captions
-
-### Transcription
-- `createTranscription(client, payload)` → `CreateTranscriptionResult` — Create transcription job for ISOBMFF file
-- `getTranscriptionProgress(client, id)` → `CompletionIterator` — Stream transcription progress
-- `getTranscriptionInfo(client, id)` → `TranscriptionInfoResult` — Get transcription metadata
+### Node.js Helpers
+- `upload(client, filePath)` → `{ file, uploadIterator }` — Upload a file from disk (auto-detects type)
 
 ### URL Signing
 - `createURLToken(client, url)` → `string` — Generate signed JWT for browser access to media endpoints
 
-### Process Monitoring
-- `getIsobmffProcessInfo(client, id)` → `IsobmffProcessInfoResult` — Get file processing metadata
-- `getIsobmffProcessProgress(client, id)` → `CompletionIterator` — Stream processing progress
+## Unified Files API
+
+All file types (video, image, caption) use a single set of endpoints:
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/v1/files` | POST | Create file record |
+| `/api/v1/files/:id` | GET | Get file detail |
+| `/api/v1/files/:id/upload` | GET/POST | Check upload status / upload chunk |
+| `/api/v1/files/:id/delete` | POST | Delete file |
+| `/api/v1/files/:id/index` | GET | Get fragment index (video only) |
+| `/api/v1/files/:id/tracks/:trackId` | GET | Get track data (video only) |
+| `/api/v1/files/:id/transcribe` | POST | Start transcription (video only) |
+| `/api/v1/files/:id/transcription` | GET | Get transcription status |
+| `/api/v1/files/:id/progress` | GET | Stream processing progress (SSE) |
+| `/api/v1/files/md5/:md5` | GET | Lookup file by MD5 hash |
+
+The file `type` field determines processing behavior:
+- `"video"` — uploaded files are automatically processed to ISOBMFF format
+- `"image"` — uploaded files are immediately ready
+- `"caption"` — uploaded files are immediately ready
+
+## Using Files in Compositions
+
+Reference uploaded files using the `file-id` attribute:
+
+```html
+<ef-configuration api-host="https://editframe.com">
+  <ef-timegroup mode="contain" class="w-[1920px] h-[1080px]">
+    <ef-video file-id="uuid-of-processed-video"></ef-video>
+    <ef-image file-id="uuid-of-uploaded-image" class="w-24 h-24"></ef-image>
+  </ef-timegroup>
+</ef-configuration>
+```
+
+The `file-id` is a stable UUID assigned at file creation time and remains the same throughout upload, processing, and playback.
 
 ## URL Signing
 

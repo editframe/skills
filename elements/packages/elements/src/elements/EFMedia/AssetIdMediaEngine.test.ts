@@ -2,11 +2,11 @@ import type { TrackFragmentIndex } from "@editframe/assets";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { UrlGenerator } from "../../transcoding/utils/UrlGenerator";
 import type { EFMedia } from "../EFMedia";
-import { AssetIdMediaEngine } from "./AssetIdMediaEngine";
+import { FileMediaEngine, AssetIdMediaEngine } from "./FileMediaEngine";
 
-describe("AssetIdMediaEngine", () => {
+describe("FileMediaEngine", () => {
   const mockApiHost = "https://api.example.com";
-  const mockAssetId = "test-asset-123";
+  const mockFileId = "test-asset-123";
   const mockUrlGenerator = new UrlGenerator(() => "https://api.example.com");
 
   const mockTrackFragmentData: Record<number, TrackFragmentIndex> = {
@@ -73,21 +73,21 @@ describe("AssetIdMediaEngine", () => {
     },
   };
 
-  let engine: AssetIdMediaEngine;
+  let engine: FileMediaEngine;
   let host: EFMedia;
 
   beforeEach(() => {
-    // Create a mock host instead of instantiating EFMedia directly
     host = {
       fetch: vi.fn().mockResolvedValue({
         json: vi.fn().mockResolvedValue(mockTrackFragmentData),
       }),
     } as any;
-    engine = new AssetIdMediaEngine(
+    engine = new FileMediaEngine(
       host,
-      mockAssetId,
+      mockFileId,
       mockTrackFragmentData,
       mockApiHost,
+      mockUrlGenerator,
     );
   });
 
@@ -96,25 +96,39 @@ describe("AssetIdMediaEngine", () => {
       expect(engine.durationMs).toBe(15000);
     });
 
-    it("should set assetId correctly", () => {
-      expect(engine.assetId).toBe(mockAssetId);
+    it("should set fileId correctly", () => {
+      expect(engine.fileId).toBe(mockFileId);
     });
 
-    it("should expose assetId as src for MediaEngine interface compatibility", () => {
-      expect(engine.src).toBe(mockAssetId);
+    it("should expose deprecated assetId as alias for fileId", () => {
+      expect(engine.assetId).toBe(mockFileId);
+    });
+
+    it("should expose fileId as src for MediaEngine interface compatibility", () => {
+      expect(engine.src).toBe(mockFileId);
+    });
+  });
+
+  describe("backward compatibility", () => {
+    it("should export AssetIdMediaEngine as alias for FileMediaEngine", () => {
+      expect(AssetIdMediaEngine).toBe(FileMediaEngine);
+    });
+
+    it("should have fetchByAssetId as alias for fetchByFileId", () => {
+      expect(FileMediaEngine.fetchByAssetId).toBe(FileMediaEngine.fetchByFileId);
     });
   });
 
   describe("track access", () => {
     it("should find audio track", () => {
-      const audioTrack = engine.audioTrackIndex;
+      const audioTrack = engine.getAudioTrackIndex();
       expect(audioTrack).toBeDefined();
       expect(audioTrack?.type).toBe("audio");
       expect(audioTrack?.track).toBe(1);
     });
 
     it("should find video track", () => {
-      const videoTrack = engine.videoTrackIndex;
+      const videoTrack = engine.getVideoTrackIndex();
       expect(videoTrack).toBeDefined();
       expect(videoTrack?.type).toBe("video");
       expect(videoTrack?.track).toBe(2);
@@ -124,45 +138,45 @@ describe("AssetIdMediaEngine", () => {
       const audioRendition = engine.audioRendition;
       expect(audioRendition).toBeDefined();
       expect(audioRendition!.trackId).toBe(1);
-      expect(audioRendition!.src).toBe(mockAssetId);
+      expect(audioRendition!.src).toBe(mockFileId);
     });
 
     it("should return correct video rendition", () => {
       const videoRendition = engine.videoRendition;
       expect(videoRendition).toBeDefined();
       expect(videoRendition!.trackId).toBe(2);
-      expect(videoRendition!.src).toBe(mockAssetId);
+      expect(videoRendition!.src).toBe(mockFileId);
     });
   });
 
   describe("URL generation", () => {
-    it("should generate correct init segment URLs", () => {
+    it("should generate correct init segment URLs using /api/v1/files/", () => {
       const url = engine.buildInitSegmentUrl(1);
-      expect(url).toBe(`${mockApiHost}/api/v1/isobmff_tracks/${mockAssetId}/1`);
+      expect(url).toBe(`${mockApiHost}/api/v1/files/${mockFileId}/tracks/1`);
     });
 
-    it("should generate correct media segment URLs", () => {
+    it("should generate correct media segment URLs using /api/v1/files/", () => {
       const url = engine.buildMediaSegmentUrl(1, 0);
-      expect(url).toBe(`${mockApiHost}/api/v1/isobmff_tracks/${mockAssetId}/1`);
+      expect(url).toBe(`${mockApiHost}/api/v1/files/${mockFileId}/tracks/1`);
     });
 
-    it("should return correct templates", () => {
+    it("should return correct templates using /api/v1/files/", () => {
       const templates = engine.templates;
       expect(templates.initSegment).toBe(
-        `${mockApiHost}/api/v1/isobmff_tracks/${mockAssetId}/{trackId}`,
+        `${mockApiHost}/api/v1/files/${mockFileId}/tracks/{trackId}`,
       );
       expect(templates.mediaSegment).toBe(
-        `${mockApiHost}/api/v1/isobmff_tracks/${mockAssetId}/{trackId}`,
+        `${mockApiHost}/api/v1/files/${mockFileId}/tracks/{trackId}`,
       );
     });
 
-    it("should return correct init segment paths", () => {
+    it("should return correct init segment paths using /api/v1/files/", () => {
       const paths = engine.getInitSegmentPaths();
       expect(paths.audio?.path).toBe(
-        `${mockApiHost}/api/v1/isobmff_tracks/${mockAssetId}/1`,
+        `${mockApiHost}/api/v1/files/${mockFileId}/tracks/1`,
       );
       expect(paths.video?.path).toBe(
-        `${mockApiHost}/api/v1/isobmff_tracks/${mockAssetId}/2`,
+        `${mockApiHost}/api/v1/files/${mockFileId}/tracks/2`,
       );
     });
   });
@@ -172,7 +186,7 @@ describe("AssetIdMediaEngine", () => {
       const ranges = engine.calculateAudioSegmentRange(
         500,
         1500,
-        { trackId: 1, src: mockAssetId },
+        { trackId: 1, src: mockFileId },
         15000,
       );
       expect(ranges).toHaveLength(2);
@@ -183,27 +197,26 @@ describe("AssetIdMediaEngine", () => {
     it("should compute segment ID correctly", () => {
       const segmentId = engine.computeSegmentId(500, {
         trackId: 1,
-        src: mockAssetId,
+        src: mockFileId,
       });
       expect(segmentId).toBe(0);
 
       const segmentId2 = engine.computeSegmentId(1500, {
         trackId: 1,
-        src: mockAssetId,
+        src: mockFileId,
       });
       expect(segmentId2).toBe(1);
     });
   });
 
   describe("static fetch method", () => {
-    it("should create engine from API response", async () => {
-      // Mock the host's fetch method
-      // The implementation calls response.text() for error handling, so we need to mock it
+    it("should create engine from API response using /api/v1/files/", async () => {
       const mockResponse = {
         ok: true,
         headers: new Headers({ "content-type": "application/json" }),
         json: vi.fn().mockResolvedValue(mockTrackFragmentData),
         text: vi.fn().mockResolvedValue(JSON.stringify(mockTrackFragmentData)),
+        clone: vi.fn().mockReturnThis(),
       };
       const mockFetch = vi.fn().mockResolvedValue(mockResponse);
 
@@ -211,20 +224,49 @@ describe("AssetIdMediaEngine", () => {
         fetch: mockFetch,
       } as any;
 
-      const fetchedEngine = await AssetIdMediaEngine.fetchByAssetId(
+      const fetchedEngine = await FileMediaEngine.fetchByFileId(
         mockHost,
         mockUrlGenerator,
-        mockAssetId,
+        mockFileId,
         mockApiHost,
       );
 
       expect(mockFetch).toHaveBeenCalledWith(
-        `${mockApiHost}/api/v1/isobmff_files/${mockAssetId}/index`,
+        `${mockApiHost}/api/v1/files/${mockFileId}/index`,
         { signal: undefined },
       );
-      expect(fetchedEngine.assetId).toBe(mockAssetId);
+      expect(fetchedEngine.fileId).toBe(mockFileId);
+      expect(fetchedEngine.assetId).toBe(mockFileId);
       expect(fetchedEngine.durationMs).toBe(15000);
-      expect(fetchedEngine.audioTrackIndex?.track).toBe(1);
+      expect(fetchedEngine.getAudioTrackIndex()?.track).toBe(1);
+    });
+
+    it("should work via deprecated fetchByAssetId alias", async () => {
+      const mockResponse = {
+        ok: true,
+        headers: new Headers({ "content-type": "application/json" }),
+        json: vi.fn().mockResolvedValue(mockTrackFragmentData),
+        text: vi.fn().mockResolvedValue(JSON.stringify(mockTrackFragmentData)),
+        clone: vi.fn().mockReturnThis(),
+      };
+      const mockFetch = vi.fn().mockResolvedValue(mockResponse);
+
+      const mockHost = {
+        fetch: mockFetch,
+      } as any;
+
+      const fetchedEngine = await FileMediaEngine.fetchByAssetId(
+        mockHost,
+        mockUrlGenerator,
+        mockFileId,
+        mockApiHost,
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${mockApiHost}/api/v1/files/${mockFileId}/index`,
+        { signal: undefined },
+      );
+      expect(fetchedEngine.fileId).toBe(mockFileId);
     });
   });
 });

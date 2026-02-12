@@ -350,6 +350,36 @@ export interface Video2FileProcessors {
   value: string;
 }
 
+export interface Video2FileStatuses {
+  comment: string;
+  value: string;
+}
+
+export interface Video2FileTypes {
+  comment: string;
+  value: string;
+}
+
+export interface Video2Files {
+  api_key_id: string | null;
+  byte_size: number | null;
+  completed_at: Timestamp | null;
+  created_at: Generated<Timestamp>;
+  creator_id: string;
+  expires_at: Timestamp | null;
+  filename: string;
+  height: number | null;
+  id: string;
+  md5: string | null;
+  mime_type: string | null;
+  next_byte: Generated<number>;
+  org_id: string;
+  remote_uri: string | null;
+  status: Generated<"created" | "uploading" | "processing" | "ready" | "failed">;
+  type: "video" | "image" | "caption";
+  width: number | null;
+}
+
 export interface Video2ImageFiles {
   api_key_id: string | null;
   byte_size: number;
@@ -450,7 +480,7 @@ export interface Video2ProcessIsobmff {
   isobmff_expires_at: Timestamp | null;
   isobmff_file_id: string | null;
   org_id: string;
-  source_type: "url" | "unprocessed_file";
+  source_type: "url" | "unprocessed_file" | "file";
   started_at: Timestamp | null;
   unprocessed_file_id: string | null;
   url: string | null;
@@ -684,6 +714,9 @@ export interface DB {
   "video.video_tracks": VideoVideoTracks;
   "video2.caption_files": Video2CaptionFiles;
   "video2.file_processors": Video2FileProcessors;
+  "video2.file_statuses": Video2FileStatuses;
+  "video2.file_types": Video2FileTypes;
+  "video2.files": Video2Files;
   "video2.image_files": Video2ImageFiles;
   "video2.isobmff_files": Video2IsobmffFiles;
   "video2.isobmff_source_types": Video2IsobmffSourceTypes;
