@@ -92,16 +92,18 @@ import { createRender, getRenderProgress, downloadRender } from "@editframe/api"
 import { writeFileSync } from "node:fs";
 
 const html = `
-  <ef-timegroup mode="contain" class="w-[1920px] h-[1080px] bg-black">
-    <ef-video 
-      src="https://editframe.com/api/v1/isobmff_files/${isobmffFile.id}"
-      class="size-full object-contain">
-    </ef-video>
-    <ef-text 
-      class="absolute bottom-10 left-10 text-white text-6xl font-bold">
-      My Video
-    </ef-text>
-  </ef-timegroup>
+  <ef-configuration api-host="https://editframe.com">
+    <ef-timegroup mode="contain" class="w-[1920px] h-[1080px] bg-black">
+      <ef-video 
+        asset-id="${isobmffFile.id}"
+        class="size-full object-contain">
+      </ef-video>
+      <ef-text 
+        class="absolute bottom-10 left-10 text-white text-6xl font-bold">
+        My Video
+      </ef-text>
+    </ef-timegroup>
+  </ef-configuration>
 `;
 
 // Create render
@@ -187,12 +189,14 @@ if (existing) {
 
 // Use in composition
 const html = `
-  <ef-timegroup mode="contain" class="w-[1920px] h-[1080px]">
-    <ef-image 
-      src="https://editframe.com/api/v1/image_files/${imageFile.id}"
-      class="size-full object-cover">
-    </ef-image>
-  </ef-timegroup>
+  <ef-configuration api-host="https://editframe.com">
+    <ef-timegroup mode="contain" class="w-[1920px] h-[1080px]">
+      <ef-image 
+        asset-id="${imageFile.id}"
+        class="size-full object-cover">
+      </ef-image>
+    </ef-timegroup>
+  </ef-configuration>
 `;
 ```
 

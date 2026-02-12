@@ -92,16 +92,20 @@ if (existing && existing.complete) {
 
 ## Using in Compositions
 
-Reference captions by their Editframe URL:
+Reference captions by their asset ID:
 
 ```typescript
 const html = `
-  <ef-timegroup mode="contain" class="w-[1920px] h-[1080px]">
-    <ef-video src="https://editframe.com/api/v1/isobmff_files/${videoFile.id}"></ef-video>
-    <ef-captions 
-      src="https://editframe.com/api/v1/caption_files/${captionFile.id}"
-      class="absolute bottom-10 left-10 right-10 text-white text-4xl text-center">
-    </ef-captions>
-  </ef-timegroup>
+  <ef-configuration api-host="https://editframe.com">
+    <ef-timegroup mode="contain" class="w-[1920px] h-[1080px]">
+      <ef-video asset-id="${videoFile.id}"></ef-video>
+      <ef-captions 
+        asset-id="${captionFile.id}"
+        class="absolute bottom-10 left-10 right-10 text-white text-4xl text-center">
+      </ef-captions>
+    </ef-timegroup>
+  </ef-configuration>
 `;
 ```
+
+The `asset-id` attribute tells elements to fetch from the Editframe API. The `api-host` on `ef-configuration` sets the API base URL for all child elements.

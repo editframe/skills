@@ -119,15 +119,19 @@ if (existing && existing.complete) {
 
 ## Using in Compositions
 
-Reference images by their Editframe URL:
+Reference images by their asset ID:
 
 ```typescript
 const html = `
-  <ef-timegroup mode="contain" class="w-[1920px] h-[1080px]">
-    <ef-image 
-      src="https://editframe.com/api/v1/image_files/${imageFile.id}"
-      class="size-full object-cover">
-    </ef-image>
-  </ef-timegroup>
+  <ef-configuration api-host="https://editframe.com">
+    <ef-timegroup mode="contain" class="w-[1920px] h-[1080px]">
+      <ef-image 
+        asset-id="${imageFile.id}"
+        class="size-full object-cover">
+      </ef-image>
+    </ef-timegroup>
+  </ef-configuration>
 `;
 ```
+
+The `asset-id` attribute tells the element to fetch from the Editframe API. The `api-host` on `ef-configuration` sets the API base URL for all child elements.

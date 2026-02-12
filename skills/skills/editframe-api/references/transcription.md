@@ -67,9 +67,8 @@ import {
   uploadUnprocessedReadableStream,
   processIsobmffFile,
   getIsobmffProcessProgress,
-  createTranscription,
-  getTranscriptionProgress,
-  getTranscriptionInfo,
+  transcribeISOBMFFFile,
+  getISOBMFFFileTranscription,
 } from "@editframe/api";
 import { md5 } from "@editframe/assets";
 import { createReadStream, readFile, stat } from "node:fs/promises";
@@ -109,39 +108,36 @@ for await (const event of await getIsobmffProcessProgress(client, isobmffFile.id
   }
 }
 
-// 3. Create transcription
-const transcription = await createTranscription(client, {
-  file_id: isobmffFile.id,
-  track_id: 2,  // Audio track ID
+// 3. Start transcription
+const transcription = await transcribeISOBMFFFile(client, isobmffFile.id, {
+  trackId: "2", // Optional: specify audio track ID
 });
 
-for await (const event of await getTranscriptionProgress(client, transcription.id)) {
-  if (event.type === "progress") {
-    console.log(`Transcription: ${event.progress.toFixed(1)}%`);
-  } else if (event.type === "complete") {
-    break;
-  }
-}
+console.log("Transcription started:", transcription.id);
 
-// 4. Get result
-const result = await getTranscriptionInfo(client, transcription.id);
-console.log("Transcription complete:", result);
+// 4. Get transcription metadata
+const result = await getISOBMFFFileTranscription(client, isobmffFile.id);
+if (result) {
+  console.log("Transcription metadata:", result);
+}
 ```
 
 ## Using Transcriptions in Compositions
 
-Once transcribed, use the `<ef-transcription>` element to display captions:
+Once transcribed, use the `<ef-captions>` element with `target` to display captions:
 
 ```typescript
 const html = `
-  <ef-timegroup mode="contain" class="w-[1920px] h-[1080px]">
-    <ef-video src="https://editframe.com/api/v1/isobmff_files/${isobmffFile.id}"></ef-video>
-    <ef-transcription 
-      src="https://editframe.com/api/v1/isobmff_files/${isobmffFile.id}/transcription"
-      class="absolute bottom-10 left-10 right-10 text-white text-4xl text-center">
-    </ef-transcription>
-  </ef-timegroup>
+  <ef-configuration api-host="https://editframe.com">
+    <ef-timegroup mode="contain" class="w-[1920px] h-[1080px]">
+      <ef-video asset-id="${isobmffFile.id}"></ef-video>
+      <ef-captions 
+        target="ef-video"
+        class="absolute bottom-10 left-10 right-10 text-white text-4xl text-center">
+      </ef-captions>
+    </ef-timegroup>
+  </ef-configuration>
 `;
 ```
 
-See the elements-composition skill for complete `<ef-transcription>` documentation.
+The `<ef-captions>` element with `target="ef-video"` automatically fetches transcription data from the video's asset. See the elements-composition skill for complete `<ef-captions>` documentation.
