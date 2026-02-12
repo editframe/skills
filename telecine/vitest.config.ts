@@ -26,6 +26,7 @@ export default defineConfig({
       "**/test-snapshots/**/*",
       "**/temp/**/*",
       "tests/playwright/**",
+      "tests/e2e/**",
       "**/node_modules/**",
       "**/generated/**",
       ".archive/**",
