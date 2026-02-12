@@ -26,19 +26,15 @@ interface SidebarItemProps {
   to: string;
   children: React.ReactNode;
   Icon: React.ElementType;
-  end?: boolean;
 }
 
-const SidebarItem = ({ to, children, Icon, end }: SidebarItemProps) => {
+const SidebarItem = ({ to, children, Icon }: SidebarItemProps) => {
   const location = useLocation();
-  const isActive = end
-    ? location.pathname === to
-    : location.pathname.startsWith(to);
+  const isActive = location.pathname.startsWith(to);
   return (
     <li>
       <NavLink
         to={to}
-        end={end}
         className={({ isActive }) =>
           clsx(
             "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs transition-all duration-150 group",
@@ -79,7 +75,6 @@ interface NavGroup {
         to: string;
         label: string;
         Icon: React.ElementType;
-        end?: boolean;
       }
     | false
   >;
@@ -93,20 +88,19 @@ const userNavGroups: NavGroup[] = [
         to: "/resource/files",
         Icon: File,
         label: "All Files",
-        end: true,
       },
       {
-        to: "/resource/files/videos",
+        to: "/resource/videos",
         Icon: VideoCamera,
         label: "Videos",
       },
       {
-        to: "/resource/files/images",
+        to: "/resource/images",
         Icon: Image,
         label: "Images",
       },
       {
-        to: "/resource/files/captions",
+        to: "/resource/captions",
         Icon: ClosedCaptioning,
         label: "Captions",
       },
@@ -310,7 +304,7 @@ export const Navigation = ({
                     return null;
                   }
                   return (
-                    <SidebarItem key={item.to} to={item.to} Icon={item.Icon} end={item.end}>
+                    <SidebarItem key={item.to} to={item.to} Icon={item.Icon}>
                       {item.label}
                     </SidebarItem>
                   );

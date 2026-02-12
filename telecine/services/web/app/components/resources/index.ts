@@ -8,7 +8,7 @@ import { z } from "zod";
 import { Members } from "./members";
 import { Invites } from "./invites";
 import { Transcriptions } from "./transcriptions";
-import { Files } from "./files";
+import { Files, VideoFiles, ImageFiles as ImageFilesByType, CaptionFiles } from "./files";
 import { ImageFiles } from "./image-files";
 import { ProcessHtml } from "./process-html";
 export type {
@@ -43,6 +43,9 @@ export const ResourceType = z.enum([
   "image_files",
   "files",
   "process_html",
+  "videos",
+  "images",
+  "captions",
 ]);
 
 export const ResourceModules = {
@@ -58,4 +61,7 @@ export const ResourceModules = {
   image_files: ImageFiles,
   files: Files,
   process_html: ProcessHtml,
+  videos: VideoFiles,
+  images: ImageFilesByType,
+  captions: CaptionFiles,
 } as const;
