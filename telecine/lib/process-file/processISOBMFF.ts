@@ -10,6 +10,21 @@ import { executeSpan } from "@/tracing";
 import { storageProvider } from "@/util/storageProvider.server";
 import { isobmffIndexFilePath, isobmffTrackFilePath } from "@/util/filePaths";
 
+const formatNameToMimeType: Record<string, string> = {
+  "mov,mp4,m4a,3gp,3g2,mj2": "video/mp4",
+  mp4: "video/mp4",
+  mov: "video/quicktime",
+  webm: "video/webm",
+  matroska: "video/x-matroska",
+  "matroska,webm": "video/webm",
+  avi: "video/x-msvideo",
+  ogg: "video/ogg",
+};
+
+function deriveMimeType(formatName: string): string | null {
+  return formatNameToMimeType[formatName] ?? null;
+}
+
 export interface UnprocessedFileInfo {
   id: string;
   md5: string;
@@ -289,6 +304,18 @@ export async function processISOBMFF(
         .where("id", "=", isobmffFile.id)
         .execute();
 
+      const videoStream = probe.streams.find((s) => s.codec_type === "video");
+      const mimeType = deriveMimeType(probe.format.format_name);
+
+      const fileMetadata = {
+        byte_size: unprocessedFile.byte_size,
+        md5: unprocessedFile.md5,
+        mime_type: mimeType,
+        width: videoStream && "width" in videoStream ? videoStream.width : null,
+        height:
+          videoStream && "height" in videoStream ? videoStream.height : null,
+      };
+
       await db
         .insertInto("video2.files")
         .values({
@@ -300,11 +327,13 @@ export async function processISOBMFF(
           type: "video",
           status: "ready",
           completed_at: new Date(),
+          ...fileMetadata,
         })
         .onConflict((oc) =>
           oc.column("id").doUpdateSet({
             status: "ready",
             completed_at: new Date(),
+            ...fileMetadata,
           }),
         )
         .execute();

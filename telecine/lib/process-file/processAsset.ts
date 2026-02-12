@@ -155,6 +155,14 @@ async function storeImageRecord(
     .onConflict((conflict) => conflict.column("id").doUpdateSet(imageData))
     .execute();
 
+  const fileMetadata = {
+    byte_size: metadata.byte_size,
+    md5: metadata.md5 || null,
+    mime_type: analysis.mimeType,
+    width: analysis.width,
+    height: analysis.height,
+  };
+
   await db
     .insertInto("video2.files")
     .values({
@@ -165,8 +173,11 @@ async function storeImageRecord(
       filename: metadata.filename,
       type: "image",
       status: "ready",
+      ...fileMetadata,
     })
-    .onConflict((oc) => oc.column("id").doUpdateSet({ status: "ready" }))
+    .onConflict((oc) =>
+      oc.column("id").doUpdateSet({ status: "ready", ...fileMetadata }),
+    )
     .execute();
 
   logger.info("Inserted image file record");

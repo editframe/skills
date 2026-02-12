@@ -221,7 +221,7 @@ export const Dimensions: ContentBlock<{
   <>{width && height ? `${width}×${height}` : "—"}</>
 );
 
-export const FileSize: ContentBlock<{ byte_size: number }> = ({
+export const FileSize: ContentBlock<{ byte_size: number | null }> = ({
   record: { byte_size },
 }) => <ByteSizeDisplay bytes={byte_size} />;
 
