@@ -20,11 +20,13 @@ export const Preview: ContentBlock<{
   if (type === "image") {
     const contentUrl = `/api/v1/files/${id}/content`;
     return (
-      <img
-        src={contentUrl}
-        alt="Preview"
-        className="max-w-md max-h-[32rem] rounded-lg shadow-sm object-contain"
-      />
+      <div className="max-w-md max-h-[32rem] overflow-hidden">
+        <img
+          src={contentUrl}
+          alt="Preview"
+          className="w-full h-full max-w-full max-h-full rounded-lg shadow-sm object-contain"
+        />
+      </div>
     );
   }
 
@@ -32,43 +34,45 @@ export const Preview: ContentBlock<{
     return (
       <ClientOnly
         fallback={
-          <div className="max-w-md max-h-[32rem] rounded-lg shadow-sm bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 text-sm">
+          <div className="w-full max-w-md h-64 rounded-lg shadow-sm bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 text-sm">
             Loading preview...
           </div>
         }
       >
         {() => (
-          <ef-configuration api-host={window.location.origin} signing-url="">
-            <ef-preview className="block max-w-md">
-              <ef-video
-                id={id}
-                file-id={id}
-                className="w-full rounded-lg shadow-sm"
-                style={{ maxWidth: "28rem", maxHeight: "32rem" }}
-              />
-              <ef-controls
-                target={id}
-                className="flex items-center gap-3 mt-2 p-2 bg-slate-100 dark:bg-slate-800 rounded"
-              >
-                <ef-toggle-play>
-                  <button
-                    slot="play"
-                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-                  >
-                    ▶
-                  </button>
-                  <button
-                    slot="pause"
-                    className="px-3 py-1 text-sm bg-orange-600 text-white rounded hover:bg-orange-700"
-                  >
-                    ⏸
-                  </button>
-                </ef-toggle-play>
-                <ef-scrubber className="flex-1" />
-                <ef-time-display className="text-xs text-slate-700 dark:text-slate-300 font-mono" />
-              </ef-controls>
-            </ef-preview>
-          </ef-configuration>
+          <div className="w-full max-w-md">
+            <ef-configuration api-host={window.location.origin} signing-url="">
+              <ef-preview className="block w-full">
+                <ef-video
+                  id={id}
+                  file-id={id}
+                  className="w-full h-auto rounded-lg shadow-sm"
+                  style={{ maxHeight: "32rem", aspectRatio: "16/9" }}
+                />
+                <ef-controls
+                  target={id}
+                  className="flex items-center gap-3 mt-2 p-2 bg-slate-100 dark:bg-slate-800 rounded"
+                >
+                  <ef-toggle-play>
+                    <button
+                      slot="play"
+                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      ▶
+                    </button>
+                    <button
+                      slot="pause"
+                      className="px-3 py-1 text-sm bg-orange-600 text-white rounded hover:bg-orange-700"
+                    >
+                      ⏸
+                    </button>
+                  </ef-toggle-play>
+                  <ef-scrubber className="flex-1" />
+                  <ef-time-display className="text-xs text-slate-700 dark:text-slate-300 font-mono" />
+                </ef-controls>
+              </ef-preview>
+            </ef-configuration>
+          </div>
         )}
       </ClientOnly>
     );
