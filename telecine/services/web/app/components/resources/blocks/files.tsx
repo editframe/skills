@@ -17,9 +17,8 @@ export const Preview: ContentBlock<{
     );
   }
 
-  const contentUrl = `/api/v1/files/${id}/content`;
-
   if (type === "image") {
+    const contentUrl = `/api/v1/files/${id}/content`;
     return (
       <img
         src={contentUrl}
@@ -31,11 +30,24 @@ export const Preview: ContentBlock<{
 
   if (type === "video") {
     return (
-      <video
-        src={contentUrl}
-        controls
-        className="max-w-md max-h-[32rem] rounded-lg shadow-sm"
-      />
+      <ClientOnly
+        fallback={
+          <div className="max-w-md max-h-[32rem] rounded-lg shadow-sm bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 text-sm">
+            Loading preview...
+          </div>
+        }
+      >
+        {() => (
+          <ef-preview className="block max-w-md max-h-[32rem]">
+            <ef-video
+              file-id={id}
+              className="w-full h-full rounded-lg shadow-sm"
+              style={{ maxWidth: "28rem", maxHeight: "32rem" }}
+            />
+            <ef-controls target="ef-video" className="mt-2" />
+          </ef-preview>
+        )}
+      </ClientOnly>
     );
   }
 
