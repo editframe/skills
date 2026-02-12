@@ -88,20 +88,17 @@ const routes = [
       // because "files" is a resourceType and would collide with /:resourceType/:id)
       route("/upload-file", "routes/resource/files/upload.tsx"),
 
-      // Pre-filtered file type pages
-      ...prefix("/files", [
-        route("/videos", "routes/resource/files/videos.tsx", [
-          route(":id", "routes/resource/files/fileDetail.tsx"),
-        ]),
-        route("/images", "routes/resource/files/images.tsx", [
-          route(":id", "routes/resource/files/fileDetail.tsx"),
-        ]),
-        route("/captions", "routes/resource/files/captions.tsx", [
-          route(":id", "routes/resource/files/fileDetail.tsx"),
-        ]),
-      ]),
-
       route("/:resourceType", "routes/resource/Listing.tsx", [
+        // Pre-filtered file type pages (static segments beat :id)
+        route("videos", "routes/resource/files/videos.tsx", [
+          route(":id", "routes/resource/files/fileDetail.tsx"),
+        ]),
+        route("images", "routes/resource/files/images.tsx", [
+          route(":id", "routes/resource/files/fileDetail.tsx"),
+        ]),
+        route("captions", "routes/resource/files/captions.tsx", [
+          route(":id", "routes/resource/files/fileDetail.tsx"),
+        ]),
         route(":id", "routes/resource/Detail.tsx", [
           route(":relatedType/:relId", "routes/resource/Related.tsx"),
         ]),

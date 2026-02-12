@@ -12,7 +12,10 @@ import type { Route } from "./+types/videos";
 
 const modules = { video_files: VideoFiles } as const;
 
-export const loader = async ({ request, context }: Route.LoaderArgs) => {
+export const loader = async ({ request, context, params }: Route.LoaderArgs) => {
+  if ((params as any).resourceType !== "files") {
+    throw new Response("Not Found", { status: 404 });
+  }
   const session = context.get(identityContext);
   const searchParams = new URL(request.url).searchParams;
   const orgId = requireOrgId(request);

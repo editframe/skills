@@ -16,10 +16,14 @@ import { DetailQuery, Files } from "~/components/resources/files";
 const modules = { files: Files } as const;
 
 export const loader = async ({
-  params: { id },
+  params,
   request,
   context,
 }: Route.LoaderArgs) => {
+  if ((params as any).resourceType !== "files") {
+    throw new Response("Not Found", { status: 404 });
+  }
+  const { id } = params;
   const session = context.get(identityContext);
   const orgId = requireOrgId(request);
 

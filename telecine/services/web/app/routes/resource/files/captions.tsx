@@ -12,7 +12,10 @@ import type { Route } from "./+types/captions";
 
 const modules = { caption_files: CaptionFiles } as const;
 
-export const loader = async ({ request, context }: Route.LoaderArgs) => {
+export const loader = async ({ request, context, params }: Route.LoaderArgs) => {
+  if ((params as any).resourceType !== "files") {
+    throw new Response("Not Found", { status: 404 });
+  }
   const session = context.get(identityContext);
   const searchParams = new URL(request.url).searchParams;
   const orgId = requireOrgId(request);
