@@ -3,11 +3,11 @@ import fs from "node:fs/promises";
 import path, { basename } from "node:path";
 
 import {
-  type CreateImageFileResult,
-  createImageFile,
-  type LookupImageFileByMd5Result,
-  lookupImageFileByMd5,
-  uploadImageFile,
+  type CreateFileResult,
+  createFile,
+  type LookupFileByMd5Result,
+  lookupFileByMd5,
+  uploadFile,
 } from "@editframe/api";
 
 import { Probe } from "@editframe/assets";
@@ -17,11 +17,11 @@ import { getClient } from "../../utils/index.js";
 import type { SubAssetSync } from "./SubAssetSync.js";
 import { SyncStatus } from "./SyncStatus.js";
 
-export class SyncImage implements SubAssetSync<CreateImageFileResult> {
+export class SyncImage implements SubAssetSync<CreateFileResult> {
   icon = "🖼️";
   label = "image";
   syncStatus: SyncStatus = new SyncStatus(this.path);
-  created: CreateImageFileResult | LookupImageFileByMd5Result | null = null;
+  created: CreateFileResult | LookupFileByMd5Result | null = null;
 
   constructor(
     public path: string,
@@ -68,27 +68,21 @@ export class SyncImage implements SubAssetSync<CreateImageFileResult> {
       );
     }
 
-    const maybeImageFile = await lookupImageFileByMd5(getClient(), this.md5);
-    if (maybeImageFile) {
-      this.created = maybeImageFile;
+    const maybeFile = await lookupFileByMd5(getClient(), this.md5);
+    if (maybeFile) {
+      this.created = maybeFile;
     } else {
-      this.created = await createImageFile(getClient(), {
+      this.created = await createFile(getClient(), {
         md5: this.md5,
         filename: basename(this.path),
-        width: videoProbe.width,
-        height: videoProbe.height,
-        mime_type: `image/${this.extension}` as
-          | "image/jpeg"
-          | "image/png"
-          | "image/jpg"
-          | "image/webp"
-          | "image/svg+xml",
+        type: "image",
+        mime_type: `image/${this.extension}`,
         byte_size: byteSize,
       });
     }
   }
   isComplete() {
-    return !!this.created?.complete;
+    return this.created?.status === "ready";
   }
   async upload() {
     if (!this.created) {
@@ -96,11 +90,12 @@ export class SyncImage implements SubAssetSync<CreateImageFileResult> {
         "Image not created. Should have been prevented by .isComplete()",
       );
     }
-    await uploadImageFile(
+    await uploadFile(
       getClient(),
       {
         id: this.created.id,
         byte_size: Number.parseInt(this.probeResult.format.size || "0", 10),
+        type: "image",
       },
       createReadableStreamFromReadable(createReadStream(this.path)),
     ).whenUploaded();

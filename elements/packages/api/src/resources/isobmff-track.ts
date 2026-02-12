@@ -209,6 +209,7 @@ export interface CreateISOBMFFTrackResult {
   complete: boolean;
 }
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export const createISOBMFFTrack = async (
   client: Client,
   payload: CreateISOBMFFTrackPayload,
@@ -230,6 +231,7 @@ export const createISOBMFFTrack = async (
   );
 };
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export const uploadISOBMFFTrack = (
   client: Client,
   fileId: string,

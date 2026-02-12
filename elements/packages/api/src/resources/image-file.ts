@@ -70,6 +70,7 @@ export const CreateImageFilePayload = z
 
 export type CreateImageFilePayload = z.infer<typeof CreateImageFilePayload>;
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export interface CreateImageFileResult {
   /**
    * Whether the image file has been fully uploaded.
@@ -89,6 +90,7 @@ export interface CreateImageFileResult {
   md5: string | null;
 }
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export interface LookupImageFileByMd5Result {
   /**
    * Whether the image file has been fully uploaded.
@@ -116,8 +118,10 @@ export interface LookupImageFileByMd5Result {
   width: number | null;
 }
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export interface GetImageFileMetadataResult extends LookupImageFileByMd5Result {}
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export const createImageFile = async (
   client: Client,
   payload: CreateImageFilePayload,
@@ -140,6 +144,7 @@ export const createImageFile = async (
   );
 };
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export const uploadImageFile = (
   client: Client,
   uploadDetails: {
@@ -160,6 +165,7 @@ export const uploadImageFile = (
   });
 };
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export const getImageFileMetadata = async (
   client: Client,
   id: string,
@@ -178,6 +184,7 @@ export const getImageFileMetadata = async (
   return null;
 };
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export const lookupImageFileByMd5 = async (
   client: Client,
   md5: string,

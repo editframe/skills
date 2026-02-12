@@ -218,6 +218,82 @@ if (tx) {
 
 Returns `null` if no transcription exists.
 
+## createFileTrack
+
+Create an ISOBMFF track record for a video file. Use after creating a file with `createFile` when uploading pre-processed ISOBMFF (e.g., from a CLI or external transcoder).
+
+**Endpoint:** `POST /api/v1/files/:id/tracks`
+
+Request body uses `CreateISOBMFFTrackPayload`: `file_id`, `track_id`, `type` (audio|video), `probe_info`, `duration_ms`, `codec_name`, `byte_size`.
+
+```typescript
+import { createFileTrack } from "@editframe/api";
+
+const result = await createFileTrack(client, fileId, {
+  file_id: fileId,
+  track_id: 1,
+  type: "video",
+  probe_info: videoStreamSchema,
+  duration_ms: 10000,
+  codec_name: "h264",
+  byte_size: 524288,
+});
+
+console.log(result.file_id);
+console.log(result.track_id);
+console.log(result.next_byte);  // 0 initially
+console.log(result.complete);   // false
+```
+
+**Response:** `CreateFileTrackResult` — `file_id`, `track_id`, `next_byte`, `byte_size`, `complete`
+
+## uploadFileTrack
+
+Upload chunked track data. Same pattern as the main file upload: GET returns 200 if complete, 202 if in progress; POST sends chunk data. Response 201 when complete, 202 when more data needed.
+
+**Endpoint:** `POST /api/v1/files/:id/tracks/:trackId/upload`
+
+```typescript
+import { uploadFileTrack } from "@editframe/api";
+import { createReadStream } from "node:fs";
+
+const trackStream = createReadStream("track-1.mp4");
+
+for await (const event of uploadFileTrack(
+  client,
+  fileId,
+  trackId,
+  byteSize,
+  trackStream
+)) {
+  if (event.type === "progress") {
+    console.log(`Track upload: ${event.progress.toFixed(1)}%`);
+  }
+}
+```
+
+Returns an upload progress iterator. Resumable: re-uploading resumes from `next_byte`.
+
+## uploadFileIndex
+
+Upload fragment index for a video file. Streamed upload (single request, not chunked). Sets file status to `"ready"` on success.
+
+**Endpoint:** `POST /api/v1/files/:id/index/upload`
+
+```typescript
+import { uploadFileIndex } from "@editframe/api";
+import { createReadStream, statSync } from "node:fs";
+
+const indexStream = createReadStream("index.json");
+const fileSize = statSync("index.json").size;
+
+const result = await uploadFileIndex(client, fileId, indexStream, fileSize);
+console.log(result.id);
+console.log(result.status);  // "ready"
+```
+
+**Response:** `{ id: string; status: "ready" }`
+
 ## Using in Compositions
 
 Reference files using the `file-id` attribute:

@@ -3,9 +3,10 @@ import type { Route } from "./+types/releaseJob";
 import { Queue } from "@/queues/Queue";
 import { valkey } from "@/valkey/valkey";
 import { getJob, releaseJob } from "@/queues/Job";
+import { auditAdminAction } from "@/util/auditAdminAction";
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
-  await requireAdminSession(request);
+  const session = await requireAdminSession(request);
   const { name, id } = params;
   const queue = Queue.fromName(name);
   if (!queue) {
@@ -17,6 +18,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   }
 
   await releaseJob(valkey, job);
+  auditAdminAction(session, "release-job", { queue: name, jobId: id });
 
   return { success: true };
 };

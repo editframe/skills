@@ -11,6 +11,11 @@ const IndexQuery = progressiveQuery(
   "ef-admin",
   graphql(`
     query APIKeys($limit: Int!, $offset: Int!) {
+      page_info: identity_api_keys_aggregate {
+        aggregate {
+          count
+        }
+      }
       rows: identity_api_keys(order_by: {created_at: desc}, limit: $limit, offset: $offset) {
         id
         user_id
@@ -84,6 +89,13 @@ export const ApiKeys: ResourceView<typeof IndexQuery, typeof detailQuery> = {
   },
   detail: {
     query: detailQuery,
-    fields: [],
+    fields: [
+      { name: "Name", content: Name },
+      { name: "Organization", content: RelatedOrg },
+      { name: "User", content: RelatedUser },
+      { name: "Webhook URL", content: WebhookURL },
+      { name: "Created At", content: CreatedAt },
+      { name: "Expires In", content: ExpiresIn },
+    ],
   },
 };

@@ -13,6 +13,7 @@ export const CreateISOBMFFFilePayload = z.object({
 
 export type CreateISOBMFFFilePayload = z.infer<typeof CreateISOBMFFFilePayload>;
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export interface CreateISOBMFFFileResult {
   /**
    * Whether the fragment index is complete. The fragment index is used internally by editframe to efficiently seek within files.
@@ -45,6 +46,7 @@ export interface LookupISOBMFFFileByMd5Result {
   md5: string;
 }
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export interface GetISOBMFFFileTranscriptionResult {
   id: string;
   work_slice_ms: number;
@@ -53,6 +55,7 @@ export interface GetISOBMFFFileTranscriptionResult {
   };
 }
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export const createISOBMFFFile = async (
   client: Client,
   payload: CreateISOBMFFFilePayload,
@@ -74,6 +77,7 @@ export const createISOBMFFFile = async (
   );
 };
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export const uploadFragmentIndex = async (
   client: Client,
   fileId: string,
@@ -103,6 +107,7 @@ export const uploadFragmentIndex = async (
   );
 };
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export const lookupISOBMFFFileByMd5 = async (
   client: Client,
   md5: string,
@@ -128,6 +133,7 @@ export const lookupISOBMFFFileByMd5 = async (
   );
 };
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export const getISOBMFFFileTranscription = async (
   client: Client,
   id: string,
@@ -157,12 +163,14 @@ export type TranscribeISOBMFFFilePayload = z.infer<
   typeof TranscribeISOBMFFFilePayload
 >;
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export interface TranscribeISOBMFFFileResult {
   id: string;
   file_id: string;
   track_id: number;
 }
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export const transcribeISOBMFFFile = async (
   client: Client,
   id: string,

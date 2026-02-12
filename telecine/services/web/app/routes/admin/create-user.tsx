@@ -14,6 +14,7 @@ import { useState } from "react";
 import { SuccessMessage } from "~/components/SuccessMessage";
 import { OrgCombobox } from "~/components/OrgCombobox";
 import clsx from "clsx";
+import { auditAdminAction } from "@/util/auditAdminAction";
 
 const schema = z
   .object({
@@ -52,7 +53,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 };
 
 export const action = async ({ request }: Route.ActionArgs) => {
-  await requireAdminSession(request);
+  const session = await requireAdminSession(request);
 
   const formResult = await createUserForm.parseFormData(request);
   if (!formResult.success) {
@@ -78,7 +79,30 @@ export const action = async ({ request }: Route.ActionArgs) => {
       .where("user_id", "=", emailPassword.user_id)
       .execute();
 
-    if (formData.org_choice === "existing" && formData.existing_org_id) {
+    let orgId: string | undefined;
+    if (formData.org_choice === "new" && formData.new_org_name) {
+      const newOrg = await db
+        .insertInto("identity.orgs")
+        .values({
+          display_name: formData.new_org_name,
+          primary_user_id: emailPassword.user_id,
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      
+      orgId = newOrg.id;
+
+      await db
+        .insertInto("identity.memberships")
+        .values({
+          org_id: orgId,
+          user_id: emailPassword.user_id,
+          role: "admin",
+        })
+        .execute();
+    } else if (formData.org_choice === "existing" && formData.existing_org_id) {
+      orgId = formData.existing_org_id;
+      
       await db
         .insertInto("identity.memberships")
         .values({
@@ -91,14 +115,12 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
     await resetPasswordUserWithPassword(formData.email_address);
 
-    logger.info(
-      {
-        email_address: formData.email_address,
-        user_id: emailPassword.user_id,
-        org_choice: formData.org_choice,
-      },
-      "Admin created user",
-    );
+    auditAdminAction(session, "create-user", {
+      email_address: formData.email_address,
+      user_id: emailPassword.user_id,
+      org_choice: formData.org_choice,
+      org_id: orgId,
+    });
 
     return data({
       success: true,

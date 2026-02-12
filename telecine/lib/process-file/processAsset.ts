@@ -155,6 +155,20 @@ async function storeImageRecord(
     .onConflict((conflict) => conflict.column("id").doUpdateSet(imageData))
     .execute();
 
+  await db
+    .insertInto("video2.files")
+    .values({
+      id: metadata.id,
+      org_id: metadata.org_id,
+      creator_id: metadata.creator_id,
+      api_key_id: metadata.api_key_id,
+      filename: metadata.filename,
+      type: "image",
+      status: "ready",
+    })
+    .onConflict((oc) => oc.column("id").doUpdateSet({ status: "ready" }))
+    .execute();
+
   logger.info("Inserted image file record");
 
   return await db

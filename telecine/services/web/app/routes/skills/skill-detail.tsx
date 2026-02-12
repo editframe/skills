@@ -17,10 +17,10 @@ import { SkillsLayout } from "~/components/skills/SkillsLayout";
 import { OnThisPage } from "~/components/skills/OnThisPage";
 
 const TYPE_BADGE_STYLES: Record<string, string> = {
-  tutorial: "bg-[var(--poster-green)] text-white",
-  "how-to": "bg-[var(--poster-blue)] text-white",
-  explanation: "bg-[var(--poster-gold)] text-[var(--ink-black)]",
-  reference: "bg-[var(--warm-gray)]/20 text-[var(--warm-gray)]",
+  tutorial: "bg-green-700 dark:bg-green-600 text-white",
+  "how-to": "bg-blue-700 dark:bg-blue-600 text-white",
+  explanation: "bg-amber-500 dark:bg-amber-400 text-gray-900",
+  reference: "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300",
 };
 
 function TypeBadge({ type }: { type: string }) {
@@ -60,13 +60,13 @@ function NavTreeNode({
       {depth === 0 ? (
         <div className="flex items-center gap-2 px-3 py-1.5 mb-2">
           {node.icon && <span className="text-base leading-none">{node.icon}</span>}
-          <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-black)] dark:text-gray-200">
+          <span className="text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-gray-200">
             {node.label}
           </span>
         </div>
       ) : (
         <div className="mb-1.5 ml-3 pl-0 py-0.5">
-          <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--warm-gray)]/40 dark:text-gray-600 select-none">
+          <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-gray-400 dark:text-gray-600 select-none">
             {node.label}
           </span>
         </div>
@@ -84,8 +84,8 @@ function NavTreeNode({
                 className={clsx(
                   "block px-3 py-1.5 text-[13px] leading-tight transition-all rounded-md",
                   referenceName === ref.name
-                    ? "text-[var(--ink-black)] dark:text-white bg-[var(--accent-blue)]/[0.15] dark:bg-[var(--accent-blue)]/[0.25] font-bold border-l-2 border-[var(--accent-blue)]"
-                    : "text-[var(--warm-gray)] dark:text-gray-400 hover:text-[var(--ink-black)] dark:hover:text-white hover:bg-black/[0.03] dark:hover:bg-white/[0.08] font-medium border-l-2 border-transparent",
+                    ? "text-gray-900 dark:text-white bg-blue-600/[0.12] dark:bg-blue-500/[0.2] font-bold border-l-2 border-blue-600 dark:border-blue-400"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/[0.03] dark:hover:bg-white/[0.08] font-medium border-l-2 border-transparent",
                 )}
               >
                 <div className="flex items-center gap-2">
@@ -133,7 +133,7 @@ export function SkillSidebarTree({
       <div className="mb-6 px-2">
         <Link
           to="/skills"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:text-gray-400 dark:hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
         >
           <span>←</span>
           <span>All Skills</span>
@@ -147,8 +147,8 @@ export function SkillSidebarTree({
           className={clsx(
             "block text-base font-bold tracking-tight transition-colors",
             isReference
-              ? "text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:text-gray-400 dark:hover:text-white"
-              : "text-[var(--ink-black)] dark:text-white",
+              ? "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+              : "text-gray-900 dark:text-white",
           )}
         >
           {skillName.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
@@ -156,7 +156,7 @@ export function SkillSidebarTree({
       </div>
 
       {/* Transparency note */}
-      <p className="text-[10px] font-medium text-[var(--warm-gray)]/50 dark:text-gray-500 mb-8 px-2">
+      <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 mb-8 px-2">
         AI agent reads this skill
       </p>
 
@@ -195,7 +195,7 @@ export function SkillSidebar({
       <div className="mb-5">
         <Link
           to="/skills"
-          className="text-xs font-medium text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white transition-colors"
+          className="text-xs font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
         >
           ← All Skills
         </Link>
@@ -208,8 +208,8 @@ export function SkillSidebar({
           className={clsx(
             "text-sm font-bold block",
             isReference
-              ? "text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white"
-              : "text-[var(--ink-black)] dark:text-white",
+              ? "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+              : "text-gray-900 dark:text-white",
           )}
         >
           {skillName.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
@@ -217,7 +217,7 @@ export function SkillSidebar({
       </div>
 
       {/* Transparency note */}
-      <p className="text-[11px] text-[var(--warm-gray)]/60 mb-5">
+      <p className="text-[11px] text-gray-400 dark:text-gray-500 mb-5">
         AI agent reads this skill
       </p>
 
@@ -235,7 +235,7 @@ export function SkillSidebar({
             return (
               <div key={group.label} className="mb-3">
                 {showTopicHeader && (
-                  <h3 className="text-[10px] font-semibold uppercase tracking-[0.1em] mt-2 mb-1 text-[var(--warm-gray)]/60 px-2">
+                  <h3 className="text-[10px] font-semibold uppercase tracking-[0.1em] mt-2 mb-1 text-gray-400 dark:text-gray-500 px-2">
                     {group.label}
                   </h3>
                 )}
@@ -249,8 +249,8 @@ export function SkillSidebar({
                         className={clsx(
                           "block px-2 py-1 text-[13px] leading-snug transition-colors border-l-2 rounded-r-sm",
                           referenceName === ref.name
-                            ? "border-[var(--accent-blue)] text-[var(--ink-black)] dark:text-white bg-[var(--accent-blue)]/5 font-medium"
-                            : "border-transparent text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:hover:text-white hover:bg-black/[0.02] dark:hover:bg-white/[0.03]",
+                            ? "border-blue-600 dark:border-blue-400 text-gray-900 dark:text-white bg-blue-600/5 dark:bg-blue-500/10 font-medium"
+                            : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/[0.02] dark:hover:bg-white/[0.03]",
                         )}
                       >
                         <div className="flex items-center gap-1.5">
@@ -347,13 +347,13 @@ function LearningPathNav({
     <div className="mt-12 pt-8 border-t border-black/10 dark:border-white/10">
       {/* Progress bar */}
       <div className="mb-4">
-        <div className="flex items-center justify-between text-xs text-[var(--warm-gray)] mb-2">
+        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
           <span className="font-medium">{currentRef.track_title || "Learning Path"}</span>
           <span>Step {currentIndex + 1} of {trackRefs.length}</span>
         </div>
         <div className="h-1.5 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
           <div
-            className="h-full bg-[var(--accent-blue)] transition-all duration-300"
+            className="h-full bg-blue-600 dark:bg-blue-500 transition-all duration-300"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -364,12 +364,12 @@ function LearningPathNav({
         {prevRef ? (
           <Link
             to={`/skills/${skillName}/${prevRef.name}`}
-            className="flex items-center gap-2 p-3 rounded border border-black/10 dark:border-white/10 hover:border-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/5 transition-colors group"
+            className="flex items-center gap-2 p-3 rounded border border-gray-200 dark:border-gray-700 hover:border-blue-600 dark:hover:border-blue-400 hover:bg-blue-600/5 dark:hover:bg-blue-500/5 transition-colors group"
           >
-            <span className="text-[var(--warm-gray)] group-hover:text-[var(--accent-blue)]">←</span>
+            <span className="text-gray-400 dark:text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400">←</span>
             <div className="flex-1 min-w-0">
-              <div className="text-[10px] uppercase tracking-wider text-[var(--warm-gray)] mb-0.5">Previous</div>
-              <div className="text-sm font-medium text-[var(--ink-black)] dark:text-white truncate">{prevRef.title}</div>
+              <div className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-0.5">Previous</div>
+              <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{prevRef.title}</div>
             </div>
           </Link>
         ) : (
@@ -379,13 +379,13 @@ function LearningPathNav({
         {nextRef ? (
           <Link
             to={`/skills/${skillName}/${nextRef.name}`}
-            className="flex items-center gap-2 p-3 rounded border border-black/10 dark:border-white/10 hover:border-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/5 transition-colors group text-right"
+            className="flex items-center gap-2 p-3 rounded border border-gray-200 dark:border-gray-700 hover:border-blue-600 dark:hover:border-blue-400 hover:bg-blue-600/5 dark:hover:bg-blue-500/5 transition-colors group text-right"
           >
             <div className="flex-1 min-w-0">
-              <div className="text-[10px] uppercase tracking-wider text-[var(--warm-gray)] mb-0.5">Next</div>
-              <div className="text-sm font-medium text-[var(--ink-black)] dark:text-white truncate">{nextRef.title}</div>
+              <div className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-0.5">Next</div>
+              <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{nextRef.title}</div>
             </div>
-            <span className="text-[var(--warm-gray)] group-hover:text-[var(--accent-blue)]">→</span>
+            <span className="text-gray-400 dark:text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400">→</span>
           </Link>
         ) : null}
       </div>
@@ -423,27 +423,27 @@ export default function SkillDetail({ loaderData }: Route.ComponentProps) {
         <main className="overflow-y-auto bg-white dark:bg-[#0a0a0a]" data-skills-main>
           <div className="max-w-4xl mx-auto px-6 lg:px-10 py-10 pb-24">
             {/* Mobile breadcrumb */}
-            <div className="lg:hidden mb-6 flex items-center gap-2 text-[13px] flex-wrap text-[var(--warm-gray)]">
+            <div className="lg:hidden mb-6 flex items-center gap-2 text-[13px] flex-wrap text-gray-500 dark:text-gray-400">
               <Link
                 to="/skills"
-                className="hover:text-[var(--ink-black)] dark:hover:text-white transition-colors"
+                className="hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 Skills
               </Link>
-              <span>/</span>
+              <span className="text-gray-400 dark:text-gray-600">/</span>
               <Link
                 to={`/skills/${skillName}`}
                 className={clsx(
-                  "hover:text-[var(--ink-black)] dark:hover:text-white transition-colors",
-                  isReference ? "" : "text-[var(--ink-black)] dark:text-white font-medium"
+                  "hover:text-gray-900 dark:hover:text-white transition-colors",
+                  isReference ? "" : "text-gray-900 dark:text-gray-100 font-medium"
                 )}
               >
                 {skillName.replace(/-/g, " ")}
               </Link>
               {isReference && (
                 <>
-                  <span>/</span>
-                  <span className="text-[var(--ink-black)] dark:text-white font-medium">
+                  <span className="text-gray-400 dark:text-gray-600">/</span>
+                  <span className="text-gray-900 dark:text-gray-100 font-medium">
                     {referenceName?.replace(/-/g, " ")}
                   </span>
                 </>
@@ -452,22 +452,22 @@ export default function SkillDetail({ loaderData }: Route.ComponentProps) {
 
             {/* Desktop breadcrumb for reference pages only */}
             {isReference && (
-              <div className="hidden lg:flex mb-6 items-center gap-2 text-[13px] text-[var(--warm-gray)]">
+              <div className="hidden lg:flex mb-6 items-center gap-2 text-[13px] text-gray-500 dark:text-gray-400">
                 <Link
                   to="/skills"
-                  className="hover:text-[var(--ink-black)] dark:hover:text-white transition-colors"
+                  className="hover:text-gray-900 dark:hover:text-white transition-colors"
                 >
                   Skills
                 </Link>
-                <span>/</span>
+                <span className="text-gray-400 dark:text-gray-600">/</span>
                 <Link
                   to={`/skills/${skillName}`}
-                  className="hover:text-[var(--ink-black)] dark:hover:text-white transition-colors"
+                  className="hover:text-gray-900 dark:hover:text-white transition-colors"
                 >
                   {skillName.replace(/-/g, " ")}
                 </Link>
-                <span>/</span>
-                <span className="text-[var(--ink-black)] dark:text-white font-medium">
+                <span className="text-gray-400 dark:text-gray-600">/</span>
+                <span className="text-gray-900 dark:text-gray-100 font-medium">
                   {referenceName?.replace(/-/g, " ")}
                 </span>
               </div>
@@ -480,36 +480,36 @@ export default function SkillDetail({ loaderData }: Route.ComponentProps) {
                 "prose dark:prose-invert",
                 "prose-base",
                 // Paragraphs
-                "prose-p:text-[var(--warm-gray)] prose-p:leading-[1.75] prose-p:mb-4",
+                "prose-p:text-gray-600 dark:prose-p:text-gray-400 prose-p:leading-[1.75] prose-p:mb-4",
                 // Headings - clear hierarchy
-                "prose-headings:scroll-mt-20 prose-headings:tracking-tight prose-headings:text-[var(--ink-black)] dark:prose-headings:text-white",
+                "prose-headings:scroll-mt-20 prose-headings:tracking-tight prose-headings:text-gray-900 dark:prose-headings:text-white",
                 "prose-h1:text-3xl prose-h1:font-bold prose-h1:mb-4 prose-h1:mt-0 prose-h1:leading-[1.2]",
                 "prose-h2:text-xl prose-h2:font-bold prose-h2:mt-10 prose-h2:mb-4 prose-h2:leading-tight prose-h2:border-b prose-h2:border-black/10 dark:prose-h2:border-white/10 prose-h2:pb-2",
                 "prose-h3:text-lg prose-h3:font-semibold prose-h3:mt-8 prose-h3:mb-3 prose-h3:leading-snug",
-                "prose-h4:text-base prose-h4:font-semibold prose-h4:mt-6 prose-h4:mb-2 prose-h4:leading-snug prose-h4:text-[var(--accent-blue)]",
+                "prose-h4:text-base prose-h4:font-semibold prose-h4:mt-6 prose-h4:mb-2 prose-h4:leading-snug prose-h4:text-blue-800 dark:prose-h4:text-blue-400",
                 // Links
-                "prose-a:text-[var(--accent-blue)] prose-a:font-medium prose-a:no-underline hover:prose-a:underline prose-a:transition-colors",
+                "prose-a:text-blue-800 dark:prose-a:text-blue-400 prose-a:font-medium prose-a:no-underline hover:prose-a:underline prose-a:transition-colors",
                 // Strong
-                "prose-strong:text-[var(--ink-black)] dark:prose-strong:text-white prose-strong:font-semibold",
+                "prose-strong:text-gray-900 dark:prose-strong:text-white prose-strong:font-semibold",
                 // Lists
                 "prose-ul:my-4 prose-ol:my-4",
-                "prose-li:text-[var(--warm-gray)] prose-li:leading-[1.75] prose-li:my-1",
+                "prose-li:text-gray-600 dark:prose-li:text-gray-400 prose-li:leading-[1.75] prose-li:my-1",
                 // Code blocks
                 "prose-pre:bg-[#1a1a1a] prose-pre:border prose-pre:border-black/10 dark:prose-pre:border-white/10 prose-pre:overflow-x-auto prose-pre:p-5 prose-pre:text-sm prose-pre:leading-relaxed prose-pre:rounded-md",
                 // Inline code
-                "prose-code:bg-black/[0.04] dark:prose-code:bg-white/[0.08] prose-code:text-[var(--ink-black)] dark:prose-code:text-white prose-code:font-mono prose-code:text-[0.9em] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded",
+                "prose-code:bg-black/[0.04] dark:prose-code:bg-white/[0.08] prose-code:text-gray-900 dark:prose-code:text-white prose-code:font-mono prose-code:text-[0.9em] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded",
                 "prose-code:before:content-none prose-code:after:content-none",
                 "prose-pre:prose-code:bg-transparent prose-pre:prose-code:text-white prose-pre:prose-code:p-0 prose-pre:prose-code:text-[1em]",
                 // HR
                 "prose-hr:border-t prose-hr:border-black/10 dark:prose-hr:border-white/10 prose-hr:my-8",
                 // Blockquotes
-                "prose-blockquote:border-l-2 prose-blockquote:border-[var(--accent-blue)] prose-blockquote:pl-4 prose-blockquote:not-italic prose-blockquote:text-[var(--warm-gray)] prose-blockquote:font-normal",
+                "prose-blockquote:border-l-2 prose-blockquote:border-blue-800 dark:prose-blockquote:border-blue-400 prose-blockquote:pl-4 prose-blockquote:not-italic prose-blockquote:text-gray-600 dark:prose-blockquote:text-gray-400 prose-blockquote:font-normal",
                 // Tables
                 "prose-table:text-sm prose-table:border-collapse",
-                "prose-th:text-[var(--ink-black)] dark:prose-th:text-white prose-th:font-semibold prose-th:text-xs prose-th:uppercase prose-th:tracking-wider prose-th:border-b-2 prose-th:border-black/20 dark:prose-th:border-white/20 prose-th:px-3 prose-th:py-2 prose-th:text-left",
-                "prose-td:text-[var(--warm-gray)] prose-td:border-b prose-td:border-black/5 dark:prose-td:border-white/5 prose-td:px-3 prose-td:py-2",
+                "prose-th:text-gray-900 dark:prose-th:text-white prose-th:font-semibold prose-th:text-xs prose-th:uppercase prose-th:tracking-wider prose-th:border-b-2 prose-th:border-black/20 dark:prose-th:border-white/20 prose-th:px-3 prose-th:py-2 prose-th:text-left",
+                "prose-td:text-gray-600 dark:prose-td:text-gray-400 prose-td:border-b prose-td:border-black/5 dark:prose-td:border-white/5 prose-td:px-3 prose-td:py-2",
                 // Selection
-                "selection:bg-[var(--accent-blue)]/10",
+                "selection:bg-blue-600/10 dark:selection:bg-blue-400/10",
               )}
             >
               <MDXAsComponent
@@ -529,7 +529,7 @@ export default function SkillDetail({ loaderData }: Route.ComponentProps) {
             {/* Reference links at bottom for overview page */}
             {!isReference && referencesMeta.length > 0 && (
               <div className="mt-12 pt-8 border-t border-black/10 dark:border-white/10">
-                <h2 className="text-lg font-bold tracking-tight mb-4 text-[var(--ink-black)] dark:text-white">
+                <h2 className="text-lg font-bold tracking-tight mb-4 text-gray-900 dark:text-white">
                   References
                 </h2>
                 <div className="grid sm:grid-cols-2 gap-3">
@@ -537,16 +537,16 @@ export default function SkillDetail({ loaderData }: Route.ComponentProps) {
                     <Link
                       key={ref.name}
                       to={`/skills/${skillName}/${ref.name}`}
-                      className="group block p-3 border border-black/10 dark:border-white/10 rounded-md hover:border-[var(--accent-blue)]/40 hover:bg-[var(--accent-blue)]/[0.02] dark:hover:bg-[var(--accent-blue)]/[0.05] transition-colors"
+                      className="group block p-3 border border-gray-200 dark:border-gray-700 rounded-md hover:border-blue-600/40 dark:hover:border-blue-400/40 hover:bg-blue-600/[0.02] dark:hover:bg-blue-500/[0.05] transition-colors"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-medium text-sm text-[var(--ink-black)] dark:text-white truncate">
+                        <span className="font-medium text-sm text-gray-900 dark:text-white truncate">
                           {ref.title}
                         </span>
                         <TypeBadge type={ref.type} />
                       </div>
                       {ref.description && (
-                        <p className="text-xs text-[var(--warm-gray)] mt-1 line-clamp-1">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
                           {ref.description}
                         </p>
                       )}

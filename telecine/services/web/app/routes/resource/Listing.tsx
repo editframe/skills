@@ -1,25 +1,14 @@
-import { useSubscriptionForQuery } from "@/graphql.client";
 import { serverQuery } from "@/graphql.server";
-import {
-  Outlet,
-  useLoaderData,
-  useLocation,
-  useSearchParams,
-} from "react-router";
-import { PaginatedTable } from "~/components/Table";
-import {
-  extractServerTableSearchParams,
-  useTableSearchParams,
-} from "~/ui/useTableSearchParams";
+import { Outlet, useLoaderData, useLocation } from "react-router";
+import { extractServerTableSearchParams } from "~/ui/useTableSearchParams";
 
-import { ResourceModules, type ResourceType } from "~/components/resources";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { ResourceModules, dataShape } from "~/components/resources";
 import { requireOrgId } from "@/util/requireOrgId";
 
-import type { z } from "zod";
 import type { Route } from "./+types/Listing";
 import { requireSession } from "@/util/requireSession.server";
 import type { ProgressiveQueryDescriptor } from "@/graphql.client/progressiveQuery";
+import { SharedResourceIndexWrapper } from "~/components/resources/SharedResourceWrappers";
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { session } = await requireSession(request);
@@ -52,120 +41,6 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   };
 };
 
-interface ResourceIndexWrapperProps {
-  liveQuery: any;
-  resourceType: z.infer<typeof ResourceType>;
-  orgId: string;
-}
-
-export const ResourceIndexWrapper = ({
-  liveQuery,
-  resourceType,
-  orgId,
-}: ResourceIndexWrapperProps) => {
-  const [searchParams] = useSearchParams();
-  const { limit, page } = useTableSearchParams();
-
-  // Add state for debounced search params
-  const [debouncedSearchParams, setDebouncedSearchParams] =
-    useState(searchParams);
-
-  // Debounce search params updates
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchParams(searchParams);
-    }, 300); // 300ms debounce
-
-    return () => clearTimeout(timer);
-  }, [searchParams]);
-
-  // Use debounced search params for whereClause
-  const whereClause = useMemo(() => {
-    if (!ResourceModules[resourceType]) {
-      throw new Error(
-        `No resource module found for resource type ${resourceType}`,
-      );
-    }
-    return ResourceModules[resourceType].index.buildWhereClause?.(
-      debouncedSearchParams,
-    );
-  }, [debouncedSearchParams, resourceType]);
-
-  // Memoize subscription parameters
-  const subscriptionParams = useMemo(
-    () => ({
-      limit,
-      offset: page * limit,
-      orgId,
-      where_clause: whereClause as any,
-    }),
-    [limit, page, orgId, whereClause],
-  );
-
-  const subscription = useSubscriptionForQuery(
-    liveQuery.token,
-    ResourceModules[resourceType].index.query,
-    subscriptionParams,
-    liveQuery.result,
-  );
-
-  const org = subscription.data?.org;
-
-  // Memoize row transformation function
-  const transformRow = useCallback(
-    (row: any) => ({
-      id: row.id,
-      record: row,
-    }),
-    [],
-  );
-
-  // Memoize table props
-  const tableProps = useMemo(
-    () => ({
-      rows: org?.rows?.map(transformRow) as { id: string; record: unknown }[],
-      buildRowURL: (record: { id: string }) =>
-        `/resource/${resourceType}/${record.id}`,
-      count: org?.page_info?.aggregate?.count ?? 0,
-      emptyResultMessage: resourceType,
-      columns: ResourceModules[resourceType].index.columns as unknown as Array<{
-        name: string;
-        content: React.ComponentType<{ id: string; record: unknown }>;
-      }>,
-    }),
-    [org?.rows, org?.page_info?.aggregate?.count, resourceType, transformRow],
-  );
-
-  if (subscription.error) {
-    console.error("Subscription error", subscription.error);
-    return (
-      <div>
-        Error: {subscription.error.name}{" "}
-        {subscription.error.graphQLErrors.map((e) => e.message).join(", ")}
-      </div>
-    );
-  }
-
-  if (!org || !org.rows || !org.page_info) {
-    return <div>Loading...</div>;
-  }
-
-  const { TableHeader } = ResourceModules[resourceType].index;
-
-  return (
-    <div className="space-y-3 pt-3">
-      {TableHeader && (
-        <div>
-          <TableHeader orgId={orgId} />
-        </div>
-      )}
-      <div className="w-full">
-        <PaginatedTable {...tableProps} />
-      </div>
-      <Outlet />
-    </div>
-  );
-};
 
 export default function Listing() {
   const loaderData = useLoaderData<typeof loader>();
@@ -173,11 +48,17 @@ export default function Listing() {
   const location = useLocation();
 
   return (
-    <ResourceIndexWrapper
-      key={location.pathname}
-      liveQuery={liveQuery}
-      resourceType={resourceType}
-      orgId={orgId}
-    />
+    <>
+      <SharedResourceIndexWrapper
+        key={location.pathname}
+        liveQuery={liveQuery}
+        resourceType={resourceType}
+        resourceModules={ResourceModules}
+        dataShape={dataShape}
+        orgId={orgId}
+        buildRowURL={(record) => `/resource/${resourceType}/${record.id}`}
+      />
+      <Outlet />
+    </>
   );
 }

@@ -21,6 +21,7 @@ export type CreateUnprocessedFilePayload = z.infer<
   typeof CreateUnprocessedFilePayload
 >;
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export interface UnprocessedFile {
   byte_size: number;
   next_byte: number;
@@ -29,6 +30,7 @@ export interface UnprocessedFile {
   md5: string;
 }
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export interface UnprocessedFileUploadDetails {
   id: string;
   byte_size: number;
@@ -41,16 +43,21 @@ assertTypesMatch<
   UnprocessedFileUploadDetails
 >(true);
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export interface CreateUnprocessedFileResult extends UnprocessedFile {}
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export interface LookupUnprocessedFileByMd5Result extends UnprocessedFile {}
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export interface UpdateUnprocessedFileResult extends UnprocessedFile {}
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export interface ProcessIsobmffFileResult {
   id: string;
 }
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export const createUnprocessedFile = async (
   client: Client,
   payload: CreateUnprocessedFilePayload,
@@ -81,6 +88,7 @@ export const createUnprocessedFile = async (
   );
 };
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export const uploadUnprocessedReadableStream = (
   client: Client,
   uploadDetails: UnprocessedFileUploadDetails,
@@ -96,6 +104,7 @@ export const uploadUnprocessedReadableStream = (
   });
 };
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export const lookupUnprocessedFileByMd5 = async (
   client: Client,
   md5: string,
@@ -120,6 +129,7 @@ export const lookupUnprocessedFileByMd5 = async (
   );
 };
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export const processIsobmffFile = async (client: Client, id: string) => {
   const response = await client.authenticatedFetch(
     `/api/v1/unprocessed_files/${id}/isobmff`,

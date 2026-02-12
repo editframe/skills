@@ -5,10 +5,9 @@
 
 import type { ColumnType } from "kysely";
 
-export type Generated<T> =
-  T extends ColumnType<infer S, infer I, infer U>
-    ? ColumnType<S, I | undefined, U>
-    : ColumnType<T, T | undefined, T>;
+export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
+  ? ColumnType<S, I | undefined, U>
+  : ColumnType<T, T | undefined, T>;
 
 export type Int8 = ColumnType<string, bigint | number | string>;
 
@@ -350,16 +349,6 @@ export interface Video2FileProcessors {
   value: string;
 }
 
-export interface Video2FileStatuses {
-  comment: string;
-  value: string;
-}
-
-export interface Video2FileTypes {
-  comment: string;
-  value: string;
-}
-
 export interface Video2Files {
   api_key_id: string | null;
   byte_size: number | null;
@@ -375,9 +364,19 @@ export interface Video2Files {
   next_byte: Generated<number>;
   org_id: string;
   remote_uri: string | null;
-  status: Generated<"created" | "uploading" | "processing" | "ready" | "failed">;
-  type: "video" | "image" | "caption";
+  status: Generated<string>;
+  type: string;
   width: number | null;
+}
+
+export interface Video2FileStatuses {
+  comment: Generated<string>;
+  value: string;
+}
+
+export interface Video2FileTypes {
+  comment: Generated<string>;
+  value: string;
 }
 
 export interface Video2ImageFiles {
@@ -480,7 +479,7 @@ export interface Video2ProcessIsobmff {
   isobmff_expires_at: Timestamp | null;
   isobmff_file_id: string | null;
   org_id: string;
-  source_type: "url" | "unprocessed_file" | "file";
+  source_type: string;
   started_at: Timestamp | null;
   unprocessed_file_id: string | null;
   url: string | null;
@@ -523,12 +522,12 @@ export interface Video2Renders {
   id: Generated<string>;
   initializer_complete: Generated<boolean>;
   md5: string | null;
-  metadata: Record<string, string>;
+  metadata: Generated<Json>;
   org_id: string;
   output_config: Json | null;
   restricted: Generated<boolean>;
   started_at: Timestamp | null;
-  status: "created" | "queued" | "rendering" | "complete" | "failed";
+  status: string;
   strategy: string;
   width: number | null;
   work_slice_ms: Generated<number>;

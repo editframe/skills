@@ -24,6 +24,7 @@ export const CreateCaptionFilePayload = z.object({
 
 export type CreateCaptionFilePayload = z.infer<typeof CreateCaptionFilePayload>;
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export interface CreateCaptionFileResult {
   /**
    * Whether the caption file is complete
@@ -39,6 +40,7 @@ export interface CreateCaptionFileResult {
   md5: string;
 }
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export interface LookupCaptionFileByMd5Result {
   /**
    * Whether the caption file is complete
@@ -78,6 +80,7 @@ const restrictSize = (size: number) => {
  * @category CaptionFile
  * @resource
  * @beta
+ * @deprecated Use the unified file API from ./file.js instead
  */
 export const createCaptionFile = async (
   client: Client,
@@ -100,6 +103,7 @@ export const createCaptionFile = async (
   );
 };
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export const uploadCaptionFile = async (
   client: Client,
   fileId: string,
@@ -128,6 +132,7 @@ export const uploadCaptionFile = async (
   );
 };
 
+/** @deprecated Use the unified file API from ./file.js instead */
 export const lookupCaptionFileByMd5 = async (
   client: Client,
   md5: string,

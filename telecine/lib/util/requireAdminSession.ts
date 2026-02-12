@@ -27,5 +27,5 @@ export async function requireAdminSession(request: Request) {
     throw redirect("/auth/login") as never;
   }
 
-  return session;
+  return { ...session, isAdmin: true };
 }

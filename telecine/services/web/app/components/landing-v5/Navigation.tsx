@@ -30,14 +30,14 @@ export function Navigation({ isLoggedIn }: NavigationProps) {
           <ThemeToggle />
           {isLoggedIn ? (
             <Link
-              to="/dashboard"
+              to="/welcome"
               className="px-5 py-2 bg-[var(--ink-black)] dark:bg-white text-white dark:text-black text-sm font-bold uppercase tracking-wider hover:bg-[var(--poster-blue)] transition-colors"
             >
               Dashboard
             </Link>
           ) : (
             <>
-              <Link to="/login" className="hidden md:inline-flex px-4 py-2 text-sm font-bold uppercase tracking-wider hover:bg-[var(--poster-gold)] transition-colors">
+              <Link to="/auth/login" className="hidden md:inline-flex px-4 py-2 text-sm font-bold uppercase tracking-wider hover:bg-[var(--poster-gold)] transition-colors">
                 Sign in
               </Link>
               <Link
@@ -74,7 +74,7 @@ export function Navigation({ isLoggedIn }: NavigationProps) {
             {!isLoggedIn && (
               <>
                 <div className="border-t-2 border-[var(--ink-black)]/10 dark:border-white/10 mt-2 pt-2" />
-                <LandingNavLink to="/login" onClick={() => setMobileMenuOpen(false)}>
+                <LandingNavLink to="/auth/login" onClick={() => setMobileMenuOpen(false)}>
                   Sign in
                 </LandingNavLink>
                 <Link

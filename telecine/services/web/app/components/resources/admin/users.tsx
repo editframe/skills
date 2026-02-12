@@ -12,6 +12,11 @@ const IndexQuery = progressiveQuery(
   "ef-admin",
   graphql(`
     query AdminUsers($limit: Int!, $offset: Int!, $where_clause: users_bool_exp) {
+      page_info: users_aggregate(where: $where_clause) {
+        aggregate {
+          count
+        }
+      }
       rows: users(
         where: $where_clause,
         order_by: {created_at: desc},

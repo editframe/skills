@@ -289,6 +289,20 @@ export async function processISOBMFF(
         .where("id", "=", isobmffFile.id)
         .execute();
 
+      await db
+        .insertInto("video2.files")
+        .values({
+          id: isobmffFile.id,
+          org_id: unprocessedFile.org_id,
+          creator_id: unprocessedFile.creator_id,
+          api_key_id: unprocessedFile.api_key_id,
+          filename: unprocessedFile.filename,
+          type: "video",
+          status: "ready",
+        })
+        .onConflict((oc) => oc.column("id").doUpdateSet({ status: "ready" }))
+        .execute();
+
       progressTracker.writeProgress(1); // 100% complete
       progressTracker.stopHeartbeat();
 

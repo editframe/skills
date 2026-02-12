@@ -101,6 +101,10 @@ const routes = [
       // Renders have special routes for non-typical forms.
       ...prefix("/renders", [route("new", "routes/resource/renders/new.tsx")]),
 
+      // Upload route under a non-conflicting prefix (can't be under /files
+      // because "files" is a resourceType and would collide with /:resourceType/:id)
+      route("/upload-file", "routes/resource/files/upload.tsx"),
+
       route("/:resourceType", "routes/resource/Listing.tsx", [
         route(":id", "routes/resource/Detail.tsx", [
           route(":relatedType/:relId", "routes/resource/Related.tsx"),
@@ -205,10 +209,14 @@ const routes = [
     ...v1.prefix("/files", [
       v1.route("/", "files/index.ts"),
       v1.route("/:id", "files/detail.ts"),
+      v1.route("/:id/content", "files/content.ts"),
       v1.route("/:id/upload", "files/upload.ts"),
       v1.route("/:id/delete", "files/delete.ts"),
       v1.route("/:id/index", "files/indexFile.ts"),
+      v1.route("/:id/index/upload", "files/indexUpload.ts"),
+      v1.route("/:id/tracks", "files/trackCreate.ts"),
       v1.route("/:id/tracks/:trackId", "files/tracks.ts"),
+      v1.route("/:id/tracks/:trackId/upload", "files/trackUpload.ts"),
       v1.route("/:id/transcribe", "files/transcribe.ts"),
       v1.route("/:id/transcription", "files/transcription.ts"),
       v1.route("/:id/progress", "files/progress.ts"),
@@ -255,6 +263,7 @@ const routes = [
     hdb.route("/webhook_create_event", "webhook_create_event/index.ts"),
     hdb.route("/webhook_deliver_event", "webhook_deliver_event/index.ts"),
     hdb.route("/create_process_html", "create_process_html.ts"),
+    hdb.route("/delete_files", "delete_files.ts"),
     hdb.route("/delete_image_files", "delete_image_files.ts"),
     hdb.route("/delete_isobmff_files", "delete_isobmff_files.ts"),
     hdb.route("/delete_isobmff_tracks", "delete_isobmff_tracks.ts"),

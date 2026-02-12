@@ -4,6 +4,7 @@ import { Button } from "~/components/Button";
 import { db } from "@/sql-client.server";
 import { ProcessHTMLWorkflow } from "@/queues/units-of-work/ProcessHtml/Workflow";
 import { ProcessHTMLInitializerQueue } from "@/queues/units-of-work/ProcessHtml/Initializer";
+import { auditAdminAction } from "@/util/auditAdminAction";
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   await requireAdminSession(request);
@@ -11,7 +12,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 };
 
 export const action = async ({ request }: Route.ActionArgs) => {
-  await requireAdminSession(request);
+  const session = await requireAdminSession(request);
   const formData = await request.formData();
   const renderIds = formData.get("renderIds");
   if (!renderIds) {
@@ -22,6 +23,12 @@ export const action = async ({ request }: Route.ActionArgs) => {
     .split("\n")
     .map((id) => id.trim())
     .filter((id) => id !== "");
+  
+  auditAdminAction(session, "reprocess-html", {
+    renderCount: renderIdsArray.length,
+    renderIds: renderIdsArray,
+  });
+
   for (const id of renderIdsArray) {
     const render = await db
       .selectFrom("video2.renders")

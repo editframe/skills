@@ -1,4 +1,3 @@
-import type { ProgressiveQueryDescriptor } from "@/graphql.client/progressiveQuery";
 import { ApiKeys } from "./api-keys";
 import { ISOBMFFFiles } from "./isobmff-files";
 import { ProcessIsoBmff } from "./process-isobmff";
@@ -9,9 +8,16 @@ import { z } from "zod";
 import { Members } from "./members";
 import { Invites } from "./invites";
 import { Transcriptions } from "./transcriptions";
+import { Files } from "./files";
 import { ImageFiles } from "./image-files";
 import { ProcessHtml } from "./process-html";
-import type { ContentBlock } from "./blocks";
+export type {
+  ContentBlock,
+  ResourceView,
+  RowTypeOrgScoped as RowType,
+  DetailRecordTypeOrgScoped as DetailRecordType,
+} from "./types";
+export { orgScoped as dataShape } from "./types";
 
 export const resourceUrl = (resourceType: string, id: string) =>
   `/resource/${resourceType}/${id}`;
@@ -23,44 +29,6 @@ export const relatedResourceUrl = (
   relId: string,
 ) => `/resource/${resourceType}/${id}/${relatedType}/${relId}`;
 
-export type RowType<Q> =
-  Q extends ProgressiveQueryDescriptor<infer Data, any>
-    ? Data extends { org: { rows: (infer R)[] } | null }
-      ? NonNullable<R>
-      : never
-    : never;
-
-export type DetailRecordType<Q> =
-  Q extends ProgressiveQueryDescriptor<infer Data, any>
-    ? Data extends { record: (infer R)[] }
-      ? NonNullable<R>
-      : never
-    : never;
-
-export interface ResourceView<
-  IndexQuery extends ProgressiveQueryDescriptor<any, any>,
-  DetailQuery extends ProgressiveQueryDescriptor<any, any>,
-> {
-  index: {
-    query: IndexQuery;
-    TableHeader?: ({ orgId }: { orgId: string }) => React.ReactElement;
-    buildWhereClause?: (searchParams: URLSearchParams) => object;
-    columns: {
-      name: string;
-      content: ContentBlock<RowType<IndexQuery>, any>;
-    }[];
-  };
-
-  detail: {
-    query: DetailQuery;
-    fields: {
-      name: string;
-      content: ContentBlock<DetailRecordType<DetailQuery>, any>;
-      vertical?: boolean;
-      noHighlight?: boolean;
-    }[];
-  };
-}
 
 export const ResourceType = z.enum([
   "unprocessed_files",
@@ -73,6 +41,7 @@ export const ResourceType = z.enum([
   "invites",
   "transcriptions",
   "image_files",
+  "files",
   "process_html",
 ]);
 
@@ -87,5 +56,6 @@ export const ResourceModules = {
   invites: Invites,
   transcriptions: Transcriptions,
   image_files: ImageFiles,
+  files: Files,
   process_html: ProcessHtml,
 } as const;

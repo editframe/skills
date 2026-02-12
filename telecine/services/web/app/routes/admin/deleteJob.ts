@@ -3,9 +3,10 @@ import type { Route } from "./+types/deleteJob";
 import { Queue } from "@/queues/Queue";
 import { valkey } from "@/valkey/valkey";
 import { getJob, deleteJob, JobStage } from "@/queues/Job";
+import { auditAdminAction } from "@/util/auditAdminAction";
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
-  await requireAdminSession(request);
+  const session = await requireAdminSession(request);
   const { name, id } = params;
   const queue = Queue.fromName(name);
   if (!queue) {
@@ -22,6 +23,11 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   }
 
   const success = await deleteJob(valkey, job, stage.data);
+  auditAdminAction(session, "delete-job", {
+    queue: name,
+    jobId: id,
+    stage: stage.data,
+  });
 
   return { success };
 };

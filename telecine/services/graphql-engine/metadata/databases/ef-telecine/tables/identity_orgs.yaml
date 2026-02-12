@@ -95,6 +95,13 @@ array_relationships:
         table:
           name: unprocessed_files
           schema: video2
+  - name: files
+    using:
+      foreign_key_constraint_on:
+        column: org_id
+        table:
+          name: files
+          schema: video2
   - name: webhook_events
     using:
       foreign_key_constraint_on:

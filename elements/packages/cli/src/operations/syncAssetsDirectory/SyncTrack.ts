@@ -3,14 +3,14 @@ import fs from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 
 import {
-  type CreateISOBMFFFileResult,
+  type CreateFileResult,
   type CreateISOBMFFTrackPayload,
   type CreateISOBMFFTrackResult,
-  createISOBMFFFile,
-  createISOBMFFTrack,
-  type LookupISOBMFFFileByMd5Result,
-  lookupISOBMFFFileByMd5,
-  uploadISOBMFFTrack,
+  createFile,
+  createFileTrack,
+  type LookupFileByMd5Result,
+  lookupFileByMd5,
+  uploadFileTrack,
 } from "@editframe/api";
 import { Probe } from "@editframe/assets";
 
@@ -31,16 +31,13 @@ export class SyncTrack implements SubAssetSync<CreateISOBMFFTrackResult> {
     public md5: string,
   ) {}
 
-  private _isoFile:
-    | CreateISOBMFFFileResult
-    | LookupISOBMFFFileByMd5Result
-    | null = null;
+  private _videoFile: CreateFileResult | LookupFileByMd5Result | null = null;
 
-  get isoFile() {
-    if (this._isoFile) {
-      return this._isoFile;
+  get videoFile() {
+    if (this._videoFile) {
+      return this._videoFile;
     }
-    throw new Error("ISOBMFF file not found. Call prepare() first.");
+    throw new Error("Video file not found. Call prepare() first.");
   }
 
   async byteSize() {
@@ -64,13 +61,15 @@ export class SyncTrack implements SubAssetSync<CreateISOBMFFTrackResult> {
   }
 
   async prepare() {
-    const maybeIsoFile = await lookupISOBMFFFileByMd5(getClient(), this.md5);
-    if (maybeIsoFile) {
-      this._isoFile = maybeIsoFile;
+    const maybeFile = await lookupFileByMd5(getClient(), this.md5);
+    if (maybeFile) {
+      this._videoFile = maybeFile;
     } else {
-      this._isoFile = await createISOBMFFFile(getClient(), {
+      this._videoFile = await createFile(getClient(), {
         md5: this.md5,
         filename: basename(this.path).replace(/\.track-[\d]+.mp4$/, ""),
+        type: "video",
+        byte_size: await this.byteSize(),
       });
     }
     this._probeResult = await Probe.probePath(this.path);
@@ -97,13 +96,13 @@ export class SyncTrack implements SubAssetSync<CreateISOBMFFTrackResult> {
 
   async validate() {
     this.trackId;
-    this.isoFile;
+    this.videoFile;
     this.trackDuration;
   }
 
   async create(): Promise<void> {
     const track = this.track;
-    const isoFile = this.isoFile;
+    const videoFile = this.videoFile;
 
     if (track.codec_type === "data") {
       throw new Error(`Unsupported codec type: ${track.codec_type}`);
@@ -112,7 +111,7 @@ export class SyncTrack implements SubAssetSync<CreateISOBMFFTrackResult> {
       track.codec_type === "audio"
         ? {
             type: track.codec_type,
-            file_id: isoFile.id,
+            file_id: videoFile.id,
             track_id: Number(this.trackId),
             probe_info: track,
             duration_ms: Math.round(this.trackDuration * 1000),
@@ -121,7 +120,7 @@ export class SyncTrack implements SubAssetSync<CreateISOBMFFTrackResult> {
           }
         : {
             type: track.codec_type,
-            file_id: isoFile.id,
+            file_id: videoFile.id,
             track_id: Number(this.trackId),
             probe_info: track,
             duration_ms: Math.round(this.trackDuration * 1000),
@@ -129,7 +128,11 @@ export class SyncTrack implements SubAssetSync<CreateISOBMFFTrackResult> {
             byte_size: await this.byteSize(),
           };
 
-    this.created = await createISOBMFFTrack(getClient(), createPayload);
+    this.created = await createFileTrack(
+      getClient(),
+      videoFile.id,
+      createPayload,
+    );
   }
   isComplete() {
     return !!this.created?.complete;
@@ -140,12 +143,12 @@ export class SyncTrack implements SubAssetSync<CreateISOBMFFTrackResult> {
         "Track not created. Should have been prevented by .isComplete()",
       );
     }
-    await uploadISOBMFFTrack(
+    await uploadFileTrack(
       getClient(),
-      this.isoFile.id,
+      this.videoFile.id,
       Number(this.trackId),
+      this.created.byte_size,
       createReadableStreamFromReadable(createReadStream(this.path)),
-      this.created?.byte_size,
     ).whenUploaded();
   }
   async markSynced() {

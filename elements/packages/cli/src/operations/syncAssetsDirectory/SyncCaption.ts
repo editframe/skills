@@ -3,21 +3,21 @@ import { basename } from "node:path";
 
 import { Readable } from "node:stream";
 import {
-  type CreateCaptionFileResult,
-  createCaptionFile,
-  type LookupCaptionFileByMd5Result,
-  lookupCaptionFileByMd5,
-  uploadCaptionFile,
+  type CreateFileResult,
+  createFile,
+  type LookupFileByMd5Result,
+  lookupFileByMd5,
+  uploadFile,
 } from "@editframe/api";
 import { createReadableStreamFromReadable } from "../../utils/createReadableStreamFromReadable.js";
 import { getClient } from "../../utils/index.js";
 import type { SubAssetSync } from "./SubAssetSync.js";
 import { SyncStatus } from "./SyncStatus.js";
-export class SyncCaption implements SubAssetSync<CreateCaptionFileResult> {
+export class SyncCaption implements SubAssetSync<CreateFileResult> {
   icon = "📝";
   label = "captions";
   syncStatus: SyncStatus = new SyncStatus(this.path);
-  created: CreateCaptionFileResult | LookupCaptionFileByMd5Result | null = null;
+  created: CreateFileResult | LookupFileByMd5Result | null = null;
   constructor(
     public path: string,
     public md5: string,
@@ -32,23 +32,21 @@ export class SyncCaption implements SubAssetSync<CreateCaptionFileResult> {
   async validate() {}
 
   async create() {
-    const maybeCaptionFile = await lookupCaptionFileByMd5(
-      getClient(),
-      this.md5,
-    );
-    if (maybeCaptionFile) {
-      this.created = maybeCaptionFile;
+    const maybeFile = await lookupFileByMd5(getClient(), this.md5);
+    if (maybeFile) {
+      this.created = maybeFile;
     } else {
-      this.created = await createCaptionFile(getClient(), {
+      this.created = await createFile(getClient(), {
         md5: this.md5,
         filename: basename(this.path).replace(/\.captions.json$/, ""),
+        type: "caption",
         byte_size: await this.byteSize(),
       });
     }
   }
 
   isComplete() {
-    return !!this.created?.complete;
+    return this.created?.status === "ready";
   }
 
   async upload() {
@@ -57,16 +55,19 @@ export class SyncCaption implements SubAssetSync<CreateCaptionFileResult> {
         "Caption not created. Should have been prevented by .isComplete()",
       );
     }
-    await uploadCaptionFile(
+    await uploadFile(
       getClient(),
-      this.created.id,
+      {
+        id: this.created.id,
+        byte_size: await this.byteSize(),
+        type: "caption",
+      },
       // It's not clear why we need to use Readable.from here, but it seems
       // to fix an issue where the request is closed early in tests
       createReadableStreamFromReadable(
         Readable.from(await fs.readFile(this.path)),
       ),
-      await this.byteSize(),
-    );
+    ).whenUploaded();
   }
 
   async markSynced() {

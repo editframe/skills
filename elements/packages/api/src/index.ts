@@ -6,7 +6,10 @@ export type {
 export {
   CreateFilePayload,
   type CreateFileResult,
+  type CreateFileTrackPayload,
+  type CreateFileTrackResult,
   createFile,
+  createFileTrack,
   type FileDetail,
   type FileRecord,
   FileStatus,
@@ -21,6 +24,8 @@ export {
   transcribeFile,
   deleteFile,
   uploadFile,
+  uploadFileTrack,
+  uploadFileIndex,
 } from "./resources/file.js";
 export {
   CreateCaptionFilePayload,

@@ -4,6 +4,10 @@ import { z } from "zod";
 import type { Client } from "../client.js";
 import { ProgressIterator } from "../ProgressIterator.js";
 import { uploadChunks } from "../uploadChunks.js";
+import {
+  CreateISOBMFFTrackPayload,
+  type CreateISOBMFFTrackResult,
+} from "./isobmff-track.js";
 
 const log = debug("ef:api:file");
 
@@ -246,5 +250,87 @@ export const getFileTranscription = async (
 
   throw new Error(
     `Failed to get file transcription ${id} ${response.status} ${response.statusText}`,
+  );
+};
+
+export type { CreateISOBMFFTrackPayload as CreateFileTrackPayload };
+export type { CreateISOBMFFTrackResult as CreateFileTrackResult };
+
+export const createFileTrack = async (
+  client: Client,
+  fileId: string,
+  payload: CreateISOBMFFTrackPayload,
+): Promise<CreateISOBMFFTrackResult> => {
+  log("Creating file track", fileId, payload);
+  CreateISOBMFFTrackPayload.parse(payload);
+
+  const response = await client.authenticatedFetch(
+    `/api/v1/files/${fileId}/tracks`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+
+  log("File track created", response.status, response.statusText);
+
+  if (response.ok) {
+    return (await response.json()) as CreateISOBMFFTrackResult;
+  }
+
+  throw new Error(
+    `Failed to create file track ${response.status} ${response.statusText}`,
+  );
+};
+
+export const uploadFileTrack = (
+  client: Client,
+  fileId: string,
+  trackId: number,
+  byteSize: number,
+  fileStream: ReadableStream,
+) => {
+  log("Uploading file track", fileId, trackId);
+
+  return uploadChunks(client, {
+    url: `/api/v1/files/${fileId}/tracks/${trackId}/upload`,
+    fileSize: byteSize,
+    fileStream,
+    maxSize: MAX_VIDEO_SIZE,
+  });
+};
+
+const FRAGMENT_INDEX_SIZE_LIMIT = 1024 * 1024 * 50; // 50MB
+
+export const uploadFileIndex = async (
+  client: Client,
+  fileId: string,
+  fileStream: ReadableStream,
+  fileSize: number,
+) => {
+  log("Uploading file index", fileId);
+  if (fileSize > FRAGMENT_INDEX_SIZE_LIMIT) {
+    throw new Error(
+      `Fragment index size ${fileSize} exceeds limit of ${FRAGMENT_INDEX_SIZE_LIMIT} bytes`,
+    );
+  }
+
+  const response = await client.authenticatedFetch(
+    `/api/v1/files/${fileId}/index/upload`,
+    {
+      method: "POST",
+      body: fileStream,
+      duplex: "half",
+    },
+  );
+
+  log("File index uploaded", response.status, response.statusText);
+
+  if (response.ok) {
+    return response.json();
+  }
+
+  throw new Error(
+    `Failed to upload file index ${response.status} ${response.statusText}`,
   );
 };

@@ -1,9 +1,7 @@
 import { XCircle } from "@phosphor-icons/react";
 import { serverQuery } from "@/graphql.server";
-import { useSubscriptionForQuery } from "@/graphql.client";
-import { ResourceModules } from "~/components/resources";
+import { ResourceModules, dataShape } from "~/components/resources";
 import { LinkWithSearch } from "~/components/LinkWithSearch";
-import { InfoRow } from "~/components/InfoRow";
 import { useNavigateOnEscape } from "~/ui/useNavigateOnEscape";
 import clsx from "clsx";
 
@@ -11,6 +9,7 @@ import type { Route } from "./+types/Detail";
 import { requireSession } from "@/util/requireSession.server";
 import { requireOrgId } from "@/util/requireOrgId";
 import type { ProgressiveQueryDescriptor } from "@/graphql.client/progressiveQuery";
+import { SharedResourceDetailWrapper } from "~/components/resources/SharedResourceWrappers";
 
 export const loader = async ({
   params: { resourceType, id },
@@ -40,64 +39,6 @@ export const loader = async ({
   };
 };
 
-interface ResourceDetailWrapperProps {
-  liveQuery: any;
-  resourceType: keyof typeof ResourceModules;
-  orgId: string;
-  id: string;
-}
-
-export const ResourceDetailWrapper = ({
-  liveQuery,
-  resourceType,
-  orgId,
-  id,
-}: ResourceDetailWrapperProps) => {
-  const subscription = useSubscriptionForQuery(
-    liveQuery.token,
-    ResourceModules[resourceType].detail.query as ProgressiveQueryDescriptor<
-      any,
-      any
-    >,
-    { id, orgId },
-    liveQuery.result,
-  );
-
-  const records = subscription.data?.record;
-
-  if (subscription.error) {
-    return <div>Error: {subscription.error.message}</div>;
-  }
-
-  if (!records) {
-    return <div>Loading...</div>;
-  }
-  const record = records[0];
-  if (!record) {
-    return <div>No record found</div>;
-  }
-
-  return (
-    <div className="mx-auto p-4">
-      {ResourceModules[resourceType].detail.fields.map((field) => (
-        <InfoRow
-          key={field.name}
-          label={field.name}
-          value={
-            <field.content
-              record={record}
-              resourceType={resourceType}
-              resourceId={id}
-              id={id}
-            />
-          }
-          vertical={field.vertical}
-          noHighlight={field.noHighlight}
-        />
-      ))}
-    </div>
-  );
-};
 
 export default function ResourceDetail({
   loaderData: { orgId, liveQuery, resourceType, id },
@@ -146,9 +87,11 @@ export default function ResourceDetail({
         </LinkWithSearch>
       </div>
 
-      <ResourceDetailWrapper
+      <SharedResourceDetailWrapper
         liveQuery={liveQuery}
         resourceType={resourceType}
+        resourceModules={ResourceModules}
+        dataShape={dataShape}
         orgId={orgId}
         id={id}
       />

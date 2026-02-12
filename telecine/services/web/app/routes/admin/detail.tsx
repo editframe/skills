@@ -1,16 +1,15 @@
 import { XCircle } from "@phosphor-icons/react";
 import { isRouteErrorResponse, useParams, useRouteError } from "react-router";
 import { serverQuery } from "@/graphql.server";
-import { useSubscriptionForQuery } from "@/graphql.client";
-import { ResourceModules } from "~/components/resources/admin";
+import { ResourceModules, dataShape } from "~/components/resources/admin";
 import { LinkWithSearch } from "~/components/LinkWithSearch";
-import { InfoRow } from "~/components/InfoRow";
 import { useNavigateOnEscape } from "~/ui/useNavigateOnEscape";
 import clsx from "clsx";
 
 import type { Route } from "./+types/detail";
 import { requireAdminSession } from "@/util/requireAdminSession";
 import type { ProgressiveQueryDescriptor } from "@/graphql.client/progressiveQuery";
+import { SharedResourceDetailWrapper } from "~/components/resources/SharedResourceWrappers";
 
 export const ErrorBoundary = () => {
   const error = useRouteError();
@@ -66,65 +65,6 @@ export const loader = async ({
   };
 };
 
-interface ResourceDetailWrapperProps {
-  liveQuery: any;
-  resourceType: keyof typeof ResourceModules;
-  id: string;
-}
-
-export const ResourceDetailWrapper = ({
-  liveQuery,
-  resourceType,
-  id,
-}: ResourceDetailWrapperProps) => {
-  const searchParams = new URLSearchParams(window.location.search);
-  const customVariables =
-    ResourceModules[resourceType].detail.buildVariables?.(searchParams) || {};
-
-  const subscription = useSubscriptionForQuery(
-    liveQuery.token,
-    ResourceModules[resourceType].detail.query as ProgressiveQueryDescriptor<
-      any,
-      any
-    >,
-    {
-      id,
-      ...customVariables,
-    },
-    liveQuery.result,
-  );
-
-  const record = subscription.data?.record;
-
-  if (subscription.error) {
-    return <div>Error: {subscription.error.message}</div>;
-  }
-
-  if (!record) {
-    return <div>No record found</div>;
-  }
-
-  return (
-    <div className="mx-auto p-4">
-      {ResourceModules[resourceType].detail.fields.map((field) => (
-        <InfoRow
-          key={field.name}
-          label={field.name}
-          value={
-            <field.content
-              record={record}
-              resourceType={resourceType}
-              resourceId={id}
-              id={id}
-            />
-          }
-          vertical={field.vertical}
-          noHighlight={field.noHighlight}
-        />
-      ))}
-    </div>
-  );
-};
 
 const PanelOverlay = ({ children }: { children: React.ReactNode }) => {
   const { resourceType } = useParams();
@@ -179,13 +119,19 @@ export default function ResourceDetail({
 }: Route.ComponentProps) {
   useNavigateOnEscape(`/admin/${resourceType}`);
 
-  // Otherwise render as overlay
+  const searchParams = new URLSearchParams(window.location.search);
+  const customVariables =
+    ResourceModules[resourceType].detail.buildVariables?.(searchParams) || {};
+
   return (
     <PanelOverlay>
-      <ResourceDetailWrapper
+      <SharedResourceDetailWrapper
         liveQuery={liveQuery}
         resourceType={resourceType}
+        resourceModules={ResourceModules}
+        dataShape={dataShape}
         id={id}
+        customVariables={customVariables}
       />
     </PanelOverlay>
   );

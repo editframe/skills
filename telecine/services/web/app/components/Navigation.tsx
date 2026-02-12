@@ -1,20 +1,19 @@
 import { useLocation } from "react-router";
 import {
   Gear,
-  Cloud,
   FilmReel,
   Key,
   VideoCamera,
   Users,
   UserPlus,
   Microphone,
-  Image as ImageIcon,
   User,
   Building,
   FileText,
   Cpu,
   ChartBar,
   WebhooksLogo,
+  File,
 } from "@phosphor-icons/react";
 import { NavLink } from "./Link";
 import clsx from "clsx";
@@ -84,15 +83,9 @@ const userNavGroups: NavGroup[] = [
     title: "Media",
     items: [
       {
-        to: "/resource/isobmff_files",
-        Icon: VideoCamera,
-        label: "Videos",
-      },
-      { to: "/resource/image_files", Icon: ImageIcon, label: "Images" },
-      {
-        to: "/resource/unprocessed_files",
-        Icon: Cloud,
-        label: "Unprocessed Files",
+        to: "/resource/files",
+        Icon: File,
+        label: "Files",
       },
     ],
   },
@@ -155,46 +148,13 @@ const adminNavGroups: NavGroup[] = [
   {
     title: "Media",
     items: [
-      { to: "/admin/isobmff_files", Icon: VideoCamera, label: "Videos" },
-      { to: "/admin/image_files", Icon: ImageIcon, label: "Images" },
-    ],
-  },
-  {
-    title: "Workers",
-    items: [
-      {
-        to: "/admin/unprocessed_files",
-        Icon: Cloud,
-        label: "Unprocessed Files",
-      },
-      { to: "/admin/renders", Icon: FilmReel, label: "Renders" },
-      {
-        to: "/admin/transcriptions",
-        Icon: Microphone,
-        label: "Transcriptions",
-      },
-      {
-        to: "/admin/process_isobmff",
-        Icon: VideoCamera,
-        label: "Process ISOBMFF",
-      },
+      { to: "/admin/files", Icon: File, label: "Files" },
     ],
   },
   {
     title: "Schedulers",
     items: [
       { to: "/admin/scheduler", Icon: Cpu, label: "Overview" },
-      {
-        to: "/admin/schedulers/process-html",
-        Icon: FileText,
-        label: "Process HTML",
-      },
-      {
-        to: "/admin/schedulers/process-isobmff",
-        Icon: VideoCamera,
-        label: "Process ISOBMFF",
-      },
-      { to: "/admin/schedulers/render", Icon: FilmReel, label: "Render" },
     ],
   },
   {

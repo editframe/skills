@@ -3,6 +3,7 @@ import type { Selectable } from "kysely";
 import { OutputConfiguration } from "@editframe/api";
 
 import type {
+  Video2Files,
   Video2Renders,
   Video2ImageFiles,
   Video2IsobmffFiles,
@@ -23,6 +24,7 @@ export const hookedTables = z.object({
   schema: z.literal("video2"),
   name: z.enum([
     "renders",
+    "files",
     "image_files",
     "isobmff_files",
     "isobmff_tracks",
@@ -82,6 +84,19 @@ interface UnprocessedFileWebhookPayload extends Pick<
   "id" | "byte_size" | "next_byte" | "md5" | "filename" | "completed_at"
 > {}
 
+interface FileWebhookPayload extends Pick<
+  Selectable<Video2Files>,
+  "id" | "type" | "status" | "filename" | "byte_size" | "md5" | "mime_type" | "width" | "height"
+> {}
+
+const fileStatusTopics: Record<string, string> = {
+  created: "file.created",
+  uploading: "file.uploading",
+  processing: "file.processing",
+  ready: "file.ready",
+  failed: "file.failed",
+};
+
 export interface WebhookPayload<PayloadData, EventData = undefined> {
   topic: string;
   data: PayloadData;
@@ -129,6 +144,42 @@ export const webhookBuilders: Partial<
 > = {
   "video2.renders.insert": buildRenderPayload,
   "video2.renders.update": buildRenderPayload,
+  "video2.files.insert": (
+    file: Selectable<Video2Files>,
+  ): WebhookPayload<FileWebhookPayload> => {
+    return {
+      topic: fileStatusTopics[file.status] || "file.created",
+      data: {
+        id: file.id,
+        type: file.type,
+        status: file.status,
+        filename: file.filename,
+        byte_size: file.byte_size,
+        md5: file.md5,
+        mime_type: file.mime_type,
+        width: file.width,
+        height: file.height,
+      },
+    };
+  },
+  "video2.files.update": (
+    file: Selectable<Video2Files>,
+  ): WebhookPayload<FileWebhookPayload> => {
+    return {
+      topic: fileStatusTopics[file.status] || "file.updated",
+      data: {
+        id: file.id,
+        type: file.type,
+        status: file.status,
+        filename: file.filename,
+        byte_size: file.byte_size,
+        md5: file.md5,
+        mime_type: file.mime_type,
+        width: file.width,
+        height: file.height,
+      },
+    };
+  },
   "video2.image_files.insert": (
     imageFile: Selectable<Video2ImageFiles>,
   ): WebhookPayload<ImageFileWebhookPayload> => {

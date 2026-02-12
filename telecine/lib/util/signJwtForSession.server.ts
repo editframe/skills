@@ -30,6 +30,7 @@ interface Claims {
 export type HasuraSessionInfo = {
   uid: string;
   cid: string | null;
+  isAdmin?: boolean;
 };
 
 export const signHasuraJwtForSession = (sessionInfo: HasuraSessionInfo) => {
@@ -44,17 +45,21 @@ export const signHasuraJwtForSession = (sessionInfo: HasuraSessionInfo) => {
     );
   }
 
+  const roles = [
+    "user",
+    "org-admin",
+    "org-primary",
+    "org-editor",
+    "org-reader",
+  ];
+  if (sessionInfo.isAdmin) {
+    roles.push("ef-admin");
+  }
+
   const claims: Claims = {
     "X-Hasura-user-id": sessionInfo.uid,
     "X-Hasura-default-role": "user",
-    "X-Hasura-allowed-roles": [
-      "user",
-      "org-admin",
-      "org-primary",
-      "org-editor",
-      "org-reader",
-      "ef-admin",
-    ],
+    "X-Hasura-allowed-roles": roles,
   };
 
   if (sessionInfo.cid) {

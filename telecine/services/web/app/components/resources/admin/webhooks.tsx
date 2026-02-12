@@ -26,6 +26,11 @@ const IndexQuery = progressiveQuery(
       $offset: Int!,
       $where_clause: api_webhook_events_bool_exp
     ) {
+      page_info: api_webhook_events_aggregate(where: $where_clause) {
+        aggregate {
+          count
+        }
+      }
       rows: api_webhook_events(
         where: $where_clause,
         order_by: { created_at: desc },
@@ -134,6 +139,11 @@ const Filter = () => {
     "render.failed",
     "render.pending",
     "render.rendering",
+    "file.created",
+    "file.ready",
+    "file.failed",
+    "file.uploading",
+    "file.processing",
     "image_file.created",
     "isobmff_file.created",
     "isobmff_track.created",

@@ -1,14 +1,11 @@
 import {
-  createUnprocessedFileFromPath,
-  getIsobmffProcessInfo,
-  getIsobmffProcessProgress,
-  processIsobmffFile,
-  uploadUnprocessedFile,
+  upload,
+  getFileProcessingProgress,
+  getFileDetail,
 } from "@editframe/api/node";
 import { program } from "commander";
 import ora from "ora";
 import { getClient } from "../utils/index.js";
-import { withSpinner } from "../utils/withSpinner.js";
 
 program
   .command("process-file <file>")
@@ -16,29 +13,24 @@ program
   .action(async (path: string) => {
     const client = getClient();
 
-    const unprocessedFile = await withSpinner(
-      "Creating unprocessed file record",
-      () => createUnprocessedFileFromPath(client, path),
-    );
+    const uploadSpinner = ora("Creating file and uploading").start();
 
-    const upload = await uploadUnprocessedFile(client, unprocessedFile, path);
-    const uploadSpinner = ora("Uploading file");
+    const { file, uploadIterator } = await upload(client, path);
 
-    for await (const event of upload) {
+    for await (const event of uploadIterator) {
       uploadSpinner.text = `Uploading file: ${(100 * event.progress).toFixed(2)}%`;
     }
     uploadSpinner.succeed("Upload complete");
-    const processorRecord = await withSpinner(
-      "Marking for processing",
-      async () => await processIsobmffFile(client, unprocessedFile.id),
-    );
+
+    if (file.type !== "video") {
+      console.log(`File type "${file.type}" does not require processing.`);
+      console.log("File ID:", file.id);
+      return;
+    }
 
     const processSpinner = ora("Waiting for processing to complete");
     processSpinner.start();
-    const progress = await getIsobmffProcessProgress(
-      client,
-      processorRecord.id,
-    );
+    const progress = await getFileProcessingProgress(client, file.id);
 
     for await (const event of progress) {
       if (event.type === "progress") {
@@ -48,8 +40,8 @@ program
       }
     }
 
-    const info = await getIsobmffProcessInfo(client, processorRecord.id);
+    const detail = await getFileDetail(client, file.id);
 
     console.log("Processed file info");
-    console.log(info);
+    console.log(detail);
   });

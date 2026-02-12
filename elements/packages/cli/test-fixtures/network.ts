@@ -1,6 +1,150 @@
 import { HttpResponse, http } from "msw";
 import type { Fixture } from "./fixture.js";
 
+// --- Unified File API mocks ---
+
+export const mockCreateFile = ({
+  status = "created",
+  id = "123",
+  type = "image",
+}: {
+  status?: string;
+  id?: string;
+  type?: string;
+  filename?: string;
+  fixture: Fixture;
+}) =>
+  http.post(
+    "http://localhost:3000/api/v1/files",
+    async () => {
+      return HttpResponse.json({
+        id,
+        status,
+        type,
+        byte_size: null,
+        md5: null,
+        next_byte: 0,
+      });
+    },
+    { once: true },
+  );
+
+export const mockLookupFileByMd5 = ({
+  status = "ready",
+  id = "123",
+  md5 = "test-md5",
+  type = "image",
+}: {
+  status?: string;
+  id?: string;
+  md5?: string;
+  type?: string;
+  fixture: Fixture;
+}) =>
+  http.get(`http://localhost:3000/api/v1/files/md5/${md5}`, async () => {
+    return HttpResponse.json({
+      id,
+      status,
+      type,
+      byte_size: null,
+      md5,
+      next_byte: 0,
+    });
+  });
+
+export const mockLookupFileByMd5NotFound = ({
+  md5 = "test-md5",
+}: {
+  md5?: string;
+}) =>
+  http.get(`http://localhost:3000/api/v1/files/md5/${md5}`, async () => {
+    return HttpResponse.json({}, { status: 404 });
+  });
+
+export const mockGetUploadFile = ({
+  status = "ready",
+  id = "123",
+}: {
+  status?: string;
+  id?: string;
+  filename?: string;
+  fixture: Fixture;
+}) =>
+  http.get(
+    `http://localhost:3000/api/v1/files/${id}/upload`,
+    async () => {
+      return HttpResponse.json({
+        id,
+        status,
+      });
+    },
+  );
+
+export const mockCreateFileTrack = ({
+  complete = true,
+  id = "123",
+  fileId = "123",
+}: {
+  complete?: boolean;
+  id?: string;
+  fileId?: string;
+  filename?: string;
+  fixture: Fixture;
+}) =>
+  http.post(
+    `http://localhost:3000/api/v1/files/${fileId}/tracks`,
+    async () => {
+      return HttpResponse.json({
+        id,
+        complete,
+        file_id: fileId,
+        track_id: id,
+        byte_size: 0,
+        next_byte: 0,
+      });
+    },
+    { once: true },
+  );
+
+export const mockGetFileTrackUpload = ({
+  complete = true,
+  fileId = "123",
+  trackId = 1,
+  id = "123",
+}: {
+  complete?: boolean;
+  id?: string;
+  fileId?: string;
+  trackId?: number;
+}) =>
+  http.get(
+    `http://localhost:3000/api/v1/files/${fileId}/tracks/${trackId}/upload`,
+    async () => {
+      return HttpResponse.json({
+        id,
+        complete,
+      });
+    },
+  );
+
+export const mockUploadFileIndex = ({
+  id = "123",
+}: {
+  id?: string;
+}) =>
+  http.post(
+    `http://localhost:3000/api/v1/files/${id}/index/upload`,
+    async () => {
+      return HttpResponse.json({
+        id,
+        status: "ready",
+      });
+    },
+    { once: true },
+  );
+
+// --- Legacy API mocks (kept for backward compatibility tests) ---
+
 export const mockCreateImageFile = ({
   complete = true,
   id = "123",
