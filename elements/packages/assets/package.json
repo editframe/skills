@@ -18,8 +18,8 @@
   },
   "devDependencies": {
     "@types/dom-webcodecs": "^0.1.11",
-    "@types/node": "^20.14.13",
-    "typescript": "^5.5.4"
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

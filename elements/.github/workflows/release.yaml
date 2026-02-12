@@ -26,7 +26,7 @@ jobs:
         run: ./scripts/docker-compose build ci-runner
 
       - name: Install Dependencies
-        run: ./scripts/docker-compose run --rm ci-runner npm ci --legacy-peer-deps
+        run: ./scripts/docker-compose run --rm ci-runner npm ci
 
       - name: Build All Packages
         run: ./scripts/build-all

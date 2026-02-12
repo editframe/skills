@@ -790,7 +790,6 @@ export default {
     require("@tailwindcss/forms"),
     require("@tailwindcss/aspect-ratio"),
     require("@tailwindcss/typography"),
-    require("tailwindcss-3d"),
     require("tailwindcss-animate"),
     function ({ addBase }: any) {
       addBase({

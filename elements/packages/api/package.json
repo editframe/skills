@@ -14,9 +14,9 @@
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.6",
     "@types/mime-types": "^2.1.4",
-    "@types/node": "^20.14.13",
-    "typedoc": "^0.26.5",
-    "typescript": "^5.5.4"
+    "@types/node": "^22.0.0",
+    "typedoc": "^0.28.0",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@editframe/assets": "0.37.3-beta",
