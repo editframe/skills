@@ -3,12 +3,13 @@ import { requireQueryAs } from "@/graphql.server/userClient";
 import { createReadableStreamFromReadable } from "@react-router/node";
 import { storageProvider } from "@/util/storageProvider.server";
 import { imageFilePath } from "@/util/filePaths";
+import { throwIfExpired } from "@/http/throwIfExpired";
 
 import type { Route } from "./+types/detail";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
-export const loader = async ({ request, params: { id } }: Route.LoaderArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+export const loader = async ({ params: { id }, context }: Route.LoaderArgs) => {
+  const session = context.get(apiIdentityContext);
 
   const imageFile = await requireQueryAs(
     session,
@@ -20,11 +21,14 @@ export const loader = async ({ request, params: { id } }: Route.LoaderArgs) => {
             md5
             mime_type
             filename
+            expires_at
           }
         }
       `),
     { id: id },
   );
+
+  throwIfExpired(imageFile.expires_at);
 
   const filePath = imageFilePath({
     org_id: session.oid,

@@ -3,17 +3,19 @@ import { requireQueryAs } from "@/graphql.server/userClient";
 import { storageProvider } from "@/util/storageProvider.server";
 import { isobmffTrackFilePath } from "@/util/filePaths";
 import { createReadableStreamFromReadable } from "@react-router/node";
+import { throwIfExpired } from "@/http/throwIfExpired";
 
 import { RangeHeader } from "@/util/RangeHeader.server";
 
 import type { Route } from "./+types/trackData";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 export const loader = async ({
   request,
   params: { file_id, track_id },
+  context,
 }: Route.LoaderArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
   const track = await requireQueryAs(
     session,
     "org-editor",
@@ -29,6 +31,7 @@ export const loader = async ({
             isobmff_file {
               id
               filename
+              expires_at
             }
           }
         }
@@ -38,6 +41,8 @@ export const loader = async ({
       track_id: Number.parseInt(track_id, 10),
     },
   );
+
+  throwIfExpired(track.isobmff_file.expires_at);
 
   const filePath = isobmffTrackFilePath({
     org_id: session.oid,

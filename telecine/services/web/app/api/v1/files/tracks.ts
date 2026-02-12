@@ -3,7 +3,8 @@ import { createReadableStreamFromReadable } from "@react-router/node";
 import { db } from "@/sql-client.server";
 import { isobmffTrackFilePath } from "@/util/filePaths";
 import { RangeHeader } from "@/util/RangeHeader.server";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { throwIfExpired } from "@/http/throwIfExpired";
+import { apiIdentityContext } from "~/middleware/context";
 import { storageProvider } from "@/util/storageProvider.server";
 
 import type { Route } from "./+types/tracks";
@@ -11,18 +12,21 @@ import type { Route } from "./+types/tracks";
 export const loader = async ({
   request,
   params: { id, trackId },
+  context,
 }: Route.LoaderArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
 
   const file = await db
     .selectFrom("video2.files")
     .where("id", "=", id)
     .where("org_id", "=", session.oid)
     .where("type", "=", "video")
-    .select(["id"])
+    .select(["id", "expires_at"])
     .executeTakeFirstOrThrow(() => {
       throw new Response("Not Found", { status: 404 });
     });
+
+  throwIfExpired(file.expires_at);
 
   const trackIdNum = Number.parseInt(trackId, 10);
 

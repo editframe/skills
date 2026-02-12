@@ -290,6 +290,7 @@ const routes = [
     hdb.route("/send_slack_notification", "send_slack_notification.ts"),
     hdb.route("/test_webhook_url", "test_webhook_url.ts"),
     hdb.route("/process_isobmff", "process_isobmff.ts"),
+    hdb.route("/reap_expired_files", "reap_expired_files.ts"),
   ]),
 ] satisfies RouteConfig;
 
