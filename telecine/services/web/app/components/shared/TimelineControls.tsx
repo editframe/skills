@@ -1,5 +1,3 @@
-import "@editframe/react/styles.css";
-
 interface TimelineControlsProps {
   target: string;
 }
