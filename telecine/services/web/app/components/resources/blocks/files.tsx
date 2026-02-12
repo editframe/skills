@@ -39,14 +39,34 @@ export const Preview: ContentBlock<{
       >
         {() => (
           <ef-configuration api-host={window.location.origin} signing-url="">
-            <ef-preview className="block max-w-md max-h-[32rem]">
+            <ef-preview className="block max-w-md">
               <ef-video
                 id={id}
                 file-id={id}
-                className="w-full h-full rounded-lg shadow-sm"
+                className="w-full rounded-lg shadow-sm"
                 style={{ maxWidth: "28rem", maxHeight: "32rem" }}
               />
-              <ef-controls target={id} className="mt-2" />
+              <ef-controls
+                target={id}
+                className="flex items-center gap-3 mt-2 p-2 bg-slate-100 dark:bg-slate-800 rounded"
+              >
+                <ef-toggle-play>
+                  <button
+                    slot="play"
+                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    ▶
+                  </button>
+                  <button
+                    slot="pause"
+                    className="px-3 py-1 text-sm bg-orange-600 text-white rounded hover:bg-orange-700"
+                  >
+                    ⏸
+                  </button>
+                </ef-toggle-play>
+                <ef-scrubber className="flex-1" />
+                <ef-time-display className="text-xs text-slate-700 dark:text-slate-300 font-mono" />
+              </ef-controls>
             </ef-preview>
           </ef-configuration>
         )}
