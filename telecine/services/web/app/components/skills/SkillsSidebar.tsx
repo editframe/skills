@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import * as React from "react";
 import clsx from "clsx";
 import type { NavNode } from "~/utils/skills.server";
 
@@ -124,7 +125,7 @@ function NavTreeSection({
 
   return (
     <div className="mb-4">
-      {/* Sticky section header — sticks below the skill name */}
+      {/* Sticky section header */}
       <div
         className={clsx(
           "sticky top-[37px] z-[9] -mx-4 px-4 pb-1 pt-1",
@@ -141,7 +142,6 @@ function NavTreeSection({
         </div>
       </div>
 
-      {/* Section content */}
       <div>
         {hasItems && (
           <NavTreeItems
@@ -168,6 +168,21 @@ function NavTreeSection({
   );
 }
 
+function Chevron({ expanded }: { expanded: boolean }) {
+  return (
+    <svg
+      className={clsx(
+        "w-3.5 h-3.5 flex-shrink-0 transition-transform duration-150",
+        expanded && "rotate-90",
+      )}
+      viewBox="0 0 16 16"
+      fill="currentColor"
+    >
+      <path d="M6 3.5l4.5 4.5L6 12.5V3.5z" />
+    </svg>
+  );
+}
+
 interface SkillsSidebarProps {
   allSkills: { name: string; description: string }[];
   currentSkill: string | null;
@@ -181,39 +196,66 @@ export function SkillsSidebar({
   currentReference,
   navTree,
 }: SkillsSidebarProps) {
+  const [expanded, setExpanded] = React.useState(true);
+
+  // Re-expand when navigating to a different skill
+  React.useEffect(() => {
+    setExpanded(true);
+  }, [currentSkill]);
+
   return (
     <aside className="hidden lg:block overflow-y-auto pb-20 bg-[#FAFAF9] dark:bg-[#1a1a1a] border-r border-black/[0.06] dark:border-white/[0.12]">
       <nav className="px-4 pt-6">
         {allSkills.map((skill) => {
           const isActive = skill.name === currentSkill;
-          const isExpanded = isActive && navTree.length > 0;
+          const hasTree = isActive && navTree.length > 0;
+          const isExpanded = hasTree && expanded;
 
           return (
-            <div key={skill.name} className="mb-1">
+            <div key={skill.name} className="mb-0.5">
               {/* Sticky skill name when expanded */}
               <div
                 className={clsx(
-                  isExpanded && "sticky top-0 z-10 -mx-4 px-4 pt-1 pb-0.5",
+                  isExpanded && "sticky top-0 z-10 -mx-4 px-4 pt-0.5",
                   isExpanded && SIDEBAR_BG,
                 )}
               >
-                <Link
-                  to={`/skills/${skill.name}`}
+                <div
                   className={clsx(
-                    "block px-3 py-2 text-[13px] leading-tight rounded-md transition-colors",
+                    "flex items-center rounded-md transition-colors",
                     isActive
-                      ? "text-gray-900 dark:text-white font-bold bg-blue-600/[0.08] dark:bg-blue-500/[0.12]"
-                      : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/[0.03] dark:hover:bg-white/[0.06] font-medium",
+                      ? "text-gray-900 dark:text-white font-bold"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium",
                   )}
                 >
-                  {skill.name
-                    .replace(/-/g, " ")
-                    .replace(/\b\w/g, (c) => c.toUpperCase())}
-                </Link>
+                  {hasTree ? (
+                    <button
+                      onClick={() => setExpanded((e) => !e)}
+                      className="flex items-center justify-center w-7 h-7 flex-shrink-0 rounded hover:bg-black/[0.05] dark:hover:bg-white/[0.08] text-gray-400 dark:text-gray-500"
+                    >
+                      <Chevron expanded={isExpanded} />
+                    </button>
+                  ) : (
+                    <span className="w-7 flex-shrink-0" />
+                  )}
+                  <Link
+                    to={`/skills/${skill.name}`}
+                    className={clsx(
+                      "flex-1 min-w-0 px-1.5 py-2 text-[13px] leading-tight rounded-md transition-colors",
+                      isActive
+                        ? "hover:bg-blue-600/[0.06] dark:hover:bg-blue-500/[0.1]"
+                        : "hover:bg-black/[0.03] dark:hover:bg-white/[0.06]",
+                    )}
+                  >
+                    {skill.name
+                      .replace(/-/g, " ")
+                      .replace(/\b\w/g, (c) => c.toUpperCase())}
+                  </Link>
+                </div>
               </div>
 
               {isExpanded && (
-                <div className="mt-2 mb-3">
+                <div className="mt-1 mb-2 ml-3 pl-3 border-l border-black/[0.06] dark:border-white/[0.12]">
                   {navTree.map((node) => (
                     <NavTreeSection
                       key={node.path}

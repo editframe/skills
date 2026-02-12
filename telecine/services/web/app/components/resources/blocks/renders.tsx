@@ -40,7 +40,7 @@ export const Resolution: ContentBlock<{
   width: number | null;
   height: number | null;
 }> = ({ record: { width, height } }) => {
-  if (!width || !height) return <span>—</span>;
+  if (!width || !height) return <span className="text-slate-400 dark:text-slate-500">—</span>;
   return (
     <span>
       {width}×{height}
@@ -51,7 +51,7 @@ export const Resolution: ContentBlock<{
 export const Duration: ContentBlock<{ duration_ms: number | null }> = ({
   record: { duration_ms },
 }) =>
-  duration_ms ? <PrettyDuration durationMs={duration_ms} /> : <span>—</span>;
+  duration_ms ? <PrettyDuration durationMs={duration_ms} /> : <span className="text-slate-400 dark:text-slate-500">—</span>;
 
 export const Download: ContentBlock<{
   id: string;
@@ -175,6 +175,7 @@ export const ProcessingDuration: ContentBlock<{
 export const Output: ContentBlock<{ output_config?: any }> = ({
   record: { output_config },
 }) => {
+  if (!output_config) return <span className="text-slate-400 dark:text-slate-500">—</span>;
   const outputConfig = OutputConfiguration.parse(output_config);
   return <span>{outputConfig.container}</span>;
 };
