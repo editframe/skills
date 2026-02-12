@@ -33,12 +33,14 @@ export async function parseMdx(mdx: string) {
 
   const { default: rehypeSlug } = await import("rehype-slug");
 
+  const { default: remarkGfm } = await import("remark-gfm");
+
   const headings: Heading[] = [];
 
   const { frontmatter, code } = await bundleMDX<Frontmatter>({
     source: mdx,
     mdxOptions(options) {
-      options.remarkPlugins = [...(options.remarkPlugins ?? []), remarkCodeMeta];
+      options.remarkPlugins = [...(options.remarkPlugins ?? []), remarkGfm, remarkCodeMeta];
       options.rehypePlugins = [
         ...(options.rehypePlugins ?? []),
         rehypeSlug,
