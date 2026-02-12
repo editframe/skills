@@ -38,10 +38,7 @@ export const Preview: ContentBlock<{
         }
       >
         {() => (
-          <ef-configuration
-            api-host={window.location.origin}
-            signing-url="/ef-sign-url"
-          >
+          <ef-configuration api-host={window.location.origin} signing-url="">
             <ef-preview className="block max-w-md max-h-[32rem]">
               <ef-video
                 id={id}

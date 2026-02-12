@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import clsx from "clsx";
-import type { NavNode, SkillReference } from "~/utils/skills.server";
+import type { NavNode } from "~/utils/skills.server";
 
 const TYPE_BADGE_STYLES: Record<string, string> = {
   tutorial: "bg-green-700 dark:bg-green-600 text-white",

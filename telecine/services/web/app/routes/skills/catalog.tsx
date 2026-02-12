@@ -5,7 +5,6 @@ import { getSkillCatalog, getSkillNames } from "~/utils/skills.server";
 import { SkillsLayout } from "~/components/skills/SkillsLayout";
 import { SkillsSidebar, TypeBadge } from "~/components/skills/SkillsSidebar";
 import { useTheme } from "~/hooks/useTheme";
-import clsx from "clsx";
 
 export const meta = () => {
   return [
@@ -23,37 +22,6 @@ export const loader = async () => {
   const allSkills = getSkillNames();
   return { skills, allSkills };
 };
-
-const TYPE_BADGE_STYLES: Record<string, string> = {
-  tutorial: "bg-green-700 dark:bg-green-600 text-white",
-  "how-to": "bg-blue-700 dark:bg-blue-600 text-white",
-  explanation: "bg-amber-500 dark:bg-amber-400 text-gray-900",
-  reference: "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300",
-};
-
-const TYPE_LABELS: Record<string, string> = {
-  tutorial: "Tutorials",
-  "how-to": "How-tos",
-  explanation: "Explanations",
-  reference: "References",
-};
-
-function getTypeCounts(
-  refs: SkillReference[],
-): { type: string; label: string; count: number }[] {
-  const counts = new Map<string, number>();
-  for (const ref of refs) {
-    counts.set(ref.type, (counts.get(ref.type) || 0) + 1);
-  }
-  const order = ["tutorial", "how-to", "explanation", "reference"];
-  return order
-    .filter((t) => counts.has(t))
-    .map((t) => ({
-      type: t,
-      label: TYPE_LABELS[t] || t,
-      count: counts.get(t)!,
-    }));
-}
 
 interface SkillData {
   name: string;

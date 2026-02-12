@@ -5,8 +5,8 @@ import type { Route } from "./+types/reference-detail";
 import {
   getSkillReference,
   getSkillReferenceSection,
-  getSkillNav,
   getSkillNavTree,
+  getSkillNames,
   getSkillReferencesMeta,
 } from "~/utils/skills.server";
 import { parseMdx } from "~/utils/mdx-bundler.server";
@@ -14,7 +14,7 @@ import { getSkillsMDXComponents } from "~/utils/skills-mdx-components";
 import clsx from "clsx";
 import { useTheme } from "~/hooks/useTheme";
 import { SkillsLayout } from "~/components/skills/SkillsLayout";
-import { SkillSidebarTree } from "./skill-detail";
+import { SkillsSidebar } from "~/components/skills/SkillsSidebar";
 import { OnThisPage } from "~/components/skills/OnThisPage";
 import type { SkillReference } from "~/utils/skills.server";
 
@@ -134,9 +134,9 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
   }
 
   const parsed = await parseMdx(referenceContent);
-  const nav = getSkillNav(skillName);
   const navTree = getSkillNavTree(skillName);
   const referencesMeta = getSkillReferencesMeta(skillName);
+  const allSkills = getSkillNames();
 
   // Extract API metadata from frontmatter
   const apiMetadata = (parsed.frontmatter as any)?.api || null;
@@ -145,9 +145,9 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
     skillName,
     referenceName: referenceParam,
     content: parsed,
-    nav,
     navTree,
     referencesMeta,
+    allSkills,
     apiMetadata,
     isReference: true,
   };
@@ -155,7 +155,7 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
 
 export default function ReferenceDetail({ loaderData }: Route.ComponentProps) {
   useTheme();
-  const { skillName, referenceName, content, navTree, referencesMeta, apiMetadata, isReference } =
+  const { skillName, referenceName, content, navTree, referencesMeta, allSkills, apiMetadata } =
     loaderData;
   const { code } = content;
   const MDXAsComponent = React.useMemo(() => getMDXComponent(code), [code]);
@@ -172,11 +172,11 @@ export default function ReferenceDetail({ loaderData }: Route.ComponentProps) {
     <SkillsLayout>
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] xl:grid-cols-[280px_1fr_auto] overflow-hidden">
         {/* Sidebar */}
-        <SkillSidebarTree
-          skillName={skillName}
-          referenceName={referenceName}
+        <SkillsSidebar
+          allSkills={allSkills}
+          currentSkill={skillName}
+          currentReference={referenceName}
           navTree={navTree}
-          isReference={isReference}
         />
 
         {/* Main content - clean white reading surface */}
