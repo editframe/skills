@@ -85,25 +85,19 @@ app.listen(3000);
 
 ### Client-Side: Configuration
 
-Configure Editframe elements to use your signing endpoint:
+In your Editframe Elements project, configure the signing endpoint:
 
 ```html
-<!DOCTYPE html>
-<html>
-<head>
-  <script type="module" src="https://cdn.editframe.com/elements/latest/elements.js"></script>
-</head>
-<body>
-  <!-- Configure signing URL -->
-  <ef-configuration signingURL="/sign-url"></ef-configuration>
-  
-  <!-- Media elements automatically use signed URLs -->
-  <ef-timegroup mode="contain" class="w-[1280px] h-[720px]">
-    <ef-video src="https://editframe.com/api/v1/transcode/manifest.m3u8?url=..."></ef-video>
-  </ef-timegroup>
-</body>
-</html>
+<!-- Configure signing URL -->
+<ef-configuration signingURL="/sign-url"></ef-configuration>
+
+<!-- Media elements automatically use signed URLs -->
+<ef-timegroup mode="contain" class="w-[1280px] h-[720px]">
+  <ef-video src="https://editframe.com/api/v1/transcode/manifest.m3u8?url=..."></ef-video>
+</ef-timegroup>
 ```
+
+Set up an Elements project with `npm create @editframe/elements` if you haven't already. See the elements-composition skill for complete setup instructions.
 
 When `<ef-video>` loads, it:
 1. Detects the `src` requires authentication
