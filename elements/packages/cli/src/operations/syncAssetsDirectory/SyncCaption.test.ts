@@ -2,10 +2,10 @@ import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
 import { fixture, withFixtures } from "../../../test-fixtures/fixture.js";
 import {
-  mockCreateCaptionFile,
-  mockLookupCaptionFileByMd5,
-  mockLookupCaptionFileByMd5NotFound,
-  mockUploadCaptionFile,
+  mockCreateFile,
+  mockGetUploadFile,
+  mockLookupFileByMd5,
+  mockLookupFileByMd5NotFound,
 } from "../../../test-fixtures/network.js";
 import { SyncCaption } from "./SyncCaption.js";
 
@@ -49,8 +49,9 @@ describe("SyncCaption", async () => {
       describe(".create()", () => {
         test("uses matching data when file matches md5", async () => {
           server.use(
-            mockLookupCaptionFileByMd5({
+            mockLookupFileByMd5({
               md5: video!.md5,
+              type: "caption",
               fixture: video!,
             }),
           );
@@ -63,13 +64,13 @@ describe("SyncCaption", async () => {
         });
         test("isComplete() returns false when not created", async () => {
           server.use(
-            mockLookupCaptionFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: video!.md5,
             }),
-            mockCreateCaptionFile({
-              complete: false,
+            mockCreateFile({
+              status: "created",
               id: "123",
-              filename: "test.mp4",
+              type: "caption",
               fixture: video!,
             }),
           );
@@ -83,13 +84,13 @@ describe("SyncCaption", async () => {
 
         test("isComplete() returns true when created", async () => {
           server.use(
-            mockLookupCaptionFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: video!.md5,
             }),
-            mockCreateCaptionFile({
-              complete: true,
+            mockCreateFile({
+              status: "ready",
               id: "123",
-              filename: "test.mp4",
+              type: "caption",
               fixture: video!,
             }),
           );
@@ -113,18 +114,17 @@ describe("SyncCaption", async () => {
 
         test("uploads caption", async () => {
           server.use(
-            mockLookupCaptionFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: video!.md5,
             }),
-            mockCreateCaptionFile({
-              complete: true,
+            mockCreateFile({
+              status: "created",
               id: "123",
-              filename: "test.mp4",
+              type: "caption",
               fixture: video!,
             }),
-            mockUploadCaptionFile({
+            mockGetUploadFile({
               id: "123",
-              filename: "test.mp4",
               fixture: video!,
             }),
           );
@@ -148,13 +148,13 @@ describe("SyncCaption", async () => {
 
         test("marks synced", async () => {
           server.use(
-            mockLookupCaptionFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: video!.md5,
             }),
-            mockCreateCaptionFile({
-              complete: true,
+            mockCreateFile({
+              status: "ready",
               id: "123",
-              filename: "test.mp4",
+              type: "caption",
               fixture: video!,
             }),
           );

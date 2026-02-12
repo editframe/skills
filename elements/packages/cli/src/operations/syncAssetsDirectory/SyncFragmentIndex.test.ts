@@ -2,10 +2,10 @@ import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
 import { fixture, withFixtures } from "../../../test-fixtures/fixture.js";
 import {
-  mockCreateIsobmffFile,
-  mockLookupISOBMFFFileByMd5,
-  mockLookupISOBMFFFileByMd5NotFound,
-  mockUploadIsobmffFileIndex,
+  mockCreateFile,
+  mockLookupFileByMd5,
+  mockLookupFileByMd5NotFound,
+  mockUploadFileIndex,
 } from "../../../test-fixtures/network.js";
 import { SyncFragmentIndex } from "./SyncFragmentIndex.js";
 
@@ -46,8 +46,10 @@ describe("SyncFragmentIndex", async () => {
       describe(".create()", () => {
         test("uses matching data when file matches md5", async () => {
           server.use(
-            mockLookupISOBMFFFileByMd5({
+            mockLookupFileByMd5({
               md5: video!.md5,
+              type: "video",
+              status: "created",
               fixture: video!,
             }),
           );
@@ -60,13 +62,13 @@ describe("SyncFragmentIndex", async () => {
         });
         test("isComplete() returns false when not created", async () => {
           server.use(
-            mockLookupISOBMFFFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: video!.md5,
             }),
-            mockCreateIsobmffFile({
-              complete: false,
+            mockCreateFile({
+              status: "created",
               id: "123",
-              filename: "test.mp4",
+              type: "video",
               fixture: video!,
             }),
           );
@@ -79,13 +81,13 @@ describe("SyncFragmentIndex", async () => {
         });
         test("isComplete() returns true when created", async () => {
           server.use(
-            mockLookupISOBMFFFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: video!.md5,
             }),
-            mockCreateIsobmffFile({
-              complete: true,
+            mockCreateFile({
+              status: "ready",
               id: "123",
-              filename: "test.mp4",
+              type: "video",
               fixture: video!,
             }),
           );
@@ -107,16 +109,16 @@ describe("SyncFragmentIndex", async () => {
         });
         test("uploads index", async () => {
           server.use(
-            mockLookupISOBMFFFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: video!.md5,
             }),
-            mockCreateIsobmffFile({
-              complete: true,
+            mockCreateFile({
+              status: "ready",
               id: "123",
-              filename: "test.mp4",
+              type: "video",
               fixture: video!,
             }),
-            mockUploadIsobmffFileIndex({
+            mockUploadFileIndex({
               id: "123",
             }),
           );
@@ -138,15 +140,16 @@ describe("SyncFragmentIndex", async () => {
         });
         test("marks synced", async () => {
           server.use(
-            mockLookupISOBMFFFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: video!.md5,
             }),
-            mockCreateIsobmffFile({
-              complete: true,
+            mockCreateFile({
+              status: "ready",
               id: "123",
+              type: "video",
               fixture: video!,
             }),
-            mockUploadIsobmffFileIndex({
+            mockUploadFileIndex({
               id: "123",
             }),
           );

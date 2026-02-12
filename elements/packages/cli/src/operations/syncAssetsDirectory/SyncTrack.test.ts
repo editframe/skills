@@ -2,11 +2,11 @@ import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
 import { fixture, withFixtures } from "../../../test-fixtures/fixture.js";
 import {
-  mockCreateIsobmffFile,
-  mockCreateIsobmffTrack,
-  mockGetIsobmffTrackUpload,
-  mockLookupISOBMFFFileByMd5,
-  mockLookupISOBMFFFileByMd5NotFound,
+  mockCreateFile,
+  mockCreateFileTrack,
+  mockGetFileTrackUpload,
+  mockLookupFileByMd5,
+  mockLookupFileByMd5NotFound,
 } from "../../../test-fixtures/network.js";
 import { SyncTrack } from "./SyncTrack.js";
 
@@ -33,10 +33,11 @@ describe("SyncTrack", async () => {
       describe("prepare()", () => {
         test("Uses existing ISOBMFF file if md5 matches", async () => {
           server.use(
-            mockLookupISOBMFFFileByMd5({
-              complete: true,
+            mockLookupFileByMd5({
+              status: "ready",
               id: "123",
               md5: video!.md5,
+              type: "video",
               fixture: video!,
             }),
           );
@@ -45,18 +46,18 @@ describe("SyncTrack", async () => {
             video!.md5,
           );
           await syncTrack.prepare();
-          expect(syncTrack.isoFile).toBeDefined();
+          expect(syncTrack.videoFile).toBeDefined();
         });
 
         test("Creates ISOBMFF file", async () => {
           server.use(
-            mockLookupISOBMFFFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: video!.md5,
             }),
-            mockCreateIsobmffFile({
-              complete: true,
+            mockCreateFile({
+              status: "ready",
               id: "123",
-              filename: "test.mp4",
+              type: "video",
               fixture: video!,
             }),
           );
@@ -65,18 +66,18 @@ describe("SyncTrack", async () => {
             video!.md5,
           );
           await syncTrack.prepare();
-          expect(syncTrack.isoFile).toBeDefined();
+          expect(syncTrack.videoFile).toBeDefined();
         });
 
         test("Probes track", async () => {
           server.use(
-            mockLookupISOBMFFFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: video!.md5,
             }),
-            mockCreateIsobmffFile({
-              complete: true,
+            mockCreateFile({
+              status: "ready",
               id: "123",
-              filename: "test.mp4",
+              type: "video",
               fixture: video!,
             }),
           );
@@ -100,7 +101,7 @@ describe("SyncTrack", async () => {
 
         test.skip("throws when track has bad duration", async () => {});
         test.skip("throws when track has bad codec_type", async () => {});
-        test.skip("throws when no isoFile exists", async () => {});
+        test.skip("throws when no videoFile exists", async () => {});
       });
 
       describe(".create()", () => {
@@ -114,16 +115,16 @@ describe("SyncTrack", async () => {
 
         test("isComplete() returns false when not complete", async () => {
           server.use(
-            mockLookupISOBMFFFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: video!.md5,
             }),
-            mockCreateIsobmffFile({
-              complete: true,
+            mockCreateFile({
+              status: "ready",
               id: "123",
-              filename: "test.mp4",
+              type: "video",
               fixture: video!,
             }),
-            mockCreateIsobmffTrack({
+            mockCreateFileTrack({
               complete: false,
               id: "track-1",
               fileId: "123",
@@ -142,16 +143,16 @@ describe("SyncTrack", async () => {
 
         test("isComplete() returns true when complete", async () => {
           server.use(
-            mockLookupISOBMFFFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: video!.md5,
             }),
-            mockCreateIsobmffFile({
-              complete: true,
+            mockCreateFile({
+              status: "ready",
               id: "123",
-              filename: "test.mp4",
+              type: "video",
               fixture: video!,
             }),
-            mockCreateIsobmffTrack({
+            mockCreateFileTrack({
               complete: true,
               id: "track-1",
               fileId: "123",
@@ -179,22 +180,22 @@ describe("SyncTrack", async () => {
         });
         test("uploads track", async () => {
           server.use(
-            mockLookupISOBMFFFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: video!.md5,
             }),
-            mockCreateIsobmffFile({
-              complete: true,
+            mockCreateFile({
+              status: "ready",
               id: "123",
-              filename: "test.mp4",
+              type: "video",
               fixture: video!,
             }),
-            mockCreateIsobmffTrack({
+            mockCreateFileTrack({
               complete: true,
               id: "track-1",
               fileId: "123",
               fixture: video!,
             }),
-            mockGetIsobmffTrackUpload({
+            mockGetFileTrackUpload({
               complete: true,
               id: "track-1",
               trackId: 1,
@@ -220,15 +221,16 @@ describe("SyncTrack", async () => {
         });
         test("marks synced", async () => {
           server.use(
-            mockLookupISOBMFFFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: video!.md5,
             }),
-            mockCreateIsobmffFile({
-              complete: true,
+            mockCreateFile({
+              status: "ready",
               id: "123",
+              type: "video",
               fixture: video!,
             }),
-            mockCreateIsobmffTrack({
+            mockCreateFileTrack({
               complete: true,
               id: "track-1",
               fileId: "123",

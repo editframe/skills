@@ -2,13 +2,11 @@ import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, it } from "vitest";
 import { fixture, withFixtures } from "../../test-fixtures/fixture.js";
 import {
-  mockCreateImageFile,
-  mockCreateIsobmffFile,
-  mockCreateIsobmffTrack,
-  mockGetUploadImageFile,
-  mockLookupImageFileByMd5NotFound,
-  mockLookupISOBMFFFileByMd5NotFound,
-  mockUploadIsobmffFileIndex,
+  mockCreateFile,
+  mockCreateFileTrack,
+  mockGetUploadFile,
+  mockLookupFileByMd5NotFound,
+  mockUploadFileIndex,
 } from "../../test-fixtures/network.js";
 
 const server = setupServer();
@@ -34,13 +32,13 @@ describe("syncAssetsDirectory", () => {
           cacheImage,
         }) => {
           server.use(
-            mockLookupImageFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: testPng!.md5,
             }),
-            mockCreateImageFile({
-              complete: true,
+            mockCreateFile({
+              status: "ready",
               id: "123",
-              filename: "test.png",
+              type: "image",
               fixture: testPng!,
             }),
           );
@@ -67,19 +65,17 @@ describe("syncAssetsDirectory", () => {
           syncAssetsDirectory,
         }) => {
           server.use(
-            mockLookupImageFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: testPng!.md5,
             }),
-            mockCreateImageFile({
-              complete: false,
+            mockCreateFile({
+              status: "created",
               id: "123",
-              filename: "test.png",
+              type: "image",
               fixture: testPng!,
             }),
-            mockGetUploadImageFile({
-              complete: true,
+            mockGetUploadFile({
               id: "123",
-              filename: "test.png",
               fixture: testPng!,
             }),
           );
@@ -106,31 +102,27 @@ describe("syncAssetsDirectory", () => {
           expectInfoFileContent,
         }) => {
           server.use(
-            mockLookupImageFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: testPng!.md5,
             }),
-            mockCreateImageFile({
-              complete: false,
+            mockCreateFile({
+              status: "created",
               id: "123",
-              filename: "test.png",
+              type: "image",
               fixture: testPng!,
             }),
-            mockGetUploadImageFile({
-              complete: true,
+            mockGetUploadFile({
               id: "123",
-              filename: "test.png",
               fixture: testPng!,
             }),
-            mockCreateImageFile({
-              complete: false,
+            mockCreateFile({
+              status: "created",
               id: "123",
-              filename: "test.png",
+              type: "image",
               fixture: test2Png!,
             }),
-            mockGetUploadImageFile({
-              complete: true,
+            mockGetUploadFile({
               id: "123",
-              filename: "test.png",
               fixture: test2Png!,
             }),
           );
@@ -172,39 +164,36 @@ describe("syncAssetsDirectory", () => {
           expectCacheFiles,
         }) => {
           const creationArgs = {
-            complete: true,
+            status: "ready" as const,
             id: "123",
-            filename: "test.mp4",
+            type: "video" as const,
             fixture: testMp4!,
           };
           server.use(
-            mockLookupISOBMFFFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: testMp4!.md5,
             }),
 
-            mockCreateIsobmffFile(creationArgs),
+            mockCreateFile(creationArgs),
 
-            mockCreateIsobmffTrack({
+            mockCreateFileTrack({
               complete: true,
               id: "track-1",
               fileId: "123",
-              filename: "test.mp4",
               fixture: testMp4!,
             }),
 
-            mockCreateIsobmffFile(creationArgs),
-            mockCreateIsobmffTrack({
+            mockCreateFile(creationArgs),
+            mockCreateFileTrack({
               complete: true,
               fileId: "123",
               id: "track-2",
-              filename: "test.mp4",
               fixture: testMp4!,
             }),
 
-            mockCreateIsobmffFile(creationArgs),
-            mockUploadIsobmffFileIndex({
+            mockCreateFile(creationArgs),
+            mockUploadFileIndex({
               id: "123",
-              complete: true,
             }),
           );
           await generateTrack(testMp4!, 1);
@@ -263,36 +252,33 @@ describe("syncAssetsDirectory", () => {
           generateTrack,
         }) => {
           const creationArgs = {
-            complete: false,
+            status: "created" as const,
             id: "123",
-            filename: "test.mp4",
+            type: "video" as const,
             fixture: testMp4!,
           };
           server.use(
-            mockLookupISOBMFFFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: testMp4!.md5,
             }),
-            mockCreateIsobmffFile(creationArgs),
-            mockUploadIsobmffFileIndex({
+            mockCreateFile(creationArgs),
+            mockUploadFileIndex({
               id: "123",
-              complete: true,
             }),
 
-            mockCreateIsobmffFile(creationArgs),
-            mockCreateIsobmffTrack({
+            mockCreateFile(creationArgs),
+            mockCreateFileTrack({
               complete: true,
               id: "track-1",
               fileId: "123",
-              filename: "test.mp4",
               fixture: testMp4!,
             }),
 
-            mockCreateIsobmffFile(creationArgs),
-            mockCreateIsobmffTrack({
+            mockCreateFile(creationArgs),
+            mockCreateFileTrack({
               complete: true,
               fileId: "123",
               id: "track-2",
-              filename: "test.mp4",
               fixture: testMp4!,
             }),
           );
@@ -350,89 +336,76 @@ describe("syncAssetsDirectory", () => {
           expectInfoFileContent,
           expectCacheFiles,
         }) => {
+          const fileCreationArgs = {
+            status: "ready" as const,
+            id: "123",
+            type: "video" as const,
+          };
           server.use(
-            mockLookupISOBMFFFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: testMp4!.md5,
             }),
-            mockCreateIsobmffFile({
-              complete: true,
-              id: "123",
-              filename: "test.mp4",
+            mockCreateFile({
+              ...fileCreationArgs,
               fixture: testMp4!,
             }),
-            mockCreateIsobmffFile({
-              complete: true,
-              id: "123",
-              filename: "test.mp4",
+            mockCreateFile({
+              ...fileCreationArgs,
               fixture: testMp4!,
             }),
-            mockCreateIsobmffFile({
-              complete: true,
-              id: "123",
-              filename: "test.mp4",
+            mockCreateFile({
+              ...fileCreationArgs,
               fixture: testMp4!,
             }),
 
-            mockCreateIsobmffTrack({
+            mockCreateFileTrack({
               complete: true,
               id: "track-1",
               fileId: "123",
-              filename: "test.mp4",
               fixture: test2Mp4!,
             }),
 
-            mockCreateIsobmffTrack({
+            mockCreateFileTrack({
               complete: true,
               id: "track-2",
               fileId: "123",
-              filename: "test.mp4",
               fixture: test2Mp4!,
             }),
 
-            mockUploadIsobmffFileIndex({
+            mockUploadFileIndex({
               id: "123",
-              complete: true,
             }),
           );
           server.use(
-            mockCreateIsobmffFile({
-              complete: true,
-              id: "123",
-              filename: "test.mp4",
+            mockCreateFile({
+              ...fileCreationArgs,
               fixture: testMp4!,
             }),
-            mockCreateIsobmffFile({
-              complete: true,
-              id: "123",
-              filename: "test.mp4",
+            mockCreateFile({
+              ...fileCreationArgs,
               fixture: testMp4!,
             }),
-            mockCreateIsobmffFile({
-              complete: true,
-              id: "123",
-              filename: "test.mp4",
+            mockCreateFile({
+              ...fileCreationArgs,
               fixture: testMp4!,
             }),
 
-            mockCreateIsobmffTrack({
+            mockCreateFileTrack({
               complete: true,
               id: "track-1",
               fileId: "123",
-              filename: "test.mp4",
               fixture: test2Mp4!,
             }),
 
-            mockCreateIsobmffTrack({
+            mockCreateFileTrack({
               complete: true,
               id: "track-2",
               fileId: "123",
-              filename: "test.mp4",
               fixture: test2Mp4!,
             }),
 
-            mockUploadIsobmffFileIndex({
+            mockUploadFileIndex({
               id: "123",
-              complete: true,
             }),
           );
 

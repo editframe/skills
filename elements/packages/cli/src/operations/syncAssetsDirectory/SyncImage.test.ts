@@ -2,10 +2,10 @@ import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
 import { fixture, withFixtures } from "../../../test-fixtures/fixture.js";
 import {
-  mockCreateImageFile,
-  mockGetUploadImageFile,
-  mockLookupImageFileByMd5,
-  mockLookupImageFileByMd5NotFound,
+  mockCreateFile,
+  mockGetUploadFile,
+  mockLookupFileByMd5,
+  mockLookupFileByMd5NotFound,
 } from "../../../test-fixtures/network.js";
 import { SyncImage } from "./SyncImage.js";
 
@@ -49,8 +49,9 @@ describe("SyncImage", async () => {
         });
         test("Skips creation if image file matches md5", async () => {
           server.use(
-            mockLookupImageFileByMd5({
+            mockLookupFileByMd5({
               md5: image!.md5,
+              type: "image",
               fixture: image!,
             }),
           );
@@ -61,13 +62,13 @@ describe("SyncImage", async () => {
         });
         test("isComplete() returns false when not created", async () => {
           server.use(
-            mockLookupImageFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: image!.md5,
             }),
-            mockCreateImageFile({
-              complete: false,
+            mockCreateFile({
+              status: "created",
               id: "123",
-              filename: "test.mp4",
+              type: "image",
               fixture: image!,
             }),
           );
@@ -78,13 +79,13 @@ describe("SyncImage", async () => {
         });
         test("isComplete() returns true when created", async () => {
           server.use(
-            mockLookupImageFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: image!.md5,
             }),
-            mockCreateImageFile({
-              complete: true,
+            mockCreateFile({
+              status: "ready",
               id: "123",
-              filename: "test.mp4",
+              type: "image",
               fixture: image!,
             }),
           );
@@ -102,16 +103,16 @@ describe("SyncImage", async () => {
         });
         test("uploads image", async () => {
           server.use(
-            mockLookupImageFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: image!.md5,
             }),
-            mockCreateImageFile({
-              complete: false,
+            mockCreateFile({
+              status: "created",
               id: "123",
-              filename: "test.mp4",
+              type: "image",
               fixture: image!,
             }),
-            mockGetUploadImageFile({
+            mockGetUploadFile({
               id: "123",
               fixture: image!,
             }),
@@ -129,15 +130,16 @@ describe("SyncImage", async () => {
         });
         test("marks synced", async () => {
           server.use(
-            mockLookupImageFileByMd5NotFound({
+            mockLookupFileByMd5NotFound({
               md5: image!.md5,
             }),
-            mockCreateImageFile({
-              complete: true,
+            mockCreateFile({
+              status: "ready",
               id: "123",
+              type: "image",
               fixture: image!,
             }),
-            mockGetUploadImageFile({
+            mockGetUploadFile({
               id: "123",
               fixture: image!,
             }),
