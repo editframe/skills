@@ -85,7 +85,11 @@ select_permissions:
         - org_id
         - role
         - updated_at
-      filter: {}
+      filter:
+        org:
+          memberships:
+            user_id:
+              _eq: X-Hasura-user-id
     comment: ""
   - role: user
     permission:
@@ -98,9 +102,12 @@ select_permissions:
         - updated_at
         - creator_id
         - id
-        - invite_token
         - org_id
-      filter: {}
+      filter:
+        org:
+          memberships:
+            user_id:
+              _eq: X-Hasura-user-id
       allow_aggregations: true
     comment: ""
 update_permissions:
@@ -125,7 +132,7 @@ update_permissions:
               - user_id:
                   _eq: X-Hasura-User-Id
       set:
-        creator_id: x-hasura-X-Hasura-User-Id
+        creator_id: X-Hasura-User-Id
     comment: ""
 delete_permissions:
   - role: org-admin

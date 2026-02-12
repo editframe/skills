@@ -17,8 +17,8 @@ import type { Route } from "./+types/update-password";
 import { requireNoSession } from "@/util/requireSession.server";
 
 const schema = z.object({
-  password: z.string(),
-  password_confirmation: z.string(),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  password_confirmation: z.string().min(8, "Password must be at least 8 characters"),
   reset_token: z.string(),
 });
 

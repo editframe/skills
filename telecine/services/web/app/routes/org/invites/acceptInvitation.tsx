@@ -194,7 +194,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     await db
       .updateTable("identity.invites")
       .set({
-        accepted_at: new Date(),
+        denied_at: sql`now()`,
       })
       .where("id", "=", invite.id)
       .execute();

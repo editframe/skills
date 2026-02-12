@@ -414,6 +414,24 @@ rsvpTest(
     await expect(page.getByText("Welcome has-invitation-")).toBeVisible();
   },
 );
+
+rsvpTest(
+  "Deny sets denied_at, not accepted_at",
+  async ({ page, signInAs, invitedUser, userInvitation }) => {
+    await signInAs(invitedUser);
+    await page.goto(`/invitation/${userInvitation.invite_token}`);
+    await page.getByRole("button", { name: "Deny" }).click();
+
+    const invite = await db
+      .selectFrom("identity.invites")
+      .where("id", "=", userInvitation.id)
+      .select(["accepted_at", "denied_at"])
+      .executeTakeFirst();
+
+    expect(invite!.denied_at).not.toBeNull();
+    expect(invite!.accepted_at).toBeNull();
+  },
+);
 rsvpTest(
   "An authenticated user can remove an member",
   async ({ page, signInAs, invitedUser, userInvitation, orgInvitedTo }) => {
@@ -535,6 +553,25 @@ rsvpTest(
     await page.goto(`/invitation/${userInvitation.invite_token}`);
     await expect(
       page.getByRole("link", { name: "Login to accept" }),
+    ).toBeVisible();
+  },
+);
+
+rsvpTest(
+  "Expired invite (>30 days) is not found",
+  async ({ page, signInAs, invitedUser, userInvitation }) => {
+    await db
+      .updateTable("identity.invites")
+      .set({ created_at: sql`now() - interval '31 days'` })
+      .where("id", "=", userInvitation.id)
+      .execute();
+
+    await signInAs(invitedUser);
+    await page.goto(`/invitation/${userInvitation.invite_token}`);
+    await expect(
+      page.getByText(
+        "The invitation you are trying to access does not exist.",
+      ),
     ).toBeVisible();
   },
 );

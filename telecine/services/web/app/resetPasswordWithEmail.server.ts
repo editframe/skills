@@ -23,12 +23,16 @@ export async function resetPasswordUserWithPassword(emailAddress: string) {
     .executeTakeFirst();
 
   if (!passwordReset) {
-    throw new Error("Failed to reset password");
+    logger.info(
+      { emailAddress },
+      "Password reset not created: email not found or valid reset already pending",
+    );
+    return null;
   }
 
   return {
     emailAddress,
-    reset_token: passwordReset?.reset_token,
+    reset_token: passwordReset.reset_token,
   };
 }
 

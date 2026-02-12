@@ -118,9 +118,8 @@ export async function createSessionCookie(
   for (const key in sessionInfo) {
     session.set(key, sessionInfo[key as keyof typeof sessionInfo]);
   }
-  return commitSession(
-    session /** TODO: SET SHORT-LIVED EXPIRES FOR RENDER COOKIES */,
-  );
+  const maxAge = 60 * 60 * 24 * 7; // 7 days
+  return commitSession(session, { maxAge });
 }
 
 const getHeader = <Header extends keyof IncomingHttpHeaders>(
