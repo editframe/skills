@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Link } from "react-router";
 import { CodeBlock } from "~/components/CodeBlock";
+import { MermaidDiagram } from "~/components/MermaidDiagram";
 import { Preview, FitScale, FocusOverlay, Filmstrip } from "@editframe/react";
 import { ApiReference } from "~/components/skills/ApiReference";
 import type { ApiMetadata } from "~/utils/skills.server";
@@ -98,7 +99,7 @@ function LiveDemo({ code }: { code: string }) {
   );
 }
 
-// --- SkillsPreBlock: Detects html live blocks and routes to LiveDemo ---
+// --- SkillsPreBlock: Detects html live blocks and mermaid diagrams ---
 
 function SkillsPreBlock(props: React.HTMLAttributes<HTMLPreElement>) {
   const childArray = React.Children.toArray(props.children);
@@ -109,6 +110,7 @@ function SkillsPreBlock(props: React.HTMLAttributes<HTMLPreElement>) {
     const meta = (codeProps["data-meta"] as string) || "";
     const className = (codeProps.className as string) || "";
     const isHtml = className.includes("language-html");
+    const isMermaid = className.includes("language-mermaid");
     const isLive = meta.includes("live");
 
     if (isHtml && isLive) {
@@ -117,6 +119,15 @@ function SkillsPreBlock(props: React.HTMLAttributes<HTMLPreElement>) {
         typeof codeContent === "string" ? codeContent.trim() : "";
       if (code) {
         return <LiveDemo code={code} />;
+      }
+    }
+
+    if (isMermaid) {
+      const codeContent = codeProps.children;
+      const chart =
+        typeof codeContent === "string" ? codeContent.trim() : "";
+      if (chart) {
+        return <MermaidDiagram chart={chart} />;
       }
     }
   }

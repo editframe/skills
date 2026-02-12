@@ -114,6 +114,7 @@ The web renderer detects markdown patterns and upgrades them to interactive comp
 | Pattern | Web rendering | LLM output |
 |---------|--------------|------------|
 | `` ```html live `` | Interactive preview + filmstrip | Plain code block |
+| `` ```mermaid `` | Rendered Mermaid diagram | Plain code block |
 | `> **Note:** ...` | Blue callout box | Standard blockquote |
 | `> **Warning:** ...` | Gold callout box | Standard blockquote |
 | Attribute/Type/Description table | Enhanced PropertyDoc styling | Standard table |
