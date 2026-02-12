@@ -48,10 +48,10 @@ Unified API for uploading, processing, and managing all media file types.
 ## File Types
 
 | Type | Accepted formats | Max size | Auto-processing |
-|------|-----------------|----------|-----------------|
-| `video` | MP4, MOV, WebM, MKV | 1GB | Processed to ISOBMFF after upload |
-| `image` | JPEG, PNG, WebP, SVG | 16MB | Ready immediately |
-| `caption` | VTT, SRT | 2MB | Ready immediately |
+|---------|------------------|----------|-------------------------------------|
+| video   | MP4, MOV, WebM, MKV | 1GB  | Processed to ISOBMFF after upload   |
+| image   | JPEG, PNG, WebP, SVG | 16MB | Ready immediately                   |
+| caption | VTT, SRT             | 2MB  | Ready immediately                   |
 
 ## File Lifecycle
 

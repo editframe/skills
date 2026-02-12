@@ -71,16 +71,16 @@ All file types (video, image, caption) use a single set of endpoints:
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/api/v1/files` | POST | Create file record |
-| `/api/v1/files/:id` | GET | Get file detail |
-| `/api/v1/files/:id/upload` | GET/POST | Check upload status / upload chunk |
-| `/api/v1/files/:id/delete` | POST | Delete file |
-| `/api/v1/files/:id/index` | GET | Get fragment index (video only) |
-| `/api/v1/files/:id/tracks/:trackId` | GET | Get track data (video only) |
-| `/api/v1/files/:id/transcribe` | POST | Start transcription (video only) |
-| `/api/v1/files/:id/transcription` | GET | Get transcription status |
-| `/api/v1/files/:id/progress` | GET | Stream processing progress (SSE) |
-| `/api/v1/files/md5/:md5` | GET | Lookup file by MD5 hash |
+| /api/v1/files | POST | Create file record |
+| /api/v1/files/:id | GET | Get file detail |
+| /api/v1/files/:id/upload | GET/POST | Check upload status or upload chunk |
+| /api/v1/files/:id/delete | POST | Delete file |
+| /api/v1/files/:id/index | GET | Get fragment index (video only) |
+| /api/v1/files/:id/tracks/:trackId | GET | Get track data (video only) |
+| /api/v1/files/:id/transcribe | POST | Start transcription (video only) |
+| /api/v1/files/:id/transcription | GET | Get transcription status |
+| /api/v1/files/:id/progress | GET | Stream processing progress (SSE) |
+| /api/v1/files/md5/:md5 | GET | Lookup file by MD5 hash |
 
 The file `type` field determines processing behavior:
 - `"video"` — uploaded files are automatically processed to ISOBMFF format
