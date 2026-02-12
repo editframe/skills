@@ -2,22 +2,34 @@
 title: Waveform Element
 description: Audio waveform visualization with multiple display modes
 type: reference
-topic: components
-order: 65
+nav:
+  parent: "Elements / Text & Graphics"
+  priority: 32
+  related: ["audio"]
+api:
+  attributes:
+    - name: target
+      type: string
+      required: true
+      description: ID of ef-audio or ef-video element
+    - name: mode
+      type: string
+      default: "bars"
+      description: Display mode
+      values: ["bars", "roundBars", "line", "curve", "wave", "spikes", "bricks", "pixel"]
+    - name: bar-spacing
+      type: number
+      default: 0.5
+      description: Spacing between bars
+    - name: line-width
+      type: number
+      default: 4
+      description: Line width for line/curve modes
 ---
 
 # ef-waveform
 
 Audio waveform visualization.
-
-## Attributes
-
-| Attribute | Type | Default | Description |
-|-----------|------|---------|-------------|
-| target | string | - | ID of `ef-audio` or `ef-video` element |
-| mode | string | `"bars"` | Display mode: `"bars"` \| `"roundBars"` \| `"line"` \| `"curve"` \| `"wave"` \| `"spikes"` \| `"bricks"` \| `"pixel"` |
-| bar-spacing | number | 0.5 | Spacing between bars |
-| line-width | number | 4 | Line width for line/curve modes |
 
 ## Basic Usage
 

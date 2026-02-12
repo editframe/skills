@@ -2,8 +2,21 @@
 title: Text Component
 description: Animated text with word-level control in React
 type: reference
-topic: components
-order: 63
+nav:
+  parent: "Components / Text & Graphics"
+  priority: 30
+  related: ["captions"]
+api:
+  properties:
+    - name: duration
+      type: string
+      description: How long text displays (e.g., "5s", "1000ms")
+    - name: className
+      type: string
+      description: CSS classes for styling
+    - name: children
+      type: React.ReactNode
+      description: Text content or TextSegment components
 ---
 
 # Text
@@ -15,12 +28,6 @@ Animated text with word-level control.
 ```tsx
 import { Text, TextSegment } from "@editframe/react";
 ```
-
-## Props
-
-- `duration` - How long text displays - e.g. `"5s"`, `"1000ms"`
-- `className` - CSS classes for styling
-- All standard span/div attributes
 
 ## Basic Usage
 

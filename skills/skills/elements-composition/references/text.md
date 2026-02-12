@@ -2,22 +2,32 @@
 title: Text Element
 description: Animated text with character, word, and line splitting
 type: reference
-topic: components
-order: 63
+nav:
+  parent: "Elements / Text & Graphics"
+  priority: 30
+  related: ["captions"]
+api:
+  attributes:
+    - name: split
+      type: string
+      default: "word"
+      description: Split mode
+      values: ["line", "word", "char"]
+    - name: stagger
+      type: timestring
+      description: Delay between segments (e.g., "100ms")
+    - name: easing
+      type: string
+      default: "linear"
+      description: Easing function
+    - name: duration
+      type: timestring
+      description: Total duration
 ---
 
 # ef-text
 
 Animated text with character/word/line splitting.
-
-## Attributes
-
-| Attribute | Type | Default | Description |
-|-----------|------|---------|-------------|
-| split | string | `"word"` | Split mode: `"line"` \| `"word"` \| `"char"` |
-| stagger | timestring | - | Delay between segments (e.g., `"100ms"`) |
-| easing | string | `"linear"` | Easing function |
-| duration | timestring | - | Total duration |
 
 ## Basic (No Animation)
 

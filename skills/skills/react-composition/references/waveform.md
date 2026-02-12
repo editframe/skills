@@ -2,8 +2,22 @@
 title: Waveform Component
 description: Audio visualization component for React compositions
 type: reference
-topic: components
-order: 65
+nav:
+  parent: "Components / Text & Graphics"
+  priority: 32
+  related: ["audio"]
+api:
+  properties:
+    - name: for
+      type: string
+      required: true
+      description: ID of the audio element to visualize
+    - name: className
+      type: string
+      description: CSS classes for styling
+    - name: style
+      type: React.CSSProperties
+      description: Inline styles (useful for colors)
 ---
 
 # Waveform
@@ -15,12 +29,6 @@ Audio visualization component.
 ```tsx
 import { Waveform } from "@editframe/react";
 ```
-
-## Props
-
-- `for` - ID of the audio element to visualize (required)
-- `className` - CSS classes for styling
-- `style` - Inline styles (useful for colors)
 
 ## Basic Usage
 

@@ -2,8 +2,10 @@
 title: Time Model
 description: How time propagation and duration calculation work in compositions
 type: explanation
-topic: core-concepts
-order: 20
+nav:
+  parent: "Concepts"
+  priority: 11
+  related: ["timegroup-modes"]
 ---
 
 # Time Model

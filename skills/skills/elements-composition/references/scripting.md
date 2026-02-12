@@ -2,8 +2,10 @@
 title: Scripting
 description: Add dynamic JavaScript behavior to timegroups with initializers and frame tasks
 type: reference
-topic: advanced
-order: 121
+nav:
+  parent: "Guides / Advanced Techniques"
+  priority: 55
+  related: ["timegroup"]
 ---
 
 # Scripting
@@ -33,7 +35,7 @@ Set up behavior that runs once per instance (prime timeline and render clones).
 ### Constraints
 
 - **Must be synchronous** - No async/await, no Promise return
-- **Must complete quickly** - <100ms (error thrown) or <10ms (warning logged)
+- **Must complete quickly** - Less than 100ms (error thrown) or less than 10ms (warning logged)
 - **Register callbacks only** - Don't do expensive work in initializer
 
 ### Timing

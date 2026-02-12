@@ -2,6 +2,8 @@ import * as React from "react";
 import { Link } from "react-router";
 import { CodeBlock } from "~/components/CodeBlock";
 import { Preview, FitScale, FocusOverlay, Filmstrip } from "@editframe/react";
+import { ApiReference } from "~/components/skills/ApiReference";
+import type { ApiMetadata } from "~/utils/skills.server";
 import clsx from "clsx";
 import { useTheme } from "~/hooks/useTheme";
 
@@ -214,8 +216,8 @@ function SkillsBlockquote(
 
 // --- Export: getSkillsMDXComponents ---
 
-export function getSkillsMDXComponents(skillName: string) {
-  return {
+export function getSkillsMDXComponents(skillName: string, api?: ApiMetadata) {
+  const components: Record<string, any> = {
     a: (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
       <SkillLink {...props} data-skill-name={skillName} />
     ),
@@ -228,6 +230,17 @@ export function getSkillsMDXComponents(skillName: string) {
     blockquote: (props: React.BlockquoteHTMLAttributes<HTMLQuoteElement>) => (
       <SkillsBlockquote {...props} />
     ),
-    // TODO: Tutorial step indicators — detect ### Step N: headings and add step-indicator styling
   };
+
+  // If API metadata exists, inject ApiReference component after h1
+  if (api) {
+    components.h1 = (props: React.HTMLAttributes<HTMLHeadingElement>) => (
+      <>
+        <h1 {...props} />
+        <ApiReference api={api} />
+      </>
+    );
+  }
+
+  return components;
 }

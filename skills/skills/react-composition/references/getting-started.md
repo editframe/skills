@@ -2,7 +2,9 @@
 title: Getting Started
 description: Create a new React-based Editframe project with templates and configuration
 type: tutorial
-order: 1
+nav:
+  parent: "Quick Start"
+  priority: 0
 ---
 
 # Getting Started

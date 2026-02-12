@@ -2,22 +2,29 @@
 title: Captions Element
 description: Synchronized captions with word-level highlighting
 type: reference
-topic: components
-order: 64
+nav:
+  parent: "Elements / Text & Graphics"
+  priority: 31
+  related: ["text", "transcription"]
+api:
+  attributes:
+    - name: target
+      type: string
+      description: Selector for ef-video or ef-audio element
+    - name: captions-script
+      type: string
+      description: ID of script element with JSON captions
+    - name: captions-src
+      type: string
+      description: URL to JSON captions file
+    - name: captions-data
+      type: object
+      description: Direct captions data object
 ---
 
 # ef-captions
 
 Synchronized captions with word highlighting.
-
-## Attributes
-
-| Attribute | Type | Default | Description |
-|-----------|------|---------|-------------|
-| target | string | - | Selector for `ef-video` or `ef-audio` element |
-| captions-script | string | - | ID of `<script>` element with JSON captions |
-| captions-src | string | - | URL to JSON captions file |
-| captions-data | object | - | Direct captions data object |
 
 ## Basic Usage
 

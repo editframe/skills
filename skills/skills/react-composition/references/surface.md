@@ -2,8 +2,19 @@
 title: Surface Component
 description: Mirror/reflect another element's content in React compositions
 type: reference
-topic: components
-order: 66
+nav:
+  parent: "Components / Layout"
+  priority: 21
+  related: ["timegroup"]
+api:
+  properties:
+    - name: for
+      type: string
+      required: true
+      description: ID of the element to mirror
+    - name: className
+      type: string
+      description: CSS classes for styling
 ---
 
 # Surface
@@ -15,12 +26,6 @@ Mirror/reflect another element's content.
 ```tsx
 import { Surface } from "@editframe/react";
 ```
-
-## Props
-
-- `for` - ID of the element to mirror (required)
-- `className` - CSS classes for styling
-- All standard div attributes
 
 ## Basic Usage
 

@@ -2,8 +2,15 @@
 title: Timegroup Modes
 description: How the four timegroup modes work and when to use each
 type: explanation
-topic: timegroup
-order: 11
+nav:
+  parent: "Concepts"
+  priority: 10
+  related: ["timegroup", "sequencing"]
+track: "layout-mastery"
+track_step: 2
+track_title: "Understanding Timeline Modes"
+prerequisites: ["timegroup"]
+next_steps: ["sequencing"]
 ---
 
 # Timegroup Modes

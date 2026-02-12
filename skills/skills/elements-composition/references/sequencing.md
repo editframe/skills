@@ -2,8 +2,14 @@
 title: Sequencing Scenes
 description: How to create sequential scene playback with cuts and transitions
 type: how-to
-topic: guides
-order: 31
+nav:
+  parent: "Guides / Layout & Timing"
+  priority: 20
+  related: ["timegroup-modes", "transitions"]
+track: "layout-mastery"
+track_step: 3
+track_title: "Building Sequences"
+prerequisites: ["timegroup", "timegroup-modes"]
 ---
 
 # Sequencing Scenes

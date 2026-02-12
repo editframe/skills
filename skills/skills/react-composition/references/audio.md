@@ -2,8 +2,35 @@
 title: Audio Component
 description: Add audio tracks with volume control and trimming in React
 type: reference
-topic: components
-order: 61
+nav:
+  parent: "Components / Media"
+  priority: 11
+  related: ["video", "waveform"]
+api:
+  properties:
+    - name: src
+      type: string
+      required: true
+      description: Audio file URL
+    - name: sourceIn
+      type: string
+      description: Absolute start time (e.g., "5s", "1000ms")
+    - name: sourceOut
+      type: string
+      description: Absolute end time (e.g., "10s", "5000ms")
+    - name: trimStart
+      type: string
+      description: Relative trim from start (e.g., "2s")
+    - name: trimEnd
+      type: string
+      description: Relative trim from end (e.g., "3s")
+    - name: volume
+      type: number
+      default: 1
+      description: Volume level (0.0 to 1.0)
+    - name: id
+      type: string
+      description: Unique identifier for the audio element
 ---
 
 # Audio
@@ -15,16 +42,6 @@ Add audio tracks with volume control and trimming.
 ```tsx
 import { Audio } from "@editframe/react";
 ```
-
-## Props
-
-- `src` - Audio file URL (required)
-- `sourceIn` - Absolute start time - e.g. `"5s"`, `"1000ms"`
-- `sourceOut` - Absolute end time - e.g. `"10s"`, `"5000ms"`
-- `trimStart` - Relative trim from start - e.g. `"2s"`
-- `trimEnd` - Relative trim from end - e.g. `"3s"`
-- `volume` - Volume level - number (0-1), default 1
-- `id` - Unique identifier for the audio element
 
 ## Basic Usage
 

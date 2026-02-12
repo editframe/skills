@@ -107,6 +107,17 @@ body {
   top: 0;
 }
 
+/* Fix code block line styling */
+.code-block-clean code {
+  display: inline-block !important;
+  white-space: pre !important;
+  min-width: 100% !important;
+}
+
+.code-block-clean code > span {
+  display: block !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;

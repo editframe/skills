@@ -2,8 +2,10 @@
 title: CSS Variables
 description: Dynamic CSS variables for time-based animations and progress tracking in React
 type: reference
-topic: advanced
-order: 121
+nav:
+  parent: "Advanced"
+  priority: 51
+  related: ["transitions", "timegroup"]
 ---
 
 # CSS Variables

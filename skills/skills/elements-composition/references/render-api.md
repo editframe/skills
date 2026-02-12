@@ -2,8 +2,9 @@
 title: Render API
 description: Render compositions to video locally using the Editframe CLI
 type: reference
-topic: advanced
-order: 122
+nav:
+  parent: "Guides / Advanced Techniques"
+  priority: 60
 ---
 
 # Local Rendering

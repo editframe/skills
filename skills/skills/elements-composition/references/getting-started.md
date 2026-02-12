@@ -2,7 +2,13 @@
 title: Getting Started
 description: Create a new Editframe Elements project with templates and asset setup
 type: tutorial
-order: 1
+nav:
+  parent: "Quick Start"
+  priority: 1
+track: "getting-started"
+track_step: 1
+track_title: "Create Your First Project"
+next_steps: ["video"]
 ---
 
 # Getting Started

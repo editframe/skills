@@ -2,8 +2,22 @@
 title: Image Component
 description: Display static images in React compositions with CSS positioning
 type: reference
-topic: components
-order: 62
+nav:
+  parent: "Components / Media"
+  priority: 12
+  related: ["video", "surface"]
+api:
+  properties:
+    - name: src
+      type: string
+      required: true
+      description: Image file URL
+    - name: alt
+      type: string
+      description: Alt text for accessibility
+    - name: className
+      type: string
+      description: CSS classes for styling
 ---
 
 # Image
@@ -15,13 +29,6 @@ Display static images in your composition.
 ```tsx
 import { Image } from "@editframe/react";
 ```
-
-## Props
-
-- `src` - Image file URL (required)
-- `alt` - Alt text for accessibility
-- `className` - CSS classes for styling
-- All standard img element attributes
 
 ## Basic Usage
 

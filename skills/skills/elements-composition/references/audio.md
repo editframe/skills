@@ -2,27 +2,47 @@
 title: Audio Element
 description: Audio element for music, voiceover, and sound effects with trimming and volume control
 type: reference
-topic: components
-order: 61
+nav:
+  parent: "Elements / Media"
+  priority: 11
+  related: ["video", "waveform"]
+api:
+  attributes:
+    - name: src
+      type: string
+      required: true
+      description: URL or path to audio source
+    - name: sourcein
+      type: timestring
+      description: Absolute start time in source media
+    - name: sourceout
+      type: timestring
+      description: Absolute end time in source media
+    - name: trimstart
+      type: timestring
+      description: Duration to trim from start
+    - name: trimend
+      type: timestring
+      description: Duration to trim from end
+    - name: duration
+      type: timestring
+      description: Override element duration
+    - name: volume
+      type: number
+      default: 1.0
+      description: Audio volume (0.0 to 1.0)
+    - name: mute
+      type: boolean
+      default: false
+      description: Silence the audio
+    - name: fft-size
+      type: string
+      description: FFT size for waveform visualization (e.g., "256")
 ---
 
 # ef-audio
 
 Audio element for music, voiceover, sound effects.
-
-## Attributes
-
-| Attribute | Type | Default | Description |
-|-----------|------|---------|-------------|
-| src | string | - | URL or path to audio source |
-| sourcein | timestring | - | Absolute start time in source media |
-| sourceout | timestring | - | Absolute end time in source media |
-| trimstart | timestring | - | Duration to trim from start |
-| trimend | timestring | - | Duration to trim from end |
-| duration | timestring | - | Override element duration |
-| volume | number | 1.0 | Audio volume (0.0 to 1.0) |
-| mute | boolean | false | Silence the audio |
-| fft-size | string | - | FFT size for waveform visualization (e.g., `"256"`) |
 
 ## Basic Usage
 

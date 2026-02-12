@@ -2,14 +2,33 @@ import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import { nightOwl } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { ghcolors as github } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import phpLanguage from "react-syntax-highlighter/dist/cjs/languages/prism/php";
+import jsxLanguage from "react-syntax-highlighter/dist/cjs/languages/prism/jsx";
+import javascriptLanguage from "react-syntax-highlighter/dist/cjs/languages/prism/javascript";
+import typescriptLanguage from "react-syntax-highlighter/dist/cjs/languages/prism/typescript";
+import markupLanguage from "react-syntax-highlighter/dist/cjs/languages/prism/markup";
+import cssLanguage from "react-syntax-highlighter/dist/cjs/languages/prism/css";
 import { Children, useEffect, useState } from "react";
 import type { FC, PropsWithChildren, ReactElement } from "react";
 
 // Handle both ESM and CommonJS module formats
 const phpLang = "default" in phpLanguage ? phpLanguage.default : phpLanguage;
+const jsxLang = "default" in jsxLanguage ? jsxLanguage.default : jsxLanguage;
+const jsLang = "default" in javascriptLanguage ? javascriptLanguage.default : javascriptLanguage;
+const tsLang = "default" in typescriptLanguage ? typescriptLanguage.default : typescriptLanguage;
+const markupLang = "default" in markupLanguage ? markupLanguage.default : markupLanguage;
+const cssLang = "default" in cssLanguage ? cssLanguage.default : cssLanguage;
 
-// Register PHP language support
+// Register language support
 SyntaxHighlighter.registerLanguage("php", phpLang);
+SyntaxHighlighter.registerLanguage("jsx", jsxLang);
+SyntaxHighlighter.registerLanguage("javascript", jsLang);
+SyntaxHighlighter.registerLanguage("js", jsLang);
+SyntaxHighlighter.registerLanguage("typescript", tsLang);
+SyntaxHighlighter.registerLanguage("ts", tsLang);
+SyntaxHighlighter.registerLanguage("markup", markupLang);
+SyntaxHighlighter.registerLanguage("html", markupLang);
+SyntaxHighlighter.registerLanguage("xml", markupLang);
+SyntaxHighlighter.registerLanguage("css", cssLang);
 
 interface CodeBlockProps extends PropsWithChildren {
   className?: string;
@@ -92,12 +111,22 @@ export const CodeBlock: FC<CodeBlockProps> = ({ children, className = "" }) => {
     <SyntaxHighlighter
       language={language}
       style={isDarkMode ? nightOwl : github}
-      className={`overflow-scroll ${className}`}
+      className={`code-block-clean overflow-x-auto ${className}`}
       customStyle={{
         fontSize: "0.875rem", // text-sm (14px)
         lineHeight: "1.625", // leading-relaxed
         padding: "0.75rem", // p-3
         margin: 0,
+      }}
+      showLineNumbers={false}
+      wrapLines={false}
+      PreTag="div"
+      CodeTag="code"
+      lineProps={{
+        style: { display: "block" }
+      }}
+      codeTagProps={{
+        style: { display: "inline-block", whiteSpace: "pre", minWidth: "100%" }
       }}
     >
       {code}

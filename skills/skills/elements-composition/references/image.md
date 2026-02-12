@@ -2,20 +2,24 @@
 title: Image Element
 description: Static image element with duration control and CSS positioning
 type: reference
-topic: components
-order: 62
+nav:
+  parent: "Elements / Media"
+  priority: 12
+  related: ["video", "surface"]
+api:
+  attributes:
+    - name: src
+      type: string
+      required: true
+      description: URL, path, or data URI
+    - name: duration
+      type: timestring
+      description: Display duration
 ---
 
 # ef-image
 
 Static image element.
-
-## Attributes
-
-| Attribute | Type | Default | Description |
-|-----------|------|---------|-------------|
-| src | string | - | URL, path, or data URI |
-| duration | timestring | - | Display duration |
 
 ## Basic Usage
 

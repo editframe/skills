@@ -2,19 +2,21 @@
 title: Surface Element
 description: Mirror/duplicate of another element's canvas output
 type: reference
-topic: components
-order: 66
+nav:
+  parent: "Elements / Layout"
+  priority: 21
+  related: ["timegroup"]
+api:
+  attributes:
+    - name: target
+      type: string
+      required: true
+      description: ID of element to mirror (e.g., ef-video)
 ---
 
 # ef-surface
 
 Mirror/duplicate of another element's canvas output.
-
-## Attributes
-
-| Attribute | Type | Default | Description |
-|-----------|------|---------|-------------|
-| target | string | - | ID of element to mirror (e.g., `ef-video`) |
 
 ## Basic Usage
 

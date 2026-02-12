@@ -5,14 +5,16 @@ import type { Route } from "./+types/skill-detail";
 import {
   getSkillContent,
   getSkillNav,
+  getSkillNavTree,
   getSkillReferencesMeta,
 } from "~/utils/skills.server";
-import type { NavGroup, SkillReference } from "~/utils/skills.server";
+import type { NavGroup, NavNode, SkillReference } from "~/utils/skills.server";
 import { parseMdx } from "~/utils/mdx-bundler.server";
 import { getSkillsMDXComponents } from "~/utils/skills-mdx-components";
 import clsx from "clsx";
 import { useTheme } from "~/hooks/useTheme";
 import { SkillsLayout } from "~/components/skills/SkillsLayout";
+import { OnThisPage } from "~/components/skills/OnThisPage";
 
 const TYPE_BADGE_STYLES: Record<string, string> = {
   tutorial: "bg-[var(--poster-green)] text-white",
@@ -31,6 +33,148 @@ function TypeBadge({ type }: { type: string }) {
     >
       {type}
     </span>
+  );
+}
+
+function NavTreeNode({
+  node,
+  skillName,
+  referenceName,
+  depth = 0,
+}: {
+  node: NavNode;
+  skillName: string;
+  referenceName: string | null;
+  depth?: number;
+}) {
+  const hasChildren = node.children.length > 0;
+  const hasItems = node.items.length > 0;
+  
+  const allTypes = node.items.map(i => i.type);
+  const uniqueTypes = new Set(allTypes);
+  const showTypeBadges = uniqueTypes.size > 1;
+  
+  return (
+    <div className={depth === 0 ? "mb-4" : "mb-0"}>
+      {/* Node header */}
+      {depth === 0 ? (
+        <div className="flex items-center gap-2 px-3 py-1.5 mb-2">
+          {node.icon && <span className="text-base leading-none">{node.icon}</span>}
+          <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-black)] dark:text-gray-200">
+            {node.label}
+          </span>
+        </div>
+      ) : (
+        <div className="mb-1.5 ml-3 pl-0 py-0.5">
+          <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--warm-gray)]/40 dark:text-gray-600 select-none">
+            {node.label}
+          </span>
+        </div>
+      )}
+      
+      {/* Node contents */}
+      <div className={depth === 0 ? "" : "ml-3 pl-3 border-l border-black/[0.06] dark:border-white/[0.15]"}>
+        {/* Items */}
+        {hasItems && (
+          <div className="space-y-px">
+            {node.items.map((ref) => (
+              <Link
+                key={ref.name}
+                to={`/skills/${skillName}/${ref.name}`}
+                className={clsx(
+                  "block px-3 py-1.5 text-[13px] leading-tight transition-all rounded-md",
+                  referenceName === ref.name
+                    ? "text-[var(--ink-black)] dark:text-white bg-[var(--accent-blue)]/[0.15] dark:bg-[var(--accent-blue)]/[0.25] font-bold border-l-2 border-[var(--accent-blue)]"
+                    : "text-[var(--warm-gray)] dark:text-gray-400 hover:text-[var(--ink-black)] dark:hover:text-white hover:bg-black/[0.03] dark:hover:bg-white/[0.08] font-medium border-l-2 border-transparent",
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="flex-1 min-w-0">{ref.title}</span>
+                  {showTypeBadges && <TypeBadge type={ref.type} />}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+        
+        {/* Children */}
+        {hasChildren && (
+          <div className="space-y-2 mt-2">
+            {node.children.map((child) => (
+              <NavTreeNode
+                key={child.path}
+                node={child}
+                skillName={skillName}
+                referenceName={referenceName}
+                depth={depth + 1}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function SkillSidebarTree({
+  skillName,
+  referenceName,
+  navTree,
+  isReference,
+}: {
+  skillName: string;
+  referenceName: string | null;
+  navTree: NavNode[];
+  isReference: boolean;
+}) {
+  return (
+    <aside className="hidden lg:block overflow-y-auto pt-6 pb-20 px-4 bg-[#FAFAF9] dark:bg-[#1a1a1a] border-r border-black/[0.06] dark:border-white/[0.12]">
+      {/* Breadcrumb */}
+      <div className="mb-6 px-2">
+        <Link
+          to="/skills"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:text-gray-400 dark:hover:text-white transition-colors"
+        >
+          <span>←</span>
+          <span>All Skills</span>
+        </Link>
+      </div>
+
+      {/* Skill name — overview link */}
+      <div className="mb-1 px-2">
+        <Link
+          to={`/skills/${skillName}`}
+          className={clsx(
+            "block text-base font-bold tracking-tight transition-colors",
+            isReference
+              ? "text-[var(--warm-gray)] hover:text-[var(--ink-black)] dark:text-gray-400 dark:hover:text-white"
+              : "text-[var(--ink-black)] dark:text-white",
+          )}
+        >
+          {skillName.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+        </Link>
+      </div>
+
+      {/* Transparency note */}
+      <p className="text-[10px] font-medium text-[var(--warm-gray)]/50 dark:text-gray-500 mb-8 px-2">
+        AI agent reads this skill
+      </p>
+
+      {/* Tree navigation */}
+      {navTree.length > 0 && (
+        <nav>
+          {navTree.map((node) => (
+            <NavTreeNode
+              key={node.path}
+              node={node}
+              skillName={skillName}
+              referenceName={referenceName}
+              depth={0}
+            />
+          ))}
+        </nav>
+      )}
+    </aside>
   );
 }
 
@@ -160,21 +304,98 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
 
   const parsed = await parseMdx(skillContent.content);
   const nav = getSkillNav(skillName);
+  const navTree = getSkillNavTree(skillName);
   const referencesMeta = getSkillReferencesMeta(skillName);
+
+  // Extract API metadata from frontmatter
+  const apiMetadata = (parsed.frontmatter as any)?.api || null;
 
   return {
     skillName,
     referenceName: null,
     content: parsed,
     nav,
+    navTree,
     referencesMeta,
+    apiMetadata,
     isReference: false,
   };
 };
 
+function LearningPathNav({
+  currentRef,
+  allRefs,
+  skillName,
+}: {
+  currentRef: SkillReference | null;
+  allRefs: SkillReference[];
+  skillName: string;
+}) {
+  if (!currentRef || !currentRef.track) return null;
+
+  const trackRefs = allRefs
+    .filter(ref => ref.track === currentRef.track)
+    .sort((a, b) => (a.track_step ?? 999) - (b.track_step ?? 999));
+
+  const currentIndex = trackRefs.findIndex(ref => ref.name === currentRef.name);
+  const prevRef = currentIndex > 0 ? trackRefs[currentIndex - 1] : null;
+  const nextRef = currentIndex < trackRefs.length - 1 ? trackRefs[currentIndex + 1] : null;
+
+  const progress = trackRefs.length > 0 ? ((currentIndex + 1) / trackRefs.length) * 100 : 0;
+
+  return (
+    <div className="mt-12 pt-8 border-t border-black/10 dark:border-white/10">
+      {/* Progress bar */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between text-xs text-[var(--warm-gray)] mb-2">
+          <span className="font-medium">{currentRef.track_title || "Learning Path"}</span>
+          <span>Step {currentIndex + 1} of {trackRefs.length}</span>
+        </div>
+        <div className="h-1.5 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-[var(--accent-blue)] transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <div className="grid grid-cols-2 gap-4">
+        {prevRef ? (
+          <Link
+            to={`/skills/${skillName}/${prevRef.name}`}
+            className="flex items-center gap-2 p-3 rounded border border-black/10 dark:border-white/10 hover:border-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/5 transition-colors group"
+          >
+            <span className="text-[var(--warm-gray)] group-hover:text-[var(--accent-blue)]">←</span>
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] uppercase tracking-wider text-[var(--warm-gray)] mb-0.5">Previous</div>
+              <div className="text-sm font-medium text-[var(--ink-black)] dark:text-white truncate">{prevRef.title}</div>
+            </div>
+          </Link>
+        ) : (
+          <div />
+        )}
+
+        {nextRef ? (
+          <Link
+            to={`/skills/${skillName}/${nextRef.name}`}
+            className="flex items-center gap-2 p-3 rounded border border-black/10 dark:border-white/10 hover:border-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/5 transition-colors group text-right"
+          >
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] uppercase tracking-wider text-[var(--warm-gray)] mb-0.5">Next</div>
+              <div className="text-sm font-medium text-[var(--ink-black)] dark:text-white truncate">{nextRef.title}</div>
+            </div>
+            <span className="text-[var(--warm-gray)] group-hover:text-[var(--accent-blue)]">→</span>
+          </Link>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export default function SkillDetail({ loaderData }: Route.ComponentProps) {
   useTheme();
-  const { skillName, referenceName, content, nav, referencesMeta, isReference } =
+  const { skillName, referenceName, content, navTree, referencesMeta, apiMetadata, isReference } =
     loaderData;
   const { code } = content;
   const MDXAsComponent = React.useMemo(() => getMDXComponent(code), [code]);
@@ -189,18 +410,18 @@ export default function SkillDetail({ loaderData }: Route.ComponentProps) {
 
   return (
     <SkillsLayout>
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] xl:grid-cols-[280px_1fr_auto] overflow-hidden">
         {/* Sidebar */}
-        <SkillSidebar
+        <SkillSidebarTree
           skillName={skillName}
           referenceName={referenceName}
-          nav={nav}
+          navTree={navTree}
           isReference={isReference}
         />
 
         {/* Main content - clean white reading surface */}
         <main className="overflow-y-auto bg-white dark:bg-[#0a0a0a]" data-skills-main>
-          <div className="max-w-[65ch] mx-auto px-6 lg:px-10 py-10 pb-24">
+          <div className="max-w-4xl mx-auto px-6 lg:px-10 py-10 pb-24">
             {/* Mobile breadcrumb */}
             <div className="lg:hidden mb-6 flex items-center gap-2 text-[13px] flex-wrap text-[var(--warm-gray)]">
               <Link
@@ -292,9 +513,18 @@ export default function SkillDetail({ loaderData }: Route.ComponentProps) {
               )}
             >
               <MDXAsComponent
-                components={getSkillsMDXComponents(skillName)}
+                components={getSkillsMDXComponents(skillName, apiMetadata)}
               />
             </div>
+
+            {/* Learning path navigation */}
+            {isReference && (
+              <LearningPathNav
+                currentRef={referencesMeta.find((r: SkillReference) => r.name === referenceName) || null}
+                allRefs={referencesMeta}
+                skillName={skillName}
+              />
+            )}
 
             {/* Reference links at bottom for overview page */}
             {!isReference && referencesMeta.length > 0 && (
@@ -327,6 +557,9 @@ export default function SkillDetail({ loaderData }: Route.ComponentProps) {
             )}
           </div>
         </main>
+
+        {/* On This Page navigation */}
+        <OnThisPage />
       </div>
     </SkillsLayout>
   );

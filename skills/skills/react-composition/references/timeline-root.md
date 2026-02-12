@@ -2,8 +2,29 @@
 title: Timeline Root
 description: Wrapper component required for React-based timelines to ensure proper rendering
 type: reference
-topic: core-concepts
-order: 11
+nav:
+  parent: "Core Concepts"
+  priority: 1
+  related: ["timegroup", "configuration"]
+api:
+  properties:
+    - name: id
+      type: string
+      required: true
+      description: Unique identifier for the root timegroup
+    - name: component
+      type: React.ComponentType
+      required: true
+      description: React component that renders your timeline content
+    - name: className
+      type: string
+      description: CSS class name for the container
+    - name: style
+      type: React.CSSProperties
+      description: Inline styles for the container
+    - name: children
+      type: React.ReactNode
+      description: Optional children (typically used for Configuration wrapper)
 ---
 
 # TimelineRoot
@@ -26,14 +47,6 @@ Always wrap your composition component with `TimelineRoot` for consistent behavi
 ```tsx
 import { TimelineRoot } from "@editframe/react";
 ```
-
-## Props
-
-- `id` - Unique identifier for the root timegroup (required)
-- `component` - React component that renders your timeline content (required)
-- `className` - Optional CSS class name for the container
-- `style` - Optional inline styles for the container
-- `children` - Optional children (typically used for Configuration wrapper)
 
 ## Basic Usage
 

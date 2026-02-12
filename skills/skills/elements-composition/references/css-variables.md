@@ -2,8 +2,10 @@
 title: CSS Variables
 description: Dynamic CSS variables for time-based animations and progress tracking
 type: reference
-topic: advanced
-order: 120
+nav:
+  parent: "Concepts"
+  priority: 12
+  related: ["video~effects"]
 ---
 
 # CSS Variables

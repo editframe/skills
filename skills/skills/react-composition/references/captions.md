@@ -2,8 +2,22 @@
 title: Captions Component
 description: Display subtitles with word-level highlighting in React
 type: reference
-topic: components
-order: 64
+nav:
+  parent: "Components / Text & Graphics"
+  priority: 31
+  related: ["text"]
+api:
+  properties:
+    - name: src
+      type: string
+      required: true
+      description: Captions JSON file URL
+    - name: className
+      type: string
+      description: CSS classes for styling
+    - name: id
+      type: string
+      description: Unique identifier
 ---
 
 # Captions
@@ -21,12 +35,6 @@ import {
   CaptionsAfterActiveWord
 } from "@editframe/react";
 ```
-
-## Props
-
-- `src` - Captions JSON file URL (required)
-- `className` - CSS classes for styling
-- `id` - Unique identifier
 
 ## Caption Format
 

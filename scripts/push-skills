@@ -23,15 +23,34 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-TEMP_BRANCH="skills-split-${BRANCH}"
+BUILD_DIR="$PROJECT_ROOT/skills/skills-generated"
 
-echo "Splitting skills subtree to temporary branch..."
-git subtree split --prefix=skills -b "$TEMP_BRANCH"
+# Clean and generate LLM-optimized skills
+echo "🧹 Cleaning build directory..."
+rm -rf "$BUILD_DIR"
 
-echo "Pushing to skills remote..."
-git push skills "$TEMP_BRANCH:$BRANCH" --force
+echo "🔨 Generating LLM-optimized skills..."
+npx tsx scripts/generate-skills.ts
 
-echo "Cleaning up temporary branch..."
-git branch -D "$TEMP_BRANCH"
+# Initialize a temporary git repo in the build directory
+echo "📦 Preparing build for push..."
+cd "$BUILD_DIR"
+git init
+git add .
+git commit -m "Generated LLM-optimized skills from source"
 
-echo "✅ Successfully pushed skills/ directory to skills remote ($BRANCH branch)"
+# Add the skills remote if it doesn't exist
+if ! git remote get-url skills &> /dev/null; then
+  SKILLS_REMOTE=$(cd "$PROJECT_ROOT" && git remote get-url skills)
+  git remote add skills "$SKILLS_REMOTE"
+fi
+
+# Push to the skills remote
+echo "🚀 Pushing to skills remote ($BRANCH branch)..."
+git push skills HEAD:"$BRANCH" --force
+
+# Clean up
+cd "$PROJECT_ROOT"
+rm -rf "$BUILD_DIR"
+
+echo "✅ Successfully pushed generated skills to skills remote ($BRANCH branch)"

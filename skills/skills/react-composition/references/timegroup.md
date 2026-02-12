@@ -2,8 +2,41 @@
 title: Timegroup Component
 description: Container component for sequencing and grouping elements in React
 type: reference
-topic: core-concepts
-order: 12
+nav:
+  parent: "Core Concepts"
+  priority: 2
+  related: ["timeline-root", "hooks"]
+api:
+  properties:
+    - name: mode
+      type: string
+      required: true
+      description: Duration calculation mode
+      values: ["fixed", "sequence", "contain", "fit"]
+    - name: duration
+      type: string
+      description: Explicit duration (for fixed mode, e.g., "5s", "1000ms")
+    - name: overlap
+      type: string
+      description: Overlap time between sequence items (e.g., "1s")
+    - name: fps
+      type: number
+      default: 30
+      description: Frame rate for rendering
+    - name: autoInit
+      type: boolean
+      default: false
+      description: Auto-seek to frame 0 on load (root only)
+    - name: workbench
+      type: boolean
+      default: false
+      description: Enable timeline/hierarchy UI (root only)
+    - name: className
+      type: string
+      description: CSS classes for styling
+    - name: ref
+      type: React.Ref
+      description: React ref (useful with hooks)
 ---
 
 # Timegroup
@@ -15,18 +48,6 @@ Container component for sequencing and grouping elements.
 ```tsx
 import { Timegroup } from "@editframe/react";
 ```
-
-## Props
-
-- `mode` - `"fixed"` | `"sequence"` | `"contain"` | `"fit"`
-- `duration` - Explicit duration (for fixed mode) - e.g. `"5s"`, `"1000ms"`, `"2m"`
-- `overlap` - Overlap time between sequence items - e.g. `"1s"`
-- `fps` - Frame rate for rendering - number (default: 30)
-- `autoInit` - Auto-seek to frame 0 on load (root only) - boolean
-- `workbench` - Enable timeline/hierarchy UI (root only) - boolean
-- `className` - CSS classes for styling
-- `ref` - React ref (useful with hooks)
-- All standard HTML div attributes
 
 ## Modes
 

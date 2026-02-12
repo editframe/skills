@@ -2,8 +2,15 @@
 title: Preview Component
 description: Video preview player component for viewing compositions
 type: reference
-topic: tools
-order: 100
+nav:
+  parent: "Tools"
+  priority: 40
+  related: ["controls", "workbench"]
+api:
+  properties:
+    - name: className
+      type: string
+      description: CSS classes for styling
 ---
 
 # Preview
@@ -15,11 +22,6 @@ Video preview player component for viewing compositions.
 ```tsx
 import { Preview } from "@editframe/react";
 ```
-
-## Props
-
-- `className` - CSS classes for styling
-- Standard HTML div attributes
 
 ## Basic Usage
 

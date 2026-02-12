@@ -2,8 +2,22 @@
 title: Configuration
 description: Configure the Editframe environment settings for API and media engine
 type: reference
-topic: core-concepts
-order: 10
+nav:
+  parent: "Core Concepts"
+  priority: 0
+  related: ["timeline-root"]
+api:
+  properties:
+    - name: apiHost
+      type: string
+      description: API server URL for transcription/rendering
+    - name: mediaEngine
+      type: string
+      description: Where to load media files
+      values: ["local", "remote"]
+    - name: children
+      type: React.ReactNode
+      description: Application content (typically TimelineRoot)
 ---
 
 # Configuration
@@ -15,11 +29,6 @@ Configure the Editframe environment settings.
 ```tsx
 import { Configuration } from "@editframe/react";
 ```
-
-## Props
-
-- `apiHost` - API server URL for transcription/rendering
-- `mediaEngine` - `"local"` | `"remote"` - Where to load media files
 
 ## Basic Usage
 

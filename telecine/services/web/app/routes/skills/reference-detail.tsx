@@ -4,14 +4,90 @@ import { getMDXComponent } from "mdx-bundler/client";
 import type { Route } from "./+types/reference-detail";
 import {
   getSkillReference,
+  getSkillReferenceSection,
   getSkillNav,
+  getSkillNavTree,
+  getSkillReferencesMeta,
 } from "~/utils/skills.server";
 import { parseMdx } from "~/utils/mdx-bundler.server";
 import { getSkillsMDXComponents } from "~/utils/skills-mdx-components";
 import clsx from "clsx";
 import { useTheme } from "~/hooks/useTheme";
 import { SkillsLayout } from "~/components/skills/SkillsLayout";
-import { SkillSidebar } from "./skill-detail";
+import { SkillSidebarTree } from "./skill-detail";
+import { OnThisPage } from "~/components/skills/OnThisPage";
+import type { SkillReference } from "~/utils/skills.server";
+
+function LearningPathNav({
+  currentRef,
+  allRefs,
+  skillName,
+}: {
+  currentRef: SkillReference | null;
+  allRefs: SkillReference[];
+  skillName: string;
+}) {
+  if (!currentRef || !currentRef.track) return null;
+
+  const trackRefs = allRefs
+    .filter(ref => ref.track === currentRef.track)
+    .sort((a, b) => (a.track_step ?? 999) - (b.track_step ?? 999));
+
+  const currentIndex = trackRefs.findIndex(ref => ref.name === currentRef.name);
+  const prevRef = currentIndex > 0 ? trackRefs[currentIndex - 1] : null;
+  const nextRef = currentIndex < trackRefs.length - 1 ? trackRefs[currentIndex + 1] : null;
+
+  const progress = trackRefs.length > 0 ? ((currentIndex + 1) / trackRefs.length) * 100 : 0;
+
+  return (
+    <div className="mt-12 pt-8 border-t border-black/10 dark:border-white/10">
+      {/* Progress bar */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between text-xs text-[var(--warm-gray)] mb-2">
+          <span className="font-medium">{currentRef.track_title || "Learning Path"}</span>
+          <span>Step {currentIndex + 1} of {trackRefs.length}</span>
+        </div>
+        <div className="h-1.5 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-[var(--accent-blue)] transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <div className="grid grid-cols-2 gap-4">
+        {prevRef ? (
+          <Link
+            to={`/skills/${skillName}/${prevRef.name}`}
+            className="flex items-center gap-2 p-3 rounded border border-black/10 dark:border-white/10 hover:border-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/5 transition-colors group"
+          >
+            <span className="text-[var(--warm-gray)] group-hover:text-[var(--accent-blue)]">←</span>
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] uppercase tracking-wider text-[var(--warm-gray)] mb-0.5">Previous</div>
+              <div className="text-sm font-medium text-[var(--ink-black)] dark:text-white truncate">{prevRef.title}</div>
+            </div>
+          </Link>
+        ) : (
+          <div />
+        )}
+
+        {nextRef ? (
+          <Link
+            to={`/skills/${skillName}/${nextRef.name}`}
+            className="flex items-center gap-2 p-3 rounded border border-black/10 dark:border-white/10 hover:border-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/5 transition-colors group text-right"
+          >
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] uppercase tracking-wider text-[var(--warm-gray)] mb-0.5">Next</div>
+              <div className="text-sm font-medium text-[var(--ink-black)] dark:text-white truncate">{nextRef.title}</div>
+            </div>
+            <span className="text-[var(--warm-gray)] group-hover:text-[var(--accent-blue)]">→</span>
+          </Link>
+        ) : null}
+      </div>
+    </div>
+  );
+}
 
 export const meta = ({ data }: Route.MetaArgs) => {
   if (!data) {
@@ -34,33 +110,52 @@ export const meta = ({ data }: Route.MetaArgs) => {
 
 export const loader = async ({ params }: Route.LoaderArgs) => {
   const skillName = params.skill;
-  const referenceName = params.reference;
+  const referenceParam = params.reference;
 
-  if (!skillName || !referenceName) {
+  if (!skillName || !referenceParam) {
     throw new Response("Not Found", { status: 404 });
   }
 
-  // Load reference content only
-  const referenceContent = getSkillReference(skillName, referenceName);
+  // Parse reference param for section separator
+  const [refName, sectionSlug] = referenceParam.split("~");
+
+  // Load reference content
+  let referenceContent: string | null;
+  if (sectionSlug) {
+    // Load specific section
+    referenceContent = getSkillReferenceSection(skillName, refName, sectionSlug);
+  } else {
+    // Load root or full file
+    referenceContent = getSkillReference(skillName, refName);
+  }
+
   if (!referenceContent) {
     throw new Response("Not Found", { status: 404 });
   }
 
   const parsed = await parseMdx(referenceContent);
   const nav = getSkillNav(skillName);
+  const navTree = getSkillNavTree(skillName);
+  const referencesMeta = getSkillReferencesMeta(skillName);
+
+  // Extract API metadata from frontmatter
+  const apiMetadata = (parsed.frontmatter as any)?.api || null;
 
   return {
     skillName,
-    referenceName,
+    referenceName: referenceParam,
     content: parsed,
     nav,
+    navTree,
+    referencesMeta,
+    apiMetadata,
     isReference: true,
   };
 };
 
 export default function ReferenceDetail({ loaderData }: Route.ComponentProps) {
   useTheme();
-  const { skillName, referenceName, content, nav, isReference } =
+  const { skillName, referenceName, content, navTree, referencesMeta, apiMetadata, isReference } =
     loaderData;
   const { code } = content;
   const MDXAsComponent = React.useMemo(() => getMDXComponent(code), [code]);
@@ -75,18 +170,18 @@ export default function ReferenceDetail({ loaderData }: Route.ComponentProps) {
 
   return (
     <SkillsLayout>
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] xl:grid-cols-[280px_1fr_auto] overflow-hidden">
         {/* Sidebar */}
-        <SkillSidebar
+        <SkillSidebarTree
           skillName={skillName}
           referenceName={referenceName}
-          nav={nav}
+          navTree={navTree}
           isReference={isReference}
         />
 
         {/* Main content - clean white reading surface */}
         <main className="overflow-y-auto bg-white dark:bg-[#0a0a0a]" data-skills-main>
-          <div className="max-w-[65ch] mx-auto px-6 lg:px-10 py-10 pb-24">
+          <div className="max-w-4xl mx-auto px-6 lg:px-10 py-10 pb-24">
             {/* Mobile breadcrumb */}
             <div className="lg:hidden mb-6 flex items-center gap-2 text-[13px] flex-wrap text-[var(--warm-gray)]">
               <Link
@@ -169,11 +264,21 @@ export default function ReferenceDetail({ loaderData }: Route.ComponentProps) {
               )}
             >
               <MDXAsComponent
-                components={getSkillsMDXComponents(skillName)}
+                components={getSkillsMDXComponents(skillName, apiMetadata)}
               />
             </div>
+
+            {/* Learning path navigation */}
+            <LearningPathNav
+              currentRef={referencesMeta.find((r: SkillReference) => r.name === referenceName) || null}
+              allRefs={referencesMeta}
+              skillName={skillName}
+            />
           </div>
         </main>
+
+        {/* On This Page navigation */}
+        <OnThisPage />
       </div>
     </SkillsLayout>
   );

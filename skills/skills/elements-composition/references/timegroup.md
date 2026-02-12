@@ -2,24 +2,44 @@
 title: Timegroup Element
 description: Container element for sequencing and grouping composition elements
 type: reference
-topic: timegroup
-order: 10
+nav:
+  parent: "Elements / Layout"
+  priority: 20
+  related: ["timegroup-modes", "sequencing"]
+track: "layout-mastery"
+track_step: 1
+track_title: "Understanding Timegroups"
+next_steps: ["timegroup-modes"]
+api:
+  attributes:
+    - name: mode
+      type: string
+      required: true
+      description: Duration calculation mode
+      values: ["fixed", "sequence", "contain", "fit"]
+    - name: duration
+      type: timestring
+      description: Explicit duration (for fixed mode)
+    - name: overlap
+      type: timestring
+      description: Overlap time between sequence items (e.g., "1s")
+    - name: fps
+      type: number
+      default: 30
+      description: Frame rate for rendering
+    - name: auto-init
+      type: boolean
+      default: false
+      description: Auto-seek to frame 0 on load (root only)
+    - name: workbench
+      type: boolean
+      default: false
+      description: Enable timeline/hierarchy UI (root only)
 ---
 
 # ef-timegroup
 
 Container for sequencing and grouping elements.
-
-## Attributes
-
-| Attribute | Type | Default | Description |
-|-----------|------|---------|-------------|
-| mode | string | - | `"fixed"` \| `"sequence"` \| `"contain"` \| `"fit"` |
-| duration | timestring | - | Explicit duration (for fixed mode) |
-| overlap | timestring | - | Overlap time between sequence items (e.g., `"1s"`) |
-| fps | number | 30 | Frame rate for rendering |
-| auto-init | boolean | false | Auto-seek to frame 0 on load (root only) |
-| workbench | boolean | false | Enable timeline/hierarchy UI (root only) |
 
 ## Modes
 

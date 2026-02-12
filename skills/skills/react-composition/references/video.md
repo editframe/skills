@@ -2,8 +2,39 @@
 title: Video Component
 description: Display video clips with optional trimming and volume control in React
 type: reference
-topic: components
-order: 60
+nav:
+  parent: "Components / Media"
+  priority: 10
+  related: ["audio", "image"]
+api:
+  properties:
+    - name: src
+      type: string
+      required: true
+      description: Video file URL
+    - name: sourceIn
+      type: string
+      description: Absolute start time (e.g., "5s", "1000ms")
+    - name: sourceOut
+      type: string
+      description: Absolute end time (e.g., "10s", "5000ms")
+    - name: trimStart
+      type: string
+      description: Relative trim from start (e.g., "2s")
+    - name: trimEnd
+      type: string
+      description: Relative trim from end (e.g., "3s")
+    - name: muted
+      type: boolean
+      default: false
+      description: Mute audio track
+    - name: volume
+      type: number
+      default: 1
+      description: Volume level (0.0 to 1.0)
+    - name: className
+      type: string
+      description: CSS classes for styling
 ---
 
 # Video
@@ -15,18 +46,6 @@ Display video clips with optional trimming.
 ```tsx
 import { Video } from "@editframe/react";
 ```
-
-## Props
-
-- `src` - Video file URL (required)
-- `sourceIn` - Absolute start time - e.g. `"5s"`, `"1000ms"`
-- `sourceOut` - Absolute end time - e.g. `"10s"`, `"5000ms"`
-- `trimStart` - Relative trim from start - e.g. `"2s"`
-- `trimEnd` - Relative trim from end - e.g. `"3s"`
-- `muted` - Mute audio - boolean
-- `volume` - Volume level - number (0-1)
-- `className` - CSS classes for styling
-- All standard video element attributes
 
 ## Basic Usage
 

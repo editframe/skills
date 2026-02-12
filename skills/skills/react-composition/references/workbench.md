@@ -2,8 +2,15 @@
 title: Workbench
 description: Full timeline editor UI with hierarchy and timeline views
 type: reference
-topic: tools
-order: 102
+nav:
+  parent: "Tools"
+  priority: 42
+  related: ["preview", "controls"]
+api:
+  properties:
+    - name: className
+      type: string
+      description: CSS classes for styling
 ---
 
 # Workbench
@@ -15,10 +22,6 @@ Full timeline editor UI with hierarchy and timeline views.
 ```tsx
 import { Workbench } from "@editframe/react";
 ```
-
-## Props
-
-- `className` - CSS classes for styling
 
 ## Basic Usage
 

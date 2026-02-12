@@ -2,8 +2,15 @@
 title: Controls
 description: Playback controls for timeline navigation including play, pause, scrubber, and loop
 type: reference
-topic: tools
-order: 101
+nav:
+  parent: "Tools"
+  priority: 41
+  related: ["preview", "workbench"]
+api:
+  properties:
+    - name: className
+      type: string
+      description: CSS classes for styling
 ---
 
 # Controls
@@ -28,11 +35,6 @@ import {
   TimeDisplay,
 } from "@editframe/react";
 ```
-
-## Props
-
-- `className` - CSS classes for styling
-- Component-specific props for customization
 
 ## Basic Usage
 
