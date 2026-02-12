@@ -1,9 +1,10 @@
 import React from "react";
 import { describe, test, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DimensionsInput } from "./DimensionsInput";
 import type { ElementSize } from "~/lib/motion-designer/sizingTypes";
+import { SIZING_MODE_LABELS } from "~/lib/motion-designer/sizingTypes";
 
 describe("DimensionsInput", () => {
   describe("fraction mode UI", () => {
@@ -19,8 +20,9 @@ describe("DimensionsInput", () => {
 
       render(<DimensionsInput label="Size" size={size} onChange={onChange} />);
 
-      const ratioSelector = screen.getByDisplayValue("1/2");
-      expect(ratioSelector).toBeInTheDocument();
+      const ratioSelector = screen.getByRole("combobox") as HTMLSelectElement;
+      expect(ratioSelector).toBeDefined();
+      expect(ratioSelector.value).toBe("1/2");
       expect(ratioSelector.tagName).toBe("SELECT");
     });
 
@@ -36,12 +38,8 @@ describe("DimensionsInput", () => {
 
       render(<DimensionsInput label="Size" size={size} onChange={onChange} />);
 
-      const pixelInputs = screen.queryAllByPlaceholderText(/px/i);
-      const widthPixelInput = pixelInputs.find((input) => {
-        const parent = input.closest("div");
-        return parent?.textContent?.includes("W");
-      });
-      expect(widthPixelInput).not.toBeInTheDocument();
+      const spinbuttons = screen.queryAllByRole("spinbutton");
+      expect(spinbuttons).toHaveLength(1);
     });
 
     test("selected ratio displays correctly in selector", () => {
@@ -56,9 +54,7 @@ describe("DimensionsInput", () => {
 
       render(<DimensionsInput label="Size" size={size} onChange={onChange} />);
 
-      const ratioSelector = screen.getByDisplayValue(
-        "1/3",
-      ) as HTMLSelectElement;
+      const ratioSelector = screen.getByRole("combobox") as HTMLSelectElement;
       expect(ratioSelector.value).toBe("1/3");
     });
 
@@ -74,8 +70,9 @@ describe("DimensionsInput", () => {
 
       render(<DimensionsInput label="Size" size={size} onChange={onChange} />);
 
-      const ratioSelector = screen.getByDisplayValue("1/4");
-      expect(ratioSelector).toBeInTheDocument();
+      const ratioSelector = screen.getByRole("combobox") as HTMLSelectElement;
+      expect(ratioSelector).toBeDefined();
+      expect(ratioSelector.value).toBe("1/4");
     });
   });
 
@@ -97,7 +94,10 @@ describe("DimensionsInput", () => {
         <DimensionsInput label="Size" size={currentSize} onChange={onChange} />,
       );
 
-      const fractionButton = screen.getByTitle("Fraction");
+      const widthSection = screen.getByText("W").closest("div")?.parentElement;
+      const fractionButton = within(widthSection!).getByTitle(
+        SIZING_MODE_LABELS.fraction,
+      );
       await user.click(fractionButton);
 
       rerender(
