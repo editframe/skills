@@ -1,0 +1,5 @@
+#!/bin/bash
+# Generate external published skills from skills/skills/ source
+# Usage: ./scripts/skills-generate
+
+npx tsx scripts/generate-skills.ts "$@"

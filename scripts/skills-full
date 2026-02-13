@@ -1,0 +1,15 @@
+#!/bin/bash
+# Full skills workflow: generate external skills and sync everything
+# Usage: ./scripts/skills-full
+
+set -e
+
+echo "🔧 Generating external skills..."
+npx tsx scripts/generate-skills.ts
+
+echo ""
+echo "🔄 Syncing all skills..."
+npx tsx scripts/sync-skills.ts --include-external
+
+echo ""
+echo "✅ Skills generation and sync complete!"

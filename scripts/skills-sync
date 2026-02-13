@@ -1,0 +1,5 @@
+#!/bin/bash
+# Sync internal skills across all agent directories
+# Usage: ./scripts/skills-sync [--dry-run] [--verbose] [--include-external]
+
+npx tsx scripts/sync-skills.ts "$@"

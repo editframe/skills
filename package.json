@@ -4,11 +4,11 @@
   "description": "Editframe monorepo",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "skills:sync": "tsx scripts/sync-skills.ts",
-    "skills:sync:dry": "tsx scripts/sync-skills.ts --dry-run",
-    "skills:sync:verbose": "tsx scripts/sync-skills.ts --verbose",
-    "skills:generate": "tsx scripts/generate-skills.ts",
-    "skills:full": "npm run skills:generate && npm run skills:sync -- --include-external"
+    "skills:sync": "./scripts/skills-sync",
+    "skills:sync:dry": "./scripts/skills-sync --dry-run",
+    "skills:sync:verbose": "./scripts/skills-sync --verbose",
+    "skills:generate": "./scripts/skills-generate",
+    "skills:full": "./scripts/skills-full"
   },
   "author": "",
   "license": "Copyright Editframe Inc.",
