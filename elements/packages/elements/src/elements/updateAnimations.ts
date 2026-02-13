@@ -1203,50 +1203,50 @@ const evaluateElementState = (
  * 4. Apply visual state (update CSS and display based on phase and policies)
  */
 export const updateAnimations = (element: AnimatableElement): void => {
-  // OPTIMIZATION: Call getAnimations({ subtree: true }) ONCE for the entire tree
-  // This avoids redundant calls for each child element (which would have massive overlap)
-  // We'll distribute the relevant animations to each element
   const allAnimations = element.getAnimations({ subtree: true });
-  
-  // Build a map of element -> animations for fast lookup
-  const animationsByElement = new Map<Element, Animation[]>();
-  for (const animation of allAnimations) {
-    const effect = animation.effect;
-    if (effect && effect instanceof KeyframeEffect && effect.target) {
-      const target = effect.target;
-      let anims = animationsByElement.get(target);
-      if (!anims) {
-        anims = [];
-        animationsByElement.set(target, anims);
-      }
-      anims.push(animation);
-    }
-  }
-  
-  // Evaluate all states
+
   const rootContext = evaluateElementState(element);
   const childContexts = deepGetTemporalElements(element).map(
     (temporalElement) => evaluateElementState(temporalElement),
   );
 
-  // OPTIMIZATION: Batch reads and writes to avoid layout thrashing
-  // Phase 1: Animation coordination (READS - animation properties, DOM state)
-  // Do ALL animation coordination first before any CSS writes
+  // Partition allAnimations by closest temporal child so each child gets
+  // only its own subtree's animations without calling getAnimations again.
+  // Iterate children in reverse (deepest first in the pre-order list)
+  // so nested temporal elements match before their ancestors.
+  const childAnimations = new Map<AnimatableElement, Animation[]>();
+  for (const animation of allAnimations) {
+    const effect = animation.effect;
+    const target = effect && effect instanceof KeyframeEffect ? effect.target : null;
+    if (!target || !(target instanceof Element)) continue;
+
+    for (let i = childContexts.length - 1; i >= 0; i--) {
+      const ctx = childContexts[i]!;
+      if (ctx.element.contains(target)) {
+        let anims = childAnimations.get(ctx.element);
+        if (!anims) {
+          anims = [];
+          childAnimations.set(ctx.element, anims);
+        }
+        anims.push(animation);
+        break;
+      }
+    }
+  }
+
   applyAnimationCoordination(
-    rootContext.element, 
+    rootContext.element,
     rootContext.state.phase,
-    animationsByElement.get(rootContext.element),
+    allAnimations,
   );
   childContexts.forEach((context) => {
     applyAnimationCoordination(
-      context.element, 
+      context.element,
       context.state.phase,
-      animationsByElement.get(context.element),
+      childAnimations.get(context.element) || [],
     );
   });
 
-  // Phase 2: Visual state application (WRITES - CSS properties)
-  // Do ALL CSS writes together so browser can batch style recalculation
   applyVisualState(rootContext.element, rootContext.state);
   childContexts.forEach((context) => {
     applyVisualState(context.element, context.state);

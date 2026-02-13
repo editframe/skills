@@ -2,7 +2,6 @@ import { consume } from "@lit/context";
 import { css, html, nothing, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
-import type { ReactiveController } from "lit";
 import {
   type Caption,
   EFCaptions,
@@ -128,89 +127,6 @@ function canWordsFitIndividually(
   return { fits: false, reason: `words exceed segment (total text: ${totalTextWidth.toFixed(1)}px, segment: ${segmentWidthPx.toFixed(1)}px)` };
 }
 
-/**
- * Controller to ensure captions track updates reactively during playback.
- * 
- * Performance optimization: Only requests updates when the visual state actually
- * needs to change (active word/segment changed), not on every frame.
- */
-class CaptionsTimeController implements ReactiveController {
-  private animationFrameId?: number;
-  private lastTimeMs = -1;
-  private lastActiveWordIndex = -1;
-  private lastActiveSegmentIndex = -1;
-  // Minimum time change to trigger update when no word change (for segment boundaries)
-  private static readonly MIN_TIME_CHANGE_MS = 100;
-  
-  constructor(private host: EFCaptionsTrack) {
-    this.host.addController(this);
-  }
-  
-  hostConnected(): void {
-    this.startTimeUpdate();
-  }
-  
-  hostDisconnected(): void {
-    this.stopTimeUpdate();
-  }
-  
-  private startTimeUpdate(): void {
-    const update = () => {
-      // Read current time from root timegroup
-      const captions = this.host.element as EFCaptions;
-      const rootTimegroup = captions.rootTimegroup;
-      const currentTimeMs = rootTimegroup?.currentTimeMs || 0;
-      const captionsData = captions?.unifiedCaptionsDataTask?.value;
-      
-      // Check if we actually need to update
-      let shouldUpdate = false;
-      
-      if (captionsData) {
-        const captionsLocalTimeMs = currentTimeMs - captions.startTimeMs;
-        const captionsLocalTimeSec = captionsLocalTimeMs / 1000;
-        
-        // Find current active word and segment indices
-        const activeWordIndex = captionsData.word_segments.findIndex(
-          (word) => captionsLocalTimeSec >= word.start && captionsLocalTimeSec < word.end
-        );
-        const activeSegmentIndex = captionsData.segments.findIndex(
-          (seg) => captionsLocalTimeSec >= seg.start && captionsLocalTimeSec < seg.end
-        );
-        
-        // Update if active word or segment changed
-        if (activeWordIndex !== this.lastActiveWordIndex) {
-          this.lastActiveWordIndex = activeWordIndex;
-          shouldUpdate = true;
-        }
-        if (activeSegmentIndex !== this.lastActiveSegmentIndex) {
-          this.lastActiveSegmentIndex = activeSegmentIndex;
-          shouldUpdate = true;
-        }
-      }
-      
-      // Also update if time changed significantly (for visual feedback during seek)
-      const timeDelta = Math.abs(currentTimeMs - this.lastTimeMs);
-      if (timeDelta >= CaptionsTimeController.MIN_TIME_CHANGE_MS) {
-        shouldUpdate = true;
-      }
-      
-      if (shouldUpdate) {
-        this.lastTimeMs = currentTimeMs;
-        this.host.requestUpdate();
-      }
-      
-      this.animationFrameId = requestAnimationFrame(update);
-    };
-    update();
-  }
-  
-  private stopTimeUpdate(): void {
-    if (this.animationFrameId) {
-      cancelAnimationFrame(this.animationFrameId);
-      this.animationFrameId = undefined;
-    }
-  }
-}
 
 @customElement("ef-captions-track")
 export class EFCaptionsTrack extends TrackItem {
@@ -342,10 +258,6 @@ export class EFCaptionsTrack extends TrackItem {
 
   @consume({ context: currentTimeContext, subscribe: true })
   contextCurrentTimeMs = 0;
-  
-  // Controller ensures real-time updates during playback
-  // The controller manages its own lifecycle via ReactiveController interface
-  private _timeController = new CaptionsTimeController(this);
   
   private lastPixelsPerMs = 0;
   

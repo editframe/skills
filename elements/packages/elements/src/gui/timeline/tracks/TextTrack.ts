@@ -1,64 +1,19 @@
+import { consume } from "@lit/context";
 import { css, html, nothing, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
-import type { ReactiveController } from "lit";
 import { EFText } from "../../../elements/EFText.js";
 import { EFTextSegment } from "../../../elements/EFTextSegment.js";
+import { currentTimeContext } from "../../currentTimeContext.js";
 // TrackItem must be pre-loaded before this module is imported
 // See preloadTracks.ts for the initialization sequence
 import { TrackItem } from "./TrackItem.js";
 import { renderTrackChildren } from "./renderTrackChildren.js";
 
-/**
- * Controller to ensure text track updates reactively during playback.
- */
-class TextTimeController implements ReactiveController {
-  #animationFrameId?: number;
-  #lastTimeMs = -1;
-  static readonly #MIN_TIME_CHANGE_MS = 50;
-  
-  constructor(private host: EFTextTrack) {
-    this.host.addController(this);
-  }
-  
-  hostConnected(): void {
-    this.#startTimeUpdate();
-  }
-  
-  hostDisconnected(): void {
-    this.#stopTimeUpdate();
-  }
-  
-  #startTimeUpdate(): void {
-    const update = () => {
-      const text = this.host.element as EFText;
-      const rootTimegroup = text?.rootTimegroup;
-      const currentTimeMs = rootTimegroup?.currentTimeMs || 0;
-      
-      // Update if time changed significantly
-      const timeDelta = Math.abs(currentTimeMs - this.#lastTimeMs);
-      if (timeDelta >= TextTimeController.#MIN_TIME_CHANGE_MS) {
-        this.#lastTimeMs = currentTimeMs;
-        this.host.requestUpdate();
-      }
-      
-      this.#animationFrameId = requestAnimationFrame(update);
-    };
-    update();
-  }
-  
-  #stopTimeUpdate(): void {
-    if (this.#animationFrameId) {
-      cancelAnimationFrame(this.#animationFrameId);
-      this.#animationFrameId = undefined;
-    }
-  }
-}
-
 @customElement("ef-text-track")
 export class EFTextTrack extends TrackItem {
-  // Controller ensures real-time updates during playback
-  #timeController = new TextTimeController(this);
+  @consume({ context: currentTimeContext, subscribe: true })
+  contextCurrentTimeMs = 0;
   static styles = [
     ...TrackItem.styles,
     css`
@@ -216,8 +171,7 @@ export class EFTextTrack extends TrackItem {
    */
   #renderSegments(segments: EFTextSegment[], durationMs: number) {
     const text = this.element as EFText;
-    const rootTimegroup = text.rootTimegroup;
-    const currentTimeMs = rootTimegroup?.currentTimeMs || 0;
+    const currentTimeMs = this.contextCurrentTimeMs || 0;
     const textLocalTimeMs = currentTimeMs - text.startTimeMs;
 
     return segments.map((segment, index) => {
