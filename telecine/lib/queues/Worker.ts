@@ -59,17 +59,21 @@ export class Worker<Payload = unknown> {
 
   async executeJob(job: MaterializedJob<Payload>) {
     await executeSpan("Worker.executeJob", async (span) => {
-      console.log("Executing job", job);
-      span.setAttributes({
+      const jobMeta = {
         queue: job.queue.name,
         orgId: job.orgId,
         workflowId: job.workflowId,
         workflowName: job.workflow.name,
         jobId: job.jobId,
-      });
+      };
+      this.logger.info(jobMeta, "Executing job");
+      span.setAttributes(jobMeta);
+      const startMs = Date.now();
       await this.execute(job);
-      // Only complete the job if execution succeeds
-      // If this.execute throws, completeJob will not be called
+      this.logger.info(
+        { ...jobMeta, executeDurationMs: Date.now() - startMs },
+        "Job execute() completed, calling completeJob",
+      );
       await completeJob(
         this.storage,
         this.queue.name,
@@ -77,6 +81,10 @@ export class Worker<Payload = unknown> {
         job.workflow.name,
         job.workflowId,
         job.jobId,
+      );
+      this.logger.info(
+        { ...jobMeta, totalDurationMs: Date.now() - startMs },
+        "Job fully completed",
       );
     });
   }
@@ -220,7 +228,7 @@ export class Worker<Payload = unknown> {
     return abortableLoopWithBackoff({
       spanName: "worker.workLoop",
       backoffMs: 1000,
-      fn: async () => {
+      fn: async (signal) => {
         await this.writePresence(loopId);
         this.logger.debug("Claiming job");
         const job = await claimJob<Payload>(this.storage, {
@@ -228,10 +236,9 @@ export class Worker<Payload = unknown> {
         });
         if (!job) {
           this.logger.debug("No job to claim");
-          // Sleep when there are no jobs to claim, otherwise this creates a very busy loop.
           return RequestSleep;
         }
-        using _claimExtender = this.extendClaimTimeout(job);
+        using _claimExtender = this.extendClaimTimeout(job, signal);
         this.logger.debug(job, "Claimed job");
         const workflow = Workflow.fromName(job.workflow);
         if (!workflow) {
@@ -252,7 +259,16 @@ export class Worker<Payload = unknown> {
           await this.publishAttemptCompleted(materializedJob);
           await this.publishJobCompleted(materializedJob);
         } catch (error) {
-          this.logger.error({ error: inspect(error) }, "Error executing job");
+          const jobMeta = {
+            jobId: job.jobId,
+            workflowId: job.workflowId,
+            attempts: job.attempts,
+            willRetry: job.attempts < 3,
+          };
+          this.logger.error(
+            { ...jobMeta, error: inspect(error) },
+            "Error executing job",
+          );
           await this.publishAttemptFailed(materializedJob);
           if (job.attempts < 3) {
             await retryJob(this.storage, job);
@@ -285,9 +301,17 @@ export class Worker<Payload = unknown> {
     });
   }
 
-  extendClaimTimeout(claim: SerializedJob<Payload>) {
+  extendClaimTimeout(claim: SerializedJob<Payload>, signal?: AbortSignal) {
     const timeoutMs = 5_000;
     const timeout = setInterval(() => {
+      if (signal?.aborted) {
+        clearInterval(timeout);
+        this.logger.info(
+          { jobId: claim.jobId, workflowId: claim.workflowId },
+          "Claim extender stopped: abort signal",
+        );
+        return;
+      }
       extendClaim(
         this.storage,
         this.queue.name,
@@ -297,11 +321,16 @@ export class Worker<Payload = unknown> {
         claim.jobId,
       ).catch((error) => {
         this.logger.error({ error: inspect(error) }, "Error extending claim");
-        console.error(error);
       });
     }, timeoutMs);
     return {
-      [Symbol.dispose]: () => clearInterval(timeout),
+      [Symbol.dispose]: () => {
+        clearInterval(timeout);
+        this.logger.debug(
+          { jobId: claim.jobId, workflowId: claim.workflowId },
+          "Claim extender disposed",
+        );
+      },
     };
   }
 }
@@ -327,6 +356,7 @@ export class WorkerWebSocketServer<Payload> {
   connection?: WorkerWebSocket;
   heartbeatInterval: NodeJS.Timeout | null = null;
   workLoops: AbortableLoop[] = [];
+  #aborting: Promise<void> | null = null;
 
   constructor(args: WorkerWebSocketServerArgs<Payload>) {
     this.logger = makeLogger().child({
@@ -388,7 +418,12 @@ export class WorkerWebSocketServer<Payload> {
     });
 
     ws.on("close", () => {
-      this.unbindConnection();
+      this.unbindConnection().catch((error) => {
+        this.logger.error(
+          { error: inspect(error) },
+          "Error during unbindConnection",
+        );
+      });
     });
 
     ws.isAlive = true;
@@ -401,24 +436,43 @@ export class WorkerWebSocketServer<Payload> {
     }
   }
 
-  unbindConnection() {
-    this.logger.debug("Unbinding connection");
+  async unbindConnection() {
+    this.logger.info("Unbinding connection");
     this.connection = undefined;
-    this.workLoops.forEach((workLoop) => {
-      workLoop.abort();
-    });
-    this.workLoops = [];
+    await this.abortWorkLoops();
   }
 
   @WithSpan()
   async abort() {
-    this.logger.debug("Aborting worker");
-    await Promise.all(this.workLoops.map((workLoop) => workLoop.abort()));
-    this.logger.debug("Workloops aborted");
+    this.logger.info("Aborting worker");
+    await this.abortWorkLoops();
+    this.logger.info("Workloops aborted");
     await this.worker.close();
     if (this.connection) {
-      this.logger.debug("Closing WebSocket connection");
+      this.logger.info("Closing WebSocket connection");
       this.connection.close();
+    }
+  }
+
+  private async abortWorkLoops() {
+    if (this.#aborting) {
+      this.logger.info("Abort already in progress, awaiting existing abort");
+      await this.#aborting;
+      return;
+    }
+    const loops = this.workLoops;
+    this.workLoops = [];
+    this.#aborting = Promise.all(loops.map((loop) => loop.abort())).then(
+      () => {},
+    );
+    try {
+      await this.#aborting;
+      this.logger.info(
+        { loopCount: loops.length },
+        "All work loops aborted",
+      );
+    } finally {
+      this.#aborting = null;
     }
   }
 }

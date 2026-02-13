@@ -15,7 +15,9 @@ export const abortableLoopWithBackoff = ({
   alwaysSleep = false,
   maxBackoffMs = 30000,
 }: {
-  fn: () => Promise<undefined | typeof RequestSleep> | Promise<void>;
+  fn: (
+    signal: AbortSignal,
+  ) => Promise<undefined | typeof RequestSleep> | Promise<void>;
   spanName: string;
   backoffMs: number;
   alwaysSleep?: boolean;
@@ -31,7 +33,7 @@ export const abortableLoopWithBackoff = ({
       }
       await executeSpan(spanName, async (_span) => {
         try {
-          const maybeSleepRequest = await fn();
+          const maybeSleepRequest = await fn(abortController.signal);
           if (maybeSleepRequest === RequestSleep) {
             await sleep(backoffMs, abortController.signal);
           }

@@ -178,7 +178,17 @@ export const retryJob = async (
       workflowId: job.workflowId,
       workflowName: job.workflow,
       jobId: job.jobId,
+      attempts: job.attempts,
     });
+    logger.info(
+      {
+        queue: job.queue,
+        jobId: job.jobId,
+        workflowId: job.workflowId,
+        attempts: job.attempts,
+      },
+      "Retrying job from claimed stage",
+    );
     job.attempts++;
     await storage
       .multi()
@@ -191,7 +201,7 @@ export const retryJob = async (
         job.workflowId,
         job.workflow,
         job.jobId,
-        "failed",
+        "claimed",
       )
       .enqueueJob(
         job.queue,
@@ -282,12 +292,8 @@ export const stallJob = async (
   job: SerializedJob<unknown>,
 ) => {
   logger.info(
+    { queue: job.queue, orgId: job.orgId, workflowId: job.workflowId, workflowName: job.workflow, jobId: job.jobId },
     "Stalling job",
-    job.queue,
-    job.orgId,
-    job.workflowId,
-    job.workflow,
-    job.jobId,
   );
   return await executeSpan("Job.stallJob", async (span) => {
     span.setAttributes({
@@ -330,7 +336,10 @@ export const completeJob = async (
   workflowId: string,
   jobId: string,
 ) => {
-  logger.info("Completing job", queue, orgId, workflowName, workflowId, jobId);
+  logger.info(
+    { queue, orgId, workflowName, workflowId, jobId },
+    "Completing job",
+  );
   return await executeSpan("Job.completeJob", async (span) => {
     span.setAttributes({
       queue,
