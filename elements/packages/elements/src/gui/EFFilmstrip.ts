@@ -125,11 +125,6 @@ export class EFFilmstrip extends TWMixin(LitElement) {
         pixels-per-ms=${this.pixelsPerMs}
         .showPlayhead=${!this.hidePlayhead}
         .showControls=${false}
-        .showRuler=${false}
-        .showHierarchy=${false}
-        .showPlaybackControls=${false}
-        .showZoomControls=${false}
-        .showTimeDisplay=${false}
         hide=${this.hide}
         show=${this.show}
       ></ef-timeline>
