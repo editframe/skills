@@ -101,7 +101,9 @@ func DetermineAction(working, target, total int) ScalingAction {
 		return ActionScaleUp
 	}
 
-	if total > target {
+	// Only scale down if there are idle connections to remove.
+	// Never disconnect connections that are actively processing jobs.
+	if total > target && total > working {
 		return ActionScaleDown
 	}
 

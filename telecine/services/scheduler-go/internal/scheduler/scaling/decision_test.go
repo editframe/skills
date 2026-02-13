@@ -200,11 +200,18 @@ func TestDetermineAction(t *testing.T) {
 			expected: ActionScaleUp,
 		},
 		{
-			name:     "scale down when total > target",
-			working:  5,
+			name:     "scale down idle connections when total > target and total > working",
+			working:  3,
 			target:   3,
 			total:    5,
 			expected: ActionScaleDown,
+		},
+		{
+			name:     "no scale down when all connections are working",
+			working:  5,
+			target:   3,
+			total:    5,
+			expected: ActionNone,
 		},
 		{
 			name:     "no action when at target",
@@ -286,7 +293,7 @@ func TestCalculateScalingDecision(t *testing.T) {
 			expectedConcurrent: 5,
 		},
 		{
-			name: "scale down gradually",
+			name: "no scale down when all connections are working even if target is lower",
 			stats: QueueStats{
 				Queued:  0,
 				Claimed: 0,
@@ -302,10 +309,32 @@ func TestCalculateScalingDecision(t *testing.T) {
 			},
 			rank:               0,
 			total:              1,
-			expectedAction:     ActionScaleDown,
+			expectedAction:     ActionNone,
 			expectedTarget:     9, // 10*0.9 + 0*0.1 = 9
 			expectedNatural:    0,
 			expectedConcurrent: 0,
+		},
+		{
+			name: "scale down idle connections when working connections already at target",
+			stats: QueueStats{
+				Queued:  3,
+				Claimed: 0,
+				Stalled: 0,
+			},
+			connections: ConnectionState{
+				Total:   5,
+				Working: 3,
+			},
+			history: ScalingHistory{
+				SmoothedTarget: 0,
+				LastRawTarget:  0,
+			},
+			rank:               0,
+			total:              1,
+			expectedAction:     ActionScaleDown,
+			expectedTarget:     3,
+			expectedNatural:    3,
+			expectedConcurrent: 3,
 		},
 		{
 			name: "respect max worker count",
