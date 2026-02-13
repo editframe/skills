@@ -2,6 +2,7 @@ import type { TrackFragmentIndex } from "@editframe/assets";
 import type {
   InitSegmentPaths,
   MediaEngine,
+  RenditionId,
   VideoRendition,
 } from "../../transcoding/types";
 import type { UrlGenerator } from "../../transcoding/utils/UrlGenerator";
@@ -169,6 +170,55 @@ export class FileMediaEngine
 
   buildMediaSegmentUrl(trackId: number, _segmentId: number) {
     return `${this.apiHost}/api/v1/files/${this.fileId}/tracks/${trackId}`;
+  }
+
+  async fetchInitSegment(
+    rendition: { id?: RenditionId; trackId: number | undefined; src: string },
+    signal: AbortSignal,
+  ) {
+    if (!rendition.trackId) {
+      throw new Error(
+        "[fetchInitSegment] Track ID is required for file-based media",
+      );
+    }
+
+    const trackData = this.data[rendition.trackId];
+    if (!trackData) {
+      throw new Error(`Track ${rendition.trackId} not found`);
+    }
+
+    const { offset, size } = trackData.initSegment;
+    const url = this.buildInitSegmentUrl(rendition.trackId);
+    const fullTrack = await this.fetchMedia(url, signal);
+    return fullTrack.slice(offset, offset + size);
+  }
+
+  async fetchMediaSegment(
+    segmentId: number,
+    rendition: { id?: RenditionId; trackId: number | undefined; src: string },
+    signal: AbortSignal,
+  ) {
+    if (!rendition.trackId) {
+      throw new Error(
+        "[fetchMediaSegment] Track ID is required for file-based media",
+      );
+    }
+
+    const trackData = this.data[rendition.trackId];
+    if (!trackData) {
+      throw new Error(`Track ${rendition.trackId} not found`);
+    }
+
+    const segment = trackData.segments[segmentId];
+    if (!segment) {
+      throw new Error(
+        `Segment ${segmentId} not found for track ${rendition.trackId}`,
+      );
+    }
+
+    const url = this.buildMediaSegmentUrl(rendition.trackId, segmentId);
+    const fullTrack = await this.fetchMedia(url, signal);
+    return fullTrack.slice(segment.offset, segment.offset + segment.size);
   }
 
   convertToSegmentRelativeTimestamps(

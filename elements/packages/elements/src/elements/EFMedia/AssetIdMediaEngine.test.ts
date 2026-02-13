@@ -209,6 +209,90 @@ describe("FileMediaEngine", () => {
     });
   });
 
+  describe("segment data extraction", () => {
+    // Build a mock track file: [init (1024 bytes)][seg0 (2048 bytes)][seg1 (2048 bytes)]
+    // Audio track (track 1) has initSegment at offset 0 size 1024,
+    // segment 0 at offset 1024 size 2048, segment 1 at offset 3072 size 2048
+    const totalTrackSize = 1024 + 2048 + 2048; // 5120 bytes
+    let mockTrackBuffer: ArrayBuffer;
+
+    beforeEach(() => {
+      mockTrackBuffer = new ArrayBuffer(totalTrackSize);
+      const view = new Uint8Array(mockTrackBuffer);
+      // Fill init region (0-1023) with 0xAA
+      view.fill(0xAA, 0, 1024);
+      // Fill segment 0 region (1024-3071) with 0xBB
+      view.fill(0xBB, 1024, 3072);
+      // Fill segment 1 region (3072-5119) with 0xCC
+      view.fill(0xCC, 3072, 5120);
+
+      // Mock fetchMedia to return the full track buffer
+      vi.spyOn(engine, "fetchMedia").mockResolvedValue(mockTrackBuffer);
+    });
+
+    it("should extract only the init segment bytes from the full track", async () => {
+      const signal = new AbortController().signal;
+      const result = await engine.fetchInitSegment(
+        { trackId: 1, src: mockFileId },
+        signal,
+      );
+
+      expect(result.byteLength).toBe(1024);
+      const view = new Uint8Array(result);
+      expect(view[0]).toBe(0xAA);
+      expect(view[1023]).toBe(0xAA);
+    });
+
+    it("should extract only segment 0 bytes from the full track", async () => {
+      const signal = new AbortController().signal;
+      const result = await engine.fetchMediaSegment(
+        0,
+        { trackId: 1, src: mockFileId },
+        signal,
+      );
+
+      expect(result.byteLength).toBe(2048);
+      const view = new Uint8Array(result);
+      expect(view[0]).toBe(0xBB);
+      expect(view[2047]).toBe(0xBB);
+    });
+
+    it("should extract only segment 1 bytes from the full track", async () => {
+      const signal = new AbortController().signal;
+      const result = await engine.fetchMediaSegment(
+        1,
+        { trackId: 1, src: mockFileId },
+        signal,
+      );
+
+      expect(result.byteLength).toBe(2048);
+      const view = new Uint8Array(result);
+      expect(view[0]).toBe(0xCC);
+      expect(view[2047]).toBe(0xCC);
+    });
+
+    it("should throw for invalid segment ID", async () => {
+      const signal = new AbortController().signal;
+      await expect(
+        engine.fetchMediaSegment(
+          99,
+          { trackId: 1, src: mockFileId },
+          signal,
+        ),
+      ).rejects.toThrow("Segment 99 not found");
+    });
+
+    it("should throw for missing track ID", async () => {
+      const signal = new AbortController().signal;
+      await expect(
+        engine.fetchInitSegment(
+          { trackId: undefined, src: mockFileId },
+          signal,
+        ),
+      ).rejects.toThrow("Track ID is required");
+    });
+  });
+
   describe("static fetch method", () => {
     it("should create engine from API response using /api/v1/files/", async () => {
       const mockResponse = {
