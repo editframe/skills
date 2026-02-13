@@ -350,7 +350,7 @@ export class EFPanZoom extends LitElement {
     // Calculate scale to fit
     const scaleX = availableWidth / contentWidth;
     const scaleY = availableHeight / contentHeight;
-    const newScale = Math.min(scaleX, scaleY, 1); // Don't scale up beyond 1:1
+    const newScale = Math.min(scaleX, scaleY);
 
     // Calculate position to center
     const scaledWidth = contentWidth * newScale;
