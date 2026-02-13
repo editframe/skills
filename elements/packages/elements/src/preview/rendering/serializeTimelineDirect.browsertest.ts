@@ -7,7 +7,6 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { serializeElementToXHTML, captureTimelineToDataUri } from "./serializeTimelineDirect.js";
 import type { EFTimegroup } from "../../elements/EFTimegroup.js";
 import type { EFText } from "../../elements/EFText.js";
-
 describe("serializeTimelineDirect", () => {
   let container: HTMLDivElement;
 
@@ -170,6 +169,88 @@ describe("serializeTimelineDirect", () => {
       // Should have wrapper with correct dimensions
       expect(xhtml).toContain('width:1920px');
       expect(xhtml).toContain('height:1080px');
+    });
+  });
+
+  describe("object-fit preservation", () => {
+    function createCanvasWithPixels(width: number, height: number): HTMLCanvasElement {
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = "red";
+      ctx.fillRect(0, 0, width, height);
+      return canvas;
+    }
+
+    it("should preserve object-fit: cover on serialized canvas elements", async () => {
+      const canvas = createCanvasWithPixels(200, 100);
+      canvas.style.width = "400px";
+      canvas.style.height = "400px";
+      canvas.style.objectFit = "cover";
+      container.appendChild(canvas);
+
+      const xhtml = await serializeElementToXHTML(container, 800, 600, {
+        canvasScale: 1,
+        timeMs: 0,
+      });
+
+      expect(xhtml).toContain("object-fit:cover");
+      expect(xhtml).not.toContain("object-fit:contain");
+    });
+
+    it("should preserve object-fit: fill on serialized canvas elements", async () => {
+      const canvas = createCanvasWithPixels(200, 100);
+      canvas.style.width = "400px";
+      canvas.style.height = "400px";
+      canvas.style.objectFit = "fill";
+      container.appendChild(canvas);
+
+      const xhtml = await serializeElementToXHTML(container, 800, 600, {
+        canvasScale: 1,
+        timeMs: 0,
+      });
+
+      expect(xhtml).toContain("object-fit:fill");
+    });
+
+    it("should preserve custom object-position on serialized canvas elements", async () => {
+      const canvas = createCanvasWithPixels(200, 100);
+      canvas.style.width = "400px";
+      canvas.style.height = "400px";
+      canvas.style.objectFit = "cover";
+      canvas.style.objectPosition = "top left";
+      container.appendChild(canvas);
+
+      const xhtml = await serializeElementToXHTML(container, 800, 600, {
+        canvasScale: 1,
+        timeMs: 0,
+      });
+
+      expect(xhtml).toContain("object-fit:cover");
+      // Extract the img tag's style to check object-position specifically
+      const imgMatch = xhtml.match(/<img\s+style="([^"]+)"/);
+      expect(imgMatch).toBeTruthy();
+      const imgStyle = imgMatch![1];
+      // "top left" computes to "0% 0%" or "left top" — not the default "50% 50%"
+      expect(imgStyle).not.toMatch(/object-position:50% 50%/);
+      expect(imgStyle).toMatch(/object-position/);
+    });
+
+    it("should default to contain when canvas has no explicit object-fit", async () => {
+      const canvas = createCanvasWithPixels(200, 100);
+      canvas.style.width = "400px";
+      canvas.style.height = "400px";
+      // No explicit object-fit — browser default is "fill" for canvas
+      container.appendChild(canvas);
+
+      const xhtml = await serializeElementToXHTML(container, 800, 600, {
+        canvasScale: 1,
+        timeMs: 0,
+      });
+
+      // Browser default for canvas object-fit is "fill"
+      expect(xhtml).toContain("object-fit:fill");
     });
   });
 

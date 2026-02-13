@@ -202,11 +202,18 @@ function serializeAttributes(element: Element, parts: Array<string | Promise<str
 /**
  * Check if a canvas element should preserve alpha channel.
  * EF-WAVEFORM always needs alpha, EF-IMAGE checks hasAlpha property.
+ * EF-SURFACE needs alpha because:
+ *   1. Without a target, its canvas is transparent and CSS background should show through
+ *   2. The target element may have transparent content
  * Raw canvas elements must preserve alpha - we don't know what they contain.
  */
 function shouldPreserveAlpha(sourceElement: Element): boolean {
   const tagName = sourceElement.tagName;
   if (tagName === 'EF-WAVEFORM') {
+    return true;
+  }
+  if (tagName === 'EF-SURFACE') {
+    // Surface needs alpha to allow CSS background to show through empty areas
     return true;
   }
   if (tagName === 'EF-IMAGE') {
@@ -374,28 +381,24 @@ function serializeCanvas(
   const computedWidth = computedStyle.width;
   const computedHeight = computedStyle.height;
   
-  // Use CSS object-fit and object-position to let the browser handle aspect ratio and centering
-  // Set img dimensions to host element size, then use object-fit: contain to scale the image data
+  // Preserve the source element's object-fit and object-position for correct scaling.
+  // These CSS properties control how the canvas content fits its container and must be
+  // carried through to the serialized <img> to maintain visual fidelity.
   const styleParts = styleStr ? styleStr.split(';').filter(s => s.trim()) : [];
-  
-  // Remove width/height/object-fit/object-position from computed styles (we'll set them explicitly)
+
+  // Remove width/height from computed styles (we'll set them explicitly from computed dimensions)
   const filteredParts = styleParts.filter(s => {
     const trimmed = s.trim();
-    return !trimmed.startsWith('width:') && 
-           !trimmed.startsWith('height:') &&
-           !trimmed.startsWith('object-fit:') &&
-           !trimmed.startsWith('object-position:');
+    return !trimmed.startsWith('width:') &&
+           !trimmed.startsWith('height:');
   });
-  
+
   // Use host element dimensions if available, otherwise fall back to canvas natural dimensions
   const displayWidth = computedWidth || `${width}px`;
   const displayHeight = computedHeight || `${height}px`;
-  
-  // Set dimensions to host size and let object-fit: contain handle the aspect ratio
+
   filteredParts.push(`width:${displayWidth}`);
   filteredParts.push(`height:${displayHeight}`);
-  filteredParts.push(`object-fit:contain`);
-  filteredParts.push(`object-position:center`);
   filteredParts.push(`display:block`);
   
   const finalStyle = filteredParts.join(';');
@@ -648,24 +651,11 @@ function serializeElement(
 
 
 /**
- * Encode SVG string to a base64 data URI using TextEncoder.
- *
- * TextEncoder.encode() converts the string to UTF-8 bytes in a single
- * native call, then we base64-encode the bytes. This avoids the O(n)
- * character-by-character inspection that encodeURIComponent performs
- * and produces a shorter output (~33% overhead vs ~200% for percent-encoding).
+ * TextEncoder instance for SVG-to-base64 encoding.
+ * encode() converts to UTF-8 bytes in a single native call, then we
+ * base64-encode the bytes. ~33% overhead vs ~200% for percent-encoding.
  */
 const textEncoder = new TextEncoder();
-function encodeSVGToBase64DataUri(svg: string): string {
-  const bytes = textEncoder.encode(svg);
-  // Convert Uint8Array to binary string in chunks to avoid stack overflow
-  // Process in 8KB chunks to avoid exceeding Function.prototype.apply() argument limit
-  let binary = '';
-  for (let i = 0; i < bytes.length; i += 8192) {
-    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192) as unknown as number[]);
-  }
-  return `data:image/svg+xml;base64,${btoa(binary)}`;
-}
 
 /**
  * Synchronous DOM capture phase. Walks the element tree, snapshots canvas
@@ -793,11 +783,17 @@ export function captureTimelineToDataUri(
   
   return Promise.all(parts).then(resolvedParts => {
     const xhtml = resolvedParts.join('');
-    const svg = 
+    const svg =
       `<svg xmlns="http://www.w3.org/2000/svg" width="${scaleConfig.outputWidth}" height="${scaleConfig.outputHeight}">` +
       `<foreignObject x="0" y="0" width="${scaleConfig.outputWidth}" height="${scaleConfig.outputHeight}">${xhtml}</foreignObject>` +
       `</svg>`;
-    return encodeSVGToBase64DataUri(svg);
+    // Encode SVG to base64 data URI inline (avoids module-level function reference issues)
+    const bytes = textEncoder.encode(svg);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 8192) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192) as unknown as number[]);
+    }
+    return `data:image/svg+xml;base64,${btoa(binary)}`;
   });
 }
 
