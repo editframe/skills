@@ -15,7 +15,7 @@ metadata:
 
 ```html
 <ef-configuration api-host="..." media-engine="local">
-  <ef-timegroup mode="sequence" workbench>
+  <ef-timegroup mode="sequence">
     <!-- elements here -->
   </ef-timegroup>
 </ef-configuration>
@@ -61,7 +61,7 @@ See the `editframe-cli` skill for full CLI command reference.
 ## Scene Structure
 
 ```html
-<ef-timegroup mode="sequence" overlap="1s" workbench>
+<ef-timegroup mode="sequence" overlap="1s">
   <!-- Scene 1 -->
   <ef-timegroup mode="fixed" duration="5s" class="absolute w-full h-full">
     <ef-video src="intro.mp4" class="size-full object-cover"></ef-video>

@@ -83,7 +83,7 @@ export function ClientRenderDemo() {
               <div className="flex-1 px-4 h-12 flex items-center">
                 <Scrubber
                   target={previewId}
-                  className="w-full h-1.5 bg-white/20 cursor-pointer [&::part(progress)]:bg-white [&::part(thumb)]:bg-white [&::part(thumb)]:w-3 [&::part(thumb)]:h-3"
+                  className="w-full h-1.5 bg-white/20 cursor-pointer [&::part(progress)]:bg-white [&::part(handle)]:bg-white [&::part(handle)]:w-3 [&::part(handle)]:h-3"
                 />
               </div>
               

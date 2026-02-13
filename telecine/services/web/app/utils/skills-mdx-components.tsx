@@ -2,7 +2,7 @@ import * as React from "react";
 import { Link } from "react-router";
 import { CodeBlock } from "~/components/CodeBlock";
 import { MermaidDiagram } from "~/components/MermaidDiagram";
-import { Preview, FitScale, FocusOverlay, Filmstrip } from "@editframe/react";
+import { Preview, FitScale, FocusOverlay, Filmstrip, TogglePlay, Scrubber, TimeDisplay } from "@editframe/react";
 import { ApiReference } from "~/components/skills/ApiReference";
 import type { ApiMetadata } from "~/utils/skills.server";
 import clsx from "clsx";
@@ -63,7 +63,7 @@ function LiveDemo({ code }: { code: string }) {
         <div className="h-[calc(50vh-4rem)] min-h-[300px] w-full">
           <Preview
             loop
-            className="h-full w-full grid grid-rows-[1.5fr_1fr]"
+            className="h-full w-full grid grid-rows-[1.5fr_auto_1fr]"
           >
             <div className="overflow-hidden bg-slate-300 dark:bg-slate-700 min-h-0 min-w-0 w-full h-full max-w-full">
               <FitScale className="w-full h-full max-w-full min-w-0">
@@ -73,6 +73,30 @@ function LiveDemo({ code }: { code: string }) {
                 />
               </FitScale>
               <FocusOverlay />
+            </div>
+            <div className="flex items-center bg-[#111] border-t border-white/10">
+              <TogglePlay>
+                <button
+                  slot="play"
+                  className="w-10 h-10 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                </button>
+                <button
+                  slot="pause"
+                  className="w-10 h-10 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" /></svg>
+                </button>
+              </TogglePlay>
+              <div className="flex-1 px-3 h-10 flex items-center border-l border-white/10">
+                <Scrubber
+                  className="w-full h-1 bg-white/20 rounded-full cursor-pointer [&::part(progress)]:bg-[var(--poster-blue)] [&::part(progress)]:rounded-full [&::part(handle)]:bg-white [&::part(handle)]:w-2.5 [&::part(handle)]:h-2.5 [&::part(handle)]:rounded-full"
+                />
+              </div>
+              <div className="px-3 border-l border-white/10 h-10 flex items-center">
+                <TimeDisplay className="text-[10px] text-white/60 font-mono tabular-nums" />
+              </div>
             </div>
             <div className="min-h-0">
               <Filmstrip

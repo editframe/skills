@@ -132,7 +132,7 @@ const slides: ImageSlide[] = [
   { id: "3", src: "/assets/slide3.jpg", duration: "3s", caption: "Slide 3" },
 ];
 
-<Timegroup workbench mode="sequence" className="w-[1920px] h-[1080px]">
+<Timegroup mode="sequence" className="w-[1920px] h-[1080px]">
   {slides.map((slide) => (
     <Timegroup 
       key={slide.id}

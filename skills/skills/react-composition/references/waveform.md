@@ -136,8 +136,7 @@ import { Audio, Waveform, Text, Image } from "@editframe/react";
 
 export const PodcastVisualizer = () => {
   return (
-    <Timegroup 
-      workbench 
+    <Timegroup
       mode="contain"
       className="w-[1920px] h-[1080px] bg-gradient-to-br from-slate-900 to-slate-800"
     >

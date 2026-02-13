@@ -38,7 +38,7 @@ import { Timegroup } from "@editframe/react";
 
 export const Video = () => {
   return (
-    <Timegroup workbench mode="sequence" className="w-[1920px] h-[1080px]">
+    <Timegroup mode="sequence" className="w-[1920px] h-[1080px]">
       {/* Your composition */}
     </Timegroup>
   );
@@ -64,7 +64,7 @@ Uses local files from your dev server:
 
 ```tsx
 <Configuration mediaEngine="local">
-  <Timegroup workbench mode="sequence">
+  <Timegroup mode="sequence">
     <Video src="/assets/local-video.mp4" />
   </Timegroup>
 </Configuration>
@@ -76,7 +76,7 @@ Loads media from remote URLs:
 
 ```tsx
 <Configuration mediaEngine="remote">
-  <Timegroup workbench mode="sequence">
+  <Timegroup mode="sequence">
     <Video src="https://cdn.example.com/video.mp4" />
   </Timegroup>
 </Configuration>
@@ -88,7 +88,7 @@ Set the API endpoint for transcription and rendering:
 
 ```tsx
 <Configuration apiHost="https://api.editframe.com">
-  <Timegroup workbench mode="sequence">
+  <Timegroup mode="sequence">
     {/* Composition */}
   </Timegroup>
 </Configuration>
@@ -103,7 +103,7 @@ const mediaEngine = import.meta.env.PROD ? "remote" : "local";
 export const Video = () => {
   return (
     <Configuration apiHost={apiHost} mediaEngine={mediaEngine}>
-      <Timegroup workbench mode="sequence" className="w-[1920px] h-[1080px]">
+      <Timegroup mode="sequence" className="w-[1920px] h-[1080px]">
         {/* Your composition */}
       </Timegroup>
     </Configuration>
@@ -118,7 +118,7 @@ If you don't need API features (transcription) or want default settings, you can
 ```tsx
 export const Video = () => {
   return (
-    <Timegroup workbench mode="sequence" className="w-[1920px] h-[1080px]">
+    <Timegroup mode="sequence" className="w-[1920px] h-[1080px]">
       {/* Your composition */}
     </Timegroup>
   );
@@ -134,7 +134,7 @@ import { Timegroup, Video, Audio } from "@editframe/react";
 export const VideoComposition = () => {
   return (
     <Timegroup 
-      workbench 
+      
       mode="sequence" 
       className="w-[1920px] h-[1080px] bg-black"
     >

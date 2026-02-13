@@ -16,7 +16,7 @@ Common structural patterns for video composition with Editframe Elements.
 **Pattern**: One scene after another, no overlap
 
 ```html
-<ef-timegroup mode="sequence" workbench>
+<ef-timegroup mode="sequence">
   <!-- Scene 1 -->
   <ef-timegroup mode="fixed" duration="5s" class="absolute w-full h-full">
     <ef-video src="intro.mp4" class="size-full object-cover"></ef-video>
@@ -43,7 +43,7 @@ Common structural patterns for video composition with Editframe Elements.
 **Pattern**: Scenes overlap with fade transitions
 
 ```html
-<ef-timegroup mode="sequence" overlap="1s" workbench>
+<ef-timegroup mode="sequence" overlap="1s">
   <!-- Scene 1 fades out while Scene 2 fades in -->
   <ef-timegroup mode="fixed" duration="5s" class="absolute w-full h-full fade-in-out">
     <ef-video src="scene1.mp4" class="size-full object-cover"></ef-video>
@@ -64,7 +64,7 @@ Common structural patterns for video composition with Editframe Elements.
 **Pattern**: Multiple elements at different z-indexes
 
 ```html
-<ef-timegroup mode="fixed" duration="10s" class="absolute w-full h-full" workbench>
+<ef-timegroup mode="fixed" duration="10s" class="absolute w-full h-full">
   <!-- Background video -->
   <ef-video src="background.mp4" class="absolute inset-0 size-full object-cover z-0"></ef-video>
   
@@ -90,7 +90,7 @@ Common structural patterns for video composition with Editframe Elements.
 **Pattern**: Multiple videos/elements side by side
 
 ```html
-<ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full" workbench>
+<ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full">
   <!-- Left side -->
   <ef-video src="before.mp4" class="absolute left-0 top-0 w-1/2 h-full object-cover"></ef-video>
   
@@ -115,7 +115,7 @@ Common structural patterns for video composition with Editframe Elements.
 **Pattern**: Small video overlaid on larger video
 
 ```html
-<ef-timegroup mode="fixed" duration="10s" class="absolute w-full h-full" workbench>
+<ef-timegroup mode="fixed" duration="10s" class="absolute w-full h-full">
   <!-- Main video -->
   <ef-video src="main.mp4" class="absolute inset-0 size-full object-cover"></ef-video>
   
@@ -136,7 +136,7 @@ Common structural patterns for video composition with Editframe Elements.
 **Pattern**: Text as primary element with supporting visuals
 
 ```html
-<ef-timegroup mode="sequence" workbench>
+<ef-timegroup mode="sequence">
   <!-- Statement 1 -->
   <ef-timegroup mode="fixed" duration="3s" class="absolute w-full h-full bg-blue-600">
     <ef-text class="absolute inset-0 flex items-center justify-center text-white text-6xl font-bold text-center">
@@ -169,7 +169,7 @@ Common structural patterns for video composition with Editframe Elements.
 **Pattern**: Static image with slow zoom/pan
 
 ```html
-<ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full" workbench>
+<ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full">
   <ef-image 
     src="photo.jpg" 
     class="absolute inset-0 size-full object-cover animate-ken-burns"
@@ -196,7 +196,7 @@ Common structural patterns for video composition with Editframe Elements.
 **Pattern**: Rapid succession of short clips
 
 ```html
-<ef-timegroup mode="sequence" workbench>
+<ef-timegroup mode="sequence">
   <ef-timegroup mode="fixed" duration="1s" class="absolute w-full h-full">
     <ef-video src="clip1.mp4" class="size-full object-cover"></ef-video>
   </ef-timegroup>
@@ -226,7 +226,7 @@ Common structural patterns for video composition with Editframe Elements.
 **Pattern**: Background stays constant while foreground elements change
 
 ```html
-<ef-timegroup mode="fixed" duration="15s" class="absolute w-full h-full" workbench>
+<ef-timegroup mode="fixed" duration="15s" class="absolute w-full h-full">
   <!-- Persistent background -->
   <ef-video src="background.mp4" class="absolute inset-0 size-full object-cover"></ef-video>
   
@@ -254,7 +254,7 @@ Common structural patterns for video composition with Editframe Elements.
 **Pattern**: Audio with visual waveform
 
 ```html
-<ef-timegroup mode="fixed" duration="30s" class="absolute w-full h-full" workbench>
+<ef-timegroup mode="fixed" duration="30s" class="absolute w-full h-full">
   <!-- Background -->
   <div class="absolute inset-0 bg-gradient-to-br from-purple-900 to-blue-900"></div>
   
@@ -284,7 +284,7 @@ Common structural patterns for video composition with Editframe Elements.
 **Pattern**: Video with synchronized captions
 
 ```html
-<ef-timegroup mode="fixed" duration="30s" class="absolute w-full h-full" workbench>
+<ef-timegroup mode="fixed" duration="30s" class="absolute w-full h-full">
   <!-- Video -->
   <ef-video src="interview.mp4" class="size-full object-cover"></ef-video>
   
@@ -306,7 +306,7 @@ Common structural patterns for video composition with Editframe Elements.
 **Pattern**: Animated logo entrance
 
 ```html
-<ef-timegroup mode="fixed" duration="3s" class="absolute w-full h-full bg-black" workbench>
+<ef-timegroup mode="fixed" duration="3s" class="absolute w-full h-full bg-black">
   <ef-image 
     src="logo.png" 
     class="absolute inset-0 m-auto w-96 h-96 object-contain animate-logo-reveal"
@@ -339,7 +339,7 @@ Common structural patterns for video composition with Editframe Elements.
 **Pattern**: Multiple features shown in grid layout
 
 ```html
-<ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full bg-gray-100" workbench>
+<ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full bg-gray-100">
   <!-- Grid container -->
   <div class="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-4 p-8">
     <!-- Feature 1 -->
@@ -378,7 +378,7 @@ Common structural patterns for video composition with Editframe Elements.
 **Pattern**: Final scene with clear CTA
 
 ```html
-<ef-timegroup mode="fixed" duration="5s" class="absolute w-full h-full" workbench>
+<ef-timegroup mode="fixed" duration="5s" class="absolute w-full h-full">
   <!-- Background (brand color) -->
   <div class="absolute inset-0 bg-gradient-to-br from-blue-600 to-blue-800"></div>
   
@@ -409,7 +409,7 @@ Common structural patterns for video composition with Editframe Elements.
 ### The Hook-Content-CTA Structure (30-60s)
 
 ```html
-<ef-timegroup mode="sequence" overlap="0.5s" workbench>
+<ef-timegroup mode="sequence" overlap="0.5s">
   <!-- Hook (3-5s): Grab attention -->
   <ef-timegroup mode="fixed" duration="4s" class="absolute w-full h-full">
     <ef-video src="hook.mp4" class="size-full object-cover"></ef-video>
@@ -460,7 +460,7 @@ Common structural patterns for video composition with Editframe Elements.
 ### The Story Arc Structure (60-90s)
 
 ```html
-<ef-timegroup mode="sequence" overlap="1s" workbench>
+<ef-timegroup mode="sequence" overlap="1s">
   <!-- Setup: Introduce character/situation -->
   <ef-timegroup mode="fixed" duration="15s" class="absolute w-full h-full">
     <ef-video src="setup.mp4" class="size-full object-cover"></ef-video>
@@ -495,7 +495,7 @@ Common structural patterns for video composition with Editframe Elements.
 ### The Testimonial Structure (45-60s)
 
 ```html
-<ef-timegroup mode="sequence" overlap="0.5s" workbench>
+<ef-timegroup mode="sequence" overlap="0.5s">
   <!-- Intro -->
   <ef-timegroup mode="fixed" duration="5s" class="absolute w-full h-full bg-brand-color">
     <ef-text class="absolute inset-0 flex items-center justify-center text-white text-4xl font-bold text-center">

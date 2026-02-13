@@ -38,7 +38,7 @@ export const App = () => {
         </div>
         
         {/* Composition */}
-        <Timegroup workbench mode="sequence" className="w-[1920px] h-[1080px]">
+        <Timegroup mode="sequence" className="w-[1920px] h-[1080px]">
           <Video src="/assets/video.mp4" />
         </Timegroup>
       </div>
@@ -81,7 +81,7 @@ export const SplitView = () => {
       {/* Right: Composition */}
       <div>
         <h2 className="text-xl mb-2">Composition</h2>
-        <Timegroup workbench mode="sequence" className="w-[1920px] h-[1080px]">
+        <Timegroup mode="sequence" className="w-[1920px] h-[1080px]">
           <Timegroup mode="fixed" duration="5s" className="absolute w-full h-full">
             <Video src="/assets/video.mp4" className="size-full" />
             <Text duration="5s" className="text-white text-4xl">
@@ -130,7 +130,7 @@ export const Editor = () => {
 
 ## Notes
 
-- Preview automatically connects to the workbench timeline
+- Preview automatically connects to the timeline
 - Shows real-time playback of your composition
 - Scales to fit the container while maintaining aspect ratio
 - Use with `Controls` component for playback buttons

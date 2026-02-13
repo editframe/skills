@@ -131,18 +131,42 @@ The timeline scrubber for seeking:
 ```tsx
 import { Scrubber } from "@editframe/react";
 
-<Scrubber 
+<Scrubber
   className="w-full h-2 bg-gray-700 rounded cursor-pointer"
 />
 ```
 
-### Scrubber Props
+### CSS Custom Properties
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `--ef-scrubber-height` | `4px` | Track height |
+| `--ef-scrubber-background` | `rgba(255, 255, 255, 0.2)` | Track background color |
+| `--ef-scrubber-progress-color` | `#fff` | Progress bar and handle color |
+| `--ef-scrubber-handle-size` | `12px` | Handle diameter |
+
+### CSS Shadow Parts
+
+Style internal elements from the outside using `::part()`:
+
+| Part | Description |
+|------|-------------|
+| `scrubber` | The track container |
+| `progress` | The filled progress bar |
+| `handle` | The draggable seek handle |
 
 ```tsx
-interface ScrubberProps {
-  className?: string;
-  // Styling props...
-}
+<Scrubber
+  className={`
+    w-full h-1.5 bg-white/20 rounded-full cursor-pointer
+    [&::part(progress)]:bg-red-500
+    [&::part(progress)]:rounded-full
+    [&::part(handle)]:bg-white
+    [&::part(handle)]:w-3
+    [&::part(handle)]:h-3
+    [&::part(handle)]:rounded-full
+  `}
+/>
 ```
 
 ## TimeDisplay Component

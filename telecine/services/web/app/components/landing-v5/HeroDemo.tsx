@@ -135,7 +135,7 @@ export function HeroDemo() {
               <div className="flex-1 px-4 h-12 flex items-center border-l border-white/10">
                 <Scrubber 
                   target={previewId}
-                  className="w-full h-1.5 bg-white/20 rounded-full cursor-pointer [&::part(progress)]:bg-[var(--accent-red)] [&::part(progress)]:rounded-full [&::part(thumb)]:bg-white [&::part(thumb)]:w-3 [&::part(thumb)]:h-3 [&::part(thumb)]:rounded-full"
+                  className="w-full h-1.5 bg-white/20 rounded-full cursor-pointer [&::part(progress)]:bg-[var(--accent-red)] [&::part(progress)]:rounded-full [&::part(handle)]:bg-white [&::part(handle)]:w-3 [&::part(handle)]:h-3 [&::part(handle)]:rounded-full"
                 />
               </div>
               

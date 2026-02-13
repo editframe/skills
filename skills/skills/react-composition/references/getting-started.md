@@ -23,7 +23,6 @@ import { Timegroup, Text } from "@editframe/react";
 export const Video = () => {
   return (
     <Timegroup
-      workbench
       className="w-[1920px] h-[1080px] bg-black"
       mode="sequence"
     >
@@ -77,7 +76,7 @@ import { Timegroup, Video, Text, Audio } from "@editframe/react";
 
 export const VideoComposition = () => {
   return (
-    <Timegroup workbench mode="sequence" overlap="1s" className="w-[1920px] h-[1080px]">
+    <Timegroup mode="sequence" overlap="1s" className="w-[1920px] h-[1080px]">
       <Timegroup mode="fixed" duration="5s" className="absolute w-full h-full">
         <Video src="/assets/intro.mp4" className="size-full object-cover" />
         <Text className="absolute top-8 text-white text-3xl">Title</Text>

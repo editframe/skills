@@ -22,19 +22,19 @@ Build your first video composition with Editframe Elements.
 Every composition starts with an `ef-timegroup` root:
 
 ```html
-<ef-timegroup workbench mode="sequence" class="w-[1920px] h-[1080px] bg-black">
+<ef-timegroup mode="sequence" class="w-[1920px] h-[1080px] bg-black">
   <!-- scenes go here -->
 </ef-timegroup>
 ```
 
-The `workbench` attribute enables the preview player. The `mode` controls how child elements are timed.
+The `mode` controls how child elements are timed.
 
 ### Step 1: Create a Scene
 
 Add a fixed-duration scene with text:
 
 ```html
-<ef-timegroup workbench mode="sequence" class="w-[1920px] h-[1080px] bg-black">
+<ef-timegroup mode="sequence" class="w-[1920px] h-[1080px] bg-black">
   <ef-timegroup mode="fixed" duration="5s" class="absolute w-full h-full">
     <ef-text class="text-white text-4xl">Hello, Editframe!</ef-text>
   </ef-timegroup>
@@ -46,7 +46,7 @@ Add a fixed-duration scene with text:
 Add video and audio to your scene:
 
 ```html
-<ef-timegroup workbench mode="sequence" class="w-[1920px] h-[1080px] bg-black">
+<ef-timegroup mode="sequence" class="w-[1920px] h-[1080px] bg-black">
   <ef-timegroup mode="fixed" duration="5s" class="absolute w-full h-full">
     <ef-video src="/assets/intro.mp4" class="size-full object-cover"></ef-video>
     <ef-text class="absolute bottom-8 text-white text-2xl">Title</ef-text>
@@ -59,7 +59,7 @@ Add video and audio to your scene:
 Chain scenes in a sequence with overlap for transitions:
 
 ```html
-<ef-timegroup workbench mode="sequence" overlap="1s" class="w-[1920px] h-[1080px] bg-black">
+<ef-timegroup mode="sequence" overlap="1s" class="w-[1920px] h-[1080px] bg-black">
   <ef-timegroup mode="fixed" duration="5s" class="absolute w-full h-full">
     <ef-video src="/assets/intro.mp4" class="size-full object-cover"></ef-video>
   </ef-timegroup>

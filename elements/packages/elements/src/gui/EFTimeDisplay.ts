@@ -1,6 +1,6 @@
 import { consume } from "@lit/context";
 import { css, html, LitElement } from "lit";
-import { customElement } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { currentTimeContext } from "./currentTimeContext.js";
 import { durationContext } from "./durationContext.js";
 import { efContext } from "./efContext.js";
@@ -21,11 +21,27 @@ export class EFTimeDisplay extends TargetOrContextMixin(LitElement, efContext) {
     ::part(time) {}
   `;
 
-  @consume({ context: currentTimeContext, subscribe: true })
+  @property({ type: Number, attribute: "current-time-ms" })
   currentTimeMs = Number.NaN;
 
-  @consume({ context: durationContext, subscribe: true })
+  @property({ type: Number, attribute: "duration-ms" })
   durationMs = 0;
+
+  @consume({ context: currentTimeContext, subscribe: true })
+  contextCurrentTimeMs = Number.NaN;
+
+  @consume({ context: durationContext, subscribe: true })
+  contextDurationMs = 0;
+
+  get effectiveCurrentTimeMs(): number {
+    if (!Number.isNaN(this.currentTimeMs)) return this.currentTimeMs;
+    if (!Number.isNaN(this.contextCurrentTimeMs)) return this.contextCurrentTimeMs;
+    return 0;
+  }
+
+  get effectiveDurationMs(): number {
+    return this.durationMs || this.contextDurationMs || 0;
+  }
 
   private formatTime(ms: number): string {
     // Handle NaN, undefined, null, or negative values
@@ -40,8 +56,8 @@ export class EFTimeDisplay extends TargetOrContextMixin(LitElement, efContext) {
   }
 
   render() {
-    const currentTime = this.currentTimeMs;
-    const totalTime = this.durationMs;
+    const currentTime = this.effectiveCurrentTimeMs;
+    const totalTime = this.effectiveDurationMs;
 
     return html`
       <span part="time">

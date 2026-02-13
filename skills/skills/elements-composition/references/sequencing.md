@@ -21,7 +21,7 @@ Create multi-scene compositions using `mode="sequence"` on a timegroup.
 Children play one after another. Total duration is the sum of all children.
 
 ```html live
-<ef-timegroup mode="sequence" workbench class="w-[720px] h-[300px] bg-black">
+<ef-timegroup mode="sequence" class="w-[720px] h-[300px] bg-black">
   <ef-timegroup mode="fixed" duration="2s" class="bg-red-500 text-white text-3xl flex items-center justify-center">
     <p>Scene 1</p>
   </ef-timegroup>
@@ -39,7 +39,7 @@ Children play one after another. Total duration is the sum of all children.
 Add `overlap` to create shared time between adjacent items — the foundation for transitions.
 
 ```html live
-<ef-timegroup mode="sequence" overlap="1s" workbench class="w-[720px] h-[300px] bg-black">
+<ef-timegroup mode="sequence" overlap="1s" class="w-[720px] h-[300px] bg-black">
   <ef-timegroup mode="fixed" duration="3s" class="absolute w-full h-full bg-red-500 text-white text-3xl flex items-center justify-center">
     <p>Scene 1</p>
   </ef-timegroup>
@@ -77,7 +77,7 @@ The inner sequence (5s total) is treated as a single 5s item in the outer sequen
 Sequences work with any element — video, images, text, or combinations:
 
 ```html live
-<ef-timegroup mode="sequence" workbench class="w-[720px] h-[480px] bg-black">
+<ef-timegroup mode="sequence" class="w-[720px] h-[480px] bg-black">
   <ef-timegroup class="flex flex-col items-center justify-center">
     <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourceout="3s" class="absolute top-0 left-0 size-full object-contain z-0"></ef-video>
     <h1 class="relative text-white text-4xl bg-black/50 p-4">Video Scene</h1>

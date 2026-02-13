@@ -29,7 +29,7 @@ Synchronized captions with word highlighting.
 ## Basic Usage
 
 ```html live
-<ef-timegroup mode="contain" workbench class="w-[720px] h-[480px] bg-black">
+<ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black">
   <ef-video id="my-video" src="https://assets.editframe.com/bars-n-tone.mp4" class="size-full object-contain"></ef-video>
 
   <ef-captions captions-script="captions-data" class="absolute bottom-8 left-4 right-4 text-center">

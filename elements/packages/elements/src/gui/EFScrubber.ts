@@ -46,8 +46,8 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
     css`
     :host {
       --ef-scrubber-height: 4px;
-      --ef-scrubber-background: var(--ef-color-border);
-      --ef-scrubber-progress-color: var(--ef-color-primary);
+      --ef-scrubber-background: var(--ef-color-border, rgba(255, 255, 255, 0.2));
+      --ef-scrubber-progress-color: var(--ef-color-primary, #fff);
       --ef-scrubber-handle-size: 12px;
       width: 100%;
       display: flex;
@@ -467,8 +467,8 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
           @pointerdown=${this.handlePointerDown}
           @contextmenu=${this.boundHandleContextMenu}
         >
-          <div class="progress" style="width: ${displayProgress * 100}%"></div>
-          <div class="handle" style="left: ${displayProgress * 100}%"></div>
+          <div part="progress" class="progress" style="width: ${displayProgress * 100}%"></div>
+          <div part="handle" class="handle" style="left: ${displayProgress * 100}%"></div>
         </div>
       `;
     }

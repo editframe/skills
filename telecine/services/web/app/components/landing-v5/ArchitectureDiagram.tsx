@@ -394,7 +394,7 @@ function FanOutDiagram() {
         <div className="flex-1 px-3 h-9 flex items-center border-l border-white/10">
           <Scrubber
             target={rootId}
-            className="w-full h-1 bg-white/20 rounded-full cursor-pointer [&::part(progress)]:bg-[var(--poster-blue)] [&::part(progress)]:rounded-full [&::part(thumb)]:bg-white [&::part(thumb)]:w-2.5 [&::part(thumb)]:h-2.5 [&::part(thumb)]:rounded-full"
+            className="w-full h-1 bg-white/20 rounded-full cursor-pointer [&::part(progress)]:bg-[var(--poster-blue)] [&::part(progress)]:rounded-full [&::part(handle)]:bg-white [&::part(handle)]:w-2.5 [&::part(handle)]:h-2.5 [&::part(handle)]:rounded-full"
           />
         </div>
 
@@ -452,7 +452,7 @@ function JITStreamingDiagram() {
         <div className="flex-1 px-3 h-9 flex items-center border-l border-white/10">
           <Scrubber
             target={rootId}
-            className="w-full h-1 bg-white/20 rounded-full cursor-pointer [&::part(progress)]:bg-[var(--poster-red)] [&::part(progress)]:rounded-full [&::part(thumb)]:bg-white [&::part(thumb)]:w-2.5 [&::part(thumb)]:h-2.5 [&::part(thumb)]:rounded-full"
+            className="w-full h-1 bg-white/20 rounded-full cursor-pointer [&::part(progress)]:bg-[var(--poster-red)] [&::part(progress)]:rounded-full [&::part(handle)]:bg-white [&::part(handle)]:w-2.5 [&::part(handle)]:h-2.5 [&::part(handle)]:rounded-full"
           />
         </div>
 

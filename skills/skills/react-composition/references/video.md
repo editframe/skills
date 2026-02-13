@@ -161,7 +161,7 @@ const videos: VideoData[] = [
   { id: "2", src: "/assets/clip2.mp4", sourceIn: "3s", sourceOut: "8s" },
 ];
 
-<Timegroup workbench mode="sequence" className="w-[1920px] h-[1080px]">
+<Timegroup mode="sequence" className="w-[1920px] h-[1080px]">
   {videos.map((video) => (
     <Timegroup key={video.id} mode="contain" className="absolute w-full h-full">
       <Video 

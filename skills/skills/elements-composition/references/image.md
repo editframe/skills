@@ -30,7 +30,7 @@ Static image element.
 ## Logo/Watermark Overlay
 
 ```html live
-<ef-timegroup mode="contain" workbench class="w-[720px] h-[480px] bg-black">
+<ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black">
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" class="size-full"></ef-video>
   <ef-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect fill='%233b82f6' width='80' height='80' rx='8'/%3E%3C/svg%3E" duration="5s" class="absolute top-4 right-4 w-16 h-16 opacity-80"></ef-image>
 </ef-timegroup>
@@ -39,7 +39,7 @@ Static image element.
 ## Image Slideshow
 
 ```html live
-<ef-timegroup mode="sequence" workbench class="w-[720px] h-[480px] bg-black">
+<ef-timegroup mode="sequence" class="w-[720px] h-[480px] bg-black">
   <ef-timegroup mode="fixed" duration="3s" class="absolute w-full h-full">
     <ef-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='480'%3E%3Crect fill='%23ef4444' width='720' height='480'/%3E%3Ctext x='360' y='250' fill='white' font-size='48' text-anchor='middle'%3ESlide 1%3C/text%3E%3C/svg%3E" duration="3s" class="size-full object-contain"></ef-image>
   </ef-timegroup>

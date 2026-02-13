@@ -22,7 +22,7 @@ Every `ef-timegroup` has a `mode` that determines how its duration is calculated
 Explicit duration. The base case — you set the length directly.
 
 ```html live
-<ef-timegroup mode="fixed" duration="3s" workbench class="w-[720px] h-[300px] bg-slate-600 flex items-center justify-center">
+<ef-timegroup mode="fixed" duration="3s" class="w-[720px] h-[300px] bg-slate-600 flex items-center justify-center">
   <p class="text-white text-4xl">3 Second Scene</p>
 </ef-timegroup>
 ```
@@ -34,7 +34,7 @@ Use `fixed` when you know the exact duration: title cards, countdowns, static sc
 Children play one after another. Duration is the sum of all children minus any overlap.
 
 ```html live
-<ef-timegroup mode="sequence" workbench class="w-[720px] h-[300px] bg-black">
+<ef-timegroup mode="sequence" class="w-[720px] h-[300px] bg-black">
   <ef-timegroup mode="fixed" duration="2s" class="bg-red-400 text-red-900 text-3xl flex items-center justify-center">
     <p>Scene 1 (2s)</p>
   </ef-timegroup>
@@ -54,7 +54,7 @@ Use `sequence` for cut-based editing, slideshows, multi-scene videos. See [seque
 Children play simultaneously. Duration is the longest child.
 
 ```html live
-<ef-timegroup mode="contain" workbench class="w-[720px] h-[300px] bg-black">
+<ef-timegroup mode="contain" class="w-[720px] h-[300px] bg-black">
   <ef-timegroup mode="fixed" duration="5s" class="absolute top-0 left-0 w-full h-1/2 bg-red-400 text-red-900 text-2xl flex items-center justify-center">
     <p>Layer A (5s)</p>
   </ef-timegroup>
@@ -71,7 +71,7 @@ Use `contain` for layered compositions: video with overlays, picture-in-picture,
 Inherits duration from parent. No duration of its own.
 
 ```html live
-<ef-timegroup mode="contain" workbench class="w-[720px] h-[300px] bg-black">
+<ef-timegroup mode="contain" class="w-[720px] h-[300px] bg-black">
   <ef-timegroup mode="fixed" duration="4s" class="absolute top-0 left-0 w-full h-1/2 bg-amber-400 text-amber-900 text-2xl flex items-center justify-center">
     <p>Content (4s)</p>
   </ef-timegroup>

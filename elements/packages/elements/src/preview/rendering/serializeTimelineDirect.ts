@@ -157,18 +157,9 @@ function serializeComputedStyles(element: Element, styles?: CSSStyleDeclaration)
     // Handle display property specially
     let finalValue = value;
     if (prop === 'display') {
-      // Fix for cloned Lit elements: shadow DOM stylesheets aren't adopted properly
-      // so computed display is wrong. Use the correct values based on element type.
-      if (tagName === 'EF-TEXT') {
-        // EFText: inline-flex (or flex for split="line")
-        finalValue = element.getAttribute('split') === 'line' ? 'flex' : 'inline-flex';
-      } else if (tagName === 'EF-TEXT-SEGMENT') {
-        // EFTextSegment: inline-block (or block for data-line-segment)
-        finalValue = element.hasAttribute('data-line-segment') ? 'block' : 'inline-block';
-      }
       // For non-caption elements, convert display:none to block since temporal
       // visibility is handled separately, not by CSS display
-      else if (value === 'none' && !isCaptionChild) {
+      if (value === 'none' && !isCaptionChild) {
         finalValue = 'block';
       }
     }

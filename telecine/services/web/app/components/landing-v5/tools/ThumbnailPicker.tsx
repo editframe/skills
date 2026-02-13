@@ -145,7 +145,7 @@ export function ThumbnailPicker() {
 
               <Scrubber
                 target={previewId}
-                className="flex-1 h-2 bg-white/20 cursor-pointer [&::part(progress)]:bg-[var(--accent-gold,#f4a261)] [&::part(thumb)]:bg-white [&::part(thumb)]:w-4 [&::part(thumb)]:h-4 [&::part(thumb)]:border-2 [&::part(thumb)]:border-black"
+                className="flex-1 h-2 bg-white/20 cursor-pointer [&::part(progress)]:bg-[var(--accent-gold,#f4a261)] [&::part(handle)]:bg-white [&::part(handle)]:w-4 [&::part(handle)]:h-4 [&::part(handle)]:border-2 [&::part(handle)]:border-black"
               />
             </div>
           ) : (

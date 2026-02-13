@@ -98,7 +98,7 @@ import { Timegroup, Video, Audio } from "@editframe/react";
 
 export const VideoWithMusic = () => {
   return (
-    <Timegroup workbench mode="sequence" className="w-[1920px] h-[1080px]">
+    <Timegroup mode="sequence" className="w-[1920px] h-[1080px]">
       {/* Audio spans entire composition */}
       <Audio src="/assets/background-music.mp3" volume={0.2} />
       

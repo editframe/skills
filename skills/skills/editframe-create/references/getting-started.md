@@ -41,7 +41,7 @@ This launches a live preview at `http://localhost:4321`. You'll see the starter 
 Open `index.html`. The composition is defined with Editframe elements inside an `ef-timegroup`:
 
 ```html
-<ef-timegroup workbench mode="sequence" class="w-[1920px] h-[1080px] bg-black">
+<ef-timegroup mode="sequence" class="w-[1920px] h-[1080px] bg-black">
   <ef-timegroup mode="fixed" duration="5s" class="absolute w-full h-full">
     <ef-text class="text-white text-4xl">Hello, Editframe!</ef-text>
   </ef-timegroup>

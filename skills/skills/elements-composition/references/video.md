@@ -69,7 +69,7 @@ Video element with source trimming.
 ## Basic Usage
 
 ```html live
-<ef-timegroup mode="contain" workbench class="w-[720px] h-[480px] bg-black">
+<ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black">
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" class="size-full object-contain"></ef-video>
 </ef-timegroup>
 ```
@@ -83,7 +83,7 @@ Two ways to trim video — choose based on your workflow:
 Show specific timestamps from source. Use when you know exact timecodes.
 
 ```html live
-<ef-timegroup mode="contain" workbench class="w-[720px] h-[480px] bg-black">
+<ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black">
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="2s" sourceout="6s" class="size-full object-contain"></ef-video>
 </ef-timegroup>
 ```
@@ -93,7 +93,7 @@ Show specific timestamps from source. Use when you know exact timecodes.
 Remove time from start/end. Use when thinking "cut off X seconds".
 
 ```html live
-<ef-timegroup mode="contain" workbench class="w-[720px] h-[480px] bg-black">
+<ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black">
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" trimstart="2s" trimend="3s" class="size-full object-contain"></ef-video>
 </ef-timegroup>
 ```
@@ -112,7 +112,7 @@ Remove time from start/end. Use when thinking "cut off X seconds".
 ## Picture-in-Picture
 
 ```html live
-<ef-timegroup mode="contain" workbench class="w-[720px] h-[480px] bg-black">
+<ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black">
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" class="size-full object-cover"></ef-video>
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="5s" class="absolute bottom-4 right-4 w-48 h-28 rounded-lg border-2 border-white"></ef-video>
 </ef-timegroup>
@@ -124,10 +124,10 @@ Build a composition step by step — from a single clip to layered scenes.
 
 ### Step 1: Display a Basic Video
 
-Place a video inside a root timegroup. The `workbench` attribute adds timeline controls.
+Place a video inside a root timegroup.
 
 ```html live
-<ef-timegroup mode="contain" workbench class="w-[720px] h-[480px] bg-black">
+<ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black">
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" class="size-full object-contain"></ef-video>
 </ef-timegroup>
 ```
@@ -139,7 +139,7 @@ Two approaches — choose based on your workflow.
 **Relative trimming** removes time from edges:
 
 ```html live
-<ef-timegroup mode="contain" workbench class="w-[720px] h-[480px] bg-black">
+<ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black">
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" trimstart="2s" trimend="2s" class="size-full object-contain"></ef-video>
 </ef-timegroup>
 ```
@@ -147,7 +147,7 @@ Two approaches — choose based on your workflow.
 **Absolute trimming** specifies exact timecodes:
 
 ```html live
-<ef-timegroup mode="contain" workbench class="w-[720px] h-[480px] bg-black">
+<ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black">
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="2s" sourceout="4s" class="size-full object-contain"></ef-video>
 </ef-timegroup>
 ```
@@ -159,7 +159,7 @@ See the [Trimming Video](#trimming-video) section for detailed guidance on choos
 Use `mode="sequence"` to play clips one after another. The timeline duration is the sum of all children.
 
 ```html live
-<ef-timegroup mode="sequence" workbench class="w-[720px] h-[480px] bg-black">
+<ef-timegroup mode="sequence" class="w-[720px] h-[480px] bg-black">
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="0s" sourceout="2s" class="size-full object-contain"></ef-video>
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="8s" class="size-full object-contain"></ef-video>
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="2s" sourceout="4s" class="size-full object-contain"></ef-video>
@@ -171,7 +171,7 @@ Use `mode="sequence"` to play clips one after another. The timeline duration is 
 Nest timegroups inside a sequence. Each child timegroup holds a video background and text overlay.
 
 ```html live
-<ef-timegroup mode="sequence" workbench class="w-[720px] h-[480px] bg-black">
+<ef-timegroup mode="sequence" class="w-[720px] h-[480px] bg-black">
   <ef-timegroup class="flex flex-col items-center justify-center">
     <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="0s" sourceout="3s" class="z-0 absolute top-0 left-0 size-full object-contain"></ef-video>
     <h1 class="relative bg-blue-500 text-4xl p-2 text-white">First Scene</h1>
@@ -199,7 +199,7 @@ Two approaches to show only part of a video source. Choose based on your workflo
 Remove time from the edges. Think: "cut off 2 seconds from the start."
 
 ```html live
-<ef-timegroup mode="contain" workbench class="w-[720px] h-[480px] bg-black">
+<ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black">
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" trimstart="2s" trimend="3s" class="size-full object-contain"></ef-video>
 </ef-timegroup>
 ```
@@ -213,7 +213,7 @@ A 10s source with `trimstart="2s" trimend="3s"` produces a 5s clip.
 Specify exact timestamps. Think: "show seconds 2 through 6."
 
 ```html live
-<ef-timegroup mode="contain" workbench class="w-[720px] h-[480px] bg-black">
+<ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black">
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="2s" sourceout="6s" class="size-full object-contain"></ef-video>
 </ef-timegroup>
 ```
@@ -238,7 +238,7 @@ Duration formula: `sourceout - sourcein`
 Trimming is most useful when building sequences from different parts of source media:
 
 ```html live
-<ef-timegroup mode="sequence" workbench class="w-[720px] h-[480px] bg-black">
+<ef-timegroup mode="sequence" class="w-[720px] h-[480px] bg-black">
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourceout="2s" class="size-full object-contain"></ef-video>
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="5s" sourceout="8s" class="size-full object-contain"></ef-video>
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="8s" class="size-full object-contain"></ef-video>
@@ -256,7 +256,7 @@ Apply visual effects to video using standard CSS. The video element renders to a
 Use Tailwind filter utilities or inline styles:
 
 ```html live
-<ef-timegroup mode="contain" workbench class="w-[720px] h-[480px] bg-black">
+<ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black">
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" class="size-full object-contain blur-sm saturate-200 brightness-150 contrast-150"></ef-video>
 </ef-timegroup>
 ```
@@ -283,7 +283,7 @@ Combine multiple filters by listing classes:
 Scale and rotate video elements:
 
 ```html live
-<ef-timegroup mode="contain" workbench class="w-[720px] h-[480px] bg-black overflow-hidden">
+<ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black overflow-hidden">
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" class="size-full object-contain scale-125 rotate-3"></ef-video>
 </ef-timegroup>
 ```
@@ -293,7 +293,7 @@ Scale and rotate video elements:
 Animate any CSS property over time using `@keyframes`:
 
 ```html live
-<ef-timegroup mode="contain" workbench class="w-[720px] h-[480px] bg-black overflow-hidden">
+<ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black overflow-hidden">
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" class="size-full object-contain" style="animation: 10s trippy"></ef-video>
   <style>
     @keyframes trippy {
@@ -311,7 +311,7 @@ Animations run relative to the video's timeline — they're fully scrubbable.
 Layer static filters with animations for complex looks:
 
 ```html live
-<ef-timegroup mode="contain" workbench class="w-[720px] h-[480px] bg-black overflow-hidden">
+<ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black overflow-hidden">
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" class="size-full object-contain sepia" style="animation: 10s zoom-drift"></ef-video>
   <style>
     @keyframes zoom-drift {

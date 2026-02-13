@@ -165,7 +165,7 @@ function TextOverlayTool() {
           <div className="flex-1 px-4 h-12 flex items-center border-l-4 border-black dark:border-white bg-neutral-100 dark:bg-[#252525]">
             <Scrubber 
               target={previewId}
-              className="w-full h-2 bg-neutral-300 cursor-pointer [&::part(progress)]:bg-black [&::part(thumb)]:bg-black [&::part(thumb)]:w-4 [&::part(thumb)]:h-4 [&::part(thumb)]:rounded-none"
+              className="w-full h-2 bg-neutral-300 cursor-pointer [&::part(progress)]:bg-black [&::part(handle)]:bg-black [&::part(handle)]:w-4 [&::part(handle)]:h-4 [&::part(handle)]:rounded-none"
             />
           </div>
           

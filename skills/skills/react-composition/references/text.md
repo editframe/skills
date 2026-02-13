@@ -97,7 +97,7 @@ const titles: TitleData[] = [
   { text: "Scene 3", duration: "3s", className: "text-green-500" },
 ];
 
-<Timegroup workbench mode="sequence" className="w-[800px] h-[500px]">
+<Timegroup mode="sequence" className="w-[800px] h-[500px]">
   {titles.map((title, i) => (
     <Timegroup key={i} mode="fixed" duration={title.duration} className="absolute w-full h-full flex items-center justify-center">
       <Text duration={title.duration} className={`text-4xl ${title.className}`}>

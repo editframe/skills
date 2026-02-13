@@ -151,7 +151,7 @@ function CaptionEditorInner({ previewId }: { previewId: string }) {
             <div className="flex-1 px-4 h-12 flex items-center">
               <Scrubber
                 target={previewId}
-                className="w-full h-2 bg-white/20 cursor-pointer [&::part(progress)]:bg-[var(--accent-gold)] [&::part(thumb)]:bg-white [&::part(thumb)]:w-4 [&::part(thumb)]:h-4"
+                className="w-full h-2 bg-white/20 cursor-pointer [&::part(progress)]:bg-[var(--accent-gold)] [&::part(handle)]:bg-white [&::part(handle)]:w-4 [&::part(handle)]:h-4"
               />
             </div>
 

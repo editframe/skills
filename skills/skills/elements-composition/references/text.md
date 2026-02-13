@@ -32,7 +32,7 @@ Animated text with character/word/line splitting.
 ## Basic (No Animation)
 
 ```html live
-<ef-timegroup mode="contain" workbench class="w-[720px] h-[480px] bg-black flex items-center justify-center">
+<ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black flex items-center justify-center">
   <ef-text duration="5s" class="text-white text-2xl">Static text</ef-text>
 </ef-timegroup>
 ```
@@ -40,7 +40,7 @@ Animated text with character/word/line splitting.
 ## Word Animation
 
 ```html live
-<ef-timegroup mode="contain" workbench class="w-[720px] h-[480px] bg-black flex items-center justify-center">
+<ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black flex items-center justify-center">
   <ef-text split="word" stagger="100ms" duration="3s" class="text-white text-3xl">
     <template>
       <ef-text-segment class="fade-in"></ef-text-segment>
@@ -81,7 +81,7 @@ Animated text with character/word/line splitting.
 ## Lower Third
 
 ```html live
-<ef-timegroup mode="contain" workbench class="w-[720px] h-[480px] bg-black relative">
+<ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black relative">
   <ef-text duration="4s" class="absolute bottom-16 left-4 bg-blue-600/90 text-white px-4 py-2 rounded-md text-sm font-semibold">
     Scene Label
   </ef-text>
