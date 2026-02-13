@@ -2250,9 +2250,8 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     const rect = this.getBoundingClientRect();
     const canvas = document.createElement("ef-canvas");
     canvas.id = "workbench-canvas";
-    // Use explicit dimensions (required for selection bounds calculation)
-    canvas.style.width = `${Math.max(rect.width, 1920)}px`;
-    canvas.style.height = `${Math.max(rect.height, 1080)}px`;
+    canvas.style.width = `${rect.width}px`;
+    canvas.style.height = `${rect.height}px`;
     canvas.style.display = "block";
 
     // Move timegroup into canvas, canvas into pan-zoom
