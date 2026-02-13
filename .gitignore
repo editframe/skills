@@ -19,3 +19,12 @@ export-profile.cpuprofile
 
 # Generated skills build directory (temporary, not committed)
 skills/skills-generated/
+
+# Skills sync system
+.skills/external/
+.skills/.sync-log.json
+.skills.backup-*/
+
+# Test render outputs
+.test-output/
+**/render.test.renders/render**/**
