@@ -1,9 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
-import { PassThrough } from "node:stream";
 
-import { createReadableStreamFromReadable } from "@react-router/node";
+
 import type { Selectable } from "kysely";
 import { parse } from "node-html-parser";
 import * as tar from "tar";
@@ -29,7 +28,7 @@ import { writeReadableStreamToWritable } from "@/util/writeReadableStreamToWrita
 import { mkTempDir } from "@/util/tempFile";
 import { envString } from "@/util/env";
 import { ProcessHTMLWorkflow } from "@/queues/units-of-work/ProcessHtml/Workflow";
-import { executeSpan } from "@/tracing";
+import { executeSpan, setSpanAttributes } from "@/tracing";
 
 import {
   execFile,
@@ -175,202 +174,253 @@ export async function createBundledHTMLDirectory(
 }
 
 async function bundleHTMLRender(html: string) {
-  await using tempDir = await mkTempDir(path.join(process.cwd(), "temp"));
-  const distPath = await createBundledHTMLDirectory(tempDir.path, html);
+  return executeSpan("bundleHTMLRender", async () => {
+    await using tempDir = await mkTempDir(path.join(process.cwd(), "temp"));
+    logger.info({ tempDir: tempDir.path }, "processHTML: vite build starting");
+    const distPath = await createBundledHTMLDirectory(tempDir.path, html);
+    logger.info({ distPath }, "processHTML: vite build complete, starting tar");
 
-  const passthrough = new PassThrough();
+    return executeSpan("bundleHTMLRender.tar", async () => {
+      // Buffer the tar output in memory to avoid a backpressure deadlock:
+      // createReadableStreamFromReadable pauses the Node stream when nobody
+      // is reading from the web ReadableStream, but we can't start reading
+      // until this function returns. Buffering (~300KB gzipped) avoids this.
+      const chunks: Buffer[] = [];
 
-  // Create a promise that resolves when the tar is complete or rejects on error
-  const tarComplete = new Promise((resolve, reject) => {
-    const tarStream = tar.create(
-      {
-        gzip: true,
-        cwd: distPath,
-      },
-      ["."],
-    );
+      await new Promise<void>((resolve, reject) => {
+        const tarStream = tar.create(
+          {
+            gzip: true,
+            cwd: distPath,
+          },
+          ["."],
+        );
 
-    tarStream.on("error", (error) => {
-      passthrough.emit("error", error);
-      reject(error);
+        tarStream.on("data", (chunk: Buffer) => chunks.push(chunk));
+        tarStream.on("error", reject);
+        tarStream.on("end", resolve);
+      });
+
+      const tarBuffer = Buffer.concat(chunks);
+      logger.info(
+        { byteSize: tarBuffer.byteLength },
+        "processHTML: tar complete",
+      );
+
+      return new ReadableStream({
+        start(controller) {
+          controller.enqueue(new Uint8Array(tarBuffer));
+          controller.close();
+        },
+      });
     });
-
-    tarStream.on("end", () => {
-      passthrough.end();
-      resolve(undefined);
-    });
-
-    tarStream.pipe(passthrough);
   });
-
-  const tarReadStream = createReadableStreamFromReadable(passthrough);
-
-  // Wait for tar to complete before cleaning up
-  await tarComplete;
-
-  return tarReadStream;
 }
 
 const ONE_HOUR = 1000 * 60 * 60;
 
 export async function processHTML(options: ProcessHTMLOptions) {
-  const workflowJobs: Array<
-    EnqueableJob<IngestImagePayload> | EnqueableJob<ProcessISOBMFFPayload>
-  > = [];
-
-  const doc = parse(options.html);
-
-  const imageElements = doc.querySelectorAll("ef-image");
-  const mediaElements = doc.querySelectorAll("ef-audio,ef-video");
-
-  const isobmffs: {
-    id: string;
-    org_id: string;
-    creator_id: string;
-    api_key_id: string | null;
-    isobmff_expires_at: Date;
-    source_type: "url";
-    url: string;
-  }[] = [];
-  const fileRows: {
-    id: string;
-    org_id: string;
-    creator_id: string;
-    api_key_id: string | null;
-    filename: string;
-    type: "video" | "image" | "caption";
-    status: "processing";
-    expires_at: Date;
-  }[] = [];
-
-  for (const media of mediaElements) {
-    const src = media.getAttribute("src");
-    if (src?.startsWith("http")) {
-      logger.info({ src }, "Processing isobmff asset");
-      const isobmffId = randomUUID();
-      isobmffs.push({
-        id: isobmffId,
-        org_id: options.org_id,
-        creator_id: options.creator_id,
-        api_key_id: options.api_key_id,
-        isobmff_expires_at: new Date(Date.now() + ONE_HOUR),
-        source_type: "url",
-        url: src,
-      });
-
-      fileRows.push({
-        id: isobmffId,
-        org_id: options.org_id,
-        creator_id: options.creator_id,
-        api_key_id: options.api_key_id,
-        filename: src,
-        type: "video",
-        status: "processing",
-        expires_at: new Date(Date.now() + ONE_HOUR),
-      });
-
-      media.setAttribute("file-id", isobmffId);
-      media.setAttribute("asset-id", isobmffId);
-      media.removeAttribute("src");
-    }
-  }
-
-  let processIsobmffs: Selectable<Video2ProcessIsobmff>[] = [];
-  if (isobmffs.length > 0) {
-    processIsobmffs = await db
-      .insertInto("video2.process_isobmff")
-      .values(isobmffs)
-      .returningAll()
-      .execute();
-  }
-
-  for (const isobmff of processIsobmffs) {
-    if (isobmff.id === undefined) {
-      logger.warn({ isobmff }, "isobmff id is undefined");
-      continue;
-    }
-    workflowJobs.push({
-      payload: isobmff,
-      queue: ProcessISOBMFFQueue.name,
+  return executeSpan("processHTML", async (span) => {
+    const meta = {
+      renderId: options.render_id,
+      processHtmlId: options.process_html_id,
       orgId: options.org_id,
-      workflowId: options.process_html_id,
-      jobId: isobmff.id,
+    };
+    span.setAttributes(meta);
+
+    const { workflowJobs, doc } = await executeSpan(
+      "processHTML.parseAndPrepare",
+      async () => {
+        const workflowJobs: Array<
+          EnqueableJob<IngestImagePayload> | EnqueableJob<ProcessISOBMFFPayload>
+        > = [];
+
+        const doc = parse(options.html);
+
+        const imageElements = doc.querySelectorAll("ef-image");
+        const mediaElements = doc.querySelectorAll("ef-audio,ef-video");
+
+        const isobmffs: {
+          id: string;
+          org_id: string;
+          creator_id: string;
+          api_key_id: string | null;
+          isobmff_expires_at: Date;
+          source_type: "url";
+          url: string;
+        }[] = [];
+        const fileRows: {
+          id: string;
+          org_id: string;
+          creator_id: string;
+          api_key_id: string | null;
+          filename: string;
+          type: "video" | "image" | "caption";
+          status: "processing";
+          expires_at: Date;
+        }[] = [];
+
+        for (const media of mediaElements) {
+          const src = media.getAttribute("src");
+          if (src?.startsWith("http")) {
+            logger.info({ src }, "Processing isobmff asset");
+            const isobmffId = randomUUID();
+            isobmffs.push({
+              id: isobmffId,
+              org_id: options.org_id,
+              creator_id: options.creator_id,
+              api_key_id: options.api_key_id,
+              isobmff_expires_at: new Date(Date.now() + ONE_HOUR),
+              source_type: "url",
+              url: src,
+            });
+
+            fileRows.push({
+              id: isobmffId,
+              org_id: options.org_id,
+              creator_id: options.creator_id,
+              api_key_id: options.api_key_id,
+              filename: src,
+              type: "video",
+              status: "processing",
+              expires_at: new Date(Date.now() + ONE_HOUR),
+            });
+
+            media.setAttribute("file-id", isobmffId);
+            media.setAttribute("asset-id", isobmffId);
+            media.removeAttribute("src");
+          }
+        }
+
+        let processIsobmffs: Selectable<Video2ProcessIsobmff>[] = [];
+        if (isobmffs.length > 0) {
+          processIsobmffs = await db
+            .insertInto("video2.process_isobmff")
+            .values(isobmffs)
+            .returningAll()
+            .execute();
+        }
+
+        for (const isobmff of processIsobmffs) {
+          if (isobmff.id === undefined) {
+            logger.warn({ isobmff }, "isobmff id is undefined");
+            continue;
+          }
+          workflowJobs.push({
+            payload: isobmff,
+            queue: ProcessISOBMFFQueue.name,
+            orgId: options.org_id,
+            workflowId: options.process_html_id,
+            jobId: isobmff.id,
+          });
+        }
+
+        for (const image of imageElements) {
+          const src = image.getAttribute("src");
+          if (src?.startsWith("http")) {
+            const imageId = randomUUID();
+            workflowJobs.push({
+              payload: {
+                url: src,
+                creatorId: options.creator_id,
+                apiKeyId: options.api_key_id ?? "",
+                imageId,
+              },
+              queue: IngestImageQueue.name,
+              orgId: options.org_id,
+              workflowId: options.process_html_id,
+              jobId: imageId,
+            });
+
+            fileRows.push({
+              id: imageId,
+              org_id: options.org_id,
+              creator_id: options.creator_id,
+              api_key_id: options.api_key_id,
+              filename: src,
+              type: "image",
+              status: "processing",
+              expires_at: new Date(Date.now() + ONE_HOUR),
+            });
+
+            image.setAttribute("file-id", imageId);
+            image.setAttribute("asset-id", imageId);
+            image.removeAttribute("src");
+          }
+        }
+
+        if (fileRows.length > 0) {
+          await db.insertInto("video2.files").values(fileRows).execute();
+        }
+
+        setSpanAttributes({
+          mediaCount: mediaElements.length,
+          imageCount: imageElements.length,
+          workflowJobCount: workflowJobs.length,
+        });
+
+        return { workflowJobs, doc };
+      },
+    );
+
+    await executeSpan("processHTML.enqueueWorkflowJobs", async () => {
+      setSpanAttributes({ jobCount: workflowJobs.length });
+      await ProcessHTMLWorkflow.enqueueJobs(...workflowJobs);
     });
-  }
 
-  for (const image of imageElements) {
-    const src = image.getAttribute("src");
-    if (src?.startsWith("http")) {
-      const imageId = randomUUID();
-      workflowJobs.push({
-        payload: {
-          url: src,
-          creatorId: options.creator_id,
-          apiKeyId: options.api_key_id ?? "",
-          imageId,
-        },
-        queue: IngestImageQueue.name,
-        orgId: options.org_id,
-        workflowId: options.process_html_id,
-        jobId: imageId,
-      });
+    // TODO: bundling should be its own unit of work, we don't want this to fail after enqueuing all the jobs
+    logger.info(meta, "processHTML: starting bundle");
+    const bundledStream = await bundleHTMLRender(doc.toString());
+    logger.info(meta, "processHTML: bundle complete, starting upload");
 
-      fileRows.push({
-        id: imageId,
-        org_id: options.org_id,
-        creator_id: options.creator_id,
-        api_key_id: options.api_key_id,
-        filename: src,
-        type: "image",
-        status: "processing",
-        expires_at: new Date(Date.now() + ONE_HOUR),
-      });
+    const filePath = renderFilePath({
+      org_id: options.org_id,
+      id: options.render_id,
+    });
 
-      image.setAttribute("file-id", imageId);
-      image.setAttribute("asset-id", imageId);
-      image.removeAttribute("src");
-    }
-  }
+    const byteSize = await executeSpan(
+      "processHTML.uploadBundle",
+      async () => {
+        setSpanAttributes({ filePath });
+        const writeStream = await storageProvider.createWriteStream(filePath);
+        logger.info({ ...meta, filePath }, "processHTML: write stream created, writing data");
 
-  if (fileRows.length > 0) {
-    await db.insertInto("video2.files").values(fileRows).execute();
-  }
+        const byteSize = await executeSpan(
+          "processHTML.writeStream",
+          async () => {
+            return writeReadableStreamToWritable(bundledStream, writeStream);
+          },
+        );
+        logger.info({ ...meta, byteSize }, "processHTML: data written, awaiting finalized");
 
-  await ProcessHTMLWorkflow.enqueueJobs(...workflowJobs);
+        await executeSpan("processHTML.awaitFinalized", async () => {
+          setSpanAttributes({ byteSize });
+          await new Promise((resolve, reject) => {
+            writeStream.on("finalized", resolve);
+            writeStream.on("error", reject);
+          });
+        });
+        logger.info(meta, "processHTML: finalized");
 
-  // TODO: bundling should be its own unit of work, we don't want this to fail after enqueuing all the jobs
-  // all the other jobs
-  // Get the bundle stream
-  const bundledStream = await bundleHTMLRender(doc.toString());
+        return byteSize;
+      },
+    );
 
-  // Upload the bundle
-  const filePath = renderFilePath({
-    org_id: options.org_id,
-    id: options.render_id,
+    await executeSpan("processHTML.updateDatabase", async () => {
+      setSpanAttributes({ byteSize, renderId: options.render_id });
+      try {
+        await db
+          .updateTable("video2.renders")
+          .set({ byte_size: byteSize })
+          .where("id", "=", options.render_id)
+          .executeTakeFirstOrThrow();
+      } catch (error) {
+        storageProvider.deletePath(filePath);
+        logger.error(error);
+        throw error;
+      }
+    });
   });
-  const writeStream = await storageProvider.createWriteStream(filePath);
-
-  const byteSize = await writeReadableStreamToWritable(
-    bundledStream,
-    writeStream,
-  );
-
-  await new Promise((resolve, reject) => {
-    writeStream.on("finalized", resolve);
-    writeStream.on("error", reject);
-  });
-
-  try {
-    await db
-      .updateTable("video2.renders")
-      .set({ byte_size: byteSize })
-      .where("id", "=", options.render_id)
-      .executeTakeFirstOrThrow();
-  } catch (error) {
-    storageProvider.deletePath(filePath);
-    logger.error(error);
-    throw error;
-  }
 }
 
 export async function writeBundledHTMLRenderToFile(
