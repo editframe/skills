@@ -98,12 +98,12 @@ export function HeroDemo() {
         {/* Demo content */}
         <div className="grid md:grid-cols-2">
           {/* Code panel - syntax highlighted (read-only) */}
-          <div className="border-r border-white/10 min-h-[200px] md:min-h-[280px] overflow-auto max-h-[200px] md:max-h-[280px]">
+          <div className="border-r border-white/10 md:min-h-[280px] overflow-auto max-h-[200px] md:max-h-[280px]">
             <CodeBlock className="language-tsx">{HERO_CODE}</CodeBlock>
           </div>
 
           {/* Live Preview panel */}
-          <div className="bg-[#111] flex flex-col min-h-[200px] md:min-h-[280px]">
+          <div className="bg-[#111] flex flex-col md:min-h-[280px]">
             {isClient ? (
               <Preview id={previewId} ref={previewRef as any} loop className="flex-1 flex flex-col">
                 <TimelineRoot id={previewId} component={HeroVideoContent} />

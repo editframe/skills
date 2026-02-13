@@ -430,7 +430,7 @@ export function TemplatedRenderingDemo() {
 
   return (
     <DemoDataContext.Provider value={{ selectedData, selectedIndex }}>
-      <div>
+      <div className="pb-2 pr-2">
         {/* ─── Top row: Preview + Data selector side by side ─── */}
         <div className="grid lg:grid-cols-5 gap-4 mb-4">
           {/* Preview (3 cols) */}
