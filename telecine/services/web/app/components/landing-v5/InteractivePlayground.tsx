@@ -137,7 +137,7 @@ function InteractivePlayground() {
   return (
     <div>
       {/* Format selector */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <div className="flex gap-2">
           {Object.entries(templates).map(([templateId, tmpl]) => (
             <button
@@ -154,10 +154,10 @@ function InteractivePlayground() {
           ))}
         </div>
         <Link
-          to="/docs/quickstart"
+          to="/skills"
           className="px-4 py-2 text-sm font-semibold text-white bg-[var(--accent-red)] rounded hover:opacity-90 transition-opacity"
         >
-          Get started
+          Explore agent skills
         </Link>
       </div>
       
@@ -189,15 +189,15 @@ function InteractivePlayground() {
           </button>
         </div>
         
-        <div className="grid md:grid-cols-2 min-h-[450px]">
+        <div className="grid md:grid-cols-2 min-h-[300px] md:min-h-[450px]">
           {/* Code editor - real Monaco */}
           <div className="border-r border-white/10">
             <CodeEditor
               code={code}
               language="html"
               onChange={handleCodeChange}
-              height={450}
-              className="w-full h-[450px]"
+              height={300}
+              className="w-full h-[300px] md:h-[450px]"
             />
           </div>
           

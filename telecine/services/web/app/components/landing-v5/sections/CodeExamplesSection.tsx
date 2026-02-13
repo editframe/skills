@@ -1,3 +1,4 @@
+import { Atom, Browsers, Target } from "@phosphor-icons/react";
 import { CodeBlock } from "~/components/CodeBlock";
 
 export function CodeExamplesSection() {
@@ -18,11 +19,11 @@ export function CodeExamplesSection() {
             {'{'}
           </div>
           <div>
-            <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase mb-4">
+            <h2 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tighter uppercase mb-4">
               Just<br />Code
             </h2>
             <p className="text-xl text-white/70 max-w-xl">
-              If you know React, you know Editframe. Familiar patterns, predictable behavior.
+              If you know React and CSS, you know Editframe. Standard web layout. No proprietary system to learn.
             </p>
           </div>
         </div>
@@ -32,7 +33,7 @@ export function CodeExamplesSection() {
           <div className="relative">
             <div className="absolute -bottom-4 -right-4 w-full h-full bg-[var(--poster-gold)]" />
             <div className="relative border-4 border-white overflow-hidden bg-[var(--card-bg)]">
-              <div className="bg-[var(--ink-black)] px-6 py-4 border-b-2 border-white/10">
+              <div className="bg-[var(--ink-black)] px-4 py-3 md:px-6 md:py-4 border-b-2 border-white/10">
                 <div className="flex items-center gap-3">
                   <div className="flex gap-2">
                     <div className="w-3 h-3 rounded-full bg-[var(--poster-red)]" />
@@ -42,53 +43,29 @@ export function CodeExamplesSection() {
                   <span className="text-white/40 text-xs font-mono">welcome-video.tsx</span>
                 </div>
               </div>
-              <div className="p-6">
+              <div className="p-3 md:p-6">
                 <CodeBlock>
-                  {`import { Composition, Video, Text, Image } from '@editframe/react'
-import { renderToVideo } from '@editframe/elements'
+                  {`import { Timegroup, Video, Text } from '@editframe/react'
 
-// 1. Define your composition as a React component
+// Define your composition as a React component
 const WelcomeVideo = ({ user }) => (
-  <Composition width={1920} height={1080} duration={5000}>
-    <Video src="background.mp4" />
-    <Image 
-      src={user.avatar} 
-      x={50} 
-      y={50} 
-      width={200} 
-      height={200}
-      style={{ borderRadius: '50%' }}
+  <Timegroup mode="fixed" duration="5s"
+    className="w-[1920px] h-[1080px] relative">
+    <Video src="background.mp4" className="absolute inset-0" />
+    <img
+      src={user.avatar}
+      className="absolute top-12 left-12 w-48 h-48 rounded-full"
     />
-    <Text 
-      x={300} 
-      y={125}
-      style={{ 
-        fontSize: 72, 
-        fontWeight: 'bold',
-        color: 'white' 
-      }}
-    >
+    <Text className="absolute top-32 left-72 text-7xl font-bold text-white">
       Welcome, {user.name}!
     </Text>
-  </Composition>
+  </Timegroup>
 )
 
-// 2. Preview instantly in browser (no build, no account)
+// Preview instantly in browser (no build, no account)
 <Preview>
   <WelcomeVideo user={{ name: 'Alex', avatar: 'avatar.jpg' }} />
-</Preview>
-
-// 3. Render to video
-// Browser: WebCodecs, instant, private
-const blob = await renderToVideo(
-  <WelcomeVideo user={{ name: 'Alex', avatar: 'avatar.jpg' }} />
-)
-
-// Cloud: Parallel fragments, hyperscale
-// $ editframe render welcome-video.tsx --data users.json
-
-// Local: FFmpeg, full control
-// $ editframe render welcome-video.tsx --local`}
+</Preview>`}
                 </CodeBlock>
               </div>
             </div>
@@ -97,20 +74,20 @@ const blob = await renderToVideo(
           {/* Key points */}
           <div className="grid md:grid-cols-3 gap-6 mt-12">
             {[
-              { 
-                icon: '⚛️', 
-                title: 'React Components', 
-                desc: 'Familiar JSX syntax. Props, state, hooks — everything you know.' 
+              {
+                icon: <Atom size={28} weight="bold" aria-hidden="true" />,
+                title: 'React Components',
+                desc: 'Familiar JSX syntax. Props, state, hooks — everything you know.'
               },
-              { 
-                icon: '⚡', 
-                title: 'Instant Preview', 
-                desc: 'See changes immediately. No build step. No server required.' 
+              {
+                icon: <Browsers size={28} weight="bold" aria-hidden="true" />,
+                title: 'HTML & CSS',
+                desc: 'Standard web layout. Tailwind, flexbox, grid — it all works.'
               },
-              { 
-                icon: '🎯', 
-                title: 'One API', 
-                desc: 'Same code runs in browser, cloud, or local. Your choice.' 
+              {
+                icon: <Target size={28} weight="bold" aria-hidden="true" />,
+                title: 'Render Anywhere',
+                desc: 'Same code runs in browser, cloud, or local. Your choice.'
               },
             ].map((item, i) => (
               <div key={i} className="bg-white/5 border border-white/10 p-6">

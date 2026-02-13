@@ -1,38 +1,17 @@
-import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
-import { nightOwl } from "react-syntax-highlighter/dist/cjs/styles/prism";
-import { ghcolors as github } from "react-syntax-highlighter/dist/cjs/styles/prism";
-import phpLanguage from "react-syntax-highlighter/dist/cjs/languages/prism/php";
-import jsxLanguage from "react-syntax-highlighter/dist/cjs/languages/prism/jsx";
-import javascriptLanguage from "react-syntax-highlighter/dist/cjs/languages/prism/javascript";
-import typescriptLanguage from "react-syntax-highlighter/dist/cjs/languages/prism/typescript";
-import markupLanguage from "react-syntax-highlighter/dist/cjs/languages/prism/markup";
-import cssLanguage from "react-syntax-highlighter/dist/cjs/languages/prism/css";
+import { Highlight, themes } from "prism-react-renderer";
 import { Children, useEffect, useState } from "react";
 import type { FC, PropsWithChildren, ReactElement } from "react";
-
-// Handle both ESM and CommonJS module formats
-const phpLang = "default" in phpLanguage ? phpLanguage.default : phpLanguage;
-const jsxLang = "default" in jsxLanguage ? jsxLanguage.default : jsxLanguage;
-const jsLang = "default" in javascriptLanguage ? javascriptLanguage.default : javascriptLanguage;
-const tsLang = "default" in typescriptLanguage ? typescriptLanguage.default : typescriptLanguage;
-const markupLang = "default" in markupLanguage ? markupLanguage.default : markupLanguage;
-const cssLang = "default" in cssLanguage ? cssLanguage.default : cssLanguage;
-
-// Register language support
-SyntaxHighlighter.registerLanguage("php", phpLang);
-SyntaxHighlighter.registerLanguage("jsx", jsxLang);
-SyntaxHighlighter.registerLanguage("javascript", jsLang);
-SyntaxHighlighter.registerLanguage("js", jsLang);
-SyntaxHighlighter.registerLanguage("typescript", tsLang);
-SyntaxHighlighter.registerLanguage("ts", tsLang);
-SyntaxHighlighter.registerLanguage("markup", markupLang);
-SyntaxHighlighter.registerLanguage("html", markupLang);
-SyntaxHighlighter.registerLanguage("xml", markupLang);
-SyntaxHighlighter.registerLanguage("css", cssLang);
 
 interface CodeBlockProps extends PropsWithChildren {
   className?: string;
 }
+
+const languageAliases: Record<string, string> = {
+  html: "markup",
+  xml: "markup",
+  js: "javascript",
+  ts: "typescript",
+};
 
 const removeCommonIndentation = (code: string) => {
   const lines = code.split("\n");
@@ -91,45 +70,51 @@ export const CodeBlock: FC<CodeBlockProps> = ({ children, className = "" }) => {
 
   const childrenArray = Children.toArray(children);
   const firstChild = childrenArray[0];
-  
-  // Handle both direct string children and wrapped <code> elements
+
   let code: string;
   let language: string;
-  
-  if (typeof firstChild === 'string') {
-    // Direct string child
+
+  if (typeof firstChild === "string") {
     code = removeCommonIndentation(firstChild.trim());
-    language = className?.replace("language-", "") || "typescript";
+    language = className?.replace("language-", "") || "tsx";
   } else {
-    // Wrapped in code element (from markdown)
-    const codeElement = firstChild as ReactElement;
+    const codeElement = firstChild as ReactElement<{
+      children: string;
+      className?: string;
+    }>;
     code = removeCommonIndentation(codeElement.props.children.trim());
-    language = codeElement.props.className?.replace("language-", "") || "text";
+    language =
+      codeElement.props.className?.replace("language-", "") || "text";
   }
 
+  const resolvedLanguage = languageAliases[language] || language;
+
   return (
-    <SyntaxHighlighter
-      language={language}
-      style={isDarkMode ? nightOwl : github}
-      className={`code-block-clean overflow-x-auto ${className}`}
-      customStyle={{
-        fontSize: "0.875rem", // text-sm (14px)
-        lineHeight: "1.625", // leading-relaxed
-        padding: "0.75rem", // p-3
-        margin: 0,
-      }}
-      showLineNumbers={false}
-      wrapLines={false}
-      PreTag="div"
-      CodeTag="code"
-      lineProps={{
-        style: { display: "block" }
-      }}
-      codeTagProps={{
-        style: { display: "inline-block", whiteSpace: "pre", minWidth: "100%" }
-      }}
+    <Highlight
+      theme={isDarkMode ? themes.nightOwl : themes.github}
+      code={code}
+      language={resolvedLanguage}
     >
-      {code}
-    </SyntaxHighlighter>
+      {({ style, tokens, getLineProps, getTokenProps }) => (
+        <pre
+          className="overflow-x-auto rounded-md"
+          style={{
+            ...style,
+            fontSize: "0.8125rem",
+            lineHeight: "1.625",
+            padding: "1rem",
+            margin: 0,
+          }}
+        >
+          {tokens.map((line, i) => (
+            <div key={i} {...getLineProps({ line })}>
+              {line.map((token, key) => (
+                <span key={key} {...getTokenProps({ token })} />
+              ))}
+            </div>
+          ))}
+        </pre>
+      )}
+    </Highlight>
   );
 };

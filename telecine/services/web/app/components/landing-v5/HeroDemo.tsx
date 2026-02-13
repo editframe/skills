@@ -3,7 +3,7 @@
    
    Purpose: The centerpiece of the hero. Shows the product in action using
    actual Editframe components with working playback controls, paired with
-   a real syntax-highlighted code display via Monaco (read-only).
+   a syntax-highlighted code display via CodeBlock (read-only, no Monaco).
    
    Design: Clean editor/preview split with subtle shadows
    ============================================================================== */
@@ -11,7 +11,9 @@
 import { useId, useEffect, useState, useRef } from "react";
 import {
   Preview,
+  FitScale,
   Timegroup,
+  TimelineRoot,
   Video,
   Text,
   Scrubber,
@@ -19,7 +21,7 @@ import {
   TimeDisplay,
   Filmstrip,
 } from "@editframe/react";
-import { CodeEditor } from "~/components/CodeEditor";
+import { CodeBlock } from "~/components/CodeBlock";
 import { ExportButton } from "./ExportButton";
 
 const VIDEO_SRC = "https://assets.editframe.com/bars-n-tone.mp4";
@@ -40,14 +42,44 @@ export function Welcome() {
   );
 }`;
 
+/* ━━ Timeline content — rendered by TimelineRoot ━━━━━━━━━━━━━━━━━━━━━━━━ */
+function HeroVideoContent() {
+  const videoId = useId();
+  return (
+    <>
+      <div className="flex-1 flex items-center justify-center p-4 bg-black">
+        <FitScale>
+          <Timegroup
+            mode="fixed"
+            className="relative bg-black"
+            style={{ width: 960, height: 540 }}
+          >
+            <Video
+              id={`hero-video-${videoId}`}
+              src={VIDEO_SRC}
+              className="size-full object-contain"
+            />
+            <Text className="absolute bottom-3 inset-x-3 text-white text-sm font-semibold text-center">
+              Build video with code
+            </Text>
+          </Timegroup>
+        </FitScale>
+      </div>
+
+      <div className="h-14 bg-black border-t border-white/10">
+        <Filmstrip autoScale className="w-full h-full" />
+      </div>
+    </>
+  );
+}
+
 export function HeroDemo() {
   const id = useId();
   const previewId = `hero-demo-${id}`;
-  const videoId = `hero-video-${id}`;
   const previewRef = useRef<HTMLElement>(null);
-  
+
   const [isClient, setIsClient] = useState(false);
-  
+
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -62,44 +94,19 @@ export function HeroDemo() {
           <div className="w-3 h-3 rounded-full bg-[var(--poster-green)]" />
           <span className="ml-4 text-xs text-white/50">composition.tsx</span>
         </div>
-        
+
         {/* Demo content */}
         <div className="grid md:grid-cols-2">
-          {/* Code panel - real Monaco editor (read-only) */}
-          <div className="border-r border-white/10 min-h-[280px]">
-            <CodeEditor
-              code={HERO_CODE}
-              language="typescript"
-              onChange={() => {}}
-              readOnly
-              height={280}
-              className="w-full h-[280px]"
-            />
+          {/* Code panel - syntax highlighted (read-only) */}
+          <div className="border-r border-white/10 min-h-[200px] md:min-h-[280px] overflow-auto max-h-[200px] md:max-h-[280px]">
+            <CodeBlock className="language-tsx">{HERO_CODE}</CodeBlock>
           </div>
-          
+
           {/* Live Preview panel */}
-          <div className="bg-[#111] flex flex-col min-h-[280px]">
+          <div className="bg-[#111] flex flex-col min-h-[200px] md:min-h-[280px]">
             {isClient ? (
               <Preview id={previewId} ref={previewRef as any} loop className="flex-1 flex flex-col">
-                <div className="flex-1 flex items-center justify-center p-4 bg-black">
-                  <Timegroup 
-                    mode="contain" 
-                    className="w-full h-full max-w-[300px] max-h-[200px] relative bg-black"
-                  >
-                    <Video
-                      id={videoId}
-                      src={VIDEO_SRC}
-                      className="size-full object-contain"
-                    />
-                    <Text className="absolute bottom-3 inset-x-3 text-white text-sm font-semibold text-center">
-                      Build video with code
-                    </Text>
-                  </Timegroup>
-                </div>
-                
-                <div className="h-14 bg-black border-t border-white/10">
-                  <Filmstrip autoScale className="w-full h-full" />
-                </div>
+                <TimelineRoot id={previewId} component={HeroVideoContent} />
               </Preview>
             ) : (
               <div className="flex-1 flex items-center justify-center bg-black">

@@ -16,16 +16,14 @@ export function GettingStartedSection() {
       </div>
 
       <div className="relative max-w-7xl mx-auto px-6">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
           <div>
-            <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase mb-2">
+            <h2 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tighter uppercase mb-4">
               Zero to video
             </h2>
-            {/* Bold "2" as design element - THE time claim */}
-            <div className="flex items-baseline gap-4 mb-8">
-              <span className="text-[120px] font-black text-[var(--poster-red)] leading-none">2</span>
-              <span className="text-4xl font-black tracking-tighter uppercase text-[var(--poster-red)]">min</span>
-            </div>
+            <p className="text-2xl font-black tracking-tighter uppercase text-[var(--poster-red)] mb-8">
+              In minutes
+            </p>
             
             <p className="text-lg text-[var(--warm-gray)] mb-10">
               One command to scaffold. One command to develop. Hot reload that works.
@@ -33,9 +31,9 @@ export function GettingStartedSection() {
             
             <div className="space-y-0 mb-10">
               {[
-                { num: '1', title: 'Create project', desc: 'CLI scaffolds TypeScript, ESLint, and your chosen template.' },
+                { num: '1', title: 'Create project', desc: 'One command. Pick a template. Start building.' },
                 { num: '2', title: 'Start developing', desc: 'Dev server with instant preview. Edit code, see video update.' },
-                { num: '3', title: 'Render & deploy', desc: 'Render locally or push to cloud. Scale to ten thousand.' },
+                { num: '3', title: 'Render & deploy', desc: 'Render locally, in-browser, or push to the cloud.' },
               ].map((step, i) => (
                 <div key={i} className="flex gap-4 py-4 border-b-2 border-[var(--ink-black)]/10 dark:border-white/10 last:border-b-0">
                   <div className="flex-shrink-0 w-10 h-10 bg-[var(--poster-red)] flex items-center justify-center text-white font-black">
@@ -50,10 +48,10 @@ export function GettingStartedSection() {
             </div>
 
             <Link
-              to="/docs/quickstart"
+              to="/skills"
               className="inline-flex items-center px-6 py-3 border-2 border-[var(--ink-black)] dark:border-white font-bold text-sm uppercase tracking-wider hover:bg-[var(--ink-black)] hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
             >
-              Read quickstart guide
+              Explore agent skills
               <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
@@ -61,7 +59,7 @@ export function GettingStartedSection() {
           </div>
 
           <div className="relative">
-            <div className="absolute -bottom-4 -right-4 w-full h-full bg-[var(--poster-red)]" />
+            <div className="absolute -bottom-2 -right-2 md:-bottom-4 md:-right-4 w-full h-full bg-[var(--poster-red)]" />
             <div className="relative border-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
               <TerminalDemo />
             </div>

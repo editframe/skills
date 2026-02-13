@@ -21,30 +21,20 @@ export function ArchitectureSection() {
 
       <div className="relative max-w-7xl mx-auto px-6">
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase mb-4">
-            Dual
+          <h2 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tighter uppercase mb-6">
+            Under the hood
           </h2>
-          {/* Parallel lines echoing the concept */}
-          <div className="flex justify-center gap-1 mb-4">
+          <div className="flex justify-center gap-1 mb-6">
             <div className="w-24 h-1 bg-[var(--poster-gold)]" />
             <div className="w-24 h-1 bg-[var(--poster-blue)]" />
           </div>
-          <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase mb-6">
-            <span className="text-[var(--poster-gold)]">Preview</span>
-            {" + "}
-            <span className="text-[var(--poster-blue)]">Render</span>
-          </h2>
-          <p className="text-lg text-[var(--warm-gray)] leading-relaxed mb-4">
-            Same code, two execution paths. Instant preview in the browser for development.
-            Parallel fragment rendering in the cloud for production at scale.
+          <p className="text-lg text-[var(--warm-gray)] leading-relaxed">
+            The rendering infrastructure that makes this possible.
           </p>
-          <div className="inline-block bg-[var(--card-bg)] border-2 border-[var(--ink-black)] dark:border-white px-4 py-2 font-mono text-sm">
-            <span className="text-[var(--warm-gray)]">$</span> <span className="text-[var(--ink-black)] dark:text-white">editframe render</span>
-          </div>
         </div>
 
         {/* 3D Explainer Demos */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-4 md:gap-8 max-w-6xl mx-auto">
           <div>
             <div className="mb-3">
               <div className="flex items-center gap-2">

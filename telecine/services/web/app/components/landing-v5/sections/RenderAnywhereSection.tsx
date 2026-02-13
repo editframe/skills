@@ -1,8 +1,8 @@
-import { ClientRenderDemo } from "../index";
+import { Globe, Cloud, Desktop } from "@phosphor-icons/react";
 
 export function RenderAnywhereSection() {
   return (
-    <section className="relative py-24 bg-[var(--poster-red)] text-white overflow-hidden">
+    <section className="relative py-24 bg-[var(--poster-red)] dark:bg-[#3a1a1a] text-white overflow-hidden">
       {/* Three-way split pattern - three equal paths */}
       <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 w-[500px] h-[500px] opacity-[0.08]">
         <svg viewBox="0 0 100 100" className="w-full h-full">
@@ -19,7 +19,7 @@ export function RenderAnywhereSection() {
       <div className="relative max-w-7xl mx-auto px-6">
         {/* Header */}
         <div className="text-center mb-16">
-          <h2 className="text-5xl md:text-7xl font-black tracking-tighter uppercase mb-6">
+          <h2 className="text-3xl sm:text-5xl md:text-7xl font-black tracking-tighter uppercase mb-6">
             Render<br />Anywhere
           </h2>
           <div className="flex justify-center gap-2 mb-6">
@@ -28,19 +28,19 @@ export function RenderAnywhereSection() {
             <div className="w-12 h-1 bg-white/40" />
           </div>
           <p className="text-xl text-white/80 max-w-3xl mx-auto leading-relaxed">
-            Same code, same API, same fidelity. Choose the execution context that fits your use case.
+            One composition, three execution contexts. Choose the one that fits.
           </p>
         </div>
 
         {/* Three equal paths */}
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
+        <div className="grid md:grid-cols-3 gap-4 md:gap-8">
           {/* Browser */}
           <div className="relative">
-            <div className="absolute -bottom-3 -right-3 w-full h-full bg-[var(--poster-gold)]" />
-            <div className="relative bg-white text-[var(--ink-black)] border-4 border-white p-6 h-full">
+            <div className="absolute -bottom-2 -right-2 md:-bottom-3 md:-right-3 w-full h-full bg-[var(--poster-gold)]" />
+            <div className="relative bg-white dark:bg-[#1a1a1a] text-[var(--ink-black)] dark:text-white border-4 border-white dark:border-white/20 p-4 md:p-6 h-full">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-[var(--poster-red)] text-white flex items-center justify-center font-black text-xl">
-                  🌐
+                <div className="w-10 h-10 bg-[var(--poster-red)] text-white flex items-center justify-center">
+                  <Globe size={24} weight="bold" aria-hidden="true" />
                 </div>
                 <h3 className="text-2xl font-black uppercase tracking-tight">Browser</h3>
               </div>
@@ -69,11 +69,11 @@ export function RenderAnywhereSection() {
 
           {/* Cloud */}
           <div className="relative">
-            <div className="absolute -bottom-3 -right-3 w-full h-full bg-[var(--poster-blue)]" />
-            <div className="relative bg-white text-[var(--ink-black)] border-4 border-white p-6 h-full">
+            <div className="absolute -bottom-2 -right-2 md:-bottom-3 md:-right-3 w-full h-full bg-[var(--poster-blue)]" />
+            <div className="relative bg-white dark:bg-[#1a1a1a] text-[var(--ink-black)] dark:text-white border-4 border-white dark:border-white/20 p-4 md:p-6 h-full">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-[var(--poster-red)] text-white flex items-center justify-center font-black text-xl">
-                  ☁️
+                <div className="w-10 h-10 bg-[var(--poster-red)] text-white flex items-center justify-center">
+                  <Cloud size={24} weight="bold" aria-hidden="true" />
                 </div>
                 <h3 className="text-2xl font-black uppercase tracking-tight">Cloud</h3>
               </div>
@@ -102,11 +102,11 @@ export function RenderAnywhereSection() {
 
           {/* Local */}
           <div className="relative">
-            <div className="absolute -bottom-3 -right-3 w-full h-full bg-[var(--poster-green)]" />
-            <div className="relative bg-white text-[var(--ink-black)] border-4 border-white p-6 h-full">
+            <div className="absolute -bottom-2 -right-2 md:-bottom-3 md:-right-3 w-full h-full bg-[var(--poster-green)]" />
+            <div className="relative bg-white dark:bg-[#1a1a1a] text-[var(--ink-black)] dark:text-white border-4 border-white dark:border-white/20 p-4 md:p-6 h-full">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-[var(--poster-red)] text-white flex items-center justify-center font-black text-xl">
-                  💻
+                <div className="w-10 h-10 bg-[var(--poster-red)] text-white flex items-center justify-center">
+                  <Desktop size={24} weight="bold" aria-hidden="true" />
                 </div>
                 <h3 className="text-2xl font-black uppercase tracking-tight">Local</h3>
               </div>
@@ -134,36 +134,6 @@ export function RenderAnywhereSection() {
           </div>
         </div>
 
-        {/* Same API callout */}
-        <div className="max-w-3xl mx-auto mb-12">
-          <div className="relative">
-            <div className="absolute -bottom-3 -right-3 w-full h-full bg-white" />
-            <div className="relative bg-[var(--card-dark-bg)] border-4 border-white p-8 text-center">
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="text-lg font-black uppercase tracking-wider">Same API, Same Fidelity</span>
-              </div>
-              <p className="text-white/70 text-sm">
-                Write once. Render anywhere. The API doesn't change. The quality doesn't change. Only the execution context.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Demo */}
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-4 text-center">
-            <span className="text-xs font-bold uppercase tracking-wider text-white/50">Live Demo • Browser Rendering</span>
-          </div>
-          <div className="relative">
-            <div className="absolute -bottom-4 -right-4 w-full h-full bg-[var(--poster-gold)]" />
-            <div className="relative border-4 border-white overflow-hidden">
-              <ClientRenderDemo />
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );
