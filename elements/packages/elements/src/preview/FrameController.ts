@@ -162,16 +162,25 @@ export class FrameController {
   #renderInProgress = false;
   #pendingRenderTime: number | null = null;
 
+  /**
+   * Last successfully rendered time. Used for deduplication when multiple
+   * callers (e.g., PlaybackController RAF loop and canvas render loop)
+   * both try to render the same frame within one animation frame.
+   */
+  #lastRenderedTimeMs: number = -1;
+
   constructor(rootElement: LitElement & { currentTimeMs: number }) {
     this.#rootElement = rootElement;
   }
 
   /**
-   * Cancel any in-progress render operation.
+   * Cancel any in-progress render operation and reset deduplication state.
    */
   abort(): void {
     this.#abortController?.abort();
     this.#abortController = null;
+    // Reset deduplication state so next render goes through even if same time
+    this.#lastRenderedTimeMs = -1;
   }
 
   /**
@@ -191,6 +200,13 @@ export class FrameController {
     options: RenderFrameOptions = {}
   ): Promise<void> {
     const { waitForLitUpdate = true, onAnimationsUpdate } = options;
+
+    // Deduplicate: skip if we just rendered this exact time.
+    // This prevents double-rendering when multiple RAF loops (e.g., PlaybackController
+    // and canvas render loop) both call renderFrame() for the same frame.
+    if (timeMs === this.#lastRenderedTimeMs) {
+      return;
+    }
 
     // If a render is in progress, queue this one
     if (this.#renderInProgress) {
@@ -243,6 +259,9 @@ export class FrameController {
       if (onAnimationsUpdate) {
         onAnimationsUpdate(this.#rootElement);
       }
+
+      // Mark this time as rendered for deduplication
+      this.#lastRenderedTimeMs = timeMs;
     } finally {
       this.#renderInProgress = false;
 

@@ -6,7 +6,7 @@ import { defaultProfiler } from "../RenderProfiler.js";
 export function loadImageFromDataUri(dataUri: string): Promise<HTMLImageElement> {
   const img = new Image();
   const imageLoadStart = performance.now();
-  
+
   return new Promise<HTMLImageElement>((resolve, reject) => {
     img.onload = () => {
       defaultProfiler.addTime("imageLoad", performance.now() - imageLoadStart);
