@@ -174,22 +174,21 @@ const discoverAndTrackAnimations = (
     }
   }
 
-  // Clean up invalid animations from per-element sets using the map we just built
-  // We check all elements that have tracked animations
-  const subtreeElements = element.querySelectorAll("*");
-  for (const el of subtreeElements) {
-    const tracked = animationTracker.get(el);
-    if (tracked) {
-      // Use the pre-built map instead of calling el.getAnimations() (which would be expensive)
-      const currentElAnimations = elementAnimationsMap.get(el) || [];
-      for (const animation of tracked) {
-        if (!isAnimationValid(animation, currentElAnimations)) {
-          tracked.delete(animation);
+  // Clean up invalid animations from per-element sets.
+  // Only walk the full subtree when DOM structure has changed (elements added/removed).
+  // During scrubbing with static DOM, skip this expensive querySelectorAll("*").
+  if (structureChanged) {
+    for (const [el, tracked] of elementAnimationsMap) {
+      const existingTracked = animationTracker.get(el);
+      if (existingTracked) {
+        for (const animation of existingTracked) {
+          if (!isAnimationValid(animation, tracked)) {
+            existingTracked.delete(animation);
+          }
         }
-      }
-      // Remove empty sets to free memory
-      if (tracked.size === 0) {
-        animationTracker.delete(el);
+        if (existingTracked.size === 0) {
+          animationTracker.delete(el);
+        }
       }
     }
   }
@@ -1210,45 +1209,62 @@ export const updateAnimations = (element: AnimatableElement): void => {
     (temporalElement) => evaluateElementState(temporalElement),
   );
 
-  // Partition allAnimations by closest temporal child so each child gets
-  // only its own subtree's animations without calling getAnimations again.
-  // Iterate children in reverse (deepest first in the pre-order list)
-  // so nested temporal elements match before their ancestors.
+  // Separate visible and invisible children.
+  // Only visible children need animation coordination (expensive).
+  // Invisible children just need display:none applied (cheap).
+  const visibleChildContexts: ElementUpdateContext[] = [];
+  for (const ctx of childContexts) {
+    if (shouldBeVisible(ctx.state.phase, ctx.element)) {
+      visibleChildContexts.push(ctx);
+    }
+  }
+
+  // Partition allAnimations by closest VISIBLE temporal parent.
+  // Only visible elements need their animations partitioned and coordinated.
+  // Build a Set of visible temporal elements for O(1) lookup, then walk up
+  // from each animation target to find its closest temporal owner.
+  const temporalSet = new Set<Element>(visibleChildContexts.map(c => c.element));
+  temporalSet.add(element); // Include root
   const childAnimations = new Map<AnimatableElement, Animation[]>();
   for (const animation of allAnimations) {
     const effect = animation.effect;
     const target = effect && effect instanceof KeyframeEffect ? effect.target : null;
     if (!target || !(target instanceof Element)) continue;
 
-    for (let i = childContexts.length - 1; i >= 0; i--) {
-      const ctx = childContexts[i]!;
-      if (ctx.element.contains(target)) {
-        let anims = childAnimations.get(ctx.element);
+    let node: Element | null = target;
+    while (node) {
+      if (temporalSet.has(node)) {
+        let anims = childAnimations.get(node as AnimatableElement);
         if (!anims) {
           anims = [];
-          childAnimations.set(ctx.element, anims);
+          childAnimations.set(node as AnimatableElement, anims);
         }
         anims.push(animation);
         break;
       }
+      node = node.parentElement;
     }
   }
 
+  // Coordinate animations for root and VISIBLE children only.
+  // Invisible children (display:none) have no CSS animations to coordinate,
+  // and when they become visible again, coordination runs on that frame.
   applyAnimationCoordination(
     rootContext.element,
     rootContext.state.phase,
     allAnimations,
   );
-  childContexts.forEach((context) => {
+  for (const context of visibleChildContexts) {
     applyAnimationCoordination(
       context.element,
       context.state.phase,
       childAnimations.get(context.element) || [],
     );
-  });
+  }
 
+  // Apply visual state for ALL children (sets display:none on invisible)
   applyVisualState(rootContext.element, rootContext.state);
-  childContexts.forEach((context) => {
+  for (const context of childContexts) {
     applyVisualState(context.element, context.state);
-  });
+  }
 };

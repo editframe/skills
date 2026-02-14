@@ -741,27 +741,31 @@ export function renderTimegroupToCanvas(
   let captureCtx: HtmlInCanvasContext | null = null;
   let originalParent: Node | null = null;
   let originalNextSibling: Node | null = null;
+  let savedClipPath = "";
+  let savedPointerEvents = "";
 
   if (useNative) {
     captureCanvas = document.createElement("canvas");
     captureCanvas.setAttribute("layoutsubtree", "");
     (captureCanvas as HtmlInCanvasElement).layoutSubtree = true;
-    captureCanvas.width = width;
-    captureCanvas.height = height;
+    captureCanvas.width = renderWidth;
+    captureCanvas.height = renderHeight;
     captureCanvas.style.cssText = `position:fixed;left:0;top:0;width:${width}px;height:${height}px;opacity:0;pointer-events:none;z-index:-9999;`;
 
     originalParent = timegroup.parentNode;
     originalNextSibling = timegroup.nextSibling;
 
+    savedClipPath = timegroup.style.clipPath;
+    savedPointerEvents = timegroup.style.pointerEvents;
+    timegroup.style.clipPath = "";
+    timegroup.style.pointerEvents = "";
+
     captureCanvas.appendChild(timegroup);
     document.body.appendChild(captureCanvas);
     captureCtx = captureCanvas.getContext("2d") as HtmlInCanvasContext;
 
-    // Force initial layout
     void captureCanvas.offsetHeight;
     void timegroup.offsetHeight;
-    getComputedStyle(captureCanvas).opacity;
-    getComputedStyle(timegroup).opacity;
   }
 
   /**
@@ -806,29 +810,28 @@ export function renderTimegroupToCanvas(
 
   const getResolutionScale = (): number => pendingResolutionScale ?? currentResolutionScale;
 
+  // Rolling timing stats for per-phase profiling
+  let frameCount = 0;
+  let totalFrameControllerMs = 0;
+  let totalCaptureMs = 0;
+  let totalCopyMs = 0;
+  let totalFrameMs = 0;
+
   const refresh = async (): Promise<void> => {
     if (disposed) return;
 
     const sourceTimeMs = timegroup.currentTimeMs ?? 0;
     const userTimeMs = timegroup.userTimeMs ?? 0;
 
-    // Skip if seek in progress (source and user time out of sync)
     if (Math.abs(sourceTimeMs - userTimeMs) > TIME_EPSILON_MS) return;
-
-    // Skip if time hasn't changed
     if (userTimeMs === lastTimeMs) return;
-
-    // Skip if already rendering (don't queue up multiple renders)
     if (rendering) return;
 
-    // Mark this time as being rendered and set the rendering flag
     lastTimeMs = userTimeMs;
     rendering = true;
 
-    // Apply any pending resolution changes before rendering
     applyPendingResolutionChange();
 
-    // Log scale info once per initialization
     if (!hasLoggedScale) {
       hasLoggedScale = true;
       const mode = useNative ? "native" : "foreignObject";
@@ -836,24 +839,33 @@ export function renderTimegroupToCanvas(
     }
 
     try {
-      // Use FrameController to ensure all FrameRenderable elements are ready
+      const tFrame = performance.now();
+
+      const tFC0 = performance.now();
       await frameController.renderFrame(userTimeMs, {
         waitForLitUpdate: false,
         onAnimationsUpdate: (root) => {
           updateAnimations(root);
-          void (root as HTMLElement).offsetWidth;
         },
       });
+      const fcMs = performance.now() - tFC0;
 
-      const t0 = performance.now();
+      const tCapture0 = performance.now();
 
       if (useNative && captureCanvas && captureCtx) {
-        // NATIVE PATH: drawElementImage directly
-        // No DOM serialization, no canvas-to-dataURL encoding, no image loading
-        captureCtx.drawElementImage(timegroup, 0, 0);
-        const renderTime = performance.now() - t0;
+        // Apply scale transform when capture buffer differs from layout size
+        // (resolutionScale < 1 means fewer pixels to rasterize)
+        if (captureCanvas.width !== width || captureCanvas.height !== height) {
+          captureCtx.save();
+          captureCtx.scale(captureCanvas.width / width, captureCanvas.height / height);
+          captureCtx.drawElementImage(timegroup, 0, 0);
+          captureCtx.restore();
+        } else {
+          captureCtx.drawElementImage(timegroup, 0, 0);
+        }
+        const captureMs = performance.now() - tCapture0;
 
-        // Copy capture canvas to output canvas at the right scale/DPR
+        const tCopy0 = performance.now();
         const targetWidth = Math.floor(renderWidth * scale * dpr);
         const targetHeight = Math.floor(renderHeight * scale * dpr);
         if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
@@ -863,13 +875,26 @@ export function renderTimegroupToCanvas(
           ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
         ctx.drawImage(captureCanvas, 0, 0, canvas.width, canvas.height);
+        const copyMs = performance.now() - tCopy0;
+
+        const frameMs = performance.now() - tFrame;
+        frameCount++;
+        totalFrameControllerMs += fcMs;
+        totalCaptureMs += captureMs;
+        totalCopyMs += copyMs;
+        totalFrameMs += frameMs;
 
         defaultProfiler.incrementRenderCount();
         if (defaultProfiler.shouldLogByFrameCount(60)) {
-          logger.debug(`[renderTimegroupToCanvas] native frame: ${renderTime.toFixed(1)}ms (resolutionScale=${currentResolutionScale})`);
+          const n = frameCount;
+          console.debug(`[perf] native ${n} frames avg: total=${(totalFrameMs/n).toFixed(1)}ms frameController=${(totalFrameControllerMs/n).toFixed(1)}ms capture=${(totalCaptureMs/n).toFixed(1)}ms copy=${(totalCopyMs/n).toFixed(1)}ms (effective ${(1000/(totalFrameMs/n)).toFixed(0)}fps)`);
+          frameCount = 0;
+          totalFrameControllerMs = 0;
+          totalCaptureMs = 0;
+          totalCopyMs = 0;
+          totalFrameMs = 0;
         }
       } else {
-        // FOREIGNOBJECT PATH: Serialize DOM → SVG → Image → Canvas
         const absoluteTimeMs = toAbsoluteTime(timegroup, userTimeMs);
 
         const dataUri = await captureTimelineToDataUri(timegroup, width, height, {
@@ -877,12 +902,11 @@ export function renderTimegroupToCanvas(
           canvasScale: currentResolutionScale,
           timeMs: absoluteTimeMs,
         });
-        const serializeTime = performance.now() - t0;
+        const captureMs = performance.now() - tCapture0;
 
-        const t1 = performance.now();
+        const tCopy0 = performance.now();
         const image = await loadImageFromDataUri(dataUri);
-        const loadTime = performance.now() - t1;
-        const renderTime = serializeTime + loadTime;
+        const copyMs = performance.now() - tCopy0;
 
         const targetWidth = Math.floor(renderWidth * scale * dpr);
         const targetHeight = Math.floor(renderHeight * scale * dpr);
@@ -898,9 +922,22 @@ export function renderTimegroupToCanvas(
         ctx.drawImage(image, 0, 0, renderWidth, renderHeight);
         ctx.restore();
 
+        const frameMs = performance.now() - tFrame;
+        frameCount++;
+        totalFrameControllerMs += fcMs;
+        totalCaptureMs += captureMs;
+        totalCopyMs += copyMs;
+        totalFrameMs += frameMs;
+
         defaultProfiler.incrementRenderCount();
         if (defaultProfiler.shouldLogByFrameCount(60)) {
-          logger.debug(`[renderTimegroupToCanvas] foreignObject frame: ${renderTime.toFixed(1)}ms (serialize=${serializeTime.toFixed(1)}ms, load=${loadTime.toFixed(1)}ms, resolutionScale=${currentResolutionScale}, image=${image.width}x${image.height})`);
+          const n = frameCount;
+          console.debug(`[perf] foreignObject ${n} frames avg: total=${(totalFrameMs/n).toFixed(1)}ms frameController=${(totalFrameControllerMs/n).toFixed(1)}ms serialize=${(totalCaptureMs/n).toFixed(1)}ms imageLoad=${(totalCopyMs/n).toFixed(1)}ms (effective ${(1000/(totalFrameMs/n)).toFixed(0)}fps)`);
+          frameCount = 0;
+          totalFrameControllerMs = 0;
+          totalCaptureMs = 0;
+          totalCopyMs = 0;
+          totalFrameMs = 0;
         }
       }
     } catch (e) {
@@ -919,8 +956,10 @@ export function renderTimegroupToCanvas(
     frameController.abort();
     renderContext.dispose();
 
-    // Restore timegroup to original DOM position
+    // Restore timegroup to original DOM position and styles
     if (useNative && originalParent) {
+      timegroup.style.clipPath = savedClipPath;
+      timegroup.style.pointerEvents = savedPointerEvents;
       if (originalNextSibling) {
         originalParent.insertBefore(timegroup, originalNextSibling);
       } else {

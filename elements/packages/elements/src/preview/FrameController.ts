@@ -161,6 +161,11 @@ export class FrameController {
   #abortController: AbortController | null = null;
   #renderInProgress = false;
   #pendingRenderTime: number | null = null;
+  #frameCount = 0;
+  #totalQueryMs = 0;
+  #totalPrepareMs = 0;
+  #totalRenderMs = 0;
+  #totalAnimsMs = 0;
 
   /**
    * Last successfully rendered time. Used for deduplication when multiple
@@ -222,18 +227,17 @@ export class FrameController {
     this.#renderInProgress = true;
 
     try {
-      // Wait for Lit to propagate time changes to children
       if (waitForLitUpdate) {
         await this.#rootElement.updateComplete;
         signal.throwIfAborted();
       }
 
-      // Query all visible elements that implement FrameRenderable
-      // Pass the timeMs parameter to use for visibility checks (root element's time may be stale)
+      const tQuery = performance.now();
       const elements = this.#queryVisibleElements(timeMs);
+      const queryMs = performance.now() - tQuery;
       signal.throwIfAborted();
 
-      // Phase 1: Parallel preparation
+      const tPrepare = performance.now();
       const elementsNeedingPreparation = elements.filter(
         (el) => el.getFrameState(timeMs).needsPreparation
       );
@@ -244,8 +248,9 @@ export class FrameController {
         );
         signal.throwIfAborted();
       }
+      const prepareMs = performance.now() - tPrepare;
 
-      // Phase 2: Sequential render by priority
+      const tRender = performance.now();
       const sortedElements = [...elements].sort(
         (a, b) => a.getFrameState(timeMs).priority - b.getFrameState(timeMs).priority
       );
@@ -254,13 +259,30 @@ export class FrameController {
         signal.throwIfAborted();
         element.renderFrame(timeMs);
       }
+      const renderMs = performance.now() - tRender;
 
-      // Phase 3: Update CSS animations (centralized)
+      const tAnims = performance.now();
       if (onAnimationsUpdate) {
         onAnimationsUpdate(this.#rootElement);
       }
+      const animsMs = performance.now() - tAnims;
 
-      // Mark this time as rendered for deduplication
+      this.#frameCount++;
+      this.#totalQueryMs += queryMs;
+      this.#totalPrepareMs += prepareMs;
+      this.#totalRenderMs += renderMs;
+      this.#totalAnimsMs += animsMs;
+
+      if (this.#frameCount % 60 === 0) {
+        const n = this.#frameCount;
+        console.debug(`[FrameController] ${n} frames avg: query=${(this.#totalQueryMs/n).toFixed(1)}ms(${elements.length}els) prepare=${(this.#totalPrepareMs/n).toFixed(1)}ms(${elementsNeedingPreparation.length}prep) render=${(this.#totalRenderMs/n).toFixed(1)}ms anims=${(this.#totalAnimsMs/n).toFixed(1)}ms`);
+        this.#frameCount = 0;
+        this.#totalQueryMs = 0;
+        this.#totalPrepareMs = 0;
+        this.#totalRenderMs = 0;
+        this.#totalAnimsMs = 0;
+      }
+
       this.#lastRenderedTimeMs = timeMs;
     } finally {
       this.#renderInProgress = false;
@@ -315,20 +337,14 @@ export class FrameController {
           result.push(element);
         }
       } else {
-        // Non-temporal element: use CSS visibility
-        if (element instanceof HTMLElement) {
-          // Fast path: check inline display style
-          if (element.style.display === "none") {
-            return;
-          }
-          // Slow path: check computed style
-          const style = getComputedStyle(element);
-          if (style.display === "none" || style.visibility === "hidden") {
-            return;
-          }
+        // Non-temporal element: only check inline display style (fast path).
+        // Skip getComputedStyle — it forces synchronous style recalc and is
+        // unnecessary because FrameRenderable elements are always temporal.
+        // We only walk non-temporal elements to reach temporal children.
+        if (element instanceof HTMLElement && element.style.display === "none") {
+          return;
         }
 
-        // Check if this element implements FrameRenderable
         if (isFrameRenderable(element)) {
           result.push(element);
         }
@@ -350,7 +366,7 @@ export class FrameController {
    * For elements with shadow DOM that contain slots, this returns the assigned
    * elements (slotted content) instead of just the shadow DOM children.
    */
-  #getChildrenIncludingSlotted(element: Element): Element[] {
+  #getChildrenIncludingSlotted(element: Element): Iterable<Element> {
     // If element has shadowRoot with slots, get assigned elements
     if (element.shadowRoot) {
       const slots = element.shadowRoot.querySelectorAll('slot');
@@ -368,9 +384,9 @@ export class FrameController {
         return assignedElements;
       }
     }
-    
-    // Fallback to regular children
-    return Array.from(element.children);
+
+    // Return HTMLCollection directly (iterable, no allocation)
+    return element.children;
   }
 
   /**
