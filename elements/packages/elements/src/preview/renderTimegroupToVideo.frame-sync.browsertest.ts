@@ -20,7 +20,7 @@ describe("Frame Synchronization in Video Rendering", () => {
     await customElements.whenDefined("ef-text-segment");
   });
 
-  it("should capture text animations at correct times (text segments should appear sequentially)", async () => {
+  it("should capture text animations at correct times (text segments should appear sequentially)", { timeout: 60000 }, async () => {
     // Create a timegroup with staggered text animation
     const tg = document.createElement("ef-timegroup") as EFTimegroup;
     tg.setAttribute("mode", "fixed");
@@ -84,9 +84,9 @@ describe("Frame Synchronization in Video Rendering", () => {
     } finally {
       document.body.removeChild(tg);
     }
-  }, 60000);
+  });
   
-  it("should demonstrate the bug with manual frame capture", async () => {
+  it("should demonstrate the bug with manual frame capture", { timeout: 30000 }, async () => {
     // This test manually demonstrates what the video renderer is doing
     // and shows the frame synchronization bug more explicitly
     
@@ -157,5 +157,5 @@ describe("Frame Synchronization in Video Rendering", () => {
     } finally {
       document.body.removeChild(tg);
     }
-  }, 30000);
+  });
 });

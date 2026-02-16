@@ -14,7 +14,7 @@ describe("Video Frame Readiness", () => {
     await customElements.whenDefined("ef-video");
   });
 
-  it("should have video canvas pixels after seekForRender", async () => {
+  it("should have video canvas pixels after seekForRender", { timeout: 30000 }, async () => {
     const tg = document.createElement("ef-timegroup") as EFTimegroup;
     tg.setAttribute("mode", "fixed");
     tg.setAttribute("duration", "5s");
@@ -83,5 +83,5 @@ describe("Video Frame Readiness", () => {
     } finally {
       document.body.removeChild(tg);
     }
-  }, 30000);
+  });
 });

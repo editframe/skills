@@ -47,7 +47,7 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
   }
 
   describe("getVideoFrameAtSourceTime", () => {
-    it("should return a VideoFrame at a given source time", async () => {
+    it("should return a VideoFrame at a given source time", { timeout: 30000 }, async () => {
       const { video, cleanup } = await createVideo();
       try {
         const frame = await video.getVideoFrameAtSourceTime(0, { quality: "main" });
@@ -63,9 +63,9 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
       } finally {
         cleanup();
       }
-    }, 30000);
+    });
 
-    it("should return different frames at different source times", async () => {
+    it("should return different frames at different source times", { timeout: 30000 }, async () => {
       const { video, cleanup } = await createVideo();
       try {
         const frame0 = await video.getVideoFrameAtSourceTime(0, { quality: "main" });
@@ -87,11 +87,11 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
       } finally {
         cleanup();
       }
-    }, 30000);
+    });
   });
 
   describe("renderToVideo", () => {
-    it("should render an untrimmed video to a valid MP4 buffer", async () => {
+    it("should render an untrimmed video to a valid MP4 buffer", { timeout: 60000 }, async () => {
       const { video, cleanup } = await createVideo();
       try {
         const buffer = await video.renderToVideo({
@@ -106,9 +106,9 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
       } finally {
         cleanup();
       }
-    }, 60000);
+    });
 
-    it("should render a trimmed video and produce correct duration output", async () => {
+    it("should render a trimmed video and produce correct duration output", { timeout: 60000 }, async () => {
       const { video, cleanup } = await createVideo({
         trimStartMs: 2000,
         trimEndMs: 2000,
@@ -130,9 +130,9 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
       } finally {
         cleanup();
       }
-    }, 60000);
+    });
 
-    it("should render with audio included", async () => {
+    it("should render with audio included", { timeout: 60000 }, async () => {
       const { video, cleanup } = await createVideo({
         trimStartMs: 1000,
         trimEndMs: 1000,
@@ -149,9 +149,9 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
       } finally {
         cleanup();
       }
-    }, 60000);
+    });
 
-    it("should report progress during rendering", async () => {
+    it("should report progress during rendering", { timeout: 60000 }, async () => {
       const { video, cleanup } = await createVideo();
       try {
         const progressReports: number[] = [];
@@ -174,9 +174,9 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
       } finally {
         cleanup();
       }
-    }, 60000);
+    });
 
-    it("should support cancellation via AbortSignal", async () => {
+    it("should support cancellation via AbortSignal", { timeout: 30000 }, async () => {
       const { video, cleanup } = await createVideo();
       try {
         const controller = new AbortController();
@@ -195,7 +195,7 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
       } finally {
         cleanup();
       }
-    }, 30000);
+    });
   });
 
   describe("CSS effects", () => {
@@ -217,23 +217,23 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
 
     let baseline: Uint8Array;
 
-    it("baseline (no effects)", async () => {
+    it("baseline (no effects)", { timeout: 5000 }, async () => {
       baseline = await renderWithStyle("");
-    }, 5000);
+    });
 
-    it("should render with filter", async () => {
+    it("should render with filter", { timeout: 5000 }, async () => {
       const buffer = await renderWithStyle("filter: grayscale(1) brightness(1.2);");
       expect(buffer.byteLength).not.toBe(baseline.byteLength);
-    }, 5000);
+    });
 
-    it("should render with opacity", async () => {
+    it("should render with opacity", { timeout: 5000 }, async () => {
       const buffer = await renderWithStyle("opacity: 0.5;");
       expect(buffer.byteLength).not.toBe(baseline.byteLength);
-    }, 5000);
+    });
 
-    it("should render with combined filter and opacity", async () => {
+    it("should render with combined filter and opacity", { timeout: 5000 }, async () => {
       const buffer = await renderWithStyle("filter: brightness(1.3); opacity: 0.8;");
       expect(buffer.byteLength).not.toBe(baseline.byteLength);
-    }, 5000);
+    });
   });
 });

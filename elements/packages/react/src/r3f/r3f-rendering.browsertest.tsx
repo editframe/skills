@@ -236,7 +236,7 @@ describe("OffscreenCanvas + Worker WebGL rendering", () => {
  */
 
 describe("Worker renders while main thread is halted (Debugger.pause)", () => {
-  test("Worker renders all frames during main-thread pause, main thread resumes after", async () => {
+  test("Worker renders all frames during main-thread pause, main thread resumes after", { timeout: 30000 }, async () => {
     const result = await (commands as any).testWorkerRendersWhileMainThreadFrozen();
 
     console.log("[Freeze Test] Pause duration:", result.pauseDuration, "ms");
@@ -294,5 +294,5 @@ describe("Worker renders while main thread is halted (Debugger.pause)", () => {
       "Worker median timestamp should be before main thread (Worker was active during pause)");
 
     console.log("[Freeze Test] PROVEN: Worker rendered DURING pause, main thread rendered AFTER resume");
-  }, 30000);
+  });
 });

@@ -570,7 +570,7 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
       }
     });
 
-    test("canvas renders correctly after mode switch", async ({ expect }) => {
+    test("canvas renders correctly after mode switch", { timeout: 10000 }, async ({ expect }) => {
       // This test requires more time for mode switching and canvas rendering
       // Skip for now as it's timing out with 3s limit - needs investigation
       // Start in DOM mode
@@ -622,6 +622,6 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
         const hasContent = await waitForCanvasContent(canvas, 3000);
         expect(hasContent).toBe(true);
       }
-    }, 10000);
+    });
   });
 });
