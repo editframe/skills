@@ -685,7 +685,7 @@ const textEncoder = new TextEncoder();
  * - Canvas (1920px displayed at 420px): encoded at ~0.16x (315px)
  *   via computeCanvasScale(420/1920 * 0.5 * 1.5 quality = 0.164)
  */
-function captureElementParts(
+export function captureElementParts(
   element: Element,
   width: number,
   height: number,

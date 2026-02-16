@@ -1,9 +1,8 @@
 /**
  * Canvas encoding orchestration with worker pool support.
- * 
+ *
  * Supports caching via RenderContext:
  * - For ef-image/ef-waveform: caches by element + renderVersion
- * - For ef-video: uses direct capture API with source timestamp caching
  */
 
 import { logger } from "../logger.js";
@@ -12,8 +11,7 @@ import { getEncoderWorkerUrl } from "../workers/encoderWorkerInline.js";
 import { encodeCanvasOnMainThread } from "./mainThreadEncoder.js";
 import { encodeCanvasInWorker } from "./workerEncoder.js";
 import type { CanvasEncodeResult, CanvasEncodeOptions } from "./types.js";
-import type { EFVideo } from "../../elements/EFVideo.js";
-import type { EFSurface } from "../../elements/EFSurface.js";
+
 
 // Module-level worker pool state
 let _workerPool: WorkerPool | null = null;
@@ -77,19 +75,6 @@ function getWorkerPool(): WorkerPool | null {
   return _workerPool;
 }
 
-/**
- * Check if an element is an EFVideo.
- */
-function isEFVideo(element: Element): element is EFVideo {
-  return element.tagName === "EF-VIDEO";
-}
-
-/**
- * Check if an element is an EFSurface.
- */
-function isEFSurface(element: Element): element is EFSurface {
-  return element.tagName === "EF-SURFACE";
-}
 
 /**
  * Encode canvases to data URLs in parallel using worker pool.
@@ -97,9 +82,7 @@ function isEFSurface(element: Element): element is EFSurface {
  * 
  * When RenderContext and sourceMap are provided:
  * - Checks cache for static elements (ef-image, ef-waveform)
- * - Uses direct capture API for ef-video elements
- * - Shares cached frames for ef-surface elements targeting ef-video
- * 
+ *
  * @param canvases - Array of canvases to encode
  * @param options - Encoding options including optional renderContext and sourceMap
  * @returns Promise resolving to array of encoded results
@@ -121,47 +104,8 @@ export async function encodeCanvasesInParallel(
       const preserveAlpha = canvas.dataset.preserveAlpha === "true";
       const sourceElement = sourceMap?.get(canvas);
       
-      // OPTIMIZATION: Check RenderContext cache for static elements
+      // Check RenderContext cache for static elements (ef-image, ef-waveform)
       if (renderContext && sourceElement) {
-        // For ef-video, use direct capture API
-        if (isEFVideo(sourceElement)) {
-          const sourceTimeMs = sourceElement.currentSourceTimeMs;
-          
-          // Use direct capture API (bypasses frameTask)
-          // Always use "main" quality for export - scrub track is only for preview scrubbing
-          try {
-            const frame = await sourceElement.captureFrameAtSourceTime(sourceTimeMs, { quality: "main" });
-            return { canvas, dataUrl: frame.dataUrl, preserveAlpha: false };
-          } catch (e) {
-            // Fall back to normal encoding if direct capture fails
-            logger.warn("[canvasEncoder] Direct capture failed, falling back to canvas encoding:", e);
-          }
-        }
-        
-        // For ef-surface targeting ef-video, share the video's cached frame
-        if (isEFSurface(sourceElement)) {
-          const target = sourceElement.targetElement;
-          if (target && isEFVideo(target as Element)) {
-            const videoTarget = target as unknown as EFVideo;
-            const sourceTimeMs = videoTarget.currentSourceTimeMs;
-            const cached = renderContext.getCachedVideoFrame(videoTarget, sourceTimeMs);
-            if (cached) {
-              return { canvas, dataUrl: cached.dataUrl, preserveAlpha: false };
-            }
-            
-            // Capture from the target video
-            // Always use "main" quality for export
-            try {
-              const frame = await videoTarget.captureFrameAtSourceTime(sourceTimeMs, { quality: "main" });
-              renderContext.setCachedVideoFrame(videoTarget, sourceTimeMs, frame);
-              return { canvas, dataUrl: frame.dataUrl, preserveAlpha: false };
-            } catch (e) {
-              logger.warn("[canvasEncoder] Direct capture for surface target failed:", e);
-            }
-          }
-        }
-        
-        // For static elements (ef-image, ef-waveform), check version-based cache
         const cachedDataUrl = renderContext.getCachedCanvasDataUrl(sourceElement);
         if (cachedDataUrl) {
           return { canvas, dataUrl: cachedDataUrl, preserveAlpha };
