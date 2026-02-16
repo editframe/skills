@@ -1,0 +1,90 @@
+---
+alwaysApply: false
+---
+# Monorepo Scripts
+
+## Scripts Location
+
+- Root scripts: `/workspace/scripts/` - Delegates to telecine/elements scripts
+- Telecine scripts: `/workspace/telecine/scripts/`
+- Elements scripts: `/workspace/elements/scripts/`
+
+Both telecine and elements have `worktree-config` scripts that handle worktree detection and Docker environment configuration.
+
+## Wrapped Script Runners
+
+The root `/workspace/scripts/` directory contains wrapper scripts that delegate to project-specific implementations. These wrappers ensure consistent behavior across the monorepo while allowing each project to have its own implementation.
+
+### `scripts/docker-compose`
+
+The root `scripts/docker-compose` wrapper always delegates to telecine's docker-compose script (`telecine/scripts/docker-compose`). This ensures:
+- Consistent docker-compose behavior across the monorepo
+- Worktree-aware configuration is automatically applied
+- All docker-compose files are discovered and included
+- Proper project names and profiles are set based on worktree context
+
+**Usage**: Run `scripts/docker-compose` from anywhere in the monorepo to execute docker-compose commands with proper worktree configuration.
+
+### `scripts/browsertest`
+
+- elements/scripts/browsertest <pathfilter>
+- telecine/scripts/browsertest <pathfilter>
+
+Generally filter tests by a file path or directory path. Otherwise the entire suite will run, which is much slower than running single test files.
+
+This wraps vitest, so other vitest options can be passed through after the path filter.
+
+### `scripts/docker`
+
+The root `scripts/docker` wrapper delegates to telecine's docker script (`telecine/scripts/docker`). This provides:
+- Project-specific docker command customization
+- Consistent entry point for docker commands across the monorepo
+
+**Usage**: Run `scripts/docker` from anywhere in the monorepo to execute docker commands with project-specific enhancements.
+
+### `scripts/start`
+
+The root `scripts/start` script starts both telecine and elements services:
+- Starts telecine services (npm install, build, docker-compose, migrations, seeding)
+- Starts elements services via process-compose (runs in background)
+- Displays worktree-specific URLs for both services
+
+**Usage**: Run `./scripts/start` from the monorepo root to start all services.
+
+### `scripts/start-host`
+
+The root `scripts/start-host` script starts host-level services that must run on the macOS host (not in containers):
+- **Host Chrome**: Playwright browser server for tests
+- All worktrees share the same host-chrome instance
+- Must be run on macOS host (outside dev container) to access system Chrome
+
+**Usage**: Run `./scripts/start-host` from the monorepo root on the macOS host.
+
+**Note**: When running from a dev container, start host services manually on the macOS host before starting elements services.
+
+### `scripts/npm` (Telecine)
+
+The `telecine/scripts/npm` script wraps npm commands to ensure they run in the correct context:
+- Executes npm commands in the telecine project directory
+- Handles worktree-aware configuration
+- Ensures dependencies are installed in the correct location
+
+**Usage**: Always use `telecine/scripts/npm` instead of direct `npm` commands when working with the telecine project:
+
+```bash
+# Install a package
+cd /workspace/telecine && ./scripts/npm install <package-name>
+
+# Run npm scripts
+cd /workspace/telecine && ./scripts/npm run <script-name>
+```
+
+**Important**: When installing packages or running npm commands for telecine, use `telecine/scripts/npm` to ensure proper worktree context and dependency management.
+
+### Other Script Runners
+
+Project-specific scripts (like `npm`, `node`, `npx`, etc.) are located in their respective project directories:
+- Telecine: `/workspace/telecine/scripts/`
+- Elements: `/workspace/elements/scripts/`
+
+These scripts handle worktree-aware configuration and should be run from within their respective project directories or referenced with their full paths.

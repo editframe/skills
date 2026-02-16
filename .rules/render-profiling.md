@@ -1,0 +1,409 @@
+---
+alwaysApply: false
+---
+# Render Performance Profiling
+
+## Overview
+
+The elements package includes profiling tools for measuring and optimizing DOM-to-canvas rendering performance. This is critical for video export, where frame generation speed directly impacts export time.
+
+## Quick Start
+
+### Running the Export Profiler
+
+```bash
+# Profile export for 3 seconds (90 frames at 30fps)
+cd /workspace
+npx tsx elements/scripts/profile-export.ts --duration 3000
+
+# Profile a specific project
+npx tsx elements/scripts/profile-export.ts --project design-catalog --duration 5000
+
+# Profile with focus on specific file for line-level detail
+npx tsx elements/scripts/profile-export.ts --focus renderTimegroupPreview --duration 5000
+```
+
+### Output
+
+The profiler produces:
+1. **Console output**: Top hotspots with **source-mapped line numbers** (original TypeScript, not bundled JS)
+2. **CPU profile file**: `./export-profile.cpuprofile` - load in Chrome DevTools for interactive analysis
+3. **Line-level profiling**: Per-line timing breakdown for focused files
+
+### Source Map Resolution
+
+The profiler automatically fetches and applies source maps to translate bundled JavaScript line numbers back to original TypeScript source lines. This means:
+- Line numbers in output match your TypeScript source files
+- No need to manually correlate bundled JS lines
+- Accurate enough for LLM-assisted performance iteration
+
+### Loading Profile in Chrome DevTools
+
+1. Open Chrome DevTools (F12)
+2. Go to **Performance** tab
+3. Click **Load profile** (upload icon)
+4. Select `export-profile.cpuprofile`
+5. Use **Bottom-Up** view for hotspot analysis
+6. Enable **Heavy (Bottom Up)** to see call trees
+
+## Line-Level Profiling
+
+For targeted optimization, use the `--focus` option to get line-by-line timing for specific files:
+
+```bash
+# Focus on a specific file
+npx tsx elements/scripts/profile-export.ts --focus renderTimegroupPreview --duration 5000
+
+# Focus on syncStyles function
+npx tsx elements/scripts/profile-export.ts --focus syncStyles --duration 5000
+
+# Focus on any file containing "preview"
+npx tsx elements/scripts/profile-export.ts --focus preview --duration 3000
+```
+
+### Line-Level Output
+
+The `--focus` option produces detailed line-by-line breakdown with **source-mapped line numbers**:
+
+```
+--- LINE-LEVEL PROFILING ---
+
+  📄 renderTimegroupPreview.ts (1860.7ms, 36.0%)
+    Line      Time     Pct  Function/Context
+  ------  --------  ------  ----------------------------------------
+     301    926.6ms   17.9%  syncStyles          ← function entry
+     476    322.3ms    6.2%  syncStyles          ← const srcVal = srcStyle[prop]
+     474    325.2ms    6.3%  syncStyles          ← property loop iteration
+     462    123.8ms    2.4%  syncStyles          ← getComputedStyle call
+     479     58.3ms    1.1%  syncStyles          ← cloneStyle[prop] = srcVal
+     477     40.7ms    0.8%  syncStyles          ← if (cloneStyle[prop] !== srcVal)
+     482     13.2ms    0.3%  syncStyles          ← animation check
+```
+
+Line numbers correspond directly to the TypeScript source file, making it easy to identify optimization targets.
+
+### How Line-Level Profiling Works
+
+1. **Source map resolution**: Fetches source maps from bundled JS and translates line numbers
+2. **positionTicks**: CPU profiles include per-line sample counts
+3. **Aggregation**: The profiler groups samples by file and line number
+4. **Focus filter**: Only files matching the `--focus` pattern are displayed in detail
+5. **Auto-focus**: Without `--focus`, functions taking >50ms are auto-expanded
+
+### Using Line-Level Data
+
+1. **Identify hot lines**: Lines with highest time are optimization targets
+2. **Check context**: The "Function/Context" column shows which function the line belongs to
+3. **Correlate with source**: Open the file and check what operation happens on that line
+4. **Common patterns**:
+   - `getComputedStyle` calls trigger style resolution
+   - `getAnimations` forces synchronous style recalc
+   - DOM writes (`style.property = value`) can trigger layout
+
+### Example: Optimizing syncStyles
+
+```bash
+npx tsx elements/scripts/profile-export.ts --focus renderTimegroupPreview --duration 5000
+```
+
+Output shows the actual hotspots with source-mapped lines:
+```
+--- TOP HOTSPOTS IN OUR CODE (with callers) ---
+
+  904.0ms (17.5%) - syncStyles
+    Location: renderTimegroupPreview.ts:301:22
+    Called by: renderTimegroupToVideo @ renderTimegroupToVideo.ts:236
+    Hot lines:
+      L476: 322.3ms  ← const srcVal = srcStyle[prop]
+      L474: 325.2ms  ← property loop
+      L477:  40.7ms  ← if (cloneStyle[prop] !== srcVal)
+      L479:  58.3ms  ← cloneStyle[prop] = srcVal
+```
+
+Check line 476 in `renderTimegroupPreview.ts`:
+```typescript
+// Line 476: const srcVal = srcStyle[prop];
+// Reading from CSSStyleDeclaration triggers style computation for each property
+```
+
+The bottleneck is the `SYNC_PROPERTIES` loop reading/writing ~45 CSS properties per element per frame. Optimization strategies:
+- Reduce the number of properties synced
+- Cache property values when elements aren't animating
+- Skip unchanged elements using dirty flags
+
+## Key Files
+
+### `elements/scripts/profile-export.ts`
+
+Playwright-based profiler that:
+- Connects to running browser via WebSocket
+- Loads a dev project
+- Starts CPU profiling via Chrome DevTools Protocol
+- Triggers export via `startExport()`
+- **Fetches and applies source maps** to translate bundled JS lines → TypeScript source lines
+- Saves profile to disk
+- Outputs hotspot summary with accurate source locations
+
+### `elements/packages/elements/src/preview/renderTimegroupToVideo.ts`
+
+The video export pipeline. Contains profiling instrumentation:
+
+```typescript
+// Profiling accumulators (reset at start of export)
+let totalSeekMs = 0;
+let totalSyncMs = 0;
+let totalRenderMs = 0;
+let totalCanvasMs = 0;
+let totalEncodeMs = 0;
+let totalAudioMs = 0;
+```
+
+Console output at end of export:
+```
+[renderToVideo] PROFILING BREAKDOWN:
+  seek:    0.40s (6.4%)
+  sync:    0.97s (15.5%)
+  render:  2.44s (39.1%)
+  canvas:  0.02s (0.3%)
+  encode:  2.32s (37.1%)
+  audio:   0.02s (0.4%)
+```
+
+### `elements/packages/elements/src/preview/renderTimegroupToCanvas.ts`
+
+Core rendering functions with built-in profiling:
+
+```typescript
+// In renderToImageNative:
+let _totalSetupMs = 0;
+let _totalDrawMs = 0;
+let _totalDownsampleMs = 0;
+let _renderCallCount = 0;
+
+// Call resetProfilingCounters() at start of export to clear
+export function resetProfilingCounters(): void {
+  _totalSetupMs = 0;
+  _totalDrawMs = 0;
+  _totalDownsampleMs = 0;
+  _renderCallCount = 0;
+}
+```
+
+## Debugging Render Content
+
+### Checking for Blank Frames
+
+The export pipeline includes debug logging for the first frame:
+
+```typescript
+// Debug output includes:
+[renderToVideo] DEBUG: Clone pairs: 352
+[renderToVideo] DEBUG: Visible elements: 83
+[renderToVideo] DEBUG: center (960,540) RGBA: 30, 41, 59, 255
+[renderToVideo] DEBUG: Non-background pixels in top 200 rows: 228940
+```
+
+**If you see `Non-background pixels: 0`**, there's a rendering issue:
+- Check `clip-path` - source elements may have `clip-path: inset(100%)` 
+- Check `opacity` - elements may be animated to 0 at time 0
+- Check element positions - flex/grid children need absolute positioning in clones
+
+### Common Issues
+
+1. **Blank frames**: Usually caused by `clip-path: inset(100%)` from proxy mode. Fixed by resetting clip-path after syncStyles.
+
+2. **Wrong positioning**: Elements with `position: static` in flex/grid layouts need absolute positioning computed from `getBoundingClientRect()`.
+
+3. **Missing fonts**: ForeignObject path requires fonts to be available in SVG context.
+
+## Rendering Paths
+
+### Native HTML-in-Canvas API (`drawElementImage`)
+
+- **Fastest path** when available (Chrome Canary with flag)
+- Enable: `chrome://flags/#canvas-draw-element`
+- Check: `isNativeCanvasApiAvailable()` / `isNativeCanvasApiEnabled()`
+- Renders DOM directly to canvas without serialization
+
+### ForeignObject Fallback
+
+- Used when native API unavailable
+- Serializes DOM to SVG foreignObject
+- Slower due to serialization and image loading
+- CSS must be either inline or in `<style>` element
+
+## Performance Targets
+
+| Metric | Target | Notes |
+|--------|--------|-------|
+| Frame render (native) | <10ms | For 60fps+ export |
+| Frame render (foreignObject) | <20ms | Acceptable for 30fps |
+| syncStyles per frame | <5ms | Main bottleneck area |
+| Full export | >1x realtime | Minimum acceptable |
+
+## Visual Fidelity Testing
+
+**CRITICAL**: Always run visual regression tests alongside performance optimizations. Performance gains are worthless if they break rendering.
+
+### Running Visual Regression Tests
+
+```bash
+cd /workspace/elements
+
+# Run all render fidelity tests
+./scripts/browsertest packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts
+
+# Run only visual regression tests
+./scripts/browsertest packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts -t "visual regression"
+
+# Run benchmark tests with visual comparison
+./scripts/browsertest packages/elements/src/preview/renderTimegroupToCanvas.benchmark.browsertest.ts
+```
+
+### How Visual Testing Works
+
+1. **Baseline Images**: Stored in `elements/packages/elements/test/baselines/`
+2. **Comparison**: Uses `odiff` for pixel-perfect comparison
+3. **Threshold**: Default tolerance is 0.1% pixel difference
+4. **Formats**: PNG for baselines, configurable quality for captures
+
+### Key Test Files
+
+- `renderTimegroupToCanvas.browsertest.ts` - Core rendering fidelity tests
+- `renderTimegroupToCanvas.benchmark.browsertest.ts` - Performance + visual comparison
+
+### Visual Comparison API
+
+```typescript
+import { 
+  expectCanvasesToMatch,
+  saveBaselineIfMissing,
+  captureCanvasAsDataUrl 
+} from "../../test/visualRegressionUtils.js";
+
+// Compare two canvases
+await expectCanvasesToMatch(actualCanvas, expectedCanvas, {
+  threshold: 0.1,  // 0.1% tolerance
+  testName: "my-test-name",
+});
+
+// Save baseline for new test
+await saveBaselineIfMissing(canvas, "baseline-name");
+```
+
+### Workflow: Performance + Fidelity
+
+When optimizing render performance:
+
+1. **Before changes**: Run visual tests to establish working baseline
+   ```bash
+   ./scripts/browsertest packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts
+   ```
+
+2. **Make optimization**: Implement your performance change
+
+3. **Verify fidelity**: Re-run visual tests - they must pass
+   ```bash
+   ./scripts/browsertest packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts
+   ```
+
+4. **Measure performance**: Run benchmark tests
+   ```bash
+   ./scripts/browsertest packages/elements/src/preview/renderTimegroupToCanvas.benchmark.browsertest.ts -t "benchmark"
+   ```
+
+5. **Full validation**: Run full export profiler
+   ```bash
+   npx tsx elements/scripts/profile-export.ts --duration 3000
+   ```
+
+### Interpreting Visual Test Failures
+
+When a visual test fails, you'll see:
+```
+Canvas comparison failed for test-name: 2.34% different
+Expected: test/baselines/test-name.png
+Diff saved to: test/baselines/test-name.diff.png
+```
+
+**Common causes of visual regressions:**
+- `clip-path` not reset on clones
+- `opacity` animated to wrong value at capture time
+- `display` property forced incorrectly (e.g., flex→block)
+- Element positioning wrong (static→absolute conversion)
+- Missing CSS properties in sync list
+
+### Regenerating Baselines
+
+If visual output has intentionally changed:
+
+```bash
+# Delete old baselines
+rm elements/packages/elements/test/baselines/test-name*.png
+
+# Re-run tests to generate new baselines
+./scripts/browsertest packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts -t "test-name"
+```
+
+**Warning**: Only regenerate baselines after visually inspecting the new output to confirm it's correct.
+
+## Browser Test Profiling
+
+The browsertest harness also supports performance testing:
+
+```typescript
+// In renderTimegroupToCanvas.browsertest.ts
+test("benchmark: native path frame time", async () => {
+  const start = performance.now();
+  for (let i = 0; i < 100; i++) {
+    await captureTimegroupAtTime(timegroup, { timeMs: i * 33, scale: 1 });
+  }
+  const elapsed = performance.now() - start;
+  console.log(`100 frames in ${elapsed}ms (${elapsed/100}ms per frame)`);
+});
+```
+
+Run benchmarks:
+```bash
+cd /workspace/elements
+./scripts/browsertest packages/elements/src/preview/renderTimegroupToCanvas.browsertest.ts -t "benchmark"
+```
+
+## Tips
+
+1. **Always profile with representative content** - Simple test fixtures don't reveal real-world bottlenecks
+
+2. **Check both paths** - Native and foreignObject have different bottlenecks
+
+3. **Use `--duration` wisely** - Longer durations give more accurate profiles but take longer
+
+4. **Look at "self time"** in Chrome DevTools - This excludes time in child functions
+
+5. **Profile in production mode** - Dev mode has additional overhead from Lit warnings
+
+6. **Use `--focus` for surgical optimization** - Target specific files to get line-level granularity
+
+7. **Trust the source-mapped lines** - The profiler automatically resolves source maps, so line numbers match your TypeScript source directly
+
+## Capture Mode Optimization
+
+During export, the DOM structure is locked. This enables significant optimizations:
+
+
+```
+
+### What Can Be Skipped During Capture
+
+| Operation | Why Skip | Savings |
+|-----------|----------|---------|
+| `getAnimations()` | Animations already discovered | 800ms+ |
+| Animation validation | DOM is locked, all tracked animations valid | Significant |
+| New element discovery | No new elements will appear | Minor |
+
+### What Must Still Run During Capture
+
+| Operation | Why Needed |
+|-----------|------------|
+| `syncStyles()` | CSS properties may animate each frame |
+| Animation time synchronization | Animations need correct currentTime |
+| Visual state application | CSS variables like `--ef-progress` change |

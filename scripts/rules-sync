@@ -1,0 +1,5 @@
+#!/bin/bash
+# Sync rules from .rules/ to .cursor/rules/ and CLAUDE.md
+# Usage: ./scripts/rules-sync [--dry-run] [--verbose]
+
+npx tsx scripts/sync-rules.ts "$@"

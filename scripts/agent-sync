@@ -1,0 +1,19 @@
+#!/bin/bash
+# Sync all agent configuration (skills + rules)
+# Usage: ./scripts/agent-sync [--dry-run] [--verbose]
+
+set -e
+
+echo ""
+echo "=== Agent Sync ==="
+echo ""
+
+echo "--- Skills ---"
+npx tsx scripts/sync-skills.ts "$@"
+
+echo ""
+echo "--- Rules ---"
+npx tsx scripts/sync-rules.ts "$@"
+
+echo ""
+echo "=== Agent Sync Complete ==="
