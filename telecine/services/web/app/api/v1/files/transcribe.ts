@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { db } from "@/sql-client.server";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 import type { Route } from "./+types/transcribe";
 
@@ -12,8 +12,9 @@ const schema = z.object({
 export const action = async ({
   params: { id },
   request,
+  context,
 }: Route.ActionArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
   const payload = schema.parse(await request.json());
 
   const file = await db

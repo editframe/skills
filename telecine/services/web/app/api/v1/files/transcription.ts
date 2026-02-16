@@ -1,13 +1,13 @@
 import { db } from "@/sql-client.server";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 import type { Route } from "./+types/transcription";
 
 export const loader = async ({
-  request,
   params: { id },
+  context,
 }: Route.LoaderArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
 
   await db
     .selectFrom("video2.files")

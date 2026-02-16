@@ -65,11 +65,15 @@ export const getMostRecentMessage = async (
   const message = messages.items.find((m: any) =>
     decodeQuotedPrintable(m.Content.Headers.Subject[0]).includes(subject),
   );
+  // Replace any localhost-style origins with the Playwright web host.
+  // The web container may use a worktree domain (e.g. main.localhost)
+  // that differs from the .env WEB_HOST (localhost).
+  const playwrightHost = process.env.PLAYWRIGHT_WEB_HOST!;
+  let body = decodeQuotedPrintable(message.Content.Body);
+  body = body.replaceAll(process.env.WEB_HOST!, playwrightHost);
+  body = body.replace(/https?:\/\/[a-z0-9.-]*localhost:\d+/g, playwrightHost);
   return {
-    body: decodeQuotedPrintable(message.Content.Body).replaceAll(
-      process.env.WEB_HOST!,
-      process.env.PLAYWRIGHT_WEB_HOST!,
-    ),
+    body,
     from: message.Content.Headers.From[0],
     to: message.Content.Headers.To[0],
     subject: decodeQuotedPrintable(message.Content.Headers.Subject[0]),

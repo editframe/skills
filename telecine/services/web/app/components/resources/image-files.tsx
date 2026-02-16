@@ -17,14 +17,14 @@ import {
 const IndexQuery = progressiveQuery(
   "org-reader",
   graphql(`
-    query Images($orgId: uuid!, $limit: Int!, $offset: Int!) {
+    query Images($orgId: uuid!, $limit: Int!, $offset: Int!, $where_clause: video2_image_files_bool_exp) {
       org: orgs_by_pk(id: $orgId) {
-        page_info: image_files_aggregate {
+        page_info: image_files_aggregate(where: $where_clause) {
           aggregate {
             count
           }
         }
-        rows: image_files(order_by: {created_at: desc}, limit: $limit, offset: $offset) {
+        rows: image_files(where: $where_clause, order_by: {created_at: desc}, limit: $limit, offset: $offset) {
           id
           created_at
           filename
@@ -56,6 +56,10 @@ const DetailQuery = progressiveQuery(
     }
   `),
 );
+
+function buildWhereClause() {
+  return { expires_at: { _is_null: true } };
+}
 
 const Actions: ContentBlock<{ id: string; filename: string }> = ({
   id,
@@ -107,6 +111,7 @@ export const ImageFiles: ResourceView<typeof IndexQuery, typeof DetailQuery> = {
   index: {
     query: IndexQuery,
     TableHeader,
+    buildWhereClause,
     columns: [
       { name: "Filename", content: Filename },
       { name: "Created At", content: CreatedAt },

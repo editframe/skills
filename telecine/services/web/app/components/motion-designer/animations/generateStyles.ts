@@ -1,4 +1,5 @@
 import type { ElementNode, Animation } from "~/lib/motion-designer/types";
+import type { KeyframesDefinition, KeyframeRule } from "../rendering/cssStructures";
 
 export interface AnimationMetadata {
   property: string;
@@ -66,6 +67,242 @@ export function generateAnimationStyles(element: ElementNode): string | null {
   }
 
   return keyframes.join("\n");
+}
+
+export function generateAnimationKeyframes(
+  element: ElementNode,
+): KeyframesDefinition[] {
+  if (element.animations.length === 0) return [];
+
+  const animationsByProperty = new Map<
+    string,
+    Array<{ anim: Animation; index: number }>
+  >();
+  element.animations.forEach((anim, index) => {
+    const cssProperty = getCSSProperty(anim.property);
+    const existing = animationsByProperty.get(cssProperty) || [];
+    existing.push({ anim, index });
+    animationsByProperty.set(cssProperty, existing);
+  });
+
+  const definitions: KeyframesDefinition[] = [];
+
+  for (const [cssProperty, group] of animationsByProperty) {
+    if (group.length === 1) {
+      const first = group[0];
+      if (first) {
+        definitions.push(
+          buildKeyframesDefinition(first.anim, element, first.index),
+        );
+      }
+    } else {
+      definitions.push(
+        buildMergedKeyframesDefinition(group, element, cssProperty),
+      );
+    }
+  }
+
+  return definitions;
+}
+
+function buildKeyframesDefinition(
+  animation: Animation,
+  element: ElementNode,
+  index: number,
+): KeyframesDefinition {
+  const name = `animation-${element.id}-${index}`;
+  const baseRotation =
+    animation.property === "rotate" ? (element.props.rotation ?? 0) : 0;
+  const keyframes: KeyframeRule[] = [];
+
+  if (animation.fromValue !== undefined && animation.toValue !== undefined) {
+    const from = convertToTransformIfNeeded(
+      animation.property,
+      animation.fromValue,
+      baseRotation,
+    );
+    const to = convertToTransformIfNeeded(
+      animation.property,
+      animation.toValue,
+      baseRotation,
+    );
+    keyframes.push({ percent: 0, properties: { [from.prop]: from.val } });
+    keyframes.push({ percent: 100, properties: { [to.prop]: to.val } });
+  } else if (animation.keyframes && animation.keyframes.length > 0) {
+    for (const kf of animation.keyframes) {
+      const percent = Math.round(kf.time * 100);
+      const converted = convertToTransformIfNeeded(
+        animation.property,
+        kf.value,
+        baseRotation,
+      );
+      keyframes.push({
+        percent,
+        properties: { [converted.prop]: converted.val },
+      });
+    }
+  } else {
+    const value = animation.fromValue || animation.toValue || "0";
+    const converted = convertToTransformIfNeeded(
+      animation.property,
+      value,
+      baseRotation,
+    );
+    keyframes.push({
+      percent: 0,
+      properties: { [converted.prop]: converted.val },
+    });
+    keyframes.push({
+      percent: 100,
+      properties: { [converted.prop]: converted.val },
+    });
+  }
+
+  return { name, keyframes };
+}
+
+function buildMergedKeyframesDefinition(
+  group: Array<{ anim: Animation; index: number }>,
+  element: ElementNode,
+  cssProperty: string,
+): KeyframesDefinition {
+  const sorted = group.sort((a, b) => a.anim.delay - b.anim.delay);
+  const first = sorted[0];
+  if (!first) {
+    return { name: `animation-${element.id}-0`, keyframes: [] };
+  }
+
+  const name = `animation-${element.id}-${first.index}`;
+  const baseRotation = element.props.rotation ?? 0;
+
+  const firstStart = first.anim.delay;
+  const lastEnd = Math.max(
+    ...sorted.map(({ anim }) => anim.delay + anim.duration),
+  );
+  const totalDuration = lastEnd - firstStart;
+
+  // Collect all time points
+  const timePoints = new Set<number>();
+  for (const { anim } of sorted) {
+    timePoints.add(anim.delay);
+    timePoints.add(anim.delay + anim.duration);
+  }
+
+  const sortedTimePoints = Array.from(timePoints).sort((a, b) => a - b);
+  const keyframes: KeyframeRule[] = [];
+
+  for (let i = 0; i < sortedTimePoints.length; i++) {
+    const timeMs = sortedTimePoints[i]!;
+    let percent: number;
+    if (i === 0) {
+      percent = 0;
+    } else if (i === sortedTimePoints.length - 1) {
+      percent = 100;
+    } else {
+      percent = totalDuration > 0 ? ((timeMs - firstStart) / totalDuration) * 100 : 0;
+    }
+
+    const properties: Record<string, string> = {};
+
+    if (cssProperty === "transform") {
+      const transforms: string[] = [];
+      for (const { anim } of sorted) {
+        const animStart = anim.delay;
+        const animEnd = anim.delay + anim.duration;
+        let value: string | undefined;
+
+        if (timeMs >= animStart && timeMs <= animEnd) {
+          const progress =
+            anim.duration > 0 ? (timeMs - animStart) / anim.duration : 0;
+          if (anim.fromValue !== undefined && anim.toValue !== undefined) {
+            const fromNum = parseFloat(anim.fromValue);
+            const toNum = parseFloat(anim.toValue);
+            if (!isNaN(fromNum) && !isNaN(toNum)) {
+              const interpolated = fromNum + (toNum - fromNum) * progress;
+              const unit =
+                anim.toValue.replace(/[0-9.-]/g, "") ||
+                anim.fromValue.replace(/[0-9.-]/g, "");
+              value = `${interpolated}${unit}`;
+            } else {
+              value = progress < 0.5 ? anim.fromValue : anim.toValue;
+            }
+          } else {
+            value = anim.fromValue || anim.toValue || "0";
+          }
+        } else if (
+          timeMs < animStart &&
+          (anim.fillMode === "backwards" || anim.fillMode === "both")
+        ) {
+          value = anim.fromValue || "0";
+        } else if (
+          timeMs > animEnd &&
+          (anim.fillMode === "forwards" || anim.fillMode === "both")
+        ) {
+          value = anim.toValue || "1";
+        }
+
+        if (value !== undefined) {
+          const converted = convertToTransformIfNeeded(
+            anim.property,
+            value,
+            baseRotation,
+          );
+          if (converted.prop === "transform") {
+            transforms.push(converted.val);
+          }
+        }
+      }
+      properties.transform =
+        transforms.length > 0 ? transforms.join(" ") : "none";
+    } else {
+      // Non-transform property
+      let value: string = "0";
+      for (const { anim } of sorted) {
+        const animStart = anim.delay;
+        const animEnd = anim.delay + anim.duration;
+        if (timeMs >= animStart && timeMs <= animEnd) {
+          if (timeMs === animStart) {
+            value = anim.fromValue || anim.toValue || "0";
+          } else if (timeMs === animEnd) {
+            value = anim.toValue || anim.fromValue || "0";
+          } else {
+            const progress =
+              anim.duration > 0 ? (timeMs - animStart) / anim.duration : 0;
+            if (anim.fromValue !== undefined && anim.toValue !== undefined) {
+              const fromNum = parseFloat(anim.fromValue);
+              const toNum = parseFloat(anim.toValue);
+              if (!isNaN(fromNum) && !isNaN(toNum)) {
+                const interpolated = fromNum + (toNum - fromNum) * progress;
+                const unit =
+                  anim.toValue.replace(/[0-9.-]/g, "") ||
+                  anim.fromValue.replace(/[0-9.-]/g, "");
+                value = `${interpolated}${unit}`;
+              }
+            }
+          }
+          break;
+        }
+      }
+      properties[cssProperty] = value;
+    }
+
+    // Determine easing
+    let easing: string | undefined;
+    if (i < sortedTimePoints.length - 1) {
+      const segmentAnim = sorted.find(({ anim }) => {
+        const start = Math.round(anim.delay);
+        const end = Math.round(anim.delay + anim.duration);
+        return timeMs >= start && timeMs < end;
+      });
+      if (segmentAnim) {
+        easing = segmentAnim.anim.easing || "ease";
+      }
+    }
+
+    keyframes.push({ percent, properties, easing });
+  }
+
+  return { name, keyframes };
 }
 
 export function getAnimationMetadata(

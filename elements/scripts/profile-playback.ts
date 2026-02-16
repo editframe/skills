@@ -193,6 +193,7 @@ async function main() {
   const scrubMode = hasFlag("scrub");
   const scrubSpeed = parseInt(getArg("scrub-speed", "50"), 10);
   const jsonOutput = hasFlag("json");
+  const canvasMode = hasFlag("canvas");
 
   console.log(`\n🔬 Playback Profiling Harness`);
   console.log(`   Project: ${project}`);
@@ -201,6 +202,9 @@ async function main() {
   console.log(`   Headless: ${headless}`);
   if (focusFile) {
     console.log(`   Focus: ${focusFile}`);
+  }
+  if (canvasMode) {
+    console.log(`   Canvas mode: forced`);
   }
   console.log();
 
@@ -233,10 +237,15 @@ async function main() {
   const context = await browser.newContext();
   const page = await context.newPage();
   
+  page.on("pageerror", (error) => {
+    console.log(`[browser:ERROR] ${error.message}`);
+  });
   page.on("console", (msg) => {
     const text = msg.text();
-    if (text.includes("[EFTimegroup]") || text.includes("[PlaybackController]") || text.includes("DEBUG")) {
-      console.log(`[browser] ${text}`);
+    if (msg.type() === "error" || msg.type() === "warning") {
+      console.log(`[browser:${msg.type()}] ${text}`);
+    } else if (text.includes("[EFTimegroup]") || text.includes("[PlaybackController]") || text.includes("DEBUG") || text.includes("[perf]") || text.includes("[renderTimegroupToCanvas]") || text.includes("Canvas") || text.includes("[DIAG]")) {
+      console.log(`[browser:${msg.type()}] ${text}`);
     }
   });
 
@@ -248,7 +257,7 @@ async function main() {
     await page.goto(devUrl, { waitUntil: "networkidle", timeout: 60000 });
 
     console.log(`⏳ Waiting for timegroup...`);
-    await page.waitForSelector("ef-timegroup", { timeout: 30000 });
+    await page.waitForSelector("ef-timegroup", { state: "attached", timeout: 30000 });
     await page.waitForFunction(() => {
       const tg = document.querySelector("ef-timegroup") as any;
       return tg && tg.durationMs > 0 && tg.playbackController;
@@ -265,6 +274,39 @@ async function main() {
     });
     console.log(`✅ Timegroup ready: ${timegroupInfo.width}x${timegroupInfo.height}, ${timegroupInfo.durationMs}ms`);
     console.log(`   Current time: ${timegroupInfo.currentTimeMs}ms`);
+
+    // Switch to canvas presentation mode if requested
+    if (canvasMode) {
+      console.log(`\n🖼️  Switching to canvas presentation mode...`);
+      // Click the Canvas button inside the workbench shadow DOM
+      const clicked = await page.evaluate(async () => {
+        const workbench = document.querySelector("ef-workbench");
+        if (!workbench || !workbench.shadowRoot) return false;
+        const buttons = workbench.shadowRoot.querySelectorAll("button");
+        for (let i = 0; i < buttons.length; i++) {
+          if (buttons[i].textContent?.trim() === "Canvas") {
+            buttons[i].click();
+            return true;
+          }
+        }
+        return false;
+      });
+      if (!clicked) {
+        console.log(`   ⚠️  Could not find Canvas button in workbench`);
+      }
+      // Wait for canvas mode to fully initialize
+      await page.waitForTimeout(3000);
+
+      // Verify canvas mode is active
+      const canvasActive = await page.evaluate(() => {
+        const workbench = document.querySelector("ef-workbench") as any;
+        return {
+          presentationMode: workbench?.presentationMode,
+          hasCanvas: !!workbench?.shadowRoot?.querySelector(".canvas-overlay canvas"),
+        };
+      });
+      console.log(`   Canvas mode: presentationMode=${canvasActive.presentationMode}, hasCanvas=${canvasActive.hasCanvas}`);
+    }
 
     // Enable profiler
     await cdp.send("Profiler.enable");
@@ -308,16 +350,31 @@ async function main() {
         if (!timegroup) {
           throw new Error("Timegroup not found");
         }
-        
+
         // Start playback
         timegroup.play();
-        
+
         // Wait for the specified duration
         await new Promise(resolve => setTimeout(resolve, duration));
-        
+
         // Pause playback
         timegroup.pause();
       }, { duration });
+
+      // Measure effective FPS after profiling
+      const fpsInfo = await page.evaluate(() => {
+        const wb = document.querySelector("ef-workbench") as any;
+        const stats = wb?.renderStats?.getStats?.(800, 500, 1);
+        return stats ? {
+          fps: stats.fps,
+          avgRenderTime: stats.avgRenderTime,
+          headroom: stats.headroom,
+          pressureState: stats.pressureState,
+        } : null;
+      });
+      if (fpsInfo) {
+        console.log(`   RenderStats: fps=${fpsInfo.fps?.toFixed(1)}, avgRenderTime=${fpsInfo.avgRenderTime?.toFixed(1)}ms, headroom=${fpsInfo.headroom?.toFixed(1)}ms, pressure=${fpsInfo.pressureState}`);
+      }
     }
 
     const playbackDuration = Date.now() - playbackStartTime;

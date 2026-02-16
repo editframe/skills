@@ -21,11 +21,11 @@ import { ErrorMessage } from "~/components/ErrorMessage";
 import { ArrowLeft } from "@phosphor-icons/react";
 
 import type { Route } from "./+types/new";
-import { requireSession } from "@/util/requireSession.server";
+import { identityContext, sessionCookieContext } from "~/middleware/context";
 import { requireOrgId } from "@/util/requireOrgId";
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  const { session } = await requireSession(request);
+export const loader = async ({ request, context }: Route.LoaderArgs) => {
+  const session = context.get(identityContext);
 
   const [org] = await requireQueryAs(
     { uid: session.uid, cid: session.cid ?? null },
@@ -94,8 +94,9 @@ export const meta: MetaFunction = () => {
   return [{ title: "New API key | Editframe" }];
 };
 
-export const action = async ({ request }: Route.ActionArgs) => {
-  const { session, sessionCookie } = await requireSession(request);
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const session = context.get(identityContext);
+  const sessionCookie = context.get(sessionCookieContext);
   const values = await createKey.parseFormData(request);
 
   if (!values.success) {

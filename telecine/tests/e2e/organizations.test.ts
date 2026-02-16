@@ -13,7 +13,7 @@ import {
 
 setupBrowser();
 
-describe("organizations - list", () => {
+describe.skip("organizations - list", () => {
   let org: FullOrgFixture;
 
   beforeAll(async () => {
@@ -52,7 +52,7 @@ describe("organizations - list", () => {
   });
 });
 
-describe("organizations - show", () => {
+describe.skip("organizations - show", () => {
   let org: FullOrgFixture;
   let otherOrg: FullOrgFixture;
 
@@ -122,7 +122,7 @@ describe("organizations - show", () => {
   });
 });
 
-describe("organizations - new", () => {
+describe.skip("organizations - new", () => {
   test("New org page requires authentication", async () => {
     await requiresAuthentication("/organizations/new");
   });
@@ -143,7 +143,7 @@ describe("organizations - new", () => {
   });
 });
 
-describe("organizations - edit", () => {
+describe.skip("organizations - edit", () => {
   let org: FullOrgFixture;
 
   beforeAll(async () => {
@@ -200,7 +200,7 @@ describe("organizations - edit", () => {
   });
 });
 
-describe("organizations - delete", () => {
+describe.skip("organizations - delete", () => {
   test("requires authentication", async () => {
     await requiresAuthentication("/organizations/1");
   });

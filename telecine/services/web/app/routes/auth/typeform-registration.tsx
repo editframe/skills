@@ -1,10 +1,12 @@
-import { requireNoSession } from "@/util/requireSession.server";
 import { ClientOnly } from "remix-utils/client-only";
 import { useEffect, useState } from "react";
+import { noAuthMiddleware } from "~/middleware/auth";
+
 import type { Route } from "./+types/typeform-registration";
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  await requireNoSession(request);
+export const middleware: Route.MiddlewareFunction[] = [noAuthMiddleware];
+
+export const loader = async () => {
   return null;
 };
 

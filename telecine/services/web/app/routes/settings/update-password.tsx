@@ -6,7 +6,7 @@ import { updatePassword } from "~/updatePassword.server";
 import { Link } from "~/components/Link";
 import { logger } from "@/logging";
 import type { Route } from "./+types/update-password";
-import { requireSession } from "@/util/requireSession.server";
+import { identityContext, sessionCookieContext } from "~/middleware/context";
 import { commitSession } from "@/util/session";
 
 const schema = z
@@ -26,8 +26,9 @@ const schema = z
 
 const editAccount = formFor(schema);
 
-export async function action({ request }: Route.ActionArgs) {
-  const { session, sessionCookie } = await requireSession(request);
+export async function action({ request, context }: Route.ActionArgs) {
+  const session = context.get(identityContext);
+  const sessionCookie = context.get(sessionCookieContext);
   const values = await editAccount.parseFormData(request);
   if (!values.success) {
     return data(values.errors, { status: 400 });
@@ -64,8 +65,7 @@ export async function action({ request }: Route.ActionArgs) {
   }
 }
 
-export const loader = async (args: Route.LoaderArgs) => {
-  await requireSession(args.request);
+export const loader = async () => {
   return {};
 };
 

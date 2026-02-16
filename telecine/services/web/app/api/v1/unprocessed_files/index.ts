@@ -9,13 +9,14 @@ import { dataFilePath } from "@/util/filePaths";
 import { v4 } from "uuid";
 
 import type { Route } from "./+types/index";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 export const action = async ({
   request,
+  context,
 }: Route.ActionArgs): Promise<CreateUnprocessedFileResult> => {
   const payload = CreateUnprocessedFilePayload.parse(await request.json());
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
   const id = v4();
   const filePath = dataFilePath({
     org_id: session.oid,

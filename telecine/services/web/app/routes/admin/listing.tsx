@@ -5,7 +5,7 @@ import { extractServerTableSearchParams } from "~/ui/useTableSearchParams";
 import { ResourceModules, dataShape } from "~/components/resources/admin";
 
 import type { Route } from "./+types/listing";
-import { requireAdminSession } from "@/util/requireAdminSession";
+import { adminIdentityContext } from "~/middleware/context";
 import type { ProgressiveQueryDescriptor } from "@/graphql.client/progressiveQuery";
 import { SharedResourceIndexWrapper } from "~/components/resources/SharedResourceWrappers";
 
@@ -20,8 +20,8 @@ export const ErrorBoundary = () => {
   return <div>Unknown error</div>;
 };
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const session = await requireAdminSession(request);
+export const loader = async ({ request, context, params }: Route.LoaderArgs) => {
+  const session = context.get(adminIdentityContext);
   const searchParams = new URL(request.url).searchParams;
   const { limit, page } = extractServerTableSearchParams(searchParams);
 

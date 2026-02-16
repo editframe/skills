@@ -1,11 +1,11 @@
 import { graphql } from "@/graphql";
 import { requireMutateAs } from "@/graphql.server/userClient";
-import { requireSession } from "@/util/requireSession.server";
+import { identityContext } from "~/middleware/context";
 
 import type { Route } from "./+types/cancel";
 
-export const action = async ({ params: { id }, request }: Route.ActionArgs) => {
-  const { session } = await requireSession(request);
+export const action = async ({ params: { id }, context }: Route.ActionArgs) => {
+  const session = context.get(identityContext);
 
   await requireMutateAs(
     { uid: session.uid, cid: session.cid ?? null },

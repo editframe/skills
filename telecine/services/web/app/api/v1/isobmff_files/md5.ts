@@ -1,12 +1,12 @@
 import { db } from "@/sql-client.server";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 import type { Route } from "./+types/md5";
 
 export const loader = async ({
-  request,
   params: { md5 },
+  context,
 }: Route.LoaderArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
 
   const isobmffFile = await db
     .selectFrom("video2.isobmff_files")

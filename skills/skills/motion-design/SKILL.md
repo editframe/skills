@@ -2,6 +2,7 @@
 name: motion-design
 title: Motion Design
 description: Professional motion graphics for video content. Use when creating animations, transitions, title sequences, or any time-based visual design for video production.
+status: draft
 order: 40
 license: MIT
 metadata:

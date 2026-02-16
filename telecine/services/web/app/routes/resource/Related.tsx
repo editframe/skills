@@ -7,7 +7,7 @@ import { useNavigate } from "react-router";
 import clsx from "clsx";
 
 import type { Route } from "./+types/Related";
-import { requireSession } from "@/util/requireSession.server";
+import { identityContext } from "~/middleware/context";
 import { requireOrgId } from "@/util/requireOrgId";
 import type { ProgressiveQueryDescriptor } from "@/graphql.client/progressiveQuery";
 import { SharedResourceDetailWrapper } from "~/components/resources/SharedResourceWrappers";
@@ -15,8 +15,9 @@ import { SharedResourceDetailWrapper } from "~/components/resources/SharedResour
 export const loader = async ({
   params: { resourceType, id, relatedType, relId },
   request,
+  context,
 }: Route.LoaderArgs) => {
-  const { session } = await requireSession(request);
+  const session = context.get(identityContext);
   const orgId = requireOrgId(request);
 
   if (!(resourceType in ResourceModules)) {

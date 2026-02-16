@@ -6,10 +6,11 @@ import { commitSession } from "@/util/session";
 import { data } from "react-router";
 
 import type { Route } from "./+types/webhook_regenerate";
-import { requireSession } from "@/util/requireSession.server";
+import { identityContext, sessionCookieContext } from "~/middleware/context";
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { session, sessionCookie } = await requireSession(request);
+export const action = async ({ params, context }: Route.ActionArgs) => {
+  const session = context.get(identityContext);
+  const sessionCookie = context.get(sessionCookieContext);
 
   const apiKey = await requireQueryAs(
     { uid: session.uid, cid: session.cid ?? null },

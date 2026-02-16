@@ -1,5 +1,5 @@
 import { consume } from "@lit/context";
-import { html, LitElement } from "lit";
+import { css, html, LitElement } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
 
@@ -14,8 +14,15 @@ import "./timeline/EFTimeline.js";
 
 @customElement("ef-filmstrip")
 export class EFFilmstrip extends TWMixin(LitElement) {
-  // CSS custom properties are now defined in track components
-  // Keep this class minimal as a wrapper
+  static styles = [
+    css`
+      :host {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+    `,
+  ];
 
   @property({ type: String })
   target = "";
@@ -124,7 +131,7 @@ export class EFFilmstrip extends TWMixin(LitElement) {
         control-target=${targetId}
         pixels-per-ms=${this.pixelsPerMs}
         .showPlayhead=${!this.hidePlayhead}
-        .showControls=${false}
+        .showControls=${true}
         hide=${this.hide}
         show=${this.show}
       ></ef-timeline>

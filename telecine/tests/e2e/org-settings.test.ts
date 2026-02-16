@@ -22,9 +22,7 @@ describe("org settings", () => {
     await page.goto("/org/settings?org=123", {
       waitUntil: "domcontentloaded",
     });
-    await playwrightExpect(
-      page.getByRole("heading", { name: "Login" }),
-    ).toBeVisible();
+    await playwrightExpect(page).toHaveURL(/\/auth\/login/);
   });
 
   test("Displays organization details", async () => {

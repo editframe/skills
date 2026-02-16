@@ -4,15 +4,15 @@ import { z } from "zod";
 import { db } from "@/sql-client.server";
 
 import type { Route } from "./+types/url-token";
-import { requireAPIToken } from "@/util/requireAPIToken";
+import { apiIdentityContext } from "~/middleware/context";
 
 const schema = z.object({
   url: z.string(),
   params: z.record(z.string()).optional(),
 });
 
-export const action = async ({ request }: Route.ActionArgs) => {
-  const session = await requireAPIToken(request);
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const session = context.get(apiIdentityContext);
   const apiKey = await db
     .selectFrom("identity.api_keys")
     .where("id", "=", session.cid)

@@ -4,13 +4,15 @@ import type {
   ElementNode,
   MotionDesignerState,
 } from "~/lib/motion-designer/types";
-import type { ElementSize } from "~/lib/motion-designer/sizingTypes";
 
-function createMockState(): MotionDesignerState {
+function createMockState(
+  overrides: Partial<MotionDesignerState["composition"]> = {},
+): MotionDesignerState {
   return {
     composition: {
       elements: {},
       rootTimegroupIds: [],
+      ...overrides,
     },
     ui: {
       selectedElementId: null,
@@ -24,7 +26,9 @@ function createMockState(): MotionDesignerState {
   };
 }
 
-function createMockElement(overrides: Partial<ElementNode> = {}): ElementNode {
+function createMockElement(
+  overrides: Partial<ElementNode> & { parentId?: string } = {},
+): ElementNode & { parentId?: string } {
   return {
     id: "test-element",
     type: "div",
@@ -36,355 +40,174 @@ function createMockElement(overrides: Partial<ElementNode> = {}): ElementNode {
 }
 
 describe("generateLayoutStyles", () => {
-  describe("flex spacing values", () => {
-    test("justifyContent space-between produces correct CSS", () => {
-      const element = createMockElement({
-        props: {
-          display: "flex",
-          justifyContent: "space-between",
-        },
-      });
+  describe("boxSizing", () => {
+    test("all elements get boxSizing border-box", () => {
+      const element = createMockElement({ type: "text" });
       const state = createMockState();
 
       const styles = generateLayoutStyles(element, state);
 
-      expect(styles.justifyContent).toBe("space-between");
-    });
-
-    test("justifyContent space-around produces correct CSS", () => {
-      const element = createMockElement({
-        props: {
-          display: "flex",
-          justifyContent: "space-around",
-        },
-      });
-      const state = createMockState();
-
-      const styles = generateLayoutStyles(element, state);
-
-      expect(styles.justifyContent).toBe("space-around");
-    });
-
-    test("justifyContent space-evenly produces correct CSS", () => {
-      const element = createMockElement({
-        props: {
-          display: "flex",
-          justifyContent: "space-evenly",
-        },
-      });
-      const state = createMockState();
-
-      const styles = generateLayoutStyles(element, state);
-
-      expect(styles.justifyContent).toBe("space-evenly");
+      expect(styles.boxSizing).toBe("border-box");
     });
   });
 
-  describe("fraction sizing", () => {
-    test("fraction 1/2 produces width 50%", () => {
+  describe("position", () => {
+    test("root timegroup with position gets absolute positioning", () => {
       const element = createMockElement({
-        props: {
-          size: {
-            widthMode: "fraction",
-            widthValue: { numerator: 1, denominator: 2 },
-            heightMode: "fixed",
-            heightValue: 100,
-          },
-        },
+        type: "timegroup",
+        id: "root-tg",
+        props: { position: { x: 10, y: 20 } },
       });
-      const state = createMockState();
+      const state = createMockState({
+        elements: { "root-tg": element as ElementNode },
+        rootTimegroupIds: ["root-tg"],
+      });
 
       const styles = generateLayoutStyles(element, state);
 
-      expect(styles.width).toBe("50%");
+      expect(styles.position).toBe("absolute");
+      expect(styles.left).toBe("10px");
+      expect(styles.top).toBe("20px");
     });
 
-    test("fraction 1/3 produces width 33.333%", () => {
+    test("root timegroup uses positionMode when provided", () => {
       const element = createMockElement({
-        props: {
-          size: {
-            widthMode: "fraction",
-            widthValue: { numerator: 1, denominator: 3 },
-            heightMode: "fixed",
-            heightValue: 100,
-          },
-        },
+        type: "timegroup",
+        id: "root-tg",
+        props: { position: { x: 0, y: 0 }, positionMode: "relative" },
       });
-      const state = createMockState();
+      const state = createMockState({
+        elements: { "root-tg": element as ElementNode },
+        rootTimegroupIds: ["root-tg"],
+      });
 
       const styles = generateLayoutStyles(element, state);
 
-      expect(styles.width).toBe("33.333%");
+      expect(styles.position).toBe("relative");
     });
 
-    test("fraction 1/4 produces width 25%", () => {
+    test("element not in container gets position when set", () => {
       const element = createMockElement({
-        props: {
-          size: {
-            widthMode: "fraction",
-            widthValue: { numerator: 1, denominator: 4 },
-            heightMode: "fixed",
-            heightValue: 100,
-          },
-        },
+        id: "standalone",
+        type: "div",
+        props: { position: { x: 5, y: 15 } },
       });
-      const state = createMockState();
+      const state = createMockState({
+        elements: { standalone: element as ElementNode },
+      });
 
       const styles = generateLayoutStyles(element, state);
 
-      expect(styles.width).toBe("25%");
+      expect(styles.position).toBe("absolute");
+      expect(styles.left).toBe("5px");
+      expect(styles.top).toBe("15px");
     });
 
-    test("fraction 1/5 produces width 20%", () => {
-      const element = createMockElement({
-        props: {
-          size: {
-            widthMode: "fraction",
-            widthValue: { numerator: 1, denominator: 5 },
-            heightMode: "fixed",
-            heightValue: 100,
-          },
-        },
-      });
-      const state = createMockState();
-
-      const styles = generateLayoutStyles(element, state);
-
-      expect(styles.width).toBe("20%");
-    });
-
-    test("fraction 1/6 produces width 16.667%", () => {
-      const element = createMockElement({
-        props: {
-          size: {
-            widthMode: "fraction",
-            widthValue: { numerator: 1, denominator: 6 },
-            heightMode: "fixed",
-            heightValue: 100,
-          },
-        },
-      });
-      const state = createMockState();
-
-      const styles = generateLayoutStyles(element, state);
-
-      expect(styles.width).toBe("16.667%");
-    });
-
-    test("fraction 2/3 produces width 66.667%", () => {
-      const element = createMockElement({
-        props: {
-          size: {
-            widthMode: "fraction",
-            widthValue: { numerator: 2, denominator: 3 },
-            heightMode: "fixed",
-            heightValue: 100,
-          },
-        },
-      });
-      const state = createMockState();
-
-      const styles = generateLayoutStyles(element, state);
-
-      expect(styles.width).toBe("66.667%");
-    });
-
-    test("fraction 3/4 produces width 75%", () => {
-      const element = createMockElement({
-        props: {
-          size: {
-            widthMode: "fraction",
-            widthValue: { numerator: 3, denominator: 4 },
-            heightMode: "fixed",
-            heightValue: 100,
-          },
-        },
-      });
-      const state = createMockState();
-
-      const styles = generateLayoutStyles(element, state);
-
-      expect(styles.width).toBe("75%");
-    });
-
-    test("fraction 2/5 produces width 40%", () => {
-      const element = createMockElement({
-        props: {
-          size: {
-            widthMode: "fraction",
-            widthValue: { numerator: 2, denominator: 5 },
-            heightMode: "fixed",
-            heightValue: 100,
-          },
-        },
-      });
-      const state = createMockState();
-
-      const styles = generateLayoutStyles(element, state);
-
-      expect(styles.width).toBe("40%");
-    });
-
-    test("fraction 3/5 produces width 60%", () => {
-      const element = createMockElement({
-        props: {
-          size: {
-            widthMode: "fraction",
-            widthValue: { numerator: 3, denominator: 5 },
-            heightMode: "fixed",
-            heightValue: 100,
-          },
-        },
-      });
-      const state = createMockState();
-
-      const styles = generateLayoutStyles(element, state);
-
-      expect(styles.width).toBe("60%");
-    });
-
-    test("fraction 4/5 produces width 80%", () => {
-      const element = createMockElement({
-        props: {
-          size: {
-            widthMode: "fraction",
-            widthValue: { numerator: 4, denominator: 5 },
-            heightMode: "fixed",
-            heightValue: 100,
-          },
-        },
-      });
-      const state = createMockState();
-
-      const styles = generateLayoutStyles(element, state);
-
-      expect(styles.width).toBe("80%");
-    });
-
-    test("fraction 5/6 produces width 83.333%", () => {
-      const element = createMockElement({
-        props: {
-          size: {
-            widthMode: "fraction",
-            widthValue: { numerator: 5, denominator: 6 },
-            heightMode: "fixed",
-            heightValue: 100,
-          },
-        },
-      });
-      const state = createMockState();
-
-      const styles = generateLayoutStyles(element, state);
-
-      expect(styles.width).toBe("83.333%");
-    });
-
-    test("fraction height produces correct percentage", () => {
-      const element = createMockElement({
-        props: {
-          size: {
-            widthMode: "fixed",
-            widthValue: 100,
-            heightMode: "fraction",
-            heightValue: { numerator: 1, denominator: 2 },
-          },
-        },
-      });
-      const state = createMockState();
-
-      const styles = generateLayoutStyles(element, state);
-
-      expect(styles.height).toBe("50%");
-    });
-
-    test("fraction sizing in flex containers produces percentage CSS", () => {
-      const parentElement = createMockElement({
+    test("element in container does not get position", () => {
+      const parent = createMockElement({
         id: "parent",
-        props: {
-          display: "flex",
-          flexDirection: "row",
-        },
-      });
-      const childElement = createMockElement({
-        id: "child",
-        parentId: "parent",
-        props: {
-          size: {
-            widthMode: "fraction",
-            widthValue: { numerator: 1, denominator: 3 },
-            heightMode: "fixed",
-            heightValue: 100,
-          },
-        },
-      });
-      const state = createMockState();
-      state.composition.elements = {
-        parent: parentElement,
-        child: childElement,
-      };
-
-      const styles = generateLayoutStyles(childElement, state);
-
-      expect(styles.width).toBe("33.333%");
-      expect(styles.flex).toBe("0 0 auto");
-    });
-
-    test("both dimensions fraction sets aspect-ratio", () => {
-      const element = createMockElement({
-        props: {
-          size: {
-            widthMode: "fraction",
-            widthValue: { numerator: 2, denominator: 3 },
-            heightMode: "fraction",
-            heightValue: { numerator: 1, denominator: 2 },
-          },
-        },
-      });
-      const state = createMockState();
-
-      const styles = generateLayoutStyles(element, state);
-
-      // aspect-ratio = (2/3) / (1/2) = 4/3 = 1.333...
-      expect(styles.width).toBe("66.667%");
-      expect(styles.height).toBe("50%");
-      expect(styles.aspectRatio).toBe("1.3333333333333333");
-    });
-
-    test("both dimensions fraction 1/2 sets aspect-ratio 1", () => {
-      const element = createMockElement({
-        props: {
-          size: {
-            widthMode: "fraction",
-            widthValue: { numerator: 1, denominator: 2 },
-            heightMode: "fraction",
-            heightValue: { numerator: 1, denominator: 2 },
-          },
-        },
-      });
-      const state = createMockState();
-
-      const styles = generateLayoutStyles(element, state);
-
-      expect(styles.width).toBe("50%");
-      expect(styles.height).toBe("50%");
-      expect(styles.aspectRatio).toBe("1");
-    });
-  });
-
-  describe("container-type", () => {
-    test("div elements have container-type: size", () => {
-      const element = createMockElement({
         type: "div",
         props: {},
       });
+      const child = createMockElement({
+        id: "child",
+        parentId: "parent",
+        type: "div",
+        props: { position: { x: 10, y: 20 } },
+      });
+      const state = createMockState({
+        elements: { parent, child },
+      });
+
+      const styles = generateLayoutStyles(child, state);
+
+      expect(styles.position).toBeUndefined();
+      expect(styles.left).toBeUndefined();
+      expect(styles.top).toBeUndefined();
+    });
+
+    test("element without position prop does not get position styles", () => {
+      const element = createMockElement({ type: "div", props: {} });
       const state = createMockState();
 
       const styles = generateLayoutStyles(element, state);
 
-      expect(styles.containerType).toBe("size");
+      expect(styles.position).toBeUndefined();
+    });
+  });
+
+  describe("size - legacy format", () => {
+    test("legacy size width and height produce pixel dimensions", () => {
+      const element = createMockElement({
+        type: "div",
+        props: { size: { width: 200, height: 150 } },
+      });
+      const state = createMockState();
+
+      const styles = generateLayoutStyles(element, state);
+
+      expect(styles.width).toBe("200px");
+      expect(styles.height).toBe("150px");
     });
 
-    test("timegroup elements have container-type: size", () => {
+    test("legacy size with 0 treats dimension as not set", () => {
+      const element = createMockElement({
+        type: "div",
+        props: { size: { width: 0, height: 100 } },
+      });
+      const state = createMockState();
+
+      const styles = generateLayoutStyles(element, state);
+
+      expect(styles.width).toBeUndefined();
+      expect(styles.height).toBe("100px");
+    });
+  });
+
+  describe("size - fixed mode format", () => {
+    test("fixed mode size produces pixel dimensions", () => {
+      const element = createMockElement({
+        type: "div",
+        props: {
+          size: {
+            widthMode: "fixed",
+            widthValue: 300,
+            heightMode: "fixed",
+            heightValue: 200,
+          },
+        },
+      });
+      const state = createMockState();
+
+      const styles = generateLayoutStyles(element, state);
+
+      expect(styles.width).toBe("300px");
+      expect(styles.height).toBe("200px");
+    });
+
+    test("fixed mode with 0 treats dimension as not set", () => {
+      const element = createMockElement({
+        type: "div",
+        props: {
+          size: {
+            widthMode: "fixed",
+            widthValue: 0,
+            heightMode: "fixed",
+            heightValue: 50,
+          },
+        },
+      });
+      const state = createMockState();
+
+      const styles = generateLayoutStyles(element, state);
+
+      expect(styles.width).toBeUndefined();
+      expect(styles.height).toBe("50px");
+    });
+  });
+
+  describe("size - timegroups", () => {
+    test("timegroup defaults to 100px when no size set", () => {
       const element = createMockElement({
         type: "timegroup",
         props: {},
@@ -393,14 +216,212 @@ describe("generateLayoutStyles", () => {
 
       const styles = generateLayoutStyles(element, state);
 
-      expect(styles.containerType).toBe("size");
+      expect(styles.width).toBe("100px");
+      expect(styles.height).toBe("100px");
     });
 
-    test("other element types do not have container-type", () => {
+    test("timegroup uses size when set", () => {
       const element = createMockElement({
+        type: "timegroup",
+        props: { size: { width: 1920, height: 1080 } },
+      });
+      const state = createMockState();
+
+      const styles = generateLayoutStyles(element, state);
+
+      expect(styles.width).toBe("1920px");
+      expect(styles.height).toBe("1080px");
+    });
+
+    test("timegroup does not use direct width/height props as fallback", () => {
+      const element = createMockElement({
+        type: "timegroup",
+        props: { width: 500, height: 500 },
+      });
+      const state = createMockState();
+
+      const styles = generateLayoutStyles(element, state);
+
+      expect(styles.width).toBe("100px");
+      expect(styles.height).toBe("100px");
+    });
+  });
+
+  describe("size - direct width/height fallback", () => {
+    test("non-timegroup uses direct width/height when size not set", () => {
+      const element = createMockElement({
+        type: "div",
+        props: { width: 80, height: 60 },
+      });
+      const state = createMockState();
+
+      const styles = generateLayoutStyles(element, state);
+
+      expect(styles.width).toBe("80px");
+      expect(styles.height).toBe("60px");
+    });
+  });
+
+  describe("size - grid container children", () => {
+    test("container child in grid with no size gets 100% width and height", () => {
+      const parent = createMockElement({ id: "parent", type: "div" });
+      const child = createMockElement({
+        id: "child",
+        parentId: "parent",
+        type: "div",
+        props: {},
+      });
+      const state = createMockState({
+        elements: { parent, child },
+      });
+
+      const styles = generateLayoutStyles(child, state);
+
+      expect(styles.width).toBe("100%");
+      expect(styles.height).toBe("100%");
+    });
+
+    test("non-media content in grid gets 100% width and height", () => {
+      const parent = createMockElement({ id: "parent", type: "div" });
+      const child = createMockElement({
+        id: "child",
+        parentId: "parent",
         type: "text",
         props: {},
       });
+      const state = createMockState({
+        elements: { parent, child },
+      });
+
+      const styles = generateLayoutStyles(child, state);
+
+      expect(styles.width).toBe("100%");
+      expect(styles.height).toBe("100%");
+    });
+
+    test("media element in grid does not set width or height for ef-fit-scale", () => {
+      const parent = createMockElement({ id: "parent", type: "div" });
+      const child = createMockElement({
+        id: "child",
+        parentId: "parent",
+        type: "video",
+        props: {},
+      });
+      const state = createMockState({
+        elements: { parent, child },
+      });
+
+      const styles = generateLayoutStyles(child, state);
+
+      expect(styles.width).toBeUndefined();
+      expect(styles.height).toBeUndefined();
+    });
+
+    test("media element in grid with explicit size gets pixel dimensions", () => {
+      const parent = createMockElement({ id: "parent", type: "div" });
+      const child = createMockElement({
+        id: "child",
+        parentId: "parent",
+        type: "image",
+        props: { size: { width: 100, height: 100 } },
+      });
+      const state = createMockState({
+        elements: { parent, child },
+      });
+
+      const styles = generateLayoutStyles(child, state);
+
+      expect(styles.width).toBe("100px");
+      expect(styles.height).toBe("100px");
+    });
+  });
+
+  describe("container grid layout", () => {
+    test("div gets display grid with vertical layout by default", () => {
+      const element = createMockElement({ type: "div" });
+      const state = createMockState();
+
+      const styles = generateLayoutStyles(element, state);
+
+      expect(styles.display).toBe("grid");
+      expect(styles.gridAutoFlow).toBe("row");
+      expect(styles.gridAutoRows).toBe("1fr");
+      expect(styles.gridTemplateColumns).toBe("1fr");
+    });
+
+    test("horizontal layoutDirection uses column flow", () => {
+      const element = createMockElement({
+        type: "div",
+        props: { layoutDirection: "horizontal" },
+      });
+      const state = createMockState();
+
+      const styles = generateLayoutStyles(element, state);
+
+      expect(styles.gridAutoFlow).toBe("column");
+      expect(styles.gridAutoColumns).toBe("1fr");
+      expect(styles.gridTemplateRows).toBe("1fr");
+    });
+
+    test("gap is applied when set", () => {
+      const element = createMockElement({
+        type: "div",
+        props: { gap: 16 },
+      });
+      const state = createMockState();
+
+      const styles = generateLayoutStyles(element, state);
+
+      expect(styles.gap).toBe("16px");
+    });
+
+    test("justifyItems and alignItems are applied when set", () => {
+      const element = createMockElement({
+        type: "div",
+        props: {
+          justifyItems: "center",
+          alignItems: "stretch",
+        },
+      });
+      const state = createMockState();
+
+      const styles = generateLayoutStyles(element, state);
+
+      expect(styles.justifyItems).toBe("center");
+      expect(styles.alignItems).toBe("stretch");
+    });
+
+    test("containers get overflow hidden", () => {
+      const element = createMockElement({ type: "div" });
+      const state = createMockState();
+
+      const styles = generateLayoutStyles(element, state);
+
+      expect(styles.overflow).toBe("hidden");
+    });
+  });
+
+  describe("container-type", () => {
+    test("div elements have container-type size", () => {
+      const element = createMockElement({ type: "div" });
+      const state = createMockState();
+
+      const styles = generateLayoutStyles(element, state);
+
+      expect(styles.containerType).toBe("size");
+    });
+
+    test("timegroup elements have container-type size", () => {
+      const element = createMockElement({ type: "timegroup" });
+      const state = createMockState();
+
+      const styles = generateLayoutStyles(element, state);
+
+      expect(styles.containerType).toBe("size");
+    });
+
+    test("content elements do not have container-type", () => {
+      const element = createMockElement({ type: "text" });
       const state = createMockState();
 
       const styles = generateLayoutStyles(element, state);
@@ -409,74 +430,53 @@ describe("generateLayoutStyles", () => {
     });
   });
 
-  describe("hug mode for media elements", () => {
-    test("video elements in hug mode do not set width and height", () => {
+  describe("padding", () => {
+    test("equal padding all sides uses shorthand", () => {
       const element = createMockElement({
-        type: "video",
-        props: {
-          size: {
-            widthMode: "hug",
-            widthValue: 0,
-            heightMode: "hug",
-            heightValue: 0,
-          },
-        },
+        props: { padding: { top: 10, right: 10, bottom: 10, left: 10 } },
       });
       const state = createMockState();
 
       const styles = generateLayoutStyles(element, state);
 
-      // Media elements should not have width/height set in hug mode
-      // Web components like ef-video set canvas dimensions internally and size themselves
-      expect(styles.width).toBeUndefined();
-      expect(styles.height).toBeUndefined();
-      // Should not set display to inline-block for media elements
-      expect(styles.display).toBeUndefined();
+      expect(styles.padding).toBe("10px");
     });
 
-    test("image elements in hug mode do not set width and height", () => {
+    test("top/bottom and left/right equal uses two-value shorthand", () => {
       const element = createMockElement({
-        type: "image",
-        props: {
-          size: {
-            widthMode: "hug",
-            widthValue: 0,
-            heightMode: "hug",
-            heightValue: 0,
-          },
-        },
+        props: { padding: { top: 8, right: 16, bottom: 8, left: 16 } },
       });
       const state = createMockState();
 
       const styles = generateLayoutStyles(element, state);
 
-      // Media elements should not have width/height set in hug mode
-      // Web components like ef-image set canvas dimensions internally and size themselves
-      expect(styles.width).toBeUndefined();
-      expect(styles.height).toBeUndefined();
-      // Should not set display to inline-block for media elements
-      expect(styles.display).toBeUndefined();
+      expect(styles.padding).toBe("8px 16px");
     });
 
-    test("div elements in hug mode use fit-content and inline-block", () => {
+    test("individual padding values use specific properties", () => {
       const element = createMockElement({
-        type: "div",
         props: {
-          size: {
-            widthMode: "hug",
-            widthValue: 0,
-            heightMode: "hug",
-            heightValue: 0,
-          },
+          padding: { top: 4, right: 8, bottom: 12, left: 16 },
         },
       });
       const state = createMockState();
 
       const styles = generateLayoutStyles(element, state);
 
-      expect(styles.width).toBe("fit-content");
-      expect(styles.height).toBe("fit-content");
-      expect(styles.display).toBe("inline-block");
+      expect(styles.paddingTop).toBe("4px");
+      expect(styles.paddingRight).toBe("8px");
+      expect(styles.paddingBottom).toBe("12px");
+      expect(styles.paddingLeft).toBe("16px");
+    });
+
+    test("undefined padding returns no padding styles", () => {
+      const element = createMockElement({ props: {} });
+      const state = createMockState();
+
+      const styles = generateLayoutStyles(element, state);
+
+      expect(styles.padding).toBeUndefined();
+      expect(styles.paddingTop).toBeUndefined();
     });
   });
 });

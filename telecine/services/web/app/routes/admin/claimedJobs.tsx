@@ -1,7 +1,6 @@
 import { useFetcher } from "react-router";
 
 import { Queue } from "@/queues/Queue";
-import { requireAdminSession } from "@/util/requireAdminSession";
 import { colorHash } from "@/util/colorHash";
 import { Button } from "~/components/Button";
 import { PaginatedTable } from "~/components/Table";
@@ -9,7 +8,6 @@ import { PaginatedTable } from "~/components/Table";
 import type { Route } from "./+types/failedJobs";
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  await requireAdminSession(request);
   const { name } = params;
   const queue = Queue.fromName(name);
   if (!queue) {

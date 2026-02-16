@@ -2,16 +2,16 @@ import { writeReadableStreamToWritable } from "@react-router/node";
 import { storageProvider } from "@/util/storageProvider.server";
 import { isobmffIndexFilePath } from "@/util/filePaths";
 import { db } from "@/sql-client.server";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 import type { Route } from "./+types/indexUpload";
 
-export const action = async ({ params: { id }, request }: Route.ActionArgs) => {
+export const action = async ({ params: { id }, request, context }: Route.ActionArgs) => {
   if (!request.body) {
     throw new Response("Request MUST have body content", { status: 400 });
   }
 
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
 
   const file = await db
     .selectFrom("video2.files")

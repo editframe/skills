@@ -1,5 +1,4 @@
 import { Queue } from "@/queues/Queue";
-import { requireAdminSession } from "@/util/requireAdminSession";
 
 import type { Route } from "./+types/completedJobs";
 import { PaginatedTable } from "~/components/Table";
@@ -7,7 +6,6 @@ import { Button } from "~/components/Button";
 import { useFetcher } from "react-router";
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  await requireAdminSession(request);
   const { name } = params;
   const queue = Queue.fromName(name);
   if (!queue) {

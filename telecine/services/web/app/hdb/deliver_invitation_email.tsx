@@ -33,7 +33,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
     from: NO_REPLY_ADDRESS,
     to: invite.email_address as string,
     subject: `[Editframe] You're invited to join ${invite.display_name}`,
-    html: render(
+    html: await render(
       <InviteMember
         host={process.env.WEB_HOST}
         token={invite.invite_token}

@@ -13,6 +13,7 @@ beforeEach(() => {
   process.env = {
     ...originalEnv,
     WEB_HOST: "https://example.com",
+    VITE_WEB_HOST: "https://example.com",
   };
 });
 

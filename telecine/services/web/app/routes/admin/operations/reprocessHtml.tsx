@@ -1,5 +1,5 @@
-import { requireAdminSession } from "@/util/requireAdminSession";
 import type { Route } from "./+types/reprocessHtml";
+import { adminIdentityContext } from "~/middleware/context";
 import { Button } from "~/components/Button";
 import { db } from "@/sql-client.server";
 import { ProcessHTMLWorkflow } from "@/queues/units-of-work/ProcessHtml/Workflow";
@@ -7,12 +7,11 @@ import { ProcessHTMLInitializerQueue } from "@/queues/units-of-work/ProcessHtml/
 import { auditAdminAction } from "@/util/auditAdminAction";
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
-  await requireAdminSession(request);
   return null;
 };
 
-export const action = async ({ request }: Route.ActionArgs) => {
-  const session = await requireAdminSession(request);
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const session = context.get(adminIdentityContext);
   const formData = await request.formData();
   const renderIds = formData.get("renderIds");
   if (!renderIds) {

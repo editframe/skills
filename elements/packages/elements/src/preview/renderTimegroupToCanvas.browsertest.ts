@@ -5,15 +5,18 @@ import { test as baseTest } from "../../test/useMSW.js";
 import { getApiHost } from "../../test/setup.js";
 import {
   captureCanvasAsDataUrl,
+  compareTwoCanvases,
   expectCanvasToMatchSnapshot,
   expectCanvasesToMatch,
+  writeSnapshot,
 } from "../../test/visualRegressionUtils.js";
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
 import {
   captureTimegroupAtTime,
   ContentNotReadyError,
-  renderToImageNative,
+  renderTimegroupToCanvas,
 } from "./renderTimegroupToCanvas.js";
+import { renderToImageNative } from "./rendering/renderToImageNative.js";
 import { renderTimegroupToVideo } from "./renderTimegroupToVideo.js";
 import {
   buildCloneStructure,
@@ -24,6 +27,7 @@ import {
   isNativeCanvasApiAvailable,
   setNativeCanvasApiEnabled,
 } from "./previewSettings.js";
+import { commands } from "@vitest/browser/context";
 import { logger } from "./logger.js";
 import "../elements/EFTimegroup.js";
 import "../elements/EFVideo.js";
@@ -2330,6 +2334,404 @@ describe("captions rendering in foreignObject path", () => {
     
     // Re-enable native for other tests
     setNativeCanvasApiEnabled(true);
+    container.remove();
+  });
+});
+
+// ============================================================================
+// DIAGNOSTIC: renderTimegroupToCanvas live preview (workbench code path)
+// ============================================================================
+
+describe("renderTimegroupToCanvas live preview (workbench path)", () => {
+  test("basic: renderTimegroupToCanvas produces visible canvas content", async () => {
+    const container = document.createElement("div");
+    container.style.cssText = "position: absolute; top: 0; left: 0; width: 800px; height: 600px;";
+    const apiHost = getApiHost();
+    render(
+      html`
+      <ef-configuration api-host="${apiHost}" signing-url="">
+        <ef-timegroup mode="contain" id="diag-tg"
+          style="width: 800px; height: 450px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: white; font-family: system-ui, sans-serif;">
+            <h1 style="font-size: 48px; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Canvas Preview Test</h1>
+            <p style="font-size: 24px; margin-top: 16px; opacity: 0.9;">renderTimegroupToCanvas diagnostic</p>
+          </div>
+        </ef-timegroup>
+      </ef-configuration>
+    `,
+      container,
+    );
+    document.body.appendChild(container);
+
+    const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
+    await timegroup.updateComplete;
+
+    console.log(`[DIAG pre] Timegroup offsetWidth: ${timegroup.offsetWidth}, offsetHeight: ${timegroup.offsetHeight}`);
+    console.log(`[DIAG pre] Timegroup currentTimeMs: ${timegroup.currentTimeMs}, userTimeMs: ${(timegroup as any).userTimeMs}`);
+    console.log(`[DIAG pre] Timegroup startTimeMs: ${timegroup.startTimeMs}, endTimeMs: ${(timegroup as any).endTimeMs}`);
+    console.log(`[DIAG pre] Timegroup durationMs: ${timegroup.durationMs}`);
+
+    // This is the exact code path the workbench uses
+    const result = renderTimegroupToCanvas(timegroup, { scale: 1 });
+    const { canvas, refresh, dispose } = result;
+
+    // Wait for the initial (fire-and-forget) render to complete
+    // Need enough time for: frameController.renderFrame + captureTimelineToDataUri + loadImageFromDataUri
+    await new Promise(r => setTimeout(r, 500));
+
+    // Now force a new render by updating time
+    console.log(`[DIAG] After initial wait - Timegroup currentTimeMs: ${timegroup.currentTimeMs}, userTimeMs: ${(timegroup as any).userTimeMs}`);
+
+    // Check canvas dimensions
+    console.log(`[DIAG] Canvas dimensions: ${canvas.width}x${canvas.height}`);
+    console.log(`[DIAG] Canvas CSS size: ${canvas.style.width}x${canvas.style.height}`);
+    console.log(`[DIAG] Timegroup computedStyle width: ${getComputedStyle(timegroup).width}, height: ${getComputedStyle(timegroup).height}`);
+    console.log(`[DIAG] Timegroup inline style: ${timegroup.style.cssText}`);
+
+    // Check if canvas has any content
+    const ctx = canvas.getContext("2d")!;
+    let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let nonZeroPixels = 0;
+    for (let i = 3; i < imageData.data.length; i += 4) {
+      if (imageData.data[i]! > 0) nonZeroPixels++;
+    }
+    const totalPixels = (canvas.width * canvas.height);
+    console.log(`[DIAG] Canvas after initial render: ${nonZeroPixels}/${totalPixels} non-zero pixels`);
+
+    // If initial render produced nothing, try direct captureTimegroupAtTime for comparison
+    if (nonZeroPixels === 0) {
+      console.log(`[DIAG] Initial render blank! Trying captureTimegroupAtTime for comparison...`);
+      const captureResult = await captureTimegroupAtTime(timegroup, { timeMs: 0, scale: 1 });
+      if (captureResult instanceof HTMLCanvasElement) {
+        const captureCtx = captureResult.getContext("2d")!;
+        const captureData = captureCtx.getImageData(0, 0, captureResult.width, captureResult.height);
+        let captureNonZero = 0;
+        for (let i = 3; i < captureData.data.length; i += 4) {
+          if (captureData.data[i]! > 0) captureNonZero++;
+        }
+        console.log(`[DIAG] captureTimegroupAtTime: ${captureNonZero}/${captureResult.width * captureResult.height} non-zero (${captureResult.width}x${captureResult.height})`);
+      } else if (captureResult instanceof HTMLImageElement) {
+        console.log(`[DIAG] captureTimegroupAtTime returned image: ${captureResult.width}x${captureResult.height}`);
+      }
+
+      // Also try calling refresh with a different time to bypass dedup
+      (timegroup as any).currentTimeMs = 1;
+      (timegroup as any).userTimeMs = 1;
+      await timegroup.updateComplete;
+      await refresh();
+
+      imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      nonZeroPixels = 0;
+      for (let i = 3; i < imageData.data.length; i += 4) {
+        if (imageData.data[i]! > 0) nonZeroPixels++;
+      }
+      console.log(`[DIAG] Canvas after forced time change + refresh: ${nonZeroPixels}/${totalPixels} non-zero`);
+    }
+
+    expect(canvas.width).toBeGreaterThan(0);
+    expect(canvas.height).toBeGreaterThan(0);
+    expect(nonZeroPixels).toBeGreaterThan(0);
+
+    dispose();
+    container.remove();
+  });
+
+  test("with clipPath inset(100%) (mimics canvas mode hiding)", async () => {
+    const container = document.createElement("div");
+    container.style.cssText = "position: absolute; top: 0; left: 0; width: 800px; height: 600px;";
+    const apiHost = getApiHost();
+    render(
+      html`
+      <ef-configuration api-host="${apiHost}" signing-url="">
+        <ef-timegroup mode="contain" id="diag-clip-tg"
+          style="width: 800px; height: 450px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: white; font-family: system-ui, sans-serif;">
+            <h1 style="font-size: 48px; margin: 0;">ClipPath Hidden Test</h1>
+          </div>
+        </ef-timegroup>
+      </ef-configuration>
+    `,
+      container,
+    );
+    document.body.appendChild(container);
+
+    const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
+    await timegroup.updateComplete;
+
+    // Mimic what the workbench does in canvas mode
+    timegroup.style.clipPath = "inset(100%)";
+    timegroup.style.pointerEvents = "none";
+
+    const result = renderTimegroupToCanvas(timegroup, { scale: 1 });
+    const { canvas, refresh, dispose } = result;
+
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await refresh();
+
+    const ctx = canvas.getContext("2d")!;
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let nonZeroPixels = 0;
+    for (let i = 3; i < imageData.data.length; i += 4) {
+      if (imageData.data[i]! > 0) nonZeroPixels++;
+    }
+    const totalPixels = canvas.width * canvas.height;
+    const percentNonZero = ((nonZeroPixels / totalPixels) * 100).toFixed(1);
+    console.log(`[DIAG clipPath] Canvas: ${canvas.width}x${canvas.height}, content: ${percentNonZero}% non-zero`);
+
+    expect(nonZeroPixels).toBeGreaterThan(0);
+
+    dispose();
+    container.remove();
+  });
+
+  test("with EFFitScale wrapper (mimics workbench layout)", async () => {
+    const container = document.createElement("div");
+    container.style.cssText = "position: absolute; top: 0; left: 0; width: 800px; height: 600px;";
+    const apiHost = getApiHost();
+    render(
+      html`
+      <ef-configuration api-host="${apiHost}" signing-url="">
+        <ef-fit-scale style="width: 800px; height: 450px;">
+          <ef-timegroup mode="contain" id="diag-fit-tg"
+            style="width: 1920px; height: 1080px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: white; font-family: system-ui, sans-serif;">
+              <h1 style="font-size: 48px; margin: 0;">FitScale + Canvas Test</h1>
+            </div>
+          </ef-timegroup>
+        </ef-fit-scale>
+      </ef-configuration>
+    `,
+      container,
+    );
+    document.body.appendChild(container);
+
+    const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
+    const fitScale = container.querySelector("ef-fit-scale") as any;
+    await timegroup.updateComplete;
+
+    // Wait for EFFitScale to apply transforms
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    console.log(`[DIAG fitscale] Timegroup offsetWidth: ${timegroup.offsetWidth}, offsetHeight: ${timegroup.offsetHeight}`);
+    console.log(`[DIAG fitscale] Timegroup inline style: ${timegroup.style.cssText}`);
+    console.log(`[DIAG fitscale] Timegroup computed transform: ${getComputedStyle(timegroup).transform}`);
+    console.log(`[DIAG fitscale] FitScale offsetWidth: ${fitScale?.offsetWidth}, offsetHeight: ${fitScale?.offsetHeight}`);
+
+    // Mimic workbench canvas mode
+    timegroup.style.clipPath = "inset(100%)";
+    timegroup.style.pointerEvents = "none";
+
+    const result = renderTimegroupToCanvas(timegroup, { scale: 1 });
+    const { canvas, refresh, dispose } = result;
+
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await refresh();
+
+    const ctx = canvas.getContext("2d")!;
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let nonZeroPixels = 0;
+    for (let i = 3; i < imageData.data.length; i += 4) {
+      if (imageData.data[i]! > 0) nonZeroPixels++;
+    }
+    const totalPixels = canvas.width * canvas.height;
+    const percentNonZero = ((nonZeroPixels / totalPixels) * 100).toFixed(1);
+    console.log(`[DIAG fitscale] Canvas: ${canvas.width}x${canvas.height}, content: ${percentNonZero}% non-zero`);
+
+    expect(nonZeroPixels).toBeGreaterThan(0);
+
+    dispose();
+    container.remove();
+  });
+
+  test("VISUAL INSPECTION: CDP screenshot baseline vs canvas rendering paths", async () => {
+    const container = document.createElement("div");
+    container.style.cssText = "position: absolute; top: 0; left: 0; width: 800px; height: 600px;";
+    const apiHost = getApiHost();
+    render(
+      html`
+      <ef-configuration api-host="${apiHost}" signing-url="">
+        <ef-timegroup mode="contain" id="diag-visual-tg"
+          style="width: 800px; height: 450px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: white; font-family: system-ui, sans-serif;">
+            <h1 style="font-size: 48px; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Visual Inspection</h1>
+            <p style="font-size: 24px; margin-top: 16px; opacity: 0.9;">DOM vs Canvas comparison</p>
+          </div>
+          <div style="position: absolute; bottom: 30px; left: 40px; width: 120px; height: 120px; background: #ff4444; border-radius: 50%;"></div>
+          <div style="position: absolute; bottom: 30px; right: 40px; width: 120px; height: 120px; background: #44ff44; border-radius: 8px;"></div>
+          <div style="position: absolute; top: 30px; right: 40px; width: 80px; height: 80px; background: #4444ff; transform: rotate(45deg);"></div>
+        </ef-timegroup>
+      </ef-configuration>
+    `,
+      container,
+    );
+    document.body.appendChild(container);
+
+    const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
+    await timegroup.updateComplete;
+    // Let layout settle
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    // ===== 1. TRUE CDP SCREENSHOT (Playwright element.screenshot - compositor output) =====
+    console.log("[VISUAL] Taking true CDP browser screenshot as baseline...");
+    const cdpDataUrl = await (commands as any).captureElementScreenshot("#diag-visual-tg");
+    await writeSnapshot("visual-inspection", "1-cdp-browser-screenshot", cdpDataUrl);
+    console.log("[VISUAL] CDP screenshot saved (true browser compositor output)");
+
+    // ===== 2. LIVE PREVIEW: renderTimegroupToCanvas (the workbench path) =====
+    console.log("[VISUAL] Capturing renderTimegroupToCanvas live preview...");
+    const liveResult = renderTimegroupToCanvas(timegroup, { scale: 1 });
+    await new Promise(r => setTimeout(r, 1500));
+    const liveDataUrl = captureCanvasAsDataUrl(liveResult.canvas, "image/png");
+    await writeSnapshot("visual-inspection", "2-live-preview", liveDataUrl);
+    console.log(`[VISUAL] Live preview saved: ${liveResult.canvas.width}x${liveResult.canvas.height}`);
+    liveResult.dispose();
+
+    // ===== 3. LIVE PREVIEW with clipPath inset(100%) =====
+    console.log("[VISUAL] Capturing live preview WITH clipPath inset(100%)...");
+    timegroup.style.clipPath = "inset(100%)";
+    timegroup.style.pointerEvents = "none";
+    const clippedResult = renderTimegroupToCanvas(timegroup, { scale: 1 });
+    await new Promise(r => setTimeout(r, 1500));
+    const clippedDataUrl = captureCanvasAsDataUrl(clippedResult.canvas, "image/png");
+    await writeSnapshot("visual-inspection", "3-live-preview-clipped", clippedDataUrl);
+    console.log(`[VISUAL] Clipped live preview saved: ${clippedResult.canvas.width}x${clippedResult.canvas.height}`);
+    clippedResult.dispose();
+    timegroup.style.clipPath = "";
+    timegroup.style.pointerEvents = "";
+
+    // ===== 4. CLONE-BASED CAPTURE: foreignObject path =====
+    console.log("[VISUAL] Capturing foreignObject clone-based capture...");
+    setNativeCanvasApiEnabled(false);
+    const foreignResult = await captureTimegroupAtTime(timegroup, { timeMs: 0, scale: 1 });
+    const foreignDataUrl = captureCanvasAsDataUrl(foreignResult, "image/png");
+    await writeSnapshot("visual-inspection", "4-clone-foreignobject", foreignDataUrl);
+    console.log(`[VISUAL] ForeignObject clone saved`);
+
+    // ===== 5. CLONE-BASED CAPTURE: native drawElementImage path =====
+    console.log("[VISUAL] Capturing native clone-based capture...");
+    setNativeCanvasApiEnabled(true);
+    const nativeResult = await captureTimegroupAtTime(timegroup, { timeMs: 0, scale: 1 });
+    const nativeDataUrl = captureCanvasAsDataUrl(nativeResult, "image/png");
+    await writeSnapshot("visual-inspection", "5-clone-native", nativeDataUrl);
+    console.log(`[VISUAL] Native clone saved`);
+
+    // ===== VISUAL DIFF COMPARISONS using odiff =====
+    // Compare each canvas rendering path against the CDP baseline
+    console.log("\n[VISUAL] ===== ODIFF VISUAL COMPARISONS =====");
+
+    // Helper: load a data URL into a canvas for comparison
+    function dataUrlToCanvas(dataUrl: string, width: number, height: number): Promise<HTMLCanvasElement> {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const c = document.createElement("canvas");
+          c.width = width;
+          c.height = height;
+          const ctx = c.getContext("2d")!;
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(c);
+        };
+        img.onerror = reject;
+        img.src = dataUrl;
+      });
+    }
+
+    // Determine comparison dimensions (normalize to same size to avoid DPR issues)
+    const compareW = 800;
+    const compareH = 450;
+
+    const cdpCanvas = await dataUrlToCanvas(cdpDataUrl, compareW, compareH);
+    const liveCanvas = await dataUrlToCanvas(liveDataUrl, compareW, compareH);
+    const clippedCanvas = await dataUrlToCanvas(clippedDataUrl, compareW, compareH);
+    const foreignCanvas = await dataUrlToCanvas(foreignDataUrl, compareW, compareH);
+    const nativeCanvas = await dataUrlToCanvas(nativeDataUrl, compareW, compareH);
+
+    const comparisons = [
+      { name: "cdp-vs-live-preview", canvas: liveCanvas },
+      { name: "cdp-vs-live-clipped", canvas: clippedCanvas },
+      { name: "cdp-vs-clone-foreign", canvas: foreignCanvas },
+      { name: "cdp-vs-clone-native", canvas: nativeCanvas },
+    ];
+
+    for (const { name, canvas } of comparisons) {
+      const result = await compareTwoCanvases(
+        cdpCanvas,
+        canvas,
+        "visual-inspection",
+        name,
+        { threshold: 0.1, acceptableDiffPercentage: 5.0 },
+      );
+      const diffPct = result.diffPercentage?.toFixed(2) ?? "N/A";
+      const status = result.match ? "MATCH" : "DIFF";
+      console.log(`[VISUAL] ${name}: ${status} (${diffPct}% different, ${result.diffCount ?? 0} pixels)`);
+    }
+
+    console.log("[VISUAL] ========================================");
+    console.log("[VISUAL] Images saved to: elements/test-assets/test/__snapshots__/visual-inspection/");
+    console.log("[VISUAL] Files:");
+    console.log("[VISUAL]   1-cdp-browser-screenshot.actual.png - TRUE CDP browser screenshot (baseline)");
+    console.log("[VISUAL]   2-live-preview.actual.png           - renderTimegroupToCanvas (workbench path)");
+    console.log("[VISUAL]   3-live-preview-clipped.actual.png   - same with clipPath: inset(100%)");
+    console.log("[VISUAL]   4-clone-foreignobject.actual.png    - captureTimegroupAtTime foreignObject");
+    console.log("[VISUAL]   5-clone-native.actual.png           - captureTimegroupAtTime native");
+    console.log("[VISUAL]   + diff images: cdp-vs-*.compare-diff.png");
+    console.log("[VISUAL] ========================================\n");
+
+    container.remove();
+  }, 60000);
+
+  test("FrameController dedup after resolution change", async () => {
+    const container = document.createElement("div");
+    container.style.cssText = "position: absolute; top: 0; left: 0; width: 800px; height: 600px;";
+    const apiHost = getApiHost();
+    render(
+      html`
+      <ef-configuration api-host="${apiHost}" signing-url="">
+        <ef-timegroup mode="contain" id="diag-dedup-tg"
+          style="width: 800px; height: 450px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: white;">
+            <h1 style="font-size: 48px; margin: 0;">Dedup Test</h1>
+          </div>
+        </ef-timegroup>
+      </ef-configuration>
+    `,
+      container,
+    );
+    document.body.appendChild(container);
+
+    const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
+    await timegroup.updateComplete;
+
+    const result = renderTimegroupToCanvas(timegroup, { scale: 1, resolutionScale: 1 });
+    const { canvas, refresh, setResolutionScale, dispose } = result;
+
+    // First render
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await refresh();
+
+    const ctx = canvas.getContext("2d")!;
+    let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let nonZeroPixels = 0;
+    for (let i = 3; i < imageData.data.length; i += 4) {
+      if (imageData.data[i]! > 0) nonZeroPixels++;
+    }
+    console.log(`[DIAG dedup] First render: ${nonZeroPixels} non-zero pixels out of ${canvas.width * canvas.height}`);
+    expect(nonZeroPixels).toBeGreaterThan(0);
+
+    // Change resolution scale (triggers re-render)
+    setResolutionScale(0.5);
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await refresh();
+
+    imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    nonZeroPixels = 0;
+    for (let i = 3; i < imageData.data.length; i += 4) {
+      if (imageData.data[i]! > 0) nonZeroPixels++;
+    }
+    console.log(`[DIAG dedup] After resolution change: ${nonZeroPixels} non-zero pixels out of ${canvas.width * canvas.height}`);
+    expect(nonZeroPixels).toBeGreaterThan(0);
+
+    dispose();
     container.remove();
   });
 });

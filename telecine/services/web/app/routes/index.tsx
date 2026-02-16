@@ -1,32 +1,27 @@
-import {
-  type LoaderFunctionArgs,
-  type MetaFunction,
-  useLoaderData,
-} from "react-router";
-import { parseRequestSession } from "@/util/session";
+import { type MetaFunction } from "react";
+import { useLoaderData } from "react-router";
+import { maybeIdentityContext } from "~/middleware/context";
 import { useTheme } from "~/hooks/useTheme";
 import { Navigation } from "~/components/landing-v5/Navigation";
 import "~/styles/landing.css";
-import {
-  HeroSection,
-  PromptToToolSection,
-  ToolsGridSection,
-  BeforeAfterSection,
-  PlaygroundSection,
-  RenderAnywhereSection,
-  ArchitectureSection,
-  TemplatedRenderingSection,
-  CodeExamplesSection,
-  GettingStartedSection,
-  FooterSection,
-} from "~/components/landing-v5/sections";
+
+import { HeroSection } from "~/components/landing-v5/sections/HeroSection";
+import { CodeExamplesSection } from "~/components/landing-v5/sections/CodeExamplesSection";
+import { PromptToToolSection } from "~/components/landing-v5/sections/PromptToToolSection";
+import { RenderAnywhereSection } from "~/components/landing-v5/sections/RenderAnywhereSection";
+import { ArchitectureSection } from "~/components/landing-v5/sections/ArchitectureSection";
+import { TemplatedRenderingSection } from "~/components/landing-v5/sections/TemplatedRenderingSection";
+import { GettingStartedSection } from "~/components/landing-v5/sections/GettingStartedSection";
+import { FooterSection } from "~/components/landing-v5/sections/FooterSection";
 import {
   RenderQueueProvider,
   RenderQueuePanel,
-} from "~/components/landing-v5/index.ts";
+} from "~/components/landing-v5/RenderQueue";
 
-export const loader = async (args: LoaderFunctionArgs) => {
-  const session = await parseRequestSession(args.request);
+import type { Route } from "./+types/index";
+
+export const loader = async ({ context }: Route.LoaderArgs) => {
+  const session = context.get(maybeIdentityContext);
   return { isLoggedIn: !!session };
 };
 
@@ -60,18 +55,15 @@ export default function IndexPage() {
           Skip to content
         </a>
         <Navigation isLoggedIn={isLoggedIn} />
-        
+
         <main id="main-content">
           <HeroSection />
-          <GettingStartedSection />
+          <CodeExamplesSection />
           <PromptToToolSection />
-          <ToolsGridSection />
-          <BeforeAfterSection />
-          <PlaygroundSection />
           <RenderAnywhereSection />
           <ArchitectureSection />
           <TemplatedRenderingSection />
-          <CodeExamplesSection />
+          <GettingStartedSection />
         </main>
 
         <FooterSection />

@@ -1,7 +1,7 @@
 import { data, redirect } from "react-router";
 import { formFor } from "~/formFor";
 import z from "zod";
-import { requireSession } from "@/util/requireSession.server";
+import { identityContext } from "~/middleware/context";
 import { Link, useNavigation, type MetaFunction } from "react-router";
 import { Roles_Enum } from "~/roles";
 import { Button } from "~/components/Button";
@@ -17,13 +17,12 @@ const newOrganization = formFor(schema);
 
 import type { Route } from "./+types/new";
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  await requireSession(request);
+export const loader = async () => {
   return null;
 };
 
-export const action = async ({ request }: Route.ActionArgs) => {
-  const { session } = await requireSession(request);
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const session = context.get(identityContext);
   const formResult = await newOrganization.parseFormData(request);
   if (!formResult.success) {
     return data(formResult.errors, { status: 400 });

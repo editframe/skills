@@ -1,6 +1,58 @@
 import { LitElement } from "lit";
-import { customElement, state } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { createRef } from "lit/directives/ref.js";
+
+/* ━━ Pure scale calculation ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+export interface ScaleInput {
+  containerWidth: number;
+  containerHeight: number;
+  contentWidth: number;
+  contentHeight: number;
+}
+
+export interface ScaleOutput {
+  scale: number;
+  translateX: number;
+  translateY: number;
+}
+
+/**
+ * Compute the scale factor and centering translation needed to fit
+ * content of a given size into a container while preserving aspect ratio.
+ *
+ * Returns `null` when any dimension is zero or negative (cannot compute).
+ */
+export function computeFitScale(input: ScaleInput): ScaleOutput | null {
+  const { containerWidth, containerHeight, contentWidth, contentHeight } =
+    input;
+
+  if (
+    containerWidth <= 0 ||
+    containerHeight <= 0 ||
+    contentWidth <= 0 ||
+    contentHeight <= 0
+  ) {
+    return null;
+  }
+
+  const containerRatio = containerWidth / containerHeight;
+  const contentRatio = contentWidth / contentHeight;
+
+  const scale =
+    containerRatio > contentRatio
+      ? containerHeight / contentHeight
+      : containerWidth / contentWidth;
+
+  const scaledWidth = contentWidth * scale;
+  const scaledHeight = contentHeight * scale;
+  const translateX = (containerWidth - scaledWidth) / 2;
+  const translateY = (containerHeight - scaledHeight) / 2;
+
+  return { scale, translateX, translateY };
+}
+
+/* ━━ Component ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 @customElement("ef-fit-scale")
 export class EFFitScale extends LitElement {
@@ -16,7 +68,7 @@ export class EFFitScale extends LitElement {
       gridTemplateRows: "100%",
       overflow: "hidden",
       boxSizing: "border-box",
-      contain: "strict",
+      contain: "layout paint style",
       position: "relative",
     });
     this.id = `${this.uniqueId}`;
@@ -28,7 +80,21 @@ export class EFFitScale extends LitElement {
   @state()
   private scale = 1;
 
-  private animationFrameId?: number;
+  @property({ type: Boolean })
+  paused = false;
+
+  updated(changedProperties: Map<string, unknown>): void {
+    if (changedProperties.has("paused") && !this.paused) {
+      // When unpaused, immediately recalculate scale
+      this.updateScale();
+    }
+  }
+
+  private containerResizeObserver?: ResizeObserver;
+  private contentResizeObserver?: ResizeObserver;
+  private childMutationObserver?: MutationObserver;
+  private observedContentChild: HTMLElement | null = null;
+  private hasWarnedZeroDimensions = false;
 
   get contentChild() {
     if (!this.children.length) return null;
@@ -158,16 +224,15 @@ export class EFFitScale extends LitElement {
       };
     }
 
-    const containerRatio = containerWidth / containerHeight;
-    const contentRatio = contentWidth / contentHeight;
-
-    const scale =
-      containerRatio > contentRatio
-        ? containerHeight / contentHeight
-        : containerWidth / contentWidth;
+    const result = computeFitScale({
+      containerWidth,
+      containerHeight,
+      contentWidth,
+      contentHeight,
+    });
 
     return {
-      scale,
+      scale: result?.scale ?? 1,
       containerWidth,
       containerHeight,
       contentWidth,
@@ -177,43 +242,72 @@ export class EFFitScale extends LitElement {
 
   scaleLastSetOn: HTMLElement | null = null;
 
-  setScale = () => {
-    if (this.isConnected) {
-      const scaleInfo = this.scaleInfo;
-      const {
-        scale,
+  private updateScale = (): void => {
+    if (!this.isConnected || this.paused) return;
+
+    const { containerWidth, containerHeight, contentWidth, contentHeight } =
+      this.scaleInfo;
+
+    // Warn on zero container dimensions
+    if (containerWidth === 0 || containerHeight === 0) {
+      if (!this.hasWarnedZeroDimensions) {
+        this.hasWarnedZeroDimensions = true;
+        console.warn(
+          `[ef-fit-scale] Container has zero dimensions (${containerWidth}×${containerHeight}). ` +
+            `Content will be invisible. Ensure all ancestors have resolved height.`,
+          this,
+        );
+      }
+      return;
+    }
+
+    // Reset warning flag when dimensions become valid
+    this.hasWarnedZeroDimensions = false;
+
+    if (this.contentChild && contentWidth > 0 && contentHeight > 0) {
+      const result = computeFitScale({
         containerWidth,
         containerHeight,
         contentWidth,
         contentHeight,
-      } = scaleInfo;
+      });
 
-      if (this.contentChild && contentWidth > 0 && contentHeight > 0) {
-        // Calculate scaled dimensions using natural size from scaleInfo
-        const scaledWidth = contentWidth * scale;
-        const scaledHeight = contentHeight * scale;
-        const translateX = (containerWidth - scaledWidth) / 2;
-        const translateY = (containerHeight - scaledHeight) / 2;
+      if (!result) return;
 
-        // In the rare event that the content child is changed, we need to remove the scale
-        // because we don't want to have a scale on the old content child that is somewhere else in the DOM
-        if (this.scaleLastSetOn !== this.contentChild) {
-          this.removeScale();
-        }
-        // Use toFixed to avoid floating point precision issues
-        // this will update every frame with sub-pixel changes if we don't pin it down
-        Object.assign(this.contentChild.style, {
-          width: `${contentWidth}px`,
-          height: `${contentHeight}px`,
-          transform: `translate(${translateX.toFixed(4)}px, ${translateY.toFixed(4)}px) scale(${scale.toFixed(4)})`,
-          transformOrigin: "top left",
-        });
-        this.scale = scale;
-        this.scaleLastSetOn = this.contentChild;
+      // In the rare event that the content child is changed, we need to remove the scale
+      // because we don't want to have a scale on the old content child that is somewhere else in the DOM
+      if (this.scaleLastSetOn !== this.contentChild) {
+        this.removeScale();
       }
-      this.animationFrameId = requestAnimationFrame(this.setScale);
+      // Use toFixed to avoid floating point precision issues
+      // this will update every frame with sub-pixel changes if we don't pin it down
+      Object.assign(this.contentChild.style, {
+        width: `${contentWidth}px`,
+        height: `${contentHeight}px`,
+        transform: `translate(${result.translateX.toFixed(4)}px, ${result.translateY.toFixed(4)}px) scale(${result.scale.toFixed(4)})`,
+        transformOrigin: "top left",
+      });
+      this.scale = result.scale;
+      this.scaleLastSetOn = this.contentChild;
     }
   };
+
+  private observeContentChild(): void {
+    const child = this.contentChild;
+    if (child === this.observedContentChild) return;
+
+    // Stop observing old child
+    this.contentResizeObserver?.disconnect();
+
+    // Observe new child
+    if (child) {
+      this.contentResizeObserver = new ResizeObserver(() => {
+        this.updateScale();
+      });
+      this.contentResizeObserver.observe(child);
+    }
+    this.observedContentChild = child;
+  }
 
   removeScale = () => {
     if (this.scaleLastSetOn) {
@@ -229,15 +323,36 @@ export class EFFitScale extends LitElement {
 
   connectedCallback(): void {
     super.connectedCallback();
-    this.animationFrameId = requestAnimationFrame(this.setScale);
+
+    this.hasWarnedZeroDimensions = false;
+
+    // Observe self for container size changes
+    this.containerResizeObserver = new ResizeObserver(() => {
+      this.updateScale();
+    });
+    this.containerResizeObserver.observe(this);
+
+    // Observe child list for content child changes
+    this.childMutationObserver = new MutationObserver(() => {
+      this.observeContentChild();
+      this.updateScale();
+    });
+    this.childMutationObserver.observe(this, { childList: true });
+
+    // Initial content child observation
+    this.observeContentChild();
+
+    // Initial scale calculation (deferred to allow layout to settle)
+    requestAnimationFrame(() => this.updateScale());
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeScale();
-    if (this.animationFrameId) {
-      cancelAnimationFrame(this.animationFrameId);
-    }
+    this.containerResizeObserver?.disconnect();
+    this.contentResizeObserver?.disconnect();
+    this.childMutationObserver?.disconnect();
+    this.observedContentChild = null;
   }
 }
 

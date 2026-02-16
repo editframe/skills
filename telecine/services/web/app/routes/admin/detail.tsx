@@ -7,7 +7,7 @@ import { useNavigateOnEscape } from "~/ui/useNavigateOnEscape";
 import clsx from "clsx";
 
 import type { Route } from "./+types/detail";
-import { requireAdminSession } from "@/util/requireAdminSession";
+import { adminIdentityContext } from "~/middleware/context";
 import type { ProgressiveQueryDescriptor } from "@/graphql.client/progressiveQuery";
 import { SharedResourceDetailWrapper } from "~/components/resources/SharedResourceWrappers";
 
@@ -37,9 +37,10 @@ export const ErrorBoundary = () => {
 
 export const loader = async ({
   request,
+  context,
   params: { resourceType, id },
 }: Route.LoaderArgs) => {
-  const session = await requireAdminSession(request);
+  const session = context.get(adminIdentityContext);
   const searchParams = new URL(request.url).searchParams;
 
   if (!(resourceType in ResourceModules)) {

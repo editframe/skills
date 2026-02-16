@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# Detect if we have a TTY
+if [ -t 0 ]; then
+    TTY_FLAGS="-it"
+else
+    TTY_FLAGS=""
+fi
+
+# Apply Hasura metadata (picks up event trigger config changes)
+$SCRIPT_DIR/hasura metadata apply 2>/dev/null || true
+
+# Disable rate limiting on the web service for E2E tests
+export DISABLE_RATE_LIMITING=true
+$SCRIPT_DIR/docker-compose up -d web > /dev/null 2>&1
+
+$SCRIPT_DIR/docker-compose run $TTY_FLAGS --rm runner npx vitest --run --config vitest.config.e2e.ts "$@"
+exit_code=$?
+
+# Re-enable rate limiting after tests
+unset DISABLE_RATE_LIMITING
+$SCRIPT_DIR/docker-compose up -d web > /dev/null 2>&1
+
+exit $exit_code

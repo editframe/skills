@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Debug a render: show status, fragment breakdown, errors, and optionally Redis/log state.
+# Usage: debug-render <render-id> [--redis] [--logs]
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+if [ -z "$1" ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+  echo "Usage: $0 <render-id> [--redis] [--logs]" >&2
+  echo "  --redis  Show live Redis workflow state" >&2
+  echo "  --logs   Grep docker compose logs for this render ID" >&2
+  exit 1
+fi
+
+$SCRIPT_DIR/run tsx /app/scripts/debug-render.ts "$@"

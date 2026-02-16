@@ -5,17 +5,18 @@ import {
 } from "@editframe/api";
 import { db } from "@/sql-client.server";
 import { downloadRenderURL } from "@/util/apiPaths";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 import type { Route } from "./+types/index";
 
 export const action = async ({
   request,
+  context,
 }: Route.ActionArgs): Promise<CreateRenderResult> => {
   const { output: output_config, ...payload } = CreateRenderPayload.parse(
     await request.json(),
   );
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
   const created = await db
     .insertInto("video2.renders")
     .values({
@@ -38,8 +39,8 @@ export const action = async ({
   return created;
 };
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+export const loader = async ({ context }: Route.LoaderArgs) => {
+  const session = context.get(apiIdentityContext);
   const apiKeyId = session.cid;
 
   const renders = await db

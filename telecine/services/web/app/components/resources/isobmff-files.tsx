@@ -36,7 +36,7 @@ const IndexQuery = progressiveQuery(
   graphql(`
     query IsobmffFiles($orgId: uuid!, $limit: Int!, $offset: Int!, $where_clause: video2_isobmff_files_bool_exp) {
       org: orgs_by_pk(id: $orgId) {
-        page_info: isobmff_files_aggregate {
+        page_info: isobmff_files_aggregate(where: $where_clause) {
           aggregate {
             count
           }
@@ -178,7 +178,8 @@ function buildWhereClause(searchParams: URLSearchParams) {
 
   const whereClause: {
     filename?: { _ilike: string };
-  } = {};
+    expires_at: { _is_null: boolean };
+  } = { expires_at: { _is_null: true } };
 
   if (search) {
     whereClause.filename = { _ilike: `%${search}%` };

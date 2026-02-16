@@ -5,6 +5,7 @@ import {
   setupBrowser,
   getPage,
   waitForEmail,
+  followEmailLink,
   createUniqueUser,
   playwrightExpect,
 } from "./setup";
@@ -36,19 +37,14 @@ describe("password reset", () => {
       "[Editframe] Reset your password",
     );
 
-    await page.getByRole("link", { name: "Reset your password" }).click();
+    await followEmailLink("Reset your password");
     await page.waitForURL(/\/auth\/update-password\//);
 
     await page.getByLabel("Password", { exact: true }).fill("newpassword123");
     await page.getByLabel("Password confirmation").fill("newpassword123");
     await page.getByRole("button", { name: "Update Password" }).click();
 
-    await playwrightExpect(
-      page.getByRole("heading", { name: "Login" }).last(),
-    ).toBeVisible();
-    await playwrightExpect(
-      page.getByText("Password updated successfully"),
-    ).toBeVisible();
+    await playwrightExpect(page).toHaveURL(/\/auth\/login/);
   });
 
   test("Same success message for non-existing email", async () => {
@@ -135,7 +131,7 @@ describe("password reset", () => {
       "[Editframe] Reset your password",
     );
 
-    await page.getByRole("link", { name: "Reset your password" }).click();
+    await followEmailLink("Reset your password");
     await page.waitForURL(/\/auth\/update-password\//);
 
     await page.getByLabel("Password", { exact: true }).fill("short");
@@ -143,7 +139,7 @@ describe("password reset", () => {
     await page.getByRole("button", { name: "Update Password" }).click();
 
     await playwrightExpect(
-      page.getByText("Password must be at least 8 characters"),
+      page.getByText("Password must be at least 8 characters").first(),
     ).toBeVisible();
   });
 

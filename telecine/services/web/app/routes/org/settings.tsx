@@ -8,7 +8,7 @@ import { Roles_Enum } from "~/roles";
 import { SuccessMessage } from "~/components/SuccessMessage";
 import { ErrorMessage } from "~/components/ErrorMessage";
 
-import { requireSession } from "@/util/requireSession.server";
+import { identityContext } from "~/middleware/context";
 import { requireOrgId } from "@/util/requireOrgId";
 
 import type { Route } from "./+types/settings";
@@ -24,9 +24,9 @@ const schema = z.object({
 
 const organizationForm = formFor(schema);
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
+export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const orgId = requireOrgId(request);
-  const { session } = await requireSession(request);
+  const session = context.get(identityContext);
 
   const organization = await requireQueryAs(
     { uid: session.uid, cid: session.cid ?? null },
@@ -56,8 +56,8 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   return { organization, role };
 };
 
-export const action = async ({ request }: Route.ActionArgs) => {
-  const { session } = await requireSession(request);
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const session = context.get(identityContext);
   const values = await organizationForm.parseFormData(request);
   if (!values.success) {
     return data(values.errors, { status: 400 });

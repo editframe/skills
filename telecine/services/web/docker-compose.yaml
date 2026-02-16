@@ -6,6 +6,7 @@ services:
       - ${PWD}/.env
     environment:
       - OTEL_SERVICE_NAME="web"
+      - DISABLE_RATE_LIMITING=${DISABLE_RATE_LIMITING:-}
       - VITE_HMR_HOST=${WORKTREE_DOMAIN:-localhost}
       - VITE_WEB_HOST=http://${WORKTREE_DOMAIN:-localhost}:3000
       - WEB_HOST=http://${WORKTREE_DOMAIN:-localhost}:3000

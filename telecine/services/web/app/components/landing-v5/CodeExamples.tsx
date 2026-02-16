@@ -1,90 +1,5 @@
 import { useState } from "react";
-
-/* ==============================================================================
-   COMPONENT: CodeExamples
-   
-   Purpose: Show real code snippets that demonstrate Editframe capabilities.
-   
-   Design: Clean code viewer with subtle styling
-   ============================================================================== */
-
-type Token = {
-  type: 'string' | 'comment' | 'keyword' | 'tag' | 'attr' | 'number' | 'bracket' | 'text';
-  value: string;
-};
-
-function tokenize(code: string): Token[] {
-  const tokens: Token[] = [];
-  let remaining = code;
-  
-  const patterns: { type: Token['type']; regex: RegExp }[] = [
-    { type: 'comment', regex: /^(\/\/[^\n]*|\/\*[\s\S]*?\*\/|\{\/\*[\s\S]*?\*\/\})/ },
-    { type: 'string', regex: /^("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)/ },
-    { type: 'keyword', regex: /^(import|export|from|function|return|const|let|var|if|else|for|while|class|extends|new|this|typeof|instanceof)\b/ },
-    { type: 'tag', regex: /^(<\/?[A-Z][a-zA-Z0-9.]*|<\/?[a-z][a-zA-Z0-9-]*)/ },
-    { type: 'attr', regex: /^\s(className|src|name|target|duration|style|volume|barColor|barWidth|barGap|start|id|loop|mode|autoScale)=/ },
-    { type: 'number', regex: /^\b(\d+(?:\.\d+)?)\b/ },
-    { type: 'bracket', regex: /^([{}()[\]<>\/])/ },
-  ];
-  
-  while (remaining.length > 0) {
-    let matched = false;
-    
-    for (const { type, regex } of patterns) {
-      const match = remaining.match(regex);
-      if (match) {
-        if (type === 'attr') {
-          tokens.push({ type: 'text', value: ' ' });
-          tokens.push({ type: 'attr', value: match[1] });
-          tokens.push({ type: 'text', value: '=' });
-        } else {
-          tokens.push({ type, value: match[0] });
-        }
-        remaining = remaining.slice(match[0].length);
-        matched = true;
-        break;
-      }
-    }
-    
-    if (!matched) {
-      const nextSpecial = remaining.slice(1).search(/["'`<>{}()[\]\/]|\b(import|export|from|function|return|const|let|var|className|src|name)\b/);
-      const textEnd = nextSpecial === -1 ? remaining.length : nextSpecial + 1;
-      tokens.push({ type: 'text', value: remaining.slice(0, textEnd) });
-      remaining = remaining.slice(textEnd);
-    }
-  }
-  
-  return tokens;
-}
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
-function highlightCode(code: string): string {
-  const tokens = tokenize(code);
-  const colorMap: Record<Token['type'], string> = {
-    string: 'text-emerald-400',
-    comment: 'opacity-50',
-    keyword: 'text-[var(--accent-red)]',
-    tag: 'text-[var(--accent-blue)]',
-    attr: 'text-[var(--accent-gold)]',
-    number: 'text-[var(--accent-gold)]',
-    bracket: 'opacity-70',
-    text: '',
-  };
-  
-  return tokens.map(token => {
-    const escaped = escapeHtml(token.value);
-    const color = colorMap[token.type];
-    return color ? `<span class="${color}">${escaped}</span>` : escaped;
-  }).join('');
-}
+import { Highlight, themes } from "prism-react-renderer";
 
 const examples = {
   basic: {
@@ -155,7 +70,6 @@ function CodeExamples() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback
       const textarea = document.createElement('textarea');
       textarea.value = examples[selected].code;
       document.body.appendChild(textarea);
@@ -187,11 +101,11 @@ function CodeExamples() {
       </div>
       
       {/* Code block */}
-      <div className="relative bg-[#1a1a1a] rounded-lg overflow-hidden">
+      <div className="relative rounded-lg overflow-hidden">
         {/* Copy button */}
         <button
           onClick={handleCopy}
-          className="absolute top-4 right-4 p-2 text-white/50 hover:text-white transition-colors"
+          className="absolute top-4 right-4 z-10 p-2 text-white/50 hover:text-white transition-colors"
           title="Copy code"
         >
           {copied ? (
@@ -205,12 +119,32 @@ function CodeExamples() {
           )}
         </button>
         
-        <pre className="p-6 overflow-x-auto">
-          <code 
-            className="text-sm font-mono text-white/90 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: highlightCode(examples[selected].code) }}
-          />
-        </pre>
+        <Highlight
+          theme={themes.nightOwl}
+          code={examples[selected].code}
+          language="tsx"
+        >
+          {({ style, tokens, getLineProps, getTokenProps }) => (
+            <pre
+              className="overflow-x-auto"
+              style={{
+                ...style,
+                fontSize: "0.875rem",
+                lineHeight: "1.625",
+                padding: "1.5rem",
+                margin: 0,
+              }}
+            >
+              {tokens.map((line, i) => (
+                <div key={i} {...getLineProps({ line })}>
+                  {line.map((token, key) => (
+                    <span key={key} {...getTokenProps({ token })} />
+                  ))}
+                </div>
+              ))}
+            </pre>
+          )}
+        </Highlight>
       </div>
     </div>
   );

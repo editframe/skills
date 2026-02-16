@@ -2,11 +2,15 @@ import { logger } from "@/logging";
 import { db } from "@/sql-client.server";
 import { data } from "react-router";
 
-import type { Route } from "./+types/resend-verification";
-import { requireSession } from "@/util/requireSession.server";
+import { authMiddleware } from "~/middleware/auth";
+import { identityContext } from "~/middleware/context";
 
-export const action = async ({ request, params: { id } }: Route.ActionArgs) => {
-  const { session } = await requireSession(request);
+import type { Route } from "./+types/resend-verification";
+
+export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
+
+export const action = async ({ params: { id }, context }: Route.ActionArgs) => {
+  const session = context.get(identityContext);
   const deleted = await db
     .deleteFrom("identity.email_confirmations")
     .where("email_password_id", "=", id)

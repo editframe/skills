@@ -3,11 +3,12 @@ import z from "zod";
 import { formFor } from "~/formFor";
 import { resetPasswordUserWithPassword } from "~/resetPasswordWithEmail.server";
 import type { MetaFunction } from "react-router";
-import { commitSession, getSession } from "@/util/session";
+import { commitSession } from "@/util/session";
 import { logger } from "@/logging";
+import { noAuthMiddleware } from "~/middleware/auth";
+import { sessionCookieContext } from "~/middleware/context";
 
 import type { Route } from "./+types/reset-password";
-import { requireNoSession } from "@/util/requireSession.server";
 
 const schema = z.object({
   email_address: z.string().email().toLowerCase(),
@@ -15,14 +16,15 @@ const schema = z.object({
 
 const resetPassword = formFor(schema);
 
-export const action = async ({ request }: Route.ActionArgs) => {
-  await requireNoSession(request);
+export const middleware: Route.MiddlewareFunction[] = [noAuthMiddleware];
+
+export const action = async ({ request, context }: Route.ActionArgs) => {
   const formResult = await resetPassword.parseFormData(request);
   if (!formResult.success) {
     return data(formResult.errors, { status: 400 });
   }
 
-  const sessionCookie = await getSession(request.headers.get("Cookie") ?? "");
+  const sessionCookie = context.get(sessionCookieContext);
 
   try {
     await resetPasswordUserWithPassword(formResult.data.email_address);
@@ -45,9 +47,8 @@ export const action = async ({ request }: Route.ActionArgs) => {
   );
 };
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  await requireNoSession(request);
-  const sessionCookie = await getSession(request.headers.get("Cookie") ?? "");
+export const loader = async ({ context }: Route.LoaderArgs) => {
+  const sessionCookie = context.get(sessionCookieContext);
   const successMessage = sessionCookie.get("success");
   return data(
     { successMessage: successMessage || null },

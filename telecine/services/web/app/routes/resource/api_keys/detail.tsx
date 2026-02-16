@@ -24,7 +24,7 @@ import { Link } from "~/components/Link";
 import { logger } from "@/logging";
 
 import type { Route } from "./+types/detail";
-import { requireSession } from "@/util/requireSession.server";
+import { identityContext, sessionCookieContext } from "~/middleware/context";
 
 const schema = z.object({
   name: z.string(),
@@ -40,8 +40,9 @@ const schema = z.object({
 
 export const editApiKey = formFor(schema);
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { session, sessionCookie } = await requireSession(request);
+export const loader = async ({ request, params, context }: Route.LoaderArgs) => {
+  const session = context.get(identityContext);
+  const sessionCookie = context.get(sessionCookieContext);
 
   const [key] = await requireQueryAs(
     { uid: session.uid, cid: session.cid ?? null },
@@ -440,8 +441,9 @@ export default function ApiKeyDetail() {
   );
 }
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { session, sessionCookie } = await requireSession(request);
+export const action = async ({ request, params, context }: Route.ActionArgs) => {
+  const session = context.get(identityContext);
+  const sessionCookie = context.get(sessionCookieContext);
   const values = await editApiKey.parseFormData(request);
 
   if (!values.success) {

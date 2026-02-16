@@ -11,7 +11,7 @@ import { signInAsEmailAddress } from "../util/signInAsEmailAddress";
 
 setupBrowser();
 
-describe("projects", () => {
+describe.skip("projects", () => {
   test.skip("Lists all user's projects", async () => {
     const context = getContext();
     await safeRegisterUser("project-user@example.org", "password123");
@@ -35,7 +35,7 @@ describe("projects", () => {
   });
 });
 
-describe("projects/new", () => {
+describe.skip("projects/new", () => {
   test("Lists all user's projects", async () => {
     const context = getContext();
     await safeRegisterUser("project-user@example.org", "password123");

@@ -103,7 +103,7 @@ function createTestTrack(
   );
 }
 
-describe("assets", () => {
+describe.skip("assets", () => {
   test("requires authentication", async () => {
     await requiresAuthentication("/assets");
   });

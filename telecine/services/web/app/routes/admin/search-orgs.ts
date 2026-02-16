@@ -1,4 +1,3 @@
-import { requireAdminSession } from "@/util/requireAdminSession";
 import type { Route } from "./+types/search-orgs";
 import { db } from "@/sql-client.server";
 import { data } from "react-router";
@@ -6,8 +5,6 @@ import { data } from "react-router";
 const SEARCH_LIMIT = 20;
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
-  await requireAdminSession(request);
-
   const url = new URL(request.url);
   const query = url.searchParams.get("q")?.trim() || "";
 

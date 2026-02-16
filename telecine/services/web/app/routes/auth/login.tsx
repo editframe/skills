@@ -13,7 +13,8 @@ import { themeClasses } from "~/utils/theme-classes";
 import clsx from "clsx";
 
 import type { Route } from "./+types/login";
-import { requireNoSession } from "@/util/requireSession.server";
+import { noAuthMiddleware } from "~/middleware/auth";
+import { sessionCookieContext } from "~/middleware/context";
 
 const schema = z.object({
   email_address: z.string().email().toLowerCase(),
@@ -22,6 +23,8 @@ const schema = z.object({
 });
 
 const login = formFor(schema);
+
+export const middleware: Route.MiddlewareFunction[] = [noAuthMiddleware];
 
 export const action = async ({ request }: Route.ActionArgs) => {
   const formResult = await login.parseFormData(request);
@@ -57,8 +60,8 @@ export const action = async ({ request }: Route.ActionArgs) => {
   });
 };
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  const { sessionCookie } = await requireNoSession(request);
+export const loader = async ({ context }: Route.LoaderArgs) => {
+  const sessionCookie = context.get(sessionCookieContext);
   const errorMessage = sessionCookie.get("error") || null;
   const successMessage = sessionCookie.get("success") || null;
   sessionCookie.unset("error");

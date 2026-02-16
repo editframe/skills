@@ -8,7 +8,8 @@ import { data, Link, type MetaFunction } from "react-router";
 import { redirect } from "react-router";
 import { graphql } from "@/graphql";
 import * as serverGQL from "@/graphql.server";
-import { requireSession } from "@/util/requireSession.server";
+import { authMiddleware } from "~/middleware/auth";
+import { identityContext } from "~/middleware/context";
 
 import type { Route } from "./+types/next";
 
@@ -22,8 +23,10 @@ const schema = z.object({
 });
 const onboarding = formFor(schema);
 
-export const action = async ({ request }: Route.ActionArgs) => {
-  const { session } = await requireSession(request);
+export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
+
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const session = context.get(identityContext);
 
   const formResult = await onboarding.parseFormData(request);
   if (!formResult.success) {
@@ -63,8 +66,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   return redirect("/welcome");
 };
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  await requireSession(request);
+export const loader = async () => {
   return null;
 };
 

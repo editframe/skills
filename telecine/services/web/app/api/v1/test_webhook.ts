@@ -3,7 +3,7 @@ import { requireMutateAs } from "@/graphql.server/userClient";
 import { graphql } from "@/graphql";
 
 import type { Route } from "./+types/test_webhook";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 const schema = z.object({
   webhookURL: z.string(),
@@ -11,8 +11,8 @@ const schema = z.object({
   api_key_id: z.string(),
 });
 
-export const action = async ({ request }: Route.ActionArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const session = context.get(apiIdentityContext);
   const payload = schema.parse(await request.json());
   await requireMutateAs(
     session,

@@ -1,4 +1,4 @@
-import { css, html, nothing } from "lit";
+import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 // TrackItem must be pre-loaded before this module is imported
@@ -106,10 +106,21 @@ export class EFTimegroupTrack extends TrackItem {
     return baseStyles;
   }
 
+  private get modeLabel(): string {
+    const mode = (this.element as any).mode || "fixed";
+    const labels: Record<string, string> = {
+      fixed: "Fixed",
+      sequence: "Sequence",
+      contain: "Container",
+      fit: "Fit",
+    };
+    return labels[mode] || mode;
+  }
+
   contents() {
     // Show filmstrip only for ROOT timegroups (no parent timegroup)
     const shouldShow = this.shouldShowFilmstrip;
-    
+
     if (shouldShow) {
       return html`<ef-thumbnail-strip
         .targetElement=${this.element}
@@ -119,9 +130,15 @@ export class EFTimegroupTrack extends TrackItem {
       ></ef-thumbnail-strip>`;
     }
 
-    // Mode info is now shown in the label, track is empty for non-root timegroups
     if (this.skipChildren) {
-      return nothing;
+      return html`<span style="
+        font-size: 9px;
+        opacity: 0.5;
+        padding-left: 4px;
+        line-height: 14px;
+        pointer-events: none;
+        white-space: nowrap;
+      ">${this.modeLabel}</span>`;
     }
     // Wrap children in a fragment for consistent return type
     // Note: This hierarchical rendering path is only used in tests/sandboxes.
@@ -140,9 +157,8 @@ export class EFTimegroupTrack extends TrackItem {
    * Override render to use taller height for filmstrip rows
    */
   override render() {
-    // Use custom height for filmstrip, standard height otherwise
-    const trackHeight = this.shouldShowFilmstrip 
-      ? `${FILMSTRIP_ROW_HEIGHT}px` 
+    const trackHeight = this.shouldShowFilmstrip
+      ? `${FILMSTRIP_ROW_HEIGHT}px`
       : "var(--timeline-track-height, 22px)";
 
     return html`<div style=${styleMap(this.gutterStyles)}>

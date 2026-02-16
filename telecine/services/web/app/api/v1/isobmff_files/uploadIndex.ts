@@ -6,13 +6,13 @@ import { isobmffIndexFilePath } from "@/util/filePaths";
 import { db } from "@/sql-client.server";
 
 import type { Route } from "./+types/uploadIndex";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
-export const action = async ({ params: { id }, request }: Route.ActionArgs) => {
+export const action = async ({ params: { id }, request, context }: Route.ActionArgs) => {
   if (!request.body) {
     throw new Response("Request MUST have body content", { status: 400 });
   }
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
   const isobmffFile = await requireQueryAs(
     session,
     "org-editor",

@@ -27,4 +27,4 @@ skills/skills-generated/
 
 # Test render outputs
 .test-output/
-**/render.test.renders/render**/**
+**/render.test.renders/

@@ -12,9 +12,10 @@ import { commitSession } from "@/util/session";
 import { ErrorMessage } from "~/components/ErrorMessage";
 import { Button } from "~/components/Button";
 import { logger } from "@/logging";
+import { noAuthMiddleware } from "~/middleware/auth";
+import { sessionCookieContext } from "~/middleware/context";
 
 import type { Route } from "./+types/update-password";
-import { requireNoSession } from "@/util/requireSession.server";
 
 const schema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
@@ -24,8 +25,10 @@ const schema = z.object({
 
 const updatePassword = formFor(schema);
 
-export const action = async ({ request }: Route.ActionArgs) => {
-  const { sessionCookie } = await requireNoSession(request);
+export const middleware: Route.MiddlewareFunction[] = [noAuthMiddleware];
+
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const sessionCookie = context.get(sessionCookieContext);
   const formResult = await updatePassword.parseFormData(request);
 
   if (!formResult.success) {
@@ -67,11 +70,8 @@ export const action = async ({ request }: Route.ActionArgs) => {
 };
 
 export const loader = async ({
-  request,
   params: { token: reset_token },
 }: Route.LoaderArgs) => {
-  await requireNoSession(request);
-
   if (!reset_token) throw new Error("No reset token");
   const email_address = await getUserByResetToken(reset_token);
 

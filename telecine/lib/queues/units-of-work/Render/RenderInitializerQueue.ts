@@ -33,6 +33,20 @@ export const RenderInitializerQueue = new Queue<Selectable<Video2Renders>>({
       )
       .execute();
   },
+
+  processCompletions: async (messages, db) => {
+    await db
+      .updateTable("video2.renders")
+      .set({
+        initializer_complete: true,
+      })
+      .where(
+        "id",
+        "in",
+        messages.map((m) => m.workflowId),
+      )
+      .execute();
+  },
 });
 
 ConnectionURLMap.set(RenderInitializerQueue, QUEUE_URL);

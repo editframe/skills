@@ -152,6 +152,16 @@ export interface SkillReference {
   next_steps?: string[];
 }
 
+interface ReactConfig {
+  generate?: boolean;
+  componentName?: string;
+  importPath?: string;
+  propMapping?: Record<string, string>;
+  additionalProps?: ApiAttribute[];
+  nav?: NavMetadata;
+  outputFilename?: string;
+}
+
 interface ReferenceFrontmatter {
   title?: string;
   description?: string;
@@ -166,6 +176,7 @@ interface ReferenceFrontmatter {
   prerequisites?: string[];
   next_steps?: string[];
   api?: ApiMetadata;
+  react?: ReactConfig;
 }
 
 export interface NavGroup {
@@ -223,7 +234,211 @@ const TOPIC_ORDER: Record<string, number> = {
   "advanced": 120,
 };
 
+// --- Conditional section processing ---
+
+function processConditionalSections(body: string, target: "html" | "react"): string {
+  const remove = target === "html" ? "react-only" : "html-only";
+  const keep = target === "html" ? "html-only" : "react-only";
+
+  body = body.replace(new RegExp(`<!-- ${remove} -->[\\s\\S]*?<!-- \\/${remove} -->`, "g"), "");
+  body = body.replace(new RegExp(`<!-- ${keep} -->\\n?`, "g"), "");
+  body = body.replace(new RegExp(`<!-- \\/${keep} -->\\n?`, "g"), "");
+  body = body.replace(/<!-- shared -->\n?/g, "");
+  body = body.replace(/<!-- \/shared -->\n?/g, "");
+  body = body.replace(/\n{3,}/g, "\n\n");
+  return body;
+}
+
+function transformApiForReact(api: ApiMetadata, reactConfig: ReactConfig): ApiMetadata {
+  const reactApi: ApiMetadata = {};
+  const propMapping = reactConfig.propMapping || {};
+
+  if (api.attributes && api.attributes.length > 0) {
+    reactApi.properties = api.attributes.map(attr => ({
+      ...attr,
+      name: propMapping[attr.name] || attr.name,
+    }));
+  }
+
+  if (reactConfig.additionalProps && reactConfig.additionalProps.length > 0) {
+    reactApi.properties = [
+      ...(reactApi.properties || []),
+      ...reactConfig.additionalProps,
+    ];
+  }
+
+  if (api.methods) reactApi.methods = api.methods;
+  if (api.functions) reactApi.functions = api.functions;
+
+  return reactApi;
+}
+
+function buildReactFrontmatter(attributes: ReferenceFrontmatter): Record<string, any> {
+  const reactConfig = attributes.react!;
+  const componentName = reactConfig.componentName || attributes.title?.replace(" Element", "") || "";
+  const reactTitle = `${componentName} Component`;
+
+  const reactFrontmatter: Record<string, any> = {
+    title: reactTitle,
+    description: attributes.description,
+    type: attributes.type,
+  };
+
+  if (attributes.topic) reactFrontmatter.topic = attributes.topic;
+  if (attributes.order !== undefined) reactFrontmatter.order = attributes.order;
+  if (reactConfig.nav) {
+    reactFrontmatter.nav = reactConfig.nav;
+  } else if (attributes.nav) {
+    reactFrontmatter.nav = attributes.nav;
+  }
+  if (attributes.track) reactFrontmatter.track = attributes.track;
+  if (attributes.track_step) reactFrontmatter.track_step = attributes.track_step;
+  if (attributes.track_title) reactFrontmatter.track_title = attributes.track_title;
+
+  if (attributes.api) {
+    reactFrontmatter.api = transformApiForReact(attributes.api, reactConfig);
+  }
+
+  return reactFrontmatter;
+}
+
+function generateReactReferenceContent(
+  htmlContent: string,
+  attributes: ReferenceFrontmatter,
+): string {
+  const reactFrontmatter = buildReactFrontmatter(attributes);
+  const parsed = fm(htmlContent);
+  const body = processConditionalSections(parsed.body, "react");
+  return `---\n${toYAML(reactFrontmatter)}\n---\n${body}`;
+}
+
+// --- React generation cache (production only) ---
+
+const isProduction = process.env.NODE_ENV === "production";
+const reactContentCache = new Map<string, string>();
+const reactMetaCache = new Map<string, SkillReference[]>();
+
+function getElementsReactSources(): { name: string; filePath: string; attributes: ReferenceFrontmatter }[] {
+  const skillsBasePath = getSkillsBasePath();
+  const elementsRefsPath = join(skillsBasePath, "elements-composition", "references");
+
+  if (!existsSync(elementsRefsPath)) return [];
+
+  const files = readdirSync(elementsRefsPath).filter(f => f.endsWith(".md"));
+  const sources: { name: string; filePath: string; attributes: ReferenceFrontmatter }[] = [];
+
+  for (const file of files) {
+    const filePath = join(elementsRefsPath, file);
+    const content = readFileSync(filePath, "utf8");
+    const { attributes } = fm<ReferenceFrontmatter>(content);
+
+    if (attributes.react?.generate) {
+      sources.push({
+        name: file.replace(".md", ""),
+        filePath,
+        attributes,
+      });
+    }
+  }
+
+  return sources;
+}
+
+function getGeneratedReactReference(refName: string): string | null {
+  const cacheKey = `ref:${refName}`;
+  if (isProduction) {
+    const cached = reactContentCache.get(cacheKey);
+    if (cached) return cached;
+  }
+
+  const skillsBasePath = getSkillsBasePath();
+  const htmlPath = join(skillsBasePath, "elements-composition", "references", `${refName}.md`);
+
+  if (!existsSync(htmlPath)) return null;
+
+  const content = readFileSync(htmlPath, "utf8");
+  const { attributes } = fm<ReferenceFrontmatter>(content);
+
+  if (!attributes.react?.generate) return null;
+
+  const result = generateReactReferenceContent(content, attributes);
+  if (isProduction) {
+    reactContentCache.set(cacheKey, result);
+  }
+
+  return result;
+}
+
+function getGeneratedReactSection(refName: string, sectionSlug: string): string | null {
+  const cacheKey = `section:${refName}~${sectionSlug}`;
+  if (isProduction) {
+    const cached = reactContentCache.get(cacheKey);
+    if (cached) return cached;
+  }
+
+  const skillsBasePath = getSkillsBasePath();
+  const htmlPath = join(skillsBasePath, "elements-composition", "references", `${refName}.md`);
+
+  if (!existsSync(htmlPath)) return null;
+
+  const content = readFileSync(htmlPath, "utf8");
+  const { attributes, body } = fm<ReferenceFrontmatter>(content);
+
+  if (!attributes.react?.generate) return null;
+  if (!attributes.sections || attributes.sections.length === 0) return null;
+
+  const sectionIndex = attributes.sections.findIndex((s) => s.slug === sectionSlug);
+  if (sectionIndex === -1) return null;
+
+  const section = attributes.sections[sectionIndex];
+  if (!section) return null;
+
+  const nextSection = attributes.sections[sectionIndex + 1];
+
+  const sectionHeadingPattern = new RegExp(`^## ${section.heading}`, "m");
+  const sectionMatch = body.match(sectionHeadingPattern);
+  if (!sectionMatch || sectionMatch.index === undefined) return null;
+
+  let sectionBody: string;
+  if (nextSection) {
+    const nextHeadingPattern = new RegExp(`^## ${nextSection.heading}`, "m");
+    const nextMatch = body.substring(sectionMatch.index).match(nextHeadingPattern);
+    if (nextMatch && nextMatch.index !== undefined) {
+      sectionBody = body.substring(sectionMatch.index, sectionMatch.index + nextMatch.index).trim();
+    } else {
+      sectionBody = body.substring(sectionMatch.index).trim();
+    }
+  } else {
+    sectionBody = body.substring(sectionMatch.index).trim();
+  }
+
+  // Process conditional sections for React
+  sectionBody = processConditionalSections(sectionBody, "react");
+
+  const sectionFrontmatter: Record<string, any> = {
+    title: section.title,
+    description: section.description || attributes.description || "",
+    type: section.type,
+  };
+
+  if (attributes.topic) sectionFrontmatter.topic = attributes.topic;
+  if (attributes.order !== undefined) sectionFrontmatter.order = attributes.order;
+
+  const result = `---\n${toYAML(sectionFrontmatter)}\n---\n\n${sectionBody}`;
+  if (isProduction) {
+    reactContentCache.set(cacheKey, result);
+  }
+
+  return result;
+}
+
 export const getSkillReferencesMeta = (skillName: string): SkillReference[] => {
+  // For react-composition, check production cache
+  if (skillName === "react-composition" && isProduction) {
+    const cached = reactMetaCache.get("react-composition");
+    if (cached) return cached;
+  }
+
   const skillsBasePath = getSkillsBasePath();
   const referencesPath = join(skillsBasePath, skillName, "references");
 
@@ -293,6 +508,38 @@ export const getSkillReferencesMeta = (skillName: string): SkillReference[] => {
         next_steps: attributes.next_steps,
       });
     }
+  }
+
+  // For react-composition, include virtual refs generated from elements-composition HTML sources
+  if (skillName === "react-composition") {
+    const elementsSources = getElementsReactSources();
+    for (const source of elementsSources) {
+      // Skip if an actual React file with the same name already exists
+      if (refs.some(r => r.name === source.name)) continue;
+
+      const reactConfig = source.attributes.react!;
+      const componentName = reactConfig.componentName || source.attributes.title?.replace(" Element", "") || "";
+      const reactTitle = `${componentName} Component`;
+
+      refs.push({
+        name: source.name,
+        title: reactTitle,
+        description: source.attributes.description || "",
+        type: source.attributes.type || "reference",
+        topic: source.attributes.topic || undefined,
+        order: source.attributes.order ?? 999,
+        nav: reactConfig.nav || source.attributes.nav,
+        track: source.attributes.track,
+        track_step: source.attributes.track_step,
+        track_title: source.attributes.track_title,
+        prerequisites: source.attributes.prerequisites,
+        next_steps: source.attributes.next_steps,
+      });
+    }
+
+    const sorted = refs.sort((a, b) => a.order - b.order);
+    if (isProduction) reactMetaCache.set("react-composition", sorted);
+    return sorted;
   }
 
   return refs.sort((a, b) => a.order - b.order);
@@ -560,6 +807,10 @@ export const getSkillReference = (
   const refPath = join(skillsBasePath, skillName, "references", `${refName}.md`);
 
   if (!existsSync(refPath)) {
+    // For react-composition, try generating from elements-composition HTML source
+    if (skillName === "react-composition") {
+      return getGeneratedReactReference(refName);
+    }
     return null;
   }
 
@@ -598,6 +849,10 @@ export const getSkillReferenceSection = (
   const refPath = join(skillsBasePath, skillName, "references", `${refName}.md`);
 
   if (!existsSync(refPath)) {
+    // For react-composition, try generating from elements-composition HTML source
+    if (skillName === "react-composition") {
+      return getGeneratedReactSection(refName, sectionSlug);
+    }
     return null;
   }
 

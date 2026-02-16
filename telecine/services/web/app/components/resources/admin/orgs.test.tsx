@@ -102,7 +102,7 @@ describe("AdminOrgs Search Input Behavior", () => {
     renderWithRouter(<Filter />);
 
     const searchInput = screen.getByPlaceholderText(
-      "Search by name or website...",
+      "Search by name, website, or primary user...",
     ) as HTMLInputElement;
 
     // Test rapid typing - this should expose the race condition
@@ -121,7 +121,7 @@ describe("AdminOrgs Search Input Behavior", () => {
     renderWithRouter(<Filter />);
 
     const searchInput = screen.getByPlaceholderText(
-      "Search by name or website...",
+      "Search by name, website, or primary user...",
     ) as HTMLInputElement;
 
     // Clear any existing value first
@@ -141,7 +141,7 @@ describe("AdminOrgs Search Input Behavior", () => {
     renderWithRouter(<Filter />);
 
     const searchInput = screen.getByPlaceholderText(
-      "Search by name or website...",
+      "Search by name, website, or primary user...",
     ) as HTMLInputElement;
     const dateInput = screen.getByDisplayValue(
       /\d{4}-\d{2}-\d{2}/,

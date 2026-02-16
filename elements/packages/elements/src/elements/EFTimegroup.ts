@@ -894,7 +894,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // Attach .catch() to prevent unhandled rejection warning - errors are handled by seekTask.onError
     Promise.resolve(this.seekTask.run()).catch(() => {}).finally(async () => {
       this.#seekInProgress = false;
-      
+
       // CRITICAL: Coordinate animations after seekTask completes
       // This handles seeks from currentTime setter (like localStorage restore)
       const { updateAnimations } = await import("./updateAnimations.js");

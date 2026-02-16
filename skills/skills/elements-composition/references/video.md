@@ -60,64 +60,244 @@ sections:
     description: How to apply CSS filters, transforms, and animations to video
     nav:
       priority: 3
+react:
+  generate: true
+  componentName: Video
+  importPath: "@editframe/react"
+  propMapping:
+    sourcein: sourceIn
+    sourceout: sourceOut
+    trimstart: trimStart
+    trimend: trimEnd
+    mute: muted
+  additionalProps:
+    - name: className
+      type: string
+      description: CSS classes for styling
+  nav:
+    parent: "Components / Media"
+    priority: 10
+    related: ["audio", "image"]
 ---
 
+<!-- html-only -->
 # ef-video
+<!-- /html-only -->
+<!-- react-only -->
+# Video
+<!-- /react-only -->
 
+<!-- html-only -->
 Video element with source trimming.
+<!-- /html-only -->
+<!-- react-only -->
+Display video clips with optional trimming.
+<!-- /react-only -->
+
+<!-- react-only -->
+## Import
+
+```tsx
+import { Video } from "@editframe/react";
+```
+<!-- /react-only -->
 
 ## Basic Usage
 
+<!-- html-only -->
 ```html live
 <ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black">
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" class="size-full object-contain"></ef-video>
 </ef-timegroup>
 ```
+<!-- /html-only -->
+<!-- react-only -->
+```tsx
+<Video src="/assets/clip.mp4" className="size-full object-cover" />
+```
+<!-- /react-only -->
 
 ## Trimming Approaches
 
-Two ways to trim video — choose based on your workflow:
+Two ways to trim video -- choose based on your workflow:
 
+<!-- html-only -->
 ### Absolute Trimming (sourcein/sourceout)
+<!-- /html-only -->
+<!-- react-only -->
+### Absolute Trimming (sourceIn/sourceOut)
+<!-- /react-only -->
 
 Show specific timestamps from source. Use when you know exact timecodes.
 
+<!-- html-only -->
 ```html live
 <ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black">
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="2s" sourceout="6s" class="size-full object-contain"></ef-video>
 </ef-timegroup>
 ```
+<!-- /html-only -->
+<!-- react-only -->
+```tsx
+{/* Show seconds 10-20 from source (10s clip) */}
+<Video
+  src="/assets/long-video.mp4"
+  sourceIn="10s"
+  sourceOut="20s"
+  className="size-full object-cover"
+/>
+```
+<!-- /react-only -->
 
+<!-- html-only -->
 ### Relative Trimming (trimstart/trimend)
+<!-- /html-only -->
+<!-- react-only -->
+### Relative Trimming (trimStart/trimEnd)
+<!-- /react-only -->
 
 Remove time from start/end. Use when thinking "cut off X seconds".
 
+<!-- html-only -->
 ```html live
 <ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black">
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" trimstart="2s" trimend="3s" class="size-full object-contain"></ef-video>
 </ef-timegroup>
 ```
+<!-- /html-only -->
+<!-- react-only -->
+```tsx
+{/* Remove 2s from start, 3s from end */}
+<Video
+  src="/assets/video.mp4"
+  trimStart="2s"
+  trimEnd="3s"
+  className="size-full object-cover"
+/>
+```
+<!-- /react-only -->
 
 **When to use each:**
+<!-- html-only -->
 - `sourcein`/`sourceout` — Working with timecodes, precise frame references
 - `trimstart`/`trimend` — UI builders, "how much to cut off" thinking
+<!-- /html-only -->
+<!-- react-only -->
+- `sourceIn`/`sourceOut` - Working with timecode, precise frame references
+- `trimStart`/`trimEnd` - UI builders, "how much to cut off" thinking
+<!-- /react-only -->
 
+<!-- react-only -->
+## With Volume Control
+
+```tsx
+<Video
+  src="/assets/clip.mp4"
+  volume={0.5}
+  className="size-full"
+/>
+```
+
+## Muted Video
+
+```tsx
+<Video
+  src="/assets/clip.mp4"
+  muted
+  className="size-full object-cover"
+/>
+```
+<!-- /react-only -->
+
+<!-- html-only -->
 ## Muted / Volume
 
 ```html
 <ef-video src="video.mp4" mute class="size-full"></ef-video>
 <ef-video src="video.mp4" volume="0.5" class="size-full"></ef-video>
 ```
+<!-- /html-only -->
 
 ## Picture-in-Picture
 
+<!-- html-only -->
 ```html live
 <ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black">
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" class="size-full object-cover"></ef-video>
   <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="5s" class="absolute bottom-4 right-4 w-48 h-28 rounded-lg border-2 border-white"></ef-video>
 </ef-timegroup>
 ```
+<!-- /html-only -->
 
+<!-- react-only -->
+## Full Scene Example
+
+```tsx
+import { Timegroup, Video, Text } from "@editframe/react";
+
+export const VideoScene = () => {
+  return (
+    <Timegroup mode="contain" className="absolute w-full h-full">
+      <Video
+        src="/assets/background.mp4"
+        sourceIn="5s"
+        sourceOut="15s"
+        className="size-full object-cover"
+      />
+      <Text className="absolute top-8 left-8 text-white text-3xl">
+        Video Title
+      </Text>
+    </Timegroup>
+  );
+};
+```
+
+## Object Fit
+
+Use Tailwind classes for positioning:
+
+```tsx
+{/* Cover - fills container, may crop */}
+<Video src="/assets/video.mp4" className="size-full object-cover" />
+
+{/* Contain - fits within container, may have letterbox */}
+<Video src="/assets/video.mp4" className="size-full object-contain" />
+
+{/* Fill - stretches to fill */}
+<Video src="/assets/video.mp4" className="size-full object-fill" />
+```
+
+## Dynamic Videos
+
+```tsx
+interface VideoData {
+  id: string;
+  src: string;
+  sourceIn: string;
+  sourceOut: string;
+}
+
+const videos: VideoData[] = [
+  { id: "1", src: "/assets/clip1.mp4", sourceIn: "0s", sourceOut: "5s" },
+  { id: "2", src: "/assets/clip2.mp4", sourceIn: "3s", sourceOut: "8s" },
+];
+
+<Timegroup mode="sequence" className="w-[1920px] h-[1080px]">
+  {videos.map((video) => (
+    <Timegroup key={video.id} mode="contain" className="absolute w-full h-full">
+      <Video
+        src={video.src}
+        sourceIn={video.sourceIn}
+        sourceOut={video.sourceOut}
+        className="size-full object-cover"
+      />
+    </Timegroup>
+  ))}
+</Timegroup>
+```
+<!-- /react-only -->
+
+<!-- html-only -->
 ## Video Tutorial
 
 Build a composition step by step — from a single clip to layered scenes.
@@ -323,3 +503,4 @@ Layer static filters with animations for complex looks:
 ```
 
 > **Note:** Static CSS classes (like `sepia`) combine with animation keyframes. The animation overrides only the properties it targets.
+<!-- /html-only -->

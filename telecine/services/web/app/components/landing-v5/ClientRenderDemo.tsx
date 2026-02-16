@@ -9,6 +9,7 @@
 import { useState, useEffect, useId, useRef } from "react";
 import {
   Preview,
+  FitScale,
   Timegroup,
   Video,
   Text,
@@ -40,21 +41,23 @@ export function ClientRenderDemo() {
               loop
               className="w-full h-full"
             >
-              <Timegroup mode="fixed" duration="5s" className="w-full h-full relative">
-                <Video
-                  src={VIDEO_SRC}
-                  duration="5s"
-                  className="w-full h-full object-cover"
-                />
-                <Text
-                  split="word"
-                  staggerMs={150}
-                  easing="ease-out"
-                  className="absolute bottom-6 inset-x-4 text-white text-xl font-bold text-center drop-shadow-lg"
-                >
-                  RENDERED IN BROWSER
-                </Text>
-              </Timegroup>
+              <FitScale>
+                <Timegroup mode="fixed" duration="5s" className="relative" style={{ width: 960, height: 540 }}>
+                  <Video
+                    src={VIDEO_SRC}
+                    duration="5s"
+                    className="w-full h-full object-cover"
+                  />
+                  <Text
+                    split="word"
+                    staggerMs={150}
+                    easing="ease-out"
+                    className="absolute bottom-6 inset-x-4 text-white text-xl font-bold text-center drop-shadow-lg"
+                  >
+                    RENDERED IN BROWSER
+                  </Text>
+                </Timegroup>
+              </FitScale>
             </Preview>
           ) : (
             <div className="w-full h-full flex items-center justify-center">

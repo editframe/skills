@@ -1,4 +1,4 @@
-import { TrimTool, TextOverlayTool } from "../index";
+import { ThumbnailPicker, TextOverlayTool } from "../index";
 
 export function ToolsGridSection() {
   return (
@@ -35,15 +35,15 @@ export function ToolsGridSection() {
 
         {/* Tools Grid - 2 tools */}
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Trim Tool */}
+          {/* Thumbnail Picker */}
           <div>
             <div className="flex items-center gap-2 mb-3">
               <div className="w-6 h-1 bg-[var(--poster-blue)]" />
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--warm-gray)]">
-                Video Trimmer
+                Thumbnail Picker
               </span>
             </div>
-            <TrimTool />
+            <ThumbnailPicker />
           </div>
 
           {/* Text Overlay */}

@@ -288,6 +288,104 @@ describe("serialization pipeline performance", () => {
     }
   }, 30000);
 
+  it("worker encoding: JPEG vs PNG at various resolutions", async () => {
+    // Direct worker encoding benchmark. Shows the cost difference between
+    // JPEG and PNG at different resolutions — this is the bottleneck for
+    // canvas-heavy compositions.
+    const { encodeCanvasInWorker } = await import("../encoding/workerEncoder.js");
+    const { WorkerPool } = await import("../workers/WorkerPool.js");
+    const { getEncoderWorkerUrl } = await import("../workers/encoderWorkerInline.js");
+
+    const workerUrl = getEncoderWorkerUrl();
+    const pool = new WorkerPool(workerUrl);
+    if (!pool.isAvailable()) {
+      console.log("Workers not available, skipping");
+      expect(true).toBe(true);
+      return;
+    }
+
+    const resolutions = [
+      { w: 1920, h: 1080, label: "1920x1080 (full)" },
+      { w: 960, h: 540, label: "960x540 (0.5x)" },
+      { w: 630, h: 354, label: "630x354 (display)" },
+    ];
+
+    console.log("\n=== WORKER ENCODING: JPEG vs PNG at various resolutions ===");
+
+    for (const { w, h, label } of resolutions) {
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d")!;
+      const grad = ctx.createLinearGradient(0, 0, w, h);
+      grad.addColorStop(0, "#ff0000");
+      grad.addColorStop(0.5, "#00ff00");
+      grad.addColorStop(1, "#0000ff");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+
+      // Warmup
+      for (let i = 0; i < 2; i++) {
+        await pool.execute((worker) => encodeCanvasInWorker(worker, canvas, false));
+        await pool.execute((worker) => encodeCanvasInWorker(worker, canvas, true));
+      }
+
+      const jpegTimes: number[] = [];
+      const pngTimes: number[] = [];
+      let jpegSize = 0;
+      let pngSize = 0;
+
+      for (let i = 0; i < 10; i++) {
+        let t = performance.now();
+        const jpg = await pool.execute((worker) => encodeCanvasInWorker(worker, canvas, false));
+        jpegTimes.push(performance.now() - t);
+        if (i === 0) jpegSize = jpg.length;
+
+        t = performance.now();
+        const png = await pool.execute((worker) => encodeCanvasInWorker(worker, canvas, true));
+        pngTimes.push(performance.now() - t);
+        if (i === 0) pngSize = png.length;
+      }
+
+      console.log(`\n--- ${label} ---`);
+      console.log(formatStats("JPEG worker  ", jpegTimes));
+      console.log(formatStats("PNG worker   ", pngTimes));
+      console.log(`JPEG size: ${(jpegSize / 1024).toFixed(1)}KB, PNG size: ${(pngSize / 1024).toFixed(1)}KB`);
+      console.log(`JPEG speedup: ${(stats(pngTimes).avg / stats(jpegTimes).avg).toFixed(1)}x`);
+    }
+
+    // Test resize-before-encode: 1920x1080 canvas → 630x354 via worker
+    console.log("\n--- Resize in worker: 1920x1080 → 630x354 ---");
+    const bigCanvas = document.createElement("canvas");
+    bigCanvas.width = 1920;
+    bigCanvas.height = 1080;
+    const bctx = bigCanvas.getContext("2d")!;
+    const grad = bctx.createLinearGradient(0, 0, 1920, 1080);
+    grad.addColorStop(0, "#ff0000");
+    grad.addColorStop(1, "#0000ff");
+    bctx.fillStyle = grad;
+    bctx.fillRect(0, 0, 1920, 1080);
+
+    // Warmup
+    for (let i = 0; i < 2; i++) {
+      await pool.execute((worker) => encodeCanvasInWorker(worker, bigCanvas, false, 630, 354));
+    }
+
+    const resizeTimes: number[] = [];
+    let resizeSize = 0;
+    for (let i = 0; i < 10; i++) {
+      const t = performance.now();
+      const result = await pool.execute((worker) => encodeCanvasInWorker(worker, bigCanvas, false, 630, 354));
+      resizeTimes.push(performance.now() - t);
+      if (i === 0) resizeSize = result.length;
+    }
+    console.log(formatStats("JPEG resize  ", resizeTimes));
+    console.log(`Output size: ${(resizeSize / 1024).toFixed(1)}KB`);
+
+    pool.terminate();
+    expect(true).toBe(true);
+  }, 60000);
+
   it("diagnostic: worker pool and JPEG vs PNG encoding", async () => {
     const hasWorker = typeof Worker !== "undefined";
     const hasOffscreen = typeof OffscreenCanvas !== "undefined";

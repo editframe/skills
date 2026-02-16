@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-# Find all instances of ctx.wait() in sandbox files
-
-# Find all .sandbox.ts files and search for ctx.wait() calls
-# Shows file path, line number, and context
-
-find elements/packages/elements/src -name "*.sandbox.ts" -type f | \
-  xargs grep -n "ctx\.wait(" | \
-  grep -v "^$"

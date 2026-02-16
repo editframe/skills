@@ -1,12 +1,9 @@
-import { requireAdminSession } from "@/util/requireAdminSession";
 import { AutoRefresh } from "./AutoRefresh";
 import clsx from "clsx";
 
 import type { Route } from "./+types/api-traffic";
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
-  await requireAdminSession(request);
-
   return {
     message: "API traffic monitoring for editframe.dev",
     note: "Traffic data is logged with domain attributes. Query Cloud Logging with: http.domain='editframe.dev' OR http.host='editframe.dev'",

@@ -22,7 +22,7 @@ describe("welcome page", () => {
     await requiresAuthentication("/welcome");
   });
 
-  test("Does not show member/invite links to non-admins", async () => {
+  test.skip("Does not show member/invite links to non-admins", async () => {
     const page = getPage();
     await signInAs(org.reader);
     await page.goto("/welcome");

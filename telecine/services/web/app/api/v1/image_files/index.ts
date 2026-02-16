@@ -6,13 +6,14 @@ import { imageFilePath } from "@/util/filePaths";
 import { db } from "@/sql-client.server";
 import { storageProvider } from "@/util/storageProvider.server";
 import { v4 } from "uuid";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 import type { Route } from "./+types/index";
 export const action = async ({
   request,
+  context,
 }: Route.ActionArgs): Promise<CreateImageFileResult> => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
   const payload = CreateImageFilePayload.parse(await request.json());
 
   const id = v4();

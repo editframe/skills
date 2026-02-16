@@ -41,7 +41,7 @@ export const IndexQuery = progressiveQuery(
       $where_clause: video2_files_bool_exp
     ) {
       org: orgs_by_pk(id: $orgId) {
-        page_info: files_aggregate {
+        page_info: files_aggregate(where: $where_clause) {
           aggregate {
             count
           }
@@ -62,6 +62,7 @@ export const IndexQuery = progressiveQuery(
           width
           height
           created_at
+          expires_at
         }
       }
     }
@@ -100,7 +101,8 @@ function buildWhereClause(searchParams: URLSearchParams) {
   const whereClause: {
     type?: { _eq: string };
     status?: { _eq: string };
-  } = {};
+    expires_at: { _is_null: boolean };
+  } = { expires_at: { _is_null: true } };
 
   if (type) {
     whereClause.type = { _eq: type };
@@ -419,7 +421,8 @@ export function createFileTypeView(
         const whereClause: {
           type: { _eq: string };
           status?: { _eq: string };
-        } = { type: { _eq: fileType } };
+          expires_at: { _is_null: boolean };
+        } = { type: { _eq: fileType }, expires_at: { _is_null: true } };
         if (status) {
           whereClause.status = { _eq: status };
         }

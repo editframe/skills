@@ -1,15 +1,15 @@
 import { logger } from "@/logging";
 import { db } from "@/sql-client.server";
 import { receiveAssetChunk } from "@/util/receiveAssetChunk";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 import type { Route } from "./+types/trackUpload";
 
 export const loader = async ({
-  request,
   params: { id, trackId },
+  context,
 }: Route.LoaderArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
 
   const track = await db
     .selectFrom("video2.isobmff_tracks")
@@ -34,8 +34,9 @@ export const loader = async ({
 export const action = async ({
   params: { id, trackId },
   request,
+  context,
 }: Route.ActionArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
 
   const track = await db
     .selectFrom("video2.isobmff_tracks")

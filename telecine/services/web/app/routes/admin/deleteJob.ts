@@ -1,12 +1,12 @@
-import { requireAdminSession } from "@/util/requireAdminSession";
 import type { Route } from "./+types/deleteJob";
+import { adminIdentityContext } from "~/middleware/context";
 import { Queue } from "@/queues/Queue";
 import { valkey } from "@/valkey/valkey";
 import { getJob, deleteJob, JobStage } from "@/queues/Job";
 import { auditAdminAction } from "@/util/auditAdminAction";
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
-  const session = await requireAdminSession(request);
+export const action = async ({ request, context, params }: Route.ActionArgs) => {
+  const session = context.get(adminIdentityContext);
   const { name, id } = params;
   const queue = Queue.fromName(name);
   if (!queue) {

@@ -3,15 +3,15 @@ import { requireMutateAs } from "@/graphql.server/userClient";
 import { z } from "zod";
 
 import type { Route } from "./+types/update-role";
-import { requireSession } from "@/util/requireSession.server";
+import { identityContext } from "~/middleware/context";
 
 const schema = z.object({
   id: z.string(),
   role: z.enum(["admin", "editor", "reader"]),
 });
 
-export const action = async ({ request }: Route.ActionArgs) => {
-  const { session } = await requireSession(request);
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const session = context.get(identityContext);
   const { id, role } = schema.parse(await request.json());
 
   await requireMutateAs(

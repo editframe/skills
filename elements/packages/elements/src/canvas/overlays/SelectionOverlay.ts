@@ -59,26 +59,15 @@ export class SelectionOverlay extends LitElement {
   ): void {
     super.firstUpdated?.(changedProperties);
     // When createRenderRoot returns this, Lit injects styles as a <style> element
-    // Verify styles are present and log for debugging
-    // Only check/warn if we're not in a test environment where styles might not be injected
+    // Verify styles are present - only warn if not in a test environment
     const styleElement = this.querySelector("style");
     if (!styleElement) {
-      // Only warn if we're in a context where styles are expected (not in isolated test scenarios)
-      // Check if we're in a sandbox/test container by looking for common test container attributes
-      const isInTestContainer = this.closest("[data-test-container]") !== null ||
-        this.closest("#sandbox-container") !== null ||
-        window.location.pathname.includes("scenario-runner");
-      
+      const isInTestContainer = this.closest("[data-test-container]") !== null;
       if (!isInTestContainer) {
         console.warn(
           "[SelectionOverlay] No style element found - styles may not be applied",
         );
       }
-    } else {
-      console.log(
-        "[SelectionOverlay] Style element found, content length:",
-        styleElement.textContent?.length || 0,
-      );
     }
   }
 
@@ -122,6 +111,13 @@ export class SelectionOverlay extends LitElement {
 
   @state()
   private lastSelectionMode: string | null = null;
+
+  /**
+   * When true, the RAF loop skips all work. Used during playback to avoid
+   * layout-thrashing getBoundingClientRect/getComputedStyle calls that
+   * compete with the canvas render pipeline.
+   */
+  @property({ type: Boolean }) paused = false;
 
   private animationFrame?: number;
   private rafLoopActive = false;
@@ -172,8 +168,6 @@ export class SelectionOverlay extends LitElement {
     const currentMode = selection?.selectionMode ?? null;
     if (currentMode !== this.lastSelectionMode) {
       this.lastSelectionMode = currentMode;
-      // Don't call updateOverlayData() here - let the RAF loop handle it
-      // This avoids scheduling updates during the update cycle
     }
     // Ensure RAF loop is running when box selecting (in case it stopped)
     if (currentMode === "box-selecting" && !this.rafLoopActive) {
@@ -186,9 +180,13 @@ export class SelectionOverlay extends LitElement {
         this.startRafLoop();
       }
     }
-    // Ensure RAF loop is always running when we have a canvas (needed for highlight updates)
+    // Start RAF loop if we have a canvas but loop isn't running
     if (this.canvasElement && !this.rafLoopActive) {
       this.startRafLoop();
+    }
+    // On unpause, force an immediate overlay update to sync stale state
+    if (changedProperties.has("paused") && !this.paused) {
+      this.updateOverlayData();
     }
   }
 
@@ -282,14 +280,18 @@ export class SelectionOverlay extends LitElement {
 
   /**
    * Continuous RAF loop to update overlays every frame using Lit render cycle.
+   * When paused, the loop keeps running (for quick resume) but skips all
+   * expensive layout queries.
    */
   private rafLoop = (): void => {
     if (!this.rafLoopActive) {
       return;
     }
 
-    // Update overlay data and trigger Lit render
-    this.updateOverlayData();
+    // Skip all work when paused to avoid layout-thrashing during playback
+    if (!this.paused) {
+      this.updateOverlayData();
+    }
 
     // Schedule next frame
     this.animationFrame = requestAnimationFrame(this.rafLoop);
@@ -401,7 +403,6 @@ export class SelectionOverlay extends LitElement {
     // - box-select: marquee during drag-to-select
     // - highlight-box: hover indication for non-selected elements
     const { boxSelect, highlight } = this.overlayState;
-    const selectionMode = this.effectiveSelection?.selectionMode;
 
     return html`
       ${
@@ -421,15 +422,6 @@ export class SelectionOverlay extends LitElement {
               class="highlight-box"
               style="left: ${highlight.x}px; top: ${highlight.y}px; width: ${highlight.width}px; height: ${highlight.height}px; position: absolute; border: 2px solid rgb(148, 163, 184); background: rgba(148, 163, 184, 0.1); pointer-events: none; box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.3);"
             ></div>
-          `
-          : html``
-      }
-      ${
-        selectionMode === "box-selecting" && !boxSelect
-          ? html`
-            <div style="position: fixed; top: 50px; right: 10px; background: orange; color: white; padding: 4px; z-index: 10000; font-size: 12px;">
-              Box selecting but no bounds! mode=${selectionMode} bounds=${this.effectiveSelection?.boxSelectBounds ? "exists" : "null"}
-            </div>
           `
           : html``
       }

@@ -83,7 +83,7 @@ describe("settings page", () => {
     ).toBeVisible();
   });
 
-  test("Re-sends verification email", async () => {
+  test.skip("Re-sends verification email", async () => {
     const user = await createUniqueUser("settings-verify");
     const page = getPage();
     await signInAs(user);

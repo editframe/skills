@@ -8,77 +8,44 @@
 // The worker code as a string. This is the same logic as encoderWorker.ts
 // but inlined so it can be converted to a blob URL at runtime.
 const workerCode = `
-/**
- * Fast base64 encoding directly from Uint8Array.
- */
-function encodeBase64Fast(bytes) {
-  const base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-  let result = "";
-  let i = 0;
-  const len = bytes.length;
-  
-  while (i < len - 2) {
-    const byte1 = bytes[i++];
-    const byte2 = bytes[i++];
-    const byte3 = bytes[i++];
-    
-    const bitmap = (byte1 << 16) | (byte2 << 8) | byte3;
-    
-    result += base64Chars.charAt((bitmap >> 18) & 63);
-    result += base64Chars.charAt((bitmap >> 12) & 63);
-    result += base64Chars.charAt((bitmap >> 6) & 63);
-    result += base64Chars.charAt(bitmap & 63);
-  }
-  
-  if (i < len) {
-    const byte1 = bytes[i++];
-    const bitmap = byte1 << 16;
-    
-    result += base64Chars.charAt((bitmap >> 18) & 63);
-    result += base64Chars.charAt((bitmap >> 12) & 63);
-    
-    if (i < len) {
-      const byte2 = bytes[i++];
-      const bitmap2 = (byte1 << 16) | (byte2 << 8);
-      result += base64Chars.charAt((bitmap2 >> 6) & 63);
-      result += "=";
-    } else {
-      result += "==";
-    }
-  }
-  
-  return result;
-}
-
 // Send a startup message to confirm worker is loaded
 postMessage("encoderWorker-loaded");
 
 // Use addEventListener for better compatibility
 addEventListener("message", async (event) => {
-  const { taskId, bitmap, preserveAlpha } = event.data;
-  
+  const { taskId, bitmap, preserveAlpha, targetWidth, targetHeight } = event.data;
+
   try {
-    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+    // Resize to target dimensions in worker (ARCHITECTURE.md §2.4)
+    const w = targetWidth || bitmap.width;
+    const h = targetHeight || bitmap.height;
+    const canvas = new OffscreenCanvas(w, h);
     const ctx = canvas.getContext("2d");
-    
+
     if (!ctx) {
       throw new Error("Failed to get 2d context from OffscreenCanvas");
     }
-    
-    ctx.drawImage(bitmap, 0, 0);
+
+    ctx.drawImage(bitmap, 0, 0, w, h);
     bitmap.close();
-    
+
     const blob = await canvas.convertToBlob({
       type: preserveAlpha ? "image/png" : "image/jpeg",
       quality: preserveAlpha ? undefined : 0.95,
     });
-    
+
+    // ARCHITECTURE.md §4.4: chunked String.fromCharCode + native btoa
+    // Native btoa is implemented in C++ and ~100x faster than JS-based
+    // base64 encoding for large payloads (e.g. 2MB PNG blobs).
     const arrayBuffer = await blob.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
-    const base64 = encodeBase64Fast(bytes);
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 8192) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+    }
     const mimeType = preserveAlpha ? "image/png" : "image/jpeg";
-    const dataUrl = \`data:\${mimeType};base64,\${base64}\`;
-    
+    const dataUrl = "data:" + mimeType + ";base64," + btoa(binary);
+
     postMessage({ taskId, dataUrl });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

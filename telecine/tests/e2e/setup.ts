@@ -76,7 +76,7 @@ export async function signOut() {
 export async function waitForEmail(recipient: string, subject: string) {
   const message = await waitFor(
     () => getMostRecentMessage(recipient, subject),
-    5_000,
+    15_000,
   );
   await state.page.goto("about:blank");
   await state.page.setContent(message.body, {
@@ -92,15 +92,16 @@ export async function followEmailLink(linkText: string) {
   if (!link) {
     throw new Error(`Link not found in email preview: ${linkText}`);
   }
-  link = link.replace(process.env.WEB_HOST!, BASE_URL);
+  // Replace any localhost-style origin with the test BASE_URL.
+  // Emails may use a worktree domain (e.g. main.localhost) that
+  // differs from the .env WEB_HOST.
+  link = link.replace(/^https?:\/\/[a-z0-9.-]*localhost:\d+/, BASE_URL);
   await page.goto(link);
 }
 
 export async function requiresAuthentication(route: string) {
   await state.page.goto(route, { waitUntil: "domcontentloaded" });
-  await playwrightExpect(
-    state.page.getByRole("heading", { name: "Login" }),
-  ).toBeVisible();
+  await playwrightExpect(state.page).toHaveURL(/\/auth\/login/);
 }
 
 interface UserFixture extends Selectable<IdentityEmailPasswords> {

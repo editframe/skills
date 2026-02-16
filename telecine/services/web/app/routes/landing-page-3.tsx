@@ -1,5 +1,5 @@
-import { type LoaderFunctionArgs, type MetaFunction, useLoaderData } from "react-router";
-import { parseRequestSession } from "@/util/session";
+import { type MetaFunction, useLoaderData } from "react-router";
+import { maybeIdentityContext } from "~/middleware/context";
 import "~/styles/marketing.css";
 import { MarketingLayout } from "~/components/layouts/MarketingLayout";
 import { HeroSection } from "~/components/marketing/landing-page-3/HeroSection";
@@ -9,8 +9,10 @@ import { PerformanceSection } from "~/components/marketing/landing-page-3/Perfor
 import { TechStackSection } from "~/components/marketing/landing-page-3/TechStackSection";
 import { CTASection } from "~/components/marketing/landing-page-3/CTASection";
 
-export const loader = async (args: LoaderFunctionArgs) => {
-  const session = await parseRequestSession(args.request);
+import type { Route } from "./+types/landing-page-3";
+
+export const loader = async ({ context }: Route.LoaderArgs) => {
+  const session = context.get(maybeIdentityContext);
   return {
     isLoggedIn: !!session,
   };

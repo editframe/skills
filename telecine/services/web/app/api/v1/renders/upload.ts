@@ -7,10 +7,10 @@ import { RenderInitializerQueue } from "@/queues/units-of-work/Render/RenderInit
 import { logger } from "@/logging";
 
 import type { Route } from "./+types/upload";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
-export const action = async ({ params: { id }, request }: Route.ActionArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+export const action = async ({ params: { id }, request, context }: Route.ActionArgs) => {
+  const session = context.get(apiIdentityContext);
   const render = await db
     .selectFrom("video2.renders")
     .where("id", "=", id)

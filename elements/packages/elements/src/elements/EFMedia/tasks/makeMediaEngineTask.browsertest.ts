@@ -3,7 +3,12 @@ import { describe } from "vitest";
 
 import { test as baseTest } from "../../../../test/useMSW.js";
 import { EFMedia } from "../../EFMedia.js";
-import { createMediaEngine } from "./makeMediaEngineTask";
+
+// Helper function to create media engine with abort handling
+async function createMediaEngine(element: EFMedia): Promise<any> {
+  const controller = new AbortController();
+  return element.getMediaEngine(controller.signal);
+}
 
 @customElement("test-media-engine")
 class TestMediaEngine extends EFMedia {}

@@ -53,6 +53,16 @@ export class EFTimelineRow extends TWMixin(LitElement) {
         border-bottom: 1px solid var(--ef-color-border-subtle);
       }
 
+      :host(.nested-timegroup) {
+        min-height: 18px;
+        --timeline-track-height: 14px;
+      }
+
+      :host(.nested-timegroup) .row-label {
+        font-size: 10px;
+        opacity: 0.7;
+      }
+
       /* Root timegroup row with filmstrip - taller to show thumbnails */
       :host(.root-timegroup) {
         min-height: 52px;
@@ -271,10 +281,12 @@ export class EFTimelineRow extends TWMixin(LitElement) {
       this.classList.toggle("ancestor-selected", this.isAncestorSelected);
     }
 
-    // Update root timegroup class for filmstrip rows
+    // Update root/nested timegroup classes
     if (changedProperties.has("element")) {
       const isRoot = this.element instanceof EFTimegroup && this.element.isRootTimegroup;
+      const isNested = this.element instanceof EFTimegroup && !this.element.isRootTimegroup;
       this.classList.toggle("root-timegroup", isRoot);
+      this.classList.toggle("nested-timegroup", isNested);
     }
   }
 

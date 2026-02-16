@@ -15,10 +15,9 @@ import { graphql } from "@/graphql";
 import * as serverGQL from "@/graphql.server/userClient";
 import { logger } from "@/logging";
 import { db } from "@/sql-client.server";
-import { maybeSession } from "@/util/requireSession.server";
-
 import { ErrorMessage } from "~/components/ErrorMessage";
 import { formFor } from "~/formFor";
+import { maybeIdentityContext } from "~/middleware/context";
 
 import type { Route } from "./+types/acceptInvitation";
 
@@ -58,8 +57,8 @@ export const ErrorBoundary = () => {
   );
 };
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { session } = await maybeSession(request);
+export const loader = async ({ context, params }: Route.LoaderArgs) => {
+  const session = context.get(maybeIdentityContext);
   const isAuthenticated = !!session;
 
   const result = await serverGQL.anonymousQuery(
@@ -106,10 +105,10 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   return { invite, isAuthenticated, token: params.token };
 };
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
+export const action = async ({ request, context, params }: Route.ActionArgs) => {
   const formResult = await inviteMember.parseFormData(request);
 
-  const { session } = await maybeSession(request);
+  const session = context.get(maybeIdentityContext);
   const isAuthenticated = !!session;
 
   if (!formResult.success) {

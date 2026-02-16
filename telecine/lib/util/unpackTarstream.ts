@@ -8,6 +8,7 @@ export const unpackTarstream = async (
   return new Promise<void>((resolve, reject) => {
     const extractor = tar.extract({
       cwd: destination,
+      gzip: true,
     });
 
     stream.pipe(extractor);

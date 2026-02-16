@@ -1,14 +1,15 @@
-import { requireNoSession } from "@/util/requireSession.server";
 import { createEmailPasswordSessionCookie } from "@/util/session";
 import { redirect } from "react-router";
 import type { MetaFunction } from "react-router";
 import { ErrorMessage } from "~/components/ErrorMessage";
 import { getUserEmailAndPasswordByMagicToken } from "~/loginUserWithMagicLink";
+import { noAuthMiddleware } from "~/middleware/auth";
 
 import type { Route } from "./+types/claim-magic-link";
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  await requireNoSession(request);
+export const middleware: Route.MiddlewareFunction[] = [noAuthMiddleware];
+
+export const loader = async ({ params }: Route.LoaderArgs) => {
   if (!params.token) {
     return null;
   }

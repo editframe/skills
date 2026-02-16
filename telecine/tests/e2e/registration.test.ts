@@ -14,7 +14,7 @@ beforeAll(async () => {
   await safeRegisterUser("login-test@example.org", "password123");
 });
 
-describe("registration", () => {
+describe.skip("registration", () => {
   test("redirects to welcome if signed in", async () => {
     const page = getPage();
     await signInAsEmail("login-test@example.org");

@@ -686,7 +686,9 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     this.stopMotionStateTracking();
     
     // Clean up cache stats updates
-    this.stopCacheStatsUpdates();
+    if (typeof this.stopCacheStatsUpdates === 'function') {
+      this.stopCacheStatsUpdates();
+    }
     
     // Clean up adaptive tracker
     if (this.adaptiveTracker) {
@@ -929,6 +931,26 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   }
   
   /**
+   * Pause or unpause the canvas overlay components (EFCanvas, SelectionOverlay)
+   * to avoid layout-thrashing during playback.
+   */
+  private setOverlaysPaused(paused: boolean): void {
+    const canvasSlot = this.querySelector("[slot='canvas']");
+    if (!canvasSlot) return;
+    const efCanvas = canvasSlot.querySelector("ef-canvas") as HTMLElement | null;
+    if (efCanvas && "paused" in efCanvas) {
+      (efCanvas as any).paused = paused;
+    }
+    // SelectionOverlay is a sibling of ef-pan-zoom inside the workbench shadow DOM,
+    // or a child of the canvas slot container. Search both locations.
+    const overlay = canvasSlot.querySelector("ef-canvas-selection-overlay") as HTMLElement | null
+      ?? this.querySelector("ef-canvas-selection-overlay") as HTMLElement | null;
+    if (overlay && "paused" in overlay) {
+      (overlay as any).paused = paused;
+    }
+  }
+
+  /**
    * Called when motion starts (playing or scrubbing began).
    */
   private handleMotionStart(): void {
@@ -940,6 +962,9 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
 
     // Mark as in motion immediately
     this.isAtRest = false;
+
+    // Pause overlay RAF loops to free CPU for the render pipeline
+    this.setOverlaysPaused(true);
 
     // For auto mode, initialize the tracker at the current display scale
     // so it doesn't have to step down from 100% to reach it.
@@ -963,12 +988,8 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         if (this.canvasPreviewResult) {
           this.canvasPreviewResult.setResolutionScale(this.currentAdaptiveScale);
         }
-
-        console.log(`[EFWorkbench] Motion started, set resolution to ${(this.currentAdaptiveScale * 100).toFixed(0)}% (displayScale=${(displayScale * 100).toFixed(0)}%)`);
       }
     }
-
-    console.log(`[EFWorkbench] Motion started (playing=${this.isPlaying}, scrubbing=${this.isScrubbing})`);
   }
   
   /**
@@ -993,16 +1014,18 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   private transitionToRest(): void {
     this.isAtRest = true;
 
+    // Resume overlay RAF loops now that playback has stopped
+    this.setOverlaysPaused(false);
+
     // If in auto mode, set full resolution (instant - no rebuild needed)
     if (this.previewResolutionScale === "auto" && this.presentationMode === "canvas") {
       // Reset tracker and set full resolution
       this.adaptiveTracker?.reset();
       this.currentAdaptiveScale = 1;
-      
+
       // Use instant resolution change - no DOM rebuild
       if (this.canvasPreviewResult) {
         this.canvasPreviewResult.setResolutionScale(1);
-        console.log("[EFWorkbench] Set full resolution for rest state (instant)");
       }
     }
   }
@@ -1215,6 +1238,11 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     
     // Disable the timegroup's own proxy mode - workbench handles canvas rendering
     (timegroup as any).proxyMode = false;
+
+    // Signal that canvas preview owns the render-capture cycle.
+    // PlaybackController will skip runThrottledFrameTask during playback
+    // to avoid DOM mutations (Layerize steps) between captures.
+    (timegroup as any).canvasPreviewActive = true;
     
     // Hide the original timegroup
     timegroup.style.clipPath = "inset(100%)";
@@ -1305,6 +1333,12 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   }
   
   private stopCanvasMode() {
+    // Restore PlaybackController's renderFrame calls
+    const timegroup = this.getTimegroup();
+    if (timegroup) {
+      (timegroup as any).canvasPreviewActive = false;
+    }
+
     if (this.canvasAnimationFrame !== null) {
       cancelAnimationFrame(this.canvasAnimationFrame);
       this.canvasAnimationFrame = null;
@@ -2332,7 +2366,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       <!-- Bottom: Timeline -->
       <div
         class="overflow-hidden"
-        style="grid-row: 3 / 4; grid-column: 1 / -1; border-top: 1px solid var(--ef-color-border);"
+        style="grid-row: 3 / 4; grid-column: 1 / -1; height: 100%; border-top: 1px solid var(--ef-color-border);"
       >
         <slot name="timeline"></slot>
       </div>

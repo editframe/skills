@@ -3,15 +3,15 @@ import { requireQueryAs } from "@/graphql.server/userClient";
 import { logger } from "@/logging";
 import { db } from "@/sql-client.server";
 import { receiveAssetChunk } from "@/util/receiveAssetChunk";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 import type { Route } from "./+types/upload";
 
 export const loader = async ({
-  request,
   params: { file_id, track_id },
+  context,
 }: Route.LoaderArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
   const track = await requireQueryAs(
     session,
     "org-editor",
@@ -38,8 +38,9 @@ export const loader = async ({
 export const action = async ({
   params: { file_id, track_id },
   request,
+  context,
 }: Route.ActionArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
   const track = await requireQueryAs(
     session,
     "org-editor",

@@ -1,6 +1,5 @@
 import { Worker } from "@/queues/Worker";
 import { appScheduler } from "@/queues/createSchedulerServer";
-import { requireAdminSession } from "@/util/requireAdminSession";
 
 import { Table } from "~/components/Table";
 import { TimeAgoInWords } from "~/ui/timeAgoInWords";
@@ -11,8 +10,6 @@ import { AutoRefresh } from "./AutoRefresh";
 import type { Route } from "./+types/scheduler";
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
-  await requireAdminSession(request);
-
   const queues = Object.entries(await appScheduler.getQueuesInfo());
   const schedulers = await appScheduler.getUmergedSchedulersInfo();
   const workLoops = await Worker.getWorkLoops();

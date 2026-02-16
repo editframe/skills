@@ -1,12 +1,9 @@
-import { requireSession } from "@/util/requireSession.server";
 import type { MetaFunction } from "react-router";
 import { Link } from "react-router";
 import { Button } from "~/components/Button";
 import clsx from "clsx";
-import type { Route } from "./+types/welcome";
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  await requireSession(request);
+export const loader = async () => {
   return {};
 };
 

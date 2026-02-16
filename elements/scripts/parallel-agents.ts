@@ -80,32 +80,8 @@ const DEFAULT_PREAMBLE = `You are a sub-agent in an orchestrated workflow. Follo
 
 **You are not done until all tests pass.**
 
-After making changes, run the appropriate tests to verify everything still works:
-
-**Important: Some files may not have sandbox files yet.** This is expected for:
-- Task factory functions (e.g., makeMediaEngineTask.ts) - pure functions without GUI
-- Utility functions and mixins without visual elements
-
-**For files WITH existing sandbox files (*.sandbox.ts):**
-- Run scenarios for the sandbox: cd elements && ./scripts/ef run <SandboxName>
-- Derive the sandbox name from the filename (e.g., EFDial.sandbox.ts → EFDial)
-- If any scenario fails:
-  1. Read the error output carefully
-  2. Fix the issue
-  3. Re-run until all scenarios pass
-- **Do not consider this task complete until ./scripts/ef run <SandboxName> reports all scenarios passing.**
-
-**For files WITHOUT sandbox files (task factories, utilities):**
-- If the file is a task factory or utility function, create a functional sandbox:
-  - Use render: () => nothing from lit (no GUI rendering needed)
-  - Create test elements programmatically in scenarios
-  - Test functional behavior directly
-- If the file is part of an element class, add scenarios to the element's existing sandbox
-- Run scenarios after creating/updating: cd elements && ./scripts/ef run <SandboxName>
-
-**For other test files:**
-- Run the relevant test suite to verify changes
-- Fix any failures before considering the task complete
+After making changes, run the relevant test suite to verify everything still works.
+Fix any failures before considering the task complete.
 
 `;
 

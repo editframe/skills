@@ -298,6 +298,55 @@ export default defineConfig(async () => {
         headless: config.headless,
         commands: {
           /**
+           * Take a true CDP browser screenshot of an element by selector.
+           * Returns base64 PNG data URL. This goes through Chrome's compositor,
+           * not Canvas APIs like drawElementImage.
+           *
+           * Note: In vitest browser mode, tests run inside an iframe. We search
+           * all frames for the element.
+           */
+          async captureElementScreenshot(context: any, selector: string) {
+            const page = context.page;
+            // Search in main frame and all child frames
+            for (const frame of page.frames()) {
+              try {
+                const element = frame.locator(selector).first();
+                await element.waitFor({ state: "attached", timeout: 500 });
+
+                // In vitest browser mode, tests run in an iframe alongside the vitest UI panel.
+                // The iframe may be narrower than the element, causing clipping.
+                // Fix: temporarily expand the iframe to full viewport before screenshotting.
+                const frameEl = await frame.frameElement();
+                let savedStyle: string | null = null;
+                if (frameEl) {
+                  savedStyle = await frameEl.evaluate((el: HTMLElement) => {
+                    const prev = el.getAttribute("style") || "";
+                    el.style.cssText = "position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;z-index:999999!important;border:none!important;";
+                    return prev;
+                  });
+                  // Let layout settle after resize
+                  await page.waitForTimeout(200);
+                }
+
+                const buffer = await element.screenshot({ type: "png", timeout: 10000 });
+
+                // Restore the iframe's original style
+                if (frameEl && savedStyle !== null) {
+                  await frameEl.evaluate((el: HTMLElement, s: string) => {
+                    el.setAttribute("style", s);
+                  }, savedStyle);
+                }
+
+                const base64 = buffer.toString("base64");
+                return `data:image/png;base64,${base64}`;
+              } catch {
+                // Element not in this frame, try next
+              }
+            }
+            throw new Error(`Element "${selector}" not found in any frame`);
+          },
+
+          /**
            * Prove Worker + OffscreenCanvas continues rendering while the main
            * thread is halted. Uses CDP Debugger.pause to truly stop the main
            * thread V8 isolate — Workers have their own isolates and keep running.

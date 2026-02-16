@@ -127,6 +127,13 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
   @property({ type: Boolean, attribute: "enable-transform-handles" })
   enableTransformHandles = true;
 
+  /**
+   * When true, the overlay RAF loop skips all layout-thrashing work
+   * (transform handles, metadata updates). Used during playback to
+   * avoid competing with the canvas render pipeline for CPU time.
+   */
+  @property({ type: Boolean }) paused = false;
+
   @state()
   private elementRegistry = new Map<string, HTMLElement>();
 
@@ -1272,12 +1279,30 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
   /**
    * Start RAF loop for overlay layer sync and transform handles updates.
    */
+  private wasPaused = false;
+
   private startOverlayRafLoop(): void {
     if (this.overlayRafId !== null) {
       return;
     }
 
     const update = () => {
+      // Skip all expensive layout work when paused (during playback)
+      if (this.paused) {
+        this.wasPaused = true;
+        this.overlayRafId = requestAnimationFrame(update);
+        return;
+      }
+
+      // On unpause, force a full metadata refresh for all selected elements
+      if (this.wasPaused) {
+        this.wasPaused = false;
+        const selectedIds = Array.from(this.selectionController.getModel().selectedIds);
+        for (const id of selectedIds) {
+          this.updateElementMetadata(id);
+        }
+      }
+
       // Sync overlay layer transform
       if (this.overlayLayer && this.panZoomTransform) {
         this.overlayLayer.panZoomTransform = this.panZoomTransform;

@@ -178,6 +178,15 @@ const retryOptions: RetryExchangeOptions = {
   retryIf: (err: any) => err?.networkError,
 };
 
+const customFetch = createFetchWithHost(HASURA_SERVER_HOST);
+
+const userClient = new Client({
+  url: GRAPHQL_URL,
+  fetch: customFetch,
+  exchanges: [retryExchange(retryOptions), fetchExchange],
+  requestPolicy: "network-only",
+});
+
 export const queryAs = <
   Data = any,
   Variables extends AnyVariables = AnyVariables,
@@ -188,66 +197,12 @@ export const queryAs = <
   variables: Variables,
 ): Promise<OperationResult<Data, Variables>> => {
   return tracer.startActiveSpan("GQL query", async (span) => {
-    logger.info("queryAs: Creating client", {
-      graphqlUrl: GRAPHQL_URL,
-      hasServerHost: !!HASURA_SERVER_HOST,
-      serverHost: HASURA_SERVER_HOST,
-    });
-
-    const customFetch = createFetchWithHost(HASURA_SERVER_HOST);
-    logger.info("queryAs: Custom fetch created", {
-      fetchType: typeof customFetch,
-      isFunction: typeof customFetch === "function",
-    });
-
-    const userClient = new Client({
-      url: GRAPHQL_URL,
-      fetch: customFetch,
-      exchanges: [retryExchange(retryOptions), fetchExchange],
-      requestPolicy: "network-only",
-    });
     span.setAttributes({
       role,
       query: print(query),
       variables: JSON.stringify(variables),
     });
     const jwtToken = signHasuraJwtForSession(sessionInfo);
-
-    // Decode JWT to verify claims (without verification, just for logging)
-    try {
-      const jwt = require("jsonwebtoken");
-      const decoded = jwt.decode(jwtToken);
-      if (
-        decoded &&
-        typeof decoded === "object" &&
-        decoded["https://hasura.io/jwt/claims"]
-      ) {
-        const claims = decoded["https://hasura.io/jwt/claims"] as Record<
-          string,
-          unknown
-        >;
-        logger.info("JWT claims being sent to Hasura", {
-          role,
-          uid: sessionInfo.uid,
-          "X-Hasura-user-id": claims["X-Hasura-user-id"],
-          "X-Hasura-User-Id": claims["X-Hasura-User-Id"],
-          "X-Hasura-default-role": claims["X-Hasura-default-role"],
-          "X-Hasura-allowed-roles": claims["X-Hasura-allowed-roles"],
-          allClaimKeys: Object.keys(claims),
-        });
-        span.setAttributes({
-          "jwt.user-id": String(
-            claims["X-Hasura-user-id"] ??
-              claims["X-Hasura-User-Id"] ??
-              "missing",
-          ),
-          "jwt.claim-keys": Object.keys(claims).join(","),
-        });
-      }
-    } catch (e) {
-      // Ignore decode errors
-    }
-
     const headers: Record<string, string> = {
       connection: "keep-alive",
       "X-Hasura-Role": role,
@@ -289,31 +244,14 @@ export const requireQueryAs = async <
   query: TadaDocumentNode<Data, Variables>,
   variables: Variables,
 ): Promise<Exclude<Data["result"], null>> => {
-  logger.info("requireQueryAs called", {
-    role,
-    uid: sessionInfo.uid,
-    cid: sessionInfo.cid,
-    queryName: print(query).split("{")[0]?.trim(),
-  });
-
   const response = await queryAs(sessionInfo, role, query, variables);
 
   if (response.error) {
     logger.error("Failed to query required query", {
       error: response.error.message,
-      errorStatus: response.error.response?.status,
-      errorStatusText: response.error.response?.statusText,
-      errorNetworkError: response.error.networkError,
-      errorGraphQLErrors: response.error.graphQLErrors,
-      errorDetails: JSON.stringify(
-        response.error,
-        Object.getOwnPropertyNames(response.error),
-      ),
       role,
       uid: sessionInfo.uid,
       cid: sessionInfo.cid,
-      query: print(query),
-      variables: JSON.stringify(variables),
     });
     throw new Response(null, {
       status: 500,
@@ -321,43 +259,16 @@ export const requireQueryAs = async <
     });
   }
 
-  logger.info("requireQueryAs response", {
-    role,
-    uid: sessionInfo.uid,
-    hasData: !!response.data,
-    hasResult: !!response.data?.result,
-    resultType: typeof response.data?.result,
-    resultIsArray: Array.isArray(response.data?.result),
-    resultLength: Array.isArray(response.data?.result)
-      ? response.data.result.length
-      : "N/A",
-  });
-
   if (!response.data?.result) {
     logger.error("Failed to query required query. Result is empty.", {
-      data: response.data,
       role,
       uid: sessionInfo.uid,
       cid: sessionInfo.cid,
-      query: print(query),
-      variables: JSON.stringify(variables),
     });
     throw new Response(null, { status: 404, statusText: "Server error" });
   }
 
-  const result = response.data.result;
-
-  if (Array.isArray(result) && result.length === 0) {
-    logger.warn("requireQueryAs returned empty array", {
-      role,
-      uid: sessionInfo.uid,
-      cid: sessionInfo.cid,
-      query: print(query),
-      variables: JSON.stringify(variables),
-    });
-  }
-
-  return result;
+  return response.data.result;
 };
 
 export const anonymousQuery = <
@@ -371,14 +282,6 @@ export const anonymousQuery = <
     span.setAttributes({
       query: print(query),
       variables: JSON.stringify(variables),
-    });
-
-    const customFetch = createFetchWithHost(HASURA_SERVER_HOST);
-    const userClient = new Client({
-      url: GRAPHQL_URL,
-      fetch: customFetch,
-      exchanges: [retryExchange(retryOptions), fetchExchange],
-      requestPolicy: "network-only",
     });
 
     const result = await userClient.query(query, variables).toPromise();
@@ -422,14 +325,6 @@ export const mutateAs = <
       "X-Hasura-Role": role,
       Authorization: `Bearer ${signHasuraJwtForSession(sessionInfo)}`,
     };
-
-    const customFetch = createFetchWithHost(HASURA_SERVER_HOST);
-    const userClient = new Client({
-      url: GRAPHQL_URL,
-      fetch: customFetch,
-      exchanges: [retryExchange(retryOptions), fetchExchange],
-      requestPolicy: "network-only",
-    });
 
     const result = await userClient
       .mutation(query, variables, {

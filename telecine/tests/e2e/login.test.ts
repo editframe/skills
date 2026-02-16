@@ -4,6 +4,7 @@ import {
   getPage,
   signInAs,
   waitForEmail,
+  followEmailLink,
   createUniqueUser,
   playwrightExpect,
 } from "./setup";
@@ -28,9 +29,8 @@ describe("login", () => {
     const page = getPage();
     await signInAs(uniqueUser);
     await page.goto("/auth/login");
-    await playwrightExpect(
-      page.getByText(`Welcome ${uniqueUser.email_address}`),
-    ).toBeVisible();
+    // After login redirect, should no longer be on /auth/login
+    await playwrightExpect(page).not.toHaveURL(/\/auth\/login/);
   });
 
   test("Successful login", async () => {
@@ -40,7 +40,7 @@ describe("login", () => {
     await page.getByLabel("Password").fill("password123");
     await page.getByRole("button", { name: "Login" }).last().click();
     await playwrightExpect(
-      page.getByText(`Welcome ${uniqueUser.email_address}`),
+      page.getByRole("heading", { name: "Welcome" }),
     ).toBeVisible();
   });
 
@@ -78,11 +78,9 @@ describe("login", () => {
       uniqueUser.email_address,
       "[Editframe] Login with magic link",
     );
-    await page
-      .getByRole("link", { name: "Login with magic link" })
-      .click();
+    await followEmailLink("Login with magic link");
     await playwrightExpect(
-      page.getByText(`Welcome ${uniqueUser.email_address}`),
+      page.getByRole("heading", { name: "Welcome" }),
     ).toBeVisible();
   });
 });

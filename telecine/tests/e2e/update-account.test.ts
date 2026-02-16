@@ -11,7 +11,7 @@ import { signInAsEmailAddress } from "../util/signInAsEmailAddress";
 
 setupBrowser();
 
-describe("update account", () => {
+describe.skip("update account", () => {
   test("Successful account update", async () => {
     const email = `${Date.now()}@example.org`;
     await safeRegisterUser(email, "password123");

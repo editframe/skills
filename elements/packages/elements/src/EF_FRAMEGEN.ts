@@ -141,20 +141,25 @@ export class EFFramegen {
     if (!ctx) throw new Error("Verification canvas 2d context not ready");
     this.verificationCtx = ctx;
 
-    // Size to match the workbench width, 1 pixel height for verification strip
+    // Size to match the workbench width, or fall back to renderOptions dimensions.
+    // Without ef-workbench (e.g. API renders), the canvas was never sized or appended,
+    // causing frame verification to fail on every frame.
     const workbench = document.querySelector("ef-workbench") as HTMLElement;
-    if (workbench) {
-      this.verificationCanvas.width = workbench.clientWidth;
+    const canvasWidth = workbench
+      ? workbench.clientWidth
+      : (this.renderOptions?.encoderOptions.video.width ?? 0);
+
+    if (canvasWidth > 0) {
+      this.verificationCanvas.width = canvasWidth;
       this.verificationCanvas.height = 1;
 
-      // Position at the bottom of the workbench (beyond content height)
       Object.assign(this.verificationCanvas.style, {
         position: "fixed",
         left: "0px",
         bottom: "0px",
-        width: `${workbench.clientWidth}px`,
+        width: `${canvasWidth}px`,
         height: "1px",
-        zIndex: "99999", // Above trigger canvas
+        zIndex: "99999",
       });
 
       document.body.appendChild(this.verificationCanvas);

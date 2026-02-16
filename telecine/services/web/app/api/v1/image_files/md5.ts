@@ -1,4 +1,4 @@
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 import type { Route } from "./+types/md5";
 import type { LookupImageFileByMd5Result } from "@editframe/api";
@@ -6,10 +6,10 @@ import { requireQueryAs } from "@/graphql.server/userClient";
 import { graphql } from "@/graphql";
 
 export const loader = async ({
-  request,
   params: { md5 },
+  context,
 }: Route.LoaderArgs): Promise<LookupImageFileByMd5Result> => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
 
   const [imageFile] = await requireQueryAs(
     session,

@@ -52,13 +52,24 @@ export const RenderFragmentWorker = new Worker({
       "Loaded assets metadata bundle",
     );
 
-    logger.debug("Executing job via Electron controller");
-
     const segmentIndex =
       fragment.segment_id === "init"
         ? "init"
         : Number.parseInt(fragment.segment_id, 10);
     const fps = Number.parseInt(render.fps, 10);
+
+    logger.info(
+      {
+        renderId: render.id,
+        segmentId: fragment.segment_id,
+        segmentIndex,
+        segmentDurationMs: render.work_slice_ms,
+        durationMs: render.duration_ms,
+        fps,
+        fromMs: typeof segmentIndex === "number" ? segmentIndex * render.work_slice_ms! : 0,
+      },
+      "Starting fragment render",
+    );
 
     // Use electronRPC to process fragment in Electron subprocess
     const electronRpc = await ElectronRPCManager.getRPCClient();
@@ -83,7 +94,7 @@ export const RenderFragmentWorker = new Worker({
       fileType: "fragment",
     });
 
-    console.log(`Writing ${fragmentBytes.byteLength} bytes to ${fragmentPath}`);
+    logger.info({ renderId: render.id, segmentId: fragment.segment_id, byteLength: fragmentBytes.byteLength, fragmentPath }, "Writing fragment to storage");
 
     await storageProvider.writeFile(fragmentPath, Buffer.from(fragmentBytes));
 

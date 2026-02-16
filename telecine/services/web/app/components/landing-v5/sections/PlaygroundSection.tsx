@@ -3,7 +3,7 @@ import { InteractivePlayground } from "../index";
 export function PlaygroundSection() {
   return (
     <section className="relative py-24 bg-[var(--poster-blue)] text-white overflow-hidden">
-      {/* Double-headed arrow pattern - bidirectional flow between code and video */}
+      {/* Double-headed arrow pattern - works in both directions, any context */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] opacity-[0.05]">
         <svg viewBox="0 0 100 50" className="w-full h-full">
           {/* Left to right arrow */}
@@ -35,10 +35,10 @@ export function PlaygroundSection() {
             </div>
             <div>
               <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase">
-                Edit code, see video
+                Works everywhere
               </h2>
               <p className="text-lg text-white/70 mt-2">
-                Instant feedback loop. No build step. No account required.
+                Custom elements that run in any framework or vanilla HTML. No build step. No account required.
               </p>
             </div>
           </div>
@@ -61,7 +61,7 @@ export function PlaygroundSection() {
             <path d="M13 10V3L4 14h7v7l9-11h-7z" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
           <div className="flex items-center gap-2 bg-white/10 px-4 py-2 border border-white/30">
-            <span className="text-xs font-bold uppercase tracking-wider">Zero Latency</span>
+            <span className="text-xs font-bold uppercase tracking-wider">No Framework Required</span>
           </div>
         </div>
       </div>

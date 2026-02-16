@@ -6,6 +6,14 @@ nav:
   parent: "Concepts"
   priority: 12
   related: ["video~effects"]
+react:
+  generate: true
+  componentName: "CSS Variables"
+  importPath: "@editframe/react"
+  nav:
+    parent: "Advanced"
+    priority: 51
+    related: ["transitions", "timegroup"]
 ---
 
 # CSS Variables
@@ -25,6 +33,7 @@ All temporal elements expose these CSS variables:
 
 Element's total duration as a CSS time value.
 
+<!-- html-only -->
 ```html
 <ef-video src="video.mp4" class="size-full"></ef-video>
 
@@ -35,6 +44,20 @@ Element's total duration as a CSS time value.
   }
 </style>
 ```
+<!-- /html-only -->
+<!-- react-only -->
+```tsx
+import { Video } from "@editframe/react";
+
+<Video
+  src="/assets/video.mp4"
+  className="size-full"
+  style={{
+    animation: "2s fade-out calc(var(--ef-duration) - 2s)"
+  }}
+/>
+```
+<!-- /react-only -->
 
 **Use cases:**
 - Time animations relative to end of clip
@@ -47,6 +70,7 @@ Current progress as a number from 0 to 1 (not a percentage).
 
 **Important:** `--ef-progress` is stored as a number (0-1), not a CSS percentage. Multiply by 100% in calculations.
 
+<!-- html-only -->
 ```html
 <ef-timegroup mode="fixed" duration="5s">
   <div class="progress-bar"></div>
@@ -61,6 +85,21 @@ Current progress as a number from 0 to 1 (not a percentage).
   }
 </style>
 ```
+<!-- /html-only -->
+<!-- react-only -->
+```tsx
+import { Timegroup } from "@editframe/react";
+
+<Timegroup mode="fixed" duration="5s">
+  <div
+    className="progress-bar h-1 bg-blue-500"
+    style={{
+      width: "calc(var(--ef-progress) * 100%)"
+    }}
+  />
+</Timegroup>
+```
+<!-- /react-only -->
 
 **Use cases:**
 - Progress bars
@@ -72,6 +111,7 @@ Current progress as a number from 0 to 1 (not a percentage).
 
 CSS percentages resolve to pixel values based on element dimensions. Using a number (0-1) allows it to work correctly in all calculations:
 
+<!-- html-only -->
 ```css
 /* Good: Number multiplied by 100% */
 width: calc(var(--ef-progress) * 100%);
@@ -79,21 +119,47 @@ width: calc(var(--ef-progress) * 100%);
 /* Bad: Would be interpreted as pixels */
 width: var(--ef-progress);
 ```
+<!-- /html-only -->
+<!-- react-only -->
+```tsx
+{/* Good: Number multiplied by 100% */}
+<div style={{ width: "calc(var(--ef-progress) * 100%)" }} />
+
+{/* Bad: Would be interpreted as pixels */}
+<div style={{ width: "var(--ef-progress)" }} />
+```
+<!-- /react-only -->
 
 ## --ef-transition-duration
 
 Duration of overlap for transitions (only set when overlap exists).
 
+<!-- html-only -->
 ```html
 <ef-timegroup mode="sequence" overlap="1s">
   <ef-timegroup mode="contain">
-    <ef-video 
+    <ef-video
       src="clip1.mp4"
       style="animation: fade-out var(--ef-transition-duration) var(--ef-transition-out-start)"
     ></ef-video>
   </ef-timegroup>
 </ef-timegroup>
 ```
+<!-- /html-only -->
+<!-- react-only -->
+```tsx
+<Timegroup mode="sequence" overlap="1s">
+  <Timegroup mode="contain">
+    <Video
+      src="/assets/clip1.mp4"
+      style={{
+        animation: "fade-out var(--ef-transition-duration) var(--ef-transition-out-start)"
+      }}
+    />
+  </Timegroup>
+</Timegroup>
+```
+<!-- /react-only -->
 
 **Use cases:**
 - Match animation duration to overlap
@@ -104,12 +170,24 @@ Duration of overlap for transitions (only set when overlap exists).
 
 Delay for when fade-out should start (calculated as duration - overlap).
 
+<!-- html-only -->
 ```html
-<ef-video 
+<ef-video
   src="video.mp4"
   style="animation: 1s fade-out var(--ef-transition-out-start)"
 ></ef-video>
 ```
+<!-- /html-only -->
+<!-- react-only -->
+```tsx
+<Video
+  src="/assets/video.mp4"
+  style={{
+    animation: "1s fade-out var(--ef-transition-out-start)"
+  }}
+/>
+```
+<!-- /react-only -->
 
 **Use cases:**
 - Fade out near end of clip
@@ -120,6 +198,7 @@ Delay for when fade-out should start (calculated as duration - overlap).
 
 ### Progress Bar
 
+<!-- html-only -->
 ```html
 <ef-timegroup mode="fixed" duration="10s" class="relative">
   <div class="progress-container">
@@ -133,7 +212,7 @@ Delay for when fade-out should start (calculated as duration - overlap).
     height: 8px;
     background: rgba(255, 255, 255, 0.2);
   }
-  
+
   .progress-fill {
     width: calc(var(--ef-progress) * 100%);
     height: 100%;
@@ -142,9 +221,31 @@ Delay for when fade-out should start (calculated as duration - overlap).
   }
 </style>
 ```
+<!-- /html-only -->
+<!-- react-only -->
+```tsx
+import { Timegroup } from "@editframe/react";
+
+const ProgressBar = () => {
+  return (
+    <Timegroup mode="fixed" duration="10s" className="relative">
+      <div className="w-full h-2 bg-gray-200">
+        <div
+          className="h-full bg-blue-500 transition-all duration-100"
+          style={{
+            width: "calc(var(--ef-progress) * 100%)"
+          }}
+        />
+      </div>
+    </Timegroup>
+  );
+};
+```
+<!-- /react-only -->
 
 ### Scale Animation
 
+<!-- html-only -->
 ```html
 <ef-timegroup mode="fixed" duration="3s">
   <div class="scaling-text">Hello World</div>
@@ -157,9 +258,30 @@ Delay for when fade-out should start (calculated as duration - overlap).
   }
 </style>
 ```
+<!-- /html-only -->
+<!-- react-only -->
+```tsx
+const ScalingText = () => {
+  return (
+    <Timegroup mode="fixed" duration="3s">
+      <div
+        className="text-4xl font-bold"
+        style={{
+          transform: "scale(var(--ef-progress))",
+          opacity: "var(--ef-progress)"
+        }}
+      >
+        Hello World
+      </div>
+    </Timegroup>
+  );
+};
+```
+<!-- /react-only -->
 
 ### Circular Progress
 
+<!-- html-only -->
 ```html
 <ef-timegroup mode="fixed" duration="5s">
   <svg class="circular-progress" viewBox="0 0 100 100">
@@ -179,9 +301,37 @@ Delay for when fade-out should start (calculated as duration - overlap).
   }
 </style>
 ```
+<!-- /html-only -->
+<!-- react-only -->
+```tsx
+const CircularProgress = () => {
+  return (
+    <Timegroup mode="fixed" duration="5s">
+      <svg className="w-32 h-32" viewBox="0 0 100 100">
+        <circle
+          cx="50"
+          cy="50"
+          r="40"
+          fill="none"
+          stroke="#3b82f6"
+          strokeWidth="8"
+          style={{
+            strokeDasharray: "251.2",
+            strokeDashoffset: "calc(251.2 * (1 - var(--ef-progress)))",
+            transform: "rotate(-90deg)",
+            transformOrigin: "center"
+          }}
+        />
+      </svg>
+    </Timegroup>
+  );
+};
+```
+<!-- /react-only -->
 
 ### Dynamic Positioning
 
+<!-- html-only -->
 ```html
 <ef-timegroup mode="fixed" duration="4s" class="relative w-full h-full">
   <div class="moving-box"></div>
@@ -198,9 +348,27 @@ Delay for when fade-out should start (calculated as duration - overlap).
   }
 </style>
 ```
+<!-- /html-only -->
+<!-- react-only -->
+```tsx
+const MovingBox = () => {
+  return (
+    <Timegroup mode="fixed" duration="4s" className="relative w-full h-full">
+      <div
+        className="absolute w-24 h-24 bg-red-500"
+        style={{
+          left: "calc(var(--ef-progress) * (100% - 96px))"
+        }}
+      />
+    </Timegroup>
+  );
+};
+```
+<!-- /react-only -->
 
 ### Fade In and Out
 
+<!-- html-only -->
 ```html
 <ef-timegroup mode="fixed" duration="6s">
   <div class="fading-element">Content</div>
@@ -213,9 +381,29 @@ Delay for when fade-out should start (calculated as duration - overlap).
   }
 </style>
 ```
+<!-- /html-only -->
+<!-- react-only -->
+```tsx
+const FadingElement = () => {
+  return (
+    <Timegroup mode="fixed" duration="6s">
+      <div
+        className="text-2xl"
+        style={{
+          opacity: "calc(1 - abs(var(--ef-progress) * 2 - 1))"
+        }}
+      >
+        Content
+      </div>
+    </Timegroup>
+  );
+};
+```
+<!-- /react-only -->
 
 ### Color Interpolation
 
+<!-- html-only -->
 ```html
 <ef-timegroup mode="fixed" duration="5s">
   <div class="color-changing">Text</div>
@@ -232,9 +420,33 @@ Delay for when fade-out should start (calculated as duration - overlap).
   }
 </style>
 ```
+<!-- /html-only -->
+<!-- react-only -->
+```tsx
+const ColorChanging = () => {
+  return (
+    <Timegroup mode="fixed" duration="5s">
+      <div
+        className="text-4xl font-bold"
+        style={{
+          color: `rgb(
+            calc(255 * var(--ef-progress)),
+            calc(128 * (1 - var(--ef-progress))),
+            255
+          )`
+        }}
+      >
+        Text
+      </div>
+    </Timegroup>
+  );
+};
+```
+<!-- /react-only -->
 
 ### Rotation
 
+<!-- html-only -->
 ```html
 <ef-timegroup mode="fixed" duration="3s">
   <div class="rotating-element">↑</div>
@@ -247,18 +459,38 @@ Delay for when fade-out should start (calculated as duration - overlap).
   }
 </style>
 ```
+<!-- /html-only -->
+<!-- react-only -->
+```tsx
+const RotatingElement = () => {
+  return (
+    <Timegroup mode="fixed" duration="3s">
+      <div
+        className="text-6xl"
+        style={{
+          transform: "rotate(calc(var(--ef-progress) * 360deg))"
+        }}
+      >
+        ↑
+      </div>
+    </Timegroup>
+  );
+};
+```
+<!-- /react-only -->
 
 ## Combining Variables
 
 Use multiple variables together:
 
+<!-- html-only -->
 ```html
 <ef-timegroup mode="sequence" overlap="1s">
   <ef-timegroup mode="contain">
-    <ef-video 
+    <ef-video
       src="clip.mp4"
       style="
-        animation: 
+        animation:
           2s fade-in 0s,
           var(--ef-transition-duration) fade-out var(--ef-transition-out-start);
       "
@@ -266,6 +498,53 @@ Use multiple variables together:
   </ef-timegroup>
 </ef-timegroup>
 ```
+<!-- /html-only -->
+<!-- react-only -->
+```tsx
+<Timegroup mode="sequence" overlap="1s">
+  <Timegroup mode="contain">
+    <Video
+      src="/assets/clip.mp4"
+      style={{
+        animation: `
+          2s fade-in 0s,
+          var(--ef-transition-duration) fade-out var(--ef-transition-out-start)
+        `
+      }}
+    />
+  </Timegroup>
+</Timegroup>
+```
+<!-- /react-only -->
+
+<!-- react-only -->
+## With Inline Styles
+
+React style prop syntax:
+
+```tsx
+<div
+  style={{
+    width: "calc(var(--ef-progress) * 100%)",
+    opacity: "var(--ef-progress)",
+    transform: "scale(var(--ef-progress))"
+  }}
+/>
+```
+
+## With Tailwind CSS
+
+Use arbitrary values with CSS variables:
+
+```tsx
+<div
+  className="w-full h-4 bg-blue-500"
+  style={{
+    width: "calc(var(--ef-progress) * 100%)"
+  }}
+/>
+```
+<!-- /react-only -->
 
 ## Browser Compatibility
 
@@ -275,6 +554,7 @@ CSS variables work in all modern browsers. For rendering, they're evaluated duri
 
 CSS variables are updated on each frame. Keep calculations simple for best performance:
 
+<!-- html-only -->
 ```css
 /* Good: Simple calculation */
 width: calc(var(--ef-progress) * 100%);
@@ -282,6 +562,62 @@ width: calc(var(--ef-progress) * 100%);
 /* Avoid: Complex nested calculations */
 width: calc(calc(var(--ef-progress) * 50%) + calc(var(--ef-progress) * 50%));
 ```
+<!-- /html-only -->
+<!-- react-only -->
+```tsx
+{/* Good: Simple calculation */}
+<div style={{ width: "calc(var(--ef-progress) * 100%)" }} />
+
+{/* Avoid: Complex nested calculations */}
+<div style={{
+  width: "calc(calc(var(--ef-progress) * 50%) + calc(var(--ef-progress) * 50%))"
+}} />
+```
+<!-- /react-only -->
+
+<!-- react-only -->
+## TypeScript Types
+
+For style objects with CSS variables:
+
+```tsx
+import { CSSProperties } from "react";
+
+const style: CSSProperties = {
+  width: "calc(var(--ef-progress) * 100%)",
+  opacity: "var(--ef-progress)",
+};
+
+<div style={style} />
+```
+
+## Reusable Progress Component
+
+```tsx
+interface ProgressProps {
+  className?: string;
+  color?: string;
+}
+
+const Progress = ({ className = "", color = "bg-blue-500" }: ProgressProps) => {
+  return (
+    <div className={`w-full h-2 bg-gray-200 ${className}`}>
+      <div
+        className={`h-full ${color}`}
+        style={{
+          width: "calc(var(--ef-progress) * 100%)"
+        }}
+      />
+    </div>
+  );
+};
+
+// Usage
+<Timegroup mode="fixed" duration="5s">
+  <Progress color="bg-green-500" />
+</Timegroup>
+```
+<!-- /react-only -->
 
 ## Tips
 
@@ -290,8 +626,15 @@ width: calc(calc(var(--ef-progress) * 50%) + calc(var(--ef-progress) * 50%));
 3. **Match transition durations** - Use `--ef-transition-duration` for consistency
 4. **Test in preview** - Verify animations work before rendering
 5. **Keep calculations simple** - Better performance and easier debugging
+<!-- react-only -->
+6. **Use TypeScript** - Type your style objects for better IDE support
+7. **Extract to components** - Create reusable animated components
+<!-- /react-only -->
 
 ## See Also
 
 - [transitions.md](transitions.md) - Transition examples using CSS variables
 - [scripting.md](scripting.md) - JavaScript-based animations
+<!-- react-only -->
+- [hooks.md](hooks.md) - React hooks for timing information
+<!-- /react-only -->

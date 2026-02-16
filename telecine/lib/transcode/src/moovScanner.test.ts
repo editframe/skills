@@ -182,7 +182,7 @@ describe("MOOV Scanner", () => {
         // Now that we validate range request support, 404 responses should throw errors
         // because they don't return 206 Partial Content as required
         await expect(fetchMoovAndFtyp(nonExistentUrl)).rejects.toThrow(
-          "Unexpected HEAD response for range request: 404 Not Found. Expected 206 Partial Content to confirm range request support.",
+          /Failed to test range request support for .+: 404 Not Found/,
         );
       });
 
@@ -224,7 +224,7 @@ describe("MOOV Scanner", () => {
 
         // Should behave the same as direct HTTP scanner - throw range request error
         await expect(fetchMoovAndFtypUnified(nonExistentUrl)).rejects.toThrow(
-          "Unexpected HEAD response for range request: 404 Not Found. Expected 206 Partial Content to confirm range request support.",
+          /Failed to test range request support for .+: 404 Not Found/,
         );
       });
 
@@ -270,7 +270,7 @@ describe("MOOV Scanner", () => {
         );
 
         await expect(fetchMoovAndFtyp(TEST_URL)).rejects.toThrow(
-          "Unexpected HEAD response for range request: 400 Bad Request. Expected 206 Partial Content to confirm range request support.",
+          /Failed to test range request support for .+: 400 Bad Request/,
         );
       });
 
@@ -285,7 +285,7 @@ describe("MOOV Scanner", () => {
         );
 
         await expect(fetchMoovAndFtyp(TEST_URL)).rejects.toThrow(
-          "Unexpected HEAD response for range request: 416 Range Not Satisfiable. Expected 206 Partial Content to confirm range request support.",
+          /Failed to test range request support for .+: 416 Range Not Satisfiable/,
         );
       });
 

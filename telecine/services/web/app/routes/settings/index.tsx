@@ -16,7 +16,7 @@ import type { FC } from "react";
 import { Button } from "~/components/Button";
 
 import type { Route } from "./+types/index";
-import { requireSession } from "@/util/requireSession.server";
+import { identityContext } from "~/middleware/context";
 const schema = z.object({
   first_name: z.string().optional(),
   last_name: z.string().optional(),
@@ -24,8 +24,8 @@ const schema = z.object({
 
 const editAccount = formFor(schema);
 
-export async function action({ request }: Route.ActionArgs) {
-  const { session } = await requireSession(request);
+export async function action({ request, context }: Route.ActionArgs) {
+  const session = context.get(identityContext);
   const values = await editAccount.parseFormData(request);
   if (!values.success) {
     return data(values.errors, { status: 400 });
@@ -77,8 +77,8 @@ const UserDetailsQuery = progressiveQuery(
 `),
 );
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  const { session } = await requireSession(request);
+export const loader = async ({ context }: Route.LoaderArgs) => {
+  const session = context.get(identityContext);
   const liveQuery = await serverQuery(session, UserDetailsQuery, {
     id: session.uid,
   });

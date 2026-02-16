@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useState, useRef } from "react";
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import type { MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import "@editframe/elements";
 import "@editframe/elements/styles.css";
@@ -7,7 +7,7 @@ import "prismjs/themes/prism-tomorrow.css";
 import { TimelineControls } from "~/components/shared/TimelineControls";
 import { Header } from "~/components/marketing/Header";
 import { Footer } from "~/components/marketing/Footer";
-import { parseRequestSession } from "@/util/session";
+import { maybeIdentityContext } from "~/middleware/context";
 import { useTheme } from "~/hooks/useTheme";
 import "~/styles/marketing.css";
 
@@ -20,8 +20,10 @@ declare global {
   }
 }
 
-export const loader = async (args: LoaderFunctionArgs) => {
-  const session = await parseRequestSession(args.request);
+import type { Route } from "./+types/animejs";
+
+export const loader = async ({ context }: Route.LoaderArgs) => {
+  const session = context.get(maybeIdentityContext);
 
   return {
     isLoggedIn: !!session,

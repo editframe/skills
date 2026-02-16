@@ -624,7 +624,16 @@ export class EFTimegroupHierarchyItem extends EFHierarchyItem<EFTimegroup> {
   }
 
   displayLabel(): string | TemplateResult<1> | typeof nothing {
-    return getFriendlyLabel(this.element, "Composition");
+    const label = getFriendlyLabel(this.element, "Composition");
+    const mode = this.element.mode || "fixed";
+    const modeLabels: Record<string, string> = {
+      fixed: "Fixed",
+      sequence: "Sequence",
+      contain: "Container",
+      fit: "Fit",
+    };
+    const modeLabel = modeLabels[mode] || mode;
+    return html`${label} <span style="opacity: 0.5; font-size: 0.65rem;">${modeLabel}</span>`;
   }
 }
 

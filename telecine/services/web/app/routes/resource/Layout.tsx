@@ -2,7 +2,7 @@ import { Outlet, redirect } from "react-router";
 import { UserNavigation } from "~/components/Navigation";
 import { requireQueryAs } from "@/graphql.server/userClient";
 import { graphql } from "@/graphql";
-import { commitSession, getSession, type SessionInfo } from "@/util/session";
+import { commitSession, type SessionInfo } from "@/util/session";
 import { SpanStatusCode } from "@opentelemetry/api";
 import { trace } from "@opentelemetry/api";
 import { Header } from "~/components/Header";
@@ -12,7 +12,13 @@ import { logger } from "@/logging";
 import { db } from "@/sql-client.server";
 
 import type { Route } from "./+types/Layout";
-import { requireSession } from "@/util/requireSession.server";
+import { authMiddleware } from "~/middleware/auth";
+import {
+  identityContext,
+  sessionCookieContext,
+} from "~/middleware/context";
+
+export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
 
 const getUserOrgs = (session: SessionInfo) => {
   const activeSpan = trace.getActiveSpan();
@@ -71,6 +77,7 @@ const getUserOrgs = (session: SessionInfo) => {
 const maybeRedirectToOrg = async (
   orgs: { id: string; display_name: string }[],
   request: Request,
+  sessionCookie: Awaited<ReturnType<typeof import("@/util/session").getSession>>,
 ) => {
   const activeSpan = trace.getActiveSpan();
 
@@ -78,14 +85,13 @@ const maybeRedirectToOrg = async (
     const url = new URL(request.url);
     const searchParams = url.searchParams;
     const urlOrgId = searchParams.get("org");
-    const readableSession = await getSession(request.headers.get("cookie"));
-    const sessionOrgId = readableSession.get("oid");
+    const sessionOrgId = sessionCookie.get("oid");
 
     logger.error("No organizations found in account", {
       url: request.url,
       urlOrgId,
       sessionOrgId,
-      sessionData: readableSession.data,
+      sessionData: sessionCookie.data,
       requestHeaders: Object.fromEntries(request.headers.entries()),
     });
 
@@ -107,14 +113,13 @@ const maybeRedirectToOrg = async (
   const url = new URL(request.url);
   const searchParams = url.searchParams;
   const urlOrgId = searchParams.get("org");
-  const readableSession = await getSession(request.headers.get("cookie"));
-  const sessionOrgId = readableSession.get("oid");
+  const sessionOrgId = sessionCookie.get("oid");
 
   // If URL has org but session doesn't, set session
   if (urlOrgId && !sessionOrgId) {
     const org = orgs.find((o) => o.id === urlOrgId);
     if (org) {
-      readableSession.set("oid", urlOrgId);
+      sessionCookie.set("oid", urlOrgId);
       activeSpan?.setAttributes({
         "organization.redirected": true,
         "organization.id": urlOrgId,
@@ -122,7 +127,7 @@ const maybeRedirectToOrg = async (
       });
       throw redirect(url.toString(), {
         headers: {
-          "Set-Cookie": await commitSession(readableSession),
+          "Set-Cookie": await commitSession(sessionCookie),
         },
       });
     }
@@ -139,12 +144,12 @@ const maybeRedirectToOrg = async (
       "organization.name": selectedOrg.display_name,
     });
 
-    readableSession.set("oid", selectedOrgId);
+    sessionCookie.set("oid", selectedOrgId);
     url.searchParams.set("org", selectedOrgId);
 
     throw redirect(url.toString(), {
       headers: {
-        "Set-Cookie": await commitSession(readableSession),
+        "Set-Cookie": await commitSession(sessionCookie),
       },
     });
   }
@@ -160,9 +165,10 @@ const maybeRedirectToOrg = async (
 
   activeSpan?.addEvent("no org redirect needed");
 };
-export const loader = async ({ request }: Route.LoaderArgs) => {
+export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const activeSpan = trace.getActiveSpan();
-  const { session } = await requireSession(request);
+  const session = context.get(identityContext);
+  const sessionCookie = context.get(sessionCookieContext);
 
   logger.info("ResourceLayout loader", {
     sessionType: session.type,
@@ -190,7 +196,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     "orgs.ids": orgs.map((o) => o.id).join(","),
   });
 
-  await maybeRedirectToOrg(orgs, request);
+  await maybeRedirectToOrg(orgs, request, sessionCookie);
   return {
     orgs,
     email: session.type === "email_passwords" ? session.email : undefined,

@@ -1,11 +1,11 @@
 import { graphql } from "@/graphql";
 import { requireMutateAs } from "@/graphql.server/userClient";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 import type { Route } from "./+types/delete";
 
-export const action = async ({ request, params: { id } }: Route.ActionArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+export const action = async ({ params: { id }, context }: Route.ActionArgs) => {
+  const session = context.get(apiIdentityContext);
 
   await requireMutateAs(
     session,

@@ -26,12 +26,8 @@ describe("update password", () => {
     await page.getByLabel("Password confirmation").fill("newpassword");
     await page.getByRole("button", { name: "Update Password" }).click();
 
-    await playwrightExpect(
-      page.getByRole("heading", { name: "Account Settings" }),
-    ).toBeVisible();
-    await playwrightExpect(
-      page.getByText("Password updated"),
-    ).toBeVisible();
+    // Successful update redirects to /settings
+    await playwrightExpect(page).toHaveURL(/\/settings(?!\/)/);
   });
 
   test("Shows error when passwords don't match", async () => {

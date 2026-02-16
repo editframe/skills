@@ -1,6 +1,7 @@
 import { OutputConfiguration } from "@editframe/api";
 import type { Selectable } from "kysely";
 
+import { logger } from "@/logging";
 import { Queue } from "@/queues/Queue";
 import { Worker } from "@/queues/Worker";
 import { ConnectionURLMap } from "@/queues/WorkerConnection";
@@ -55,7 +56,7 @@ export const RenderFinalizerWorker = new Worker({
       outputConfig.container === "webp";
 
     if (isStill) {
-      console.log("is still. Skipping finalizer", render.id);
+      logger.info({ renderId: render.id }, "Still image, skipping finalizer");
       return;
     }
 
@@ -69,7 +70,7 @@ export const RenderFinalizerWorker = new Worker({
       work_slice_ms: work_slice_ms,
     });
 
-    console.log("merging fragment paths", allFragmentIds);
+    logger.info({ renderId: render.id, fragmentCount: allFragmentIds.length }, "Merging fragment paths");
 
     await storageProvider.mergePaths(
       allFragmentIds.map((fragmentId) => {

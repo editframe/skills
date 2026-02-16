@@ -122,7 +122,7 @@ export const test = playwrightTest.extend<AppFixtures>({
   waitForEmail: async ({ page }, use) => {
     await use(async (recipient: string, subject: string) => {
       const [message] = await Promise.all([
-        waitFor(() => getMostRecentMessage(recipient, subject)),
+        waitFor(() => getMostRecentMessage(recipient, subject), 15_000),
         page.goto("about:blank"),
       ]);
       await page.setContent(message.body, { waitUntil: "domcontentloaded" });

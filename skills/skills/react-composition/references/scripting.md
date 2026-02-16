@@ -46,7 +46,7 @@ const DynamicScene = () => {
 ### Constraints
 
 - **Must be synchronous** - No async/await, no Promise return
-- **Must complete quickly** - <100ms (error thrown) or <10ms (warning logged)
+- **Must complete quickly** - &lt;100ms (error thrown) or &lt;10ms (warning logged)
 - **Register callbacks only** - Don't do expensive work in initializer
 
 ### Timing

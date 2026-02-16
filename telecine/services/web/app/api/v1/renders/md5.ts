@@ -2,13 +2,13 @@ import type { LookupRenderByMd5Result } from "@editframe/api";
 import { db } from "@/sql-client.server";
 
 import type { Route } from "./+types/md5";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 export const loader = async ({
-  request,
   params: { md5 },
+  context,
 }: Route.LoaderArgs): Promise<LookupRenderByMd5Result> => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
   const render = await db
     .selectFrom("video2.renders")
     .where("md5", "=", md5)

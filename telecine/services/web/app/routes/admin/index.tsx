@@ -2,13 +2,18 @@ import { Outlet } from "react-router";
 import "~/styles/docs.css";
 import { AdminNavigation } from "~/components/Navigation";
 import type { Route } from "./+types/index";
-import { requireAdminSession } from "@/util/requireAdminSession";
 import { useTheme } from "~/hooks/useTheme";
 import { ThemeToggle } from "~/components/ThemeToggle";
 import clsx from "clsx";
+import { authMiddleware } from "~/middleware/auth";
+import { adminMiddleware } from "~/middleware/admin";
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  await requireAdminSession(request);
+export const middleware: Route.MiddlewareFunction[] = [
+  authMiddleware,
+  adminMiddleware,
+];
+
+export const loader = async () => {
   return null;
 };
 

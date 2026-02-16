@@ -58,14 +58,14 @@ describe("search.client", () => {
     const { search } = await import("./search.client");
     const results = search("Test Document");
     expect(results.length).toBeGreaterThan(0);
-    expect(results[0].title).toBe("Test Document");
+    expect(results[0]!.title).toBe("Test Document");
   });
 
   test("searches documents by content", async () => {
     const { search } = await import("./search.client");
     const results = search("searching");
     expect(results.length).toBeGreaterThan(0);
-    expect(results[0].content).toContain("searching");
+    expect(results[0]!.content).toContain("searching");
   });
 
   test("returns empty array for empty query", async () => {

@@ -12,7 +12,6 @@ export const checkoutRenderSource = async (id: string, org_id: string) => {
   return await executeSpan("Render.checkoutRenderSource", async (span) => {
     const randomId = Math.random().toString(36).substring(2, 15);
     const tarPath = renderFilePath({ org_id, id });
-    const tarStream = await storageProvider.createReadStream(tarPath);
     const workDir = path.join(os.tmpdir(), "render", id, randomId);
     const indexPath = path.join(workDir, "index.html");
 
@@ -23,8 +22,17 @@ export const checkoutRenderSource = async (id: string, org_id: string) => {
       indexPath,
     });
 
+    const bundleExists = await storageProvider.pathExists(tarPath);
+    if (!bundleExists) {
+      throw new Error(`Render bundle not found: ${tarPath}`);
+    }
+
     await fs.rm(workDir, { recursive: true, force: true });
     await fs.mkdir(workDir, { recursive: true });
+
+    // Create the stream immediately before consuming it to avoid
+    // unhandled error events firing between creation and pipe
+    const tarStream = await storageProvider.createReadStream(tarPath);
     logger.trace({ workDir }, "Unpacking tarstream");
     await unpackTarstream(tarStream, workDir);
 

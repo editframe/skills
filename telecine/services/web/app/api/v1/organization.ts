@@ -1,10 +1,10 @@
 import { db } from "@/sql-client.server";
 
 import type { Route } from "./+types/organization";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
-export const loader = async (args: Route.LoaderArgs) => {
-  const session = await requireCookieOrTokenSession(args.request);
+export const loader = async ({ context }: Route.LoaderArgs) => {
+  const session = context.get(apiIdentityContext);
 
   const result = await db
     .selectFrom("identity.api_keys")

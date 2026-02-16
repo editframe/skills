@@ -13,7 +13,7 @@ import { logger } from "@/logging";
 import { useTheme } from "~/hooks/useTheme";
 
 import type { Route } from "./+types/register";
-import { requireNoSession } from "@/util/requireSession.server";
+import { noAuthMiddleware } from "~/middleware/auth";
 
 const schema = z
   .object({
@@ -40,8 +40,9 @@ const schema = z
 
 const register = formFor(schema);
 
+export const middleware: Route.MiddlewareFunction[] = [noAuthMiddleware];
+
 export const action = async ({ request }: Route.ActionArgs) => {
-  await requireNoSession(request);
   const formResult = await register.parseFormData(request);
   if (!formResult.success) {
     return data(formResult.errors, { status: 400 });
@@ -89,8 +90,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 };
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  await requireNoSession(request);
+export const loader = async () => {
   return null;
 };
 

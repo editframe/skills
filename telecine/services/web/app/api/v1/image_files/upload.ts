@@ -5,10 +5,10 @@ import { db } from "@/sql-client.server";
 import { logger } from "@/logging";
 
 import type { Route } from "./+types/upload";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
-export const loader = async ({ request, params: { id } }: Route.LoaderArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+export const loader = async ({ params: { id }, context }: Route.LoaderArgs) => {
+  const session = context.get(apiIdentityContext);
   const imageFile = await requireQueryAs(
     session,
     "org-editor",
@@ -29,8 +29,8 @@ export const loader = async ({ request, params: { id } }: Route.LoaderArgs) => {
   return Response.json({}, { status: 202 });
 };
 
-export const action = async ({ params, request }: Route.ActionArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+export const action = async ({ params, request, context }: Route.ActionArgs) => {
+  const session = context.get(apiIdentityContext);
   const imageFile = await requireQueryAs(
     session,
     "org-editor",

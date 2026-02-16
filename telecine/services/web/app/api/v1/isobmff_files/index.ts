@@ -4,12 +4,13 @@ import {
 } from "@editframe/api";
 import { db } from "@/sql-client.server";
 import type { Route } from "./+types/index";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 export const action = async ({
   request,
+  context,
 }: Route.ActionArgs): Promise<CreateISOBMFFFileResult> => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
   const payload = CreateISOBMFFFilePayload.parse(await request.json());
   return db
     .insertInto("video2.isobmff_files")

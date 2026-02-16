@@ -1,7 +1,7 @@
 import { db } from "@/sql-client.server";
 import { isobmffTrackFilePath } from "@/util/filePaths";
 import { storageProvider } from "@/util/storageProvider.server";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 import {
   CreateISOBMFFTrackPayload,
   type CreateISOBMFFTrackResult,
@@ -12,8 +12,9 @@ import type { Route } from "./+types/trackCreate";
 export const action = async ({
   params: { id },
   request,
+  context,
 }: Route.ActionArgs): Promise<CreateISOBMFFTrackResult> => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
   const payload = CreateISOBMFFTrackPayload.parse(await request.json());
 
   const file = await db

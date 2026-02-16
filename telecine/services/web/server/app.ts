@@ -15,7 +15,7 @@ import cors from "cors";
 import mime from "mime-types";
 import morgan from "morgan";
 import { trace } from "@opentelemetry/api";
-import "react-router";
+import { RouterContextProvider } from "react-router";
 
 import {
   UPLOAD_TO_BUCKET,
@@ -26,10 +26,6 @@ import {
   authRateLimiter,
   strictAuthRateLimiter,
 } from "@/http/rateLimiter";
-
-declare module "react-router" {
-  interface AppLoadContext {}
-}
 
 const ALLOWED_ORIGINS = [
   "https://editframe.dev",
@@ -57,10 +53,11 @@ app.use(
         return;
       }
 
-      // In development, allow any *.localhost domain
+      // In development, allow any *.localhost domain and Docker-internal origins
       if (
         process.env.NODE_ENV === "development" &&
-        origin.match(/^https?:\/\/[^:]+\.localhost(:\d+)?$/)
+        (origin.match(/^https?:\/\/[^:]+\.localhost(:\d+)?$/) ||
+          origin.match(/^https?:\/\/web(:\d+)?$/))
       ) {
         callback(null, true);
         return;
@@ -230,7 +227,7 @@ app.use(
       return serverBuild;
     },
     getLoadContext() {
-      return {};
+      return new RouterContextProvider();
     },
   }),
 );

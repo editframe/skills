@@ -1,7 +1,7 @@
 import { data } from "react-router";
 import { writeReadableStreamToWritable } from "@react-router/node";
 import { createWriteStream } from "node:fs";
-import { parseRequestSession } from "@/util/session";
+import type { SessionInfo } from "@/util/session";
 import { UPLOAD_TO_BUCKET } from "../../../lib/util/storageProvider.server";
 import { parseByteRangeHeader } from "@/util/parseByteRangeHeader";
 import { db } from "@/sql-client.server";
@@ -25,6 +25,7 @@ export async function receiveUploadChunk(
   request: Request,
   table: string,
   id: string,
+  sessionInfo: SessionInfo,
 ) {
   if (!isValidUploadType(table)) {
     // DO NOT REMOVE THIS CHECK
@@ -35,10 +36,6 @@ export async function receiveUploadChunk(
 
   if (!request.body) {
     throw new Response(null, { statusText: "No body", status: 400 });
-  }
-  const sessionInfo = await parseRequestSession(request);
-  if (!sessionInfo) {
-    throw new Response(null, { statusText: "Unauthorized", status: 401 });
   }
   const maybeRecord = await db
     .selectFrom(`video.${table}`)

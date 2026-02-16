@@ -20,6 +20,7 @@ interface ContextConfig {
   height: number;
   location: string;
   orgId: string;
+  renderId?: string;
   loadTimeoutMs?: number;
   assetsBundle?: AssetsMetadataBundle;
   assetProvider?: AssetProvider;
@@ -42,8 +43,11 @@ export class ElectronEngine {
 
   async createContext(config: ContextConfig) {
     return await executeSpan("ElectronEngine.createContext", async (_span) => {
-      const logger = logging.logger.child({ component: "ElectronEngine" });
-      console.log("🔧 [ElectronEngine] Creating BrowserWindow...");
+      const logger = logging.logger.child({
+        component: "ElectronEngine",
+        ...(config.renderId ? { renderId: config.renderId } : {}),
+      });
+      logger.info("Creating BrowserWindow");
       const renderer = new BrowserWindow({
         x: 0,
         y: 0,
@@ -68,20 +72,20 @@ export class ElectronEngine {
       });
 
       try {
-        console.log("🔧 [ElectronEngine] BrowserWindow created, setting up...");
+        logger.info("BrowserWindow created, setting up");
         renderer.webContents.setFrameRate(240);
 
         this.setupRendererHandlers(renderer, logger);
         this.setupApiRouting(renderer, config.orgId, logger);
 
-        console.log("🔧 [ElectronEngine] About to load page:", config.location);
+        logger.info({ location: config.location }, "Loading page");
         await this.initializePage(
           renderer,
           config.location,
           config.loadTimeoutMs ?? 5000,
           logger,
         );
-        console.log("🔧 [ElectronEngine] Page loaded successfully");
+        logger.info("Page loaded successfully");
 
         const engineContext = new ElectronEngineContext(
           renderer,
@@ -173,7 +177,6 @@ export class ElectronEngine {
         return;
       }
 
-      console.log({ level, message });
       if (level === "info") {
         logger.info({ level, message }, "renderer console message");
       } else if (level === "debug") {
@@ -183,7 +186,6 @@ export class ElectronEngine {
       } else if (level === "error") {
         logger.error({ level, message }, "renderer console message");
       } else {
-        console.log("renderer console message", { level, message });
         logger.info({ level, message }, "renderer console message");
       }
     });

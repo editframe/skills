@@ -9,11 +9,14 @@ import {
 import "./styles/global.css";
 import { FlashMessages } from "./components/flash/FlashMessage";
 
-import { maybeSession } from "@/util/requireSession.server";
 import { commitSession } from "@/util/session";
 import { ClientConfiguration } from "./components/ClientConfiguration";
+import { sessionMiddleware } from "./middleware/session";
+import { sessionCookieContext } from "./middleware/context";
 
 import type { Route } from "./+types/root";
+
+export const middleware: Route.MiddlewareFunction[] = [sessionMiddleware];
 
 const WEB_HOST = import.meta.env.VITE_WEB_HOST || "http://localhost:3000";
 const GRAPHQL_URL =
@@ -59,9 +62,9 @@ function getResolvedTheme(
   return prefersDark ? "dark" : "light";
 }
 
-export const loader = async (args: Route.LoaderArgs) => {
-  const { sessionCookie } = await maybeSession(args.request);
-  const cookieHeader = args.request.headers.get("cookie");
+export const loader = async ({ request, context }: Route.LoaderArgs) => {
+  const sessionCookie = context.get(sessionCookieContext);
+  const cookieHeader = request.headers.get("cookie");
   const theme = parseThemeCookie(cookieHeader);
 
   return data(

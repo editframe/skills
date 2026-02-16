@@ -1,15 +1,15 @@
 import { graphql } from "@/graphql";
 import { requireQueryAs } from "@/graphql.server/userClient";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 import type { Route } from "./+types/detail.json";
 import type { GetImageFileMetadataResult } from "@editframe/api";
 
 export const loader = async ({
-  request,
   params: { id },
+  context,
 }: Route.LoaderArgs): Promise<GetImageFileMetadataResult> => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
 
   const imageFile = await requireQueryAs(
     session,

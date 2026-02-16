@@ -1,5 +1,5 @@
-import { requireAdminSession } from "@/util/requireAdminSession";
 import type { Route } from "./+types/create-user";
+import { adminIdentityContext } from "~/middleware/context";
 import { Button } from "~/components/Button";
 import { db } from "@/sql-client.server";
 import { data } from "react-router";
@@ -48,12 +48,11 @@ const schema = z
 const createUserForm = formFor(schema);
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
-  await requireAdminSession(request);
   return null;
 };
 
-export const action = async ({ request }: Route.ActionArgs) => {
-  const session = await requireAdminSession(request);
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const session = context.get(adminIdentityContext);
 
   const formResult = await createUserForm.parseFormData(request);
   if (!formResult.success) {

@@ -1,5 +1,4 @@
 import { Queue } from "@/queues/Queue";
-import { requireAdminSession } from "@/util/requireAdminSession";
 
 import type { Route } from "./+types/queue";
 import { Outlet, redirect } from "react-router";
@@ -7,7 +6,6 @@ import { clsx } from "clsx";
 import { NavLink } from "~/components/Link";
 import { AutoRefresh } from "./AutoRefresh";
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  await requireAdminSession(request);
   if (request.url.endsWith(params.name)) {
     return redirect(`/admin/queues/${params.name}/queued`);
   }

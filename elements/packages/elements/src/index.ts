@@ -1,5 +1,4 @@
 import "./elements/EFTimegroup.js";
-import "./sandbox/index.js";
 
 export { EFTimegroup } from "./elements/EFTimegroup.js";
 export {
@@ -174,7 +173,12 @@ export { type BoxBounds, EFResizableBox } from "./gui/EFResizableBox.ts";
 
 import "./gui/EFFitScale.js";
 
-export { EFFitScale } from "./gui/EFFitScale.js";
+export {
+  EFFitScale,
+  computeFitScale,
+  type ScaleInput,
+  type ScaleOutput,
+} from "./gui/EFFitScale.js";
 
 import "./elements/EFSurface.ts";
 

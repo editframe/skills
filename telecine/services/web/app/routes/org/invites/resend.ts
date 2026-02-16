@@ -1,10 +1,10 @@
 import { graphql } from "@/graphql";
 import { requireMutateAs, requireQueryAs } from "@/graphql.server/userClient";
 import type { Route } from "./+types/resend";
-import { requireSession } from "@/util/requireSession.server";
+import { identityContext } from "~/middleware/context";
 
-export const action = async ({ params: { id }, request }: Route.ActionArgs) => {
-  const { session } = await requireSession(request);
+export const action = async ({ params: { id }, context }: Route.ActionArgs) => {
+  const session = context.get(identityContext);
 
   // First get the current invitation details
   const invite = await requireQueryAs(

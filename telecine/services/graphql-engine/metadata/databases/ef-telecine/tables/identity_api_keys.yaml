@@ -210,7 +210,7 @@ event_triggers:
         columns: '*'
     retry_conf:
       interval_sec: 10
-      num_retries: 0
+      num_retries: 1
       timeout_sec: 60
     webhook: '{{HASURA_ACTION_ORIGIN}}/hdb/deliver_new_api_email_notification'
     headers:

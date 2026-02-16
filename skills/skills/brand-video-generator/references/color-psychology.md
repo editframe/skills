@@ -176,7 +176,7 @@ When analyzing a website:
 - **>40% of visual space**: Dominant primary color
 - **20-40%**: Strong secondary color
 - **10-20%**: Supporting color
-- **<10%**: Accent color
+- **&lt;10%**: Accent color
 
 ### Color Context
 Consider where colors appear:
