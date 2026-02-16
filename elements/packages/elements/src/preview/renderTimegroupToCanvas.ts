@@ -814,14 +814,14 @@ export function renderTimegroupToCanvas(
   let totalFrameMs = 0;
 
   const refresh = async (): Promise<void> => {
-    if (disposed) { console.log('[CANVAS_REFRESH] early return: disposed'); return; }
+    if (disposed) return;
 
     const sourceTimeMs = timegroup.currentTimeMs ?? 0;
     const userTimeMs = timegroup.userTimeMs ?? 0;
 
-    if (Math.abs(sourceTimeMs - userTimeMs) > TIME_EPSILON_MS) { console.log('[CANVAS_REFRESH] early return: time mismatch', JSON.stringify({ sourceTimeMs, userTimeMs, diff: Math.abs(sourceTimeMs - userTimeMs) })); return; }
+    if (Math.abs(sourceTimeMs - userTimeMs) > TIME_EPSILON_MS) return;
     if (userTimeMs === lastTimeMs) return;
-    if (rendering) { console.log('[CANVAS_REFRESH] early return: rendering in progress'); return; }
+    if (rendering) return;
 
     lastTimeMs = userTimeMs;
     rendering = true;
@@ -891,8 +891,6 @@ export function renderTimegroupToCanvas(
       } else {
         const absoluteTimeMs = toAbsoluteTime(timegroup, userTimeMs);
 
-        console.log('[CANVAS_REFRESH] foreignObject branch', JSON.stringify({ absoluteTimeMs, width, height, currentResolutionScale }));
-
         const dataUri = await captureTimelineToDataUri(timegroup, width, height, {
           renderContext,
           canvasScale: currentResolutionScale,
@@ -900,13 +898,9 @@ export function renderTimegroupToCanvas(
         });
         const captureMs = performance.now() - tCapture0;
 
-        console.log('[CANVAS_REFRESH] dataUri length=' + dataUri.length + ', captureMs=' + captureMs.toFixed(1));
-
         const tCopy0 = performance.now();
         const image = await loadImageFromDataUri(dataUri);
         const copyMs = performance.now() - tCopy0;
-
-        console.log('[CANVAS_REFRESH] image loaded', JSON.stringify({ imageWidth: image.width, imageHeight: image.height, naturalWidth: image.naturalWidth, naturalHeight: image.naturalHeight }));
 
         const targetWidth = Math.floor(renderWidth * scale * dpr);
         const targetHeight = Math.floor(renderHeight * scale * dpr);
@@ -916,8 +910,6 @@ export function renderTimegroupToCanvas(
         } else {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
-
-        console.log('[CANVAS_REFRESH] drawing to canvas', JSON.stringify({ targetWidth, targetHeight, canvasWidth: canvas.width, canvasHeight: canvas.height, dpr, scale, renderWidth, renderHeight }));
 
         ctx.save();
         ctx.scale(dpr * scale, dpr * scale);
