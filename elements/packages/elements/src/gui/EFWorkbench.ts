@@ -1111,28 +1111,31 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   
   private initDomMode() {
     // Don't initialize if we're no longer in dom mode
-    if (this.presentationMode !== "dom") return;
-    
+    if (this.presentationMode !== "dom") {
+      return;
+    }
+
     const timegroup = this.getTimegroup();
     if (!timegroup) {
       setTimeout(() => this.initDomMode(), 100);
       return;
     }
-    
+
     // Pause the ef-fit-scale to prevent it from applying transforms
     const fitScale = this.querySelector("[slot='canvas']") as any;
-    if (fitScale?.removeScale && fitScale?.paused !== undefined) {
+    const hasFitScaleMethods = !!(fitScale?.removeScale && fitScale?.paused !== undefined);
+    if (hasFitScaleMethods) {
       fitScale.paused = true;
       fitScale.removeScale();
     }
-    
+
     // Disable the timegroup's own proxy mode (it may have been enabled by thumbnail strip)
     (timegroup as any).proxyMode = false;
-    
+
     // Show the original timegroup directly
     timegroup.style.clipPath = "";
     timegroup.style.pointerEvents = "";
-    
+
     // Create DOM stats strategy if stats are enabled
     if (this.showStats && this.adaptiveTracker) {
       this.domStatsStrategy = new DomStatsStrategy({
@@ -1244,8 +1247,10 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     // to avoid DOM mutations (Layerize steps) between captures.
     (timegroup as any).canvasPreviewActive = true;
     
-    // Hide the original timegroup
-    timegroup.style.clipPath = "inset(100%)";
+    // Ensure the timegroup is visible for native drawElementImage capture.
+    // The canvas overlay (position:absolute, inset:0) covers it visually.
+    // Clear any clipPath that stopDomMode() may have set.
+    timegroup.style.clipPath = "";
     timegroup.style.pointerEvents = "none";
     
     // Show the canvas container
@@ -1342,10 +1347,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       this.zoomReinitTimeout = null;
     }
 
-    // Dispose the canvas preview result BEFORE clearing canvasPreviewActive.
-    // dispose() restores the timegroup to its original DOM position in native
-    // mode — this must happen while canvasPreviewActive is still true so that
-    // the lifecycle guards prevent re-initialization during the move back.
     this.canvasPreviewResult?.dispose();
     this.canvasPreviewResult = null;
 

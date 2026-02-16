@@ -279,7 +279,9 @@ export class EFHierarchy extends TWMixin(LitElement) {
 
   private getRootElements(): Element[] {
     const target = this.getTargetElement();
-    if (!target) return [];
+    if (!target) {
+      return [];
+    }
 
     if (isEFTemporal(target)) {
       return [target];

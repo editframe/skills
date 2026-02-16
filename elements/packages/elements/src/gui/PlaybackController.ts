@@ -504,7 +504,7 @@ export class PlaybackController implements ReactiveController {
     if (this.#removed) {
       return;
     }
-    
+
     await this.stopPlayback();
     const host = this.#host;
     if (!host) {
@@ -514,7 +514,7 @@ export class PlaybackController implements ReactiveController {
     if (host.waitForMediaDurations) {
       await host.waitForMediaDurations();
     }
-    
+
     // Check again after async - controller could have been removed
     if (this.#removed) {
       return;
@@ -607,7 +607,6 @@ export class PlaybackController implements ReactiveController {
       const willReachEnd = endMs >= toMs;
 
       if (!host.renderAudio) {
-        console.log('[PlaybackController] host.renderAudio is not defined');
         return false;
       }
 

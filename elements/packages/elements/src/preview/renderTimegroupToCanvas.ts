@@ -32,7 +32,7 @@ import { logger } from "./logger.js";
 import { loadImageFromDataUri } from "./rendering/loadImage.js";
 import { createDprCanvas, renderToImageNative } from "./rendering/renderToImageNative.js";
 import { clearInlineImageCache, getInlineImageCacheSize } from "./rendering/inlineImages.js";
-import { isNativeCanvasApiAvailable } from "./previewSettings.js";
+import { isNativeCanvasApiAvailable, getRenderMode } from "./previewSettings.js";
 import type { HtmlInCanvasContext, HtmlInCanvasElement } from "./rendering/types.js";
 
 // Re-export rendering types and functions for external use
@@ -735,12 +735,13 @@ export function renderTimegroupToCanvas(
   // Pending resolution change - applied at start of next refresh to avoid blanking
   let pendingResolutionScale: number | null = null;
 
-  // Native rendering state
-  const useNative = isNativeCanvasApiAvailable();
+  // Use the user's render mode preference. Native requires the timegroup to be
+  // inside a <canvas layoutsubtree> for drawElementImage to work.
+  const useNative = getRenderMode() === "native" && isNativeCanvasApiAvailable();
   let captureCanvas: HTMLCanvasElement | null = null;
   let captureCtx: HtmlInCanvasContext | null = null;
-  let originalParent: Node | null = null;
-  let originalNextSibling: Node | null = null;
+  let originalParent: ParentNode | null = null;
+  let originalNextSibling: ChildNode | null = null;
   let savedClipPath = "";
   let savedPointerEvents = "";
 
@@ -751,19 +752,15 @@ export function renderTimegroupToCanvas(
     captureCanvas.width = renderWidth;
     captureCanvas.height = renderHeight;
     captureCanvas.style.cssText = `position:fixed;left:0;top:0;width:${width}px;height:${height}px;opacity:0;pointer-events:none;z-index:-9999;`;
-
     originalParent = timegroup.parentNode;
     originalNextSibling = timegroup.nextSibling;
-
     savedClipPath = timegroup.style.clipPath;
     savedPointerEvents = timegroup.style.pointerEvents;
     timegroup.style.clipPath = "";
     timegroup.style.pointerEvents = "";
-
     captureCanvas.appendChild(timegroup);
     document.body.appendChild(captureCanvas);
     captureCtx = captureCanvas.getContext("2d") as HtmlInCanvasContext;
-
     void captureCanvas.offsetHeight;
     void timegroup.offsetHeight;
   }
@@ -783,7 +780,6 @@ export function renderTimegroupToCanvas(
     renderWidth = Math.floor(width * currentResolutionScale);
     renderHeight = Math.floor(height * currentResolutionScale);
 
-    // Update capture canvas buffer for native mode
     if (captureCanvas) {
       captureCanvas.width = renderWidth;
       captureCanvas.height = renderHeight;
@@ -818,14 +814,14 @@ export function renderTimegroupToCanvas(
   let totalFrameMs = 0;
 
   const refresh = async (): Promise<void> => {
-    if (disposed) return;
+    if (disposed) { console.log('[CANVAS_REFRESH] early return: disposed'); return; }
 
     const sourceTimeMs = timegroup.currentTimeMs ?? 0;
     const userTimeMs = timegroup.userTimeMs ?? 0;
 
-    if (Math.abs(sourceTimeMs - userTimeMs) > TIME_EPSILON_MS) return;
+    if (Math.abs(sourceTimeMs - userTimeMs) > TIME_EPSILON_MS) { console.log('[CANVAS_REFRESH] early return: time mismatch', JSON.stringify({ sourceTimeMs, userTimeMs, diff: Math.abs(sourceTimeMs - userTimeMs) })); return; }
     if (userTimeMs === lastTimeMs) return;
-    if (rendering) return;
+    if (rendering) { console.log('[CANVAS_REFRESH] early return: rendering in progress'); return; }
 
     lastTimeMs = userTimeMs;
     rendering = true;
@@ -853,8 +849,6 @@ export function renderTimegroupToCanvas(
       const tCapture0 = performance.now();
 
       if (useNative && captureCanvas && captureCtx) {
-        // Apply scale transform when capture buffer differs from layout size
-        // (resolutionScale < 1 means fewer pixels to rasterize)
         if (captureCanvas.width !== width || captureCanvas.height !== height) {
           captureCtx.save();
           captureCtx.scale(captureCanvas.width / width, captureCanvas.height / height);
@@ -897,6 +891,8 @@ export function renderTimegroupToCanvas(
       } else {
         const absoluteTimeMs = toAbsoluteTime(timegroup, userTimeMs);
 
+        console.log('[CANVAS_REFRESH] foreignObject branch', JSON.stringify({ absoluteTimeMs, width, height, currentResolutionScale }));
+
         const dataUri = await captureTimelineToDataUri(timegroup, width, height, {
           renderContext,
           canvasScale: currentResolutionScale,
@@ -904,9 +900,13 @@ export function renderTimegroupToCanvas(
         });
         const captureMs = performance.now() - tCapture0;
 
+        console.log('[CANVAS_REFRESH] dataUri length=' + dataUri.length + ', captureMs=' + captureMs.toFixed(1));
+
         const tCopy0 = performance.now();
         const image = await loadImageFromDataUri(dataUri);
         const copyMs = performance.now() - tCopy0;
+
+        console.log('[CANVAS_REFRESH] image loaded', JSON.stringify({ imageWidth: image.width, imageHeight: image.height, naturalWidth: image.naturalWidth, naturalHeight: image.naturalHeight }));
 
         const targetWidth = Math.floor(renderWidth * scale * dpr);
         const targetHeight = Math.floor(renderHeight * scale * dpr);
@@ -916,6 +916,8 @@ export function renderTimegroupToCanvas(
         } else {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
+
+        console.log('[CANVAS_REFRESH] drawing to canvas', JSON.stringify({ targetWidth, targetHeight, canvasWidth: canvas.width, canvasHeight: canvas.height, dpr, scale, renderWidth, renderHeight }));
 
         ctx.save();
         ctx.scale(dpr * scale, dpr * scale);
@@ -956,7 +958,7 @@ export function renderTimegroupToCanvas(
     frameController.abort();
     renderContext.dispose();
 
-    // Restore timegroup to original DOM position and styles
+    // Restore timegroup to original DOM position if native mode moved it
     if (useNative && originalParent) {
       timegroup.style.clipPath = savedClipPath;
       timegroup.style.pointerEvents = savedPointerEvents;
@@ -966,8 +968,6 @@ export function renderTimegroupToCanvas(
         originalParent.appendChild(timegroup);
       }
       captureCanvas?.remove();
-      captureCanvas = null;
-      captureCtx = null;
     }
   };
 
