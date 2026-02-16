@@ -124,8 +124,7 @@ describe("EFTimeline", () => {
       expect(timeline.targetTemporal).toBe(null);
 
       (canvas as any).selectionContext.select("test-element");
-      await timeline.updateComplete;
-
+      // targetTemporal is a live getter — no update cycle needed.
       expect(timeline.targetTemporal).toBe(timegroup);
       expect(timeline.durationMs).toBe(10000);
     });
@@ -163,8 +162,8 @@ describe("EFTimeline", () => {
       expect(timeline.targetTemporal).toBe(null);
 
       (canvas as any).selectionContext.select("test-element");
-      await timeline.updateComplete;
-
+      // targetTemporal is a live getter that reads directly from the
+      // SelectionModel's state — no Lit update cycle needed.
       expect(timeline.targetTemporal).toBe(timegroup);
       expect(timeline.durationMs).toBe(10000);
     });
@@ -214,12 +213,10 @@ describe("EFTimeline", () => {
       await timeline.updateComplete;
 
       (canvas as any).selectionContext.select("element-1");
-      await timeline.updateComplete;
       expect(timeline.targetTemporal).toBe(timegroup1);
       expect(timeline.durationMs).toBe(5000);
 
       (canvas as any).selectionContext.select("element-2");
-      await timeline.updateComplete;
       expect(timeline.targetTemporal).toBe(timegroup2);
       expect(timeline.durationMs).toBe(15000);
     });

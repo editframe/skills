@@ -1417,14 +1417,17 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // Find matching caption elements by position (querySelectorAll returns in document order)
     const originalCaptions = original.querySelectorAll('ef-captions');
     const cloneCaptions = clone.querySelectorAll('ef-captions');
-    
+
     for (let i = 0; i < originalCaptions.length && i < cloneCaptions.length; i++) {
       const origCap = originalCaptions[i] as any;
       const cloneCap = cloneCaptions[i] as any;
-      
-      // Copy captionsData if set via JS property
-      if (origCap.captionsData) {
-        cloneCap.captionsData = origCap.captionsData;
+
+      // Copy loaded captions data from any source (JS property, captions-src, script element).
+      // The loaded data is stored in unifiedCaptionsDataTask.value after async loading.
+      // Setting captionsData on the clone gives it Priority 1, bypassing async loading.
+      const loadedData = origCap.captionsData ?? origCap.unifiedCaptionsDataTask?.value;
+      if (loadedData) {
+        cloneCap.captionsData = loadedData;
       }
     }
   }
@@ -1707,7 +1710,11 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     
     // 2. Deep clone the DOM
     const cloneEl = this.cloneNode(true) as EFTimegroup;
+    // Strip all id attributes from clone tree to prevent duplicate IDs in the document
     cloneEl.removeAttribute("id");
+    for (const el of cloneEl.querySelectorAll("[id]")) {
+      el.removeAttribute("id");
+    }
     cloneEl.setAttribute("data-no-workbench", "true");
     cloneEl.setAttribute("data-no-playback-controller", "true");
     
