@@ -792,6 +792,12 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
 
     disconnectedCallback() {
       super.disconnectedCallback();
+
+      // Skip teardown when being moved for canvas preview capture.
+      // The element is temporarily reparented to a capture canvas for native
+      // rendering but must retain its PlaybackController and animation state.
+      if ((this as any).canvasPreviewActive) return;
+
       this.#ownCurrentTimeController?.remove();
 
       if (this.playbackController) {
@@ -808,10 +814,17 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
 
     connectedCallback() {
       super.connectedCallback();
+
+      // Skip re-initialization when being moved for canvas preview capture.
+      // The element is temporarily reparented to a capture canvas for native
+      // rendering — root detection and PlaybackController creation must be
+      // skipped to avoid an infinite wrapWithWorkbench → initCanvasMode loop.
+      if ((this as any).canvasPreviewActive) return;
+
       this.#ownCurrentTimeController?.remove();
 
       // Root detection: Check DOM structure to determine if this is truly a root.
-      // 
+      //
       // We can't rely on Lit Context (parentTimegroup) because context propagates
       // asynchronously during update cycles. Children may complete their first update
       // before ancestors have provided context, causing them to incorrectly think
@@ -819,12 +832,12 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       //
       // Instead, we check if there's an ancestor ef-timegroup in the DOM. This is
       // reliable because DOM structure is established synchronously at connection time.
-      // 
+      //
       // If there's NO ancestor timegroup, this is a true root → create PlaybackController.
       // If there IS an ancestor, wait for context to propagate (handled by parentTimegroup setter).
       // Note: closest() includes self, so we check from parentElement to find true ancestors.
       const hasAncestorTimegroup = this.parentElement?.closest('ef-timegroup') != null;
-      
+
       if (!hasAncestorTimegroup && !this.playbackController) {
         // True root: no ancestor timegroup in DOM
         // Defer slightly to allow element to fully initialize

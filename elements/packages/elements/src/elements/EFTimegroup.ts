@@ -1226,22 +1226,28 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   }
 
   connectedCallback() {
-    
+
     // CRITICAL: super.connectedCallback() MUST be synchronous for Lit lifecycle to work correctly.
     // Deferring it breaks render clones because updateComplete resolves before Lit initializes.
-    // 
+    //
     // EFTemporal.connectedCallback() handles root detection after Lit Context propagates:
     // - Schedules updateComplete.then(didBecomeRoot check)
     // - Only true roots (no parent after context) create PlaybackController
-    // 
+    //
     // PlaybackController.hostConnected() owns ALL root initialization:
     // - waitForMediaDurations
-    // - localStorage time restoration  
+    // - localStorage time restoration
     // - initial seek
     //
     // This avoids the previous race conditions where both EFTimegroup.connectedCallback
     // and PlaybackController.hostConnected tried to initialize, causing concurrent seeks.
     super.connectedCallback();
+
+    // Skip re-initialization when being moved for canvas preview capture.
+    // EFTemporal.connectedCallback (super) already guards its own logic;
+    // we guard the EFTimegroup-specific parts here (initializer, child
+    // listeners, TimegroupController, wrapWithWorkbench).
+    if ((this as any).canvasPreviewActive) return;
 
     // Run initializer after element is fully connected and Lit has updated
     // This ensures the element is in a stable state before user code runs
@@ -1259,7 +1265,6 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
         if (this.parentTimegroup) {
           new TimegroupController(this.parentTimegroup, this);
         }
-
 
         if (this.shouldWrapWithWorkbench()) {
           this.wrapWithWorkbench();
@@ -1324,6 +1329,11 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
 
   disconnectedCallback() {
     super.disconnectedCallback();
+
+    // Skip teardown when being moved for canvas preview capture.
+    // EFTemporal.disconnectedCallback (super) already guards its own logic.
+    if ((this as any).canvasPreviewActive) return;
+
     this.#resizeObserver?.disconnect();
     this.#removePlaybackListener();
     for (const child of this.#trackedChildren) {
@@ -2152,6 +2162,14 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    * @internal
    */
   shouldWrapWithWorkbench() {
+    // Never wrap when being captured by canvas preview — the element is
+    // temporarily reparented for native rendering and must not spawn a
+    // new workbench (which would read "canvas" from localStorage and
+    // re-enter initCanvasMode, creating an infinite loop).
+    if ((this as any).canvasPreviewActive) {
+      return false;
+    }
+
     // Only root timegroups should wrap with workbench
     if (!this.isRootTimegroup) {
       return false;

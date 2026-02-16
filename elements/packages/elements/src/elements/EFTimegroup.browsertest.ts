@@ -636,6 +636,59 @@ describe.skip("shouldWrapWithWorkbench", () => {
   });
 });
 
+describe("canvasPreviewActive lifecycle guards", () => {
+  test("shouldWrapWithWorkbench returns false when canvasPreviewActive is true", () => {
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.workbench = true;
+    (timegroup as any).canvasPreviewActive = true;
+    document.body.appendChild(timegroup);
+
+    assert.isFalse(
+      timegroup.shouldWrapWithWorkbench(),
+      "shouldWrapWithWorkbench must return false when canvasPreviewActive is set",
+    );
+
+    timegroup.remove();
+  });
+
+  test("moving a canvasPreviewActive timegroup does not create a PlaybackController", async () => {
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    document.body.appendChild(timegroup);
+    await timegroup.updateComplete;
+
+    // Capture the existing PlaybackController reference
+    const originalPC = timegroup.playbackController;
+
+    // Simulate canvas preview capture: set flag, then reparent
+    (timegroup as any).canvasPreviewActive = true;
+    const captureCanvas = document.createElement("canvas");
+    document.body.appendChild(captureCanvas);
+    captureCanvas.appendChild(timegroup);
+    await timegroup.updateComplete;
+
+    // The original PlaybackController must survive the move
+    assert.strictEqual(
+      timegroup.playbackController,
+      originalPC,
+      "PlaybackController must not be replaced during canvas capture move",
+    );
+
+    // Move back
+    document.body.appendChild(timegroup);
+    await timegroup.updateComplete;
+    (timegroup as any).canvasPreviewActive = false;
+
+    assert.strictEqual(
+      timegroup.playbackController,
+      originalPC,
+      "PlaybackController must still be the same after restoration",
+    );
+
+    timegroup.remove();
+    captureCanvas.remove();
+  });
+});
+
 describe("DOM nodes", () => {
   test("can have mode and duration set as attributes", () => {
     const timegroup = document.createElement("ef-timegroup");

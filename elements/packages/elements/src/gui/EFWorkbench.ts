@@ -1333,12 +1333,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   }
   
   private stopCanvasMode() {
-    // Restore PlaybackController's renderFrame calls
-    const timegroup = this.getTimegroup();
-    if (timegroup) {
-      (timegroup as any).canvasPreviewActive = false;
-    }
-
     if (this.canvasAnimationFrame !== null) {
       cancelAnimationFrame(this.canvasAnimationFrame);
       this.canvasAnimationFrame = null;
@@ -1347,10 +1341,21 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       clearTimeout(this.zoomReinitTimeout);
       this.zoomReinitTimeout = null;
     }
+
+    // Dispose the canvas preview result BEFORE clearing canvasPreviewActive.
+    // dispose() restores the timegroup to its original DOM position in native
+    // mode — this must happen while canvasPreviewActive is still true so that
+    // the lifecycle guards prevent re-initialization during the move back.
+    this.canvasPreviewResult?.dispose();
     this.canvasPreviewResult = null;
-    
+
+    const timegroup = this.getTimegroup();
+    if (timegroup) {
+      (timegroup as any).canvasPreviewActive = false;
+    }
+
     // Note: renderStats persists across mode changes - no cleanup needed
-    
+
     // Clear and hide the canvas container
     const container = this.canvasPreviewRef.value;
     if (container) {
