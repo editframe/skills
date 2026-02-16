@@ -103,14 +103,25 @@ async function decodeFirstFrame(videoBuffer: Uint8Array): Promise<{
 }
 
 /**
- * Check if a canvas has non-black content
+ * Check if an image source has non-black content
  */
-function canvasHasContent(canvas: HTMLCanvasElement): { hasContent: boolean; nonBlackPercentage: number } {
+function canvasHasContent(source: HTMLCanvasElement | HTMLImageElement): { hasContent: boolean; nonBlackPercentage: number } {
+  let canvas: HTMLCanvasElement;
+  if (source instanceof HTMLCanvasElement) {
+    canvas = source;
+  } else {
+    canvas = document.createElement("canvas");
+    canvas.width = source.width;
+    canvas.height = source.height;
+    const tmpCtx = canvas.getContext("2d")!;
+    tmpCtx.drawImage(source, 0, 0);
+  }
+
   const ctx = canvas.getContext("2d");
   if (!ctx || canvas.width === 0 || canvas.height === 0) {
     return { hasContent: false, nonBlackPercentage: 0 };
   }
-  
+
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   let nonBlackPixels = 0;
   for (let i = 0; i < imageData.data.length; i += 4) {
@@ -121,11 +132,11 @@ function canvasHasContent(canvas: HTMLCanvasElement): { hasContent: boolean; non
       nonBlackPixels++;
     }
   }
-  
+
   const totalPixels = canvas.width * canvas.height;
   const nonBlackPercentage = (nonBlackPixels / totalPixels) * 100;
   const hasContent = nonBlackPixels > totalPixels * 0.1;
-  
+
   return { hasContent, nonBlackPercentage };
 }
 
@@ -183,7 +194,7 @@ describe("renderTimegroupToVideo foreignObject path with ef-video", () => {
         blockingTimeoutMs: 5000,
       });
       
-      const thumbnailResult = canvasHasContent(thumbnailCanvas);
+      const thumbnailResult = canvasHasContent(thumbnailCanvas as HTMLCanvasElement | HTMLImageElement);
       logger.debug(`[ForeignObject Path Test] Thumbnail capture: ${thumbnailCanvas.width}x${thumbnailCanvas.height}, hasContent: ${thumbnailResult.hasContent}, nonBlack: ${thumbnailResult.nonBlackPercentage.toFixed(1)}%`);
       
       expect(thumbnailResult.hasContent, "Thumbnail capture should have non-black content").toBe(true);

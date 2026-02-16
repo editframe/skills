@@ -113,7 +113,9 @@ export class AdaptiveResolutionTracker {
         }
       });
       
-      this.pressureObserver.observe("cpu", { sampleInterval: 500 });
+      this.pressureObserver.observe("cpu", { sampleInterval: 500 }).catch(() => {
+        // Ignore errors from observe (e.g., AbortError if disconnect called before observe resolves)
+      });
     } catch (e) {
       logger.warn("[AdaptiveResolutionTracker] Failed to initialize PressureObserver:", e);
       this.pressureObserver = null;

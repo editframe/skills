@@ -1,18 +1,21 @@
-/// <reference types="@vitest/browser/providers/playwright" />
-
 import { existsSync, readFileSync } from "node:fs";
 import * as path from "node:path";
 import type { UserConfig } from "vite";
 import { defineConfig } from "vitest/config";
 import tsconfigPaths from "vite-tsconfig-paths";
-import type { BrowserProviderOptions } from "vitest/node";
+import { playwright } from "@vitest/browser-playwright";
 
 type ViteTestBrowserMode = "connect" | "launch";
+
+interface PlaywrightOptions {
+  connectOptions?: { wsEndpoint: string };
+  launchOptions?: Record<string, any>;
+}
 
 interface TestConfiguration {
   server?: UserConfig["server"];
   headless?: boolean;
-  browserProvider: BrowserProviderOptions;
+  playwrightOptions: PlaywrightOptions;
 }
 
 // Detect CI environment
@@ -220,8 +223,8 @@ function createConnectConfig(wsEndpoint: string): TestConfiguration {
       host: "0.0.0.0",
       ...(isCI ? {} : { allowedHosts: [worktreeDomain] }),
     },
-    browserProvider: {
-      connect: {
+    playwrightOptions: {
+      connectOptions: {
         wsEndpoint,
       },
     },
@@ -238,8 +241,8 @@ function createLaunchConfig(): TestConfiguration {
       ...(isCI ? {} : { allowedHosts: [worktreeDomain] }),
     },
     headless: true,
-    browserProvider: {
-      launch: {
+    playwrightOptions: {
+      launchOptions: {
         channel: "chrome",
         headless: true,
         args: [
@@ -364,7 +367,7 @@ export default defineConfig(async () => {
       globals: true,
       browser: {
         enabled: true,
-        provider: "playwright",
+        provider: playwright(config.playwrightOptions),
         headless: config.headless,
         api: {
           port: TEST_SERVER_PORT,
@@ -374,7 +377,6 @@ export default defineConfig(async () => {
         instances: [
           {
             browser: "chromium",
-            ...config.browserProvider,
           },
         ],
       },

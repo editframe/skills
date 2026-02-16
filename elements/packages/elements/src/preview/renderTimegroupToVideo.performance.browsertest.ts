@@ -18,7 +18,8 @@ describe("renderTimegroupToVideo performance", () => {
     // Create a simple timegroup with some content
     const tg = document.createElement("ef-timegroup") as EFTimegroup;
     tg.style.cssText = "width: 640px; height: 360px; background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);";
-    tg.setAttribute("duration", "2000ms"); // 2 seconds
+    tg.setAttribute("mode", "fixed");
+    tg.setAttribute("duration", "2s");
     
     // Add some complex content to make serialization take time
     const shapes = document.createElement("div");
@@ -94,7 +95,8 @@ describe("renderTimegroupToVideo performance", () => {
     // This test demonstrates the parallelization benefits
     const tg = document.createElement("ef-timegroup") as EFTimegroup;
     tg.style.cssText = "width: 320px; height: 240px; background: #1a1a2e;";
-    tg.setAttribute("duration", "3000ms"); // 3 seconds
+    tg.setAttribute("mode", "fixed");
+    tg.setAttribute("duration", "3s");
     
     // Simple content
     const content = document.createElement("div");

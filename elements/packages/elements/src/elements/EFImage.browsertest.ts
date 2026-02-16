@@ -12,14 +12,17 @@ describe("EFImage", () => {
     afterEach(() => {
       delete window.FRAMEGEN_BRIDGE;
     });
-    test("assetPath uses http:// protocol", () => {
-      const workbench = document.createElement("ef-workbench");
+    test("assetPath uses apiHost and files endpoint", () => {
+      const preview = document.createElement("ef-preview");
       const element = document.createElement("ef-image");
-      workbench.appendChild(element);
+      preview.apiHost = "https://editframe.com";
+      preview.appendChild(element);
+      document.body.appendChild(preview);
       element.assetId = "550e8400-e29b-41d4-a716-446655440000";
       expect(element.assetPath()).toBe(
-        "https://editframe.com/api/v1/image_files/550e8400-e29b-41d4-a716-446655440000",
+        "https://editframe.com/api/v1/files/550e8400-e29b-41d4-a716-446655440000",
       );
+      preview.remove();
     });
   });
 
@@ -27,10 +30,15 @@ describe("EFImage", () => {
     test("determines assetPath", () => {
       const id = v4();
       const image = document.createElement("ef-image");
+      const preview = document.createElement("ef-preview");
+      preview.apiHost = "https://editframe.com";
       image.setAttribute("asset-id", id);
+      preview.appendChild(image);
+      document.body.appendChild(preview);
       expect(image.assetPath()).toBe(
-        `https://editframe.com/api/v1/image_files/${id}`,
+        `https://editframe.com/api/v1/files/${id}`,
       );
+      preview.remove();
     });
 
     test("honors apiHost", () => {
@@ -41,7 +49,8 @@ describe("EFImage", () => {
       preview.appendChild(image);
       preview.apiHost = "test://";
       document.body.appendChild(preview);
-      expect(image.assetPath()).toBe(`test:///api/v1/image_files/${id}`);
+      expect(image.assetPath()).toBe(`test:///api/v1/files/${id}`);
+      preview.remove();
     });
   });
 
@@ -92,7 +101,7 @@ describe("EFImage", () => {
     test("assetPath preserves local file behavior", () => {
       const image = document.createElement("ef-image");
       image.src = "local-image.jpg";
-      expect(image.assetPath()).toBe("/@ef-image/local-image.jpg");
+      expect(image.assetPath()).toBe("/api/v1/assets/local/image?src=local-image.jpg");
     });
 
     test("assetPath preserves asset-id priority over direct URL", () => {
@@ -100,11 +109,13 @@ describe("EFImage", () => {
       const preview = document.createElement("ef-preview");
       preview.appendChild(image);
       preview.apiHost = "https://api.test.com";
+      document.body.appendChild(preview);
       image.src = "https://example.com/image.jpg";
       image.assetId = "test-asset-id";
       expect(image.assetPath()).toBe(
-        "https://api.test.com/api/v1/image_files/test-asset-id",
+        "https://api.test.com/api/v1/files/test-asset-id",
       );
+      preview.remove();
     });
 
     test("handles CORS fallback for direct URLs", () => {
@@ -122,30 +133,22 @@ describe("EFImage", () => {
     test("renders SVG with viewBox but no width/height attributes", async () => {
       const image = document.createElement("ef-image");
       document.body.appendChild(image);
-      
-      // Create an SVG blob with only viewBox (no width/height)
+
+      // Use data URI for SVG with only viewBox (no width/height)
       const svgContent = '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="#3b82f6" /></svg>';
-      const blob = new Blob([svgContent], { type: "image/svg+xml" });
-      const url = URL.createObjectURL(blob);
-      
-      image.src = url;
+      const dataUri = "data:image/svg+xml," + encodeURIComponent(svgContent);
+
+      image.src = dataUri;
       image.style.width = "200px";
       image.style.height = "200px";
-      
-      await image.loadImage();
-      
-      const canvas = image.canvasRef.value;
-      expect(canvas).toBeDefined();
-      expect(canvas!.width).toBeGreaterThan(0);
-      expect(canvas!.height).toBeGreaterThan(0);
-      
-      // Verify canvas has content (not blank)
-      const ctx = canvas!.getContext("2d");
-      const imageData = ctx!.getImageData(0, 0, canvas!.width, canvas!.height);
-      const hasNonZeroPixels = imageData.data.some(byte => byte !== 0);
-      expect(hasNonZeroPixels).toBe(true);
-      
-      URL.revokeObjectURL(url);
+
+      await image.updateComplete;
+
+      // With a data URI, EFImage renders an <img> element (direct URL path)
+      const imgEl = image.imageRef.value;
+      expect(imgEl).toBeDefined();
+      expect(imgEl!.complete || imgEl!.naturalWidth > 0).toBe(true);
+
       document.body.removeChild(image);
     });
   });

@@ -37,7 +37,7 @@ const TimingDisplay: FC<TimingDisplayProps> = ({ onUpdate }) => {
     <Preview id="test-preview">
       <Timegroup mode="fixed" duration="3s" ref={ref}>
         <Video
-          src="https://editframe-dev-assets.s3.us-east-1.amazonaws.com/test-assets/test_audio.mp4"
+          src="test_audio.mp4"
           trim="0s-1s"
         />
       </Timegroup>
@@ -77,8 +77,10 @@ describe("useTimingInfo", () => {
     await timegroup.updateComplete;
     await timegroup.waitForMediaDurations();
 
-    // Wait for initial frame task
-    await timegroup.frameTask.run();
+    // Trigger a Lit update cycle so the controller fires hostUpdated
+    timegroup.currentTimeMs = 0;
+    await timegroup.updateComplete;
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     assert.ok(receivedInfo, "Should receive timing info");
     assert.equal(receivedInfo?.ownCurrentTimeMs, 0);

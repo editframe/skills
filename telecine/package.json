@@ -53,7 +53,7 @@
     "@types/wavesurfer.js": "^6.0.12",
     "@types/ws": "^8.5.12",
     "@vitejs/plugin-react": "^4.7.0",
-    "@vitest/browser": "^3.2.4",
+    "@vitest/browser-playwright": "^4.0.0",
     "fake-indexeddb": "^5.0.1",
     "jsdom": "^24.0.0",
     "kysely-codegen": "^0.16.8",
@@ -73,7 +73,7 @@
     "typescript": "^5.9.3",
     "typescript-plugin-css-modules": "^5.0.2",
     "vite-plugin-singlefile": "^2.3.0",
-    "vitest": "^3.2.4",
+    "vitest": "^4.0.0",
     "why-is-node-running": "^3.2.2"
   },
   "optionalDependencies": {

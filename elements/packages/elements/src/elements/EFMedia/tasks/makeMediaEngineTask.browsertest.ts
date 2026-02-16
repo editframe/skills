@@ -45,53 +45,47 @@ const testWithElement = baseTest.extend<{
 describe("makeMediaEngineTask", () => {
   describe("createMediaEngine - Engine Selection Logic", () => {
     testWithElement(
-      "should throw error for empty src when no assetId",
+      "should return undefined for empty src when no assetId",
       async ({ element, expect }) => {
         element.setAttribute("src", "");
         element.removeAttribute("asset-id");
 
-        await expect(createMediaEngine(element)).rejects.toThrow(
-          "Unsupported media source",
-        );
+        const result = await createMediaEngine(element);
+        expect(result).toBeUndefined();
       },
     );
 
     testWithElement(
-      "should throw error for whitespace-only src when no assetId",
+      "should return undefined for whitespace-only src when no assetId",
       async ({ element, expect }) => {
         element.setAttribute("src", "   ");
         element.removeAttribute("asset-id");
 
-        await expect(createMediaEngine(element)).rejects.toThrow(
-          "Unsupported media source",
-        );
+        const result = await createMediaEngine(element);
+        expect(result).toBeUndefined();
       },
     );
 
     testWithElement(
-      "should throw error for null src when no assetId",
+      "should return undefined for null src when no assetId",
       async ({ element, expect }) => {
         element.removeAttribute("src");
         element.removeAttribute("asset-id");
 
-        await expect(createMediaEngine(element)).rejects.toThrow(
-          "Unsupported media source",
-        );
+        const result = await createMediaEngine(element);
+        expect(result).toBeUndefined();
       },
     );
 
     testWithElement(
-      "should throw error when assetId is provided but apiHost is missing",
+      "should return undefined when assetId is provided but apiHost is missing",
       async ({ element, expect }) => {
         element.setAttribute("asset-id", "test-asset-123");
-        element.setAttribute("api-host", ""); // Explicitly set empty api-host
-        await element.updateComplete; // Wait for Lit to process attributes
+        element.setAttribute("api-host", "");
+        await element.updateComplete;
 
-        // The test might hit "Unsupported media source" instead due to src being empty
-        // Both errors indicate improper setup, so accept either
-        await expect(createMediaEngine(element)).rejects.toThrow(
-          /(API host is required for AssetID mode|Unsupported media source)/,
-        );
+        const result = await createMediaEngine(element);
+        expect(result).toBeUndefined();
       },
     );
 

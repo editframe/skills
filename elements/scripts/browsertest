@@ -63,57 +63,16 @@ WS_ENDPOINT_PATH="$MONOREPO_ROOT/.wsEndpoint.json"
 # Export monorepo root so vitest config can find it even when bundled
 export MONOREPO_ROOT
 
-# Check if .wsEndpoint.json exists, if not start browser server
+# In local dev, tests run inside Docker and connect to a browser on the host machine.
+# In CI, we launch a browser directly since there's no host machine.
 if [ ! -f "$WS_ENDPOINT_PATH" ]; then
-  echo "Browser server not running. Starting browser server..."
-  
-  # Start browser server in background using the root script
-  # Redirect stderr to capture any errors
-  LOG_FILE=$(mktemp)
-  "$MONOREPO_ROOT/scripts/start-host-chrome" > "$LOG_FILE" 2>&1 &
-  BROWSER_PID=$!
-  
-  # Wait for .wsEndpoint.json to be created (poll with timeout)
-  TIMEOUT=20
-  ELAPSED=0
-  while [ $ELAPSED -lt $TIMEOUT ]; do
-    # Check if process is still running
-    if ! kill -0 $BROWSER_PID 2>/dev/null; then
-      # Process died, check for errors
-      if [ ! -f "$WS_ENDPOINT_PATH" ]; then
-        echo "Error: Browser server process exited unexpectedly" >&2
-        echo "Output:" >&2
-        cat "$LOG_FILE" >&2
-        rm -f "$LOG_FILE"
-        exit 1
-      fi
-    fi
-    
-    if [ -f "$WS_ENDPOINT_PATH" ]; then
-      # Give it a moment to ensure the file is fully written and readable
-      sleep 0.5
-      if [ -f "$WS_ENDPOINT_PATH" ] && [ -r "$WS_ENDPOINT_PATH" ]; then
-        echo "Browser server started successfully"
-        rm -f "$LOG_FILE"
-        break
-      fi
-    fi
-    sleep 0.5
-    ELAPSED=$((ELAPSED + 1))
-  done
-  
-  rm -f "$LOG_FILE"
-  
-  if [ ! -f "$WS_ENDPOINT_PATH" ] || [ ! -r "$WS_ENDPOINT_PATH" ]; then
-    echo "Error: Browser server failed to start within ${TIMEOUT}s" >&2
-    kill $BROWSER_PID 2>/dev/null || true
-    exit 1
-  fi
-  
-  # Additional verification: ensure file is valid JSON
-  if ! python3 -m json.tool "$WS_ENDPOINT_PATH" > /dev/null 2>&1; then
-    echo "Error: .wsEndpoint.json exists but is not valid JSON" >&2
-    kill $BROWSER_PID 2>/dev/null || true
+  if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
+    echo "CI detected — browser will be launched by vitest"
+  else
+    echo "Error: No browser server running. Start one on the host machine first:" >&2
+    echo "" >&2
+    echo "  $MONOREPO_ROOT/scripts/start-host-chrome" >&2
+    echo "" >&2
     exit 1
   fi
 fi

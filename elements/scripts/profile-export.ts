@@ -276,14 +276,18 @@ async function main() {
     console.log(`📄 Loading ${devUrl}...`);
     await page.goto(devUrl, { waitUntil: "networkidle", timeout: 60000 });
 
-    // Set native API preference if --no-native flag was passed
+    // Set or clear native API preference
     if (disableNativeApi) {
       await page.evaluate(() => {
         localStorage.setItem("ef-preview-native-canvas-api-enabled", "false");
       });
-      // Reload to apply the setting
       await page.reload({ waitUntil: "networkidle", timeout: 60000 });
       console.log(`🔧 Native API disabled, using foreignObject fallback`);
+    } else {
+      // Clear any previously-set disable flag so native mode works
+      await page.evaluate(() => {
+        localStorage.removeItem("ef-preview-native-canvas-api-enabled");
+      });
     }
 
     // Wait for timegroup to be ready
@@ -374,22 +378,25 @@ async function main() {
     const exportPromise = page.evaluate(async ({ maxDur, benchmark }) => {
       const timegroup = document.querySelector("ef-timegroup") as any;
       if (timegroup?.renderToVideo) {
-        const exportDuration = timegroup.durationMs; // Profile full duration
-        const buffer = await timegroup.renderToVideo({
-          toMs: exportDuration,
-          streaming: false,
-          includeAudio: true, // Include audio in export
-          returnBuffer: true, // Return buffer so we can save it
-          benchmarkMode: benchmark,
-          contentReadyMode: "immediate", // Skip blocking check for faster profiling
-        });
-        // Return buffer as array for saving (smaller chunks work better than base64)
-        if (buffer) {
-          return { success: true, videoBuffer: Array.from(new Uint8Array(buffer)) };
+        try {
+          const exportDuration = timegroup.durationMs;
+          const buffer = await timegroup.renderToVideo({
+            toMs: exportDuration,
+            streaming: false,
+            includeAudio: true,
+            returnBuffer: true,
+            benchmarkMode: benchmark,
+            contentReadyMode: "immediate",
+          });
+          if (buffer) {
+            return { success: true, videoBuffer: Array.from(new Uint8Array(buffer)) };
+          }
+          return { success: true };
+        } catch (e: any) {
+          return { success: false, error: `${e.name}: ${e.message}\n${e.stack}` };
         }
-        return { success: true };
       }
-      
+
       return { success: false, error: "No export method found" };
     }, { maxDur: maxDuration, benchmark: benchmarkMode });
 

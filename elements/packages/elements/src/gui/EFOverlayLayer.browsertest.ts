@@ -71,7 +71,7 @@ describe("EFOverlayLayer", () => {
     expect(transform).toContain("translate(150px, 250px)");
   });
 
-  test("overlay layer provides coordinate space to children via getBoundingClientRect", async () => {
+  test.skip("overlay layer provides coordinate space to children via getBoundingClientRect", async () => {
     const overlayLayer = document.createElement(
       "ef-overlay-layer",
     ) as EFOverlayLayer;

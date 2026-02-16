@@ -51,7 +51,6 @@ describe("EFPlay", () => {
     await video.updateComplete;
 
     await video.mediaEngineTask.run();
-    await new Promise((resolve) => setTimeout(resolve, 100));
     await play.updateComplete;
 
     expect(play.playing).toBe(false);
@@ -84,7 +83,6 @@ describe("EFPlay", () => {
     await video.updateComplete;
 
     await video.mediaEngineTask.run();
-    await new Promise((resolve) => setTimeout(resolve, 100));
     await play.updateComplete;
 
     expect(getComputedStyle(play).display).not.toBe("none");
@@ -122,7 +120,6 @@ describe("EFPlay", () => {
     await video.updateComplete;
 
     await video.mediaEngineTask.run();
-    await new Promise((resolve) => setTimeout(resolve, 100));
     await play.updateComplete;
 
     const playSpy = vi.spyOn(video.playbackController, "play");
@@ -185,7 +182,6 @@ describe("EFPlay", () => {
     await video.updateComplete;
 
     await video.mediaEngineTask.run();
-    await new Promise((resolve) => setTimeout(resolve, 100));
     await play.updateComplete;
 
     expect(play.efContext).toBe(preview);

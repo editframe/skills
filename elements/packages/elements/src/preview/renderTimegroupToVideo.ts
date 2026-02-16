@@ -141,14 +141,29 @@ function resolveConfig(
 
   // Force layout reflow before reading dimensions
   void timegroup.offsetHeight;
-  
-  const timegroupWidth = timegroup.offsetWidth;
-  const timegroupHeight = timegroup.offsetHeight;
-  
-  logger.debug(`[renderTimegroupToVideo] Timegroup dimensions: ${timegroupWidth}x${timegroupHeight}`);
-  logger.debug(`[renderTimegroupToVideo] Computed style:`, getComputedStyle(timegroup).width, getComputedStyle(timegroup).height);
-  logger.debug(`[renderTimegroupToVideo] BoundingClientRect:`, timegroup.getBoundingClientRect());
-  
+
+  // Try multiple sources for dimensions (offsetWidth can be 0 in headless browsers)
+  let timegroupWidth = timegroup.offsetWidth;
+  let timegroupHeight = timegroup.offsetHeight;
+
+  if (!timegroupWidth || !timegroupHeight) {
+    const rect = timegroup.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      timegroupWidth = rect.width;
+      timegroupHeight = rect.height;
+    }
+  }
+
+  if (!timegroupWidth || !timegroupHeight) {
+    const computed = getComputedStyle(timegroup);
+    const cw = parseFloat(computed.width);
+    const ch = parseFloat(computed.height);
+    if (cw > 0 && ch > 0) {
+      timegroupWidth = cw;
+      timegroupHeight = ch;
+    }
+  }
+
   if (!timegroupWidth || !timegroupHeight) {
     throw new Error(
       `Timegroup has no dimensions (${timegroupWidth}x${timegroupHeight}). ` +

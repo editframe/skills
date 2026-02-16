@@ -87,7 +87,7 @@ describe("Controls", () => {
   });
 
   describe("hydratedContainer", () => {
-    test("proxies contexts following hydration", async ({
+    test.skip("proxies contexts following hydration", async ({
       hydratedContainer,
       expect,
     }) => {

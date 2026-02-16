@@ -3,21 +3,22 @@
  * Ensures initializer runs once on prime timeline and once on each clone.
  */
 
-import { describe, test, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { EFTimegroup } from "./EFTimegroup.js";
 
 describe("EFTimegroup initializer", () => {
   let container: HTMLDivElement;
 
   beforeEach(() => {
-    while (document.body.children.length) {
-      document.body.children[0]?.remove();
-    }
     container = document.createElement("div");
     document.body.appendChild(container);
   });
 
-  test("should run initializer on prime timeline when set before connection", async () => {
+  afterEach(() => {
+    container.remove();
+  });
+
+  it("should run initializer on prime timeline when set before connection", async () => {
     const tg = document.createElement("ef-timegroup") as EFTimegroup;
     const initializerFn = vi.fn();
     
@@ -33,7 +34,7 @@ describe("EFTimegroup initializer", () => {
     expect(initializerFn).toHaveBeenCalledWith(tg);
   });
 
-  test("should NOT run initializer on prime timeline when set after connection", async () => {
+  it("should NOT run initializer on prime timeline when set after connection", async () => {
     const tg = document.createElement("ef-timegroup") as EFTimegroup;
     const initializerFn = vi.fn();
     
@@ -50,7 +51,7 @@ describe("EFTimegroup initializer", () => {
     expect(initializerFn).toHaveBeenCalledTimes(0);
   });
 
-  test("should only run initializer once even if set multiple times", async () => {
+  it("should only run initializer once even if set multiple times", async () => {
     const tg = document.createElement("ef-timegroup") as EFTimegroup;
     const initializerFn1 = vi.fn();
     const initializerFn2 = vi.fn();
@@ -72,7 +73,7 @@ describe("EFTimegroup initializer", () => {
     expect(initializerFn2).toHaveBeenCalledTimes(0);
   });
 
-  test("should use initializer set after connection for createRenderClone", async () => {
+  it("should use initializer set after connection for createRenderClone", async () => {
     const tg = document.createElement("ef-timegroup") as EFTimegroup;
     const initializerFn = vi.fn();
     
@@ -96,7 +97,7 @@ describe("EFTimegroup initializer", () => {
     cleanup();
   });
 
-  test("should run initializer on render clones", async () => {
+  it("should run initializer on render clones", async () => {
     const tg = document.createElement("ef-timegroup") as EFTimegroup;
     const initializerFn = vi.fn();
     
@@ -121,7 +122,7 @@ describe("EFTimegroup initializer", () => {
     cleanup();
   });
 
-  test("should work with React-style initializers that replace the DOM", async () => {
+  it("should work with React-style initializers that replace the DOM", async () => {
     const tg = document.createElement("ef-timegroup") as EFTimegroup;
     let cloneReplaced = false;
     
@@ -148,5 +149,54 @@ describe("EFTimegroup initializer", () => {
     expect(clone).toBeInstanceOf(EFTimegroup);
     
     cleanup();
+  });
+
+  it("should handle initializer that throws error", async () => {
+    const tg = document.createElement("ef-timegroup") as EFTimegroup;
+
+    tg.initializer = () => {
+      throw new Error("Initializer error");
+    };
+
+    // Initializer errors fire asynchronously via updateComplete.then(),
+    // so they become unhandled rejections rather than rejecting updateComplete.
+    const errorPromise = new Promise<Error>((resolve) => {
+      const handler = (e: PromiseRejectionEvent) => {
+        e.preventDefault();
+        window.removeEventListener("unhandledrejection", handler);
+        resolve(e.reason);
+      };
+      window.addEventListener("unhandledrejection", handler);
+    });
+
+    container.appendChild(tg);
+    await tg.updateComplete;
+
+    const error = await errorPromise;
+    expect(error.message).toContain("Initializer error");
+  });
+
+  it("should reject async initializers", async () => {
+    const tg = document.createElement("ef-timegroup") as EFTimegroup;
+
+    // @ts-expect-error - intentionally testing invalid usage
+    tg.initializer = async () => {
+      await new Promise(resolve => setTimeout(resolve, 10));
+    };
+
+    const errorPromise = new Promise<Error>((resolve) => {
+      const handler = (e: PromiseRejectionEvent) => {
+        e.preventDefault();
+        window.removeEventListener("unhandledrejection", handler);
+        resolve(e.reason);
+      };
+      window.addEventListener("unhandledrejection", handler);
+    });
+
+    container.appendChild(tg);
+    await tg.updateComplete;
+
+    const error = await errorPromise;
+    expect(error.message).toContain("must be synchronous");
   });
 });

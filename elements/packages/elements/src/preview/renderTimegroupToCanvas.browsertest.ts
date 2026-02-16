@@ -27,7 +27,7 @@ import {
   isNativeCanvasApiAvailable,
   setNativeCanvasApiEnabled,
 } from "./previewSettings.js";
-import { commands } from "@vitest/browser/context";
+import { commands } from "vitest/browser";
 import { logger } from "./logger.js";
 import "../elements/EFTimegroup.js";
 import "../elements/EFVideo.js";
@@ -368,8 +368,9 @@ function hasCanvasContent(source: CanvasImageSource | HTMLCanvasElement): boolea
   } else {
     // Draw to temp canvas
     canvas = document.createElement('canvas');
-    canvas.width = source.width as number;
-    canvas.height = source.height as number;
+    const s = source as unknown as { naturalWidth?: number; width: number; naturalHeight?: number; height: number };
+    canvas.width = s.naturalWidth ?? s.width;
+    canvas.height = s.naturalHeight ?? s.height;
     const ctx = canvas.getContext("2d")!;
     ctx.drawImage(source, 0, 0);
   }
@@ -603,12 +604,12 @@ describe("renderTimegroupToCanvas", () => {
 
     test("native: captures at different scales", async ({ htmlTimegroup }) => {
       setNativeCanvasApiEnabled(true);
-      const dpr = window.devicePixelRatio || 1;
 
       for (let i = 0; i < scales.length; i++) {
-        const canvas = await captureTimegroupAtTime(htmlTimegroup, { timeMs: 0, scale: scales[i]! });
-        expect(canvas.width).toBe(expectedWidths[i]! * dpr);
-        expect(hasCanvasContent(canvas)).toBe(true);
+        const result = await captureTimegroupAtTime(htmlTimegroup, { timeMs: 0, scale: scales[i]! });
+        // Native path uses skipDprScaling: true, so canvas is at 1x DPR
+        expect(result.width).toBe(expectedWidths[i]!);
+        expect(hasCanvasContent(result)).toBe(true);
       }
     });
 
@@ -616,12 +617,11 @@ describe("renderTimegroupToCanvas", () => {
       htmlTimegroup,
     }) => {
       setNativeCanvasApiEnabled(false);
-      const dpr = window.devicePixelRatio || 1;
 
       for (let i = 0; i < scales.length; i++) {
-        const canvas = await captureTimegroupAtTime(htmlTimegroup, { timeMs: 0, scale: scales[i]! });
-        expect(canvas.width).toBe(expectedWidths[i]! * dpr);
-        expect(hasCanvasContent(canvas)).toBe(true);
+        const result = await captureTimegroupAtTime(htmlTimegroup, { timeMs: 0, scale: scales[i]! });
+        expect(result.width).toBe(expectedWidths[i]!);
+        expect(hasCanvasContent(result)).toBe(true);
       }
     });
   });
@@ -732,7 +732,19 @@ describe("renderTimegroupToCanvas", () => {
      * Check if video content within a canvas has been rendered.
      * Samples the area where video should be and checks for non-background pixels.
      */
-    function hasVideoContentInCenter(canvas: HTMLCanvasElement): boolean {
+    function hasVideoContentInCenter(source: CanvasImageSource | HTMLCanvasElement): boolean {
+      let canvas: HTMLCanvasElement;
+      if (source instanceof HTMLCanvasElement) {
+        canvas = source;
+      } else {
+        canvas = document.createElement("canvas");
+        const s = source as unknown as { naturalWidth?: number; width: number; naturalHeight?: number; height: number };
+        const w = s.naturalWidth ?? s.width;
+        const h = s.naturalHeight ?? s.height;
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext("2d")!.drawImage(source, 0, 0);
+      }
       const ctx = canvas.getContext("2d")!;
       const width = canvas.width;
       const height = canvas.height;
@@ -2123,10 +2135,10 @@ describe("captions rendering in foreignObject path", () => {
       const cloneActiveWord = clone.querySelector("ef-captions-active-word") as any;
       await cloneActiveWord?.updateComplete;
       
-      const cloneWordText = cloneActiveWord?.shadowRoot?.textContent?.trim();
+      const cloneWordText = cloneActiveWord?.textContent?.trim();
       console.log(`Clone caption text at 500ms: "${cloneWordText}"`);
       expect(cloneWordText).toBeTruthy();
-      
+
     } finally {
       cleanup();
       container.remove();
@@ -2216,7 +2228,7 @@ describe("captions rendering in foreignObject path", () => {
       const cloneActiveWord = clone.querySelector("ef-captions-active-word") as any;
       await cloneActiveWord?.updateComplete;
       
-      const cloneWordText = cloneActiveWord?.shadowRoot?.textContent?.trim();
+      const cloneWordText = cloneActiveWord?.textContent?.trim();
       console.log(`Clone caption text at 500ms (JS data): "${cloneWordText}"`);
       expect(cloneWordText).toBe("JSWord1");
       
@@ -2295,8 +2307,8 @@ describe("captions rendering in foreignObject path", () => {
     // Seek to time where "Hello" should be visible
     await seekAndWait(500);
     
-    // Verify the source element has correct text in shadow DOM
-    const sourceText = activeWord.shadowRoot?.textContent?.trim();
+    // Verify the source element has correct text (light DOM — wordText setter uses this.textContent)
+    const sourceText = activeWord.textContent?.trim();
     console.log(`Source element text at 500ms: "${sourceText}"`);
     expect(sourceText).toBe("Hello");
     
@@ -2314,8 +2326,8 @@ describe("captions rendering in foreignObject path", () => {
     // Now seek to a different time where "World" should be visible
     await seekAndWait(1500);
     
-    // Verify source element now has "World"
-    const sourceText2 = activeWord.shadowRoot?.textContent?.trim();
+    // Verify source element now has "World" (light DOM)
+    const sourceText2 = activeWord.textContent?.trim();
     console.log(`Source element text at 1500ms: "${sourceText2}"`);
     expect(sourceText2).toBe("World");
     

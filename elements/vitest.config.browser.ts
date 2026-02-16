@@ -1,10 +1,8 @@
-/// <reference types="@vitest/browser/providers/playwright" />
-
 // import "tsconfig-paths/register";
 import * as path from "node:path";
 import type { UserConfig } from "vite";
 import { defineConfig } from "vitest/config";
-import type { BrowserProviderOptions } from "vitest/node";
+import { playwright } from "@vitest/browser-playwright";
 import { recordReplayProxyPlugin } from "./packages/elements/test/recordReplayProxyPlugin.js";
 import { TEST_SERVER_PORT } from "./packages/elements/test/constants.js";
 import debug from 'debug';
@@ -13,10 +11,15 @@ const log = debug('ef');
 
 type ViteTestBrowserMode = "connect" | "launch";
 
+interface PlaywrightOptions {
+  connectOptions?: { wsEndpoint: string };
+  launchOptions?: Record<string, any>;
+}
+
 interface TestConfiguration {
   server?: UserConfig["server"];
   headless?: boolean;
-  browserProvider: BrowserProviderOptions;
+  playwrightOptions: PlaywrightOptions;
 }
 
 // Detect CI environment - check multiple indicators
@@ -50,8 +53,8 @@ function createConnectConfig(wsEndpoint: string): TestConfiguration {
       // This is needed for Traefik routing (not needed in CI)
       ...(isCI ? {} : { allowedHosts: [worktreeDomain] }),
     },
-    browserProvider: {
-      connect: {
+    playwrightOptions: {
+      connectOptions: {
         wsEndpoint,
       },
     },
@@ -71,8 +74,8 @@ function createLaunchConfig(): TestConfiguration {
       ...(isCI ? {} : { allowedHosts: [worktreeDomain] }),
     },
     headless: true,
-    browserProvider: {
-      launch: {
+    playwrightOptions: {
+      launchOptions: {
         channel: "chrome",
         headless: true,
         args: [
@@ -290,11 +293,10 @@ export default defineConfig(async () => {
       // Global setup file that runs before every test
       setupFiles: ["./packages/elements/test/setup.ts"],
       // No longer need global setup - proxy is integrated into Vite server
-      minWorkers: 1,
       maxWorkers: 1,
       browser: {
         enabled: true,
-        provider: "playwright",
+        provider: playwright(config.playwrightOptions),
         headless: config.headless,
         commands: {
           /**
@@ -493,7 +495,6 @@ export default defineConfig(async () => {
         instances: [
           {
             browser: "chromium",
-            ...config.browserProvider,
           },
         ],
       },

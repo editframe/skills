@@ -1,5 +1,6 @@
 import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
+import { playwright } from "@vitest/browser-playwright";
 
 export default defineConfig({
   plugins: [tsconfigPaths()],
@@ -10,17 +11,12 @@ export default defineConfig({
     /* Globals MUST be enabled for testing library to automatically cleanup between tests */
     globals: true,
     browser: {
-      provider: "playwright",
+      provider: playwright(),
       enabled: true,
-      name: "chromium",
       instances: [
         {
           browser: "chromium",
           headless: true,
-          // @ts-expect-error Launch options are not typed, but they work. We need to use chrome for h264 decoding
-          launch: {
-            // Using default Chromium instead of Chrome channel for ARM64 compatibility
-          },
         },
       ],
     },

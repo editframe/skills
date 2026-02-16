@@ -10,13 +10,8 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    minWorkers: 1,
     maxWorkers: 1,
-    poolOptions: {
-      threads: {
-        singleThread: true,
-      },
-    },
+    isolate: false,
     setupFiles: ["./services/load-config.ts", "./test-env.ts"],
     include: ["**/*.test.ts", "**/*.test.tsx"],
     exclude: [

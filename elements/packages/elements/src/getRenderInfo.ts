@@ -37,8 +37,26 @@ export const getRenderInfo = async () => {
   console.error("Waiting for media durations", rootTimeGroup);
   await rootTimeGroup.waitForMediaDurations();
 
-  const width = rootTimeGroup.clientWidth;
-  const height = rootTimeGroup.clientHeight;
+  let width = rootTimeGroup.clientWidth;
+  let height = rootTimeGroup.clientHeight;
+
+  // Fallback for headless browsers where clientWidth/Height can be 0
+  if (!width || !height) {
+    const rect = rootTimeGroup.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      width = rect.width;
+      height = rect.height;
+    }
+  }
+  if (!width || !height) {
+    const computed = getComputedStyle(rootTimeGroup);
+    const cw = parseFloat(computed.width);
+    const ch = parseFloat(computed.height);
+    if (cw > 0 && ch > 0) {
+      width = cw;
+      height = ch;
+    }
+  }
   const fps = 30;
   const durationMs = Math.round(rootTimeGroup.durationMs);
 

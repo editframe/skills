@@ -83,5 +83,5 @@ describe("Video Frame Readiness", () => {
     } finally {
       document.body.removeChild(tg);
     }
-  }, { timeout: 30000 });
+  }, 30000);
 });

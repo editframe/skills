@@ -418,10 +418,16 @@ export class EFMedia extends EFTargetable(
     this.mediaEngineTask.startPending();
     this.setContentReadyState("loading");
 
-    this.#mediaEnginePromise = this.#createMediaEngine(signal);
-    
+    // Store the handled promise so that concurrent callers at the cache check
+    // (line above) get a resolved promise, not a raw rejecting one.
+    const loadPromise = this.#loadMediaEngine(signal);
+    this.#mediaEnginePromise = loadPromise;
+    return loadPromise;
+  }
+
+  async #loadMediaEngine(signal?: AbortSignal): Promise<MediaEngine | undefined> {
     try {
-      this.#mediaEngine = await this.#mediaEnginePromise;
+      this.#mediaEngine = await this.#createMediaEngine(signal);
       this.#mediaEngineError = undefined;
       if (this.#mediaEngine) {
         this.mediaEngineTask.setValue(this.#mediaEngine);
@@ -436,7 +442,7 @@ export class EFMedia extends EFTargetable(
       this.#mediaEngineError = error instanceof Error ? error : new Error(String(error));
       this.mediaEngineTask.setError(this.#mediaEngineError);
       this.setContentReadyState("error");
-      
+
       // Don't throw for expected errors
       const isExpectedError = error instanceof DOMException && error.name === "AbortError" ||
         error instanceof Error && (
@@ -445,11 +451,11 @@ export class EFMedia extends EFTargetable(
           error.message.includes("404") ||
           error.message.includes("Failed to fetch")
         );
-      
+
       if (!isExpectedError) {
         console.error("Media engine error:", error);
       }
-      
+
       return undefined;
     }
   }

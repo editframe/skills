@@ -243,8 +243,8 @@ describe("Media Engine Selection", () => {
     const video = document.createElement("ef-video");
     video.src = remoteSrc;
     document.body.appendChild(video);
-    await video.mediaEngineTask.run();
-    expect(video.mediaEngineTask.value).toBeInstanceOf(JitMediaEngine);
+    const engine = await video.getMediaEngine();
+    expect(engine).toBeInstanceOf(JitMediaEngine);
     video.remove();
   });
 
@@ -254,9 +254,9 @@ describe("Media Engine Selection", () => {
   }) => {
     const video = document.createElement("ef-video");
     video.src = remoteSrc;
-    configuration.appendChild(video); // Fixture `configuration` is already on the page.
-    await video.mediaEngineTask.run();
-    expect(video.mediaEngineTask.value).toBeInstanceOf(JitMediaEngine);
+    configuration.appendChild(video);
+    const engine = await video.getMediaEngine();
+    expect(engine).toBeInstanceOf(JitMediaEngine);
     video.remove();
   });
 
@@ -268,8 +268,8 @@ describe("Media Engine Selection", () => {
     const video = document.createElement("ef-video");
     video.src = remoteSrc;
     configuration.appendChild(video);
-    await video.mediaEngineTask.run();
-    expect(video.mediaEngineTask.value).toBeInstanceOf(JitMediaEngine);
+    const engine = await video.getMediaEngine();
+    expect(engine).toBeInstanceOf(JitMediaEngine);
     video.remove();
   });
 
@@ -280,12 +280,12 @@ describe("Media Engine Selection", () => {
     configuration,
     expect,
   }) => {
-    configuration.setAttribute("media-engine", "cloud"); // Explicitly set to cloud
+    configuration.setAttribute("media-engine", "cloud");
     const video = document.createElement("ef-video");
     video.src = localSrc;
     configuration.appendChild(video);
-    await video.mediaEngineTask.run();
-    expect(video.mediaEngineTask.value).toBeInstanceOf(AssetMediaEngine);
+    const engine = await video.getMediaEngine();
+    expect(engine).toBeInstanceOf(AssetMediaEngine);
     video.remove();
   });
 });
@@ -581,13 +581,13 @@ describe("EFMedia", () => {
         timegroup.append(element);
         configuration.append(timegroup);
 
-        await element.mediaEngineTask.run();
+        await element.updateComplete;
 
         expect(element.fftSize).toBe(256);
         expect(element.fftDecay).toBe(4);
         expect(element.fftGain).toBe(2.0);
         expect(element.interpolateFrequencies).toBe(true);
-        expect(element.shouldInterpolateFrequencies).toBe(true);
+        expect(element.getShouldInterpolateFrequencies()).toBe(true);
       },
     );
 
@@ -600,9 +600,9 @@ describe("EFMedia", () => {
         timegroup.append(element);
         configuration.append(timegroup);
 
-        await element.mediaEngineTask.run();
+        await element.updateComplete;
 
-        const weights = element.FREQ_WEIGHTS;
+        const weights = element.getFreqWeights();
         expect(weights).toBeInstanceOf(Float32Array);
         expect(weights.length).toBe(element.fftSize / 2); // 64 for fftSize 128
 
@@ -638,11 +638,11 @@ describe("EFMedia", () => {
     }) => {
       element.assetId = "test-asset-456";
       await element.updateComplete;
-      expect(element.getAttribute("asset-id")).toBe("test-asset-456");
+      expect(element.getAttribute("file-id")).toBe("test-asset-456");
 
       element.assetId = null;
       await element.updateComplete;
-      expect(element.hasAttribute("asset-id")).toBe(false);
+      expect(element.hasAttribute("file-id")).toBe(false);
     });
 
     test("reads assetId from html source", async ({ expect }) => {

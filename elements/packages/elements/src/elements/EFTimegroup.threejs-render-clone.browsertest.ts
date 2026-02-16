@@ -34,13 +34,13 @@ describe("Canvas addFrameTask render clone synchronous rendering", () => {
     canvas.height = 300;
     canvas.style.width = "100%";
     canvas.style.height = "100%";
-    canvas.id = "test-canvas";
-    
+    canvas.dataset.testCanvas = "sync";
+
     tg.appendChild(canvas);
-    
+
     // Use initializer to set up rendering on both prime and clone
     tg.initializer = (instance) => {
-      const instanceCanvas = instance.querySelector("#test-canvas") as HTMLCanvasElement;
+      const instanceCanvas = instance.querySelector("[data-test-canvas='sync']") as HTMLCanvasElement;
       if (!instanceCanvas) return;
       
       const ctx = instanceCanvas.getContext("2d")!;
@@ -67,7 +67,7 @@ describe("Canvas addFrameTask render clone synchronous rendering", () => {
 
     try {
       // Find the canvas in the clone
-      const cloneCanvas = clone.querySelector("#test-canvas") as HTMLCanvasElement;
+      const cloneCanvas = clone.querySelector("[data-test-canvas='sync']") as HTMLCanvasElement;
       expect(cloneCanvas).toBeTruthy();
       expect(cloneCanvas.width).toBe(400);
       expect(cloneCanvas.height).toBe(300);
@@ -115,12 +115,12 @@ describe("Canvas addFrameTask render clone synchronous rendering", () => {
     const canvas = document.createElement("canvas");
     canvas.width = 400;
     canvas.height = 300;
-    canvas.id = "test-canvas-2";
+    canvas.dataset.testCanvas = "det";
     tg.appendChild(canvas);
-    
+
     // Use initializer to set up rendering
     tg.initializer = (instance) => {
-      const instanceCanvas = instance.querySelector("#test-canvas-2") as HTMLCanvasElement;
+      const instanceCanvas = instance.querySelector("[data-test-canvas='det']") as HTMLCanvasElement;
       if (!instanceCanvas) return;
       
       const ctx = instanceCanvas.getContext("2d")!;
@@ -144,7 +144,7 @@ describe("Canvas addFrameTask render clone synchronous rendering", () => {
     const { clone, cleanup } = await tg.createRenderClone();
 
     try {
-      const cloneCanvas = clone.querySelector("#test-canvas-2") as HTMLCanvasElement;
+      const cloneCanvas = clone.querySelector("[data-test-canvas='det']") as HTMLCanvasElement;
       const cloneCtx = cloneCanvas.getContext("2d")!;
 
       // Seek to 500ms twice and verify pixels are identical

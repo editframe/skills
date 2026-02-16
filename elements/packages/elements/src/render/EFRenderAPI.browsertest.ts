@@ -7,7 +7,6 @@
  * - Render info extraction
  */
 
-import { html, render } from "lit";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import "../elements/EFTimegroup.js";
 import "../elements/EFImage.js";
@@ -58,11 +57,10 @@ describe("EFRenderAPI", () => {
       </ef-configuration>
     `;
 
-    await customElements.whenDefined("ef-timegroup");
-    await customElements.whenDefined("ef-workbench");
-
-    // Wait a bit for initialization
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    const tg = document.querySelector("ef-timegroup") as any;
+    const wb = document.querySelector("ef-workbench") as any;
+    await tg.updateComplete;
+    await wb.updateComplete;
 
     expect(window.EF_RENDER?.isReady()).toBe(true);
   });
@@ -78,12 +76,11 @@ describe("EFRenderAPI", () => {
       </ef-configuration>
     `;
 
-    await customElements.whenDefined("ef-timegroup");
-    await customElements.whenDefined("ef-workbench");
-    await customElements.whenDefined("ef-image");
-
-    // Wait for initialization
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    const tg = document.querySelector("ef-timegroup") as any;
+    const wb = document.querySelector("ef-workbench") as any;
+    await tg.updateComplete;
+    await wb.updateComplete;
+    await tg.waitForMediaDurations();
 
     const buffer = await window.EF_RENDER!.render({
       fps: 30,
@@ -108,14 +105,13 @@ describe("EFRenderAPI", () => {
       </ef-configuration>
     `;
 
-    await customElements.whenDefined("ef-timegroup");
-    await customElements.whenDefined("ef-workbench");
-    await customElements.whenDefined("ef-image");
+    const tg = document.querySelector("ef-timegroup") as any;
+    const wb = document.querySelector("ef-workbench") as any;
+    await tg.updateComplete;
+    await wb.updateComplete;
+    await tg.waitForMediaDurations();
 
-    // Wait for initialization
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    const chunks: Uint8Array[] = [];
+    const chunks: unknown[] = [];
     let chunkCount = 0;
 
     // Set up chunk handler (simulating Playwright exposeFunction)
@@ -134,10 +130,12 @@ describe("EFRenderAPI", () => {
     expect(chunkCount).toBeGreaterThan(0);
     expect(chunks.length).toBeGreaterThan(0);
 
-    // Verify chunks are Uint8Array
+    // Chunks are StreamTargetChunk objects: { type: 'write', data: Uint8Array, position: number }
     for (const chunk of chunks) {
-      expect(chunk instanceof Uint8Array).toBe(true);
-      expect(chunk.length).toBeGreaterThan(0);
+      const c = chunk as { type: string; data: { byteLength: number }; position: number };
+      expect(c.type).toBe("write");
+      expect(c.data.byteLength).toBeGreaterThan(0);
+      expect(typeof c.position).toBe("number");
     }
   });
 
@@ -151,9 +149,10 @@ describe("EFRenderAPI", () => {
       </ef-configuration>
     `;
 
-    await customElements.whenDefined("ef-timegroup");
-    await customElements.whenDefined("ef-workbench");
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    const tg = document.querySelector("ef-timegroup") as any;
+    const wb = document.querySelector("ef-workbench") as any;
+    await tg.updateComplete;
+    await wb.updateComplete;
 
     // Clear onRenderChunk
     delete (window as any).onRenderChunk;
@@ -176,9 +175,10 @@ describe("EFRenderAPI", () => {
       </ef-configuration>
     `;
 
-    await customElements.whenDefined("ef-timegroup");
-    await customElements.whenDefined("ef-workbench");
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    const tg = document.querySelector("ef-timegroup") as any;
+    const wb = document.querySelector("ef-workbench") as any;
+    await tg.updateComplete;
+    await wb.updateComplete;
 
     const info = await window.EF_RENDER!.getRenderInfo();
 
@@ -199,27 +199,18 @@ describe("EFRenderAPI", () => {
       </ef-configuration>
     `;
 
-    await customElements.whenDefined("ef-timegroup");
-    await customElements.whenDefined("ef-workbench");
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
+    const tg = document.querySelector("ef-timegroup") as any;
     const workbench = document.querySelector("ef-workbench") as any;
+    await tg.updateComplete;
+    await workbench.updateComplete;
     expect(workbench.rendering).toBe(false);
 
     window.onRenderChunk = () => {};
 
-    const renderPromise = window.EF_RENDER!.renderStreaming({
+    await window.EF_RENDER!.renderStreaming({
       fps: 30,
       includeAudio: false,
     });
-
-    // Check that rendering is set to true during render
-    // Note: This is a race condition, but in practice it should be set quickly
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    // The rendering flag might be set, but we can't reliably test it here
-    // since the render happens asynchronously
-
-    await renderPromise;
 
     // After render, rendering should be false again
     expect(workbench.rendering).toBe(false);

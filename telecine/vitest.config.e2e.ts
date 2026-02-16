@@ -8,12 +8,8 @@ export default defineConfig({
     setupFiles: ["./services/load-config.ts", "./test-env.ts"],
     include: ["tests/e2e/**/*.test.ts"],
     // E2E tests share a browser and must run sequentially
-    pool: "forks",
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
+    maxWorkers: 1,
+    isolate: false,
     testTimeout: 30_000,
     hookTimeout: 30_000,
     globals: true,

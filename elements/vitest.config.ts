@@ -22,13 +22,8 @@ export default defineConfig({
   test: {
     watch: false,
     environment: "node",
-    minWorkers: 2,
     maxWorkers: 6,
-    poolOptions: {
-      threads: {
-        singleThread: true,
-      },
-    },
+    isolate: false,
     setupFiles: ["./packages/elements/test/setup.ts"],
     include: ["**/*.test.ts", "**/*.test.tsx"],
     exclude: ["**/node_modules/**", "**/generated/**"],

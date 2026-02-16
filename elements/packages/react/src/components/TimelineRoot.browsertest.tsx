@@ -6,6 +6,7 @@ import { TimelineRoot } from "./TimelineRoot";
 import type { EFTimegroup } from "@editframe/elements";
 import { setNativeCanvasApiEnabled, isNativeCanvasApiAvailable } from "../../../elements/src/preview/previewSettings";
 import { renderTimegroupToVideo } from "../../../elements/src/preview/renderTimegroupToVideo";
+import { captureTimegroupAtTime } from "../../../elements/src/preview/renderTimegroupToCanvas";
 
 // Import elements CSS to get the animations working
 import "../../../elements/src/elements.css";
@@ -82,16 +83,16 @@ const DesignCatalogLikeContent: React.FC = () => {
 /**
  * Helper to get average color of a canvas or image
  */
-function getCanvasAverageColor(source: CanvasImageSource | HTMLCanvasElement): { r: number; g: number; b: number } {
+function getCanvasAverageColor(source: CanvasImageSource): { r: number; g: number; b: number } {
   let canvas: HTMLCanvasElement;
-  
+
   if (source instanceof HTMLCanvasElement) {
     canvas = source;
   } else {
-    // Draw to temp canvas
     canvas = document.createElement('canvas');
-    canvas.width = source.width as number;
-    canvas.height = source.height as number;
+    const el = source as HTMLImageElement;
+    canvas.width = el.width;
+    canvas.height = el.height;
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Failed to get canvas context");
     ctx.drawImage(source, 0, 0);
@@ -158,19 +159,13 @@ describe("TimelineRoot", () => {
         console.log("[Test] Timegroup duration:", timegroup.durationMs);
         
         // Capture at two different times: 100ms (should be red) and 600ms (should be blue)
-        const timestamps = [100, 600];
-        
-        console.log("[Test] Starting captureBatch with timestamps:", timestamps);
-        const canvases = await timegroup.captureBatch(timestamps, {
-          scale: 0.5,
-          contentReadyMode: "immediate",
-        });
-        
-        assert.equal(canvases.length, 2, "Should capture 2 frames");
-        
-        // Get colors from both canvases
-        const color1 = getCanvasAverageColor(canvases[0]!);
-        const color2 = getCanvasAverageColor(canvases[1]!);
+        console.log("[Test] Starting captures at 100ms and 600ms");
+        const capture1 = await captureTimegroupAtTime(timegroup, { timeMs: 100, scale: 0.5 });
+        const capture2 = await captureTimegroupAtTime(timegroup, { timeMs: 600, scale: 0.5 });
+
+        // Get colors from both captures
+        const color1 = getCanvasAverageColor(capture1);
+        const color2 = getCanvasAverageColor(capture2);
         
         console.log("[Test] Canvas 1 (100ms) average color:", color1);
         console.log("[Test] Canvas 2 (600ms) average color:", color2);
@@ -225,18 +220,13 @@ describe("TimelineRoot", () => {
         console.log("[Test Catalog] Nested timegroups:", timegroup.querySelectorAll("ef-timegroup").length);
         
         // Capture at three different times: 100ms (red), 600ms (green), 1100ms (blue)
-        const timestamps = [100, 600, 1100];
-        
-        console.log("[Test Catalog] Starting captureBatch with timestamps:", timestamps);
-        const canvases = await timegroup.captureBatch(timestamps, {
-          scale: 0.5,
-          contentReadyMode: "immediate",
-        });
-        
-        assert.equal(canvases.length, 3, "Should capture 3 frames");
-        
-        // Get colors from all canvases
-        const colors = canvases.map(c => getCanvasAverageColor(c));
+        console.log("[Test Catalog] Starting captures at 100ms, 600ms, 1100ms");
+        const capture1 = await captureTimegroupAtTime(timegroup, { timeMs: 100, scale: 0.5 });
+        const capture2 = await captureTimegroupAtTime(timegroup, { timeMs: 600, scale: 0.5 });
+        const capture3 = await captureTimegroupAtTime(timegroup, { timeMs: 1100, scale: 0.5 });
+
+        // Get colors from all captures
+        const colors = [capture1, capture2, capture3].map(c => getCanvasAverageColor(c));
         
         console.log("[Test Catalog] Canvas 1 (100ms) color:", colors[0]);
         console.log("[Test Catalog] Canvas 2 (600ms) color:", colors[1]);
@@ -355,20 +345,14 @@ describe("TimelineRoot", () => {
         console.log("[Test Native] Native API available:", isNativeCanvasApiAvailable());
         
         // Capture at two different times: 100ms (should be red) and 600ms (should be blue)
-        const timestamps = [100, 600];
-        
-        console.log("[Test Native] Starting captureBatch with timestamps:", timestamps);
-        const canvases = await timegroup.captureBatch(timestamps, {
-          scale: 0.5,
-          contentReadyMode: "immediate",
-        });
-        
-        assert.equal(canvases.length, 2, "Should capture 2 frames");
-        
-        // Get colors from both canvases
-        const color1 = getCanvasAverageColor(canvases[0]!);
-        const color2 = getCanvasAverageColor(canvases[1]!);
-        
+        console.log("[Test Native] Starting captures at 100ms and 600ms");
+        const capture1 = await captureTimegroupAtTime(timegroup, { timeMs: 100, scale: 0.5 });
+        const capture2 = await captureTimegroupAtTime(timegroup, { timeMs: 600, scale: 0.5 });
+
+        // Get colors from both captures
+        const color1 = getCanvasAverageColor(capture1);
+        const color2 = getCanvasAverageColor(capture2);
+
         console.log("[Test Native] Canvas 1 (100ms) average color:", color1);
         console.log("[Test Native] Canvas 2 (600ms) average color:", color2);
         
@@ -423,20 +407,14 @@ describe("TimelineRoot", () => {
         console.log("[Test ForeignObject] Using foreignObject path (native disabled)");
         
         // Capture at two different times: 100ms (should be red) and 600ms (should be blue)
-        const timestamps = [100, 600];
-        
-        console.log("[Test ForeignObject] Starting captureBatch with timestamps:", timestamps);
-        const canvases = await timegroup.captureBatch(timestamps, {
-          scale: 0.5,
-          contentReadyMode: "immediate",
-        });
-        
-        assert.equal(canvases.length, 2, "Should capture 2 frames");
-        
-        // Get colors from both canvases
-        const color1 = getCanvasAverageColor(canvases[0]!);
-        const color2 = getCanvasAverageColor(canvases[1]!);
-        
+        console.log("[Test ForeignObject] Starting captures at 100ms and 600ms");
+        const capture1 = await captureTimegroupAtTime(timegroup, { timeMs: 100, scale: 0.5 });
+        const capture2 = await captureTimegroupAtTime(timegroup, { timeMs: 600, scale: 0.5 });
+
+        // Get colors from both captures
+        const color1 = getCanvasAverageColor(capture1);
+        const color2 = getCanvasAverageColor(capture2);
+
         console.log("[Test ForeignObject] Canvas 1 (100ms) average color:", color1);
         console.log("[Test ForeignObject] Canvas 2 (600ms) average color:", color2);
         

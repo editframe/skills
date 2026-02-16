@@ -131,10 +131,14 @@ async function waitForTimegroupDimensions(timegroup: EFTimegroup): Promise<void>
   // Force layout immediately after stylesheets load
   void timegroup.offsetHeight;
   
-  if (!timegroup.offsetWidth || !timegroup.offsetHeight) {
-    const computedWidth = getComputedStyle(timegroup).width;
-    const computedHeight = getComputedStyle(timegroup).height;
-    
+  const rect = timegroup.getBoundingClientRect();
+  const hasOffset = timegroup.offsetWidth > 0 && timegroup.offsetHeight > 0;
+  const hasRect = rect.width > 0 && rect.height > 0;
+  const computedWidth = getComputedStyle(timegroup).width;
+  const computedHeight = getComputedStyle(timegroup).height;
+  const hasComputed = parseFloat(computedWidth) > 0 && parseFloat(computedHeight) > 0;
+
+  if (!hasOffset && !hasRect && !hasComputed) {
     throw new Error(
       `Timegroup has no dimensions (${timegroup.offsetWidth}x${timegroup.offsetHeight}). ` +
       `Computed styles: width=${computedWidth}, height=${computedHeight}. ` +

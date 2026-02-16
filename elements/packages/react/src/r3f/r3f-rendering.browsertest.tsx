@@ -9,7 +9,7 @@
  */
 
 import { describe, test, assert, beforeEach } from "vitest";
-import { commands } from "@vitest/browser/context";
+import { commands } from "vitest/browser";
 import * as THREE from "three";
 import type { EFTimegroup } from "@editframe/elements/elements/EFTimegroup.js";
 import "@editframe/elements/elements/EFTimegroup.js";
@@ -32,11 +32,11 @@ describe("Three.js WebGL rendering via addFrameTask", () => {
     const canvas = document.createElement("canvas");
     canvas.width = 200;
     canvas.height = 200;
-    canvas.id = "three-canvas";
+    canvas.dataset.testCanvas = "three";
     tg.appendChild(canvas);
 
     tg.initializer = (instance) => {
-      const c = instance.querySelector("#three-canvas") as HTMLCanvasElement;
+      const c = instance.querySelector("[data-test-canvas='three']") as HTMLCanvasElement;
       if (!c) return;
 
       const renderer = new THREE.WebGLRenderer({ canvas: c, preserveDrawingBuffer: true });
@@ -62,7 +62,7 @@ describe("Three.js WebGL rendering via addFrameTask", () => {
     const { clone, cleanup } = await tg.createRenderClone();
 
     try {
-      const cloneCanvas = clone.querySelector("#three-canvas") as HTMLCanvasElement;
+      const cloneCanvas = clone.querySelector("[data-test-canvas='three']") as HTMLCanvasElement;
       assert.isNotNull(cloneCanvas, "Clone should have the canvas");
 
       await clone.seekForRender(0);
@@ -103,11 +103,11 @@ describe("Three.js WebGL rendering via addFrameTask", () => {
     const canvas = document.createElement("canvas");
     canvas.width = 100;
     canvas.height = 100;
-    canvas.id = "det-canvas";
+    canvas.dataset.testCanvas = "det";
     tg.appendChild(canvas);
 
     tg.initializer = (instance) => {
-      const c = instance.querySelector("#det-canvas") as HTMLCanvasElement;
+      const c = instance.querySelector("[data-test-canvas='det']") as HTMLCanvasElement;
       if (!c) return;
 
       const renderer = new THREE.WebGLRenderer({ canvas: c, preserveDrawingBuffer: true });
@@ -131,7 +131,7 @@ describe("Three.js WebGL rendering via addFrameTask", () => {
     const { clone, cleanup } = await tg.createRenderClone();
 
     try {
-      const cloneCanvas = clone.querySelector("#det-canvas") as HTMLCanvasElement;
+      const cloneCanvas = clone.querySelector("[data-test-canvas='det']") as HTMLCanvasElement;
       const gl = cloneCanvas.getContext("webgl2", { preserveDrawingBuffer: true })
         || cloneCanvas.getContext("webgl", { preserveDrawingBuffer: true });
 

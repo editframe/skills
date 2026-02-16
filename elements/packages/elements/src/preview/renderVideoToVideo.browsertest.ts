@@ -63,7 +63,7 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
       } finally {
         cleanup();
       }
-    }, { timeout: 30000 });
+    }, 30000);
 
     it("should return different frames at different source times", async () => {
       const { video, cleanup } = await createVideo();
@@ -87,7 +87,7 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
       } finally {
         cleanup();
       }
-    }, { timeout: 30000 });
+    }, 30000);
   });
 
   describe("renderToVideo", () => {
@@ -106,7 +106,7 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
       } finally {
         cleanup();
       }
-    }, { timeout: 60000 });
+    }, 60000);
 
     it("should render a trimmed video and produce correct duration output", async () => {
       const { video, cleanup } = await createVideo({
@@ -130,7 +130,7 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
       } finally {
         cleanup();
       }
-    }, { timeout: 60000 });
+    }, 60000);
 
     it("should render with audio included", async () => {
       const { video, cleanup } = await createVideo({
@@ -149,7 +149,7 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
       } finally {
         cleanup();
       }
-    }, { timeout: 60000 });
+    }, 60000);
 
     it("should report progress during rendering", async () => {
       const { video, cleanup } = await createVideo();
@@ -174,7 +174,7 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
       } finally {
         cleanup();
       }
-    }, { timeout: 60000 });
+    }, 60000);
 
     it("should support cancellation via AbortSignal", async () => {
       const { video, cleanup } = await createVideo();
@@ -195,7 +195,7 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
       } finally {
         cleanup();
       }
-    }, { timeout: 30000 });
+    }, 30000);
   });
 
   describe("CSS effects", () => {
@@ -219,21 +219,21 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
 
     it("baseline (no effects)", async () => {
       baseline = await renderWithStyle("");
-    }, { timeout: 5000 });
+    }, 5000);
 
     it("should render with filter", async () => {
       const buffer = await renderWithStyle("filter: grayscale(1) brightness(1.2);");
       expect(buffer.byteLength).not.toBe(baseline.byteLength);
-    }, { timeout: 5000 });
+    }, 5000);
 
     it("should render with opacity", async () => {
       const buffer = await renderWithStyle("opacity: 0.5;");
       expect(buffer.byteLength).not.toBe(baseline.byteLength);
-    }, { timeout: 5000 });
+    }, 5000);
 
     it("should render with combined filter and opacity", async () => {
       const buffer = await renderWithStyle("filter: brightness(1.3); opacity: 0.8;");
       expect(buffer.byteLength).not.toBe(baseline.byteLength);
-    }, { timeout: 5000 });
+    }, 5000);
   });
 });

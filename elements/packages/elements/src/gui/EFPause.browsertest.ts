@@ -51,7 +51,6 @@ describe("EFPause", () => {
     await video.updateComplete;
 
     await video.mediaEngineTask.run();
-    await new Promise((resolve) => setTimeout(resolve, 100));
     await pause.updateComplete;
 
     expect(pause.playing).toBe(false);
@@ -84,7 +83,6 @@ describe("EFPause", () => {
     await video.updateComplete;
 
     await video.mediaEngineTask.run();
-    await new Promise((resolve) => setTimeout(resolve, 100));
     await pause.updateComplete;
 
     expect(getComputedStyle(pause).display).toBe("none");
@@ -122,7 +120,6 @@ describe("EFPause", () => {
     await video.updateComplete;
 
     await video.mediaEngineTask.run();
-    await new Promise((resolve) => setTimeout(resolve, 100));
     await pause.updateComplete;
 
     const pauseSpy = vi.spyOn(video.playbackController, "pause");
@@ -185,7 +182,6 @@ describe("EFPause", () => {
     await video.updateComplete;
 
     await video.mediaEngineTask.run();
-    await new Promise((resolve) => setTimeout(resolve, 100));
     await pause.updateComplete;
 
     expect(pause.efContext).toBe(preview);

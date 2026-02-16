@@ -84,7 +84,7 @@ describe("Frame Synchronization in Video Rendering", () => {
     } finally {
       document.body.removeChild(tg);
     }
-  }, { timeout: 60000 });
+  }, 60000);
   
   it("should demonstrate the bug with manual frame capture", async () => {
     // This test manually demonstrates what the video renderer is doing
@@ -157,5 +157,5 @@ describe("Frame Synchronization in Video Rendering", () => {
     } finally {
       document.body.removeChild(tg);
     }
-  }, { timeout: 30000 });
+  }, 30000);
 });

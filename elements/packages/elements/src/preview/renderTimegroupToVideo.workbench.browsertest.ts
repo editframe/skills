@@ -138,7 +138,6 @@ describe("renderTimegroupToVideo - workbench integration", () => {
       await workbench.updateComplete;
       await timegroup.updateComplete;
       await timegroup.waitForMediaDurations();
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
       logger.debug("[Workbench Integration Test] Starting export with progress tracking...");
       
@@ -258,7 +257,6 @@ describe("renderTimegroupToVideo - workbench integration", () => {
       await workbench.updateComplete;
       await timegroup.updateComplete;
       await timegroup.waitForMediaDurations();
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
       logger.debug("[Temporal Culling Test] Starting export across all time ranges...");
       
@@ -351,7 +349,6 @@ describe("renderTimegroupToVideo - workbench integration", () => {
       await workbench.updateComplete;
       await timegroup.updateComplete;
       await timegroup.waitForMediaDurations();
-      await new Promise(resolve => setTimeout(resolve, 1500));
       
       logger.debug("[Nested Timegroups Test] Starting export with scene transitions...");
       
@@ -451,7 +448,6 @@ describe("renderTimegroupToVideo - workbench integration", () => {
       await workbench.updateComplete;
       await timegroup.updateComplete;
       await timegroup.waitForMediaDurations();
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
       logger.debug("[DOM Mutation Test] Starting export with complex DOM changes...");
       
@@ -556,7 +552,6 @@ describe("renderTimegroupToVideo - workbench integration", () => {
       await workbench.updateComplete;
       await timegroup.updateComplete;
       await timegroup.waitForMediaDurations();
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
       logger.debug("[Clone Reuse Test] Testing 720p export with 30 frames...");
       
@@ -668,7 +663,6 @@ describe("renderTimegroupToVideo - workbench integration", () => {
       await workbench.updateComplete;
       await timegroup.updateComplete;
       await timegroup.waitForMediaDurations();
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
       logger.debug("[1080p Test] Starting high-resolution export...");
       
@@ -714,19 +708,19 @@ describe("renderTimegroupToVideo - workbench integration", () => {
   }, 90000);
   
   it("performance: measure actual export speed at multiple resolutions", async () => {
-    const container = document.createElement("div");
     const apiHost = getApiHost();
-    
+
     const resolutions = [
       { name: "720p", width: 1280, height: 720 },
       { name: "1080p", width: 1920, height: 1080 }
     ];
-    
+
     console.log("[PERF] ========================================");
     console.log("[PERF] Performance Benchmark Test");
     console.log("[PERF] ========================================");
-    
+
     for (const res of resolutions) {
+      const container = document.createElement("div");
       render(
         html`
         <ef-configuration api-host="${apiHost}" signing-url="/@ef-sign-url">

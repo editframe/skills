@@ -73,7 +73,7 @@ describe("URL Token Deduplication", () => {
       await Promise.all(
         Array.from(videos).map(async (video) => {
           try {
-            await video.mediaEngineTask.run();
+            await video.getMediaEngine();
           } catch (error) {
             // Expected to fail since we're mocking, but should trigger token requests
             console.log("Expected error:", error);
@@ -173,7 +173,7 @@ describe("URL Token Deduplication", () => {
       await Promise.all(
         Array.from(videos).map(async (video) => {
           try {
-            await video.mediaEngineTask.run();
+            await video.getMediaEngine();
           } catch (_error) {
             // Expected due to mocking
           }
@@ -286,7 +286,7 @@ describe("URL Token Deduplication", () => {
       await Promise.all(
         elements.map(async ({ video }) => {
           try {
-            await video.mediaEngineTask.run();
+            await video.getMediaEngine();
           } catch (_error) {
             // Expected due to mocking
           }
@@ -379,7 +379,7 @@ describe("URL Token Deduplication", () => {
       await Promise.all(
         Array.from(videos).map(async (video: any) => {
           try {
-            await video.mediaEngineTask.run();
+            await video.getMediaEngine();
           } catch (_error) {
             // Expected due to mocking
           }

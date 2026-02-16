@@ -622,6 +622,6 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
         const hasContent = await waitForCanvasContent(canvas, 3000);
         expect(hasContent).toBe(true);
       }
-    }, { timeout: 10000 }); // Increased timeout for mode switching
+    }, 10000);
   });
 });

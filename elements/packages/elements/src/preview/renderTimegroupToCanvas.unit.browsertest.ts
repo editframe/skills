@@ -204,11 +204,11 @@ describe("captureTimegroupAtTime", () => {
       const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
       await timegroup.updateComplete;
       
-      const canvas = await captureTimegroupAtTime(timegroup, { timeMs: 0 });
-      
-      expect(canvas).toBeInstanceOf(HTMLCanvasElement);
-      expect(canvas.width).toBeGreaterThan(0);
-      expect(canvas.height).toBeGreaterThan(0);
+      const result = await captureTimegroupAtTime(timegroup, { timeMs: 0 });
+
+      expect(result instanceof HTMLCanvasElement || result instanceof HTMLImageElement).toBe(true);
+      expect(result.width).toBeGreaterThan(0);
+      expect(result.height).toBeGreaterThan(0);
     } finally {
       document.body.removeChild(container);
     }
@@ -227,16 +227,14 @@ describe("captureTimegroupAtTime", () => {
       const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
       await timegroup.updateComplete;
       
-      const canvas = await captureTimegroupAtTime(timegroup, { 
-        timeMs: 0, 
-        scale: 0.5 
+      const result = await captureTimegroupAtTime(timegroup, {
+        timeMs: 0,
+        scale: 0.5
       });
-      
-      expect(canvas).toBeInstanceOf(HTMLCanvasElement);
-      // Canvas should be scaled (approximately 200x150 for 400x300 source at 0.5 scale)
-      // Allow for DPR variations
-      expect(canvas.width).toBeGreaterThan(0);
-      expect(canvas.width).toBeLessThanOrEqual(400 * window.devicePixelRatio);
+
+      expect(result instanceof HTMLCanvasElement || result instanceof HTMLImageElement).toBe(true);
+      expect(result.width).toBeGreaterThan(0);
+      expect(result.width).toBeLessThanOrEqual(400 * window.devicePixelRatio);
     } finally {
       document.body.removeChild(container);
     }
@@ -262,10 +260,10 @@ describe("captureTimegroupAtTime", () => {
       const canvas1000 = await captureTimegroupAtTime(timegroup, { timeMs: 1000 });
       const canvas2500 = await captureTimegroupAtTime(timegroup, { timeMs: 2500 });
       
-      // All should produce valid canvases
-      expect(canvas0).toBeInstanceOf(HTMLCanvasElement);
-      expect(canvas1000).toBeInstanceOf(HTMLCanvasElement);
-      expect(canvas2500).toBeInstanceOf(HTMLCanvasElement);
+      // All should produce valid image sources
+      for (const result of [canvas0, canvas1000, canvas2500]) {
+        expect(result instanceof HTMLCanvasElement || result instanceof HTMLImageElement).toBe(true);
+      }
     } finally {
       document.body.removeChild(container);
     }
