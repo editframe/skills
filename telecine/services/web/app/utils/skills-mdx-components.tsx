@@ -123,31 +123,9 @@ function LiveDemo({ code }: { code: string }) {
   );
 }
 
-// --- InteractiveDemo: GUI component preview without playback controls ---
+// --- Skills that show source-only for html live blocks (no live rendering) ---
 
-function InteractiveDemo({ code }: { code: string }) {
-  return (
-    <div className="not-prose my-8">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="px-2 py-0.5 bg-[var(--poster-blue)] text-white text-[10px] font-bold uppercase tracking-wider">
-          Live
-        </span>
-      </div>
-
-      <div className="border-2 border-[var(--ink-black)] dark:border-white overflow-hidden">
-        <div className="min-h-[200px] w-full bg-slate-100 dark:bg-slate-800 p-4">
-          <div dangerouslySetInnerHTML={{ __html: code }} />
-        </div>
-      </div>
-
-      <SourceToggle code={code} />
-    </div>
-  );
-}
-
-// --- Skills that render interactive demos instead of temporal compositions ---
-
-const INTERACTIVE_SKILLS = new Set(["editor-gui"]);
+const SOURCE_ONLY_SKILLS = new Set(["editor-gui"]);
 
 // --- SkillsPreBlock: Detects html live blocks and mermaid diagrams ---
 
@@ -161,16 +139,14 @@ function SkillsPreBlock({ skillName, ...props }: React.HTMLAttributes<HTMLPreEle
     const className = (codeProps.className as string) || "";
     const isHtml = className.includes("language-html");
     const isMermaid = className.includes("language-mermaid");
-    const isLive = meta.includes("live");
+    const isLive = meta.includes("live") && !SOURCE_ONLY_SKILLS.has(skillName);
 
     if (isHtml && isLive) {
       const codeContent = codeProps.children;
       const code =
         typeof codeContent === "string" ? codeContent.trim() : "";
       if (code) {
-        return INTERACTIVE_SKILLS.has(skillName)
-          ? <InteractiveDemo code={code} />
-          : <LiveDemo code={code} />;
+        return <LiveDemo code={code} />;
       }
     }
 
