@@ -19,7 +19,7 @@ import { ExportButton } from "./ExportButton";
 const OVERLAP_MS = 495; // 15 frames
 
 const DUR = {
-  title: 4067,
+  title: 3000,
   author: 10033,
   layers: 9367,
   timeline: 11100,
@@ -49,20 +49,17 @@ interface CaptionGroup {
 }
 
 const CAPTIONS_TITLE: CaptionGroup[] = [
-  { showMs: 0, hideMs: 2300, words: [
-    { w: "Video", s: 0, e: 440 }, { w: "shouldn't", s: 440, e: 940 }, { w: "be", s: 940, e: 1020 }, { w: "this", s: 1020, e: 1220 }, { w: "hard", s: 1220, e: 1460 }, { w: "to", s: 1460, e: 1600 }, { w: "automate.", s: 1600, e: 2020 },
+  { showMs: 0, hideMs: 2500, words: [
+    { w: "Video", s: 0, e: 360 }, { w: "is", s: 360, e: 540 }, { w: "a", s: 540, e: 640 }, { w: "web", s: 640, e: 920 }, { w: "page", s: 920, e: 1260 }, { w: "that", s: 1260, e: 1500 }, { w: "moves.", s: 1500, e: 2100 },
   ] },
 ];
 
 const CAPTIONS_AUTHOR: CaptionGroup[] = [
-  { showMs: 0, hideMs: 2500, words: [
-    { w: "Video", s: 360, e: 920 }, { w: "is", s: 920, e: 1240 }, { w: "just", s: 1240, e: 1540 }, { w: "markup.", s: 1540, e: 2220 },
+  { showMs: 0, hideMs: 3200, words: [
+    { w: "It", s: 360, e: 560 }, { w: "starts", s: 560, e: 960 }, { w: "with", s: 960, e: 1200 }, { w: "HTML", s: 1200, e: 1700 }, { w: "and", s: 1700, e: 1960 }, { w: "CSS.", s: 1960, e: 2600 },
   ] },
-  { showMs: 2500, hideMs: 5300, words: [
-    { w: "Write", s: 2740, e: 3020 }, { w: "HTML,", s: 3020, e: 3560 }, { w: "style", s: 4040, e: 4340 }, { w: "it", s: 4340, e: 4460 }, { w: "with", s: 4460, e: 4600 }, { w: "CSS,", s: 4600, e: 5020 },
-  ] },
-  { showMs: 5500, hideMs: 8700, words: [
-    { w: "then", s: 5720, e: 5820 }, { w: "reach", s: 5820, e: 6140 }, { w: "for", s: 6140, e: 6380 }, { w: "React", s: 6380, e: 6720 }, { w: "or", s: 6720, e: 7060 }, { w: "JavaScript", s: 7060, e: 7500 }, { w: "when", s: 7500, e: 7920 }, { w: "you", s: 7920, e: 8039 }, { w: "need", s: 8039, e: 8240 }, { w: "to.", s: 8240, e: 8440 },
+  { showMs: 3400, hideMs: 8700, words: [
+    { w: "When", s: 3600, e: 3900 }, { w: "you", s: 3900, e: 4100 }, { w: "need", s: 4100, e: 4400 }, { w: "more,", s: 4400, e: 4900 }, { w: "it's", s: 5200, e: 5500 }, { w: "just", s: 5500, e: 5900 }, { w: "React.", s: 5900, e: 6600 },
   ] },
 ];
 
@@ -194,7 +191,9 @@ function SceneCaptions({ groups }: { groups: CaptionGroup[] }) {
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   Scene 1: Title — "BUILD VIDEO WITH CODE" char-level shatter-assemble
+   Scene 1: Title — "VIDEO IS A / WEB PAGE / THAT MOVES."
+   Three-line staggered reveal with continuous drift. "WEB PAGE" is the
+   hero phrase, rendered in gold with a scale pulse.
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function SceneTitle() {
   const d = DUR.title;
@@ -204,28 +203,49 @@ function SceneTitle() {
       <div className="absolute inset-0" style={{
         background: "radial-gradient(ellipse 80% 60% at 50% 50%, rgba(21,101,192,0.08) 0%, transparent 70%)",
       }} />
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
+      {/* Continuous slow drift keeps every frame unique */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center" style={{
+        animation: `hero-title-drift ${d}ms ease-in-out both`,
+      }}>
+        {/* Line 1: "VIDEO IS A" — visible immediately */}
         <Text
           split="char"
-          staggerMs={40}
+          staggerMs={35}
           easing="ease-out"
-          className="text-white text-7xl font-black tracking-tighter text-center leading-[1.1]"
+          className="text-white text-6xl font-black tracking-tighter text-center leading-[1.1]"
           style={{
-            animation: "hero-char-assemble 400ms cubic-bezier(0.68, -0.1, 0.265, 1.1) both",
-            animationDelay: "500ms",
+            animation: "hero-char-assemble 350ms cubic-bezier(0.68, -0.1, 0.265, 1.1) both",
+            animationDelay: "0ms",
           }}
         >
-          BUILD VIDEO{"\n"}WITH CODE
+          VIDEO IS A
         </Text>
-        <div
-          className="mt-4 h-[3px] bg-[var(--poster-gold)]"
+        {/* Line 2: "WEB PAGE" — hero phrase, gold, larger */}
+        <Text
+          split="char"
+          staggerMs={50}
+          easing="ease-out"
+          className="text-[var(--poster-gold)] text-8xl font-black tracking-tighter text-center leading-[1.0]"
           style={{
-            width: "40%",
-            transformOrigin: "center",
-            animation: "hero-draw-spring 660ms cubic-bezier(0.68, -0.1, 0.265, 1.1) both",
-            animationDelay: "1650ms",
+            animation: "hero-char-assemble 400ms cubic-bezier(0.68, -0.1, 0.265, 1.1) both, hero-title-pulse 1800ms ease-in-out both",
+            animationDelay: "500ms, 1400ms",
           }}
-        />
+        >
+          WEB PAGE
+        </Text>
+        {/* Line 3: "THAT MOVES." — slides up last */}
+        <Text
+          split="char"
+          staggerMs={30}
+          easing="ease-out"
+          className="text-white/60 text-4xl font-bold tracking-tight text-center leading-[1.2] mt-1"
+          style={{
+            animation: "hero-slide-up-decel 400ms ease-out both",
+            animationDelay: "1100ms",
+          }}
+        >
+          THAT MOVES.
+        </Text>
       </div>
       <SceneCaptions groups={CAPTIONS_TITLE} />
     </Timegroup>

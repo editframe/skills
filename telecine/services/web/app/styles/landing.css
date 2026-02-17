@@ -144,6 +144,18 @@ body {
   100% { transform: scaleX(1); }
 }
 
+/* Scene 1: Continuous slow upward drift — prevents any static frames */
+@keyframes hero-title-drift {
+  0% { transform: translateY(8px); }
+  100% { transform: translateY(-4px); }
+}
+
+/* Scene 1: Subtle scale pulse on the hero word "WEB PAGE" after assembly */
+@keyframes hero-title-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+
 /* Scene 2: Metal material — layers reveal with clip-path wipe */
 @keyframes hero-clip-reveal {
   from {
