@@ -56,6 +56,14 @@ case $name in
     ;;
 esac
 
+# Copy skills into build context (needed for Tailwind class scanning and runtime)
+SKILLS_SRC="${SCRIPT_DIR}/../../skills/skills"
+SKILLS_DEST="${SCRIPT_DIR}/../skills/skills"
+if [ -d "$SKILLS_SRC" ] && [ ! -d "$SKILLS_DEST" ]; then
+  cp -r "$SKILLS_SRC" "$SKILLS_DEST"
+  trap "rm -rf '$SKILLS_DEST'" EXIT
+fi
+
 docker buildx build \
   ${SCRIPT_DIR}/.. \
   -f ${SCRIPT_DIR}/../${DOCKERFILE} \

@@ -7,8 +7,8 @@ export default {
     "./services/web/app/**/*.{js,jsx,ts,tsx,md,mdx}",
     "./lib/elements/**/*.{js,jsx,ts,tsx,html}",
     "./lib/packages/packages/elements/**/*.{js,jsx,ts,tsx,html}",
-    "../skills/skills/*/references/*.md",
-    "../skills/skills/*/SKILL.md",
+    "./skills/skills/*/references/*.md",
+    "./skills/skills/*/SKILL.md",
   ],
   darkMode: "selector",
   theme: {

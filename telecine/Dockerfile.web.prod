@@ -10,6 +10,7 @@ RUN npm install
 
 COPY ./lib/ ./lib/
 COPY ./services/web/ ./services/web/
+COPY ./skills/skills/ ./skills/skills/
 COPY ./tsconfig.json ./ 
 COPY ./react-router.config.ts /app/react-router.config.ts
 COPY ./tailwind.config.ts /app/tailwind.config.ts
@@ -30,6 +31,7 @@ COPY --from=installer /app/package.json /app/package-lock.json ./
 COPY --from=installer /app/node_modules /app/node_modules
 COPY --from=installer /app/services/web/ /app/services/web/
 COPY --from=installer /app/lib /app/lib
+COPY --from=installer /app/skills /app/skills
 COPY --from=installer /app/services/web/build /app/services/web/build
 COPY ./tsconfig.json /app/tsconfig.json
 COPY ./loader.js /app/loader.js
