@@ -232,7 +232,7 @@ function SceneAuthor() {
         {/* Right: rendered result as video frame */}
         <div className="w-[42%] pr-10 flex items-center justify-center">
           <div
-            className="w-full border-2 border-white/30 relative overflow-hidden"
+            className="w-full border border-white/40 relative overflow-hidden"
             style={{
               aspectRatio: "16/9",
               animation: "hero-reveal-left 660ms cubic-bezier(0.36, 0, 0.66, 1) both",
@@ -240,13 +240,13 @@ function SceneAuthor() {
             }}
           >
             <div className="absolute inset-0" style={{
-              background: "linear-gradient(160deg, #111 0%, #1a1a2e 100%)",
+              background: "linear-gradient(160deg, #1a2440 0%, #0f1a30 50%, #1a1230 100%)",
             }} />
             <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
               <div className="text-white text-2xl font-black mb-2">Welcome back</div>
               <div className="text-[var(--poster-gold)] text-base">Your 2024 highlights</div>
             </div>
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/10">
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
               <div className="h-full bg-[var(--poster-red)]" style={{
                 animation: "hero-progress-spring 1800ms ease-out both",
                 animationDelay: "5000ms",
@@ -280,8 +280,8 @@ function LayerPlane({ index, color, opacity: baseOpacity }: { index: number; col
   const eased = 1 - Math.pow(1 - entranceProgress, 3);
 
   const yFloat = Math.sin(t * 1.2 + index * 1.8) * 0.06;
-  const xSpread = (index - 1.5) * 0.3;
-  const zOffset = (index - 1.5) * 0.7;
+  const xSpread = (index - 1.5) * 0.5;
+  const zOffset = (index - 1.5) * 0.55;
 
   useFrame(() => {
     if (!meshRef.current) return;
@@ -312,11 +312,11 @@ function LayersCamera() {
 
   useFrame(() => {
     const progress = durationMs > 0 ? timeMs / durationMs : 0;
-    const angle = 0.35 + (1 - progress) * 0.3;
-    const distance = 6.5 - progress * 0.8;
+    const angle = 0.25 + (1 - progress) * 0.2;
+    const distance = 7 - progress * 0.5;
     camera.position.set(
       Math.sin(angle) * distance,
-      1.2 + (1 - progress) * 0.4,
+      1.0 + (1 - progress) * 0.3,
       Math.cos(angle) * distance,
     );
     camera.lookAt(0, 0, 0);
@@ -604,8 +604,9 @@ function SceneTemplate() {
     { name: "Marcus Johnson", stat: "156", label: "videos rendered", accent: "var(--poster-blue)" },
     { name: "Alex Rivera", stat: "12.4k", label: "views", accent: "var(--poster-gold)" },
   ];
-  const cycleDuration = 1600;
-  const cardDuration = 1200;
+  const cardHoldMs = 1200;
+  const cardFadeMs = 300;
+  const cardTotalMs = cardFadeMs + cardHoldMs + cardFadeMs;
 
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
@@ -618,19 +619,18 @@ function SceneTemplate() {
           2024
         </div>
 
-        {/* Cycling review cards - each fully exits before next enters */}
+        {/* Cycling review cards - single animation per card handles full lifecycle */}
         <div className="relative" style={{ width: 500, height: 180 }}>
           {reviews.map((review, i) => {
-            const enterMs = i * cycleDuration + 400;
-            const exitMs = enterMs + cardDuration;
+            const startMs = i * (cardHoldMs + cardFadeMs) + 400;
             return (
               <div
                 key={review.name}
                 className="absolute inset-0 flex flex-col items-center justify-center"
                 style={{
                   opacity: 0,
-                  animation: `hero-card-enter 300ms ease-out both, hero-card-exit 250ms ease-in both`,
-                  animationDelay: `${enterMs}ms, ${exitMs}ms`,
+                  animation: `hero-card-lifecycle ${cardTotalMs}ms ease both`,
+                  animationDelay: `${startMs}ms`,
                 }}
               >
                 <div className="text-white/50 text-sm font-mono mb-3">{review.name}</div>

@@ -185,24 +185,23 @@ body {
   }
 }
 
-/* Template scene: non-overlapping card enter/exit */
-@keyframes hero-card-enter {
-  from {
+/* Template scene: single lifecycle animation per card (enter → hold → exit)
+   cardFadeMs=300, cardHoldMs=1200, total=1800ms
+   fade-in: 0→16.7%, hold: 16.7→83.3%, fade-out: 83.3→100% */
+@keyframes hero-card-lifecycle {
+  0% {
     transform: translateY(20px) scale(0.95);
     opacity: 0;
   }
-  to {
+  16.7% {
     transform: translateY(0) scale(1);
     opacity: 1;
   }
-}
-
-@keyframes hero-card-exit {
-  from {
+  83.3% {
     transform: translateY(0) scale(1);
     opacity: 1;
   }
-  to {
+  100% {
     transform: translateY(-15px) scale(0.95);
     opacity: 0;
   }
