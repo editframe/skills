@@ -41,8 +41,7 @@ class TargeterTest extends LitElement {
   }
 }
 
-// Skip all TargetController tests - failing tests need investigation
-describe.skip("target", () => {
+describe("target", () => {
   afterEach(() => {
     // Clean up all test elements from the document body
     document.body.innerHTML = "";

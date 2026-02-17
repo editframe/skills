@@ -155,6 +155,10 @@ export class TargetController implements ReactiveController {
 
   private updateTarget() {
     if (!this.host.target) {
+      if (this.host.targetElement !== null) {
+        this.host.targetElement = null;
+        this.host.requestUpdate("targetElement");
+      }
       return;
     }
 
