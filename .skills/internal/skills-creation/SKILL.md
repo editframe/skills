@@ -381,6 +381,26 @@ Each subdirectory is a skill. Read its `SKILL.md` frontmatter for the name and d
 - **`skills/SYNC.md`** - Complete skills sync system documentation
 - **`.skills/internal/skills-docs/SKILL.md`** - Detailed skills documentation system
 
+## Improving Skills From Use
+
+Internal skills should self-improve through use. When an agent follows a skill and the result is wrong, incomplete, or suboptimal -- and the user provides feedback -- the agent should update the skill before finishing the task.
+
+**When to update a skill:**
+- The skill's guidance led to an incorrect result that required user correction
+- The skill was missing a step or consideration that the user had to supply
+- The user provided a principle or constraint that generalizes beyond the current task
+
+**How to update:**
+- **Generalize.** Extract the reusable lesson from the specific instance. "Always classify content as procedural, architectural, or enumerated" -- not "when building the deployments skill, we learned that service tables go stale."
+- **Stay terse.** A skill improvement should make the skill more precise, not longer. If adding a paragraph, look for one to remove or tighten.
+- **Don't append.** Skills are not logs. Don't add "lessons learned" sections or accumulate examples. Integrate the improvement into the existing structure -- revise a guideline, add a validation check, adjust a phase description.
+- **Sync and commit.** Skill updates follow the same workflow: edit in `.skills/internal/`, run `npm run skills:sync`, commit.
+
+**What NOT to do:**
+- Don't record session-specific details ("on Feb 17 we discovered...")
+- Don't add every edge case as a new bullet point -- skills should stay general
+- Don't weaken existing guidance to accommodate a one-off exception
+
 ## When NOT to Create a Skill
 
 A skill is **not** needed for:
