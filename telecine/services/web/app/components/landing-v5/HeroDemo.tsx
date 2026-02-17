@@ -441,11 +441,88 @@ function SceneAuthor() {
    Scene 3: Layers — 3D floating composition layers with R3F
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 const LAYER_DEFS = [
-  { color: new THREE.Color("#1565C0"), label: "Video", opacity: 0.75 },
-  { color: new THREE.Color("#EEEEEE"), label: "Text", opacity: 0.6 },
-  { color: new THREE.Color("#E53935"), label: "Shape", opacity: 0.65 },
-  { color: new THREE.Color("#FFB300"), label: "3D", opacity: 0.55 },
+  { color: new THREE.Color("#1565C0"), label: "Video",  hex: "#1565C0", entranceMs: 400,  highlightMs: 3320 },
+  { color: new THREE.Color("#E0E0E0"), label: "Text",   hex: "#E0E0E0", entranceMs: 1600, highlightMs: 4300 },
+  { color: new THREE.Color("#E53935"), label: "Shape",  hex: "#E53935", entranceMs: 2800, highlightMs: 4940 },
+  { color: new THREE.Color("#FFB300"), label: "3D",     hex: "#FFB300", entranceMs: 4000, highlightMs: 5880 },
 ];
+
+function LayerContentVideo() {
+  return (
+    <group>
+      {Array.from({ length: 8 }, (_, i) => (
+        <mesh key={i} position={[0, 0.55 - i * 0.16, 0.001]}>
+          <planeGeometry args={[2.2, 0.06]} />
+          <meshBasicMaterial color="#0D47A1" transparent opacity={0.5} />
+        </mesh>
+      ))}
+      <mesh position={[0, 0, 0.002]}>
+        <circleGeometry args={[0.22, 3]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.9} />
+      </mesh>
+    </group>
+  );
+}
+
+function LayerContentText() {
+  return (
+    <group>
+      {[0.5, 0.25, 0.12, -0.12, -0.25, -0.5].map((y, i) => {
+        const w = [1.8, 2.0, 1.4, 2.1, 1.6, 1.0][i];
+        return (
+          <mesh key={i} position={[-0.1 + (2.2 - w) * -0.2, y, 0.001]}>
+            <planeGeometry args={[w, 0.08]} />
+            <meshBasicMaterial color="#333333" transparent opacity={0.7} />
+          </mesh>
+        );
+      })}
+      <mesh position={[0, 0.65, 0.001]}>
+        <planeGeometry args={[1.2, 0.12]} />
+        <meshBasicMaterial color="#222222" transparent opacity={0.9} />
+      </mesh>
+    </group>
+  );
+}
+
+function LayerContentShape() {
+  return (
+    <group>
+      <mesh position={[0.15, 0.05, 0.001]}>
+        <circleGeometry args={[0.38, 32]} />
+        <meshBasicMaterial color="#B71C1C" transparent opacity={0.7} />
+      </mesh>
+      <mesh position={[-0.55, -0.3, 0.002]}>
+        <planeGeometry args={[0.5, 0.35]} />
+        <meshBasicMaterial color="#FF8A80" transparent opacity={0.6} />
+      </mesh>
+      <mesh position={[0.6, 0.4, 0.002]}>
+        <circleGeometry args={[0.18, 3]} />
+        <meshBasicMaterial color="#FFCDD2" transparent opacity={0.7} />
+      </mesh>
+    </group>
+  );
+}
+
+function LayerContent3D() {
+  return (
+    <group>
+      <mesh position={[0, 0, 0.15]} rotation={[0.4, 0.6, 0]}>
+        <boxGeometry args={[0.55, 0.55, 0.55]} />
+        <meshBasicMaterial color="#FF8F00" wireframe transparent opacity={0.9} />
+      </mesh>
+      <mesh position={[-0.35, -0.2, 0.08]} rotation={[0.3, 0.8, 0.1]}>
+        <boxGeometry args={[0.3, 0.3, 0.3]} />
+        <meshBasicMaterial color="#FFD54F" transparent opacity={0.5} />
+      </mesh>
+      <mesh position={[0.4, 0.25, 0.12]}>
+        <sphereGeometry args={[0.15, 12, 12]} />
+        <meshBasicMaterial color="#FFF8E1" wireframe transparent opacity={0.6} />
+      </mesh>
+    </group>
+  );
+}
+
+const LAYER_CONTENT = [LayerContentVideo, LayerContentText, LayerContentShape, LayerContent3D];
 
 function LayerPlane({ index, color, opacity: baseOpacity }: { index: number; color: THREE.Color; opacity: number }) {
   const { timeMs } = useCompositionTime();
@@ -938,17 +1015,101 @@ function SceneStream() {
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function SceneRender() {
   const d = DUR.render;
+
+  // Timeline (ms from scene start):
+  // 0-400      heading fades in
+  // 600        Cloud label appears
+  // 800-2800   Cloud 4 segments fill (staggered starts, staggered completions)
+  // 2900       Cloud row flash
+  // 3200       Browser label + bar appear
+  // 3300-5100  Browser bar fills
+  // 5200       Browser done + row flash
+  // 4400       CLI label + bar appear
+  // 4500-6300  CLI bar fills
+  // 6400       CLI done + row flash
+  // 6600       All-done glow pulse on panel
+  // 7000       "One composition -> every target" tagline slides in
+  // 8600       Scene starts to fade out (d - OVERLAP)
+
   const cloudSegments = [
-    { label: "Seg 1", delay: 800, duration: 1400 },
-    { label: "Seg 2", delay: 950, duration: 1700 },
-    { label: "Seg 3", delay: 1100, duration: 1100 },
-    { label: "Seg 4", delay: 1250, duration: 1900 },
+    { label: "Seg 1", delay: 800,  duration: 1200 },
+    { label: "Seg 2", delay: 1000, duration: 1500 },
+    { label: "Seg 3", delay: 1200, duration: 1000 },
+    { label: "Seg 4", delay: 1400, duration: 1400 },
   ];
+
+  const cloudDoneMs = 2800;
+  const browserAppear = 3200;
+  const browserFillDur = 1900;
+  const browserDoneMs = browserAppear + browserFillDur;
+  const cliAppear = 4400;
+  const cliFillDur = 1900;
+  const cliDoneMs = cliAppear + cliFillDur;
+  const allDoneMs = cliDoneMs + 200;
+  const taglineMs = 7000;
+
+  const renderRow = (
+    color: string,
+    label: string,
+    appearMs: number,
+    fillDur: number,
+    doneMs: number,
+  ) => (
+    <div className="relative">
+      <div
+        className="text-xs font-mono text-white/50 mb-2 flex items-center gap-2"
+        style={{ animation: "hero-fade-in 264ms ease-out both", animationDelay: `${appearMs}ms` }}
+      >
+        <span className="w-2 h-2" style={{ background: `var(--poster-${color})` }} />
+        {label}
+      </div>
+      <div
+        className="h-9 bg-white/[0.03] border border-white/10 relative overflow-hidden"
+        style={{ animation: "hero-fade-in 264ms ease-out both", animationDelay: `${appearMs}ms` }}
+      >
+        {/* Fill bar */}
+        <div className="absolute inset-y-0 left-0 overflow-hidden" style={{
+          background: `var(--poster-${color})`, opacity: 0.4,
+          animation: `hero-progress-spring ${fillDur}ms cubic-bezier(0.22, 1, 0.36, 1) both`,
+          animationDelay: `${appearMs + 100}ms`,
+          ["--bar-target" as string]: "100%",
+        }}>
+          {/* Shimmer overlay while filling */}
+          <div className="absolute inset-0" style={{
+            background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)",
+            animation: `hero-bar-shimmer 800ms ease-in-out ${Math.ceil(fillDur / 800)}`,
+            animationDelay: `${appearMs + 100}ms`,
+            animationFillMode: "both",
+          }} />
+        </div>
+        {/* Checkmark with pop */}
+        <svg
+          className="absolute top-1.5 right-1.5 w-3.5 h-3.5"
+          style={{ color: `var(--poster-${color})`, animation: `hero-check-pop 330ms ease-out both`, animationDelay: `${doneMs}ms` }}
+          viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}
+          strokeLinecap="round" strokeLinejoin="round"
+        >
+          <path d="M5 12l5 5L20 7" style={{
+            strokeDasharray: 24,
+            animation: `hero-check-draw 264ms ease-out both`,
+            animationDelay: `${doneMs + 132}ms`,
+          }} />
+        </svg>
+      </div>
+      {/* Row completion flash */}
+      <div className="absolute inset-0 rounded pointer-events-none" style={{
+        background: `var(--poster-${color})`,
+        animation: `hero-render-row-flash 500ms ease-out both`,
+        animationDelay: `${doneMs + 100}ms`,
+      }} />
+    </div>
+  );
 
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
       <Audio src={AUDIO_SRC.render} />
       <div className="absolute inset-0 flex flex-col justify-center px-12 gap-5">
+        {/* Heading */}
         <div
           className="text-[10px] font-mono uppercase tracking-[0.3em] text-white/30"
           style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "200ms" }}
@@ -956,113 +1117,94 @@ function SceneRender() {
           scalable rendering
         </div>
 
-        {/* Cloud: parallel segments with staggered starts */}
-        <div>
-          <div
-            className="text-xs font-mono text-white/50 mb-2 flex items-center gap-2"
-            style={{ animation: "hero-fade-in 264ms ease-out both", animationDelay: "400ms" }}
-          >
-            <span className="w-2 h-2 bg-[var(--poster-green)]" />
-            Cloud &mdash; parallel
+        {/* Render panel with all-done glow */}
+        <div className="flex flex-col gap-5 rounded-lg p-1" style={{
+          animation: `hero-render-done-glow 800ms ease-out both`,
+          animationDelay: `${allDoneMs}ms`,
+        }}>
+          {/* Cloud: parallel segments with staggered starts */}
+          <div className="relative">
+            <div
+              className="text-xs font-mono text-white/50 mb-2 flex items-center gap-2"
+              style={{ animation: "hero-fade-in 264ms ease-out both", animationDelay: "600ms" }}
+            >
+              <span className="w-2 h-2 bg-[var(--poster-green)]" />
+              Cloud, parallel
+            </div>
+            <div
+              className="flex gap-1"
+              style={{ animation: "hero-fade-in 264ms ease-out both", animationDelay: "600ms" }}
+            >
+              {cloudSegments.map((seg) => {
+                const segDone = seg.delay + seg.duration;
+                return (
+                  <div key={seg.label} className="flex-1 h-9 bg-white/[0.03] border border-white/10 relative overflow-hidden">
+                    {/* Fill */}
+                    <div
+                      className="absolute inset-0 overflow-hidden"
+                      style={{
+                        background: "var(--poster-green)",
+                        opacity: 0.4,
+                        animation: `hero-progress-spring ${seg.duration}ms cubic-bezier(0.22, 1, 0.36, 1) both`,
+                        animationDelay: `${seg.delay}ms`,
+                        ["--bar-target" as string]: "100%",
+                      }}
+                    >
+                      <div className="absolute inset-0" style={{
+                        background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)",
+                        animation: `hero-bar-shimmer 600ms ease-in-out ${Math.ceil(seg.duration / 600)}`,
+                        animationDelay: `${seg.delay}ms`,
+                        animationFillMode: "both",
+                      }} />
+                    </div>
+                    <span className="absolute inset-0 flex items-center justify-center text-[9px] font-mono text-white/40">{seg.label}</span>
+                    {/* Checkmark */}
+                    <svg
+                      className="absolute top-1.5 right-1.5 w-3 h-3 text-[var(--poster-green)]"
+                      viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}
+                      strokeLinecap="round" strokeLinejoin="round"
+                      style={{ animation: `hero-check-pop 330ms ease-out both`, animationDelay: `${segDone}ms` }}
+                    >
+                      <path d="M5 12l5 5L20 7" style={{
+                        strokeDasharray: 24,
+                        animation: `hero-check-draw 264ms ease-out both`,
+                        animationDelay: `${segDone + 132}ms`,
+                      }} />
+                    </svg>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Cloud row flash */}
+            <div className="absolute inset-0 rounded pointer-events-none" style={{
+              background: "var(--poster-green)",
+              animation: `hero-render-row-flash 500ms ease-out both`,
+              animationDelay: `${cloudDoneMs + 100}ms`,
+            }} />
           </div>
-          <div
-            className="flex gap-1"
-            style={{ animation: "hero-fade-in 264ms ease-out both", animationDelay: "400ms" }}
-          >
-            {cloudSegments.map((seg) => (
-              <div key={seg.label} className="flex-1 h-9 bg-white/[0.03] border border-white/10 relative overflow-hidden">
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background: "var(--poster-green)",
-                    opacity: 0.4,
-                    animation: `hero-progress-spring ${seg.duration}ms ease-out both`,
-                    animationDelay: `${seg.delay}ms`,
-                    ["--bar-target" as string]: "100%",
-                  }}
-                />
-                <span className="absolute inset-0 flex items-center justify-center text-[9px] font-mono text-white/40">{seg.label}</span>
-                <svg
-                  className="absolute top-1.5 right-1.5 w-3 h-3 text-[var(--poster-green)]"
-                  viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}
-                  strokeLinecap="round" strokeLinejoin="round"
-                  style={{
-                    strokeDasharray: 24,
-                    animation: `hero-check-draw 264ms ease-out both, hero-fade-in 132ms ease-out both`,
-                    animationDelay: `${seg.delay + seg.duration + 132}ms, ${seg.delay + seg.duration}ms`,
-                  }}
-                >
-                  <path d="M5 12l5 5L20 7" />
-                </svg>
-              </div>
-            ))}
-          </div>
+
+          {/* Browser */}
+          {renderRow("blue", "Browser", browserAppear, browserFillDur, browserDoneMs)}
+
+          {/* CLI */}
+          {renderRow("red", "CLI", cliAppear, cliFillDur, cliDoneMs)}
         </div>
 
-        {/* Browser */}
-        <div>
-          <div
-            className="text-xs font-mono text-white/50 mb-2 flex items-center gap-2"
-            style={{ animation: "hero-fade-in 264ms ease-out both", animationDelay: "3200ms" }}
-          >
-            <span className="w-2 h-2 bg-[var(--poster-blue)]" />
-            Browser
-          </div>
-          <div
-            className="h-9 bg-white/[0.03] border border-white/10 relative overflow-hidden"
-            style={{ animation: "hero-fade-in 264ms ease-out both", animationDelay: "3200ms" }}
-          >
-            <div className="absolute inset-y-0 left-0" style={{
-              background: "var(--poster-blue)", opacity: 0.4,
-              animation: "hero-progress-spring 2000ms ease-out both",
-              animationDelay: "3200ms",
-              ["--bar-target" as string]: "100%",
-            }} />
-            <svg className="absolute top-1.5 right-1.5 w-3 h-3 text-[var(--poster-blue)]"
-              viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}
-              strokeLinecap="round" strokeLinejoin="round"
-              style={{
-                strokeDasharray: 24,
-                animation: `hero-check-draw 264ms ease-out both, hero-fade-in 132ms ease-out both`,
-                animationDelay: `${3200 + 2000 + 132}ms, ${3200 + 2000}ms`,
-              }}
-            >
-              <path d="M5 12l5 5L20 7" />
-            </svg>
-          </div>
-        </div>
-
-        {/* CLI */}
-        <div>
-          <div
-            className="text-xs font-mono text-white/50 mb-2 flex items-center gap-2"
-            style={{ animation: "hero-fade-in 264ms ease-out both", animationDelay: "4200ms" }}
-          >
-            <span className="w-2 h-2 bg-[var(--poster-red)]" />
-            CLI
-          </div>
-          <div
-            className="h-9 bg-white/[0.03] border border-white/10 relative overflow-hidden"
-            style={{ animation: "hero-fade-in 264ms ease-out both", animationDelay: "4200ms" }}
-          >
-            <div className="absolute inset-y-0 left-0" style={{
-              background: "var(--poster-red)", opacity: 0.4,
-              animation: "hero-progress-spring 2000ms ease-out both",
-              animationDelay: "4200ms",
-              ["--bar-target" as string]: "100%",
-            }} />
-            <svg className="absolute top-1.5 right-1.5 w-3 h-3 text-[var(--poster-red)]"
-              viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}
-              strokeLinecap="round" strokeLinejoin="round"
-              style={{
-                strokeDasharray: 24,
-                animation: `hero-check-draw 264ms ease-out both, hero-fade-in 132ms ease-out both`,
-                animationDelay: `${4200 + 2000 + 132}ms, ${4200 + 2000}ms`,
-              }}
-            >
-              <path d="M5 12l5 5L20 7" />
-            </svg>
-          </div>
+        {/* Closing tagline */}
+        <div
+          className="flex items-center justify-center gap-3 mt-2"
+          style={{
+            animation: `hero-render-tagline-in 500ms cubic-bezier(0.22, 1, 0.36, 1) both`,
+            animationDelay: `${taglineMs}ms`,
+          }}
+        >
+          <span className="text-sm font-mono text-white/70 tracking-wide">
+            One composition
+          </span>
+          <span className="text-white/20 font-mono">&rarr;</span>
+          <span className="text-sm font-mono text-white/70 tracking-wide">
+            every target
+          </span>
         </div>
       </div>
       <SceneCaptions groups={CAPTIONS_RENDER} />
