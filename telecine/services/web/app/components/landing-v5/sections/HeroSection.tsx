@@ -41,37 +41,31 @@ export function HeroSection() {
 
         {/* CLI + CTAs */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <div className="flex flex-col items-center gap-1">
-            <div className="bg-[var(--ink-black)] dark:bg-[#1a1a1a] px-5 py-3 font-mono text-sm flex items-center gap-3 border-2 border-[var(--ink-black)] dark:border-white/20">
-              <span>
-                <span className="text-[var(--poster-gold)]">$</span>
-                <span className="text-white ml-2">npm create @editframe@latest</span>
-              </span>
-              <button
-                onClick={() => navigator.clipboard?.writeText("npm create @editframe@latest")}
-                className="text-white/40 hover:text-white transition-colors flex-shrink-0"
-                title="Copy command"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-              </button>
-            </div>
-            <span className="text-xs text-[var(--warm-gray)]">Free local quick-start</span>
+          <div className="bg-[var(--ink-black)] dark:bg-[#1a1a1a] px-5 py-3 font-mono text-sm flex items-center gap-3 border-2 border-[var(--ink-black)] dark:border-white/20">
+            <span>
+              <span className="text-[var(--poster-gold)]">$</span>
+              <span className="text-white ml-2">npm create @editframe@latest</span>
+            </span>
+            <button
+              onClick={() => navigator.clipboard?.writeText("npm create @editframe@latest")}
+              className="text-white/40 hover:text-white transition-colors flex-shrink-0"
+              title="Copy command"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </button>
           </div>
 
-          <div className="flex flex-col items-center gap-1">
-            <Link
-              to="/auth/register"
-              className="inline-flex items-center justify-center px-8 py-3 bg-[var(--poster-red)] text-white font-bold text-sm uppercase tracking-wider shadow-poster-hard hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all"
-            >
-              Cloud Waitlist
-              <svg className="ml-3 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </Link>
-            <span className="text-xs text-[var(--warm-gray)]">Parallel rendering & API</span>
-          </div>
+          <Link
+            to="/auth/register"
+            className="inline-flex items-center justify-center px-8 py-3 bg-[var(--poster-red)] text-white font-bold text-sm uppercase tracking-wider shadow-poster-hard hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all"
+          >
+            Get Early Access
+            <svg className="ml-3 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </Link>
 
           <Link
             to="/skills"

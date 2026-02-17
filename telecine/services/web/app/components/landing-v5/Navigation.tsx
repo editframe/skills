@@ -37,9 +37,9 @@ export function Navigation({ isLoggedIn }: NavigationProps) {
                 to="/auth/register"
                 className="hidden md:inline-flex px-5 py-2 bg-[var(--poster-red)] text-white text-sm font-bold uppercase tracking-wider hover:bg-[var(--poster-blue)] transition-colors"
               >
-                Cloud Waitlist
+                Get Early Access
               </Link>
-            </>
+            </> 
           )}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -69,7 +69,7 @@ export function Navigation({ isLoggedIn }: NavigationProps) {
                   onClick={() => setMobileMenuOpen(false)}
                   className="px-4 py-3 bg-[var(--poster-red)] text-white text-sm font-bold uppercase tracking-wider text-center hover:bg-[var(--poster-blue)] transition-colors"
                 >
-                  Cloud Waitlist
+                  Get Early Access
                 </Link>
               </>
             )}
