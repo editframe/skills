@@ -2,11 +2,10 @@ import * as React from "react";
 import { Link } from "react-router";
 import { CodeBlock } from "~/components/CodeBlock";
 import { MermaidDiagram } from "~/components/MermaidDiagram";
-import { Preview, FitScale, FocusOverlay, Filmstrip, TogglePlay, Scrubber, TimeDisplay } from "@editframe/react";
+import { Preview, FitScale, FocusOverlay, TogglePlay, Scrubber, TimeDisplay } from "@editframe/react";
 import { ApiReference } from "~/components/skills/ApiReference";
 import type { ApiMetadata } from "~/utils/skills.server";
 import clsx from "clsx";
-import { useTheme } from "~/hooks/useTheme";
 
 // --- Helper: Extract text content from React nodes ---
 
@@ -47,8 +46,6 @@ function SkillLink({
 // --- LiveDemo: Interactive preview + source for html live blocks ---
 
 function LiveDemo({ code }: { code: string }) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const [showSource, setShowSource] = React.useState(false);
 
   return (
@@ -63,7 +60,7 @@ function LiveDemo({ code }: { code: string }) {
         <div className="h-[calc(50vh-4rem)] min-h-[300px] w-full">
           <Preview
             loop
-            className="h-full w-full grid grid-rows-[1.5fr_auto_1fr]"
+            className="h-full w-full grid grid-rows-[1fr_auto]"
           >
             <div className="overflow-hidden bg-slate-300 dark:bg-slate-700 min-h-0 min-w-0 w-full h-full max-w-full">
               <FitScale className="w-full h-full max-w-full min-w-0">
@@ -98,12 +95,7 @@ function LiveDemo({ code }: { code: string }) {
                 <TimeDisplay className="text-[10px] text-white/60 font-mono tabular-nums" />
               </div>
             </div>
-            <div className="min-h-0">
-              <Filmstrip
-                {...({ autoScale: true } as Record<string, unknown>)}
-                className={clsx("w-full h-full", { dark: isDark })}
-              />
-            </div>
+
           </Preview>
         </div>
       </div>

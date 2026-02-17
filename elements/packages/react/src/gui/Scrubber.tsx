@@ -13,6 +13,8 @@ export interface ScrubberProps {
   scrollContainerRef?: React.RefObject<HTMLElement>;
   isScrubbingRef?: React.MutableRefObject<boolean>;
   onSeek?: (time: number) => void;
+  className?: string;
+  style?: React.CSSProperties;
 }
 
 const BaseScrubber = createComponent<
