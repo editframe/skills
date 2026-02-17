@@ -305,7 +305,7 @@ export const getSkillReferencesMeta = (skillName: string): SkillReference[] => {
           topic: attributes.topic || undefined,
           order: attributes.order ?? 999,
           parentRef: name,
-          nav: section.nav || attributes.nav,
+          nav: section.nav ? { ...attributes.nav, ...section.nav } : attributes.nav,
           track: attributes.track,
           track_step: attributes.track_step,
           track_title: attributes.track_title,

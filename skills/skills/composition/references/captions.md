@@ -20,6 +20,38 @@ api:
     - name: captions-data
       type: object
       description: Direct captions data object
+  sub_elements:
+    - tag: ef-captions-active-word
+      description: Currently spoken word
+      attributes:
+        - name: wordText
+          type: string
+          description: Text of active word
+        - name: wordIndex
+          type: number
+          description: Index of active word
+      css_variables:
+        - name: --ef-word-seed
+          type: number
+          description: Deterministic random (0-1) per word for animations
+    - tag: ef-captions-before-active-word
+      description: Words already spoken in current segment
+      attributes:
+        - name: segmentText
+          type: string
+          description: Text of caption segment
+    - tag: ef-captions-after-active-word
+      description: Words not yet spoken in current segment
+      attributes:
+        - name: segmentText
+          type: string
+          description: Text of caption segment
+    - tag: ef-captions-segment
+      description: Full caption segment text
+      attributes:
+        - name: segmentText
+          type: string
+          description: Text of caption segment
 react:
   generate: true
   componentName: Captions
@@ -634,6 +666,76 @@ Use caption components for custom styling:
 </script>
 ```
 <!-- /html-only -->
+
+## Sub-Elements
+
+`ef-captions` uses child elements to separate caption text into styleable parts. These elements act as **slots** — they're containers that `ef-captions` fills with text. You style them with CSS classes, and `ef-captions` handles updating their content.
+
+All caption sub-elements use `display: inline` by default for natural text flow. They act as transparent containers — the text flows as if the element boundaries don't exist.
+
+### ef-captions-active-word
+
+The word currently being spoken. Automatically hidden when empty or contains only punctuation.
+
+**CSS Variables:**
+- `--ef-word-seed` - Deterministic random (0-1) per word for animations
+
+**Behavior:**
+- Adds trailing space automatically for proper word spacing
+- Hidden via `hidden` attribute when no active word
+
+### ef-captions-before-active-word
+
+All words in the current segment that have already been spoken.
+
+**Behavior:**
+- Adds trailing space when followed by active word
+- Hidden via `hidden` attribute when no prior words
+
+### ef-captions-after-active-word
+
+All words in the current segment not yet spoken.
+
+**Behavior:**
+- No leading space (active word adds trailing space)
+- Hidden via `hidden` attribute when no upcoming words
+
+### ef-captions-segment
+
+The full text of the current caption segment.
+
+**Behavior:**
+- Hidden via `hidden` attribute when no active segment
+- Can be used alone or alongside word-level elements
+
+### Layout Patterns
+
+```html
+<!-- Inline flow (default) -->
+<ef-captions class="text-white text-xl">
+  <ef-captions-before-active-word></ef-captions-before-active-word>
+  <ef-captions-active-word class="font-bold"></ef-captions-active-word>
+  <ef-captions-after-active-word></ef-captions-after-active-word>
+</ef-captions>
+
+<!-- Multi-line layout -->
+<ef-captions>
+  <div class="text-center">
+    <ef-captions-segment class="block text-white/50 mb-1"></ef-captions-segment>
+  </div>
+  <div class="text-center">
+    <ef-captions-active-word class="text-yellow-400 text-2xl"></ef-captions-active-word>
+  </div>
+</ef-captions>
+```
+
+### Technical Notes
+
+- All sub-elements use light DOM (not shadow DOM) for styling simplicity
+- Parent `ef-captions` element updates child `textContent` directly
+- Empty or punctuation-only content automatically hides elements via `hidden` attribute
+- Elements maintain text flow by using `display: inline` with no margins/padding
+- `--ef-word-seed` provides deterministic randomness based on word index (not random each frame)
 
 ## Generate Captions
 

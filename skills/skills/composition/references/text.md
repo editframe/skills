@@ -23,6 +23,45 @@ api:
     - name: duration
       type: timestring
       description: Total duration
+  sub_elements:
+    - tag: ef-text-segment
+      description: Individual segment created when splitting text by word, character, or line
+      attributes:
+        - name: segmentIndex
+          type: number
+          description: Index of this segment in the text
+        - name: segmentText
+          type: string
+          description: Text content of this segment
+        - name: staggerOffsetMs
+          type: number
+          description: Calculated stagger delay for this segment
+        - name: segmentStartMs
+          type: number
+          description: Start time of segment relative to parent
+        - name: segmentEndMs
+          type: number
+          description: End time of segment relative to parent
+        - name: hidden
+          type: boolean
+          description: Whether segment is hidden
+      methods:
+        - name: registerAnimations()
+          signature: "static registerAnimations(id: string, cssText: string): void"
+          description: Register animation styles globally for all text segments
+        - name: unregisterAnimations()
+          signature: "static unregisterAnimations(id: string): void"
+          description: Unregister previously registered animation styles
+      css_variables:
+        - name: --ef-index
+          type: number
+          description: Segment index (0, 1, 2, ...)
+        - name: --ef-stagger-offset
+          type: time
+          description: Calculated stagger delay (e.g., "0ms", "100ms")
+        - name: --ef-seed
+          type: number
+          description: Deterministic random (0-1) based on index
 react:
   generate: true
   componentName: Text
@@ -382,6 +421,79 @@ The `--ef-seed` CSS variable provides deterministic randomness per segment.
   </ef-text>
 </ef-timegroup>
 ```
+
+## Multiple Segments Per Word
+
+Create multiple segments for each text unit by using multiple `ef-text-segment` elements in the template.
+
+```html live
+<ef-timegroup mode="contain" class="w-[720px] h-[480px] bg-black flex items-center justify-center">
+  <ef-text split="word" stagger="120ms" duration="4s" class="text-white text-3xl">
+    <template>
+      <!-- Shadow segment behind -->
+      <ef-text-segment class="segment-shadow"></ef-text-segment>
+      <!-- Main segment on top -->
+      <ef-text-segment class="segment-main"></ef-text-segment>
+    </template>
+    Layered shadow effect
+  </ef-text>
+
+  <style>
+    .segment-shadow {
+      position: absolute;
+      color: #3b82f6;
+      filter: blur(4px);
+      animation: shadowSlide 0.6s ease-out forwards;
+      animation-delay: var(--ef-stagger-offset);
+    }
+
+    .segment-main {
+      position: relative;
+      animation: mainSlide 0.6s ease-out forwards;
+      animation-delay: var(--ef-stagger-offset);
+    }
+
+    @keyframes shadowSlide {
+      from { opacity: 0; transform: translate(-20px, 10px); }
+      to { opacity: 0.6; transform: translate(4px, 4px); }
+    }
+
+    @keyframes mainSlide {
+      from { opacity: 0; transform: translate(-20px, 0); }
+      to { opacity: 1; transform: translate(0, 0); }
+    }
+  </style>
+</ef-timegroup>
+```
+
+## Unregistering Animations
+
+Remove previously registered animations when no longer needed.
+
+```javascript
+const EFTextSegment = customElements.get('ef-text-segment');
+EFTextSegment.unregisterAnimations('bounce');
+```
+
+## ef-text-segment Reference
+
+`ef-text-segment` elements are automatically created by `ef-text` when using split modes. Each segment represents a word, character, or line and can be styled and animated independently.
+
+### CSS Variables
+
+| Variable | Type | Description |
+|----------|------|-------------|
+| `--ef-index` | number | Segment index (0, 1, 2, ...) |
+| `--ef-stagger-offset` | time | Calculated stagger delay (e.g., "0ms", "100ms") |
+| `--ef-seed` | number | Deterministic random (0-1) based on index |
+
+### Technical Notes
+
+- Segments are automatically created by `ef-text` when using split modes
+- Segments inherit animation properties from parent `ef-text` element
+- `registerAnimations()` uses adopted stylesheets for efficient global sharing
+- Non-whitespace segments automatically become `inline-block` when animated to enable transforms
+- Whitespace segments remain `inline` to preserve text flow
 <!-- /html-only -->
 
 <!-- react-only -->
@@ -455,4 +567,61 @@ const FadingText = ({ children }: { children: React.ReactNode }) => {
   );
 };
 ```
+
+## Register Custom Animations
+
+Use `TextSegment.registerAnimations()` to define animations shared across all segments:
+
+```tsx
+import { TextSegment } from "@editframe/react";
+
+TextSegment.registerAnimations("customAnimations", `
+  @keyframes slideIn {
+    from { transform: translateX(-100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  .slide-in { animation: slideIn 0.5s ease-out; }
+`);
+
+const AnimatedText = () => (
+  <Text duration="5s" className="text-white text-4xl">
+    <TextSegment className="slide-in inline-block">Slides</TextSegment>
+    {" "}
+    <TextSegment className="bounce-in inline-block">Bounces</TextSegment>
+  </Text>
+);
+```
+
+Unregister animations when no longer needed:
+
+```tsx
+import { useEffect } from "react";
+import { TextSegment } from "@editframe/react";
+
+const MyComponent = () => {
+  useEffect(() => {
+    TextSegment.registerAnimations("myAnimations", `/* styles */`);
+    return () => {
+      TextSegment.unregisterAnimations("myAnimations");
+    };
+  }, []);
+
+  return (/* ... */);
+};
+```
+
+## TextSegment Reference
+
+Each TextSegment has access to CSS variables for advanced animations:
+
+| Variable | Type | Description |
+|----------|------|-------------|
+| `--ef-index` | number | Segment index (0, 1, 2, ...) |
+| `--ef-stagger-offset` | time | Calculated stagger delay |
+| `--ef-seed` | number | Deterministic random (0-1) based on index |
+
+- TextSegment requires a parent `Text` component
+- Use `inline-block` display for transform animations to work correctly
+- Animation styles are shared globally across all TextSegment instances
+- Each segment's `--ef-seed` value is deterministic based on its index
 <!-- /react-only -->

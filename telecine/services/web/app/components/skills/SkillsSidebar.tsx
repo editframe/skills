@@ -60,9 +60,6 @@ export function SkillPicker({ allSkills, currentSkill }: SkillPickerProps) {
         })}
       </nav>
 
-      <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 mt-8 px-2.5">
-        AI agent reads these skills
-      </p>
     </aside>
   );
 }
