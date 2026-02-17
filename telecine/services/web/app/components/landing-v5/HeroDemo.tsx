@@ -25,7 +25,7 @@ const DUR = {
   timeline: 11100,
   editor: 8400,
   template: 6300,
-  stream: 8367,
+  stream: 6000,
   render: 9100,
 } as const;
 
@@ -65,13 +65,13 @@ const CAPTIONS_AUTHOR: CaptionGroup[] = [
 
 const CAPTIONS_LAYERS: CaptionGroup[] = [
   { showMs: 0, hideMs: 3000, words: [
-    { w: "Stack", s: 0, e: 920 }, { w: "layers", s: 920, e: 1280 }, { w: "like", s: 1280, e: 1620 }, { w: "you'd", s: 1620, e: 1940 }, { w: "stack", s: 1940, e: 2220 }, { w: "elements.", s: 2220, e: 2760 },
+    { w: "Stack", s: 0, e: 920 }, { w: "layers", s: 920, e: 1280 }, { w: "the", s: 1280, e: 1480 }, { w: "way", s: 1480, e: 1720 }, { w: "you", s: 1720, e: 1880 }, { w: "stack", s: 1880, e: 2140 }, { w: "divs.", s: 2140, e: 2760 },
   ] },
   { showMs: 3100, hideMs: 6700, words: [
-    { w: "Video,", s: 3320, e: 3980 }, { w: "text,", s: 4300, e: 4640 }, { w: "shapes,", s: 4940, e: 5360 }, { w: "3D,", s: 5880, e: 6460 },
+    { w: "Video,", s: 3320, e: 3980 }, { w: "text,", s: 4300, e: 4640 }, { w: "shapes,", s: 4940, e: 5360 }, { w: "3D\u2009\u2014", s: 5880, e: 6460 },
   ] },
   { showMs: 6700, hideMs: 8400, words: [
-    { w: "each", s: 6920, e: 7160 }, { w: "one", s: 7160, e: 7420 }, { w: "composable.", s: 7420, e: 8100 },
+    { w: "mix", s: 6920, e: 7160 }, { w: "everything.", s: 7160, e: 8100 },
   ] },
 ];
 
@@ -115,14 +115,11 @@ const CAPTIONS_TEMPLATE: CaptionGroup[] = [
 ];
 
 const CAPTIONS_STREAM: CaptionGroup[] = [
-  { showMs: 0, hideMs: 1800, words: [
-    { w: "Preview", s: 0, e: 1020 }, { w: "is", s: 1020, e: 1200 }, { w: "instant.", s: 1200, e: 1600 },
+  { showMs: 0, hideMs: 2000, words: [
+    { w: "Preview", s: 0, e: 700 }, { w: "is", s: 700, e: 900 }, { w: "instant.", s: 900, e: 1600 },
   ] },
-  { showMs: 1800, hideMs: 4200, words: [
-    { w: "Frames", s: 2020, e: 2420 }, { w: "stream", s: 2420, e: 2860 }, { w: "just-in-time,", s: 2860, e: 4040 },
-  ] },
-  { showMs: 4200, hideMs: 7100, words: [
-    { w: "so", s: 4380, e: 4680 }, { w: "you're", s: 4680, e: 4860 }, { w: "never", s: 4860, e: 5120 }, { w: "waiting", s: 5120, e: 5500 }, { w: "on", s: 5500, e: 5720 }, { w: "a", s: 5720, e: 5840 }, { w: "render", s: 5840, e: 6020 }, { w: "to", s: 6020, e: 6240 }, { w: "see", s: 6240, e: 6460 }, { w: "your", s: 6460, e: 6580 }, { w: "work.", s: 6580, e: 6840 },
+  { showMs: 2000, hideMs: 5200, words: [
+    { w: "Change", s: 2200, e: 2600 }, { w: "the", s: 2600, e: 2800 }, { w: "code,", s: 2800, e: 3300 }, { w: "see", s: 3500, e: 3800 }, { w: "the", s: 3800, e: 4000 }, { w: "frame.", s: 4000, e: 4600 },
   ] },
 ];
 
@@ -257,14 +254,24 @@ function SceneTitle() {
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function SceneAuthor() {
   const d = DUR.author;
+
+  /* Phase 1 (0–3s "It starts with HTML and CSS"):
+       HTML lines type in → right panel builds: video bg, then title
+     Phase 2 (3.4–6.5s "When you need more, it's just React"):
+       CSS lines type in → right panel restyles: gold title, size, glow
+     Phase 3 (6.5–9s): settle, progress bar, hold */
+
   const codeLines = [
-    { text: '<video src="clip.mp4" />', color: "text-[var(--poster-blue)]" },
-    { text: '<h1 class="title">', color: "text-white/80" },
-    { text: "  Welcome back", color: "text-white/60" },
-    { text: "</h1>", color: "text-white/80" },
-    { text: '<style>', color: "text-[var(--poster-gold)]" },
-    { text: '  .title { color: gold }', color: "text-[var(--poster-gold)]/70" },
-    { text: '</style>', color: "text-[var(--poster-gold)]" },
+    { text: '<video src="clip.mp4"></video>', color: "text-[var(--poster-blue)]", delay: 600 },
+    { text: '<h1 class="title">', color: "text-white/80", delay: 1400 },
+    { text: "  Year in Review", color: "text-white/60", delay: 1900 },
+    { text: "</h1>", color: "text-white/80", delay: 2300 },
+    { text: "<style>", color: "text-[var(--poster-gold)]", delay: 3600 },
+    { text: "  .title {", color: "text-[var(--poster-gold)]", delay: 4100 },
+    { text: "    color: gold;", color: "text-[#FFD54F]", delay: 4600 },
+    { text: "    font-size: 3rem;", color: "text-[#FFD54F]", delay: 5100 },
+    { text: "  }", color: "text-[var(--poster-gold)]", delay: 5600 },
+    { text: "</style>", color: "text-[var(--poster-gold)]", delay: 5900 },
   ];
 
   return (
@@ -274,8 +281,8 @@ function SceneAuthor() {
         background: "radial-gradient(ellipse 60% 50% at 75% 50%, rgba(21,101,192,0.06) 0%, transparent 70%)",
       }} />
       <div className="absolute inset-0 flex items-center">
-        {/* Left: code panel with editor chrome */}
-        <div className="w-[52%] pl-10 pr-4 flex flex-col justify-center">
+        {/* Left: code panel */}
+        <div className="w-[48%] pl-8 pr-2 flex flex-col justify-center">
           <div
             className="border border-white/10 overflow-hidden"
             style={{ animation: "hero-fade-in 400ms ease-out both", animationDelay: "200ms" }}
@@ -286,17 +293,17 @@ function SceneAuthor() {
               <div className="w-2 h-2 rounded-full bg-[var(--poster-green)]/60" />
               <span className="ml-2 text-[9px] font-mono text-white/30">composition.html</span>
             </div>
-            <div className="p-4 font-mono text-sm leading-relaxed bg-white/[0.02]">
+            <div className="p-4 font-mono text-[12px] leading-relaxed bg-white/[0.02]">
               {codeLines.map((line, i) => (
                 <div
                   key={i}
                   className={`flex ${line.color}`}
                   style={{
                     animation: "hero-slide-up-decel 264ms ease-out both",
-                    animationDelay: `${825 + i * 180}ms`,
+                    animationDelay: `${line.delay}ms`,
                   }}
                 >
-                  <span className="text-white/15 w-6 text-right mr-3 select-none text-xs">{i + 1}</span>
+                  <span className="text-white/15 w-5 text-right mr-3 select-none text-xs">{i + 1}</span>
                   {line.text}
                 </div>
               ))}
@@ -305,37 +312,122 @@ function SceneAuthor() {
         </div>
 
         {/* Center arrow */}
-        <div className="flex items-center justify-center w-[6%]">
+        <div className="flex items-center justify-center w-[4%]">
           <div
-            className="text-white/30 text-xl font-mono"
-            style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "2800ms" }}
+            className="text-white/40 text-lg font-mono"
+            style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "1800ms" }}
           >
             &rarr;
           </div>
         </div>
 
-        {/* Right: rendered result as video frame */}
-        <div className="w-[42%] pr-10 flex items-center justify-center">
+        {/* Right: rendered video frame — builds progressively */}
+        <div className="w-[48%] pr-8 flex items-center justify-center">
           <div
-            className="w-full border border-white/40 relative overflow-hidden"
+            className="w-full relative overflow-hidden"
             style={{
               aspectRatio: "16/9",
-              animation: "hero-reveal-left 660ms cubic-bezier(0.36, 0, 0.66, 1) both",
-              animationDelay: "3600ms",
+              animation: "hero-fade-in 500ms ease-out both",
+              animationDelay: "800ms",
             }}
           >
+            {/* Video background — appears when <video> line types */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: "linear-gradient(135deg, #0d1b2a 0%, #1b2838 40%, #1a1230 100%)",
+                animation: "hero-fade-in 600ms ease-out both",
+                animationDelay: "900ms",
+              }}
+            />
             <div className="absolute inset-0" style={{
-              background: "linear-gradient(160deg, #1a2440 0%, #0f1a30 50%, #1a1230 100%)",
+              background: "radial-gradient(ellipse 80% 60% at 50% 40%, rgba(21,101,192,0.12) 0%, transparent 70%)",
+              animation: "hero-fade-in 600ms ease-out both",
+              animationDelay: "900ms",
             }} />
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
-              <div className="text-[var(--poster-gold)] text-2xl font-black">Welcome back</div>
+
+            {/* Play button — appears with <video>, fades when <h1> arrives */}
+            <div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{
+                animation: "hero-fade-in 400ms ease-out both, hero-fade-out 400ms ease-in both",
+                animationDelay: "1000ms, 1900ms",
+              }}
+            >
+              <div className="w-10 h-10 rounded-full border-2 border-white/20 flex items-center justify-center">
+                <svg className="w-4 h-4 text-white/30 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
             </div>
+
+            {/* Border frame */}
+            <div
+              className="absolute inset-0 border border-white/20"
+              style={{
+                animation: "hero-fade-in 400ms ease-out both",
+                animationDelay: "900ms",
+              }}
+            />
+
+            {/* Title — appears when <h1> types (~2s), restyles to gold at ~4.8s */}
+            <div
+              className="absolute inset-0 flex flex-col items-center justify-center p-6"
+              style={{
+                animation: "hero-fade-in 400ms ease-out both",
+                animationDelay: "2100ms",
+              }}
+            >
+              <div
+                className="text-white text-2xl font-black tracking-tight text-center leading-tight"
+                style={{
+                  animation: "hero-author-title-restyle 600ms ease-out both",
+                  animationDelay: "4800ms",
+                }}
+              >
+                Year in Review
+              </div>
+            </div>
+
+            {/* Gold glow — appears when CSS block types */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(255,179,0,0.1) 0%, transparent 70%)",
+                animation: "hero-fade-in 800ms ease-out both",
+                animationDelay: "4800ms",
+              }}
+            />
+
+            {/* Year watermark — appears with CSS restyle */}
+            <div
+              className="absolute top-4 left-5 text-white/[0.08] text-5xl font-black leading-none select-none"
+              style={{
+                animation: "hero-fade-in 600ms ease-out both",
+                animationDelay: "5200ms",
+              }}
+            >
+              2024
+            </div>
+
+            {/* Progress bar */}
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
               <div className="h-full bg-[var(--poster-red)]" style={{
-                animation: "hero-progress-spring 1800ms ease-out both",
-                animationDelay: "5000ms",
-                ["--bar-target" as string]: "35%",
+                animation: "hero-progress-spring 2500ms ease-out both",
+                animationDelay: "6500ms",
+                ["--bar-target" as string]: "45%",
               }} />
+            </div>
+
+            {/* Timecode */}
+            <div
+              className="absolute bottom-2 right-3 text-[9px] font-mono text-white/30"
+              style={{
+                animation: "hero-fade-in 264ms ease-out both",
+                animationDelay: "6500ms",
+              }}
+            >
+              00:02.14
             </div>
           </div>
         </div>

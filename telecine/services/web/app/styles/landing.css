@@ -261,6 +261,18 @@ body {
   }
 }
 
+/* Scene 2: Title restyles from white to gold + scales up when CSS block types */
+@keyframes hero-author-title-restyle {
+  0% {
+    color: white;
+    font-size: 1.5rem;
+  }
+  100% {
+    color: var(--poster-gold);
+    font-size: 2.25rem;
+  }
+}
+
 /* Progress bar with spring overshoot */
 @keyframes hero-progress-spring {
   0% { width: 0%; }
@@ -298,6 +310,39 @@ body {
   to { stroke-dashoffset: 0; }
 }
 
+/* Scene 8: completion flash on each render target row */
+@keyframes hero-render-row-flash {
+  0% { opacity: 0; }
+  40% { opacity: 0.25; }
+  100% { opacity: 0; }
+}
+
+/* Scene 8: pulse scale on checkmark */
+@keyframes hero-check-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Scene 8: slide up + fade for closing tagline */
+@keyframes hero-render-tagline-in {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+/* Scene 8: bar shimmer for active progress bars */
+@keyframes hero-bar-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+/* Scene 8: all-done glow pulse on the whole render panel */
+@keyframes hero-render-done-glow {
+  0% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+  50% { box-shadow: 0 0 40px 4px rgba(255,255,255,0.06); }
+  100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+}
+
 /* Playhead sweep across timeline (fixed px for 960px composition) */
 @keyframes hero-playhead-sweep {
   from { transform: translateX(0); }
@@ -306,6 +351,64 @@ body {
 @keyframes hero-playhead-sweep-fixed {
   from { transform: translateX(0); }
   to { transform: translateX(800px); }
+}
+
+/* Scene 4: Snap-in assembly — components drop/bounce into place like legos */
+@keyframes hero-snap-in {
+  0% {
+    transform: translateY(-30px) scale(0.92);
+    opacity: 0;
+  }
+  55% {
+    transform: translateY(3px) scale(1.015);
+    opacity: 1;
+  }
+  75% {
+    transform: translateY(-1px) scale(0.995);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Component label that flashes on snap then dims */
+@keyframes hero-label-flash {
+  0% {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  15% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0.25;
+    transform: translateX(0);
+  }
+}
+
+/* Playhead snap-appear with vertical scale */
+@keyframes hero-playhead-snap {
+  0% {
+    opacity: 0;
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  60% {
+    opacity: 1;
+    transform: scaleY(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+/* Preview scanline sweep */
+@keyframes hero-scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(200%); }
 }
 
 /* Caption word activation — dims-to-bright (permanent, karaoke-style) */
@@ -318,6 +421,22 @@ body {
 @keyframes hero-word-speak {
   0%, 100% { color: white; }
   20%, 80% { color: var(--poster-gold); }
+}
+
+/* Scene 7: Stream — pipeline pulse animation */
+@keyframes hero-stream-pulse {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes hero-stream-source-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,179,0,0.4); }
+  50% { transform: scale(1.03); box-shadow: 0 0 20px 4px rgba(255,179,0,0.15); }
+}
+
+@keyframes hero-stream-arrive {
+  0% { opacity: 0; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 @media (prefers-reduced-motion: reduce) {
