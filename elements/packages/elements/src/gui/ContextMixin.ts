@@ -442,6 +442,7 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
 
     #timegroupObserver = new MutationObserver((mutations) => {
       let shouldUpdate = false;
+      const undefinedEFTags = new Set<string>();
 
       for (const mutation of mutations) {
         if (mutation.type === "childList") {
@@ -455,6 +456,18 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
           ) {
             // Handle childList changes within existing temporal elements
             shouldUpdate = true;
+          }
+
+          // Collect ef-* tags from added nodes that haven't upgraded yet.
+          // When React hydrates or TimelineRoot renders, the custom element
+          // may be inserted before its class is defined, so isEFTemporal()
+          // returns false. We need to retry after the element upgrades.
+          if (!this.targetTemporal) {
+            for (const node of mutation.addedNodes) {
+              if (node instanceof Element) {
+                this.#collectUndefinedEFTags(node, undefinedEFTags);
+              }
+            }
           }
         } else if (mutation.type === "attributes") {
           // Watch for attribute changes that might affect duration
@@ -479,6 +492,10 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
         }
       }
 
+      if (undefinedEFTags.size > 0) {
+        this.#retryTemporalDiscovery(undefinedEFTags);
+      }
+
       if (shouldUpdate) {
         // Trigger an update to ensure reactive properties recalculate
         // Use a microtask to ensure DOM updates are complete
@@ -493,6 +510,42 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
         });
       }
     });
+
+    /**
+     * Recursively collect ef-* tag names from an element tree that
+     * have not yet been registered as custom elements.
+     */
+    #collectUndefinedEFTags(el: Element, tags: Set<string>): void {
+      const tag = el.tagName.toLowerCase();
+      if (tag.startsWith("ef-") && !customElements.get(tag)) {
+        tags.add(tag);
+      }
+      for (const child of el.children) {
+        this.#collectUndefinedEFTags(child, tags);
+      }
+    }
+
+    /**
+     * Wait for unregistered ef-* custom elements to upgrade, then
+     * retry findRootTemporal(). Mirrors the whenDefined pattern in play().
+     */
+    async #retryTemporalDiscovery(tags: Set<string>): Promise<void> {
+      await Promise.all(
+        [...tags].map((tag) =>
+          customElements.whenDefined(tag).catch(() => {}),
+        ),
+      );
+
+      if (this.targetTemporal) return; // already found by another path
+
+      const found = this.findRootTemporal();
+      if (found) {
+        this.targetTemporal = found;
+        await (found as any).updateComplete;
+        this.updateDurationProperties();
+        this.requestUpdate();
+      }
+    }
 
     /**
      * Update duration properties when temporal element changes

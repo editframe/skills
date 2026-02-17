@@ -1062,3 +1062,44 @@ describe.skip("ContextMixin", () => {
     });
   });
 });
+
+describe("ContextMixin late temporal discovery", () => {
+  test("preview discovers temporal element added after connection via DOM manipulation", async () => {
+    // Simulates what happens when React's TimelineRoot renders content
+    // into a Preview: the ef-timegroup is added to the DOM after the
+    // Preview has already connected and its MutationObserver is running.
+    const container = document.createElement("div");
+    container.innerHTML = `
+      <ef-configuration api-host="http://localhost:63315" signing-url="">
+        <ef-preview id="late-discovery-preview">
+          <div id="react-root" style="display:contents"></div>
+        </ef-preview>
+      </ef-configuration>
+    `;
+    document.body.appendChild(container);
+
+    const preview = container.querySelector("ef-preview") as any;
+    await preview.updateComplete;
+
+    // At this point, preview has no targetTemporal
+    expect(preview.targetTemporal).toBe(null);
+
+    // Now simulate React rendering a timegroup into the wrapper div
+    // (this is what TimelineRoot does)
+    const reactRoot = container.querySelector("#react-root")!;
+    const timegroup = document.createElement("ef-timegroup");
+    timegroup.setAttribute("mode", "fixed");
+    timegroup.setAttribute("duration", "5s");
+    reactRoot.appendChild(timegroup);
+
+    // Wait for custom element upgrade + MutationObserver async retry
+    await customElements.whenDefined("ef-timegroup");
+    await timegroup.updateComplete;
+    await preview.updateComplete;
+
+    // Preview should have discovered the late-arriving temporal element
+    expect(preview.targetTemporal).toBe(timegroup);
+
+    container.remove();
+  });
+});
