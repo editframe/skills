@@ -1090,47 +1090,27 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   /**
    * Collects all LitElement descendants recursively.
    * Used by seekForRender to ensure all reactive elements have updated.
-   * Optimized to filter by temporal visibility and skip hidden subtrees.
+   * Prunes subtrees of temporally-invisible elements — their Lit updates
+   * still fire via microtasks (OwnCurrentTimeController), so skipping
+   * the explicit await is safe.
    */
   #getAllLitElementDescendants(): LitElement[] {
     const result: LitElement[] = [];
     const currentTimeMs = this.currentTimeMs;
-    let hiddenSubtreesSkipped = 0;
-    let temporallyFilteredOut = 0;
-    let totalLitElements = 0;
     
     const walk = (el: Element) => {
-      // OPTIMIZATION: Check inline style.display first (no getComputedStyle call)
-      if (el instanceof HTMLElement && el.style.display === 'none') {
-        hiddenSubtreesSkipped++;
-        return; // Fast path - skip without expensive getComputedStyle
-      }
-      
-      // Slow path: only if inline style doesn't indicate hidden
-      if (el instanceof HTMLElement) {
-        const style = getComputedStyle(el);
-        if (style.display === "none" || style.visibility === "hidden") {
-          hiddenSubtreesSkipped++;
-          return; // Don't walk children
-        }
-      }
-      
       for (const child of el.children) {
-        if (child instanceof LitElement) {
-          totalLitElements++;
-          // Check temporal visibility for temporal elements
-          if ("startTimeMs" in child && "endTimeMs" in child) {
-            const startMs = (child as any).startTimeMs ?? -Infinity;
-            const endMs = (child as any).endTimeMs ?? Infinity;
-            if (currentTimeMs >= startMs && currentTimeMs <= endMs) {
-              result.push(child);
-            } else {
-              temporallyFilteredOut++;
-            }
-          } else {
-            // Non-temporal elements always included
-            result.push(child);
+        // Temporal pruning: skip invisible temporal elements and their subtrees
+        if ("startTimeMs" in child && "endTimeMs" in child) {
+          const startMs = (child as any).startTimeMs ?? -Infinity;
+          const endMs = (child as any).endTimeMs ?? Infinity;
+          if (endMs > startMs && (currentTimeMs < startMs || currentTimeMs >= endMs)) {
+            continue; // skip entire subtree
           }
+        }
+
+        if (child instanceof LitElement) {
+          result.push(child);
         }
         walk(child);
       }
