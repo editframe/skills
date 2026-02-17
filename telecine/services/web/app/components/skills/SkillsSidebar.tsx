@@ -2,26 +2,6 @@ import { Link } from "react-router";
 import clsx from "clsx";
 import type { NavNode } from "~/utils/skills.server";
 
-const TYPE_BADGE_STYLES: Record<string, string> = {
-  tutorial: "bg-green-700 dark:bg-green-600 text-white",
-  "how-to": "bg-blue-700 dark:bg-blue-600 text-white",
-  explanation: "bg-amber-500 dark:bg-amber-400 text-gray-900",
-  reference: "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300",
-};
-
-export function TypeBadge({ type }: { type: string }) {
-  return (
-    <span
-      className={clsx(
-        "inline-block px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider leading-none rounded-sm flex-shrink-0",
-        TYPE_BADGE_STYLES[type] || TYPE_BADGE_STYLES.reference,
-      )}
-    >
-      {type}
-    </span>
-  );
-}
-
 const NAV_BG = "bg-[#FAFAF9] dark:bg-[#1a1a1a]";
 
 // ─── Skill Picker (Column 1) ────────────────────────────────────────────────
@@ -70,12 +50,10 @@ function NavTreeItems({
   items,
   skillName,
   referenceName,
-  showTypeBadges,
 }: {
   items: NavNode["items"];
   skillName: string;
   referenceName: string | null;
-  showTypeBadges: boolean;
 }) {
   return (
     <div className="space-y-px">
@@ -90,10 +68,7 @@ function NavTreeItems({
               : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/[0.03] dark:hover:bg-white/[0.08] font-medium border-l-2 border-transparent",
           )}
         >
-          <div className="flex items-center gap-2">
-            <span className="flex-1 min-w-0">{ref.title}</span>
-            {showTypeBadges && <TypeBadge type={ref.type} />}
-          </div>
+          {ref.title}
         </Link>
       ))}
     </div>
@@ -111,9 +86,6 @@ function NavTreeSubNode({
 }) {
   const hasChildren = node.children.length > 0;
   const hasItems = node.items.length > 0;
-  const allTypes = node.items.map((i) => i.type);
-  const uniqueTypes = new Set(allTypes);
-  const showTypeBadges = uniqueTypes.size > 1;
 
   return (
     <div>
@@ -129,7 +101,6 @@ function NavTreeSubNode({
             items={node.items}
             skillName={skillName}
             referenceName={referenceName}
-            showTypeBadges={showTypeBadges}
           />
         )}
         {hasChildren && (
@@ -160,9 +131,6 @@ function NavTreeSection({
 }) {
   const hasChildren = node.children.length > 0;
   const hasItems = node.items.length > 0;
-  const allTypes = node.items.map((i) => i.type);
-  const uniqueTypes = new Set(allTypes);
-  const showTypeBadges = uniqueTypes.size > 1;
 
   return (
     <div className="mb-4">
@@ -189,7 +157,6 @@ function NavTreeSection({
             items={node.items}
             skillName={skillName}
             referenceName={referenceName}
-            showTypeBadges={showTypeBadges}
           />
         )}
         {hasChildren && (

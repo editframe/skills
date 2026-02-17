@@ -3,7 +3,7 @@ import type { Route } from "./+types/catalog";
 import type { SkillReference } from "~/utils/skills.server";
 import { getSkillCatalog, getSkillNames } from "~/utils/skills.server";
 import { SkillsLayout } from "~/components/skills/SkillsLayout";
-import { SkillPicker, TypeBadge } from "~/components/skills/SkillsSidebar";
+import { SkillPicker } from "~/components/skills/SkillsSidebar";
 import { useTheme } from "~/hooks/useTheme";
 
 export const meta = () => {
@@ -72,11 +72,10 @@ export default function SkillsCatalog({ loaderData }: Route.ComponentProps) {
                       to={`/skills/${tutorial.skillName}/${tutorial.name}`}
                       className="group block p-3 border border-gray-200 dark:border-gray-700 rounded-md hover:border-blue-600/40 dark:hover:border-blue-400/40 hover:bg-blue-600/[0.02] dark:hover:bg-blue-500/[0.05] transition-colors"
                     >
-                      <div className="flex items-center gap-2 mb-1.5">
+                      <div className="mb-1.5">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
                           {tutorial.skillTitle}
                         </span>
-                        <TypeBadge type="tutorial" />
                       </div>
                       <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
                         {tutorial.title}
