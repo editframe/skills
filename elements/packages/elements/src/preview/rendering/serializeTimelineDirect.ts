@@ -163,6 +163,15 @@ function serializeComputedStyles(element: Element, styles?: CSSStyleDeclaration)
   const tagName = element.tagName;
   const isCaptionChild = CAPTION_CHILD_TAGS.has(tagName);
   
+  // Check if the element has explicit width/height in its inline style.
+  // For elements that auto-size to content (inline, inline-block text),
+  // serializing the computed "used" pixel width/height would lock them to
+  // exact dimensions that may not match the foreignObject rendering context,
+  // causing text wrapping when font metrics differ slightly.
+  const htmlEl = element as HTMLElement;
+  const hasExplicitWidth = !!htmlEl.style?.getPropertyValue('width');
+  const hasExplicitHeight = !!htmlEl.style?.getPropertyValue('height');
+  
   
   for (const prop of SERIALIZED_STYLE_PROPERTIES) {
     // Convert camelCase to kebab-case first
@@ -194,6 +203,19 @@ function serializeComputedStyles(element: Element, styles?: CSSStyleDeclaration)
     // Skip clipPath - clones always render without clip-path
     // (source may have clip-path: inset(100%) from proxy mode)
     if (prop === 'clipPath') {
+      continue;
+    }
+    
+    // Skip width/height when not explicitly set on the element.
+    // getComputedStyle returns "used" pixel values for width/height even when
+    // the specified value is auto. Serializing these pixel values locks
+    // content-sized elements (text segments, inline-block spans) to exact
+    // dimensions, which breaks when the foreignObject context renders text
+    // with different font metrics.
+    if (prop === 'width' && !hasExplicitWidth) {
+      continue;
+    }
+    if (prop === 'height' && !hasExplicitHeight) {
       continue;
     }
     

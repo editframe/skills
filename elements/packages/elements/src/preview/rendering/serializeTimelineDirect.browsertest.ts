@@ -311,6 +311,79 @@ describe("serializeTimelineDirect", () => {
     });
   });
 
+  describe("animated text serialization fidelity", () => {
+    it("should not serialize width on inline/inline-block text containers that would constrain content flow", async () => {
+      // Reproduce the TemplatedRenderingDemo layout:
+      // flex column container with centered items, ef-text with word split + animation
+      const wrapper = document.createElement("div");
+      wrapper.style.display = "flex";
+      wrapper.style.flexDirection = "column";
+      wrapper.style.alignItems = "center";
+      wrapper.style.justifyContent = "center";
+      wrapper.style.textAlign = "center";
+      wrapper.style.width = "960px";
+      wrapper.style.height = "540px";
+      wrapper.style.backgroundColor = "#333";
+
+      const text = document.createElement("ef-text") as EFText;
+      text.split = "word";
+      text.setAttribute("stagger", "100ms");
+      text.textContent = "Sarah Chen!";
+      text.style.fontSize = "48px";
+      text.style.fontWeight = "900";
+      text.style.color = "white";
+      text.style.textTransform = "uppercase";
+      text.style.letterSpacing = "-0.025em";
+      // Simulate animation to trigger inline-block on segments
+      text.style.animationName = "tmpl-slide-up";
+      text.style.animationDuration = "0.5s";
+      text.style.animationFillMode = "both";
+
+      wrapper.appendChild(text);
+      container.appendChild(wrapper);
+      await text.updateComplete;
+      await text.whenSegmentsReady();
+
+      // After animation propagation, verify segments got inline-block
+      const segments = text.segments;
+      const nonWhitespaceSegments = segments.filter(s => !/^\s+$/.test(s.segmentText));
+      for (const seg of nonWhitespaceSegments) {
+        expect(getComputedStyle(seg).display).toBe('inline-block');
+      }
+
+      // Serialize
+      const xhtml = await serializeElementToXHTML(wrapper, 960, 540, {
+        canvasScale: 1,
+        timeMs: 0,
+      });
+
+      // Parse and check: inline-block segments should NOT have explicit width
+      // that could constrain text if font metrics differ slightly in foreignObject
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(
+        `<div xmlns="http://www.w3.org/1999/xhtml">${xhtml}</div>`,
+        'text/xml'
+      );
+
+      const allEls = doc.querySelectorAll('*');
+      for (const el of allEls) {
+        const content = el.textContent?.trim();
+        if ((content === 'Sarah' || content === 'Chen!') && el.children.length === 0) {
+          const style = el.getAttribute('style') || '';
+          // Check: inline-block text segments should have width:auto, not a pixel value
+          // A pixel width on the segment container forces text to fit that exact width,
+          // which breaks when foreignObject renders with different font metrics.
+          const widthMatch = style.match(/(?:^|;)\s*width:([^;]+)/);
+          if (widthMatch) {
+            const widthVal = widthMatch[1]!.trim();
+            // Width should be 'auto', not a specific pixel value
+            expect(widthVal).toBe('auto');
+          }
+        }
+      }
+    });
+  });
+
   describe("style serialization", () => {
     it("should serialize computed styles including flex properties", async () => {
       // Use a plain div to test style serialization without shadow DOM interference
