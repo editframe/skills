@@ -12,7 +12,7 @@ export const meta = () => {
     {
       name: "description",
       content:
-        "Everything you need to build with Editframe — skills for AI agents, documentation for developers, from the same source.",
+        "Everything you need to build with Editframe.",
     },
   ];
 };
@@ -52,22 +52,9 @@ export default function SkillsCatalog({ loaderData }: Route.ComponentProps) {
             <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white mb-4">
               Documentation
             </h1>
-            <p className="text-gray-500 dark:text-gray-400 leading-relaxed mb-6 max-w-2xl">
-              Everything you need to build with Editframe — skills for AI
-              agents, documentation for developers, from the same source.
+            <p className="text-gray-500 dark:text-gray-400 leading-relaxed mb-10 max-w-2xl">
+              Everything you need to build with Editframe.
             </p>
-
-            {/* Transparency notice */}
-            <div className="border-l-2 border-blue-800 dark:border-blue-400 pl-4 mb-10 py-1">
-              <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                <span className="font-semibold text-gray-900 dark:text-white">
-                  Transparency
-                </span>{" "}
-                — This documentation is authored as agent skills. What you see
-                here is the exact content your AI agent reads — same source,
-                same truth.
-              </p>
-            </div>
 
             {/* Tutorials */}
             {tutorials.length > 0 && (
@@ -109,39 +96,9 @@ export default function SkillsCatalog({ loaderData }: Route.ComponentProps) {
             <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white mb-4 pb-2 border-b border-black/10 dark:border-white/10">
               Installation
             </h2>
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                  Cursor
-                </h3>
-                <pre className="bg-[#1a1a1a] border border-black/10 dark:border-white/10 overflow-x-auto p-5 text-sm leading-relaxed rounded-md">
-                  <code className="text-white">{`cp -r skills/elements-composition .cursor/skills/
-cp -r skills/react-composition .cursor/skills/
-cp -r skills/motion-design .cursor/skills/
-cp -r skills/brand-video-generator .cursor/skills/`}</code>
-                </pre>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                  Claude Code
-                </h3>
-                <pre className="bg-[#1a1a1a] border border-black/10 dark:border-white/10 overflow-x-auto p-5 text-sm leading-relaxed rounded-md">
-                  <code className="text-white">
-                    /plugin marketplace add editframe/skills
-                  </code>
-                </pre>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                  Manual
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                  Copy the skill folders to your agent's skills directory. Each
-                  skill includes a SKILL.md file and references/ directory with
-                  detailed documentation.
-                </p>
-              </div>
-            </div>
+            <pre className="bg-[#1a1a1a] border border-black/10 dark:border-white/10 overflow-x-auto p-5 text-sm leading-relaxed rounded-md">
+              <code className="text-white">npx ai-agent-skills install editframe/skills --agent cursor</code>
+            </pre>
           </div>
         </main>
       </div>

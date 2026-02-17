@@ -86,6 +86,7 @@ interface SkillFrontmatter {
   name: string;
   title?: string;
   description: string;
+  status?: string;
   order?: number;
   license: string;
   metadata: {
@@ -731,6 +732,7 @@ export const getSkillNames = (): { name: string; title: string; description: str
       if (!existsSync(skillPath)) return null;
       const content = readFileSync(skillPath, "utf8");
       const { attributes } = fm<SkillFrontmatter>(content);
+      if (attributes.status === "draft") return null;
       return {
         name: attributes.name,
         title: attributes.title || humanize(attributes.name),
@@ -763,6 +765,8 @@ export const getSkillCatalog = (): SkillSummary[] => {
 
     const content = readFileSync(skillPath, "utf8");
     const { attributes } = fm<SkillFrontmatter>(content);
+
+    if (attributes.status === "draft") return null;
 
     const referencesMeta = getSkillReferencesMeta(skillDir);
     const references = referencesMeta.map((r) => r.name);

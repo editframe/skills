@@ -31,12 +31,6 @@ export function SkillsLayout({ children }: SkillsLayoutProps) {
             <div className="flex items-center gap-3 md:gap-6">
               <ThemeToggle />
               <Link
-                to="/docs"
-                className="text-xs md:text-sm font-bold uppercase tracking-wider text-gray-900 dark:text-gray-100 hover:text-red-600 dark:hover:text-red-400 transition-colors hidden sm:inline"
-              >
-                Docs
-              </Link>
-              <Link
                 to="/welcome"
                 className="px-4 md:px-6 py-2 bg-gray-900 dark:bg-white text-white dark:text-black font-bold text-xs md:text-sm uppercase tracking-wider hover:bg-red-600 dark:hover:bg-red-500 transition-colors"
               >

@@ -14,7 +14,7 @@ import { getSkillsMDXComponents } from "~/utils/skills-mdx-components";
 import clsx from "clsx";
 import { useTheme } from "~/hooks/useTheme";
 import { SkillsLayout } from "~/components/skills/SkillsLayout";
-import { SkillPicker, ReferenceNav, TypeBadge } from "~/components/skills/SkillsSidebar";
+import { SkillPicker, ReferenceNav } from "~/components/skills/SkillsSidebar";
 import { OnThisPage } from "~/components/skills/OnThisPage";
 
 export const meta = ({ data }: Route.MetaArgs) => {
@@ -31,7 +31,7 @@ export const meta = ({ data }: Route.MetaArgs) => {
     { title: `${title} - Editframe` },
     {
       name: "description",
-      content: `Agent skill documentation for ${skillName}`,
+      content: `Documentation for ${skillName}`,
     },
   ];
 };
@@ -274,35 +274,7 @@ export default function SkillDetail({ loaderData }: Route.ComponentProps) {
               />
             )}
 
-            {/* Reference links at bottom for overview page */}
-            {!isReference && referencesMeta.length > 0 && (
-              <div className="mt-12 pt-8 border-t border-black/10 dark:border-white/10">
-                <h2 className="text-lg font-bold tracking-tight mb-4 text-gray-900 dark:text-white">
-                  References
-                </h2>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {referencesMeta.map((ref: SkillReference) => (
-                    <Link
-                      key={ref.name}
-                      to={`/skills/${skillName}/${ref.name}`}
-                      className="group block p-3 border border-gray-200 dark:border-gray-700 rounded-md hover:border-blue-600/40 dark:hover:border-blue-400/40 hover:bg-blue-600/[0.02] dark:hover:bg-blue-500/[0.05] transition-colors"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-medium text-sm text-gray-900 dark:text-white truncate">
-                          {ref.title}
-                        </span>
-                        <TypeBadge type={ref.type} />
-                      </div>
-                      {ref.description && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
-                          {ref.description}
-                        </p>
-                      )}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
+
           </div>
         </main>
 
