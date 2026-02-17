@@ -672,7 +672,7 @@ function SceneLayers() {
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   Scene 4: Timeline — waveforms, captions, multi-track editor
+   Scene 4: Timeline — components snap together to build an editor
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function SceneTimeline() {
   const d = DUR.timeline;
@@ -1055,25 +1055,45 @@ function SceneTemplate() {
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   Scene 7: Stream — JIT streaming playback with R3F particles
+   Scene 7: Stream — fast pipeline: code → frames → preview
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const STREAM_LANES = 5;
+const STREAM_PER_LANE = 14;
+const STREAM_COUNT = STREAM_LANES * STREAM_PER_LANE;
+
 function StreamParticles() {
   const { timeMs, durationMs } = useCompositionTime();
   const meshRef = useRef<THREE.InstancedMesh>(null!);
-  const count = 60;
   const dummy = useRef(new THREE.Object3D()).current;
 
   useFrame(() => {
     if (!meshRef.current) return;
     const t = durationMs > 0 ? timeMs / durationMs : 0;
-    for (let i = 0; i < count; i++) {
-      const offset = i / count;
-      const progress = (t * 1.5 + offset) % 1;
-      const x = -4 + progress * 8;
-      const lane = (i % 5) - 2;
-      const y = lane * 0.4 + Math.sin(progress * Math.PI * 2 + offset * 6) * 0.3;
-      const z = Math.cos(offset * Math.PI * 2) * 0.8;
-      const scale = 0.03 + Math.sin(progress * Math.PI) * 0.06;
+    const entranceT = Math.min(t * 5, 1);
+
+    for (let i = 0; i < STREAM_COUNT; i++) {
+      const lane = i % STREAM_LANES;
+      const idx = Math.floor(i / STREAM_LANES);
+
+      const stagger = lane * 0.04 + idx * 0.02;
+      const particleEntrance = Math.min(Math.max((entranceT - stagger) * 6, 0), 1);
+
+      const speed = 2.8 + (lane % 3) * 0.6;
+      const offset = idx / STREAM_PER_LANE + lane * 0.11;
+      const progress = (t * speed + offset) % 1;
+
+      const x = -5.5 + progress * 11;
+      const laneY = (lane - (STREAM_LANES - 1) / 2) * 0.42;
+      const y = laneY + Math.sin(progress * Math.PI * 6 + offset * 8) * 0.03;
+      const z = (lane - 2) * 0.12;
+
+      const fadeIn = Math.min(progress * 10, 1);
+      const fadeOut = Math.min((1 - progress) * 10, 1);
+      const alpha = fadeIn * fadeOut * particleEntrance;
+
+      const baseScale = 0.035 + (lane === 2 ? 0.015 : 0);
+      const scale = baseScale * alpha;
+
       dummy.position.set(x, y, z);
       dummy.scale.setScalar(scale);
       dummy.updateMatrix();
@@ -1083,16 +1103,46 @@ function StreamParticles() {
   });
 
   return (
-    <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
-      <sphereGeometry args={[1, 8, 8]} />
+    <instancedMesh ref={meshRef} args={[undefined, undefined, STREAM_COUNT]}>
+      <sphereGeometry args={[1, 16, 16]} />
       <meshPhysicalMaterial
         color="#FFB300"
         emissive="#FFB300"
-        emissiveIntensity={0.5}
-        roughness={0.3}
-        metalness={0.6}
+        emissiveIntensity={0.9}
+        roughness={0.2}
+        metalness={0.7}
       />
     </instancedMesh>
+  );
+}
+
+function StreamLaneLines() {
+  const { timeMs, durationMs } = useCompositionTime();
+  const groupRef = useRef<THREE.Group>(null!);
+
+  useFrame(() => {
+    if (!groupRef.current) return;
+    const t = durationMs > 0 ? timeMs / durationMs : 0;
+    const opacity = Math.min(t * 6, 1) * 0.07;
+    groupRef.current.children.forEach((child) => {
+      if (child instanceof THREE.Mesh) {
+        (child.material as THREE.MeshBasicMaterial).opacity = opacity;
+      }
+    });
+  });
+
+  return (
+    <group ref={groupRef}>
+      {Array.from({ length: STREAM_LANES }).map((_, i) => {
+        const y = (i - (STREAM_LANES - 1) / 2) * 0.42;
+        return (
+          <mesh key={i} position={[0, y, -0.1]}>
+            <planeGeometry args={[11, 0.004]} />
+            <meshBasicMaterial color="#FFB300" transparent opacity={0} />
+          </mesh>
+        );
+      })}
+    </group>
   );
 }
 
@@ -1101,9 +1151,9 @@ function StreamCamera() {
   const { camera } = useThree();
 
   useFrame(() => {
-    const progress = durationMs > 0 ? timeMs / durationMs : 0;
-    const angle = progress * 0.2 - 0.1;
-    camera.position.set(Math.sin(angle) * 7, 0.5 + progress * 0.3, Math.cos(angle) * 7);
+    const t = durationMs > 0 ? timeMs / durationMs : 0;
+    const ease = t * t * (3 - 2 * t);
+    camera.position.set(0, 0.1 + ease * 0.15, 6.2 - ease * 0.2);
     camera.lookAt(0, 0, 0);
   });
 
@@ -1116,32 +1166,70 @@ function SceneStream() {
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
       <Audio src={AUDIO_SRC.stream} />
       <CompositionCanvas
-        camera={{ position: [0, 0.5, 7], fov: 35 }}
+        camera={{ position: [0, 0.1, 6.2], fov: 35 }}
         gl={{ antialias: true, alpha: true }}
       >
-        <ambientLight intensity={0.3} />
-        <pointLight position={[3, 3, 3]} intensity={0.6} color="#FFB300" />
-        <pointLight position={[-3, 2, -2]} intensity={0.3} color="#1565C0" />
+        <ambientLight intensity={0.4} />
+        <pointLight position={[5, 2, 3]} intensity={0.8} color="#FFB300" />
+        <pointLight position={[-5, 1, 2]} intensity={0.3} color="#4FC3F7" />
         <StreamCamera />
+        <StreamLaneLines />
         <StreamParticles />
       </CompositionCanvas>
 
       <div className="absolute inset-0 pointer-events-none">
+        {/* Source: code icon */}
         <div
-          className="absolute top-8 left-8 text-[10px] font-mono uppercase tracking-[0.3em] text-white/30"
-          style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "200ms" }}
+          className="absolute top-1/2 left-5 -translate-y-1/2 flex flex-col items-center gap-1.5"
+          style={{ animation: "hero-fade-in 200ms ease-out both", animationDelay: "100ms" }}
+        >
+          <div
+            className="w-8 h-8 rounded border border-[var(--poster-gold)]/40 flex items-center justify-center"
+            style={{ animation: "hero-stream-source-pulse 1400ms ease-in-out infinite" }}
+          >
+            <span className="text-[var(--poster-gold)] text-xs font-mono">&lt;/&gt;</span>
+          </div>
+          <span className="text-[9px] font-mono text-white/40 uppercase tracking-wider">src</span>
+        </div>
+
+        {/* Destination: preview icon */}
+        <div
+          className="absolute top-1/2 right-5 -translate-y-1/2 flex flex-col items-center gap-1.5"
+          style={{ animation: "hero-stream-arrive 350ms ease-out both", animationDelay: "500ms" }}
+        >
+          <div className="w-8 h-8 rounded border border-white/20 flex items-center justify-center bg-white/5">
+            <span className="text-white/70 text-[10px] font-mono">&#9654;</span>
+          </div>
+          <span className="text-[9px] font-mono text-white/40 uppercase tracking-wider">preview</span>
+        </div>
+
+        {/* Top-left label */}
+        <div
+          className="absolute top-7 left-8 text-[10px] font-mono uppercase tracking-[0.3em] text-white/50"
+          style={{ animation: "hero-fade-in 200ms ease-out both", animationDelay: "80ms" }}
         >
           jit streaming
         </div>
-        {/* Streaming indicator */}
+
+        {/* Live indicator */}
         <div
-          className="absolute top-8 right-8 flex items-center gap-2"
-          style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "800ms" }}
+          className="absolute top-7 right-8 flex items-center gap-2"
+          style={{ animation: "hero-fade-in 200ms ease-out both", animationDelay: "250ms" }}
         >
-          <div className="w-1.5 h-1.5 rounded-full bg-[var(--poster-green)]" style={{
-            animation: "hero-cursor-blink 1200ms ease-in-out infinite",
+          <div className="w-2 h-2 rounded-full bg-[var(--poster-green)]" style={{
+            animation: "hero-cursor-blink 700ms ease-in-out infinite",
           }} />
-          <span className="text-[10px] font-mono text-white/40 uppercase">Live</span>
+          <span className="text-[11px] font-mono text-white/70 uppercase tracking-wide font-medium">Live</span>
+        </div>
+
+        {/* FPS indicator */}
+        <div
+          className="absolute bottom-7 right-8 font-mono text-[11px] tabular-nums flex items-center gap-1.5"
+          style={{ animation: "hero-fade-in 200ms ease-out both", animationDelay: "400ms" }}
+        >
+          <span className="text-[var(--poster-green)] font-medium">30fps</span>
+          <span className="text-white/25">|</span>
+          <span className="text-white/40">0 dropped</span>
         </div>
       </div>
       <SceneCaptions groups={CAPTIONS_STREAM} />
