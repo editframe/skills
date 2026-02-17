@@ -468,7 +468,8 @@ function LayerContentText() {
   return (
     <group>
       {[0.5, 0.25, 0.12, -0.12, -0.25, -0.5].map((y, i) => {
-        const w = [1.8, 2.0, 1.4, 2.1, 1.6, 1.0][i];
+        const widths = [1.8, 2.0, 1.4, 2.1, 1.6, 1.0];
+        const w = widths[i] ?? 1.5;
         return (
           <mesh key={i} position={[-0.1 + (2.2 - w) * -0.2, y, 0.001]}>
             <planeGeometry args={[w, 0.08]} />
@@ -524,39 +525,80 @@ function LayerContent3D() {
 
 const LAYER_CONTENT = [LayerContentVideo, LayerContentText, LayerContentShape, LayerContent3D];
 
-function LayerPlane({ index, color, opacity: baseOpacity }: { index: number; color: THREE.Color; opacity: number }) {
+function LayerPlane({ index, def }: { index: number; def: typeof LAYER_DEFS[number] }) {
   const { timeMs } = useCompositionTime();
-  const meshRef = useRef<THREE.Mesh>(null!);
+  const groupRef = useRef<THREE.Group>(null!);
+  const matRef = useRef<THREE.MeshPhysicalMaterial>(null!);
+  const edgeMatRef = useRef<THREE.MeshBasicMaterial>(null!);
   const t = timeMs / 1000;
 
-  const entranceDelay = index * 350;
-  const entranceProgress = Math.min(1, Math.max(0, (timeMs - entranceDelay) / 400));
+  const entranceProgress = Math.min(1, Math.max(0, (timeMs - def.entranceMs) / 600));
   const eased = 1 - Math.pow(1 - entranceProgress, 3);
 
-  const yFloat = Math.sin(t * 1.2 + index * 1.8) * 0.06;
-  const xSpread = (index - 1.5) * 0.5;
-  const zOffset = (index - 1.5) * 0.55;
+  const highlightDuration = 600;
+  const highlightProgress = Math.min(1, Math.max(0, (timeMs - def.highlightMs) / highlightDuration));
+  const highlightPeak = highlightProgress < 0.5
+    ? highlightProgress * 2
+    : 2 - highlightProgress * 2;
+  const isHighlighted = timeMs >= def.highlightMs && timeMs < def.highlightMs + highlightDuration;
+
+  const yFloat = Math.sin(t * 0.8 + index * 2.0) * 0.04;
+  const zSpacing = 1.0;
+  const zOffset = (index - 1.5) * zSpacing;
+  const xSpread = (index - 1.5) * 0.15;
+
+  const ContentComponent = LAYER_CONTENT[index] ?? LayerContentVideo;
 
   useFrame(() => {
-    if (!meshRef.current) return;
-    meshRef.current.position.set(xSpread, yFloat + (1 - eased) * 3, zOffset);
-    meshRef.current.rotation.y = (1 - eased) * 0.5 + Math.sin(t * 0.3 + index) * 0.02;
-    meshRef.current.scale.setScalar(eased);
+    if (!groupRef.current) return;
+    groupRef.current.position.set(
+      xSpread,
+      yFloat + (1 - eased) * 4,
+      zOffset,
+    );
+    groupRef.current.rotation.y = (1 - eased) * 0.8 + Math.sin(t * 0.25 + index) * 0.015;
+    const s = eased * (isHighlighted ? 1.0 + highlightPeak * 0.06 : 1.0);
+    groupRef.current.scale.setScalar(s);
+
+    if (matRef.current) {
+      matRef.current.opacity = eased * (isHighlighted ? 0.95 : 0.88);
+      matRef.current.emissiveIntensity = isHighlighted ? highlightPeak * 0.3 : 0;
+    }
+    if (edgeMatRef.current) {
+      edgeMatRef.current.opacity = eased * (isHighlighted ? 0.9 : 0.25);
+    }
   });
 
   return (
-    <mesh ref={meshRef}>
-      <planeGeometry args={[2.8, 1.6]} />
-      <meshPhysicalMaterial
-        color={color}
-        transparent
-        opacity={baseOpacity}
-        roughness={0.2}
-        metalness={0.05}
-        clearcoat={0.6}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
+    <group ref={groupRef}>
+      <mesh>
+        <planeGeometry args={[2.6, 1.5]} />
+        <meshPhysicalMaterial
+          ref={matRef}
+          color={def.color}
+          emissive={def.color}
+          emissiveIntensity={0}
+          transparent
+          opacity={0.88}
+          roughness={0.35}
+          metalness={0.02}
+          clearcoat={0.4}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      <mesh position={[0, 0, 0.0005]}>
+        <planeGeometry args={[2.64, 1.54]} />
+        <meshBasicMaterial
+          ref={edgeMatRef}
+          color="#ffffff"
+          transparent
+          opacity={0.25}
+          wireframe
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      <ContentComponent />
+    </group>
   );
 }
 
@@ -566,14 +608,15 @@ function LayersCamera() {
 
   useFrame(() => {
     const progress = durationMs > 0 ? timeMs / durationMs : 0;
-    const angle = 0.25 + (1 - progress) * 0.2;
-    const distance = 7 - progress * 0.5;
+    const angle = 0.35 + progress * 0.55;
+    const distance = 7.5 - progress * 1.2;
+    const yPos = 1.8 - progress * 1.0;
     camera.position.set(
       Math.sin(angle) * distance,
-      1.0 + (1 - progress) * 0.3,
+      yPos,
       Math.cos(angle) * distance,
     );
-    camera.lookAt(0, 0, 0);
+    camera.lookAt(0, 0, 0.3);
   });
 
   return null;
@@ -585,18 +628,19 @@ function SceneLayers() {
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
       <Audio src={AUDIO_SRC.layers} />
       <div className="absolute inset-0" style={{
-        background: "radial-gradient(ellipse 70% 60% at 50% 45%, rgba(21,101,192,0.05) 0%, transparent 70%)",
+        background: "radial-gradient(ellipse 80% 70% at 50% 45%, rgba(21,101,192,0.08) 0%, transparent 70%)",
       }} />
       <CompositionCanvas
-        camera={{ position: [3, 1.5, 6], fov: 32 }}
+        camera={{ position: [3, 1.8, 7], fov: 30 }}
         gl={{ antialias: true, alpha: true }}
       >
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[5, 5, 5]} intensity={0.7} />
-        <pointLight position={[-3, 2, 4]} intensity={0.3} color="#FFB300" />
+        <ambientLight intensity={0.6} />
+        <directionalLight position={[5, 5, 5]} intensity={0.8} />
+        <pointLight position={[-3, 2, 4]} intensity={0.4} color="#FFB300" />
+        <pointLight position={[3, -1, -2]} intensity={0.2} color="#1565C0" />
         <LayersCamera />
         {LAYER_DEFS.map((def, i) => (
-          <LayerPlane key={i} index={i} color={def.color} opacity={def.opacity} />
+          <LayerPlane key={i} index={i} def={def} />
         ))}
       </CompositionCanvas>
       <div className="absolute inset-0 pointer-events-none">
@@ -606,19 +650,18 @@ function SceneLayers() {
         >
           composable layers
         </div>
-        {/* Layer labels that appear as layers enter */}
-        <div className="absolute bottom-16 left-8 flex gap-3">
-          {LAYER_DEFS.map((def, i) => (
+        <div className="absolute bottom-16 left-8 flex gap-4">
+          {LAYER_DEFS.map((def) => (
             <div
               key={def.label}
-              className="flex items-center gap-1.5"
+              className="flex items-center gap-2"
               style={{
-                animation: "hero-fade-in 264ms ease-out both",
-                animationDelay: `${800 + i * 400}ms`,
+                animation: "hero-fade-in 400ms ease-out both",
+                animationDelay: `${def.entranceMs + 200}ms`,
               }}
             >
-              <div className="w-2 h-2" style={{ background: `#${def.color.getHexString()}` }} />
-              <span className="text-[10px] font-mono text-white/50 uppercase">{def.label}</span>
+              <div className="w-2.5 h-2.5 rounded-sm" style={{ background: def.hex }} />
+              <span className="text-[11px] font-mono text-white/60 uppercase tracking-wide">{def.label}</span>
             </div>
           ))}
         </div>
@@ -855,20 +898,48 @@ function SceneEditor() {
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function SceneTemplate() {
   const d = DUR.template;
-  const reviews = [
+
+  const featured = [
     { name: "Sarah Chen", stat: "2,847", label: "commits", accent: "var(--poster-red)" },
-    { name: "Marcus Johnson", stat: "156", label: "videos rendered", accent: "var(--poster-blue)" },
-    { name: "Alex Rivera", stat: "12.4k", label: "views", accent: "var(--poster-gold)" },
+    { name: "Marcus Johnson", stat: "384", label: "hours listened", accent: "var(--poster-blue)" },
+    { name: "Alex Rivera", stat: "12.4k", label: "photos shared", accent: "var(--poster-gold)" },
   ];
-  const cardHoldMs = 1200;
-  const cardFadeMs = 300;
+
+  const cascade = [
+    { name: "Priya Patel", stat: "1,203", label: "miles run", accent: "var(--poster-green)" },
+    { name: "James Liu", stat: "47", label: "countries visited", accent: "var(--poster-pink)" },
+    { name: "Emma Wilson", stat: "892", label: "recipes tried", accent: "var(--poster-red)" },
+    { name: "David Kim", stat: "5.2k", label: "songs played", accent: "var(--poster-blue)" },
+    { name: "Sofia Garcia", stat: "163", label: "books finished", accent: "var(--poster-gold)" },
+    { name: "Liam O'Brien", stat: "3,411", label: "photos taken", accent: "var(--poster-green)" },
+    { name: "Aisha Mohammed", stat: "728", label: "workouts done", accent: "var(--poster-pink)" },
+    { name: "Tom Nakamura", stat: "94", label: "PRs merged", accent: "var(--poster-red)" },
+    { name: "Clara Johansson", stat: "2.1k", label: "messages sent", accent: "var(--poster-blue)" },
+    { name: "Ryan Torres", stat: "456", label: "goals scored", accent: "var(--poster-gold)" },
+    { name: "Mei Zhang", stat: "1,847", label: "sketches drawn", accent: "var(--poster-green)" },
+    { name: "Noah Brown", stat: "612", label: "flights taken", accent: "var(--poster-pink)" },
+  ];
+
+  const cardHoldMs = 1000;
+  const cardFadeMs = 250;
   const cardTotalMs = cardFadeMs + cardHoldMs + cardFadeMs;
+  const cascadeStartMs = 3 * (cardHoldMs + cardFadeMs) + 400;
+  const cascadeCardMs = 120;
+
+  const counterSteps = [
+    { value: "3", delay: cascadeStartMs },
+    { value: "27", delay: cascadeStartMs + 200 },
+    { value: "148", delay: cascadeStartMs + 400 },
+    { value: "1,024", delay: cascadeStartMs + 700 },
+    { value: "4,519", delay: cascadeStartMs + 1000 },
+    { value: "10,000", delay: cascadeStartMs + 1300 },
+  ];
 
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
       <Audio src={AUDIO_SRC.template} />
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        {/* Year watermark - positioned to not overlap stats */}
+        {/* Year watermark */}
         <div
           className="text-white/[0.04] text-[180px] font-black leading-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none"
           style={{ animation: "hero-fade-in 660ms ease-out both", animationDelay: "0ms" }}
@@ -876,9 +947,9 @@ function SceneTemplate() {
           2024
         </div>
 
-        {/* Cycling review cards - single animation per card handles full lifecycle */}
-        <div className="relative" style={{ width: 500, height: 180 }}>
-          {reviews.map((review, i) => {
+        {/* Featured cards with surfaces */}
+        <div className="relative" style={{ width: 340, height: 200 }}>
+          {featured.map((review, i) => {
             const startMs = i * (cardHoldMs + cardFadeMs) + 400;
             return (
               <div
@@ -888,25 +959,93 @@ function SceneTemplate() {
                   opacity: 0,
                   animation: `hero-card-lifecycle ${cardTotalMs}ms ease both`,
                   animationDelay: `${startMs}ms`,
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 8,
+                  background: "linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)",
+                  backdropFilter: "blur(4px)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
                 }}
               >
-                <div className="text-white/50 text-sm font-mono mb-3">{review.name}</div>
-                <div className="text-6xl font-black mb-1" style={{ color: review.accent }}>
+                <div className="text-white/30 text-[10px] uppercase tracking-[0.2em] font-mono absolute top-3 left-4">Your Year in Review</div>
+                <div className="text-white/50 text-sm font-mono mb-2">{review.name}</div>
+                <div className="text-5xl font-black mb-1" style={{ color: review.accent }}>
                   {review.stat}
                 </div>
-                <div className="text-white/40 text-sm uppercase tracking-wider">{review.label}</div>
+                <div className="text-white/40 text-xs uppercase tracking-wider">{review.label}</div>
+                <div className="text-white/10 text-[10px] font-mono absolute bottom-3 right-4">2024</div>
               </div>
             );
           })}
         </div>
 
+        {/* Rapid cascade — many small cards streaming upward */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{
+          opacity: 0,
+          animation: `hero-fade-in 200ms ease both, hero-fade-out 400ms ease both`,
+          animationDelay: `${cascadeStartMs}ms, ${cascadeStartMs + 1600}ms`,
+        }}>
+          {cascade.map((card, i) => {
+            const col = i % 4;
+            const xPositions = [12, 30, 55, 76];
+            const x = xPositions[col];
+            const stagger = i * cascadeCardMs;
+            return (
+              <div
+                key={card.name}
+                className="absolute flex flex-col items-center justify-center"
+                style={{
+                  width: 160,
+                  height: 100,
+                  left: `${x}%`,
+                  top: "50%",
+                  opacity: 0,
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 6,
+                  background: "linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.005) 100%)",
+                  animation: `hero-cascade-card 600ms ease both`,
+                  animationDelay: `${cascadeStartMs + stagger}ms`,
+                }}
+              >
+                <div className="text-white/40 text-[9px] font-mono mb-1">{card.name}</div>
+                <div className="text-xl font-black" style={{ color: card.accent }}>{card.stat}</div>
+                <div className="text-white/30 text-[8px] uppercase tracking-wider">{card.label}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Counter ticking up */}
+        <div className="absolute top-[72px] right-12 text-right">
+          {counterSteps.map((step, i) => (
+            <div
+              key={step.value}
+              className="absolute right-0 top-0 flex flex-col items-end"
+              style={{
+                opacity: 0,
+                animation: i === counterSteps.length - 1
+                  ? `hero-counter-final 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both`
+                  : `hero-counter-step 200ms ease both`,
+                animationDelay: `${step.delay}ms`,
+              }}
+            >
+              <div className="text-white/20 text-[9px] font-mono uppercase tracking-wider mb-1">Videos generated</div>
+              <div className="text-3xl font-black tabular-nums" style={{
+                color: i === counterSteps.length - 1 ? "var(--poster-gold)" : "rgba(255,255,255,0.5)",
+              }}>
+                {step.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Command line */}
         <div
-          className="absolute bottom-28 inset-x-8 flex items-center justify-center"
-          style={{ animation: "hero-slide-up-decel 330ms ease-out both", animationDelay: "400ms" }}
+          className="absolute bottom-20 inset-x-8 flex items-center justify-center"
+          style={{ animation: "hero-slide-up-decel 330ms ease-out both", animationDelay: "200ms" }}
         >
-          <div className="bg-white/5 border border-white/10 px-4 py-2 font-mono text-xs text-white/50 flex items-center gap-2">
+          <div className="bg-white/5 border border-white/10 px-4 py-2 font-mono text-xs text-white/50 flex items-center gap-2" style={{ borderRadius: 4 }}>
             <span className="text-[var(--poster-gold)]">$</span>
-            <span>editframe render --data users.json</span>
+            <span>editframe render --data users.json --template year-in-review</span>
           </div>
         </div>
       </div>
