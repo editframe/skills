@@ -19,14 +19,14 @@ import { ExportButton } from "./ExportButton";
 const OVERLAP_MS = 495; // 15 frames
 
 const DUR = {
-  title: 4400,
-  author: 8500,
-  layers: 10333,
-  timeline: 10567,
-  editor: 10400,
-  template: 6967,
-  stream: 7700,
-  render: 10667,
+  title: 4067,
+  author: 10033,
+  layers: 9367,
+  timeline: 11100,
+  editor: 8400,
+  template: 6300,
+  stream: 8367,
+  render: 9100,
 } as const;
 
 function sceneStyle(durationMs: number): React.CSSProperties {
@@ -49,32 +49,32 @@ interface CaptionGroup {
 }
 
 const CAPTIONS_TITLE: CaptionGroup[] = [
-  { showMs: 0, hideMs: 2900, words: [
-    { w: "Video", s: 0, e: 960 }, { w: "shouldn't", s: 960, e: 1500 }, { w: "be", s: 1500, e: 1580 }, { w: "this", s: 1580, e: 1820 }, { w: "hard", s: 1820, e: 2080 }, { w: "to", s: 2080, e: 2280 }, { w: "automate.", s: 2280, e: 2640 },
+  { showMs: 0, hideMs: 2300, words: [
+    { w: "Video", s: 0, e: 440 }, { w: "shouldn't", s: 440, e: 940 }, { w: "be", s: 940, e: 1020 }, { w: "this", s: 1020, e: 1220 }, { w: "hard", s: 1220, e: 1460 }, { w: "to", s: 1460, e: 1600 }, { w: "automate.", s: 1600, e: 2020 },
   ] },
 ];
 
 const CAPTIONS_AUTHOR: CaptionGroup[] = [
-  { showMs: 0, hideMs: 1700, words: [
-    { w: "Video", s: 0, e: 200 }, { w: "is", s: 200, e: 640 }, { w: "just", s: 640, e: 880 }, { w: "markup.", s: 880, e: 1420 },
+  { showMs: 0, hideMs: 2500, words: [
+    { w: "Video", s: 360, e: 920 }, { w: "is", s: 920, e: 1240 }, { w: "just", s: 1240, e: 1540 }, { w: "markup.", s: 1540, e: 2220 },
   ] },
-  { showMs: 1700, hideMs: 4200, words: [
-    { w: "Write", s: 1920, e: 2040 }, { w: "HTML,", s: 2040, e: 2500 }, { w: "style", s: 3000, e: 3360 }, { w: "it", s: 3360, e: 3480 }, { w: "with", s: 3480, e: 3580 }, { w: "CSS,", s: 3580, e: 3980 },
+  { showMs: 2500, hideMs: 5300, words: [
+    { w: "Write", s: 2740, e: 3020 }, { w: "HTML,", s: 3020, e: 3560 }, { w: "style", s: 4040, e: 4340 }, { w: "it", s: 4340, e: 4460 }, { w: "with", s: 4460, e: 4600 }, { w: "CSS,", s: 4600, e: 5020 },
   ] },
-  { showMs: 4500, hideMs: 7400, words: [
-    { w: "then", s: 4720, e: 4860 }, { w: "reach", s: 4860, e: 5120 }, { w: "for", s: 5120, e: 5320 }, { w: "React", s: 5320, e: 5660 }, { w: "or", s: 5660, e: 5880 }, { w: "JavaScript", s: 5880, e: 6380 }, { w: "when", s: 6380, e: 6700 }, { w: "you", s: 6700, e: 6820 }, { w: "need", s: 6820, e: 6960 }, { w: "to.", s: 6960, e: 7160 },
+  { showMs: 5500, hideMs: 8700, words: [
+    { w: "then", s: 5720, e: 5820 }, { w: "reach", s: 5820, e: 6140 }, { w: "for", s: 6140, e: 6380 }, { w: "React", s: 6380, e: 6720 }, { w: "or", s: 6720, e: 7060 }, { w: "JavaScript", s: 7060, e: 7500 }, { w: "when", s: 7500, e: 7920 }, { w: "you", s: 7920, e: 8039 }, { w: "need", s: 8039, e: 8240 }, { w: "to.", s: 8240, e: 8440 },
   ] },
 ];
 
 const CAPTIONS_LAYERS: CaptionGroup[] = [
-  { showMs: 0, hideMs: 2600, words: [
-    { w: "Stack", s: 0, e: 780 }, { w: "layers", s: 780, e: 1180 }, { w: "like", s: 1180, e: 1460 }, { w: "you'd", s: 1460, e: 1680 }, { w: "stack", s: 1680, e: 1900 }, { w: "elements.", s: 1900, e: 2360 },
+  { showMs: 0, hideMs: 3000, words: [
+    { w: "Stack", s: 0, e: 920 }, { w: "layers", s: 920, e: 1280 }, { w: "like", s: 1280, e: 1620 }, { w: "you'd", s: 1620, e: 1940 }, { w: "stack", s: 1940, e: 2220 }, { w: "elements.", s: 2220, e: 2760 },
   ] },
-  { showMs: 2700, hideMs: 7300, words: [
-    { w: "Video,", s: 2900, e: 3520 }, { w: "text,", s: 4040, e: 4440 }, { w: "shapes,", s: 5180, e: 5740 }, { w: "3D,", s: 6480, e: 7020 },
+  { showMs: 3100, hideMs: 6700, words: [
+    { w: "Video,", s: 3320, e: 3980 }, { w: "text,", s: 4300, e: 4640 }, { w: "shapes,", s: 4940, e: 5360 }, { w: "3D,", s: 5880, e: 6460 },
   ] },
-  { showMs: 7400, hideMs: 9200, words: [
-    { w: "each", s: 7680, e: 7960 }, { w: "one", s: 7960, e: 8260 }, { w: "composable.", s: 8260, e: 8940 },
+  { showMs: 6700, hideMs: 8400, words: [
+    { w: "each", s: 6920, e: 7160 }, { w: "one", s: 7160, e: 7420 }, { w: "composable.", s: 7420, e: 8100 },
   ] },
 ];
 
@@ -82,62 +82,62 @@ const CAPTIONS_TIMELINE: CaptionGroup[] = [
   { showMs: 0, hideMs: 1800, words: [
     { w: "Need", s: 0, e: 1060 }, { w: "an", s: 1060, e: 1280 }, { w: "editor?", s: 1280, e: 1600 },
   ] },
-  { showMs: 1900, hideMs: 4300, words: [
-    { w: "Snap", s: 2140, e: 2520 }, { w: "together", s: 2520, e: 2960 }, { w: "GUI", s: 2960, e: 3460 }, { w: "primitives.", s: 3460, e: 4060 },
+  { showMs: 2000, hideMs: 4200, words: [
+    { w: "Snap", s: 2240, e: 2500 }, { w: "together", s: 2500, e: 2940 }, { w: "GUI", s: 2940, e: 3440 }, { w: "primitives.", s: 3440, e: 4019 },
   ] },
-  { showMs: 4200, hideMs: 6800, words: [
-    { w: "Timeline,", s: 4400, e: 5020 }, { w: "waveforms,", s: 5320, e: 6020 }, { w: "captions,", s: 6180, e: 6560 },
+  { showMs: 4200, hideMs: 7000, words: [
+    { w: "Timeline,", s: 4420, e: 4900 }, { w: "waveforms,", s: 5460, e: 6200 }, { w: "captions,", s: 6400, e: 6780 },
   ] },
-  { showMs: 6800, hideMs: 9500, words: [
-    { w: "into", s: 6980, e: 7200 }, { w: "any", s: 7200, e: 7620 }, { w: "editing", s: 7620, e: 8040 }, { w: "experience", s: 8040, e: 8480 }, { w: "you", s: 8480, e: 8900 }, { w: "want.", s: 8900, e: 9240 },
+  { showMs: 7100, hideMs: 10100, words: [
+    { w: "into", s: 7360, e: 7640 }, { w: "any", s: 7640, e: 8200 }, { w: "editing", s: 8200, e: 8640 }, { w: "experience", s: 8640, e: 9140 }, { w: "you", s: 9140, e: 9560 }, { w: "want.", s: 9560, e: 9820 },
   ] },
 ];
 
 const CAPTIONS_EDITOR: CaptionGroup[] = [
-  { showMs: 0, hideMs: 1600, words: [
-    { w: "A", s: 0, e: 180 }, { w: "full", s: 180, e: 580 }, { w: "NLE.", s: 580, e: 1380 },
+  { showMs: 0, hideMs: 1700, words: [
+    { w: "A", s: 0, e: 640 }, { w: "full", s: 640, e: 920 }, { w: "NLE.", s: 920, e: 1460 },
   ] },
-  { showMs: 1700, hideMs: 5400, words: [
-    { w: "A", s: 1960, e: 2200 }, { w: "simple", s: 2200, e: 3420 }, { w: "trim", s: 3420, e: 3700 }, { w: "tool", s: 3700, e: 4080 }, { w: "in", s: 4460, e: 4780 }, { w: "a", s: 4780, e: 4900 }, { w: "form.", s: 4900, e: 5200 },
+  { showMs: 1700, hideMs: 3900, words: [
+    { w: "A", s: 1980, e: 2160 }, { w: "simple", s: 2160, e: 2400 }, { w: "trim", s: 2400, e: 2700 }, { w: "tool", s: 2700, e: 3040 }, { w: "in", s: 3040, e: 3260 }, { w: "a", s: 3260, e: 3360 }, { w: "form.", s: 3360, e: 3660 },
   ] },
-  { showMs: 5600, hideMs: 6700, words: [
-    { w: "It's", s: 5800, e: 6020 }, { w: "your", s: 6020, e: 6140 }, { w: "UI,", s: 6140, e: 6480 },
+  { showMs: 3900, hideMs: 5100, words: [
+    { w: "It's", s: 4200, e: 4380 }, { w: "your", s: 4380, e: 4500 }, { w: "UI.", s: 4500, e: 4780 },
   ] },
-  { showMs: 6800, hideMs: 9100, words: [
-    { w: "these", s: 7080, e: 7400 }, { w: "are", s: 7400, e: 7540 }, { w: "just", s: 7540, e: 7820 }, { w: "the", s: 7820, e: 7820 }, { w: "building", s: 7820, e: 8340 }, { w: "blocks.", s: 8340, e: 8840 },
+  { showMs: 5200, hideMs: 7200, words: [
+    { w: "These", s: 5460, e: 5760 }, { w: "are", s: 5760, e: 5940 }, { w: "just", s: 5940, e: 6200 }, { w: "the", s: 6200, e: 6400 }, { w: "building", s: 6400, e: 6680 }, { w: "blocks.", s: 6680, e: 6980 },
   ] },
 ];
 
 const CAPTIONS_TEMPLATE: CaptionGroup[] = [
-  { showMs: 0, hideMs: 1100, words: [
-    { w: "Feed", s: 0, e: 480 }, { w: "in", s: 480, e: 480 }, { w: "data,", s: 500, e: 820 },
+  { showMs: 0, hideMs: 1700, words: [
+    { w: "Feed", s: 0, e: 880 }, { w: "in", s: 880, e: 1080 }, { w: "data,", s: 1080, e: 1420 },
   ] },
-  { showMs: 800, hideMs: 5500, words: [
-    { w: "and", s: 820, e: 1760 }, { w: "one", s: 1760, e: 2140 }, { w: "template", s: 2140, e: 2740 }, { w: "becomes", s: 2740, e: 3100 }, { w: "10,000", s: 3100, e: 4180 }, { w: "unique", s: 4180, e: 4620 }, { w: "videos.", s: 4620, e: 5260 },
+  { showMs: 1700, hideMs: 4900, words: [
+    { w: "and", s: 1940, e: 2040 }, { w: "one", s: 2040, e: 2260 }, { w: "template", s: 2260, e: 2640 }, { w: "becomes", s: 2640, e: 3120 }, { w: "10,000", s: 3120, e: 3980 }, { w: "unique", s: 3980, e: 4300 }, { w: "videos.", s: 4300, e: 4680 },
   ] },
 ];
 
 const CAPTIONS_STREAM: CaptionGroup[] = [
-  { showMs: 300, hideMs: 2000, words: [
-    { w: "Preview", s: 520, e: 1040 }, { w: "is", s: 1040, e: 1200 }, { w: "instant.", s: 1200, e: 1720 },
+  { showMs: 0, hideMs: 1800, words: [
+    { w: "Preview", s: 0, e: 1020 }, { w: "is", s: 1020, e: 1200 }, { w: "instant.", s: 1200, e: 1600 },
   ] },
-  { showMs: 2100, hideMs: 3900, words: [
-    { w: "Frames", s: 2300, e: 2820 }, { w: "stream", s: 2820, e: 3140 }, { w: "just-in-time,", s: 3140, e: 3720 },
+  { showMs: 1800, hideMs: 4200, words: [
+    { w: "Frames", s: 2020, e: 2420 }, { w: "stream", s: 2420, e: 2860 }, { w: "just-in-time,", s: 2860, e: 4040 },
   ] },
-  { showMs: 3800, hideMs: 6600, words: [
-    { w: "so", s: 4020, e: 4280 }, { w: "you're", s: 4280, e: 4460 }, { w: "never", s: 4460, e: 4720 }, { w: "waiting", s: 4720, e: 5060 }, { w: "on", s: 5060, e: 5260 }, { w: "a", s: 5260, e: 5340 }, { w: "render", s: 5340, e: 5580 }, { w: "to", s: 5580, e: 5780 }, { w: "see", s: 5780, e: 5940 }, { w: "your", s: 5940, e: 6100 }, { w: "work.", s: 6100, e: 6360 },
+  { showMs: 4200, hideMs: 7100, words: [
+    { w: "so", s: 4380, e: 4680 }, { w: "you're", s: 4680, e: 4860 }, { w: "never", s: 4860, e: 5120 }, { w: "waiting", s: 5120, e: 5500 }, { w: "on", s: 5500, e: 5720 }, { w: "a", s: 5720, e: 5840 }, { w: "render", s: 5840, e: 6020 }, { w: "to", s: 6020, e: 6240 }, { w: "see", s: 6240, e: 6460 }, { w: "your", s: 6460, e: 6580 }, { w: "work.", s: 6580, e: 6840 },
   ] },
 ];
 
 const CAPTIONS_RENDER: CaptionGroup[] = [
-  { showMs: 0, hideMs: 1800, words: [
-    { w: "When", s: 0, e: 920 }, { w: "it's", s: 920, e: 1220 }, { w: "ready,", s: 1220, e: 1560 },
+  { showMs: 0, hideMs: 1600, words: [
+    { w: "When", s: 0, e: 960 }, { w: "it's", s: 960, e: 1180 }, { w: "ready,", s: 1180, e: 1420 },
   ] },
-  { showMs: 1700, hideMs: 6000, words: [
-    { w: "render", s: 1880, e: 2360 }, { w: "to", s: 2360, e: 2620 }, { w: "the", s: 2620, e: 2760 }, { w: "cloud,", s: 2760, e: 3240 }, { w: "the", s: 3520, e: 3680 }, { w: "browser,", s: 3680, e: 4200 }, { w: "or", s: 4660, e: 4760 }, { w: "the", s: 4760, e: 4900 }, { w: "command", s: 4900, e: 5260 }, { w: "line.", s: 5260, e: 5760 },
+  { showMs: 1600, hideMs: 5300, words: [
+    { w: "render", s: 1900, e: 2240 }, { w: "to", s: 2240, e: 2500 }, { w: "the", s: 2500, e: 2620 }, { w: "cloud,", s: 2620, e: 3000 }, { w: "the", s: 3300, e: 3380 }, { w: "browser,", s: 3380, e: 3820 }, { w: "or", s: 4120, e: 4200 }, { w: "the", s: 4200, e: 4340 }, { w: "command", s: 4340, e: 4560 }, { w: "line.", s: 4560, e: 5100 },
   ] },
-  { showMs: 6100, hideMs: 9500, words: [
-    { w: "Same", s: 6320, e: 6740 }, { w: "composition,", s: 6740, e: 7500 }, { w: "every", s: 8020, e: 8560 }, { w: "target.", s: 8560, e: 9220 },
+  { showMs: 5200, hideMs: 7900, words: [
+    { w: "Same", s: 5400, e: 5780 }, { w: "composition,", s: 5780, e: 6380 }, { w: "every", s: 7000, e: 7340 }, { w: "target.", s: 7340, e: 7680 },
   ] },
 ];
 
