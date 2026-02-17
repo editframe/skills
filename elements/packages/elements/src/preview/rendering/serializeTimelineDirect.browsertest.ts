@@ -486,4 +486,188 @@ describe("serializeTimelineDirect", () => {
       expect(xhtml).toContain("SCENE_BETA");
     });
   });
+
+  describe("nested timegroup sequence (HeroDemo pattern)", () => {
+    async function renderNestedSequence() {
+      const wrapper = document.createElement("div");
+      litRender(html`
+        <ef-timegroup mode="sequence" style="width:960px;height:540px">
+          <ef-timegroup mode="fixed" duration="2s" style="width:960px;height:540px">
+            <div class="scene1-content">SCENE_ONE_CONTENT</div>
+          </ef-timegroup>
+          <ef-timegroup mode="fixed" duration="2s" style="width:960px;height:540px">
+            <div class="scene2-content">SCENE_TWO_CONTENT</div>
+          </ef-timegroup>
+          <ef-timegroup mode="fixed" duration="2s" style="width:960px;height:540px">
+            <div class="scene3-content">SCENE_THREE_CONTENT</div>
+          </ef-timegroup>
+        </ef-timegroup>
+      `, wrapper);
+      container.appendChild(wrapper);
+      await customElements.whenDefined("ef-timegroup");
+      const timegroup = wrapper.querySelector("ef-timegroup");
+      if (!(timegroup instanceof EFTimegroup)) {
+        throw new Error(`Expected EFTimegroup instance`);
+      }
+      return timegroup;
+    }
+
+    it("should only serialize scene2 when seeked to scene2 time range", async () => {
+      const root = await renderNestedSequence();
+      await root.updateComplete;
+      await root.waitForMediaDurations();
+
+      // Scene1: 0-2000ms, Scene2: 2000-4000ms, Scene3: 4000-6000ms
+      // Seek to 3000ms (middle of scene2)
+      await root.seek(3000);
+
+      const xhtml = await serializeElementToXHTML(root, 960, 540, {
+        canvasScale: 1,
+        timeMs: 3000,
+      });
+
+      expect(xhtml).not.toContain("SCENE_ONE_CONTENT");
+      expect(xhtml).toContain("SCENE_TWO_CONTENT");
+      expect(xhtml).not.toContain("SCENE_THREE_CONTENT");
+    });
+
+    it("should only serialize scene2 at the exact boundary between scene1 and scene2", async () => {
+      const root = await renderNestedSequence();
+      await root.updateComplete;
+      await root.waitForMediaDurations();
+
+      // At exactly 2000ms: scene1 ends, scene2 begins
+      await root.seek(2000);
+
+      const xhtml = await serializeElementToXHTML(root, 960, 540, {
+        canvasScale: 1,
+        timeMs: 2000,
+      });
+
+      expect(xhtml).not.toContain("SCENE_ONE_CONTENT");
+      expect(xhtml).toContain("SCENE_TWO_CONTENT");
+      expect(xhtml).not.toContain("SCENE_THREE_CONTENT");
+    });
+
+    it("should transition correctly through all scenes using seekForRender", async () => {
+      const root = await renderNestedSequence();
+      await root.updateComplete;
+      await root.waitForMediaDurations();
+
+      // Simulate the export pipeline: seek through multiple frames sequentially
+      const frameTimes = [0, 1000, 2000, 3000, 4000, 5000];
+      const results: string[] = [];
+
+      for (const timeMs of frameTimes) {
+        await root.seekForRender(timeMs);
+
+        const xhtml = await serializeElementToXHTML(root, 960, 540, {
+          canvasScale: 1,
+          timeMs,
+        });
+        results.push(xhtml);
+      }
+
+      // Frame at 0ms: scene1 visible
+      expect(results[0]).toContain("SCENE_ONE_CONTENT");
+      expect(results[0]).not.toContain("SCENE_TWO_CONTENT");
+
+      // Frame at 1000ms: scene1 visible (midway)
+      expect(results[1]).toContain("SCENE_ONE_CONTENT");
+      expect(results[1]).not.toContain("SCENE_TWO_CONTENT");
+
+      // Frame at 2000ms: scene2 visible (scene1 ended)
+      expect(results[2]).not.toContain("SCENE_ONE_CONTENT");
+      expect(results[2]).toContain("SCENE_TWO_CONTENT");
+
+      // Frame at 3000ms: scene2 visible (midway)
+      expect(results[3]).not.toContain("SCENE_ONE_CONTENT");
+      expect(results[3]).toContain("SCENE_TWO_CONTENT");
+
+      // Frame at 4000ms: scene3 visible (scene2 ended)
+      expect(results[4]).not.toContain("SCENE_TWO_CONTENT");
+      expect(results[4]).toContain("SCENE_THREE_CONTENT");
+
+      // Frame at 5000ms: scene3 visible (midway)
+      expect(results[5]).not.toContain("SCENE_TWO_CONTENT");
+      expect(results[5]).toContain("SCENE_THREE_CONTENT");
+    });
+
+    it("should transition correctly with overlap using seekForRender", async () => {
+      const overlapMs = 500;
+      const wrapper = document.createElement("div");
+      litRender(html`
+        <ef-timegroup mode="sequence" overlap="${overlapMs}ms" style="width:960px;height:540px">
+          <ef-timegroup mode="fixed" duration="2s" style="width:960px;height:540px">
+            <div class="scene1-content">SCENE_ONE_CONTENT</div>
+          </ef-timegroup>
+          <ef-timegroup mode="fixed" duration="2s" style="width:960px;height:540px">
+            <div class="scene2-content">SCENE_TWO_CONTENT</div>
+          </ef-timegroup>
+          <ef-timegroup mode="fixed" duration="2s" style="width:960px;height:540px">
+            <div class="scene3-content">SCENE_THREE_CONTENT</div>
+          </ef-timegroup>
+        </ef-timegroup>
+      `, wrapper);
+      container.appendChild(wrapper);
+      await customElements.whenDefined("ef-timegroup");
+      const root = wrapper.querySelector("ef-timegroup") as EFTimegroup;
+      await root.updateComplete;
+      await root.waitForMediaDurations();
+
+      // With 500ms overlap: Scene1 0-2000, Scene2 1500-3500, Scene3 3000-5000
+      // Both scenes visible during overlap windows
+      const frameTimes = [0, 750, 1500, 1750, 2000, 2500, 3000, 3250, 3500, 4000];
+      const results: string[] = [];
+
+      for (const timeMs of frameTimes) {
+        await root.seekForRender(timeMs);
+        const xhtml = await serializeElementToXHTML(root, 960, 540, {
+          canvasScale: 1,
+          timeMs,
+        });
+        results.push(xhtml);
+      }
+
+      // Frame 0ms: only scene1
+      expect(results[0]).toContain("SCENE_ONE_CONTENT");
+      expect(results[0]).not.toContain("SCENE_TWO_CONTENT");
+
+      // Frame 750ms: only scene1 (before overlap)
+      expect(results[1]).toContain("SCENE_ONE_CONTENT");
+      expect(results[1]).not.toContain("SCENE_TWO_CONTENT");
+
+      // Frame 1500ms: overlap — both scene1 and scene2 visible
+      expect(results[2]).toContain("SCENE_ONE_CONTENT");
+      expect(results[2]).toContain("SCENE_TWO_CONTENT");
+
+      // Frame 1750ms: overlap — both scene1 and scene2
+      expect(results[3]).toContain("SCENE_ONE_CONTENT");
+      expect(results[3]).toContain("SCENE_TWO_CONTENT");
+
+      // Frame 2000ms: scene1 ended, only scene2
+      expect(results[4]).not.toContain("SCENE_ONE_CONTENT");
+      expect(results[4]).toContain("SCENE_TWO_CONTENT");
+
+      // Frame 2500ms: only scene2
+      expect(results[5]).not.toContain("SCENE_ONE_CONTENT");
+      expect(results[5]).toContain("SCENE_TWO_CONTENT");
+
+      // Frame 3000ms: overlap — both scene2 and scene3
+      expect(results[6]).toContain("SCENE_TWO_CONTENT");
+      expect(results[6]).toContain("SCENE_THREE_CONTENT");
+
+      // Frame 3250ms: overlap — both scene2 and scene3
+      expect(results[7]).toContain("SCENE_TWO_CONTENT");
+      expect(results[7]).toContain("SCENE_THREE_CONTENT");
+
+      // Frame 3500ms: scene2 ended, only scene3
+      expect(results[8]).not.toContain("SCENE_TWO_CONTENT");
+      expect(results[8]).toContain("SCENE_THREE_CONTENT");
+
+      // Frame 4000ms: only scene3
+      expect(results[9]).not.toContain("SCENE_TWO_CONTENT");
+      expect(results[9]).toContain("SCENE_THREE_CONTENT");
+    });
+  });
 });

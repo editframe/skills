@@ -1000,6 +1000,11 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     const newTime = timeMs / 1000;
     this.#userTimeMs = timeMs;
     this.#currentTime = newTime;
+    // Sync playbackController if present so currentTime getter returns
+    // the correct value regardless of which code path reads it.
+    if (this.playbackController) {
+      this.playbackController.currentTime = newTime;
+    }
     // Sync the base mixin's local time so ownCurrentTimeMs returns the
     // correct value in render clones (which have no playback controller).
     this._setLocalTimeMs(timeMs);
