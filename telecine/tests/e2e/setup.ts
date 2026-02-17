@@ -1,5 +1,7 @@
 import { chromium, type Browser, type BrowserContext, type Page } from "playwright";
 import { expect as playwrightExpect } from "@playwright/test";
+
+playwrightExpect.configure({ timeout: 30_000 });
 import { beforeAll, afterAll, beforeEach, afterEach } from "vitest";
 import { nanoid } from "nanoid";
 import { safeRegisterUser } from "@/sql-client.server/safeRegisterUser";

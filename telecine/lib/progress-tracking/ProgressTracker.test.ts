@@ -1,5 +1,5 @@
 import { valkey } from "@/valkey/valkey";
-import { beforeAll, beforeEach, describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test } from "vitest";
 import { getTestPrefix } from "TEST/util/getTestPrefix";
 import {
   type ProgressItem,
@@ -9,9 +9,6 @@ import {
 import { sleep } from "@/util/sleep";
 
 describe("ProgressTracker", () => {
-  beforeAll(async () => {
-    await valkey.flushall("SYNC");
-  });
   beforeEach(async () => {
     const keys = await valkey.keys(`${getTestPrefix()}*`);
     if (keys.length > 0) {

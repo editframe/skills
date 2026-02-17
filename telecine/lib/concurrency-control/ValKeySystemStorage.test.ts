@@ -1,13 +1,10 @@
-import { expect, describe, beforeEach, test, beforeAll } from "vitest";
+import { expect, describe, beforeEach, test } from "vitest";
 import { ValkeySystemStorage } from "./ValkeySystemStorage";
 import { valkey } from "@/valkey/valkey";
 import { getTestPrefix } from "TEST/util/getTestPrefix";
 import { logger } from "@/logging";
 
 describe("ValkeySystemStorage", () => {
-  beforeAll(async () => {
-    await valkey.flushall("SYNC");
-  });
   beforeEach(async () => {
     const keys = await valkey.keys(`${getTestPrefix()}*`);
     if (keys.length > 0) {

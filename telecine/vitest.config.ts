@@ -1,5 +1,6 @@
 import { defineConfig } from "vitest/config";
 import tsconfigPaths from "vite-tsconfig-paths";
+import { availableParallelism } from "node:os";
 
 export default defineConfig({
   plugins: [tsconfigPaths()],
@@ -10,8 +11,7 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    maxWorkers: 1,
-    isolate: false,
+    maxWorkers: availableParallelism(),
     setupFiles: ["./services/load-config.ts", "./test-env.ts"],
     include: ["**/*.test.ts", "**/*.test.tsx"],
     exclude: [

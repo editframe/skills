@@ -1,18 +1,15 @@
-import { describe, test, expect, beforeAll } from "vitest";
+import { describe, test, expect } from "vitest";
+import { nanoid } from "nanoid";
 import { ProgressTracker } from "@/progress-tracking/ProgressTracker";
-import { valkey } from "@/valkey/valkey";
 import { sleep } from "@/util/sleep";
 import { StreamEventSource } from "TEST/util/StreamEventSource";
 import { progressEventStream } from "./progressEventStream";
 
 describe("progressEventStream", () => {
-  beforeAll(async () => {
-    await valkey.flushall("SYNC");
-  });
-
   test("Immediately returns complete if the process is already complete", async () => {
+    const id = nanoid();
     const response = progressEventStream("process-isobmff", {
-      id: "123",
+      id,
       completed_at: "now",
       failed_at: null,
     });
@@ -28,8 +25,9 @@ describe("progressEventStream", () => {
   });
 
   test("Immediately returns failure if the process has failed", async () => {
+    const id = nanoid();
     const response = progressEventStream("process-isobmff", {
-      id: "123",
+      id,
       completed_at: null,
       failed_at: "now",
     });
@@ -43,12 +41,13 @@ describe("progressEventStream", () => {
   });
 
   test("Returns failed event if the process fails mid-way", async () => {
+    const id = `partial-${nanoid()}`;
     const response = progressEventStream("process-isobmff", {
-      id: "123-partial",
+      id,
       completed_at: null,
       failed_at: null,
     });
-    const progressTracker = new ProgressTracker("process-isobmff:123-partial");
+    const progressTracker = new ProgressTracker(`process-isobmff:${id}`);
     await sleep(10);
     const events: any[] = [];
     const eventSource = new StreamEventSource(response.body!);
@@ -65,8 +64,9 @@ describe("progressEventStream", () => {
   });
 
   test("returns a stream of progress events", async () => {
+    const id = `full-${nanoid()}`;
     const response = progressEventStream("process-isobmff", {
-      id: "123-full",
+      id,
       completed_at: null,
       failed_at: null,
     });
@@ -81,7 +81,7 @@ describe("progressEventStream", () => {
       events.push({ type: "complete" });
     });
 
-    const progressTracker = new ProgressTracker("process-isobmff:123-full");
+    const progressTracker = new ProgressTracker(`process-isobmff:${id}`);
     // Waiting for the progress tracker to start listening is not reliable.
     // But I have not yet figured out the explicit thing to wait for.
     await progressTracker.writeProgress(0);
