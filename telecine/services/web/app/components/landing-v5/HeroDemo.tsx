@@ -141,7 +141,7 @@ const CAPTIONS_RENDER: CaptionGroup[] = [
   ] },
 ];
 
-const AUDIO_BASE = "/audio/hero";
+const AUDIO_BASE = "https://assets.editframe.com/hero";
 
 function SceneCaptions({ groups }: { groups: CaptionGroup[] }) {
   return (
