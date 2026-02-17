@@ -12,11 +12,11 @@ description: Rollback procedures, debugging failed deployments, scaling resource
 Cloud Run keeps previous revisions. To roll back to the last known-good revision:
 
 ```bash
-# List recent revisions for a service
-gcloud run revisions list --service telecine-web --region us-central1 --project editframe
+# List recent revisions for a service (use deploy-info to get service names)
+gcloud run revisions list --service <service-name> --region us-central1 --project editframe
 
 # Route 100% traffic to a specific revision
-gcloud run services update-traffic telecine-web \
+gcloud run services update-traffic <service-name> \
   --to-revisions=<revision-name>=100 \
   --region us-central1 \
   --project editframe
@@ -30,13 +30,12 @@ git log --oneline -10
 
 # Build and push that specific version
 cd telecine
-git stash  # if needed
-scripts/build-and-push web  # builds with current HEAD SHA
+scripts/build-and-push <service>  # builds with current HEAD SHA
 
 # Or: manually tag and push an older image
-docker tag us-central1-docker.pkg.dev/editframe/telecine-artifacts/web:<old-sha> \
-           us-central1-docker.pkg.dev/editframe/telecine-artifacts/web:<new-sha>
-docker push us-central1-docker.pkg.dev/editframe/telecine-artifacts/web:<new-sha>
+docker tag us-central1-docker.pkg.dev/editframe/telecine-artifacts/<service>:<old-sha> \
+           us-central1-docker.pkg.dev/editframe/telecine-artifacts/<service>:<new-sha>
+docker push us-central1-docker.pkg.dev/editframe/telecine-artifacts/<service>:<new-sha>
 ```
 
 Then run `pulumi up` in `telecine/deploy/`.
@@ -60,8 +59,7 @@ pulumi up -y
 npm does not support true unpublish for packages older than 72 hours. Instead:
 
 ```bash
-# Publish a patch with the fix, or republish the previous version
-# First, check what's currently published:
+# Check what's currently published:
 npm view @editframe/elements versions --json
 
 # Tag a previous version as latest:
@@ -110,44 +108,29 @@ elements/scripts/docker-compose run --rm runner npm run format
 
 ### Adjust worker CPU/memory
 
-Edit `telecine/deploy/worker-resources.config.ts`:
+Edit `telecine/deploy/worker-resources.config.ts`. Values use millicores for CPU (e.g., `"2000m"` = 2 vCPU) and standard Kubernetes memory notation (e.g., `"4Gi"`).
 
-```typescript
-export const workerResources = {
-  renderFragment: {
-    cpu: "2000m",    // millicores (2000m = 2 vCPU)
-    memory: "4Gi",   // GiB
-  },
-  // ...
-};
-```
+Run `scripts/deploy-info telecine` to see current allocations.
 
 Then deploy: push to `main` or run `pulumi up` manually.
 
 ### Adjust instance counts
 
-Instance min/max are defined in the Pulumi resource files under `telecine/deploy/resources/`. Each service's Cloud Run definition specifies `scaling.minInstanceCount` and `scaling.maxInstanceCount`.
+Instance min/max are defined in each service's Cloud Run definition (`cloudrun.ts`) under `template.scaling.minInstanceCount` and `template.scaling.maxInstanceCount`.
 
-For workers, look in `telecine/deploy/resources/queues/`. For public services, check their respective directories (`web/`, `jit-transcoding/`, etc.).
+For workers, these are set via `maxWorkerCount` in `telecine/deploy/resources/queues/workers.ts` (all workers have `minInstanceCount: 0`). For public services, check their respective directories under `telecine/deploy/resources/`.
+
+Run `scripts/deploy-info telecine` to see current instance limits.
 
 ### Adjust concurrency
 
-Cloud Run concurrency (requests per instance) is also configured in the Pulumi resource definitions. Look for `maxInstanceRequestConcurrency` in the service's `cloudrun.ts` file.
+Cloud Run concurrency (requests per instance) is configured as `maxInstanceRequestConcurrency` in each service's `cloudrun.ts` file.
 
 ## Secret Management
 
-Secrets are managed via GCP Secret Manager and referenced in Pulumi.
+Secrets are managed via GCP Secret Manager and referenced in Pulumi. Run `scripts/deploy-info telecine` to see the current list of secret names.
 
-### Current secrets
-
-Defined in `telecine/deploy/resources/secrets.ts`:
-- `application` -- application secret
-- `action` -- action secret
-- `app-jwt` -- app JWT secret
-- `jwt` -- Hasura JWT secret
-- `hasura-admin` -- Hasura admin secret
-
-The postgres password is managed separately in `telecine/deploy/resources/database/`.
+Secret definitions live in `telecine/deploy/resources/secrets.ts`. The postgres password is managed separately in `telecine/deploy/resources/database/`.
 
 ### Add a new secret
 
@@ -159,27 +142,20 @@ echo -n "secret-value" | gcloud secrets create my-new-secret \
   --replication-policy=automatic
 ```
 
-2. Add a new version (if updating):
-```bash
-echo -n "new-value" | gcloud secrets versions add my-new-secret \
-  --data-file=- \
-  --project=editframe
-```
-
-3. Reference it in Pulumi by adding to `telecine/deploy/resources/secrets.ts`:
+2. Reference it in Pulumi by adding to `telecine/deploy/resources/secrets.ts`:
 ```typescript
 export const myNewSecret = secretToken("my-new");
 ```
 
-4. Bind it to the service that needs it in the service's Cloud Run resource definition (as an environment variable or volume mount).
+3. Bind it to the service that needs it in the service's Cloud Run resource definition (as an environment variable or volume mount).
 
-5. Deploy via push to `main` or `pulumi up`.
+4. Deploy via push to `main` or `pulumi up`.
 
 ### Rotate a secret
 
 1. Add a new version in Secret Manager:
 ```bash
-echo -n "rotated-value" | gcloud secrets versions add application \
+echo -n "rotated-value" | gcloud secrets versions add <secret-name> \
   --data-file=- \
   --project=editframe
 ```
@@ -195,10 +171,10 @@ echo -n "rotated-value" | gcloud secrets versions add application \
 gcloud run services list --region us-central1 --project editframe
 
 # Describe a specific service
-gcloud run services describe telecine-web --region us-central1 --project editframe
+gcloud run services describe <service-name> --region us-central1 --project editframe
 
 # View recent logs
-gcloud run services logs read telecine-web --region us-central1 --project editframe --limit 50
+gcloud run services logs read <service-name> --region us-central1 --project editframe --limit 50
 ```
 
 ### Check Pulumi stack state

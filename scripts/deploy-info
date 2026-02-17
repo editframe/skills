@@ -1,0 +1,5 @@
+#!/bin/bash
+# Query local config files for current deployment infrastructure data.
+# Usage: ./scripts/deploy-info <telecine|elements>
+
+npx tsx scripts/deploy-info.ts "$@"

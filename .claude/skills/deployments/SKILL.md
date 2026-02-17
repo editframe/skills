@@ -10,6 +10,15 @@ This monorepo has two deployment paths:
 - **telecine** -- GCP Cloud Run services deployed via Pulumi, triggered by push to `main`
 - **elements** -- npm packages published by pushing a git tag
 
+## Getting Current Infrastructure Data
+
+Run `scripts/deploy-info` to query local config files for current service lists, resource allocations, routes, secrets, packages, and release pipeline steps. This is always more accurate than any prose description.
+
+```bash
+scripts/deploy-info telecine    # Services, resources, routes, secrets
+scripts/deploy-info elements    # Packages, release pipeline
+```
+
 ## Quick Reference
 
 | Action | Command |
@@ -21,20 +30,23 @@ This monorepo has two deployment paths:
 | Prepare elements release | `elements/scripts/prepare-release <version>` |
 | Bump elements to beta | `elements/scripts/prerelease` |
 | Publish elements manually | `elements/scripts/publish` |
+| Query current infrastructure | `scripts/deploy-info telecine` or `scripts/deploy-info elements` |
 
 ## Telecine (GCP Cloud Run)
 
-Telecine runs on GCP Cloud Run in `us-central1`, project `editframe`, domain `editframe.com`. Pulumi manages all infrastructure from `telecine/deploy/`. Docker images are pushed to `us-central1-docker.pkg.dev/editframe/telecine-artifacts/`. Images are tagged with the git SHA.
+Telecine runs on GCP Cloud Run, managed by Pulumi (TypeScript) from `telecine/deploy/`. Docker images are tagged with the git SHA and pushed to GCP Artifact Registry. A push to `main` triggers parallel Docker builds for all services, followed by a Pulumi deployment.
 
-**Services deployed:** web, hasura (graphql-engine), jit-transcoding, transcribe, transcribe-ctl, scheduler-go, and seven workers (ingest-image, process-html-initializer, process-html-finalizer, process-isobmff, render-initializer, render-fragment, render-finalizer).
+Supporting infrastructure includes Cloud SQL Postgres, Valkey (Redis) on Compute Engine, GCS storage buckets, an HTTPS load balancer with URL-map routing, and Cloudflare DNS.
 
-**Supporting infrastructure:** Cloud SQL Postgres 15, Valkey (Redis) on Compute Engine, two GCS buckets, HTTPS load balancer with URL-map routing, Cloudflare DNS, GCP Secret Manager.
+Run `scripts/deploy-info telecine` for the current list of services, their resource allocations, load balancer routes, and secrets.
 
-See [references/telecine.md](references/telecine.md) for full architecture, service details, and CI/CD workflow.
+See [references/telecine.md](references/telecine.md) for deployment architecture and procedures.
 
 ## Elements (npm)
 
-Elements publishes `@editframe/api`, `@editframe/react`, `@editframe/elements`, `@editframe/assets`, `@editframe/cli`, `@editframe/vite-plugin`, and `@editframe/create` to npm. Pushing any git tag triggers the release workflow. Tags containing "beta" publish with the `beta` npm dist-tag; all others use `latest`.
+Elements publishes `@editframe` packages to npm. Pushing any git tag triggers the release workflow. Tags containing "beta" publish with the `beta` npm dist-tag; all others use `latest`.
+
+Run `scripts/deploy-info elements` for the current package list and release pipeline steps.
 
 See [references/elements.md](references/elements.md) for the release workflow and versioning.
 
