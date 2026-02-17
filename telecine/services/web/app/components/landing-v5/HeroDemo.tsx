@@ -4,6 +4,7 @@ import {
   FitScale,
   Timegroup,
   Text,
+  Audio,
   Scrubber,
   TogglePlay,
   TimeDisplay,
@@ -14,6 +15,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { ExportButton } from "./ExportButton";
 
 /* ━━ Scene Timing (30fps frame-aligned) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const VOICEOVER_SRC = "https://assets.editframe.com/hero-voiceover.mp3";
 const OVERLAP_MS = 495; // 15 frames
 
 function sceneStyle(durationMs: number): React.CSSProperties {
@@ -30,7 +32,7 @@ function sceneStyle(durationMs: number): React.CSSProperties {
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function SceneTitle() {
   return (
-    <Timegroup mode="fixed" duration="2640ms" className="relative" style={{ ...sceneStyle(2640), width: 960, height: 540, background: "#0a0a0a" }}>
+    <Timegroup mode="fixed" duration="4158ms" className="relative" style={{ ...sceneStyle(4158), width: 960, height: 540, background: "#0a0a0a" }}>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <Text
           split="char"
@@ -39,6 +41,7 @@ function SceneTitle() {
           className="text-white text-7xl font-black tracking-tighter text-center leading-[1.1]"
           style={{
             animation: "hero-char-assemble 400ms cubic-bezier(0.68, -0.1, 0.265, 1.1) both",
+            animationDelay: "500ms",
           }}
         >
           BUILD VIDEO WITH CODE
@@ -49,7 +52,7 @@ function SceneTitle() {
             width: "50%",
             transformOrigin: "left",
             animation: "hero-draw-spring 660ms cubic-bezier(0.68, -0.1, 0.265, 1.1) both",
-            animationDelay: "825ms",
+            animationDelay: "1650ms",
           }}
         />
       </div>
@@ -72,13 +75,13 @@ function SceneAuthor() {
   ];
 
   return (
-    <Timegroup mode="fixed" duration="3630ms" className="relative" style={{ ...sceneStyle(3630), width: 960, height: 540, background: "#0a0a0a" }}>
+    <Timegroup mode="fixed" duration="9504ms" className="relative" style={{ ...sceneStyle(9504), width: 960, height: 540, background: "#0a0a0a" }}>
       <div className="absolute inset-0 flex">
         {/* Left: code panel */}
         <div className="w-[55%] p-8 flex flex-col justify-center">
           <div
             className="text-[10px] font-mono uppercase tracking-[0.3em] text-white/30 mb-4"
-            style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "165ms" }}
+            style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "500ms" }}
           >
             html + css + script
           </div>
@@ -89,7 +92,7 @@ function SceneAuthor() {
                 className={line.color}
                 style={{
                   animation: "hero-slide-up-decel 264ms ease-out both",
-                  animationDelay: `${330 + i * 99}ms`,
+                  animationDelay: `${825 + i * 165}ms`,
                 }}
               >
                 {line.text}
@@ -102,15 +105,15 @@ function SceneAuthor() {
         <div className="w-[45%] flex items-center justify-center relative">
           <div
             className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white/20 text-2xl"
-            style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "990ms" }}
+            style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "2640ms" }}
           >
             →
           </div>
           <div
             className="bg-white/5 border-2 border-white/20 p-8"
             style={{
-              animation: "hero-reveal-left 495ms cubic-bezier(0.36, 0, 0.66, 1) both",
-              animationDelay: "1155ms",
+              animation: "hero-reveal-left 660ms cubic-bezier(0.36, 0, 0.66, 1) both",
+              animationDelay: "3300ms",
             }}
           >
             <div className="text-white text-3xl font-black mb-2">Welcome back</div>
@@ -121,14 +124,14 @@ function SceneAuthor() {
 
       <div
         className="absolute bottom-6 left-8 right-8"
-        style={{ animation: "hero-slide-up-decel 330ms ease-out both", animationDelay: "1980ms" }}
+        style={{ animation: "hero-slide-up-decel 330ms ease-out both", animationDelay: "5940ms" }}
       >
         <Text
           split="char"
           staggerMs={25}
           easing="ease-out"
           className="text-white text-xl font-bold"
-          style={{ animation: "hero-char-assemble 330ms cubic-bezier(0.68, -0.1, 0.265, 1.1) both", animationDelay: "1980ms" }}
+          style={{ animation: "hero-char-assemble 330ms cubic-bezier(0.68, -0.1, 0.265, 1.1) both", animationDelay: "5940ms" }}
         >
           Write HTML. Render video.
         </Text>
@@ -203,7 +206,7 @@ function LayersCamera() {
 
 function SceneLayers() {
   return (
-    <Timegroup mode="fixed" duration="3630ms" className="relative" style={{ ...sceneStyle(3630), width: 960, height: 540, background: "#0a0a0a" }}>
+    <Timegroup mode="fixed" duration="12012ms" className="relative" style={{ ...sceneStyle(12012), width: 960, height: 540, background: "#0a0a0a" }}>
       <CompositionCanvas
         camera={{ position: [3, 1.5, 5], fov: 35 }}
         gl={{ antialias: true, alpha: true }}
@@ -219,13 +222,13 @@ function SceneLayers() {
       <div className="absolute inset-0 pointer-events-none">
         <div
           className="absolute top-8 left-8 text-white/60 text-xs font-mono uppercase tracking-widest"
-          style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "660ms" }}
+          style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "990ms" }}
         >
           composable layers
         </div>
         <div
           className="absolute bottom-10 left-8 right-8"
-          style={{ animation: "hero-slide-up-decel 400ms ease-out both", animationDelay: "825ms" }}
+          style={{ animation: "hero-slide-up-decel 400ms ease-out both", animationDelay: "1650ms" }}
         >
           <div className="text-white text-2xl font-bold leading-tight">
             Stack <span className="px-1 bg-[var(--poster-blue)] text-white">video</span>{" "}
