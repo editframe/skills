@@ -244,14 +244,30 @@ function determineSyncOperations(fileMap: SkillFileMap): SyncOperation[] {
     const allSame = present.every(f => f.hash === newest.hash);
 
     if (allSame) {
-      // All files identical - no sync needed
-      operations.push({
-        type: 'skip',
-        from: null,
-        to: newest.location,
-        path: relativePath,
-        reason: 'All copies identical',
-      });
+      // All present copies identical - but copy to any missing locations
+      const allLocations = ['.skills', '.cursor', '.claude', '.opencode'] as const;
+      const presentLocations = new Set(present.map(f => f.location));
+      const missing = allLocations.filter(loc => !presentLocations.has(loc));
+
+      if (missing.length === 0) {
+        operations.push({
+          type: 'skip',
+          from: null,
+          to: newest.location,
+          path: relativePath,
+          reason: 'All copies identical',
+        });
+      } else {
+        for (const target of missing) {
+          operations.push({
+            type: 'copy',
+            from: newest.location,
+            to: target,
+            path: relativePath,
+            reason: `Missing from ${target}`,
+          });
+        }
+      }
       continue;
     }
 
