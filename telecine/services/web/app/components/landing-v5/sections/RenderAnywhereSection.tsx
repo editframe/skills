@@ -1,4 +1,4 @@
-import { Globe, Cloud, Desktop } from "@phosphor-icons/react";
+import { Globe, Cloud, Terminal } from "@phosphor-icons/react";
 
 export function RenderAnywhereSection() {
   return (
@@ -45,7 +45,7 @@ export function RenderAnywhereSection() {
                 <h3 className="text-2xl font-black uppercase tracking-tight">Browser</h3>
               </div>
               <p className="text-sm mb-4 text-[var(--warm-gray)]">
-                WebCodecs API. Instant rendering. No upload. Complete privacy.
+                Export video directly from the browser. No server round-trip. Nothing to install.
               </p>
               <div className="font-mono text-xs bg-[var(--ink-black)] text-white p-3 mb-4">
                 <span className="text-[var(--poster-gold)]">renderToVideo</span>(comp)
@@ -53,15 +53,48 @@ export function RenderAnywhereSection() {
               <div className="space-y-2 text-xs">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-[var(--poster-green)]" />
-                  <span>H.264, VP9, AV1</span>
+                  <span>H.264, VP9, AV1 via WebCodecs</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-[var(--poster-green)]" />
-                  <span>Browser-dependent</span>
+                  <span>No upload required</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-[var(--poster-green)]" />
-                  <span>Zero latency</span>
+                  <span>Embed export in your app</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* CLI */}
+          <div className="relative">
+            <div className="absolute -bottom-2 -right-2 md:-bottom-3 md:-right-3 w-full h-full bg-[var(--poster-green)]" />
+            <div className="relative bg-white dark:bg-[#1a1a1a] text-[var(--ink-black)] dark:text-white border-4 border-white dark:border-white/20 p-4 md:p-6 h-full">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-[var(--poster-red)] text-white flex items-center justify-center">
+                  <Terminal size={24} weight="bold" aria-hidden="true" />
+                </div>
+                <h3 className="text-2xl font-black uppercase tracking-tight">CLI</h3>
+              </div>
+              <p className="text-sm mb-4 text-[var(--warm-gray)]">
+                Render from the command line. Same composition, headless Chrome under the hood.
+              </p>
+              <div className="font-mono text-xs bg-[var(--ink-black)] text-white p-3 mb-4">
+                $ <span className="text-[var(--poster-gold)]">editframe render</span>
+              </div>
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--poster-green)]" />
+                  <span>H.264, VP9, AV1 via WebCodecs</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--poster-green)]" />
+                  <span>Scriptable and CI-friendly</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--poster-green)]" />
+                  <span>GPU-accelerated encoding</span>
                 </div>
               </div>
             </div>
@@ -78,56 +111,23 @@ export function RenderAnywhereSection() {
                 <h3 className="text-2xl font-black uppercase tracking-tight">Cloud</h3>
               </div>
               <p className="text-sm mb-4 text-[var(--warm-gray)]">
-                Parallel fragment rendering. Hyperscale. Full codec support.
+                Parallel fragment rendering. Split your video into segments, encode concurrently, reassemble.
               </p>
               <div className="font-mono text-xs bg-[var(--ink-black)] text-white p-3 mb-4">
-                $ <span className="text-[var(--poster-gold)]">editframe render</span>
+                $ <span className="text-[var(--poster-gold)]">editframe cloud-render</span>
               </div>
               <div className="space-y-2 text-xs">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-[var(--poster-green)]" />
-                  <span>H.264, H.265, VP9, AV1</span>
+                  <span>H.264 via server-side FFmpeg</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-[var(--poster-green)]" />
-                  <span>All codecs supported</span>
+                  <span>Parallel fragment processing</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-[var(--poster-green)]" />
-                  <span>Infinite scale</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Local */}
-          <div className="relative">
-            <div className="absolute -bottom-2 -right-2 md:-bottom-3 md:-right-3 w-full h-full bg-[var(--poster-green)]" />
-            <div className="relative bg-white dark:bg-[#1a1a1a] text-[var(--ink-black)] dark:text-white border-4 border-white dark:border-white/20 p-4 md:p-6 h-full">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-[var(--poster-red)] text-white flex items-center justify-center">
-                  <Desktop size={24} weight="bold" aria-hidden="true" />
-                </div>
-                <h3 className="text-2xl font-black uppercase tracking-tight">Local</h3>
-              </div>
-              <p className="text-sm mb-4 text-[var(--warm-gray)]">
-                FFmpeg on your machine. Full control. No network dependency.
-              </p>
-              <div className="font-mono text-xs bg-[var(--ink-black)] text-white p-3 mb-4">
-                $ <span className="text-[var(--poster-gold)]">editframe render --local</span>
-              </div>
-              <div className="space-y-2 text-xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--poster-green)]" />
-                  <span>All FFmpeg codecs</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--poster-green)]" />
-                  <span>Complete control</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--poster-green)]" />
-                  <span>Offline capable</span>
+                  <span>API and webhook integration</span>
                 </div>
               </div>
             </div>
