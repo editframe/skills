@@ -264,6 +264,12 @@ body {
   to { stroke-dashoffset: 0; }
 }
 
+/* Playhead sweep across timeline */
+@keyframes hero-playhead-sweep {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(70vw - 56px)); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;

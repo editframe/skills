@@ -15,23 +15,6 @@ import { ExportButton } from "./ExportButton";
 
 /* ━━ Scene Timing (30fps frame-aligned) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 const OVERLAP_MS = 495; // 15 frames
-const SCENES = [
-  { name: "Author", durationMs: 2640 },
-  { name: "Compose", durationMs: 3300 },
-  { name: "Template", durationMs: 3630 },
-  { name: "Render", durationMs: 2970 },
-  { name: "Ship", durationMs: 3795 },
-] as const;
-
-/* ━━ Code snippets per scene ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const CODE_SNIPPETS = [
-  `<Text split="char" stagger="40ms"\n  easing="ease-out">\n  BUILD VIDEO WITH CODE\n</Text>`,
-  `<Timegroup mode="contain">\n  <Video src="interview.mp4" />\n  <Text>Every frame tells a story</Text>\n</Timegroup>`,
-  `editframe render \\\n  --data '{"name":"Sarah Chen"}'`,
-  `<Preview loop>\n  <Timegroup mode="fixed" duration="5s">\n    <CompositionCanvas shadows />\n  </Timegroup>\n</Preview>`,
-  `$ npx editframe render hero.tsx\n\n✓ Rendered in 1.2s`,
-];
-
 /* ━━ Crossfade style for each scene ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function sceneStyle(durationMs: number): React.CSSProperties {
   const fadeOutDelay = durationMs - OVERLAP_MS;
@@ -41,384 +24,521 @@ function sceneStyle(durationMs: number): React.CSSProperties {
   };
 }
 
-/* ━━ Scene 1: Author — char-level shatter-assemble, glass material ━━━━━━━ */
+/* ━━ Scene 1: Author — HTML/CSS/Script → Video ━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function SceneAuthor() {
+  const codeLines = [
+    { text: '<div class="card">', color: "text-[var(--poster-blue)]" },
+    { text: '  <h1>Welcome back</h1>', color: "text-white/80" },
+    { text: '  <p style="color: gold">', color: "text-white/80" },
+    { text: "    Your 2024 highlights", color: "text-[var(--poster-gold)]" },
+    { text: "  </p>", color: "text-white/80" },
+    { text: "</div>", color: "text-[var(--poster-blue)]" },
+  ];
+
   return (
-    <Timegroup mode="fixed" duration="2640ms" className="relative" style={{ ...sceneStyle(2640), width: 960, height: 540, background: "#0a0a0a" }}>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
+    <Timegroup mode="fixed" duration="3300ms" className="relative" style={{ ...sceneStyle(3300), width: 960, height: 540, background: "#0a0a0a" }}>
+      <div className="absolute inset-0 flex">
+        {/* Left: code panel */}
+        <div className="w-[55%] p-8 flex flex-col justify-center">
+          <div
+            className="text-[10px] font-mono uppercase tracking-[0.3em] text-white/30 mb-4"
+            style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "165ms" }}
+          >
+            html + css + script
+          </div>
+          <div className="font-mono text-sm leading-relaxed">
+            {codeLines.map((line, i) => (
+              <div
+                key={i}
+                className={line.color}
+                style={{
+                  animation: "hero-slide-up-decel 264ms ease-out both",
+                  animationDelay: `${330 + i * 99}ms`,
+                }}
+              >
+                {line.text}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: rendered result */}
+        <div className="w-[45%] flex items-center justify-center relative">
+          {/* Arrow from code to result */}
+          <div
+            className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white/20 text-2xl"
+            style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "990ms" }}
+          >
+            →
+          </div>
+          <div
+            className="bg-white/5 border-2 border-white/20 p-8"
+            style={{
+              animation: "hero-reveal-left 495ms cubic-bezier(0.36, 0, 0.66, 1) both",
+              animationDelay: "1155ms",
+            }}
+          >
+            <div className="text-white text-3xl font-black mb-2">Welcome back</div>
+            <div className="text-[var(--poster-gold)] text-lg">Your 2024 highlights</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom label */}
+      <div
+        className="absolute bottom-6 left-8 right-8 flex items-center gap-4"
+        style={{ animation: "hero-slide-up-decel 330ms ease-out both", animationDelay: "1650ms" }}
+      >
         <Text
           split="char"
-          staggerMs={40}
+          staggerMs={25}
           easing="ease-out"
-          className="text-white text-7xl font-black tracking-tighter text-center leading-[1.1]"
-          style={{
-            animation: "hero-char-assemble 400ms cubic-bezier(0.68, -0.1, 0.265, 1.1) both",
-          }}
+          className="text-white text-xl font-bold"
+          style={{ animation: "hero-char-assemble 330ms cubic-bezier(0.68, -0.1, 0.265, 1.1) both", animationDelay: "1650ms" }}
         >
-          BUILD VIDEO WITH CODE
+          Write HTML. Render video.
         </Text>
-        <div
-          className="mt-6 h-1 bg-[var(--poster-gold)]"
-          style={{
-            width: "50%",
-            transformOrigin: "left",
-            animation: "hero-draw-spring 660ms cubic-bezier(0.68, -0.1, 0.265, 1.1) both",
-            animationDelay: "825ms",
-          }}
-        />
       </div>
     </Timegroup>
   );
 }
 
-/* ━━ Scene 2: Compose — 3D floating layers with R3F ━━━━━━━━━━━━━━━━━━━━━━ */
-
-const LAYER_COLORS = [
-  new THREE.Color("#1565C0"), // poster-blue
-  new THREE.Color("#FFFFFF"),
-  new THREE.Color("#E53935"), // poster-red
-];
-
-function LayerPlane({ index, color }: { index: number; color: THREE.Color }) {
-  const { timeMs } = useCompositionTime();
-  const meshRef = useRef<THREE.Mesh>(null!);
-  const t = timeMs / 1000;
-
-  // Stagger entrance: each layer enters 200ms apart
-  const entranceDelay = index * 200;
-  const entranceProgress = Math.min(1, Math.max(0, (timeMs - entranceDelay) / 300));
-  // Ease-out cubic
-  const eased = 1 - Math.pow(1 - entranceProgress, 3);
-
-  // Floating offset per layer
-  const yFloat = Math.sin(t * 1.5 + index * 1.2) * 0.08;
-  const zOffset = (index - 1) * 0.8;
-
-  useFrame(() => {
-    if (!meshRef.current) return;
-    meshRef.current.position.set(0, yFloat + (1 - eased) * 3, zOffset);
-    meshRef.current.rotation.y = (1 - eased) * 0.5;
-    meshRef.current.scale.setScalar(eased);
-  });
+/* ━━ Scene 2: Compose — Timeline with waveforms, captions, tracks ━━━━━━━━ */
+function SceneCompose() {
+  const tracks = [
+    { label: "Video", color: "var(--poster-blue)", width: "85%", left: "5%" },
+    { label: "Caption", color: "var(--poster-gold)", width: "60%", left: "15%" },
+    { label: "Audio", color: "var(--poster-green)", width: "90%", left: "2%" },
+    { label: "Overlay", color: "var(--poster-red)", width: "40%", left: "30%" },
+  ];
 
   return (
-    <mesh ref={meshRef}>
-      <planeGeometry args={[3.2, 1.8]} />
-      <meshPhysicalMaterial
-        color={color}
-        transparent
-        opacity={0.7}
-        roughness={0.15}
-        metalness={0.1}
-        clearcoat={0.8}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
+    <Timegroup mode="fixed" duration="3630ms" className="relative" style={{ ...sceneStyle(3630), width: 960, height: 540, background: "#0a0a0a" }}>
+      <div className="absolute inset-0 flex flex-col">
+        {/* Header */}
+        <div className="px-6 py-3 flex items-center justify-between border-b border-white/10">
+          <div
+            className="text-[10px] font-mono uppercase tracking-[0.3em] text-white/30"
+            style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "165ms" }}
+          >
+            timeline
+          </div>
+          <div
+            className="flex gap-2"
+            style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "330ms" }}
+          >
+            <div className="text-[10px] font-mono text-white/40">00:00</div>
+            <div className="text-[10px] font-mono text-white/40">00:05</div>
+            <div className="text-[10px] font-mono text-white/40">00:10</div>
+            <div className="text-[10px] font-mono text-white/40">00:15</div>
+            <div className="text-[10px] font-mono text-white/40">00:20</div>
+          </div>
+        </div>
+
+        {/* Track list */}
+        <div className="flex-1 flex flex-col justify-center px-6 gap-2">
+          {tracks.map((track, i) => (
+            <div
+              key={track.label}
+              className="flex items-center gap-3"
+              style={{
+                animation: "hero-slide-up-decel 264ms ease-out both",
+                animationDelay: `${330 + i * 132}ms`,
+              }}
+            >
+              <span className="text-[10px] font-mono text-white/50 w-14 text-right uppercase">{track.label}</span>
+              <div className="flex-1 h-10 bg-white/3 relative border border-white/5">
+                <div
+                  className="absolute top-0 bottom-0 border border-white/20"
+                  style={{
+                    left: track.left,
+                    width: track.width,
+                    background: `color-mix(in srgb, ${track.color} 20%, transparent)`,
+                    borderColor: `color-mix(in srgb, ${track.color} 40%, transparent)`,
+                    animation: "hero-reveal-left 396ms cubic-bezier(0.36, 0, 0.66, 1) both",
+                    animationDelay: `${660 + i * 132}ms`,
+                  }}
+                >
+                  {/* Waveform visualization for audio track */}
+                  {track.label === "Audio" && (
+                    <div className="absolute inset-0 flex items-center gap-px px-1 overflow-hidden">
+                      {Array.from({ length: 60 }).map((_, j) => (
+                        <div
+                          key={j}
+                          className="flex-1 bg-[var(--poster-green)]"
+                          style={{
+                            height: `${20 + Math.sin(j * 0.5) * 30 + Math.random() * 40}%`,
+                            opacity: 0.5,
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  {/* Caption markers */}
+                  {track.label === "Caption" && (
+                    <div className="absolute inset-0 flex items-center px-2 gap-4 overflow-hidden">
+                      {["Hello world", "Welcome back", "Your highlights"].map((text, j) => (
+                        <span key={j} className="text-[9px] font-mono text-[var(--poster-gold)] whitespace-nowrap opacity-60">{text}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Playhead */}
+        <div className="absolute top-12 bottom-0 pointer-events-none" style={{ left: "calc(15% + 56px)" }}>
+          <div
+            className="w-0.5 h-full bg-white"
+            style={{
+              animation: "hero-fade-in 198ms ease-out both, hero-playhead-sweep 2310ms linear both",
+              animationDelay: "990ms, 990ms",
+            }}
+          />
+        </div>
+
+        {/* Bottom capability tags */}
+        <div className="px-6 py-3 border-t border-white/10 flex gap-3">
+          {["Waveforms", "Captions", "Multi-track"].map((tag, i) => (
+            <div
+              key={tag}
+              className="text-[10px] font-mono uppercase tracking-wider text-white/40 border border-white/10 px-2 py-0.5"
+              style={{
+                animation: "hero-rubber-bounce 330ms cubic-bezier(0.68, -0.55, 0.265, 1.55) both",
+                animationDelay: `${1650 + i * 165}ms`,
+              }}
+            >
+              {tag}
+            </div>
+          ))}
+        </div>
+      </div>
+    </Timegroup>
   );
 }
 
-function ComposeCamera() {
+/* ━━ Scene 3: Template — Year-in-review, data-driven ━━━━━━━━━━━━━━━━━━━━━ */
+function SceneTemplate() {
+  const reviews = [
+    { name: "Sarah Chen", stat: "2,847", label: "commits", accent: "var(--poster-red)" },
+    { name: "Marcus Johnson", stat: "156", label: "videos rendered", accent: "var(--poster-blue)" },
+    { name: "Alex Rivera", stat: "12.4k", label: "views", accent: "var(--poster-gold)" },
+  ];
+  const cycleDuration = 1155; // 35 frames
+
+  return (
+    <Timegroup mode="fixed" duration="3960ms" className="relative" style={{ ...sceneStyle(3960), width: 960, height: 540, background: "#0a0a0a" }}>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        {/* Title */}
+        <div
+          className="text-[10px] font-mono uppercase tracking-[0.3em] text-white/30 mb-6"
+          style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "165ms" }}
+        >
+          one template → thousands of videos
+        </div>
+
+        {/* Year badge */}
+        <div
+          className="text-white/10 text-[120px] font-black leading-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none"
+          style={{ animation: "hero-fade-in 660ms ease-out both", animationDelay: "0ms" }}
+        >
+          2024
+        </div>
+
+        {/* Cycling review cards */}
+        <div className="relative" style={{ width: 500, height: 180 }}>
+          {reviews.map((review, i) => (
+            <div
+              key={review.name}
+              className="absolute inset-0 flex flex-col items-center justify-center"
+              style={{
+                animation: `hero-char-gather 330ms ease-out both, hero-char-scatter 264ms ease-in both`,
+                animationDelay: `${i * cycleDuration + 330}ms, ${(i + 1) * cycleDuration}ms`,
+              }}
+            >
+              <div className="text-white/50 text-sm font-mono mb-3">{review.name}</div>
+              <div className="text-6xl font-black text-white mb-1" style={{ color: review.accent }}>
+                {review.stat}
+              </div>
+              <div className="text-white/40 text-sm uppercase tracking-wider">{review.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Data source indicator */}
+        <div
+          className="absolute bottom-6 inset-x-8 flex items-center justify-center gap-3"
+          style={{ animation: "hero-slide-up-decel 330ms ease-out both", animationDelay: "330ms" }}
+        >
+          <div className="bg-white/5 border border-white/10 px-3 py-1.5 font-mono text-xs text-white/50 flex items-center gap-2">
+            <span className="text-[var(--poster-gold)]">$</span>
+            <span>editframe render --data users.json</span>
+          </div>
+        </div>
+      </div>
+    </Timegroup>
+  );
+}
+
+/* ━━ Scene 4: Stream — JIT streaming playback ━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+function StreamParticles() {
+  const { timeMs, durationMs } = useCompositionTime();
+  const meshRef = useRef<THREE.InstancedMesh>(null!);
+  const count = 40;
+  const dummy = useRef(new THREE.Object3D()).current;
+
+  useFrame(() => {
+    if (!meshRef.current) return;
+    const t = durationMs > 0 ? timeMs / durationMs : 0;
+    for (let i = 0; i < count; i++) {
+      const offset = i / count;
+      const progress = (t * 2 + offset) % 1;
+      // Particles flow left to right, representing streaming data
+      const x = (progress - 0.5) * 8;
+      const y = Math.sin(offset * Math.PI * 4 + timeMs * 0.002) * 1.5;
+      const z = Math.cos(offset * Math.PI * 3) * 1.2;
+      const scale = 0.05 + Math.sin(progress * Math.PI) * 0.08;
+      dummy.position.set(x, y, z);
+      dummy.scale.setScalar(scale);
+      dummy.updateMatrix();
+      meshRef.current.setMatrixAt(i, dummy.matrix);
+    }
+    meshRef.current.instanceMatrix.needsUpdate = true;
+  });
+
+  return (
+    <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
+      <sphereGeometry args={[1, 8, 8]} />
+      <meshPhysicalMaterial
+        color="#FFB300"
+        emissive="#FFB300"
+        emissiveIntensity={0.4}
+        roughness={0.3}
+        metalness={0.6}
+      />
+    </instancedMesh>
+  );
+}
+
+function StreamCamera() {
   const { timeMs, durationMs } = useCompositionTime();
   const { camera } = useThree();
 
   useFrame(() => {
     const progress = durationMs > 0 ? timeMs / durationMs : 0;
-    // Orbit from angled view to straight-on
-    const angle = (1 - progress) * 0.6;
-    const distance = 5.5 - progress * 0.5;
-    camera.position.set(
-      Math.sin(angle) * distance,
-      0.5 + (1 - progress) * 0.8,
-      Math.cos(angle) * distance,
-    );
+    const angle = progress * 0.4 - 0.2;
+    camera.position.set(Math.sin(angle) * 6, 1 + progress * 0.5, Math.cos(angle) * 6);
     camera.lookAt(0, 0, 0);
   });
 
   return null;
 }
 
-function SceneCompose() {
+function SceneStream() {
   return (
     <Timegroup mode="fixed" duration="3300ms" className="relative" style={{ ...sceneStyle(3300), width: 960, height: 540, background: "#0a0a0a" }}>
       <CompositionCanvas
-        camera={{ position: [3, 1.5, 5], fov: 35 }}
+        camera={{ position: [0, 1, 6], fov: 40 }}
         gl={{ antialias: true, alpha: true }}
       >
-        <ambientLight intensity={0.4} />
-        <directionalLight position={[5, 5, 5]} intensity={0.8} />
-        <pointLight position={[-3, 2, 4]} intensity={0.3} color="#FFB300" />
-        <ComposeCamera />
-        {LAYER_COLORS.map((color, i) => (
-          <LayerPlane key={i} index={i} color={color} />
-        ))}
+        <ambientLight intensity={0.3} />
+        <pointLight position={[3, 3, 3]} intensity={0.6} color="#FFB300" />
+        <pointLight position={[-3, 2, -2]} intensity={0.3} color="#1565C0" />
+        <StreamCamera />
+        <StreamParticles />
       </CompositionCanvas>
-      {/* Overlaid labels */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div
-          className="absolute top-8 left-8 text-white/60 text-xs font-mono uppercase tracking-widest"
-          style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "660ms" }}
-        >
-          3 layers
-        </div>
-        <div
-          className="absolute bottom-10 left-8 right-8"
-          style={{ animation: "hero-slide-up-decel 400ms ease-out both", animationDelay: "825ms" }}
-        >
-          <div className="text-white text-2xl font-bold leading-tight">
-            Every frame tells a{" "}
-            <span className="px-1 bg-[var(--poster-gold)] text-[#0a0a0a]">story</span>
-          </div>
-        </div>
-      </div>
-    </Timegroup>
-  );
-}
 
-/* ━━ Scene 3: Template — char-level name morph + typewriter ━━━━━━━━━━━━━━ */
-function SceneTemplate() {
-  const names = ["Sarah Chen", "Marcus Johnson", "Alex Rivera"];
-  const cycleDuration = 990;
-
-  return (
-    <Timegroup mode="fixed" duration="3630ms" className="relative" style={{ ...sceneStyle(3630), width: 960, height: 540, background: "#0a0a0a" }}>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        {/* Label */}
+      {/* Overlay text */}
+      <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-8">
         <div
-          className="text-white/40 text-xs font-mono uppercase tracking-[0.3em] mb-8"
+          className="text-[10px] font-mono uppercase tracking-[0.3em] text-white/30"
           style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "165ms" }}
         >
-          data-driven templates
+          jit streaming
         </div>
-
-        {/* Name cycling area */}
-        <div className="relative" style={{ width: 600, height: 72 }}>
-          {names.map((name, i) => (
-            <div
-              key={name}
-              className="absolute inset-0 flex items-center justify-center"
-              style={{
-                animation: `hero-char-gather 330ms ease-out both, hero-char-scatter 264ms ease-in both`,
-                animationDelay: `${i * cycleDuration + 330}ms, ${(i + 1) * cycleDuration}ms`,
-              }}
+        <div>
+          <div
+            style={{ animation: "hero-slide-up-decel 330ms ease-out both", animationDelay: "660ms" }}
+          >
+            <Text
+              split="char"
+              staggerMs={30}
+              easing="ease-out"
+              className="text-white text-3xl font-black tracking-tight"
+              style={{ animation: "hero-char-assemble 330ms cubic-bezier(0.68, -0.1, 0.265, 1.1) both", animationDelay: "660ms" }}
             >
-              <Text
-                split="char"
-                staggerMs={30}
-                easing="ease-out"
-                className="text-white text-6xl font-black tracking-tight text-center"
-                style={{
-                  animation: "hero-char-gather 330ms ease-out both",
-                  animationDelay: `${i * cycleDuration + 330}ms`,
-                }}
-              >
-                {name}
-              </Text>
-            </div>
-          ))}
-        </div>
-
-        {/* Progress dots */}
-        <div className="flex gap-3 mt-10">
-          {names.map((_, i) => (
-            <div
-              key={i}
-              className="w-2.5 h-2.5"
-              style={{
-                background: "var(--poster-gold)",
-                animation: "hero-rubber-bounce 330ms cubic-bezier(0.68, -0.55, 0.265, 1.55) both",
-                animationDelay: `${i * cycleDuration + 330}ms`,
-              }}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Typewriter CLI at bottom */}
-      <div className="absolute bottom-8 inset-x-8">
-        <div className="bg-white/5 border border-white/10 px-4 py-2 font-mono text-xs text-white/50 flex items-center gap-2">
-          <span className="text-[var(--poster-gold)]">$</span>
-          <span style={{ animation: "hero-fade-in 1650ms steps(38, end) both", animationDelay: "330ms" }}>
-            editframe render --data &apos;&#123;&quot;name&quot;:&quot;...&quot;&#125;&apos;
-          </span>
-          <span className="w-2 h-4 bg-white/70 ml-0.5" style={{ animation: "hero-cursor-blink 660ms step-end infinite both" }} />
+              Instant playback. No waiting.
+            </Text>
+          </div>
+          <div
+            className="text-white/40 text-sm mt-2"
+            style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "1155ms" }}
+          >
+            Frames render and stream as they&apos;re needed
+          </div>
         </div>
       </div>
     </Timegroup>
   );
 }
 
-/* ━━ Scene 4: Render — editor assembly with clip-path reveals ━━━━━━━━━━━━ */
+/* ━━ Scene 5: Render — Scalable parallel rendering ━━━━━━━━━━━━━━━━━━━━━━━ */
 function SceneRender() {
-  return (
-    <Timegroup mode="fixed" duration="2970ms" className="relative" style={{ ...sceneStyle(2970), width: 960, height: 540, background: "#0a0a0a" }}>
-      <div className="absolute inset-0 p-6 flex flex-col gap-2">
-        {/* Preview viewport */}
-        <div
-          className="flex-1 border-2 border-white/60 relative overflow-hidden"
-          style={{ animation: "hero-reveal-left 400ms cubic-bezier(0.36, 0, 0.66, 1) both", animationDelay: "165ms" }}
-        >
-          {/* Gradient fill to simulate video content */}
-          <div className="absolute inset-0" style={{
-            background: "linear-gradient(135deg, #1565C0 0%, #0a0a0a 40%, #E53935 100%)",
-            opacity: 0.4,
-          }} />
-          <svg className="absolute inset-0 m-auto w-16 h-16 text-white/20" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M8 5v14l11-7z" />
-          </svg>
-          {/* Scrub position indicator */}
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
-            <div className="h-full bg-[var(--poster-red)]" style={{
-              animation: "hero-progress-spring 1650ms ease-out both",
-              animationDelay: "825ms",
-              ["--bar-target" as string]: "60%",
-            }} />
-          </div>
-        </div>
-
-        {/* Filmstrip */}
-        <div
-          className="h-10 flex gap-0.5"
-          style={{ animation: "hero-reveal-bottom 350ms cubic-bezier(0.36, 0, 0.66, 1) both", animationDelay: "396ms" }}
-        >
-          {Array.from({ length: 16 }).map((_, i) => (
-            <div
-              key={i}
-              className="flex-1"
-              style={{
-                background: `hsl(${200 + i * 8}, 30%, ${12 + i * 1.5}%)`,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Timeline with trim handles */}
-        <div
-          className="h-8 relative"
-          style={{ animation: "hero-reveal-right 350ms cubic-bezier(0.36, 0, 0.66, 1) both", animationDelay: "594ms" }}
-        >
-          <div className="absolute inset-0 bg-white/5 border border-white/10" />
-          {/* Trim region */}
-          <div className="absolute top-0 bottom-0 left-[15%] right-[25%] border-2 border-[var(--poster-gold)]">
-            <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[var(--poster-gold)] -translate-x-full" />
-            <div className="absolute right-0 top-0 bottom-0 w-1.5 bg-[var(--poster-gold)] translate-x-full" />
-          </div>
-          {/* Playhead */}
-          <div className="absolute top-0 bottom-0 left-[40%] w-0.5 bg-white" style={{
-            animation: "hero-fade-in 198ms ease-out both",
-            animationDelay: "990ms",
-          }} />
-        </div>
-      </div>
-
-      {/* Component label */}
-      <div
-        className="absolute top-3 right-3 text-[10px] font-mono uppercase tracking-wider text-[var(--poster-gold)]"
-        style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "330ms" }}
-      >
-        &lt;Preview&gt; + &lt;Filmstrip&gt; + &lt;TrimHandles&gt;
-      </div>
-    </Timegroup>
-  );
-}
-
-/* ━━ Scene 5: Ship — terminal + progress + checkmark ━━━━━━━━━━━━━━━━━━━━━ */
-function SceneShip() {
-  const bars = [
-    { label: "Cloud", color: "var(--poster-green)", duration: 1320, delay: 990 },
-    { label: "Browser", color: "var(--poster-blue)", duration: 1650, delay: 990 },
-    { label: "Local", color: "var(--poster-red)", duration: 1980, delay: 990 },
+  // Cloud renders 4 segments in parallel
+  const cloudSegments = [
+    { label: "Seg 1", delay: 660, duration: 990 },
+    { label: "Seg 2", delay: 660, duration: 1155 },
+    { label: "Seg 3", delay: 660, duration: 825 },
+    { label: "Seg 4", delay: 660, duration: 1320 },
   ];
 
   return (
-    <Timegroup mode="fixed" duration="3795ms" className="relative" style={{ ...sceneStyle(3795), width: 960, height: 540, background: "#0a0a0a" }}>
-      <div className="absolute inset-0 flex flex-col items-center justify-center px-20 gap-5">
-        {/* Terminal header */}
+    <Timegroup mode="fixed" duration="3960ms" className="relative" style={{ ...sceneStyle(3960), width: 960, height: 540, background: "#0a0a0a" }}>
+      <div className="absolute inset-0 flex flex-col justify-center px-12 gap-6">
+        {/* Title */}
         <div
-          className="w-full max-w-lg"
-          style={{ animation: "hero-slide-up-decel 330ms ease-out both", animationDelay: "165ms" }}
+          className="text-[10px] font-mono uppercase tracking-[0.3em] text-white/30"
+          style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "165ms" }}
         >
-          <div className="bg-white/5 border border-white/10 px-4 py-2 font-mono text-sm text-white/70 flex items-center gap-2">
-            <span className="text-[var(--poster-gold)]">$</span>
-            <span>npx editframe render hero.tsx</span>
-          </div>
+          scalable rendering
         </div>
 
-        {/* Progress bars */}
-        <div className="w-full max-w-lg flex flex-col gap-3">
-          {bars.map((bar, i) => (
-            <div
-              key={bar.label}
-              className="flex items-center gap-4"
-              style={{
-                animation: "hero-slide-up-decel 264ms ease-out both",
-                animationDelay: `${660 + i * 132}ms`,
-              }}
-            >
-              <span className="text-white/50 text-xs font-mono w-16 text-right">{bar.label}</span>
-              <div className="flex-1 h-5 bg-white/5 relative overflow-hidden border border-white/10">
+        {/* Cloud: parallel segments */}
+        <div>
+          <div
+            className="text-xs font-mono text-white/50 mb-2 flex items-center gap-2"
+            style={{ animation: "hero-fade-in 264ms ease-out both", animationDelay: "330ms" }}
+          >
+            <span className="w-2 h-2 bg-[var(--poster-green)]" />
+            Cloud — parallel
+          </div>
+          <div
+            className="flex gap-1"
+            style={{ animation: "hero-fade-in 264ms ease-out both", animationDelay: "330ms" }}
+          >
+            {cloudSegments.map((seg) => (
+              <div key={seg.label} className="flex-1 h-8 bg-white/5 border border-white/10 relative overflow-hidden">
                 <div
-                  className="h-full"
+                  className="absolute inset-0"
                   style={{
-                    background: bar.color,
-                    animation: `hero-progress-spring ${bar.duration}ms ease-out both`,
-                    animationDelay: `${bar.delay}ms`,
+                    background: "var(--poster-green)",
+                    opacity: 0.3,
+                    animation: `hero-progress-spring ${seg.duration}ms ease-out both`,
+                    animationDelay: `${seg.delay}ms`,
                     ["--bar-target" as string]: "100%",
                   }}
                 />
+                <span className="absolute inset-0 flex items-center justify-center text-[9px] font-mono text-white/40">{seg.label}</span>
+                {/* Checkmark when done */}
+                <svg
+                  className="absolute top-1 right-1 w-3 h-3 text-[var(--poster-green)]"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}
+                  strokeLinecap="round" strokeLinejoin="round"
+                  style={{
+                    strokeDasharray: 24,
+                    animation: `hero-check-draw 264ms ease-out both, hero-fade-in 132ms ease-out both`,
+                    animationDelay: `${seg.delay + seg.duration + 132}ms, ${seg.delay + seg.duration}ms`,
+                  }}
+                >
+                  <path d="M5 12l5 5L20 7" />
+                </svg>
               </div>
-              {/* Checkmark appears when bar completes */}
-              <svg
-                className="w-4 h-4 text-[var(--poster-green)]"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={3}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{
-                  strokeDasharray: 24,
-                  animation: `hero-check-draw 264ms ease-out both, hero-fade-in 132ms ease-out both`,
-                  animationDelay: `${bar.delay + bar.duration + 132}ms, ${bar.delay + bar.duration}ms`,
-                }}
-              >
-                <path d="M5 12l5 5L20 7" />
-              </svg>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
-        {/* Speed badge on Cloud row */}
+        {/* Browser */}
+        <div>
+          <div
+            className="text-xs font-mono text-white/50 mb-2 flex items-center gap-2"
+            style={{ animation: "hero-fade-in 264ms ease-out both", animationDelay: "660ms" }}
+          >
+            <span className="w-2 h-2 bg-[var(--poster-blue)]" />
+            Browser
+          </div>
+          <div
+            className="h-8 bg-white/5 border border-white/10 relative overflow-hidden"
+            style={{ animation: "hero-fade-in 264ms ease-out both", animationDelay: "660ms" }}
+          >
+            <div
+              className="absolute inset-y-0 left-0"
+              style={{
+                background: "var(--poster-blue)",
+                opacity: 0.3,
+                animation: "hero-progress-spring 2310ms ease-out both",
+                animationDelay: "660ms",
+                ["--bar-target" as string]: "100%",
+              }}
+            />
+            <svg
+              className="absolute top-1 right-1 w-3 h-3 text-[var(--poster-blue)]"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}
+              strokeLinecap="round" strokeLinejoin="round"
+              style={{
+                strokeDasharray: 24,
+                animation: `hero-check-draw 264ms ease-out both, hero-fade-in 132ms ease-out both`,
+                animationDelay: `${660 + 2310 + 132}ms, ${660 + 2310}ms`,
+              }}
+            >
+              <path d="M5 12l5 5L20 7" />
+            </svg>
+          </div>
+        </div>
+
+        {/* CLI */}
+        <div>
+          <div
+            className="text-xs font-mono text-white/50 mb-2 flex items-center gap-2"
+            style={{ animation: "hero-fade-in 264ms ease-out both", animationDelay: "990ms" }}
+          >
+            <span className="w-2 h-2 bg-[var(--poster-red)]" />
+            CLI
+          </div>
+          <div
+            className="h-8 bg-white/5 border border-white/10 relative overflow-hidden"
+            style={{ animation: "hero-fade-in 264ms ease-out both", animationDelay: "990ms" }}
+          >
+            <div
+              className="absolute inset-y-0 left-0"
+              style={{
+                background: "var(--poster-red)",
+                opacity: 0.3,
+                animation: "hero-progress-spring 2310ms ease-out both",
+                animationDelay: "660ms",
+                ["--bar-target" as string]: "100%",
+              }}
+            />
+            <svg
+              className="absolute top-1 right-1 w-3 h-3 text-[var(--poster-red)]"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}
+              strokeLinecap="round" strokeLinejoin="round"
+              style={{
+                strokeDasharray: 24,
+                animation: `hero-check-draw 264ms ease-out both, hero-fade-in 132ms ease-out both`,
+                animationDelay: `${660 + 2310 + 132}ms, ${660 + 2310}ms`,
+              }}
+            >
+              <path d="M5 12l5 5L20 7" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Scalable rendering badge */}
         <div
-          className="absolute text-sm font-black px-2 py-0.5 bg-[var(--poster-gold)] text-[#0a0a0a]"
+          className="self-start text-[10px] font-mono uppercase tracking-wider text-white/40 border border-white/10 px-2 py-0.5"
           style={{
-            top: "calc(50% - 28px)",
-            right: "calc(50% - 200px)",
             animation: "hero-rubber-bounce 396ms cubic-bezier(0.68, -0.55, 0.265, 1.55) both",
-            animationDelay: `${990 + 1320 + 264}ms`,
+            animationDelay: "3300ms",
           }}
         >
-          4× faster
+          Same video. Three render targets.
         </div>
       </div>
     </Timegroup>
   );
-}
-
-/* ━━ Compute scene start times for code overlay sync ━━━━━━━━━━━━━━━━━━━━━ */
-const sceneStartTimes: number[] = [];
-{
-  let t = 0;
-  for (let i = 0; i < SCENES.length; i++) {
-    sceneStartTimes.push(t);
-    t += SCENES[i]!.durationMs - OVERLAP_MS;
-  }
-}
-
-function getActiveScene(currentTimeMs: number): number {
-  for (let i = sceneStartTimes.length - 1; i >= 0; i--) {
-    if (currentTimeMs >= sceneStartTimes[i]!) return i;
-  }
-  return 0;
 }
 
 /* ━━ Main Component ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
@@ -427,32 +547,10 @@ export function HeroDemo() {
   const previewId = `hero-demo-${id}`;
   const previewRef = useRef<HTMLElement>(null);
   const [isClient, setIsClient] = useState(false);
-  const [activeScene, setActiveScene] = useState(0);
-  const sceneName = SCENES[activeScene]?.name ?? "Author";
-  const codeSnippet = CODE_SNIPPETS[activeScene] ?? CODE_SNIPPETS[0];
 
   useEffect(() => {
     setIsClient(true);
   }, []);
-
-  useEffect(() => {
-    if (!isClient) return;
-    let raf: number;
-    let prevScene = 0;
-    const tick = () => {
-      const el = previewRef.current as any;
-      if (el?.currentTimeMs != null && !Number.isNaN(el.currentTimeMs)) {
-        const scene = getActiveScene(el.currentTimeMs);
-        if (scene !== prevScene) {
-          prevScene = scene;
-          setActiveScene(scene);
-        }
-      }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [isClient]);
 
   return (
     <div className="w-full relative">
@@ -475,26 +573,14 @@ export function HeroDemo() {
                   <SceneAuthor />
                   <SceneCompose />
                   <SceneTemplate />
+                  <SceneStream />
                   <SceneRender />
-                  <SceneShip />
                 </Timegroup>
               </FitScale>
             </Preview>
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-[#0a0a0a]">
               <div className="text-white/30 text-xs uppercase tracking-widest">Loading</div>
-            </div>
-          )}
-
-          {/* Floating code card overlay */}
-          {isClient && (
-            <div className="absolute bottom-4 right-4 max-w-[280px] bg-[#0a0a0a]/90 border-2 border-white/15 p-3 pointer-events-none backdrop-blur-sm">
-              <div className="text-[10px] font-mono uppercase tracking-wider text-white/40 mb-1.5">
-                {sceneName}
-              </div>
-              <pre className="text-[11px] font-mono text-[var(--poster-gold)] leading-relaxed whitespace-pre-wrap">
-                {codeSnippet}
-              </pre>
             </div>
           )}
         </div>
