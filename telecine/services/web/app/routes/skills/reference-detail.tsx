@@ -103,7 +103,7 @@ export const meta = ({ data }: Route.MetaArgs) => {
     { title: `${title} - Editframe` },
     {
       name: "description",
-      content: `Agent skill documentation for ${skillName}`,
+      content: `Documentation for ${skillName}`,
     },
   ];
 };

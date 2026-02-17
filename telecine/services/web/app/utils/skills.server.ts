@@ -250,6 +250,25 @@ function processConditionalSections(body: string, target: "html" | "react"): str
   return body;
 }
 
+function stripHtmlComments(body: string): string {
+  // Split on fenced code blocks to avoid stripping comments inside them
+  const parts = body.split(/(```[\s\S]*?```)/g);
+  for (let i = 0; i < parts.length; i += 2) {
+    // Even indices are outside code blocks
+    parts[i] = parts[i]!.replace(/<!--[\s\S]*?-->/g, "");
+  }
+  return parts.join("").replace(/\n{3,}/g, "\n\n");
+}
+
+function prepareForMdx(content: string): string {
+  const parsed = fm(content);
+  let body = processConditionalSections(parsed.body, "html");
+  body = stripHtmlComments(body);
+  const frontmatterMatch = content.match(/^---\n[\s\S]*?\n---/);
+  const frontmatter = frontmatterMatch ? frontmatterMatch[0] : "";
+  return `${frontmatter}\n\n${body}`;
+}
+
 function transformApiForReact(api: ApiMetadata, reactConfig: ReactConfig): ApiMetadata {
   const reactApi: ApiMetadata = {};
   const propMapping = reactConfig.propMapping || {};
@@ -309,7 +328,8 @@ function generateReactReferenceContent(
 ): string {
   const reactFrontmatter = buildReactFrontmatter(attributes);
   const parsed = fm(htmlContent);
-  const body = processConditionalSections(parsed.body, "react");
+  let body = processConditionalSections(parsed.body, "react");
+  body = stripHtmlComments(body);
   return `---\n${toYAML(reactFrontmatter)}\n---\n${body}`;
 }
 
@@ -415,6 +435,7 @@ function getGeneratedReactSection(refName: string, sectionSlug: string): string 
 
   // Process conditional sections for React
   sectionBody = processConditionalSections(sectionBody, "react");
+  sectionBody = stripHtmlComments(sectionBody);
 
   const sectionFrontmatter: Record<string, any> = {
     title: section.title,
@@ -797,9 +818,12 @@ export const getSkillContent = (skillName: string): SkillContent | null => {
   const fileContent = readFileSync(skillPath, "utf8");
   const { attributes, body } = fm<SkillFrontmatter>(fileContent);
 
+  let processed = processConditionalSections(body, "html");
+  processed = stripHtmlComments(processed);
+
   return {
     frontmatter: attributes,
-    content: body,
+    content: processed,
   };
 };
 
@@ -830,18 +854,18 @@ export const getSkillReference = (
       
       if (match && match.index !== undefined) {
         // Extract original frontmatter from content
-        const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
-        if (frontmatterMatch) {
-          const originalFrontmatter = frontmatterMatch[0];
+        const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+        if (fmMatch) {
+          const originalFrontmatter = fmMatch[0];
           const rootBody = parsed.body.substring(0, match.index).trim();
-          return `${originalFrontmatter}\n\n${rootBody}`;
+          return prepareForMdx(`${originalFrontmatter}\n\n${rootBody}`);
         }
       }
     }
   }
 
   // No sections or section not found - return full file
-  return content;
+  return prepareForMdx(content);
 };
 
 export const getSkillReferenceSection = (
@@ -920,7 +944,7 @@ export const getSkillReferenceSection = (
   if (attributes.topic) sectionFrontmatter.topic = attributes.topic;
   if (attributes.order !== undefined) sectionFrontmatter.order = attributes.order;
 
-  return `---\n${toYAML(sectionFrontmatter)}\n---\n\n${sectionBody}`;
+  return prepareForMdx(`---\n${toYAML(sectionFrontmatter)}\n---\n\n${sectionBody}`);
 };
 
 export const getSkillReferences = (skillName: string): string[] => {
