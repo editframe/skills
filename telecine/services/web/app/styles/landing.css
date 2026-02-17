@@ -494,6 +494,116 @@ body {
   100% { opacity: 1; transform: scale(1); }
 }
 
+/* ━━ Scene 5: Editor NLE→Form morph ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Phase 1 NLE collapses: scale down + fade out */
+@keyframes hero-editor-nle-collapse {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.92) translateY(-20px);
+    opacity: 0;
+  }
+}
+
+/* Phase 2 form enters: scale up from small + fade in */
+@keyframes hero-editor-form-enter {
+  from {
+    transform: scale(0.9) translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Filmstrip horizontal scrub — slides the strip left to simulate playback */
+@keyframes hero-editor-filmstrip-scrub {
+  from { transform: translateX(0); }
+  to { transform: translateX(-120px); }
+}
+
+/* Scrub indicator drifts right as filmstrip scrolls beneath it */
+@keyframes hero-editor-scrub-indicator {
+  from { transform: translateX(0); }
+  to { transform: translateX(60px); }
+}
+
+/* Trim region bounces in with spring overshoot */
+@keyframes hero-editor-trim-settle {
+  0% {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  60% {
+    transform: scaleX(1.03);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+/* Playhead ticks forward slightly */
+@keyframes hero-editor-playhead-tick {
+  from { transform: translateX(0); }
+  to { transform: translateX(30px); }
+}
+
+/* Trim handles animate a drag — right handle moves inward */
+@keyframes hero-editor-trim-drag {
+  0% {
+    left: 18%;
+    right: 25%;
+  }
+  40% {
+    left: 18%;
+    right: 18%;
+  }
+  60% {
+    left: 22%;
+    right: 18%;
+  }
+  100% {
+    left: 22%;
+    right: 22%;
+  }
+}
+
+/* Out-point time display updates to reflect trim drag */
+@keyframes hero-editor-time-update {
+  0% { opacity: 1; }
+  40% { opacity: 0.5; }
+  60% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+/* Scanlines drift upward for preview visual interest */
+@keyframes hero-editor-scanlines {
+  from { transform: translateY(0); }
+  to { transform: translateY(-8px); }
+}
+
+/* Corner brackets pulse to accent "building blocks" */
+@keyframes hero-editor-bracket-pulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0.15;
+    transform: scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;

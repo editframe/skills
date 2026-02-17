@@ -905,110 +905,313 @@ function SceneTimeline() {
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   Scene 5: Editor — preview + filmstrip + trim handles
+   Scene 5: Editor — full NLE morphs into compact trim widget
+   Phase 1 (0–3.5s): Full editor assembles — preview, filmstrip, trim bar
+   Phase 2 (3.5–5.5s): Collapses into a minimal trim-tool-in-a-form
+   Phase 3 (5.5–8.4s): Trim handles animate drag, bracket accents
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function SceneEditor() {
   const d = DUR.editor;
+  const filmstripFrames = Array.from({ length: 20 });
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
       <Audio src={AUDIO_SRC.editor} />
-      <div className="absolute inset-0 p-6 flex flex-col gap-2">
+
+      {/* ── Phase 1: Full NLE layout (collapses at 3500ms) ── */}
+      <div
+        className="absolute inset-0 p-5 flex flex-col gap-1.5"
+        style={{
+          animation: "hero-fade-in 300ms ease-out both, hero-editor-nle-collapse 600ms cubic-bezier(0.4, 0, 0.2, 1) both",
+          animationDelay: "200ms, 3500ms",
+        }}
+      >
         {/* Preview viewport */}
         <div
-          className="flex-1 border border-white/20 relative overflow-hidden"
-          style={{ animation: "hero-reveal-left 500ms cubic-bezier(0.36, 0, 0.66, 1) both", animationDelay: "400ms" }}
+          className="flex-[1_1_0%] border border-white/15 relative overflow-hidden rounded-sm"
+          style={{ animation: "hero-reveal-left 450ms cubic-bezier(0.36, 0, 0.66, 1) both", animationDelay: "300ms" }}
         >
           <div className="absolute inset-0" style={{
-            background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+            background: "linear-gradient(135deg, #0f1b3d 0%, #1a2755 30%, #2a1f5e 60%, #3d1248 100%)",
           }} />
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="text-[var(--poster-gold)] text-xl font-bold" style={{
+          <div className="absolute inset-0 opacity-[0.04]" style={{
+            backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 3px, white 3px, white 4px)",
+            animation: "hero-editor-scanlines 3000ms linear infinite",
+            animationDelay: "600ms",
+          }} />
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+            <div className="text-white/20 text-[9px] font-mono uppercase tracking-[0.25em]" style={{
+              animation: "hero-fade-in 300ms ease-out both",
+              animationDelay: "800ms",
+            }}>episode 12</div>
+            <div className="text-white text-2xl font-bold tracking-tight" style={{
               animation: "hero-fade-in 400ms ease-out both",
-              animationDelay: "1200ms",
+              animationDelay: "1000ms",
             }}>Welcome back</div>
+            <div className="text-white/40 text-xs" style={{
+              animation: "hero-fade-in 300ms ease-out both",
+              animationDelay: "1200ms",
+            }}>Season 2 Recap</div>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/10">
             <div className="h-full bg-[var(--poster-red)]" style={{
-              animation: "hero-progress-spring 2500ms ease-out both",
-              animationDelay: "3000ms",
-              ["--bar-target" as string]: "60%",
+              animation: "hero-progress-spring 3000ms ease-out both",
+              animationDelay: "1400ms",
+              ["--bar-target" as string]: "45%",
             }} />
           </div>
-          {/* Playback controls */}
-          <div className="absolute bottom-3 left-3 flex items-center gap-2" style={{
-            animation: "hero-fade-in 264ms ease-out both",
-            animationDelay: "1800ms",
+          <div className="absolute bottom-2 left-3 flex items-center gap-2" style={{
+            animation: "hero-fade-in 250ms ease-out both",
+            animationDelay: "1400ms",
           }}>
-            <svg className="w-4 h-4 text-white/50" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5 text-white/50" fill="currentColor" viewBox="0 0 24 24">
               <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
             </svg>
-            <span className="text-[10px] font-mono text-white/40">00:03.12</span>
+            <span className="text-[9px] font-mono text-white/35">00:03.12</span>
           </div>
+          <div className="absolute bottom-2 right-3 text-[9px] font-mono text-white/25" style={{
+            animation: "hero-fade-in 250ms ease-out both",
+            animationDelay: "1600ms",
+          }}>00:12.48</div>
         </div>
 
-        {/* Filmstrip with varied content simulation */}
+        {/* Filmstrip — continuous scrub */}
         <div
-          className="h-12 flex gap-0.5"
-          style={{ animation: "hero-reveal-bottom 350ms cubic-bezier(0.36, 0, 0.66, 1) both", animationDelay: "1500ms" }}
+          className="h-11 relative overflow-hidden rounded-sm"
+          style={{ animation: "hero-reveal-bottom 350ms cubic-bezier(0.36, 0, 0.66, 1) both", animationDelay: "1200ms" }}
         >
-          {Array.from({ length: 16 }).map((_, i) => (
-            <div
-              key={i}
-              className="flex-1 relative overflow-hidden"
-              style={{
-                background: `linear-gradient(${135 + i * 12}deg, hsl(${210 + i * 5}, ${25 + (i % 3) * 10}%, ${10 + i * 1.2}%) 0%, hsl(${220 + i * 7}, ${20 + (i % 4) * 8}%, ${14 + i * 1}%) 100%)`,
-              }}
-            >
-              {i % 4 === 2 && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-1 h-1 bg-white/20 rounded-full" />
+          <div className="absolute inset-0 flex gap-px" style={{
+            animation: "hero-editor-filmstrip-scrub 4000ms ease-in-out both",
+            animationDelay: "1600ms",
+          }}>
+            {filmstripFrames.map((_, i) => {
+              const hue = 220 + i * 8 + (i > 10 ? (i - 10) * 6 : 0);
+              const sat = 30 + (i % 5) * 8;
+              const lightBase = 12 + i * 1.5;
+              const hasHighlight = i === 5 || i === 12 || i === 16;
+              return (
+                <div
+                  key={i}
+                  className="flex-shrink-0 relative overflow-hidden"
+                  style={{
+                    width: 48,
+                    height: "100%",
+                    background: `linear-gradient(${120 + i * 15}deg, hsl(${hue}, ${sat}%, ${lightBase}%) 0%, hsl(${hue + 20}, ${sat + 10}%, ${lightBase + 6}%) 100%)`,
+                  }}
+                >
+                  {hasHighlight && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-5 h-3 rounded-sm bg-white/[0.08] border border-white/10" />
+                    </div>
+                  )}
+                  {i === 8 && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-white/15 text-[7px] font-mono">CUT</div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
+              );
+            })}
+          </div>
+          <div className="absolute top-0 bottom-0 left-1/3 w-px bg-white/40" style={{
+            animation: "hero-fade-in 200ms ease-out both, hero-editor-scrub-indicator 4000ms ease-in-out both",
+            animationDelay: "1800ms, 1800ms",
+          }} />
         </div>
 
-        {/* Timeline with trim handles */}
+        {/* Timeline trim bar */}
         <div
-          className="h-10 relative"
-          style={{ animation: "hero-reveal-right 350ms cubic-bezier(0.36, 0, 0.66, 1) both", animationDelay: "2500ms" }}
+          className="h-9 relative rounded-sm"
+          style={{ animation: "hero-reveal-right 350ms cubic-bezier(0.36, 0, 0.66, 1) both", animationDelay: "1800ms" }}
         >
-          <div className="absolute inset-0 bg-white/5 border border-white/10" />
-          <div className="absolute top-0 bottom-0 left-[15%] right-[25%] border-2 border-[var(--poster-gold)]">
-            <div className="absolute left-0 top-0 bottom-0 w-2 bg-[var(--poster-gold)] -translate-x-full cursor-ew-resize" />
-            <div className="absolute right-0 top-0 bottom-0 w-2 bg-[var(--poster-gold)] translate-x-full cursor-ew-resize" />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-[9px] font-mono text-white/30">Selected region</span>
-            </div>
+          <div className="absolute inset-0 bg-white/[0.03] border border-white/10 rounded-sm" />
+          <div
+            className="absolute top-0 bottom-0 border-2 border-[var(--poster-gold)] rounded-sm"
+            style={{
+              left: "12%",
+              right: "30%",
+              animation: "hero-editor-trim-settle 800ms cubic-bezier(0.34, 1.56, 0.64, 1) both",
+              animationDelay: "2200ms",
+            }}
+          >
+            <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[var(--poster-gold)] -translate-x-full rounded-l-sm" />
+            <div className="absolute right-0 top-0 bottom-0 w-1.5 bg-[var(--poster-gold)] translate-x-full rounded-r-sm" />
+            <div className="absolute inset-0 bg-[var(--poster-gold)]/[0.04]" />
           </div>
-          <div className="absolute top-0 bottom-0 left-[40%] w-0.5 bg-white" style={{
-            animation: "hero-fade-in 198ms ease-out both",
-            animationDelay: "4000ms",
+          <div className="absolute top-0 bottom-0 w-0.5 bg-white" style={{
+            left: "35%",
+            animation: "hero-fade-in 150ms ease-out both, hero-editor-playhead-tick 2000ms ease-in-out both",
+            animationDelay: "2600ms, 2600ms",
           }} />
         </div>
       </div>
 
-      {/* Component labels */}
-      <div className="absolute top-3 left-6 right-6 flex justify-between">
-        <div
-          className="text-[10px] font-mono uppercase tracking-[0.3em] text-white/30"
-          style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "200ms" }}
-        >
-          editor primitives
-        </div>
-        <div
-          className="flex gap-3 text-[9px] font-mono text-white/25"
-          style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "600ms" }}
-        >
-          <span>&lt;Preview&gt;</span>
-          <span>&lt;Filmstrip&gt;</span>
-          <span>&lt;TrimHandles&gt;</span>
+      {/* Phase 1 component labels */}
+      <div
+        className="absolute top-2 left-5 right-5 flex justify-between items-center"
+        style={{
+          animation: "hero-fade-in 250ms ease-out both, hero-editor-nle-collapse 600ms cubic-bezier(0.4, 0, 0.2, 1) both",
+          animationDelay: "150ms, 3500ms",
+        }}
+      >
+        <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-white/25" style={{
+          animation: "hero-fade-in 300ms ease-out both",
+          animationDelay: "150ms",
+        }}>full nle</div>
+        <div className="flex gap-2">
+          {[
+            { label: "<Preview>", delay: 500 },
+            { label: "<Filmstrip>", delay: 1300 },
+            { label: "<TrimHandles>", delay: 1900 },
+          ].map((c, i) => (
+            <span
+              key={i}
+              className="text-[8px] font-mono text-white/20 px-1.5 py-0.5 border border-white/[0.08] rounded-sm"
+              style={{
+                animation: "hero-slide-up-decel 300ms cubic-bezier(0.34, 1.56, 0.64, 1) both",
+                animationDelay: `${c.delay}ms`,
+              }}
+            >{c.label}</span>
+          ))}
         </div>
       </div>
+
+      {/* ── Phase 2: Compact trim-tool-in-a-form ── */}
+      <div
+        className="absolute inset-0 flex items-center justify-center px-16"
+        style={{
+          animation: "hero-editor-form-enter 600ms cubic-bezier(0.34, 1.56, 0.64, 1) both",
+          animationDelay: "3800ms",
+        }}
+      >
+        <div className="w-full max-w-[520px]">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-white/25" style={{
+              animation: "hero-fade-in 300ms ease-out both",
+              animationDelay: "4000ms",
+            }}>trim clip</span>
+            <span className="text-[8px] font-mono text-white/15" style={{
+              animation: "hero-fade-in 300ms ease-out both",
+              animationDelay: "4200ms",
+            }}>00:02.10 – 00:08.44</span>
+          </div>
+
+          {/* Compact filmstrip with trim overlay */}
+          <div className="h-10 relative overflow-hidden rounded border border-white/10 mb-1.5" style={{
+            animation: "hero-fade-in 300ms ease-out both",
+            animationDelay: "4000ms",
+          }}>
+            <div className="absolute inset-0 flex gap-px">
+              {Array.from({ length: 14 }).map((_, i) => {
+                const hue = 220 + i * 10 + (i > 7 ? (i - 7) * 6 : 0);
+                return (
+                  <div
+                    key={i}
+                    className="flex-1"
+                    style={{
+                      background: `linear-gradient(${130 + i * 14}deg, hsl(${hue}, 35%, ${13 + i * 1.2}%) 0%, hsl(${hue + 15}, 30%, ${17 + i}%) 100%)`,
+                    }}
+                  />
+                );
+              })}
+            </div>
+            <div
+              className="absolute top-0 bottom-0 border-2 border-[var(--poster-gold)] rounded-sm"
+              style={{
+                animation: "hero-editor-trim-drag 2500ms cubic-bezier(0.4, 0, 0.2, 1) both",
+                animationDelay: "5500ms",
+                left: "18%",
+                right: "25%",
+              }}
+            >
+              <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[var(--poster-gold)] -translate-x-full rounded-l-sm flex items-center justify-center">
+                <div className="w-px h-3 bg-black/30" />
+              </div>
+              <div className="absolute right-0 top-0 bottom-0 w-1.5 bg-[var(--poster-gold)] translate-x-full rounded-r-sm flex items-center justify-center">
+                <div className="w-px h-3 bg-black/30" />
+              </div>
+              <div className="absolute inset-0 bg-[var(--poster-gold)]/[0.06]" />
+            </div>
+            <div className="absolute top-0 bottom-0 left-0 bg-black/50" style={{
+              width: "18%",
+              animation: "hero-fade-in 300ms ease-out both",
+              animationDelay: "4200ms",
+            }} />
+            <div className="absolute top-0 bottom-0 right-0 bg-black/50" style={{
+              width: "25%",
+              animation: "hero-fade-in 300ms ease-out both",
+              animationDelay: "4200ms",
+            }} />
+          </div>
+
+          {/* Form-style time inputs */}
+          <div className="flex items-center gap-3 mt-2" style={{
+            animation: "hero-fade-in 300ms ease-out both",
+            animationDelay: "4400ms",
+          }}>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[8px] font-mono text-white/20 uppercase">in</span>
+              <div className="px-2 py-1 bg-white/[0.04] border border-white/10 rounded text-[9px] font-mono text-white/50">00:02.10</div>
+            </div>
+            <div className="flex-1 h-px bg-white/[0.08]" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-[8px] font-mono text-white/20 uppercase">out</span>
+              <div className="px-2 py-1 bg-white/[0.04] border border-white/10 rounded text-[9px] font-mono text-white/50" style={{
+                animation: "hero-editor-time-update 2500ms step-end both",
+                animationDelay: "5500ms",
+              }}>00:08.44</div>
+            </div>
+          </div>
+
+          {/* Component tags for form mode */}
+          <div className="flex items-center justify-center gap-2 mt-3">
+            {[
+              { label: "<Filmstrip>", delay: 4600 },
+              { label: "<TrimHandles>", delay: 4800 },
+            ].map((c, i) => (
+              <span
+                key={i}
+                className="text-[8px] font-mono text-white/15 px-1.5 py-0.5 border border-white/[0.06] rounded-sm"
+                style={{
+                  animation: "hero-slide-up-decel 300ms cubic-bezier(0.34, 1.56, 0.64, 1) both",
+                  animationDelay: `${c.delay}ms`,
+                }}
+              >{c.label}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Phase 3: corner brackets — "building blocks" accent ── */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          animation: "hero-fade-in 400ms ease-out both",
+          animationDelay: "6800ms",
+        }}
+      >
+        <div className="absolute top-[28%] left-[12%] w-4 h-4 border-t border-l border-white/10" style={{
+          animation: "hero-editor-bracket-pulse 1200ms ease-in-out both",
+          animationDelay: "7000ms",
+        }} />
+        <div className="absolute top-[28%] right-[12%] w-4 h-4 border-t border-r border-white/10" style={{
+          animation: "hero-editor-bracket-pulse 1200ms ease-in-out both",
+          animationDelay: "7100ms",
+        }} />
+        <div className="absolute bottom-[28%] left-[12%] w-4 h-4 border-b border-l border-white/10" style={{
+          animation: "hero-editor-bracket-pulse 1200ms ease-in-out both",
+          animationDelay: "7200ms",
+        }} />
+        <div className="absolute bottom-[28%] right-[12%] w-4 h-4 border-b border-r border-white/10" style={{
+          animation: "hero-editor-bracket-pulse 1200ms ease-in-out both",
+          animationDelay: "7300ms",
+        }} />
+      </div>
+
       <SceneCaptions groups={CAPTIONS_EDITOR} />
     </Timegroup>
   );
 }
+
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    Scene 6: Template — Year-in-review, data-driven
