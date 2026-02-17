@@ -14,7 +14,7 @@
 
 import { encodeCanvasesInParallel } from "../encoding/canvasEncoder.js";
 import type { RenderContext } from "../RenderContext.js";
-import { isVisibleAtTime } from "../previewTypes.js";
+import { isTemporal, isVisibleAtTime } from "../previewTypes.js";
 import { ScaleConfig } from "./ScaleConfig.js";
 
 /**
@@ -571,12 +571,17 @@ function serializeElement(
   
   // Check temporal visibility - skip elements outside their time bounds
   // This is non-destructive (doesn't modify DOM)
-  // NOTE: We do NOT check CSS visibility/display here because:
-  // 1. The container may have visibility:hidden for off-screen rendering
-  // 2. Temporal elements control their own visibility via time bounds
   // NOTE: Ancestor checking is unnecessary - serializeElement walks top-down,
   // so if a parent is temporally invisible, its children are never visited
   if (!isVisibleAtTime(element, options.timeMs)) {
+    return;
+  }
+  
+  // Respect updateAnimations' visibility decision for temporal elements.
+  // isVisibleAtTime uses inclusive end bounds, but updateAnimations uses
+  // exclusive end for mid-composition elements (VisibilityPolicy). When
+  // updateAnimations has set display:none, that is the authoritative decision.
+  if (isTemporal(element) && (element as HTMLElement).style?.getPropertyValue('display') === 'none') {
     return;
   }
   

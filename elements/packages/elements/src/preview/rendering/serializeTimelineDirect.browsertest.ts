@@ -4,8 +4,9 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { html, render as litRender } from "lit";
 import { serializeElementToXHTML, captureTimelineToDataUri } from "./serializeTimelineDirect.js";
-import type { EFTimegroup } from "../../elements/EFTimegroup.js";
+import { EFTimegroup } from "../../elements/EFTimegroup.js";
 import "../../elements/EFText.js";
 import "../../elements/EFTextSegment.js";
 import type { EFText } from "../../elements/EFText.js";
@@ -423,6 +424,66 @@ describe("serializeTimelineDirect", () => {
       expect(xhtml).toContain('font-family:');
       expect(xhtml).toContain('font-size:');
       expect(xhtml).toContain('font-weight:');
+    });
+  });
+
+  describe("sequence visibility at end boundary", () => {
+    async function renderSequenceTimegroup(child1Text: string, child2Text: string) {
+      const wrapper = document.createElement("div");
+      litRender(html`
+        <ef-timegroup mode="sequence" style="width:800px;height:600px">
+          <ef-text duration="1s">${child1Text}</ef-text>
+          <ef-text duration="1s">${child2Text}</ef-text>
+        </ef-timegroup>
+      `, wrapper);
+      container.appendChild(wrapper);
+      await customElements.whenDefined("ef-timegroup");
+      const timegroup = wrapper.querySelector("ef-timegroup");
+      if (!(timegroup instanceof EFTimegroup)) {
+        throw new Error(`Expected EFTimegroup instance`);
+      }
+      return timegroup;
+    }
+
+    it("should not serialize the first sequence child at its end boundary when a second child begins", async () => {
+      const timegroup = await renderSequenceTimegroup("FIRST_SCENE", "SECOND_SCENE");
+
+      await timegroup.updateComplete;
+      await timegroup.waitForMediaDurations();
+
+      // Seek to the exact end boundary of child1 / start of child2 (1000ms)
+      // updateAnimations should mark child1 as invisible (exclusive end for mid-composition elements)
+      await timegroup.seek(1000);
+
+      // Serialize at the same time
+      const xhtml = await serializeElementToXHTML(timegroup, 800, 600, {
+        canvasScale: 1,
+        timeMs: 1000,
+      });
+
+      // The first child should NOT appear in the serialized output.
+      // It has ended and the second child has begun.
+      expect(xhtml).not.toContain("FIRST_SCENE");
+      expect(xhtml).toContain("SECOND_SCENE");
+    });
+
+    it("should not serialize an ended sequence child when rendering past its end time", async () => {
+      const timegroup = await renderSequenceTimegroup("SCENE_ALPHA", "SCENE_BETA");
+
+      await timegroup.updateComplete;
+      await timegroup.waitForMediaDurations();
+
+      // Seek to 1500ms - well into second child's range
+      await timegroup.seek(1500);
+
+      const xhtml = await serializeElementToXHTML(timegroup, 800, 600, {
+        canvasScale: 1,
+        timeMs: 1500,
+      });
+
+      // The first child (0-1000ms) must not appear at 1500ms
+      expect(xhtml).not.toContain("SCENE_ALPHA");
+      expect(xhtml).toContain("SCENE_BETA");
     });
   });
 });
