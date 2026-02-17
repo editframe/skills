@@ -141,7 +141,17 @@ const CAPTIONS_RENDER: CaptionGroup[] = [
   ] },
 ];
 
-const AUDIO_BASE = "https://assets.editframe.com/hero";
+const AUDIO_CDN = "https://assets.editframe.com/hero";
+const AUDIO_SRC = {
+  title:    `${AUDIO_CDN}/01-title-a290b7f6.mp3`,
+  author:   `${AUDIO_CDN}/02-author-99e9ca24.mp3`,
+  layers:   `${AUDIO_CDN}/03-layers-9b105620.mp3`,
+  timeline: `${AUDIO_CDN}/04-timeline-993b3d16.mp3`,
+  editor:   `${AUDIO_CDN}/05-editor-197fcf4c.mp3`,
+  template: `${AUDIO_CDN}/06-template-95d5c2cd.mp3`,
+  stream:   `${AUDIO_CDN}/07-stream-5b7d2772.mp3`,
+  render:   `${AUDIO_CDN}/08-render-bc145020.mp3`,
+} as const;
 
 function SceneCaptions({ groups }: { groups: CaptionGroup[] }) {
   return (
@@ -190,7 +200,7 @@ function SceneTitle() {
   const d = DUR.title;
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
-      <Audio src={`${AUDIO_BASE}/01-title.mp3`} />
+      <Audio src={AUDIO_SRC.title} />
       <div className="absolute inset-0" style={{
         background: "radial-gradient(ellipse 80% 60% at 50% 50%, rgba(21,101,192,0.08) 0%, transparent 70%)",
       }} />
@@ -239,7 +249,7 @@ function SceneAuthor() {
 
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
-      <Audio src={`${AUDIO_BASE}/02-author.mp3`} />
+      <Audio src={AUDIO_SRC.author} />
       <div className="absolute inset-0" style={{
         background: "radial-gradient(ellipse 60% 50% at 75% 50%, rgba(21,101,192,0.06) 0%, transparent 70%)",
       }} />
@@ -384,7 +394,7 @@ function SceneLayers() {
   const d = DUR.layers;
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
-      <Audio src={`${AUDIO_BASE}/03-layers.mp3`} />
+      <Audio src={AUDIO_SRC.layers} />
       <div className="absolute inset-0" style={{
         background: "radial-gradient(ellipse 70% 60% at 50% 45%, rgba(21,101,192,0.05) 0%, transparent 70%)",
       }} />
@@ -447,7 +457,7 @@ function SceneTimeline() {
 
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
-      <Audio src={`${AUDIO_BASE}/04-timeline.mp3`} />
+      <Audio src={AUDIO_SRC.timeline} />
       <div className="absolute inset-0 flex flex-col">
         {/* Ruler header */}
         <div className="px-6 py-3 flex items-center justify-between border-b border-white/10">
@@ -552,7 +562,7 @@ function SceneEditor() {
   const d = DUR.editor;
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
-      <Audio src={`${AUDIO_BASE}/05-editor.mp3`} />
+      <Audio src={AUDIO_SRC.editor} />
       <div className="absolute inset-0 p-6 flex flex-col gap-2">
         {/* Preview viewport */}
         <div
@@ -667,7 +677,7 @@ function SceneTemplate() {
 
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
-      <Audio src={`${AUDIO_BASE}/06-template.mp3`} />
+      <Audio src={AUDIO_SRC.template} />
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         {/* Year watermark - positioned to not overlap stats */}
         <div
@@ -776,7 +786,7 @@ function SceneStream() {
   const d = DUR.stream;
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
-      <Audio src={`${AUDIO_BASE}/07-stream.mp3`} />
+      <Audio src={AUDIO_SRC.stream} />
       <CompositionCanvas
         camera={{ position: [0, 0.5, 7], fov: 35 }}
         gl={{ antialias: true, alpha: true }}
@@ -825,7 +835,7 @@ function SceneRender() {
 
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
-      <Audio src={`${AUDIO_BASE}/08-render.mp3`} />
+      <Audio src={AUDIO_SRC.render} />
       <div className="absolute inset-0 flex flex-col justify-center px-12 gap-5">
         <div
           className="text-[10px] font-mono uppercase tracking-[0.3em] text-white/30"
