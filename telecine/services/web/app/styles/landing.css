@@ -185,6 +185,29 @@ body {
   }
 }
 
+/* Template scene: non-overlapping card enter/exit */
+@keyframes hero-card-enter {
+  from {
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes hero-card-exit {
+  from {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-15px) scale(0.95);
+    opacity: 0;
+  }
+}
+
 /* Typewriter cursor blink */
 @keyframes hero-cursor-blink {
   0%, 100% { opacity: 1; }
@@ -264,10 +287,26 @@ body {
   to { stroke-dashoffset: 0; }
 }
 
-/* Playhead sweep across timeline */
+/* Playhead sweep across timeline (fixed px for 960px composition) */
 @keyframes hero-playhead-sweep {
   from { transform: translateX(0); }
   to { transform: translateX(calc(70vw - 56px)); }
+}
+@keyframes hero-playhead-sweep-fixed {
+  from { transform: translateX(0); }
+  to { transform: translateX(800px); }
+}
+
+/* Caption word activation — dims-to-bright (permanent, karaoke-style) */
+@keyframes hero-word-on {
+  from { opacity: 0.4; }
+  to { opacity: 1; }
+}
+
+/* Caption word speak — brief gold flash while word is being spoken */
+@keyframes hero-word-speak {
+  0%, 100% { color: white; }
+  20%, 80% { color: var(--poster-gold); }
 }
 
 @media (prefers-reduced-motion: reduce) {
