@@ -33,6 +33,7 @@ import type { RenderProgress, RenderToVideoOptions } from "./renderTimegroupToVi
 import type { ContentReadyMode } from "./renderTimegroupToCanvas.types.js";
 import {
   resetRenderState,
+  waitForVideoContent,
 } from "./renderTimegroupToCanvas.js";
 import { captureTimelineToDataUri } from "./rendering/serializeTimelineDirect.js";
 import { renderToImageNative } from "./rendering/renderToImageNative.js";
@@ -520,6 +521,11 @@ export async function renderTimegroupToVideo(
           promise: null!,
         };
         
+        // Wait for video content if using blocking mode
+        if (config.contentReadyMode === "blocking") {
+          await waitForVideoContent(renderClone, timeMs, config.blockingTimeoutMs);
+        }
+
         if (config.canvasMode === "native") {
           const renderStart = performance.now();
           const canvas = await renderToImageNative(renderClone, config.width, config.height, {

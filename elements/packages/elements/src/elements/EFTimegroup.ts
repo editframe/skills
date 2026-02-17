@@ -83,14 +83,15 @@ export interface RenderCloneResult {
  * 
  * CONSTRAINTS:
  * - MUST be synchronous (no async/await, no Promise return)
- * - MUST complete in <100ms (error) or <10ms (warning)
+ * - MUST complete in <2000ms (error) or <100ms (warning)
  * - Should only register callbacks and set up behavior, not do expensive work
+ * - GPU operations (WebGL context creation, shader compilation) may take up to ~1s
  */
 export type TimegroupInitializer = (timegroup: EFTimegroup) => void;
 
 // Constants for initializer time budget enforcement
-const INITIALIZER_ERROR_THRESHOLD_MS = 100;
-const INITIALIZER_WARN_THRESHOLD_MS = 10;
+const INITIALIZER_ERROR_THRESHOLD_MS = 2000;
+const INITIALIZER_WARN_THRESHOLD_MS = 100;
 
 // ============================================================================
 // Purpose 1: Composition Rules - How Duration is Determined

@@ -247,7 +247,7 @@ interface WaitForVideoContentResult {
  * Only checks videos that should be visible at the current time.
  * Returns result with ready status and list of blank video names.
  */
-async function waitForVideoContent(
+export async function waitForVideoContent(
   timegroup: EFTimegroup,
   timeMs: number,
   maxWaitMs: number,

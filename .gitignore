@@ -28,3 +28,6 @@ skills/skills-generated/
 # Test render outputs
 .test-output/
 **/render.test.renders/
+
+# Self-signed TLS certs for local Traefik HTTPS
+scripts/certs/

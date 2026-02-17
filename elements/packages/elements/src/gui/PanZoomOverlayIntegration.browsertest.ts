@@ -504,22 +504,26 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
 
-      await waitForRaf();
+      // Wait for Lit elements to finish initial render and RAF loop to establish position
+      await panZoom.updateComplete;
+      await overlayLayer.updateComplete;
+      await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())));
 
-      const positionChangedHandler = vi.fn();
-      overlayItem.addEventListener("position-changed", positionChangedHandler);
+      // Set up event listener before triggering the change
+      const positionChangedPromise = new Promise<CustomEvent<OverlayItemPosition>>((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error("position-changed event not fired within 5s")), 5000);
+        overlayItem.addEventListener("position-changed", (e) => {
+          clearTimeout(timeout);
+          resolve(e as CustomEvent<OverlayItemPosition>);
+        }, { once: true });
+      });
 
       // Zoom changes the target's screen size, which should trigger position-changed
-      // because width/height change
       panZoom.scale = 2;
       overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 2 };
+      await panZoom.updateComplete;
 
-      await waitForRaf();
-
-      // Should have received position change event (size changed due to zoom)
-      expect(positionChangedHandler).toHaveBeenCalled();
-      const event = positionChangedHandler.mock
-        .calls[0][0] as CustomEvent<OverlayItemPosition>;
+      const event = await positionChangedPromise;
       expect(event.detail.width).toBeCloseTo(400, 1); // 200 * 2
       expect(event.detail.height).toBeCloseTo(300, 1); // 150 * 2
     });

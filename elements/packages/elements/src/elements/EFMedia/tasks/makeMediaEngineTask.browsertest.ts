@@ -2,7 +2,9 @@ import { customElement } from "lit/decorators.js";
 import { describe } from "vitest";
 
 import { test as baseTest } from "../../../../test/useMSW.js";
+import { getApiHost } from "../../../../test/setup.js";
 import { EFMedia } from "../../EFMedia.js";
+import "../../../gui/EFConfiguration.js";
 
 // Helper function to create media engine with abort handling
 async function createMediaEngine(element: EFMedia): Promise<any> {
@@ -24,18 +26,23 @@ const testWithElement = baseTest.extend<{
   configuration: HTMLElement;
 }>({
   element: async ({}, use) => {
+    const apiHost = getApiHost();
+    const config = document.createElement("ef-configuration") as any;
+    config.setAttribute("api-host", apiHost);
+    config.apiHost = apiHost;
+
     const element = document.createElement("test-media-engine");
+    config.appendChild(element);
+    document.body.appendChild(config);
 
-    // Set up element with required properties via attributes
-    const apiHost = `${window.location.protocol}//${window.location.host}`;
-    element.setAttribute("api-host", apiHost);
-
-    document.body.appendChild(element);
     await use(element);
-    element.remove();
+    config.remove();
   },
   configuration: async ({}, use) => {
+    const apiHost = getApiHost();
     const config = document.createElement("ef-configuration") as any;
+    config.setAttribute("api-host", apiHost);
+    config.apiHost = apiHost;
     document.body.appendChild(config);
     await use(config);
     config.remove();
@@ -80,8 +87,10 @@ describe("makeMediaEngineTask", () => {
     testWithElement(
       "should return undefined when assetId is provided but apiHost is missing",
       async ({ element, expect }) => {
+        // Move element out of ef-configuration so apiHost is unavailable
+        document.body.appendChild(element);
+
         element.setAttribute("asset-id", "test-asset-123");
-        element.setAttribute("api-host", "");
         await element.updateComplete;
 
         const result = await createMediaEngine(element);

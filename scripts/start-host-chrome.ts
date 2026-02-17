@@ -71,6 +71,7 @@ async function main() {
     args: [
       "--autoplay-policy=no-user-gesture-required", // Allow AudioContext without user interaction
       "--enable-features=CanvasDrawElement", // allow drawing of HTML elements to canvas with new API (for tests)
+      "--ignore-certificate-errors", // Accept self-signed TLS cert from Traefik (enables HTTP/2)
     ],
     ...(ignoreDefaultArgs.length > 0 ? { ignoreDefaultArgs } : {}),
   });

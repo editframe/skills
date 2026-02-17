@@ -12,6 +12,8 @@ services:
       - "4323:4323"    # Telecine test server
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./scripts/certs:/etc/traefik/certs:ro
+      - ./scripts/traefik-dynamic.yaml:/etc/traefik/dynamic.yaml:ro
     networks:
       - editframe-shared
     command:
@@ -19,6 +21,7 @@ services:
       - --providers.docker
       - --providers.docker.exposedbydefault=false
       - --providers.docker.network=editframe-shared
+      - --providers.file.filename=/etc/traefik/dynamic.yaml
       - --entrypoints.web.address=:3000
       - --entrypoints.traefik.address=:7777
       - --entrypoints.port24678.address=:24678
@@ -31,6 +34,9 @@ services:
       - --entrypoints.web.transport.respondingTimeouts.readTimeout=0s
       - --entrypoints.web.transport.respondingTimeouts.writeTimeout=0s
       - --entrypoints.web.transport.respondingTimeouts.idleTimeout=3600s
+      - --entrypoints.elements-test.transport.respondingTimeouts.readTimeout=0s
+      - --entrypoints.elements-test.transport.respondingTimeouts.writeTimeout=0s
+      - --entrypoints.elements-test.transport.respondingTimeouts.idleTimeout=3600s
     restart: unless-stopped
 
   postgres:

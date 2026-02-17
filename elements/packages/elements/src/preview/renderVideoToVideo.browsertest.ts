@@ -7,20 +7,25 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import type { EFVideo } from "../elements/EFVideo.js";
 import "../elements/EFVideo.js";
-
-const VIDEO_SRC = "http://host.docker.internal:3000/bars-n-tone.mp4";
+import "../gui/EFConfiguration.js";
+import { getApiHost } from "../../test/setup.js";
 
 describe.sequential("renderVideoToVideo — direct fast path", () => {
   beforeAll(async () => {
     await customElements.whenDefined("ef-video");
+    await customElements.whenDefined("ef-configuration");
   });
 
   async function createVideo(opts: {
     trimStartMs?: number;
     trimEndMs?: number;
   } = {}): Promise<{ video: EFVideo; cleanup: () => void }> {
+    const config = document.createElement("ef-configuration") as any;
+    config.setAttribute("api-host", getApiHost());
+    config.setAttribute("signing-url", "/@ef-sign-url");
+
     const video = document.createElement("ef-video") as EFVideo;
-    video.src = VIDEO_SRC;
+    video.src = "bars-n-tone.mp4";
     if (opts.trimStartMs !== undefined) {
       video.trimStartMs = opts.trimStartMs;
     }
@@ -28,7 +33,8 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
       video.trimEndMs = opts.trimEndMs;
     }
     video.style.cssText = "width: 384px; height: 224px; display: block;";
-    document.body.appendChild(video);
+    config.appendChild(video);
+    document.body.appendChild(config);
 
     await video.updateComplete;
     await video.waitForMediaDurations();
@@ -40,7 +46,7 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
           if (e.reason?.name === "AbortError") e.preventDefault();
         };
         window.addEventListener("unhandledrejection", swallowAbort);
-        document.body.removeChild(video);
+        config.remove();
         setTimeout(() => window.removeEventListener("unhandledrejection", swallowAbort), 500);
       },
     };

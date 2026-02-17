@@ -53,6 +53,7 @@ function createConnectConfig(wsEndpoint: string): TestConfiguration {
       // This is needed for Traefik routing (not needed in CI)
       ...(isCI ? {} : { allowedHosts: [worktreeDomain] }),
     },
+    headless: true,
     playwrightOptions: {
       connectOptions: {
         wsEndpoint,
@@ -125,7 +126,7 @@ export default defineConfig(async () => {
   // Get worktree domain for Traefik URL rewriting
   // Test server uses its own Traefik entrypoint (port 4322) to avoid conflict with dev-projects
   const worktreeDomain = process.env.WORKTREE_DOMAIN || "main.localhost";
-  const traefikUrl = `http://${worktreeDomain}:4322`;
+  const traefikUrl = `https://${worktreeDomain}:4322`;
 
   // Plugin to override server resolvedUrls for browser connections
   // Vitest constructs browser URLs from resolvedUrls.local[0] or resolvedUrls.network[0]
@@ -293,7 +294,6 @@ export default defineConfig(async () => {
       // Global setup file that runs before every test
       setupFiles: ["./packages/elements/test/setup.ts"],
       // No longer need global setup - proxy is integrated into Vite server
-      maxWorkers: 1,
       browser: {
         enabled: true,
         provider: playwright(config.playwrightOptions),

@@ -25,6 +25,7 @@ services:
       traefik.http.routers.elements-test-${WORKTREE_ID:-main}.rule: "Host(`${WORKTREE_DOMAIN}`)"
       traefik.http.routers.elements-test-${WORKTREE_ID:-main}.entrypoints: elements-test
       traefik.http.routers.elements-test-${WORKTREE_ID:-main}.service: elements-test-${WORKTREE_ID:-main}
+      traefik.http.routers.elements-test-${WORKTREE_ID:-main}.tls: true
       traefik.http.services.elements-test-${WORKTREE_ID:-main}.loadbalancer.server.port: 63315
 
   dev-projects:
