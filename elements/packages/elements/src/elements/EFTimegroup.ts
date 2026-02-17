@@ -562,9 +562,33 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   // ---- End Content Readiness Aggregation ----
 
   /** @public */
-  mode: TimeMode = "contain";
+  #mode: TimeMode = "contain";
+  get mode(): TimeMode { return this.#mode; }
+  set mode(value: TimeMode) {
+    if (this.#mode === value) return;
+    const old = this.#mode;
+    this.#mode = value;
+    this.requestUpdate("mode", old);
+    if (this.getAttribute("mode") !== value) {
+      this.setAttribute("mode", value);
+    }
+  }
+
   /** @public */
-  overlapMs = 0;
+  #overlapMs = 0;
+  get overlapMs(): number { return this.#overlapMs; }
+  set overlapMs(value: number) {
+    if (this.#overlapMs === value) return;
+    const old = this.#overlapMs;
+    this.#overlapMs = value;
+    this.requestUpdate("overlapMs", old);
+    const attrVal = value > 0 ? `${value}ms` : null;
+    if (attrVal && this.getAttribute("overlap") !== attrVal) {
+      this.setAttribute("overlap", attrVal);
+    } else if (!attrVal && this.hasAttribute("overlap")) {
+      this.removeAttribute("overlap");
+    }
+  }
 
   #initializer?: TimegroupInitializer;
   

@@ -512,6 +512,30 @@ describe("serializeTimelineDirect", () => {
       return timegroup;
     }
 
+    /** Build sequence via JS properties (how React sets them) instead of HTML attributes */
+    async function renderNestedSequenceViaProperties() {
+      const root = document.createElement("ef-timegroup") as EFTimegroup;
+      root.mode = "sequence";
+      root.style.cssText = "width:960px;height:540px";
+
+      const scenes = [["SCENE_ONE_CONTENT", "scene1-content"], ["SCENE_TWO_CONTENT", "scene2-content"], ["SCENE_THREE_CONTENT", "scene3-content"]];
+      for (const [label, cls] of scenes) {
+        const child = document.createElement("ef-timegroup") as EFTimegroup;
+        child.mode = "fixed";
+        child.duration = "2s";
+        child.style.cssText = "width:960px;height:540px";
+        const div = document.createElement("div");
+        div.className = cls!;
+        div.textContent = label!;
+        child.appendChild(div);
+        root.appendChild(child);
+      }
+
+      container.appendChild(root);
+      await root.updateComplete;
+      return root;
+    }
+
     it("should only serialize scene2 when seeked to scene2 time range", async () => {
       const root = await renderNestedSequence();
       await root.updateComplete;
@@ -591,6 +615,155 @@ describe("serializeTimelineDirect", () => {
       // Frame at 5000ms: scene3 visible (midway)
       expect(results[5]).not.toContain("SCENE_TWO_CONTENT");
       expect(results[5]).toContain("SCENE_THREE_CONTENT");
+    });
+
+    it("should transition correctly through scenes on a render clone", async () => {
+      const root = await renderNestedSequence();
+      await root.updateComplete;
+      await root.waitForMediaDurations();
+
+      // Use the actual render clone path — this is what the export pipeline does
+      const { clone, cleanup } = await root.createRenderClone();
+
+      try {
+        // Verify clone setup: no playbackController, correct structure
+        expect(clone.playbackController).toBeUndefined();
+
+        const childTGs = Array.from(clone.querySelectorAll("ef-timegroup")) as any[];
+        expect(childTGs.length).toBe(3);
+
+        const frameTimes = [0, 1000, 2000, 3000, 4000, 5000];
+        const results: string[] = [];
+
+        for (const timeMs of frameTimes) {
+          await clone.seekForRender(timeMs);
+
+          const xhtml = await serializeElementToXHTML(clone, 960, 540, {
+            canvasScale: 1,
+            timeMs,
+          });
+          results.push(xhtml);
+        }
+
+        // Frame at 0ms: scene1 visible
+        expect(results[0]).toContain("SCENE_ONE_CONTENT");
+        expect(results[0]).not.toContain("SCENE_TWO_CONTENT");
+
+        // Frame at 1000ms: scene1 visible (midway)
+        expect(results[1]).toContain("SCENE_ONE_CONTENT");
+        expect(results[1]).not.toContain("SCENE_TWO_CONTENT");
+
+        // Frame at 2000ms: scene2 visible (scene1 ended)
+        expect(results[2]).not.toContain("SCENE_ONE_CONTENT");
+        expect(results[2]).toContain("SCENE_TWO_CONTENT");
+
+        // Frame at 3000ms: scene2 visible (midway)
+        expect(results[3]).not.toContain("SCENE_ONE_CONTENT");
+        expect(results[3]).toContain("SCENE_TWO_CONTENT");
+
+        // Frame at 4000ms: scene3 visible (scene2 ended)
+        expect(results[4]).not.toContain("SCENE_TWO_CONTENT");
+        expect(results[4]).toContain("SCENE_THREE_CONTENT");
+
+        // Frame at 5000ms: scene3 visible (midway)
+        expect(results[5]).not.toContain("SCENE_TWO_CONTENT");
+        expect(results[5]).toContain("SCENE_THREE_CONTENT");
+      } finally {
+        cleanup();
+      }
+    });
+
+    it("should preserve mode/overlapMs on render clone when set as JS properties", async () => {
+      const root = await renderNestedSequenceViaProperties();
+      await root.waitForMediaDurations();
+
+      const { clone, cleanup } = await root.createRenderClone();
+
+      try {
+        expect(clone.mode).toBe("sequence");
+
+        const childTGs = Array.from(clone.querySelectorAll("ef-timegroup")) as EFTimegroup[];
+        expect(childTGs.length).toBe(3);
+
+        // Children should have sequential startTimeMs, not all 0
+        expect(childTGs[0]!.startTimeMs).toBe(0);
+        expect(childTGs[0]!.endTimeMs).toBe(2000);
+        expect(childTGs[1]!.startTimeMs).toBe(2000);
+        expect(childTGs[1]!.endTimeMs).toBe(4000);
+        expect(childTGs[2]!.startTimeMs).toBe(4000);
+        expect(childTGs[2]!.endTimeMs).toBe(6000);
+
+        const frameTimes = [0, 1000, 2000, 3000, 4000, 5000];
+        const results: string[] = [];
+
+        for (const timeMs of frameTimes) {
+          await clone.seekForRender(timeMs);
+          const xhtml = await serializeElementToXHTML(clone, 960, 540, {
+            canvasScale: 1,
+            timeMs,
+          });
+          results.push(xhtml);
+        }
+
+        // Frame at 0ms: scene1 visible
+        expect(results[0]).toContain("SCENE_ONE_CONTENT");
+        expect(results[0]).not.toContain("SCENE_TWO_CONTENT");
+
+        // Frame at 2000ms: scene2 visible (scene1 ended)
+        expect(results[2]).not.toContain("SCENE_ONE_CONTENT");
+        expect(results[2]).toContain("SCENE_TWO_CONTENT");
+
+        // Frame at 4000ms: scene3 visible
+        expect(results[4]).not.toContain("SCENE_TWO_CONTENT");
+        expect(results[4]).toContain("SCENE_THREE_CONTENT");
+      } finally {
+        cleanup();
+      }
+    });
+
+    it("should transition correctly after re-parenting clone (renderTimegroupToVideo pattern)", async () => {
+      const root = await renderNestedSequence();
+      await root.updateComplete;
+      await root.waitForMediaDurations();
+
+      const { clone, cleanup } = await root.createRenderClone();
+
+      try {
+        // Re-parent clone into a new container (simulates renderTimegroupToVideo)
+        const newContainer = document.createElement("div");
+        newContainer.style.cssText = "position:fixed;left:-99999px;top:-99999px;pointer-events:none;";
+        newContainer.appendChild(clone); // RE-PARENT: moves clone from its original container
+        document.body.appendChild(newContainer);
+
+        void clone.offsetHeight;
+
+        const frameTimes = [0, 1000, 2000, 3000, 4000, 5000];
+        const results: string[] = [];
+
+        for (const timeMs of frameTimes) {
+          await clone.seekForRender(timeMs);
+
+          const xhtml = await serializeElementToXHTML(clone, 960, 540, {
+            canvasScale: 1,
+            timeMs,
+          });
+          results.push(xhtml);
+        }
+
+        // Frame at 0ms: scene1 visible
+        expect(results[0]).toContain("SCENE_ONE_CONTENT");
+        expect(results[0]).not.toContain("SCENE_TWO_CONTENT");
+
+        // Frame at 2000ms: scene2 visible (scene1 ended)
+        expect(results[2]).not.toContain("SCENE_ONE_CONTENT");
+        expect(results[2]).toContain("SCENE_TWO_CONTENT");
+
+        // Frame at 4000ms: scene3 visible
+        expect(results[4]).not.toContain("SCENE_TWO_CONTENT");
+        expect(results[4]).toContain("SCENE_THREE_CONTENT");
+      } finally {
+        cleanup();
+      }
     });
 
     it("should transition correctly with overlap using seekForRender", async () => {
