@@ -53,7 +53,17 @@ Before writing, plan the skill structure:
    - **How-to skill**: Specific task guidance
    - **Explanation skill**: Deep conceptual understanding
 
-2. **Plan file structure**:
+2. **Classify each piece of planned content**:
+
+   Before writing anything, categorize every section you plan to include:
+
+   - **Procedural** -- how to do something (deploy, rollback, create a release). Stable. Write as prose.
+   - **Architectural** -- how a system works at a high level (what connects to what, why things are structured a certain way). Moderately stable. Write as concise narrative, but avoid enumerating specifics.
+   - **Enumerated data** -- lists of things, tables of values, counts, names, versions (service lists, resource allocations, package names, secret names, route tables). **Volatile. Do not write into the skill.** Instead, point the agent at the source file or create a companion script that queries it (see "Companion Scripts" below).
+
+   The goal: if a config file changes, no skill doc should need updating. The skill teaches agents *how to reason* about a domain; scripts and source files provide *the current facts*.
+
+3. **Plan file structure**:
    ```
    .skills/internal/{skill-name}/
    └── SKILL.md                    # Main entry point (required)
@@ -131,6 +141,32 @@ description: What this reference covers
 - Include code blocks or snippets when relevant
 - Link between skills using relative paths: `[skill-name](...)`
 - Write for LLM consumption (clear, structured, no marketing)
+- **Never duplicate data that lives in source files.** If information can be derived from a config file, script, or definition that already exists in the repo, don't copy it into the skill. Instead, tell the agent where to find it (`"Run scripts/deploy-info telecine for current service list"`) or which file to read (`"See telecine/deploy/worker-resources.config.ts for current allocations"`). Skills should be a guide to reasoning, not a cache of facts.
+- **Test for drift:** before finalizing any section, ask: "If someone changes a config file tomorrow, will this prose become wrong?" If yes, rewrite the section to reference the source rather than restating it.
+
+### Companion Scripts
+
+Some skills need a **companion script** -- a script that queries local config files and emits current data for agents to consume. This replaces hardcoded tables and lists in skill prose.
+
+**When to create a companion script:**
+- The skill domain involves configuration that changes (service lists, resource allocations, package versions, routing tables, secret names)
+- Multiple source files must be read and correlated to answer common questions
+- The source files are in formats that require domain knowledge to parse (Pulumi TypeScript, GitHub Actions YAML, complex configs)
+
+**Design principles:**
+- **Local only.** No network, no Docker, no auth. The script parses files on disk. It should run in under a second.
+- **Root-level.** Place companion scripts at `scripts/` in the monorepo root, not inside a package.
+- **Structured plain text output.** One field per line, YAML-ish. Readable by humans and LLMs. Not JSON (too verbose for context windows), not pretty-printed tables (ambiguous to parse).
+- **Thin wrapper pattern.** A bash script (`scripts/{name}`) that calls `npx tsx scripts/{name}.ts`. Matches the existing convention (see `scripts/skills-sync`).
+
+**When NOT to create a companion script:**
+- The data lives in a single, simple file the agent can read directly (e.g., a `package.json`)
+- The skill domain is purely procedural (how-to steps, debugging workflows)
+- The data rarely changes (deployment process, toolchain choices)
+
+In these cases, just tell the agent which file to read: `"See telecine/deploy/worker-resources.config.ts for current allocations."`
+
+**Example:** The `deployments` skill uses `scripts/deploy-info telecine` and `scripts/deploy-info elements` to query current services, resources, routes, secrets, packages, and release pipeline steps from local config files.
 
 ### Phase 4: Validation
 
@@ -157,7 +193,13 @@ Before syncing, validate the skill:
    - Concrete examples included
    - Links formatted correctly: `[text](path)` or `[text](references/file.md)`
 
-4. **Example check**:
+4. **Drift check**:
+   - Scan every section for enumerated data: tables of values, bulleted lists of names, hardcoded counts or versions
+   - For each instance, ask: "Does this data live in a source file that could change independently?"
+   - If yes: replace with a reference to the source file or companion script
+   - Common offenders: service/worker lists, resource allocations, package names, secret names, route tables, pipeline step lists, environment variables
+
+5. **Example check**:
    ```bash
    # Manually verify the content structure
    cat .skills/internal/{skill-name}/SKILL.md
@@ -262,6 +304,25 @@ If the skill is complete and approved:
 >
 > ✅ Complete! The skill is now available in all agent directories.
 
+### Example: Identifying and Extracting Volatile Data
+
+This example shows what happens when a first draft contains data that will drift.
+
+**Agent** writes a deployment skill with a table:
+
+> | Service | CPU | Memory | Max Instances |
+> |---|---|---|---|
+> | web | 1000m | 1Gi | 10 |
+> | render-fragment | 2000m | 4Gi | 200 |
+
+**Review** (Phase 4 drift check) catches this: the CPU, memory, and instance counts all come from `worker-resources.config.ts` and Pulumi `cloudrun.ts` files. If someone tunes render-fragment to 8Gi, the skill doc is immediately wrong.
+
+**Resolution**: Create a companion script (`scripts/deploy-info`) that parses those source files and emits current values. Replace the table in the skill with:
+
+> Run `scripts/deploy-info telecine` to see current services and resource allocations.
+
+The skill keeps its procedural and architectural content (how deployment works, how to scale resources, how to roll back). The volatile data is always queried fresh.
+
 ## Updating Existing Skills
 
 To update an existing skill:
@@ -291,20 +352,13 @@ To update an existing skill:
 
 ## Skill Directory
 
-Current skills in `.skills/internal/`:
+List current skills by inspecting the canonical directory:
 
-- **css-animations** - CSS animation fill-mode requirements
-- **diagnostic-logs** - Creating diagnostic logs for debugging
-- **editor-gui** - Building video editing interfaces
-- **monorepo-setup-git** - Git configuration and workflows
-- **monorepo-setup-worktrees** - Git worktrees setup
-- **profile-tests** - CPU performance profiling
-- **skills-creation** - This skill! Creating and maintaining skills
-- **skills-docs** - Skills documentation system (for published skills)
-- **swiss-bauhaus-design** - Design principles and aesthetics
-- **threejs-compositions** - 3D scenes with Three.js
-- **video-analysis** - Video file analysis and debugging
-- **visual-thinking** - Creating visual analogies and explanations
+```bash
+ls .skills/internal/
+```
+
+Each subdirectory is a skill. Read its `SKILL.md` frontmatter for the name and description.
 
 ## Key Files & Scripts
 
