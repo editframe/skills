@@ -16,22 +16,18 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { ExportButton } from "./ExportButton";
 
 /* ━━ Timing Constants (30fps frame-aligned) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const VOICEOVER_SRC = "https://assets.editframe.com/hero-voiceover-v2.mp3";
 const OVERLAP_MS = 495; // 15 frames
 
 const DUR = {
-  title: 3432,
-  author: 8712,
-  layers: 8910,
-  timeline: 10164,
-  editor: 8844,
-  template: 5841,
-  stream: 8976,
-  render: 8613,
+  title: 4400,
+  author: 8500,
+  layers: 10333,
+  timeline: 10567,
+  editor: 10400,
+  template: 6967,
+  stream: 7700,
+  render: 10667,
 } as const;
-
-const TOTAL_MS =
-  Object.values(DUR).reduce((a, b) => a + b, 0) - 7 * OVERLAP_MS; // 60027
 
 function sceneStyle(durationMs: number): React.CSSProperties {
   return {
@@ -40,7 +36,7 @@ function sceneStyle(durationMs: number): React.CSSProperties {
   };
 }
 
-/* ━━ Word-level caption data (from whisper timestamps, absolute ms) ━━━━━━ */
+/* ━━ Per-scene word-level caption data (timestamps relative to scene start) ━━ */
 interface WordTiming {
   /** display text */ w: string;
   /** start ms */ s: number;
@@ -52,85 +48,140 @@ interface CaptionGroup {
   words: WordTiming[];
 }
 
-const CAPTION_GROUPS: CaptionGroup[] = [
-  // Scene 1: Title
-  { showMs: 740, hideMs: 3200, words: [
-    { w: "Video", s: 840, e: 1160 }, { w: "shouldn't", s: 1160, e: 1520 }, { w: "be", s: 1520, e: 1840 }, { w: "this", s: 1840, e: 2120 }, { w: "hard", s: 2120, e: 2340 }, { w: "to", s: 2340, e: 2700 }, { w: "automate.", s: 2700, e: 3000 },
-  ] },
-  // Scene 2: Author
-  { showMs: 3260, hideMs: 5720, words: [
-    { w: "What", s: 3360, e: 3540 }, { w: "if", s: 3540, e: 3780 }, { w: "video", s: 3780, e: 4120 }, { w: "was", s: 4120, e: 4460 }, { w: "just", s: 4460, e: 4880 }, { w: "HTML?", s: 4880, e: 5520 },
-  ] },
-  { showMs: 6060, hideMs: 8220, words: [
-    { w: "Write", s: 6160, e: 6380 }, { w: "markup,", s: 6380, e: 6980 }, { w: "add", s: 7180, e: 7480 }, { w: "styles", s: 7480, e: 8020 }, { w: "\u2014", s: 8020, e: 8020 },
-  ] },
-  { showMs: 8460, hideMs: 11380, words: [
-    { w: "Editframe", s: 8560, e: 9080 }, { w: "renders", s: 9080, e: 9480 }, { w: "it", s: 9480, e: 9720 }, { w: "to", s: 9720, e: 9960 }, { w: "real", s: 9960, e: 10220 }, { w: "video", s: 10220, e: 10700 }, { w: "frames.", s: 10700, e: 11180 },
-  ] },
-  // Scene 3: Layers
-  { showMs: 11500, hideMs: 14040, words: [
-    { w: "Stack", s: 11600, e: 11900 }, { w: "layers", s: 11900, e: 12300 }, { w: "the", s: 12300, e: 12480 }, { w: "way", s: 12480, e: 12620 }, { w: "you'd", s: 12620, e: 12980 }, { w: "stack", s: 12980, e: 13160 }, { w: "divs", s: 13160, e: 13840 }, { w: "\u2014", s: 13840, e: 13840 },
-  ] },
-  { showMs: 13920, hideMs: 17360, words: [
-    { w: "video,", s: 14020, e: 14560 }, { w: "text,", s: 14820, e: 15260 }, { w: "shapes,", s: 15700, e: 16040 }, { w: "3D", s: 16580, e: 17160 }, { w: "\u2014", s: 17160, e: 17160 },
-  ] },
-  { showMs: 17280, hideMs: 19740, words: [
-    { w: "each", s: 17380, e: 17760 }, { w: "one", s: 17760, e: 18020 }, { w: "a", s: 18020, e: 18500 }, { w: "composable", s: 18500, e: 19100 }, { w: "element.", s: 19100, e: 19540 },
-  ] },
-  // Scene 4: Timeline
-  { showMs: 20000, hideMs: 21180, words: [
-    { w: "Need", s: 20100, e: 20220 }, { w: "an", s: 20220, e: 20500 }, { w: "editor?", s: 20500, e: 20880 },
-  ] },
-  { showMs: 21380, hideMs: 23820, words: [
-    { w: "Snap", s: 21480, e: 21740 }, { w: "together", s: 21740, e: 22240 }, { w: "GUI", s: 22240, e: 22840 }, { w: "primitives", s: 22840, e: 23620 }, { w: "\u2014", s: 23620, e: 23620 },
-  ] },
-  { showMs: 23840, hideMs: 26660, words: [
-    { w: "timeline,", s: 23940, e: 24440 }, { w: "waveforms,", s: 24860, e: 25780 }, { w: "captions", s: 26000, e: 26460 }, { w: "\u2014", s: 26460, e: 26460 },
-  ] },
-  { showMs: 27000, hideMs: 29680, words: [
-    { w: "into", s: 27100, e: 27380 }, { w: "any", s: 27380, e: 27840 }, { w: "editing", s: 27840, e: 28140 }, { w: "experience", s: 28140, e: 28900 }, { w: "you", s: 28900, e: 29260 }, { w: "want.", s: 29260, e: 29480 },
-  ] },
-  // Scene 5: Editor
-  { showMs: 29380, hideMs: 31660, words: [
-    { w: "A", s: 29480, e: 30160 }, { w: "full", s: 30160, e: 30600 }, { w: "NLE.", s: 30600, e: 31460 },
-  ] },
-  { showMs: 31820, hideMs: 34020, words: [
-    { w: "A", s: 31920, e: 32140 }, { w: "simple", s: 32140, e: 32460 }, { w: "trim", s: 32460, e: 32720 }, { w: "tool", s: 32720, e: 33020 }, { w: "in", s: 33020, e: 33220 }, { w: "a", s: 33220, e: 33500 }, { w: "form.", s: 33500, e: 33820 },
-  ] },
-  { showMs: 34120, hideMs: 35380, words: [
-    { w: "It's", s: 34220, e: 34500 }, { w: "your", s: 34500, e: 34760 }, { w: "UI", s: 34760, e: 35180 }, { w: "\u2014", s: 35180, e: 35180 },
-  ] },
-  { showMs: 35500, hideMs: 37780, words: [
-    { w: "these", s: 35600, e: 35840 }, { w: "are", s: 35840, e: 36120 }, { w: "just", s: 36120, e: 36480 }, { w: "the", s: 36480, e: 36760 }, { w: "building", s: 36760, e: 37020 }, { w: "blocks.", s: 37020, e: 37580 },
-  ] },
-  // Scene 6: Template
-  { showMs: 37960, hideMs: 39120, words: [
-    { w: "Feed", s: 38060, e: 38240 }, { w: "in", s: 38240, e: 38520 }, { w: "data,", s: 38520, e: 38920 },
-  ] },
-  { showMs: 39180, hideMs: 43180, words: [
-    { w: "and", s: 39280, e: 39580 }, { w: "one", s: 39580, e: 40100 }, { w: "template", s: 40100, e: 40520 }, { w: "becomes", s: 40520, e: 40960 }, { w: "10,000", s: 40960, e: 41840 }, { w: "unique", s: 41840, e: 42300 }, { w: "videos.", s: 42300, e: 42980 },
-  ] },
-  // Scene 7: Stream
-  { showMs: 43260, hideMs: 45020, words: [
-    { w: "Preview", s: 43360, e: 43860 }, { w: "is", s: 43860, e: 44240 }, { w: "instant.", s: 44240, e: 44820 },
-  ] },
-  { showMs: 45040, hideMs: 48020, words: [
-    { w: "Frames", s: 45140, e: 45760 }, { w: "stream", s: 46060, e: 46520 }, { w: "just-in-time,", s: 46840, e: 47820 },
-  ] },
-  { showMs: 48180, hideMs: 51680, words: [
-    { w: "so", s: 48280, e: 48500 }, { w: "you're", s: 48500, e: 48780 }, { w: "never", s: 48780, e: 49100 }, { w: "waiting", s: 49100, e: 49460 }, { w: "on", s: 49460, e: 49800 }, { w: "a", s: 49800, e: 50020 }, { w: "render", s: 50020, e: 50260 }, { w: "to", s: 50260, e: 50500 }, { w: "see", s: 50500, e: 50740 }, { w: "your", s: 50740, e: 51140 }, { w: "work.", s: 51140, e: 51480 },
-  ] },
-  // Scene 8: Render
-  { showMs: 51720, hideMs: 52900, words: [
-    { w: "When", s: 51820, e: 52020 }, { w: "it's", s: 52020, e: 52280 }, { w: "ready,", s: 52280, e: 52700 },
-  ] },
-  { showMs: 52920, hideMs: 56780, words: [
-    { w: "render", s: 53020, e: 53320 }, { w: "to", s: 53320, e: 53540 }, { w: "the", s: 53540, e: 53760 }, { w: "cloud,", s: 53760, e: 54060 }, { w: "the", s: 54360, e: 54580 }, { w: "browser,", s: 54580, e: 55040 }, { w: "or", s: 55320, e: 55540 }, { w: "the", s: 55540, e: 55800 }, { w: "command", s: 55800, e: 56160 }, { w: "line", s: 56160, e: 56580 }, { w: "\u2014", s: 56580, e: 56580 },
-  ] },
-  { showMs: 56480, hideMs: 59880, words: [
-    { w: "Same", s: 56580, e: 57560 }, { w: "composition,", s: 57560, e: 58500 }, { w: "every", s: 59120, e: 59320 }, { w: "target.", s: 59320, e: 59680 },
+const CAPTIONS_TITLE: CaptionGroup[] = [
+  { showMs: 0, hideMs: 2900, words: [
+    { w: "Video", s: 0, e: 960 }, { w: "shouldn't", s: 960, e: 1500 }, { w: "be", s: 1500, e: 1580 }, { w: "this", s: 1580, e: 1820 }, { w: "hard", s: 1820, e: 2080 }, { w: "to", s: 2080, e: 2280 }, { w: "automate.", s: 2280, e: 2640 },
   ] },
 ];
+
+const CAPTIONS_AUTHOR: CaptionGroup[] = [
+  { showMs: 0, hideMs: 1700, words: [
+    { w: "Video", s: 0, e: 200 }, { w: "is", s: 200, e: 640 }, { w: "just", s: 640, e: 880 }, { w: "markup.", s: 880, e: 1420 },
+  ] },
+  { showMs: 1700, hideMs: 4200, words: [
+    { w: "Write", s: 1920, e: 2040 }, { w: "HTML,", s: 2040, e: 2500 }, { w: "style", s: 3000, e: 3360 }, { w: "it", s: 3360, e: 3480 }, { w: "with", s: 3480, e: 3580 }, { w: "CSS,", s: 3580, e: 3980 },
+  ] },
+  { showMs: 4500, hideMs: 7400, words: [
+    { w: "then", s: 4720, e: 4860 }, { w: "reach", s: 4860, e: 5120 }, { w: "for", s: 5120, e: 5320 }, { w: "React", s: 5320, e: 5660 }, { w: "or", s: 5660, e: 5880 }, { w: "JavaScript", s: 5880, e: 6380 }, { w: "when", s: 6380, e: 6700 }, { w: "you", s: 6700, e: 6820 }, { w: "need", s: 6820, e: 6960 }, { w: "to.", s: 6960, e: 7160 },
+  ] },
+];
+
+const CAPTIONS_LAYERS: CaptionGroup[] = [
+  { showMs: 0, hideMs: 2600, words: [
+    { w: "Stack", s: 0, e: 780 }, { w: "layers", s: 780, e: 1180 }, { w: "like", s: 1180, e: 1460 }, { w: "you'd", s: 1460, e: 1680 }, { w: "stack", s: 1680, e: 1900 }, { w: "elements.", s: 1900, e: 2360 },
+  ] },
+  { showMs: 2700, hideMs: 7300, words: [
+    { w: "Video,", s: 2900, e: 3520 }, { w: "text,", s: 4040, e: 4440 }, { w: "shapes,", s: 5180, e: 5740 }, { w: "3D,", s: 6480, e: 7020 },
+  ] },
+  { showMs: 7400, hideMs: 9200, words: [
+    { w: "each", s: 7680, e: 7960 }, { w: "one", s: 7960, e: 8260 }, { w: "composable.", s: 8260, e: 8940 },
+  ] },
+];
+
+const CAPTIONS_TIMELINE: CaptionGroup[] = [
+  { showMs: 0, hideMs: 1800, words: [
+    { w: "Need", s: 0, e: 1060 }, { w: "an", s: 1060, e: 1280 }, { w: "editor?", s: 1280, e: 1600 },
+  ] },
+  { showMs: 1900, hideMs: 4300, words: [
+    { w: "Snap", s: 2140, e: 2520 }, { w: "together", s: 2520, e: 2960 }, { w: "GUI", s: 2960, e: 3460 }, { w: "primitives.", s: 3460, e: 4060 },
+  ] },
+  { showMs: 4200, hideMs: 6800, words: [
+    { w: "Timeline,", s: 4400, e: 5020 }, { w: "waveforms,", s: 5320, e: 6020 }, { w: "captions,", s: 6180, e: 6560 },
+  ] },
+  { showMs: 6800, hideMs: 9500, words: [
+    { w: "into", s: 6980, e: 7200 }, { w: "any", s: 7200, e: 7620 }, { w: "editing", s: 7620, e: 8040 }, { w: "experience", s: 8040, e: 8480 }, { w: "you", s: 8480, e: 8900 }, { w: "want.", s: 8900, e: 9240 },
+  ] },
+];
+
+const CAPTIONS_EDITOR: CaptionGroup[] = [
+  { showMs: 0, hideMs: 1600, words: [
+    { w: "A", s: 0, e: 180 }, { w: "full", s: 180, e: 580 }, { w: "NLE.", s: 580, e: 1380 },
+  ] },
+  { showMs: 1700, hideMs: 5400, words: [
+    { w: "A", s: 1960, e: 2200 }, { w: "simple", s: 2200, e: 3420 }, { w: "trim", s: 3420, e: 3700 }, { w: "tool", s: 3700, e: 4080 }, { w: "in", s: 4460, e: 4780 }, { w: "a", s: 4780, e: 4900 }, { w: "form.", s: 4900, e: 5200 },
+  ] },
+  { showMs: 5600, hideMs: 6700, words: [
+    { w: "It's", s: 5800, e: 6020 }, { w: "your", s: 6020, e: 6140 }, { w: "UI,", s: 6140, e: 6480 },
+  ] },
+  { showMs: 6800, hideMs: 9100, words: [
+    { w: "these", s: 7080, e: 7400 }, { w: "are", s: 7400, e: 7540 }, { w: "just", s: 7540, e: 7820 }, { w: "the", s: 7820, e: 7820 }, { w: "building", s: 7820, e: 8340 }, { w: "blocks.", s: 8340, e: 8840 },
+  ] },
+];
+
+const CAPTIONS_TEMPLATE: CaptionGroup[] = [
+  { showMs: 0, hideMs: 1100, words: [
+    { w: "Feed", s: 0, e: 480 }, { w: "in", s: 480, e: 480 }, { w: "data,", s: 500, e: 820 },
+  ] },
+  { showMs: 800, hideMs: 5500, words: [
+    { w: "and", s: 820, e: 1760 }, { w: "one", s: 1760, e: 2140 }, { w: "template", s: 2140, e: 2740 }, { w: "becomes", s: 2740, e: 3100 }, { w: "10,000", s: 3100, e: 4180 }, { w: "unique", s: 4180, e: 4620 }, { w: "videos.", s: 4620, e: 5260 },
+  ] },
+];
+
+const CAPTIONS_STREAM: CaptionGroup[] = [
+  { showMs: 300, hideMs: 2000, words: [
+    { w: "Preview", s: 520, e: 1040 }, { w: "is", s: 1040, e: 1200 }, { w: "instant.", s: 1200, e: 1720 },
+  ] },
+  { showMs: 2100, hideMs: 3900, words: [
+    { w: "Frames", s: 2300, e: 2820 }, { w: "stream", s: 2820, e: 3140 }, { w: "just-in-time,", s: 3140, e: 3720 },
+  ] },
+  { showMs: 3800, hideMs: 6600, words: [
+    { w: "so", s: 4020, e: 4280 }, { w: "you're", s: 4280, e: 4460 }, { w: "never", s: 4460, e: 4720 }, { w: "waiting", s: 4720, e: 5060 }, { w: "on", s: 5060, e: 5260 }, { w: "a", s: 5260, e: 5340 }, { w: "render", s: 5340, e: 5580 }, { w: "to", s: 5580, e: 5780 }, { w: "see", s: 5780, e: 5940 }, { w: "your", s: 5940, e: 6100 }, { w: "work.", s: 6100, e: 6360 },
+  ] },
+];
+
+const CAPTIONS_RENDER: CaptionGroup[] = [
+  { showMs: 0, hideMs: 1800, words: [
+    { w: "When", s: 0, e: 920 }, { w: "it's", s: 920, e: 1220 }, { w: "ready,", s: 1220, e: 1560 },
+  ] },
+  { showMs: 1700, hideMs: 6000, words: [
+    { w: "render", s: 1880, e: 2360 }, { w: "to", s: 2360, e: 2620 }, { w: "the", s: 2620, e: 2760 }, { w: "cloud,", s: 2760, e: 3240 }, { w: "the", s: 3520, e: 3680 }, { w: "browser,", s: 3680, e: 4200 }, { w: "or", s: 4660, e: 4760 }, { w: "the", s: 4760, e: 4900 }, { w: "command", s: 4900, e: 5260 }, { w: "line.", s: 5260, e: 5760 },
+  ] },
+  { showMs: 6100, hideMs: 9500, words: [
+    { w: "Same", s: 6320, e: 6740 }, { w: "composition,", s: 6740, e: 7500 }, { w: "every", s: 8020, e: 8560 }, { w: "target.", s: 8560, e: 9220 },
+  ] },
+];
+
+const AUDIO_BASE = "/audio/hero";
+
+function SceneCaptions({ groups }: { groups: CaptionGroup[] }) {
+  return (
+    <div className="absolute inset-0 z-10 pointer-events-none">
+      {groups.map((group, gi) => (
+        <div
+          key={gi}
+          className="absolute bottom-4 left-0 right-0 flex justify-center px-8"
+          style={{
+            animation: `hero-fade-in 100ms ease-out both`,
+            animationDelay: `${group.showMs}ms`,
+          }}
+        >
+          <span
+            className="inline-block bg-black/90 text-white text-lg font-semibold px-4 py-2 text-center leading-snug tracking-wide"
+            style={{
+              animation: `hero-fade-out 100ms ease-in both`,
+              animationDelay: `${group.hideMs}ms`,
+            }}
+          >
+            {group.words.map((word, wi) => {
+              const dur = Math.max(word.e - word.s, 80);
+              return (
+                <span
+                  key={wi}
+                  style={{
+                    animation: `hero-word-on 80ms ease-out both, hero-word-speak ${dur}ms ease both`,
+                    animationDelay: `${word.s}ms, ${word.s}ms`,
+                  }}
+                >
+                  {word.w}{wi < group.words.length - 1 ? " " : ""}
+                </span>
+              );
+            })}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    Scene 1: Title — "BUILD VIDEO WITH CODE" char-level shatter-assemble
@@ -139,6 +190,7 @@ function SceneTitle() {
   const d = DUR.title;
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
+      <Audio src={`${AUDIO_BASE}/01-title.mp3`} />
       <div className="absolute inset-0" style={{
         background: "radial-gradient(ellipse 80% 60% at 50% 50%, rgba(21,101,192,0.08) 0%, transparent 70%)",
       }} />
@@ -165,6 +217,7 @@ function SceneTitle() {
           }}
         />
       </div>
+      <SceneCaptions groups={CAPTIONS_TITLE} />
     </Timegroup>
   );
 }
@@ -175,16 +228,18 @@ function SceneTitle() {
 function SceneAuthor() {
   const d = DUR.author;
   const codeLines = [
-    { text: '<div class="card">', color: "text-[var(--poster-blue)]" },
-    { text: '  <h1>Welcome back</h1>', color: "text-white/80" },
-    { text: '  <p style="color: gold">', color: "text-white/80" },
-    { text: "    Your 2024 highlights", color: "text-[var(--poster-gold)]" },
-    { text: "  </p>", color: "text-white/80" },
-    { text: "</div>", color: "text-[var(--poster-blue)]" },
+    { text: '<video src="clip.mp4" />', color: "text-[var(--poster-blue)]" },
+    { text: '<h1 class="title">', color: "text-white/80" },
+    { text: "  Welcome back", color: "text-white/60" },
+    { text: "</h1>", color: "text-white/80" },
+    { text: '<style>', color: "text-[var(--poster-gold)]" },
+    { text: '  .title { color: gold }', color: "text-[var(--poster-gold)]/70" },
+    { text: '</style>', color: "text-[var(--poster-gold)]" },
   ];
 
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
+      <Audio src={`${AUDIO_BASE}/02-author.mp3`} />
       <div className="absolute inset-0" style={{
         background: "radial-gradient(ellipse 60% 50% at 75% 50%, rgba(21,101,192,0.06) 0%, transparent 70%)",
       }} />
@@ -199,7 +254,7 @@ function SceneAuthor() {
               <div className="w-2 h-2 rounded-full bg-[var(--poster-red)]/60" />
               <div className="w-2 h-2 rounded-full bg-[var(--poster-gold)]/60" />
               <div className="w-2 h-2 rounded-full bg-[var(--poster-green)]/60" />
-              <span className="ml-2 text-[9px] font-mono text-white/30">composition.tsx</span>
+              <span className="ml-2 text-[9px] font-mono text-white/30">composition.html</span>
             </div>
             <div className="p-4 font-mono text-sm leading-relaxed bg-white/[0.02]">
               {codeLines.map((line, i) => (
@@ -243,8 +298,7 @@ function SceneAuthor() {
               background: "linear-gradient(160deg, #1a2440 0%, #0f1a30 50%, #1a1230 100%)",
             }} />
             <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
-              <div className="text-white text-2xl font-black mb-2">Welcome back</div>
-              <div className="text-[var(--poster-gold)] text-base">Your 2024 highlights</div>
+              <div className="text-[var(--poster-gold)] text-2xl font-black">Welcome back</div>
             </div>
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
               <div className="h-full bg-[var(--poster-red)]" style={{
@@ -256,6 +310,7 @@ function SceneAuthor() {
           </div>
         </div>
       </div>
+      <SceneCaptions groups={CAPTIONS_AUTHOR} />
     </Timegroup>
   );
 }
@@ -329,6 +384,7 @@ function SceneLayers() {
   const d = DUR.layers;
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
+      <Audio src={`${AUDIO_BASE}/03-layers.mp3`} />
       <div className="absolute inset-0" style={{
         background: "radial-gradient(ellipse 70% 60% at 50% 45%, rgba(21,101,192,0.05) 0%, transparent 70%)",
       }} />
@@ -368,6 +424,7 @@ function SceneLayers() {
           ))}
         </div>
       </div>
+      <SceneCaptions groups={CAPTIONS_LAYERS} />
     </Timegroup>
   );
 }
@@ -390,6 +447,7 @@ function SceneTimeline() {
 
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
+      <Audio src={`${AUDIO_BASE}/04-timeline.mp3`} />
       <div className="absolute inset-0 flex flex-col">
         {/* Ruler header */}
         <div className="px-6 py-3 flex items-center justify-between border-b border-white/10">
@@ -482,6 +540,7 @@ function SceneTimeline() {
           />
         </div>
       </div>
+      <SceneCaptions groups={CAPTIONS_TIMELINE} />
     </Timegroup>
   );
 }
@@ -493,6 +552,7 @@ function SceneEditor() {
   const d = DUR.editor;
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
+      <Audio src={`${AUDIO_BASE}/05-editor.mp3`} />
       <div className="absolute inset-0 p-6 flex flex-col gap-2">
         {/* Preview viewport */}
         <div
@@ -503,14 +563,10 @@ function SceneEditor() {
             background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
           }} />
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="text-white text-xl font-bold mb-1" style={{
+            <div className="text-[var(--poster-gold)] text-xl font-bold" style={{
               animation: "hero-fade-in 400ms ease-out both",
               animationDelay: "1200ms",
             }}>Welcome back</div>
-            <div className="text-[var(--poster-gold)] text-sm" style={{
-              animation: "hero-fade-in 400ms ease-out both",
-              animationDelay: "1500ms",
-            }}>Your 2024 highlights</div>
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
             <div className="h-full bg-[var(--poster-red)]" style={{
@@ -590,6 +646,7 @@ function SceneEditor() {
           <span>&lt;TrimHandles&gt;</span>
         </div>
       </div>
+      <SceneCaptions groups={CAPTIONS_EDITOR} />
     </Timegroup>
   );
 }
@@ -610,6 +667,7 @@ function SceneTemplate() {
 
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
+      <Audio src={`${AUDIO_BASE}/06-template.mp3`} />
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         {/* Year watermark - positioned to not overlap stats */}
         <div
@@ -653,6 +711,7 @@ function SceneTemplate() {
           </div>
         </div>
       </div>
+      <SceneCaptions groups={CAPTIONS_TEMPLATE} />
     </Timegroup>
   );
 }
@@ -717,6 +776,7 @@ function SceneStream() {
   const d = DUR.stream;
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
+      <Audio src={`${AUDIO_BASE}/07-stream.mp3`} />
       <CompositionCanvas
         camera={{ position: [0, 0.5, 7], fov: 35 }}
         gl={{ antialias: true, alpha: true }}
@@ -746,6 +806,7 @@ function SceneStream() {
           <span className="text-[10px] font-mono text-white/40 uppercase">Live</span>
         </div>
       </div>
+      <SceneCaptions groups={CAPTIONS_STREAM} />
     </Timegroup>
   );
 }
@@ -764,6 +825,7 @@ function SceneRender() {
 
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
+      <Audio src={`${AUDIO_BASE}/08-render.mp3`} />
       <div className="absolute inset-0 flex flex-col justify-center px-12 gap-5">
         <div
           className="text-[10px] font-mono uppercase tracking-[0.3em] text-white/30"
@@ -881,55 +943,7 @@ function SceneRender() {
           </div>
         </div>
       </div>
-    </Timegroup>
-  );
-}
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   Caption Overlay — word-level karaoke captions
-   Each word lights up when spoken (opacity 0.4 → 1) and gets a brief
-   gold color flash. Group visibility uses nested fade-in / fade-out.
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-function CaptionOverlay() {
-  return (
-    <Timegroup
-      mode="fixed"
-      duration={`${TOTAL_MS}ms`}
-      className="absolute inset-0 z-10 pointer-events-none"
-    >
-      {CAPTION_GROUPS.map((group, gi) => (
-        <div
-          key={gi}
-          className="absolute bottom-4 left-0 right-0 flex justify-center px-8"
-          style={{
-            animation: `hero-fade-in 100ms ease-out both`,
-            animationDelay: `${group.showMs}ms`,
-          }}
-        >
-          <span
-            className="inline-block bg-black/90 text-white text-lg font-semibold px-4 py-2 text-center leading-snug tracking-wide"
-            style={{
-              animation: `hero-fade-out 100ms ease-in both`,
-              animationDelay: `${group.hideMs}ms`,
-            }}
-          >
-            {group.words.map((word, wi) => {
-              const dur = Math.max(word.e - word.s, 80);
-              return (
-                <span
-                  key={wi}
-                  style={{
-                    animation: `hero-word-on 80ms ease-out both, hero-word-speak ${dur}ms ease both`,
-                    animationDelay: `${word.s}ms, ${word.s}ms`,
-                  }}
-                >
-                  {word.w}{wi < group.words.length - 1 ? " " : ""}
-                </span>
-              );
-            })}
-          </span>
-        </div>
-      ))}
+      <SceneCaptions groups={CAPTIONS_RENDER} />
     </Timegroup>
   );
 }
@@ -943,7 +957,6 @@ function HeroDemoContent() {
         className="relative"
         style={{ width: 960, height: 540 }}
       >
-        <Audio src={VOICEOVER_SRC} />
         <Timegroup
           mode="sequence"
           overlapMs={OVERLAP_MS}
@@ -959,7 +972,6 @@ function HeroDemoContent() {
           <SceneStream />
           <SceneRender />
         </Timegroup>
-        <CaptionOverlay />
       </Timegroup>
     </FitScale>
   );
