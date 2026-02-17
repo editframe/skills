@@ -39,7 +39,7 @@ export function PromptToToolSection() {
             <div className="w-8 h-2 bg-white/40" />
           </div>
           <p className="text-xl text-white/80 max-w-2xl mx-auto">
-            Agent skills turn natural language into production-ready video tools.
+            Skills are documentation your agent can use as tools.
             Describe what you want. Get working code.
           </p>
         </div>
@@ -89,7 +89,7 @@ export function PromptToToolSection() {
             to="/skills"
             className="inline-flex items-center px-8 py-4 bg-white text-[var(--poster-green)] dark:text-[#1a3a1a] font-bold text-sm uppercase tracking-wider hover:bg-[var(--poster-gold)] hover:text-[var(--ink-black)] transition-colors shadow-poster-hard"
           >
-            Explore agent skills
+            Explore docs & skills
             <svg className="ml-3 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>

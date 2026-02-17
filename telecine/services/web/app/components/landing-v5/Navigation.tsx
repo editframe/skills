@@ -17,7 +17,7 @@ export function Navigation({ isLoggedIn }: NavigationProps) {
           <span className="text-xl font-black tracking-tighter uppercase">editframe</span>
         </Link>
         <div className="hidden md:flex items-center gap-1">
-          <LandingNavLink to="/skills">Agent Skills</LandingNavLink>
+          <LandingNavLink to="/skills">Docs & Skills</LandingNavLink>
         </div>
         <div className="flex items-center gap-3">
           <ThemeToggle />
@@ -37,7 +37,7 @@ export function Navigation({ isLoggedIn }: NavigationProps) {
                 to="/auth/register"
                 className="hidden md:inline-flex px-5 py-2 bg-[var(--poster-red)] text-white text-sm font-bold uppercase tracking-wider hover:bg-[var(--poster-blue)] transition-colors"
               >
-                Join Waitlist
+                Cloud Waitlist
               </Link>
             </>
           )}
@@ -56,7 +56,7 @@ export function Navigation({ isLoggedIn }: NavigationProps) {
         <div className="md:hidden border-t-2 border-[var(--ink-black)] dark:border-white bg-[var(--paper-cream)]">
           <div className="px-6 py-4 flex flex-col gap-2">
             <LandingNavLink to="/skills" onClick={() => setMobileMenuOpen(false)}>
-              Agent Skills
+              Docs & Skills
             </LandingNavLink>
             {!isLoggedIn && (
               <>
@@ -69,7 +69,7 @@ export function Navigation({ isLoggedIn }: NavigationProps) {
                   onClick={() => setMobileMenuOpen(false)}
                   className="px-4 py-3 bg-[var(--poster-red)] text-white text-sm font-bold uppercase tracking-wider text-center hover:bg-[var(--poster-blue)] transition-colors"
                 >
-                  Join Waitlist
+                  Cloud Waitlist
                 </Link>
               </>
             )}

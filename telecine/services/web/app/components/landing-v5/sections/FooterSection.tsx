@@ -9,7 +9,7 @@ export function FooterSection() {
           <div className="md:col-span-2">
             <Link to="/" className="text-2xl font-black tracking-tighter uppercase">editframe</Link>
             <p className="mt-4 text-sm text-white/60 max-w-xs">
-              Build video with code. React components, instant preview, hyperscale rendering.
+              Build video with code. HTML + CSS compositions with scripting and React support. Instant preview, hyperscale rendering.
             </p>
             {/* Color bar accent */}
             <div className="flex gap-1 mt-6">
@@ -24,7 +24,7 @@ export function FooterSection() {
           <div>
             <h3 className="font-bold text-sm uppercase tracking-wider mb-4">Product</h3>
             <ul className="space-y-3">
-              <li><Link to="/skills" className="text-sm text-white/60 hover:text-white transition-colors">Agent Skills</Link></li>
+              <li><Link to="/skills" className="text-sm text-white/60 hover:text-white transition-colors">Docs & Skills</Link></li>
               <li><Link to="/changelog" className="text-sm text-white/60 hover:text-white transition-colors">Changelog</Link></li>
             </ul>
           </div>

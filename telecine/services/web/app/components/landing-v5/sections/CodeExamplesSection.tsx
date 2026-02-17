@@ -23,7 +23,7 @@ export function CodeExamplesSection() {
               Just<br />Code
             </h2>
             <p className="text-xl text-white/70 max-w-xl">
-              If you know React and CSS, you know Editframe. Standard web layout. No proprietary system to learn.
+              HTML and CSS are the foundation. Add scripting for animation. Use React when you want components. No proprietary system to learn.
             </p>
           </div>
         </div>
@@ -75,14 +75,14 @@ const WelcomeVideo = ({ user }) => (
           <div className="grid md:grid-cols-3 gap-6 mt-12">
             {[
               {
-                icon: <Atom size={28} weight="bold" aria-hidden="true" />,
-                title: 'React Components',
-                desc: 'Familiar JSX syntax. Props, state, hooks — everything you know.'
-              },
-              {
                 icon: <Browsers size={28} weight="bold" aria-hidden="true" />,
                 title: 'HTML & CSS',
-                desc: 'Standard web layout. Tailwind, flexbox, grid — it all works.'
+                desc: 'The foundation. Tailwind, flexbox, grid, animations — standard web layout.'
+              },
+              {
+                icon: <Atom size={28} weight="bold" aria-hidden="true" />,
+                title: 'Scripting & React',
+                desc: 'Add scripting for dynamic content. Use React components when you want them.'
               },
               {
                 icon: <Target size={28} weight="bold" aria-hidden="true" />,
