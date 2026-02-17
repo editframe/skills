@@ -1,4 +1,4 @@
-import { useId, useEffect, useState, useRef, useCallback } from "react";
+import { useId, useEffect, useState, useRef } from "react";
 import {
   Preview,
   FitScale,
@@ -438,24 +438,21 @@ export function HeroDemo() {
   useEffect(() => {
     if (!isClient) return;
     let raf: number;
+    let prevScene = 0;
     const tick = () => {
       const el = previewRef.current as any;
       if (el?.currentTimeMs != null && !Number.isNaN(el.currentTimeMs)) {
-        setActiveScene(getActiveScene(el.currentTimeMs));
+        const scene = getActiveScene(el.currentTimeMs);
+        if (scene !== prevScene) {
+          prevScene = scene;
+          setActiveScene(scene);
+        }
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [isClient]);
-
-  const autoPlay = useCallback((el: HTMLElement | null) => {
-    if (!el) return;
-    (previewRef as any).current = el;
-    requestAnimationFrame(() => {
-      (el as any).play?.();
-    });
-  }, []);
 
   return (
     <div className="w-full relative">
@@ -464,7 +461,7 @@ export function HeroDemo() {
           {isClient ? (
             <Preview
               id={previewId}
-              ref={autoPlay}
+              ref={previewRef as any}
               loop
               className="block w-full h-full"
             >
