@@ -676,110 +676,227 @@ function SceneLayers() {
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function SceneTimeline() {
   const d = DUR.timeline;
+
   const tracks = [
-    { label: "Video", color: "var(--poster-blue)", width: "85%", left: "5%" },
-    { label: "Caption", color: "var(--poster-gold)", width: "60%", left: "15%" },
-    { label: "Audio", color: "var(--poster-green)", width: "90%", left: "2%" },
-    { label: "Overlay", color: "var(--poster-red)", width: "40%", left: "30%" },
+    { label: "Video", tag: "<VideoTrack>", color: "var(--poster-blue)", width: "85%", left: "5%" },
+    { label: "Caption", tag: "<Captions>", color: "var(--poster-gold)", width: "60%", left: "15%" },
+    { label: "Audio", tag: "<Waveform>", color: "var(--poster-green)", width: "90%", left: "2%" },
+    { label: "Overlay", tag: "<Overlay>", color: "var(--poster-red)", width: "40%", left: "30%" },
   ];
 
-  const waveformHeights = Array.from({ length: 60 }, (_, j) =>
-    20 + Math.sin(j * 0.5) * 30 + Math.abs(Math.sin(j * 1.7 + 3)) * 40
-  );
+  const waveformSvgPath = Array.from({ length: 100 }, (_, j) => {
+    const t = j / 99;
+    const y = Math.sin(t * 12) * 0.3
+      + Math.sin(t * 28 + 1.2) * 0.2
+      + Math.sin(t * 5.5 + 0.7) * 0.25
+      + (Math.sin(t * 60) * 0.1 * Math.sin(t * 3));
+    const h = Math.abs(y);
+    const x = t * 100;
+    return `M${x},${50 - h * 45} L${x},${50 + h * 45}`;
+  }).join(" ");
 
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
       <Audio src={AUDIO_SRC.timeline} />
-      <div className="absolute inset-0 flex flex-col">
+      <div className="absolute inset-0 flex flex-col" style={{ padding: "12px 24px", gap: "6px" }}>
+
         {/* Ruler header */}
-        <div className="px-6 py-3 flex items-center justify-between border-b border-white/10">
-          <div
-            className="text-[10px] font-mono uppercase tracking-[0.3em] text-white/30"
-            style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "200ms" }}
-          >
-            timeline
-          </div>
-          <div
-            className="flex gap-6"
-            style={{ animation: "hero-fade-in 330ms ease-out both", animationDelay: "400ms" }}
-          >
+        <div
+          className="flex items-center justify-between"
+          style={{
+            animation: "hero-fade-in 300ms ease-out both",
+            animationDelay: "150ms",
+            height: "28px",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            paddingBottom: "6px",
+          }}
+        >
+          <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-white/30">timeline</div>
+          <div className="flex gap-6">
             {["00:00", "00:05", "00:10", "00:15", "00:20"].map((t) => (
               <div key={t} className="text-[10px] font-mono text-white/40">{t}</div>
             ))}
           </div>
         </div>
 
-        {/* Mini preview window above tracks */}
-        <div
-          className="mx-6 mt-4 mb-2 h-28 border border-white/10 relative overflow-hidden"
-          style={{ animation: "hero-fade-in 400ms ease-out both", animationDelay: "300ms" }}
-        >
-          <div className="absolute inset-0" style={{
-            background: "linear-gradient(135deg, #1565C0 0%, #0a0a0a 50%, #E53935 100%)",
-            opacity: 0.2,
-          }} />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-white/20 text-sm font-mono">Preview</div>
+        {/* Preview — snaps in as first component block */}
+        <div className="relative" style={{
+          animation: "hero-snap-in 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both",
+          animationDelay: "400ms",
+        }}>
+          <div className="absolute -top-0.5 left-1 z-10" style={{
+            animation: "hero-label-flash 1800ms ease-out both",
+            animationDelay: "500ms",
+          }}>
+            <span className="text-[9px] font-mono text-[var(--poster-gold)]">&lt;Preview&gt;</span>
           </div>
-        </div>
-
-        {/* Track list */}
-        <div className="flex-1 flex flex-col justify-center px-6 gap-2">
-          {tracks.map((track, i) => (
-            <div
-              key={track.label}
-              className="flex items-center gap-3"
-              style={{
-                animation: "hero-slide-up-decel 264ms ease-out both",
-                animationDelay: `${500 + i * 200}ms`,
-              }}
-            >
-              <span className="text-[10px] font-mono text-white/50 w-14 text-right uppercase">{track.label}</span>
-              <div className="flex-1 h-10 bg-white/3 relative border border-white/5">
-                <div
-                  className="absolute top-0 bottom-0 border border-white/20"
-                  style={{
-                    left: track.left,
-                    width: track.width,
-                    background: `color-mix(in srgb, ${track.color} 20%, transparent)`,
-                    borderColor: `color-mix(in srgb, ${track.color} 40%, transparent)`,
-                    animation: "hero-reveal-left 396ms cubic-bezier(0.36, 0, 0.66, 1) both",
-                    animationDelay: `${1200 + i * 250}ms`,
-                  }}
-                >
-                  {track.label === "Audio" && (
-                    <div className="absolute inset-0 flex items-center gap-px px-1 overflow-hidden">
-                      {waveformHeights.map((h, j) => (
-                        <div
-                          key={j}
-                          className="flex-1 bg-[var(--poster-green)]"
-                          style={{ height: `${h}%`, opacity: 0.5 }}
-                        />
-                      ))}
-                    </div>
-                  )}
-                  {track.label === "Caption" && (
-                    <div className="absolute inset-0 flex items-center px-2 gap-4 overflow-hidden">
-                      {["Hello world", "Welcome back", "Your highlights"].map((text, j) => (
-                        <span key={j} className="text-[9px] font-mono text-[var(--poster-gold)] whitespace-nowrap opacity-60">{text}</span>
-                      ))}
-                    </div>
-                  )}
+          <div className="border border-white/15 relative overflow-hidden" style={{ height: "150px" }}>
+            <div className="absolute inset-0" style={{
+              background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 70%, #1a1a2e 100%)",
+            }} />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="relative" style={{ width: "60%", height: "70%" }}>
+                <div className="absolute bottom-0 left-0 right-0" style={{
+                  height: "40%",
+                  background: "linear-gradient(180deg, #1a3a2a 0%, #0d1f16 100%)",
+                  opacity: 0.7,
+                }} />
+                <div className="absolute top-[15%] left-[10%]" style={{
+                  width: "35%", height: "45%",
+                  background: "linear-gradient(180deg, rgba(21,101,192,0.3) 0%, rgba(15,52,96,0.2) 100%)",
+                  borderRadius: "2px",
+                }} />
+                <div className="absolute bottom-[20%] left-[8%] right-[8%]">
+                  <div className="text-[var(--poster-gold)] text-sm font-bold" style={{ opacity: 0.9 }}>Welcome back</div>
+                  <div className="text-white/40 text-[9px] font-mono mt-0.5">00:03.12 / 00:20.00</div>
                 </div>
               </div>
             </div>
-          ))}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ opacity: 0.04 }}>
+              <div className="w-full" style={{
+                height: "30%",
+                background: "linear-gradient(180deg, transparent, white, transparent)",
+                animation: "hero-scanline 3000ms linear infinite",
+                animationDelay: "800ms",
+              }} />
+            </div>
+            <div className="absolute pointer-events-none" style={{
+              top: "10%", left: "10%", right: "10%", bottom: "10%",
+              border: "1px dashed rgba(255,255,255,0.06)",
+            }} />
+            <div className="absolute bottom-0 left-0 right-0 flex items-center gap-2 px-3 py-1.5" style={{
+              background: "linear-gradient(transparent, rgba(0,0,0,0.6))",
+              animation: "hero-fade-in 300ms ease-out both",
+              animationDelay: "1000ms",
+            }}>
+              <svg className="w-3 h-3 text-white/60" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+              <div className="flex-1 h-0.5 bg-white/10 relative">
+                <div className="absolute inset-y-0 left-0 bg-[var(--poster-red)]" style={{
+                  animation: "hero-progress-spring 5000ms ease-out both",
+                  animationDelay: "2500ms",
+                  ["--bar-target" as string]: "65%",
+                }} />
+              </div>
+              <span className="text-[8px] font-mono text-white/40">00:13 / 00:20</span>
+            </div>
+          </div>
         </div>
 
-        {/* Playhead - fixed pixel sweep instead of vw */}
-        <div className="absolute top-12 bottom-0 pointer-events-none" style={{ left: "80px" }}>
+        {/* Track list — each row snaps in sequentially like lego bricks */}
+        <div className="flex flex-col" style={{ gap: "4px", flex: 1 }}>
+          {tracks.map((track, i) => {
+            const snapDelay = 900 + i * 180;
+            const clipDelay = snapDelay + 400;
+            return (
+              <div key={track.label} className="relative" style={{
+                animation: "hero-snap-in 350ms cubic-bezier(0.34, 1.56, 0.64, 1) both",
+                animationDelay: `${snapDelay}ms`,
+              }}>
+                <div className="absolute -top-0.5 right-1 z-10" style={{
+                  animation: "hero-label-flash 2000ms ease-out both",
+                  animationDelay: `${snapDelay + 100}ms`,
+                }}>
+                  <span className="text-[8px] font-mono text-[var(--poster-gold)]">{track.tag}</span>
+                </div>
+                <div className="flex items-center gap-2" style={{ height: "36px" }}>
+                  <span className="text-[9px] font-mono text-white/50 uppercase" style={{ width: "52px", textAlign: "right" }}>{track.label}</span>
+                  <div className="flex-1 h-full bg-white/[0.02] relative border border-white/[0.06]">
+                    <div
+                      className="absolute top-0 bottom-0"
+                      style={{
+                        left: track.left,
+                        width: track.width,
+                        background: `color-mix(in srgb, ${track.color} 18%, transparent)`,
+                        borderTop: `1px solid color-mix(in srgb, ${track.color} 50%, transparent)`,
+                        borderBottom: `1px solid color-mix(in srgb, ${track.color} 50%, transparent)`,
+                        borderLeft: `2px solid color-mix(in srgb, ${track.color} 70%, transparent)`,
+                        borderRight: `2px solid color-mix(in srgb, ${track.color} 70%, transparent)`,
+                        animation: "hero-reveal-left 350ms cubic-bezier(0.36, 0, 0.66, 1) both",
+                        animationDelay: `${clipDelay}ms`,
+                      }}
+                    >
+                      {track.label === "Video" && (
+                        <>
+                          <div className="absolute inset-0 flex overflow-hidden">
+                            {Array.from({ length: 12 }).map((_, j) => (
+                              <div key={j} className="flex-1 border-r border-white/[0.04]" style={{
+                                background: `linear-gradient(${150 + j * 15}deg, hsl(${215 + j * 4}, 30%, ${9 + j * 1.5}%) 0%, hsl(${220 + j * 6}, 25%, ${12 + j}%) 100%)`,
+                              }} />
+                            ))}
+                          </div>
+                          <div className="absolute top-0.5 left-1.5">
+                            <span className="text-[7px] font-mono text-white/50">interview_final.mp4</span>
+                          </div>
+                          <div className="absolute bottom-1 left-[20%] w-1.5 h-1.5 bg-[var(--poster-gold)] rotate-45 opacity-50" />
+                          <div className="absolute bottom-1 left-[55%] w-1.5 h-1.5 bg-[var(--poster-gold)] rotate-45 opacity-50" />
+                          <div className="absolute bottom-1 left-[78%] w-1.5 h-1.5 bg-[var(--poster-gold)] rotate-45 opacity-50" />
+                        </>
+                      )}
+                      {track.label === "Caption" && (
+                        <div className="absolute inset-0 flex items-center px-1 gap-1 overflow-hidden">
+                          {[
+                            { text: "Hello world", w: "28%" },
+                            { text: "Welcome back", w: "32%" },
+                            { text: "Your highlights", w: "35%" },
+                          ].map((seg, j) => (
+                            <div key={j} className="h-[60%] flex items-center justify-center px-1.5" style={{
+                              width: seg.w,
+                              background: "color-mix(in srgb, var(--poster-gold) 15%, transparent)",
+                              border: "1px solid color-mix(in srgb, var(--poster-gold) 25%, transparent)",
+                              borderRadius: "2px",
+                            }}>
+                              <span className="text-[7px] font-mono text-[var(--poster-gold)] whitespace-nowrap opacity-70">{seg.text}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {track.label === "Audio" && (
+                        <div className="absolute inset-0 overflow-hidden">
+                          <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full" style={{ opacity: 0.5 }}>
+                            <path d={waveformSvgPath} stroke="var(--poster-green)" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+                          </svg>
+                        </div>
+                      )}
+                      {track.label === "Overlay" && (
+                        <>
+                          <div className="absolute inset-0" style={{
+                            background: "linear-gradient(90deg, color-mix(in srgb, var(--poster-red) 30%, transparent), color-mix(in srgb, var(--poster-red) 12%, transparent))",
+                          }} />
+                          <div className="absolute top-0.5 left-1.5">
+                            <span className="text-[7px] font-mono text-white/45">lower_third.html</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    {[20, 40, 60, 80].map((pct) => (
+                      <div key={pct} className="absolute top-0 bottom-0 w-px bg-white/[0.03]" style={{ left: `${pct}%` }} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Playhead — snaps in at VO "snap" (~2200ms), then sweeps */}
+        <div className="absolute pointer-events-none" style={{ left: "76px", top: "40px", bottom: "12px" }}>
           <div
-            className="w-0.5 h-full bg-white"
+            className="w-0.5 h-full"
             style={{
-              animation: "hero-fade-in 198ms ease-out both, hero-playhead-sweep-fixed 6000ms linear both",
-              animationDelay: "2500ms, 2500ms",
+              transformOrigin: "top center",
+              animation: "hero-playhead-snap 250ms cubic-bezier(0.34, 1.56, 0.64, 1) both, hero-playhead-sweep-fixed 6500ms linear both",
+              animationDelay: "2200ms, 2400ms",
+              background: "linear-gradient(180deg, white 0%, white 80%, transparent 100%)",
             }}
-          />
+          >
+            <div className="absolute -top-1 left-1/2 -translate-x-1/2" style={{
+              width: "8px", height: "8px",
+              background: "white",
+              clipPath: "polygon(0 0, 100% 0, 100% 50%, 50% 100%, 0 50%)",
+            }} />
+          </div>
         </div>
       </div>
       <SceneCaptions groups={CAPTIONS_TIMELINE} />
