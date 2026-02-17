@@ -255,6 +255,62 @@ describe("serializeTimelineDirect", () => {
     });
   });
 
+  describe("display recovery for text segments", () => {
+    it("should serialize inline text segments as display:inline when they have stale display:none from temporal visibility", async () => {
+      const text = document.createElement("ef-text") as EFText;
+      text.split = "word";
+      text.textContent = "SARAH CHEN!";
+
+      container.appendChild(text);
+      await text.updateComplete;
+      await text.whenSegmentsReady();
+
+      // Simulate what updateAnimations does for temporal visibility:
+      // set display:none on segments (as if they were outside their time bounds)
+      const segments = text.segments;
+      for (const segment of segments) {
+        segment.style.setProperty("display", "none");
+      }
+
+      // Now serialize - the serializer should recover the correct display value,
+      // not blindly convert none -> block
+      const xhtml = await serializeElementToXHTML(text, 800, 600, {
+        canvasScale: 1,
+        timeMs: 0,
+      });
+
+      // Parse the output to check display values on segment containers
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(`<div xmlns="http://www.w3.org/1999/xhtml">${xhtml}</div>`, 'text/xml');
+
+      // Find all span/div elements that contain the segment text
+      const allElements = doc.querySelectorAll('*');
+      const segmentContainers: Element[] = [];
+      for (const el of allElements) {
+        const style = el.getAttribute('style') || '';
+        // Segment containers are the innermost styled elements containing word text
+        if (el.textContent?.trim() === 'SARAH' || el.textContent?.trim() === 'CHEN!') {
+          if (style && el.children.length === 0) {
+            segmentContainers.push(el);
+          }
+        }
+      }
+
+      // Word segments should NOT be serialized as display:block
+      // They should be display:inline (the natural :host display value)
+      for (const container of segmentContainers) {
+        const style = container.getAttribute('style') || '';
+        expect(style).not.toContain('display:block');
+        expect(style).toContain('display:inline');
+      }
+
+      // Additionally, word segments should be <span> tags, not <div> tags
+      for (const container of segmentContainers) {
+        expect(container.tagName.toLowerCase()).toBe('span');
+      }
+    });
+  });
+
   describe("style serialization", () => {
     it("should serialize computed styles including flex properties", async () => {
       // Use a plain div to test style serialization without shadow DOM interference

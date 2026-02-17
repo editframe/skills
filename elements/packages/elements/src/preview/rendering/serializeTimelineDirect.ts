@@ -131,9 +131,29 @@ function escapeXML(str: string): string {
 
 
 /**
+ * Resolve the natural display value for an element that has display:none
+ * set as an inline style (e.g., from temporal visibility via updateAnimations).
+ *
+ * Temporarily removes the inline display override so getComputedStyle falls
+ * through to the element's stylesheet rules (including shadow DOM :host styles),
+ * reads the natural value, then restores the override.
+ */
+function resolveNaturalDisplay(element: Element): string {
+  const htmlEl = element as HTMLElement;
+  const inlineDisplay = htmlEl.style?.getPropertyValue('display');
+  if (inlineDisplay === 'none' && htmlEl.style) {
+    htmlEl.style.removeProperty('display');
+    const natural = getComputedStyle(element).getPropertyValue('display');
+    htmlEl.style.setProperty('display', 'none');
+    return natural || 'block';
+  }
+  return 'block';
+}
+
+/**
  * Serialize computed styles as inline style string.
- * Handles display:none → block conversion for non-caption elements
- * (temporal visibility is handled separately).
+ * Handles display:none recovery for non-caption elements by resolving
+ * the element's natural display value from its stylesheet rules.
  * @param element - The element to serialize styles for
  * @param styles - Optional pre-computed CSSStyleDeclaration (avoids redundant getComputedStyle calls)
  */
@@ -157,10 +177,11 @@ function serializeComputedStyles(element: Element, styles?: CSSStyleDeclaration)
     // Handle display property specially
     let finalValue = value;
     if (prop === 'display') {
-      // For non-caption elements, convert display:none to block since temporal
-      // visibility is handled separately, not by CSS display
+      // For non-caption elements, recover the natural display value when display:none
+      // was set by the temporal visibility system (updateAnimations). This prevents
+      // inline elements (like ef-text-segment) from being serialized as display:block.
       if (value === 'none' && !isCaptionChild) {
-        finalValue = 'block';
+        finalValue = resolveNaturalDisplay(element);
       }
     }
     
@@ -556,7 +577,12 @@ function serializeElement(
     // Serialize custom element with its styles, then shadow DOM content inside
     // Use span for inline/inline-block/inline-flex elements to preserve inline behavior
     const computedStyle = getComputedStyle(element);
-    const computedDisplay = computedStyle.display;
+    let computedDisplay = computedStyle.display;
+    // If display:none was set by temporal visibility, resolve the natural display
+    // to determine the correct container tag (span vs div)
+    if (computedDisplay === 'none') {
+      computedDisplay = resolveNaturalDisplay(element);
+    }
     const isInline = computedDisplay === 'inline' || computedDisplay === 'inline-block' || computedDisplay === 'inline-flex';
     const containerTag = isInline ? 'span' : 'div';
     

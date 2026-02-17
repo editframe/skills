@@ -111,6 +111,26 @@ function isDefaultValue(prop: string, value: string): boolean {
   return defaults === value;
 }
 
+/**
+ * Resolve the natural display value for an element that has display:none
+ * set as an inline style (e.g., from temporal visibility via updateAnimations).
+ *
+ * Temporarily removes the inline display override so getComputedStyle falls
+ * through to the element's stylesheet rules (including shadow DOM :host styles),
+ * reads the natural value, then restores the override.
+ */
+function resolveNaturalDisplay(element: Element): string {
+  const htmlEl = element as HTMLElement;
+  const inlineDisplay = htmlEl.style?.getPropertyValue('display');
+  if (inlineDisplay === 'none' && htmlEl.style) {
+    htmlEl.style.removeProperty('display');
+    const natural = getComputedStyle(element).getPropertyValue('display');
+    htmlEl.style.setProperty('display', 'none');
+    return natural || 'block';
+  }
+  return 'block';
+}
+
 // Re-export temporal types from shared module
 export {
   type TemporalElement,
@@ -354,7 +374,7 @@ function syncElementStyles(
           tagName === 'EF-CAPTIONS-AFTER-ACTIVE-WORD' ||
           tagName === 'EF-CAPTIONS-SEGMENT'
         );
-        const targetDisplay = (strVal === "none" && !isCaptionChild) ? "block" : strVal;
+        const targetDisplay = (strVal === "none" && !isCaptionChild) ? resolveNaturalDisplay(source) : strVal;
         cloneStyle.display = targetDisplay;
         continue;
       }
@@ -395,7 +415,7 @@ function syncElementStyles(
           tagName === 'EF-CAPTIONS-AFTER-ACTIVE-WORD' ||
           tagName === 'EF-CAPTIONS-SEGMENT'
         );
-        const targetDisplay = (srcVal === "none" && !isCaptionChild) ? "block" : srcVal;
+        const targetDisplay = (srcVal === "none" && !isCaptionChild) ? resolveNaturalDisplay(source) : srcVal;
         cloneStyle.display = targetDisplay;
         continue;
       }
