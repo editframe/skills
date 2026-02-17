@@ -43,11 +43,30 @@ function SkillLink({
   return <Link to={href || "#"} {...props} />;
 }
 
-// --- LiveDemo: Interactive preview + source for html live blocks ---
+// --- SourceToggle: Collapsible source code viewer ---
+
+function SourceToggle({ code }: { code: string }) {
+  const [showSource, setShowSource] = React.useState(false);
+  return (
+    <>
+      <button
+        onClick={() => setShowSource(!showSource)}
+        className="text-xs font-bold uppercase tracking-wider text-[var(--warm-gray)] cursor-pointer py-2 hover:text-[var(--ink-black)] dark:hover:text-white transition-colors mt-1"
+      >
+        {showSource ? "\u25BC" : "\u25B6"} Source
+      </button>
+      {showSource && (
+        <div className="border-2 border-[var(--ink-black)]/10 dark:border-white/10 overflow-hidden">
+          <CodeBlock className="language-html">{code}</CodeBlock>
+        </div>
+      )}
+    </>
+  );
+}
+
+// --- LiveDemo: Temporal composition preview with playback controls ---
 
 function LiveDemo({ code }: { code: string }) {
-  const [showSource, setShowSource] = React.useState(false);
-
   return (
     <div className="not-prose my-8">
       <div className="flex items-center gap-2 mb-2">
@@ -95,29 +114,44 @@ function LiveDemo({ code }: { code: string }) {
                 <TimeDisplay className="text-[10px] text-white/60 font-mono tabular-nums" />
               </div>
             </div>
-
           </Preview>
         </div>
       </div>
 
-      <button
-        onClick={() => setShowSource(!showSource)}
-        className="text-xs font-bold uppercase tracking-wider text-[var(--warm-gray)] cursor-pointer py-2 hover:text-[var(--ink-black)] dark:hover:text-white transition-colors mt-1"
-      >
-        {showSource ? "\u25BC" : "\u25B6"} Source
-      </button>
-      {showSource && (
-        <div className="border-2 border-[var(--ink-black)]/10 dark:border-white/10 overflow-hidden">
-          <CodeBlock className="language-html">{code}</CodeBlock>
-        </div>
-      )}
+      <SourceToggle code={code} />
     </div>
   );
 }
 
+// --- InteractiveDemo: GUI component preview without playback controls ---
+
+function InteractiveDemo({ code }: { code: string }) {
+  return (
+    <div className="not-prose my-8">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="px-2 py-0.5 bg-[var(--poster-blue)] text-white text-[10px] font-bold uppercase tracking-wider">
+          Live
+        </span>
+      </div>
+
+      <div className="border-2 border-[var(--ink-black)] dark:border-white overflow-hidden">
+        <div className="min-h-[200px] w-full bg-slate-100 dark:bg-slate-800 p-4">
+          <div dangerouslySetInnerHTML={{ __html: code }} />
+        </div>
+      </div>
+
+      <SourceToggle code={code} />
+    </div>
+  );
+}
+
+// --- Skills that render interactive demos instead of temporal compositions ---
+
+const INTERACTIVE_SKILLS = new Set(["editor-gui"]);
+
 // --- SkillsPreBlock: Detects html live blocks and mermaid diagrams ---
 
-function SkillsPreBlock(props: React.HTMLAttributes<HTMLPreElement>) {
+function SkillsPreBlock({ skillName, ...props }: React.HTMLAttributes<HTMLPreElement> & { skillName: string }) {
   const childArray = React.Children.toArray(props.children);
   const codeElement = childArray[0];
 
@@ -134,7 +168,9 @@ function SkillsPreBlock(props: React.HTMLAttributes<HTMLPreElement>) {
       const code =
         typeof codeContent === "string" ? codeContent.trim() : "";
       if (code) {
-        return <LiveDemo code={code} />;
+        return INTERACTIVE_SKILLS.has(skillName)
+          ? <InteractiveDemo code={code} />
+          : <LiveDemo code={code} />;
       }
     }
 
@@ -249,7 +285,7 @@ export function getSkillsMDXComponents(skillName: string, api?: ApiMetadata) {
       <SkillLink {...props} data-skill-name={skillName} />
     ),
     pre: (props: React.HTMLAttributes<HTMLPreElement>) => (
-      <SkillsPreBlock {...props} />
+      <SkillsPreBlock {...props} skillName={skillName} />
     ),
     table: (props: React.TableHTMLAttributes<HTMLTableElement>) => (
       <SkillsTable {...props} />
