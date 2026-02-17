@@ -556,20 +556,47 @@ export const isEFTemporal = (obj: any): obj is TemporalMixinInterface =>
 
 const EF_TEMPORAL = Symbol("EF_TEMPORAL");
 
+export interface TemporalCollectionResult {
+  /** Temporal elements to process (visible + pruned roots). */
+  elements: Array<TemporalMixinInterface & HTMLElement>;
+  /** Temporal elements whose subtrees were pruned (invisible containers). */
+  pruned: Set<TemporalMixinInterface & HTMLElement>;
+}
+
 export const deepGetTemporalElements = (
   element: Element,
-  temporals: Array<TemporalMixinInterface & HTMLElement> = [],
-) => {
-  // Get children to walk - handle both regular children and slotted content
-  const children = getChildrenIncludingSlotted(element);
-  
-  for (const child of children) {
-    if (isEFTemporal(child)) {
-      temporals.push(child as TemporalMixinInterface & HTMLElement);
+  timeMs?: number,
+): TemporalCollectionResult => {
+  const elements: Array<TemporalMixinInterface & HTMLElement> = [];
+  const pruned = new Set<TemporalMixinInterface & HTMLElement>();
+
+  const walk = (el: Element) => {
+    const children = getChildrenIncludingSlotted(el);
+
+    for (const child of children) {
+      if (isEFTemporal(child)) {
+        const temporal = child as TemporalMixinInterface & HTMLElement;
+        elements.push(temporal);
+
+        // Prune: if a time was provided and this temporal element is outside
+        // its time range, skip its entire subtree. The caller is responsible
+        // for setting display:none on these pruned roots; their children are
+        // hidden by containment and never visited.
+        if (timeMs !== undefined) {
+          const startMs = temporal.startTimeMs;
+          const endMs = temporal.endTimeMs;
+          if (endMs > startMs && (timeMs < startMs || timeMs >= endMs)) {
+            pruned.add(temporal);
+            continue; // skip subtree
+          }
+        }
+      }
+      walk(child);
     }
-    deepGetTemporalElements(child, temporals);
-  }
-  return temporals;
+  };
+
+  walk(element);
+  return { elements, pruned };
 };
 
 /**

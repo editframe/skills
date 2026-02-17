@@ -1205,9 +1205,24 @@ export const updateAnimations = (element: AnimatableElement): void => {
   const allAnimations = element.getAnimations({ subtree: true });
 
   const rootContext = evaluateElementState(element);
-  const childContexts = deepGetTemporalElements(element).map(
-    (temporalElement) => evaluateElementState(temporalElement),
-  );
+  const timelineTimeMs = (element.rootTimegroup ?? element).currentTimeMs;
+  const { elements: collectedElements, pruned } = deepGetTemporalElements(element, timelineTimeMs);
+
+  // For pruned elements (invisible containers whose subtrees were skipped),
+  // just set display:none directly — no need to evaluate phase/state since
+  // we already know they're outside their time range.
+  for (const prunedElement of pruned) {
+    prunedElement.style.setProperty("display", "none");
+  }
+
+  // Evaluate state only for non-pruned elements (visible + individually
+  // invisible leaf elements that weren't behind a pruned container).
+  const childContexts: ElementUpdateContext[] = [];
+  for (const temporalElement of collectedElements) {
+    if (!pruned.has(temporalElement)) {
+      childContexts.push(evaluateElementState(temporalElement));
+    }
+  }
 
   // Separate visible and invisible children.
   // Only visible children need animation coordination (expensive).
@@ -1262,7 +1277,7 @@ export const updateAnimations = (element: AnimatableElement): void => {
     );
   }
 
-  // Apply visual state for ALL children (sets display:none on invisible)
+  // Apply visual state for non-pruned children (pruned ones already got display:none above)
   applyVisualState(rootContext.element, rootContext.state);
   for (const context of childContexts) {
     applyVisualState(context.element, context.state);
