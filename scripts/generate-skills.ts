@@ -17,7 +17,7 @@
  */
 
 import { readFileSync, writeFileSync, readdirSync, statSync, mkdirSync, existsSync } from "node:fs";
-import { join, basename } from "node:path";
+import { join } from "node:path";
 
 function parseYaml(yaml: string): any {
   const lines = yaml.split("\n");
@@ -152,135 +152,18 @@ interface ApiMetadata {
   }[];
 }
 
-interface ReactConfig {
-  generate?: boolean;
-  componentName?: string;
-  importPath?: string;
-  propMapping?: Record<string, string>;
-  additionalProps?: ApiAttribute[];
-  nav?: any;
-  outputFilename?: string;
-}
-
 interface SourceFrontmatter {
   title?: string;
   description?: string;
-  type?: string;
-  topic?: string;
-  order?: number;
-  nav?: any;
-  track?: string;
-  track_step?: number;
-  track_title?: string;
-  prerequisites?: string[];
-  next_steps?: string[];
   api?: ApiMetadata;
-  sections?: any[];
-  // LLM-only fields
   name?: string;
   license?: string;
   metadata?: {
     author: string;
     version: string;
   };
-  // Generation control
   skill?: boolean;
   status?: string;
-  react?: ReactConfig;
-}
-
-// --- Conditional section processing ---
-
-function processConditionalSections(body: string, target: "html" | "react"): string {
-  const remove = target === "html" ? "react-only" : "html-only";
-  const keep = target === "html" ? "html-only" : "react-only";
-
-  // Remove opposite-platform sections
-  body = body.replace(new RegExp(`<!-- ${remove} -->[\\s\\S]*?<!-- \\/${remove} -->`, "g"), "");
-  // Unwrap same-platform markers (keep the content)
-  body = body.replace(new RegExp(`<!-- ${keep} -->\\n?`, "g"), "");
-  body = body.replace(new RegExp(`<!-- \\/${keep} -->\\n?`, "g"), "");
-  // Remove shared markers (keep the content)
-  body = body.replace(/<!-- shared -->\n?/g, "");
-  body = body.replace(/<!-- \/shared -->\n?/g, "");
-  // Clean up any double blank lines left by removal
-  body = body.replace(/\n{3,}/g, "\n\n");
-  return body;
-}
-
-// --- React generation from HTML sources ---
-
-function transformApiForReact(api: ApiMetadata, reactConfig: ReactConfig): ApiMetadata {
-  const reactApi: ApiMetadata = {};
-  const propMapping = reactConfig.propMapping || {};
-
-  // Convert HTML attributes to React properties with name mapping
-  if (api.attributes && api.attributes.length > 0) {
-    reactApi.properties = api.attributes.map(attr => ({
-      ...attr,
-      name: propMapping[attr.name] || attr.name,
-    }));
-  }
-
-  // Add React-specific props
-  if (reactConfig.additionalProps && reactConfig.additionalProps.length > 0) {
-    reactApi.properties = [
-      ...(reactApi.properties || []),
-      ...reactConfig.additionalProps,
-    ];
-  }
-
-  // Pass through methods and functions unchanged
-  if (api.methods) reactApi.methods = api.methods;
-  if (api.functions) reactApi.functions = api.functions;
-
-  return reactApi;
-}
-
-function generateReactVariant(
-  sourcePath: string,
-  reactOutputDir: string,
-  attributes: SourceFrontmatter,
-) {
-  const reactConfig = attributes.react!;
-  const filename = reactConfig.outputFilename || basename(sourcePath);
-  const outputPath = join(reactOutputDir, filename);
-
-  // Transform title: "Video Element" -> "Video Component" (or use componentName)
-  const componentName = reactConfig.componentName || attributes.title?.replace(" Element", "") || "";
-  const reactTitle = `${componentName} Component`;
-
-  // Build React LLM frontmatter
-  const llmFrontmatter: any = {
-    name: reactTitle,
-    description: attributes.description,
-  };
-
-  // Transform API metadata
-  const reactApi = attributes.api ? transformApiForReact(attributes.api, reactConfig) : undefined;
-
-  // Process body for React target
-  let body = processConditionalSections(parseFrontmatter(readFileSync(sourcePath, "utf8")).body, "react");
-
-  // Inject React API prose after h1
-  if (reactApi) {
-    const apiProse = apiToProse(reactApi);
-    const h1Match = body.match(/^# .+$/m);
-    if (h1Match && h1Match.index !== undefined) {
-      const afterH1 = h1Match.index + h1Match[0].length;
-      body = body.substring(0, afterH1) + "\n\n" + apiProse + "\n" + body.substring(afterH1);
-    }
-  }
-
-  // Ensure output directory exists
-  const outputDir = join(reactOutputDir);
-  if (!existsSync(outputDir)) {
-    mkdirSync(outputDir, { recursive: true });
-  }
-
-  const output = `---\n${stringifyYaml(llmFrontmatter).trim()}\n---\n\n${body}`;
-  writeFileSync(outputPath, output, "utf8");
-  console.log(`  React variant: ${outputPath}`);
 }
 
 // --- API to prose conversion ---
@@ -330,7 +213,7 @@ function apiToProse(api: ApiMetadata): string {
 
 // --- File generation ---
 
-function generateSkillFile(sourcePath: string, outputPath: string, target: "html" | "react" = "html") {
+function generateSkillFile(sourcePath: string, outputPath: string) {
   const content = readFileSync(sourcePath, "utf8");
   const parsed = parseFrontmatter(content);
   const attributes = parsed.attributes as SourceFrontmatter;
@@ -363,8 +246,9 @@ function generateSkillFile(sourcePath: string, outputPath: string, target: "html
 
   let body = parsed.body;
 
-  // Process conditional sections
-  body = processConditionalSections(body, target);
+  // Strip conditional markers but keep all content (both HTML and React variants)
+  body = body.replace(/<!-- (?:html-only|react-only|shared|\/html-only|\/react-only|\/shared) -->\n?/g, "");
+  body = body.replace(/\n{3,}/g, "\n\n");
 
   // If API metadata exists, convert to prose and inject after h1
   if (attributes.api) {
@@ -382,7 +266,7 @@ function generateSkillFile(sourcePath: string, outputPath: string, target: "html
   writeFileSync(outputPath, output, "utf8");
 }
 
-function generateSkillsRecursive(sourceDir: string, outputDir: string, reactOutputBaseDir?: string) {
+function generateSkillsRecursive(sourceDir: string, outputDir: string) {
   // Check if this directory's SKILL.md marks it as draft
   const skillMdPath = join(sourceDir, "SKILL.md");
   if (existsSync(skillMdPath)) {
@@ -399,7 +283,6 @@ function generateSkillsRecursive(sourceDir: string, outputDir: string, reactOutp
   }
 
   const entries = readdirSync(sourceDir);
-  const isElementsComposition = sourceDir.includes("elements-composition");
 
   for (const entry of entries) {
     const sourcePath = join(sourceDir, entry);
@@ -407,30 +290,10 @@ function generateSkillsRecursive(sourceDir: string, outputDir: string, reactOutp
     const stat = statSync(sourcePath);
 
     if (stat.isDirectory()) {
-      generateSkillsRecursive(sourcePath, outputPath, reactOutputBaseDir);
+      generateSkillsRecursive(sourcePath, outputPath);
     } else if (entry.endsWith(".md")) {
       console.log(`Generating: ${sourcePath}`);
-
-      // Determine target based on directory context
-      const target = sourceDir.includes("react-composition") ? "react" : "html";
-      generateSkillFile(sourcePath, outputPath, target);
-
-      // If this is an elements-composition file with react.generate, also produce React output
-      if (isElementsComposition && reactOutputBaseDir) {
-        const content = readFileSync(sourcePath, "utf8");
-        const parsed = parseFrontmatter(content);
-        const attributes = parsed.attributes as SourceFrontmatter;
-
-        if (attributes.react?.generate) {
-          // Determine the React output directory (mirror the references/ subdir)
-          const relativeDir = sourceDir.includes("references") ? "references" : "";
-          const reactOutDir = relativeDir
-            ? join(reactOutputBaseDir, relativeDir)
-            : reactOutputBaseDir;
-
-          generateReactVariant(sourcePath, reactOutDir, attributes);
-        }
-      }
+      generateSkillFile(sourcePath, outputPath);
     }
   }
 }
@@ -440,13 +303,10 @@ const monorepoRoot = join(process.cwd());
 const sourceDir = join(monorepoRoot, "skills", "skills");
 const outputDir = join(monorepoRoot, "skills", "skills-generated");
 
-// React output base for cross-generated files
-const reactOutputBaseDir = join(outputDir, "react-composition");
-
 console.log("Generating LLM-optimized skills...");
 console.log(`Source: ${sourceDir}`);
 console.log(`Output: ${outputDir}`);
 
-generateSkillsRecursive(sourceDir, outputDir, reactOutputBaseDir);
+generateSkillsRecursive(sourceDir, outputDir);
 
 console.log("Done!");

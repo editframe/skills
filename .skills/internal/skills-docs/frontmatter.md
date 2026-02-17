@@ -6,8 +6,8 @@ Complete field reference for both file types in the skills documentation system.
 
 ```yaml
 ---
-name: elements-composition
-description: Create video compositions with Editframe Elements. Use when working with ef-timegroup, ef-video...
+name: composition
+description: Build video scenes with media, text, timing, transitions, and effects (HTML or React).
 license: MIT
 metadata:
   author: editframe

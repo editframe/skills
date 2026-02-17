@@ -1,40 +1,22 @@
 # Editframe Skills
 
-Agent Skills for video composition with Editframe Elements.
+Agent skills for building video with Editframe.
 
 ## Installation
 
-### Cursor
-
-Add to your project's `.cursor/skills/` directory:
-
 ```bash
-cp -r skills/elements-composition .cursor/skills/
-cp -r skills/react-composition .cursor/skills/
-cp -r skills/motion-design .cursor/skills/
-cp -r skills/brand-video-generator .cursor/skills/
+npx ai-agent-skills install editframe/skills --agent cursor
 ```
-
-### Claude Code
-
-```bash
-/plugin marketplace add editframe/skills
-```
-
-### Manual
-
-Copy the skill folders to your agent's skills directory:
-- `skills/elements-composition/` - HTML/Web Components
-- `skills/react-composition/` - React Components
-- `skills/motion-design/` - Motion graphics principles
-- `skills/brand-video-generator/` - Generate video plans from brand websites
 
 ## Available Skills
 
-- **elements-composition** - Create video compositions with Editframe Elements (HTML/Web Components)
-- **react-composition** - Create video compositions with @editframe/react React wrappers (React/TypeScript)
-- **motion-design** - Professional motion graphics principles: timing, easing, physics, attention choreography, and advanced animation techniques
-- **brand-video-generator** - Analyze brand websites and generate strategic video composition plans: visual identity analysis, messaging strategy, scene planning, and asset requirements
+- **composition** — Build video scenes with media, text, timing, transitions, and effects (HTML or React)
+- **editor-gui** — Build video editing interfaces with timeline, preview, and playback controls
+- **editframe-cli** — Terminal commands for rendering, previewing, and transcribing
+- **editframe-api** — Server-side SDK for programmatic rendering and file management
+- **editframe-create** — Scaffold new projects from templates
+- **webhooks** — Async event notifications for renders and file processing
+- **vite-plugin** — Local development with JIT transcoding and visual testing
 
 ## License
 
