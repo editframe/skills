@@ -5,6 +5,7 @@
  * One-way sync from .rules/ (canonical source) to:
  *   - .cursor/rules/*.mdc  (copy with .mdc extension)
  *   - CLAUDE.md             (concatenate alwaysApply: true rules, strip frontmatter)
+ *   - AGENTS.md             (same as CLAUDE.md, for OpenCode)
  *
  * Usage:
  *   npx tsx scripts/sync-rules.ts              # Sync rules
@@ -135,15 +136,15 @@ async function syncToCursor(root: string, rules: RuleFile[], options: SyncOption
   return count;
 }
 
-async function syncToClaudeMd(root: string, rules: RuleFile[], options: SyncOptions): Promise<number> {
-  const claudeMdPath = path.join(root, 'CLAUDE.md');
+async function syncToInstructionFile(root: string, rules: RuleFile[], options: SyncOptions, filename: string): Promise<number> {
+  const filePath = path.join(root, filename);
   const alwaysApplyRules = rules.filter(r => r.alwaysApply);
 
   if (alwaysApplyRules.length === 0) {
-    if (fsSync.existsSync(claudeMdPath)) {
-      if (options.verbose) console.log('  DELETE CLAUDE.md (no alwaysApply rules)');
+    if (fsSync.existsSync(filePath)) {
+      if (options.verbose) console.log(`  DELETE ${filename} (no alwaysApply rules)`);
       if (!options.dryRun) {
-        await fs.unlink(claudeMdPath);
+        await fs.unlink(filePath);
       }
     }
     return 0;
@@ -153,11 +154,11 @@ async function syncToClaudeMd(root: string, rules: RuleFile[], options: SyncOpti
   const output = sections.join('\n\n---\n\n') + '\n';
 
   if (options.verbose) {
-    console.log(`  WRITE  CLAUDE.md (${alwaysApplyRules.length} rules: ${alwaysApplyRules.map(r => r.name).join(', ')})`);
+    console.log(`  WRITE  ${filename} (${alwaysApplyRules.length} rules: ${alwaysApplyRules.map(r => r.name).join(', ')})`);
   }
 
   if (!options.dryRun) {
-    await fs.writeFile(claudeMdPath, output);
+    await fs.writeFile(filePath, output);
   }
 
   return alwaysApplyRules.length;
@@ -217,11 +218,15 @@ async function main(): Promise<void> {
   const cursorCount = await syncToCursor(root, rules, options);
 
   log('\nSyncing to CLAUDE.md', 'blue');
-  const claudeCount = await syncToClaudeMd(root, rules, options);
+  const claudeCount = await syncToInstructionFile(root, rules, options, 'CLAUDE.md');
+
+  log('\nSyncing to AGENTS.md', 'blue');
+  const agentsCount = await syncToInstructionFile(root, rules, options, 'AGENTS.md');
 
   log('\n═══════════════════════════════════════════════════════════', 'blue');
   log(`  .cursor/rules/: ${cursorCount} files`, 'green');
   log(`  CLAUDE.md:      ${claudeCount} rules`, 'green');
+  log(`  AGENTS.md:      ${agentsCount} rules`, 'green');
   log('═══════════════════════════════════════════════════════════', 'blue');
 }
 

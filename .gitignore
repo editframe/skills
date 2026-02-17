@@ -25,6 +25,9 @@ skills/skills-generated/
 .skills/.sync-log.json
 .skills.backup-*/
 
+# OpenCode generated config
+.opencode/skills/
+
 # Test render outputs
 .test-output/
 **/render.test.renders/

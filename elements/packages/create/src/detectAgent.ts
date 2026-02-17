@@ -38,6 +38,19 @@ export async function detectInstalledAgents(): Promise<string[]> {
     // Not found
   }
 
+  // Check for OpenCode (project-level .opencode directory or AGENTS.md)
+  try {
+    await access(path.join(process.cwd(), ".opencode"));
+    detected.push("opencode");
+  } catch {
+    try {
+      await access(path.join(process.cwd(), "AGENTS.md"));
+      detected.push("opencode");
+    } catch {
+      // Not found
+    }
+  }
+
   // Check for Windsurf (user-level ~/.windsurf directory)
   try {
     await access(path.join(os.homedir(), ".windsurf"));
@@ -60,6 +73,7 @@ export async function getAgentChoices() {
     { title: "Cursor", value: "cursor" },
     { title: "VS Code Copilot", value: "vscode" },
     { title: "Claude Code", value: "claude" },
+    { title: "OpenCode", value: "opencode" },
     { title: "Windsurf", value: "windsurf" },
     { title: "All agents", value: "all" },
     { title: "Skip", value: "skip" },

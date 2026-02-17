@@ -27,7 +27,7 @@ interface FileState {
   mtime: number;                             // Unix timestamp (seconds)
   size: number;                              // File size in bytes
   hash: string;                              // MD5 hash of content
-  location: '.skills' | '.cursor' | '.claude';
+  location: '.skills' | '.cursor' | '.claude' | '.opencode';
 }
 
 interface SkillFileMap {
@@ -35,13 +35,14 @@ interface SkillFileMap {
     skills?: FileState;
     cursor?: FileState;
     claude?: FileState;
+    opencode?: FileState;
   };
 }
 
 interface SyncOperation {
   type: 'copy' | 'delete' | 'skip';
-  from: '.skills' | '.cursor' | '.claude' | null;
-  to: '.skills' | '.cursor' | '.claude';
+  from: '.skills' | '.cursor' | '.claude' | '.opencode' | null;
+  to: '.skills' | '.cursor' | '.claude' | '.opencode';
   path: string;
   reason: string;
 }
@@ -99,7 +100,7 @@ function logVerbose(message: string, verbose: boolean): void {
 // File State Management
 // ============================================================================
 
-async function getFileState(filePath: string, location: '.skills' | '.cursor' | '.claude', relativePath: string): Promise<FileState | null> {
+async function getFileState(filePath: string, location: '.skills' | '.cursor' | '.claude' | '.opencode', relativePath: string): Promise<FileState | null> {
   try {
     const stat = await fs.stat(filePath);
     const content = await fs.readFile(filePath);
@@ -118,10 +119,11 @@ async function getFileState(filePath: string, location: '.skills' | '.cursor' | 
 
 async function buildFileMap(root: string): Promise<SkillFileMap> {
   const fileMap: SkillFileMap = {};
-  const skillDirs: { path: string; location: '.skills' | '.cursor' | '.claude' }[] = [
+  const skillDirs: { path: string; location: '.skills' | '.cursor' | '.claude' | '.opencode' }[] = [
     { path: path.join(root, '.skills/internal'), location: '.skills' },
     { path: path.join(root, '.cursor/skills'), location: '.cursor' },
     { path: path.join(root, '.claude/skills'), location: '.claude' },
+    { path: path.join(root, '.opencode/skills'), location: '.opencode' },
   ];
 
   for (const { path: skillDir, location } of skillDirs) {
@@ -204,9 +206,10 @@ function determineSyncOperations(fileMap: SkillFileMap): SyncOperation[] {
     const skills = locations['.skills'];
     const cursor = locations['.cursor'];
     const claude = locations['.claude'];
+    const opencode = locations['.opencode'];
 
     // Collect all present files with their mtimes
-    const present: FileState[] = [skills, cursor, claude].filter(Boolean);
+    const present: FileState[] = [skills, cursor, claude, opencode].filter(Boolean);
 
     if (present.length === 0) {
       continue; // File doesn't exist anywhere
@@ -215,7 +218,7 @@ function determineSyncOperations(fileMap: SkillFileMap): SyncOperation[] {
     if (present.length === 1) {
       // File exists in only one location - copy to all others
       const source = present[0];
-      const targets = ['.skills', '.cursor', '.claude'].filter(
+      const targets = ['.skills', '.cursor', '.claude', '.opencode'].filter(
         loc => loc !== source.location
       );
 
@@ -253,13 +256,14 @@ function determineSyncOperations(fileMap: SkillFileMap): SyncOperation[] {
     }
 
     // Files differ - copy newest to other locations
-    for (const target of ['.skills', '.cursor', '.claude']) {
+    for (const target of ['.skills', '.cursor', '.claude', '.opencode']) {
       if (target === newest.location) continue;
 
       const targetFile =
         target === '.skills' ? skills :
         target === '.cursor' ? cursor :
-        claude;
+        target === '.claude' ? claude :
+        opencode;
 
       if (!targetFile || targetFile.hash !== newest.hash) {
         operations.push({
@@ -283,26 +287,20 @@ function handleDeletions(fileMap: SkillFileMap): SyncOperation[] {
     const skills = locations['.skills'];
     const cursor = locations['.cursor'];
     const claude = locations['.claude'];
+    const opencode = locations['.opencode'];
 
     // If deleted from .skills/ (canonical source), delete everywhere
-    if (!skills && (cursor || claude)) {
-      if (cursor) {
-        operations.push({
-          type: 'delete',
-          from: null,
-          to: '.cursor',
-          path: relativePath,
-          reason: 'Deleted from canonical source (.skills/)',
-        });
-      }
-      if (claude) {
-        operations.push({
-          type: 'delete',
-          from: null,
-          to: '.claude',
-          path: relativePath,
-          reason: 'Deleted from canonical source (.skills/)',
-        });
+    if (!skills && (cursor || claude || opencode)) {
+      for (const [loc, state] of [['.cursor', cursor], ['.claude', claude], ['.opencode', opencode]] as const) {
+        if (state) {
+          operations.push({
+            type: 'delete',
+            from: null,
+            to: loc,
+            path: relativePath,
+            reason: 'Deleted from canonical source (.skills/)',
+          });
+        }
       }
     }
   }
@@ -331,12 +329,14 @@ async function executeOperation(
       const sourceDir =
         op.from === '.skills' ? '.skills/internal' :
         op.from === '.cursor' ? '.cursor/skills' :
-        '.claude/skills';
+        op.from === '.claude' ? '.claude/skills' :
+        '.opencode/skills';
 
       const targetDir =
         op.to === '.skills' ? '.skills/internal' :
         op.to === '.cursor' ? '.cursor/skills' :
-        '.claude/skills';
+        op.to === '.claude' ? '.claude/skills' :
+        '.opencode/skills';
 
       const sourcePath = path.join(root, sourceDir, op.path);
       const targetPath = path.join(root, targetDir, op.path);
@@ -361,7 +361,8 @@ async function executeOperation(
       const targetDir =
         op.to === '.skills' ? '.skills/internal' :
         op.to === '.cursor' ? '.cursor/skills' :
-        '.claude/skills';
+        op.to === '.claude' ? '.claude/skills' :
+        '.opencode/skills';
 
       const targetPath = path.join(root, targetDir, op.path);
 
