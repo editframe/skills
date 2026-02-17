@@ -28,4 +28,6 @@ Do not leave comments in the code describing changes that were made. Code should
 
 Do not replace user's stated goals with simpler ones just because they are hard to achieve. The user is the sole decision maker for what the goals are.
 
+When using a skill from .skills/internal/ and user feedback reveals the skill was wrong, incomplete, or led to a suboptimal result, update the skill with the generalized lesson before finishing the task. Integrate improvements into existing structure -- don't append. Keep skills terse and general.
+
 Never run 

@@ -18,7 +18,7 @@ Do not create markdown files/assessments unless explicitly requested by the user
 
 Do not make assumptions about performance. Always test and measure performance before and after changes. Don't reference % improvements that are not results of actual measurements. Never make assertions about performance that were not prooven by actual measurements.
 
-Never run build unless explicitly requested by the user. We run against source, not built packages during development.
+Never run build/tsc/lint unless explicitly requested by the user. We run against source, not built packages during development.
 
 The user isn't interested in hacks or workarounds, attack the root cause unless explicitly requested by the user.
 
@@ -27,3 +27,7 @@ Arbitrary timeouts are rarely a defensible solution. We must find event or deter
 Do not leave comments in the code describing changes that were made. Code should not be a running commentary on the changes that were made, it should just be the code, or comments describing the purpose of the code/rational for the code. But it shouldn't be a narration of edits.
 
 Do not replace user's stated goals with simpler ones just because they are hard to achieve. The user is the sole decision maker for what the goals are.
+
+When using a skill from .skills/internal/ and user feedback reveals the skill was wrong, incomplete, or led to a suboptimal result, update the skill with the generalized lesson before finishing the task. Integrate improvements into existing structure -- don't append. Keep skills terse and general.
+
+Never run 
