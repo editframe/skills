@@ -198,7 +198,7 @@ body {
 }
 
 /* Template scene: single lifecycle animation per card (enter → hold → exit)
-   cardFadeMs=300, cardHoldMs=1200, total=1800ms
+   cardFadeMs=250, cardHoldMs=1000, total=1500ms
    fade-in: 0→16.7%, hold: 16.7→83.3%, fade-out: 83.3→100% */
 @keyframes hero-card-lifecycle {
   0% {
@@ -216,6 +216,61 @@ body {
   100% {
     transform: translateY(-15px) scale(0.95);
     opacity: 0;
+  }
+}
+
+/* Template scene: cascade cards fly upward */
+@keyframes hero-cascade-card {
+  0% {
+    transform: translateY(40px) scale(0.8);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  50% {
+    transform: translateY(-20px) scale(0.95);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(-120px) scale(0.85);
+    opacity: 0;
+  }
+}
+
+/* Template scene: counter step — snap in, hold, snap out */
+@keyframes hero-counter-step {
+  0% {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  20% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  80% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+}
+
+/* Template scene: final counter — pops in and holds */
+@keyframes hero-counter-final {
+  0% {
+    transform: translateY(8px) scale(0.9);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(-2px) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
   }
 }
 
