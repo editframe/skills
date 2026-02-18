@@ -41,6 +41,7 @@ export interface OwnerProgress {
 interface ActiveTask {
   task: UpgradeTask;
   startedAt: number;
+  promise: Promise<void>;
 }
 
 interface CompletedTask {
@@ -179,14 +180,7 @@ export class QualityUpgradeScheduler {
    * Start a single task.
    */
   #startTask(task: UpgradeTask): void {
-    const activeTask: ActiveTask = {
-      task,
-      startedAt: performance.now(),
-    };
-
-    this.#activeTasks.set(task.key, activeTask);
-
-    task
+    const promise = task
       .fetch(this.#abortController.signal)
       .then(() => {
         // Success
@@ -223,6 +217,12 @@ export class QualityUpgradeScheduler {
         // Continue processing queue even after failure
         this.#processQueue();
       });
+
+    this.#activeTasks.set(task.key, {
+      task,
+      startedAt: performance.now(),
+      promise,
+    });
   }
 
   /**
@@ -297,6 +297,11 @@ export class QualityUpgradeScheduler {
    * Dispose the scheduler - abort all in-flight work.
    */
   dispose(): void {
+    // Suppress in-flight task rejections before aborting to avoid unhandled
+    // rejection events from the synchronous abort signal firing.
+    for (const activeTask of this.#activeTasks.values()) {
+      activeTask.promise.catch(() => {});
+    }
     this.#abortController.abort();
     this.#queue = [];
     this.#activeTasks.clear();

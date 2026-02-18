@@ -238,7 +238,9 @@ export abstract class BaseMediaEngine {
     });
     abortPromise.catch(() => {});
 
-    return Promise.race([promise, abortPromise]);
+    const racePromise = Promise.race([promise, abortPromise]);
+    racePromise.catch(() => {});
+    return racePromise;
   }
 
   // Public wrapper methods that delegate to fetchWithCache
