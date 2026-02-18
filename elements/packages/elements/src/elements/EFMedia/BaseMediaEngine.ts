@@ -114,9 +114,6 @@ export abstract class BaseMediaEngine {
           async () => {
             const fetchStart = performance.now();
             try {
-              // Pass the signal to host.fetch() so network requests can be canceled when tasks are aborted
-              // If multiple callers are waiting on the same request and one aborts, the request will be canceled
-              // Other callers will get an error, but they can retry if needed
               const response = await this.host.fetch(url, { headers, signal });
               const fetchEnd = performance.now();
               span.setAttribute("fetchMs", fetchEnd - fetchStart);

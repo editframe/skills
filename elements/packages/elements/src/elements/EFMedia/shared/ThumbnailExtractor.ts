@@ -137,10 +137,11 @@ export class ThumbnailExtractor {
       // Check abort before starting segment fetch
       signal?.throwIfAborted();
 
-      const [initSegment, mediaSegment] = await Promise.all([
-        this.mediaEngine.fetchInitSegment(rendition, signal!),
-        this.mediaEngine.fetchMediaSegment(segmentId, rendition, signal!),
-      ]);
+      const initP = this.mediaEngine.fetchInitSegment(rendition, signal!);
+      const mediaP = this.mediaEngine.fetchMediaSegment(segmentId, rendition, signal!);
+      initP.catch(() => {});
+      mediaP.catch(() => {});
+      const [initSegment, mediaSegment] = await Promise.all([initP, mediaP]);
 
       // Check abort after potentially slow network operations
       signal?.throwIfAborted();
