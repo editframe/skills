@@ -161,7 +161,6 @@ const api: IEFRenderAPI = {
       // Create custom writable stream that calls window.onRenderChunk
       const chunkWriter = new WritableStream<Uint8Array>({
         write(chunk: Uint8Array) {
-          console.error("Writing chunk", chunk);
           if (window.onRenderChunk) {
             window.onRenderChunk(chunk);
           }

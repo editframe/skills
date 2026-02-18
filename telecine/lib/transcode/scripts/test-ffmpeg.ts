@@ -41,10 +41,7 @@ console.log("Command:", "ffmpeg", ffmpegArgs.join(" "));
 // Run FFmpeg command
 const ffmpeg = spawn("ffmpeg", ffmpegArgs);
 
-// Log output
-ffmpeg.stdout.on("data", (data) => {
-  console.log(`stdout: ${data}`);
-});
+ffmpeg.stdout.on("data", () => {});
 
 ffmpeg.stderr.on("data", (data) => {
   process.stderr.write(data);

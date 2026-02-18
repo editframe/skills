@@ -208,7 +208,6 @@ export async function processISOBMFF(
 
       // Wait for all tracks to complete and collect their fragment indexes
       const trackResults = await Promise.all(trackPromises);
-      console.log("Track results", trackResults);
 
       // Combine all track fragment indexes into a single index
       const fragmentIndex: Record<number, any> = {};

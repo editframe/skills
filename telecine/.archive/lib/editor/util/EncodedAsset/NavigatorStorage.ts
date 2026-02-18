@@ -6,7 +6,6 @@ import {
 
 export const NavigatorStorage: StorageProvider = {
   async createFromBufferList(id: string, bufferList: ArrayBuffer[]) {
-    console.log("BufferList", bufferList);
     const fsHandle = await navigator.storage.getDirectory();
     const fileHandle = await fsHandle.getFileHandle(id, {
       create: true,
