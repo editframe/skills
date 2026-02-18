@@ -27,7 +27,7 @@ import {
   isNativeCanvasApiAvailable,
   setNativeCanvasApiEnabled,
 } from "./previewSettings.js";
-import { commands } from "@vitest/browser";
+import { commands } from "@vitest/browser/context";
 import { logger } from "./logger.js";
 import "../elements/EFTimegroup.js";
 import "../elements/EFVideo.js";
@@ -526,8 +526,8 @@ describe("renderTimegroupToCanvas", () => {
       });
 
       await expectCanvasesToMatch(
-        foreignCanvas,
-        nativeCanvas,
+        foreignCanvas as unknown as HTMLCanvasElement,
+        nativeCanvas as unknown as HTMLCanvasElement,
         "renderTimegroupToCanvas",
         "video-cross-path",
         { threshold: 0.1, acceptableDiffPercentage: 5.0 },
@@ -545,7 +545,7 @@ describe("renderTimegroupToCanvas", () => {
       for (let i = 0; i < scales.length; i++) {
         const result = await captureTimegroupAtTime(htmlTimegroup, { timeMs: 0, scale: scales[i]! });
         // Native path uses skipDprScaling: true, so canvas is at 1x DPR
-        expect(result.width).toBe(expectedWidths[i]!);
+        expect((result as any).width).toBe(expectedWidths[i]!);
         expect(hasCanvasContent(result)).toBe(true);
       }
     });
@@ -557,7 +557,7 @@ describe("renderTimegroupToCanvas", () => {
 
       for (let i = 0; i < scales.length; i++) {
         const result = await captureTimegroupAtTime(htmlTimegroup, { timeMs: 0, scale: scales[i]! });
-        expect(result.width).toBe(expectedWidths[i]!);
+        expect((result as any).width).toBe(expectedWidths[i]!);
         expect(hasCanvasContent(result)).toBe(true);
       }
     });
@@ -894,7 +894,6 @@ describe("renderTimegroupToCanvas", () => {
           timegroup,
           width,
           height,
-          { waitForPaint: true },
         );
 
         // Draw to output canvas with scaling
@@ -969,7 +968,6 @@ describe("renderTimegroupToCanvas", () => {
         previewContainer,
         width,
         height,
-        { waitForPaint: true },
       );
 
       // Draw to output canvas with scaling
@@ -1302,7 +1300,7 @@ async function decodeFirstFrame(videoBuffer: Uint8Array): Promise<{
   samplePixel: [number, number, number, number];
 }> {
   // Create a video element and load the buffer
-  const blob = new Blob([videoBuffer], { type: "video/mp4" });
+  const blob = new Blob([videoBuffer as unknown as BlobPart], { type: "video/mp4" });
   const url = URL.createObjectURL(blob);
   
   const video = document.createElement("video");
@@ -2230,7 +2228,7 @@ describe("captions rendering in foreignObject path", () => {
     // Helper to properly seek and wait for captions to update (from existing captions tests)
     const seekAndWait = async (timeMs: number) => {
       timegroup.currentTimeMs = timeMs;
-      timegroup.seekTask.run().catch(() => {
+      timegroup.seekTask.run()?.catch(() => {
         // AbortErrors are expected during cleanup
       });
       await timegroup.seekTask.taskComplete;

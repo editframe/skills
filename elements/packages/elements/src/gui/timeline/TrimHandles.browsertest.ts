@@ -96,7 +96,7 @@ describe("EFTrimHandles", () => {
     await simulateDrag(startHandle, container, 10, 50, trimHandles.updateComplete);
 
     expect(changes.length).toBeGreaterThan(0);
-    const detail = changes[changes.length - 1];
+    const detail = changes[changes.length - 1]!;
     expect(detail.type).toBe("start");
     expect(detail.elementId).toBe(trimHandles.elementId);
     expect(detail.value.startMs).toBeGreaterThanOrEqual(0);
@@ -115,7 +115,7 @@ describe("EFTrimHandles", () => {
     await simulateDrag(endHandle, container, rect.width - 10, rect.width - 50, trimHandles.updateComplete);
 
     expect(changes.length).toBeGreaterThan(0);
-    const detail = changes[changes.length - 1];
+    const detail = changes[changes.length - 1]!;
     expect(detail.type).toBe("end");
     expect(detail.value.startMs).toBe(2000); // unchanged
     expect(detail.value.endMs).toBeGreaterThanOrEqual(0);
@@ -136,7 +136,7 @@ describe("EFTrimHandles", () => {
     await simulateDrag(startHandle, container, 10, 90000, trimHandles.updateComplete);
 
     expect(changes.length).toBeGreaterThan(0);
-    const lastChange = changes[changes.length - 1];
+    const lastChange = changes[changes.length - 1]!;
     expect(lastChange.value.startMs).toBeLessThanOrEqual(
       trimHandles.intrinsicDurationMs - trimHandles.trimEndMs,
     );
@@ -154,7 +154,7 @@ describe("EFTrimHandles", () => {
     await simulateDrag(endHandle, container, rect.width - 10, rect.width + 90000, trimHandles.updateComplete);
 
     expect(changes.length).toBeGreaterThan(0);
-    const lastChange = changes[changes.length - 1];
+    const lastChange = changes[changes.length - 1]!;
     expect(lastChange.value.endMs).toBeLessThanOrEqual(
       trimHandles.intrinsicDurationMs - trimHandles.trimStartMs,
     );
@@ -171,7 +171,7 @@ describe("EFTrimHandles", () => {
     await simulateDrag(startHandle, container, 10, -20000, trimHandles.updateComplete);
 
     expect(changes.length).toBeGreaterThan(0);
-    const lastChange = changes[changes.length - 1];
+    const lastChange = changes[changes.length - 1]!;
     expect(lastChange.value.startMs).toBeGreaterThanOrEqual(0);
   }, 1000);
 
@@ -206,8 +206,8 @@ describe("EFTrimHandles", () => {
     await trimHandles.updateComplete;
 
     expect(endDetail).toBeTruthy();
-    expect(endDetail?.elementId).toBe(trimHandles.elementId);
-    expect(endDetail?.type).toBe("start");
+    expect((endDetail as { elementId: string; type: string } | null)?.elementId).toBe(trimHandles.elementId);
+    expect((endDetail as { elementId: string; type: string } | null)?.type).toBe("start");
   }, 1000);
 
   // ============================================================================
@@ -299,7 +299,7 @@ describe("EFTrimHandles", () => {
     await simulateDrag(region, container, 500, 600, trimHandles.updateComplete);
 
     expect(changes.length).toBeGreaterThan(0);
-    const detail = changes[changes.length - 1];
+    const detail = changes[changes.length - 1]!;
     expect(detail.type).toBe("region");
     // Dragging right: trimStart increases, trimEnd decreases
     expect(detail.value.startMs).toBeGreaterThan(2000);
@@ -327,7 +327,7 @@ describe("EFTrimHandles", () => {
     await simulateDrag(region, container, 500, -5000, trimHandles.updateComplete);
 
     expect(changes.length).toBeGreaterThan(0);
-    const detail = changes[changes.length - 1];
+    const detail = changes[changes.length - 1]!;
     expect(detail.value.startMs).toBe(0);
     expect(detail.value.endMs).toBe(4000); // original kept = 6000, so trimEnd = 10000 - 6000 = 4000
   }, 1000);
@@ -349,7 +349,7 @@ describe("EFTrimHandles", () => {
     await simulateDrag(region, container, 500, 6000, trimHandles.updateComplete);
 
     expect(changes.length).toBeGreaterThan(0);
-    const detail = changes[changes.length - 1];
+    const detail = changes[changes.length - 1]!;
     expect(detail.value.endMs).toBe(0);
     expect(detail.value.startMs).toBe(4000); // original kept = 6000, so trimStart = 10000 - 6000 = 4000
   }, 1000);
@@ -362,7 +362,7 @@ describe("EFTrimHandles", () => {
     const container = createContainer(1000);
 
     // Create a mock seek target with a currentTimeMs property
-    const seekTarget = document.createElement("div") as HTMLElement & { currentTimeMs: number };
+    const seekTarget = document.createElement("div") as unknown as HTMLElement & { currentTimeMs: number };
     seekTarget.id = "seek-target-start";
     (seekTarget as any).currentTimeMs = 5000;
     container.appendChild(seekTarget);
@@ -385,7 +385,7 @@ describe("EFTrimHandles", () => {
   test("seeks target to end of kept duration when dragging end handle", async () => {
     const container = createContainer(1000);
 
-    const seekTarget = document.createElement("div") as HTMLElement & { currentTimeMs: number };
+    const seekTarget = document.createElement("div") as unknown as HTMLElement & { currentTimeMs: number };
     seekTarget.id = "seek-target-end";
     (seekTarget as any).currentTimeMs = 0;
     container.appendChild(seekTarget);
@@ -410,7 +410,7 @@ describe("EFTrimHandles", () => {
   test("seeks target to 0 when dragging region", async () => {
     const container = createContainer(1000);
 
-    const seekTarget = document.createElement("div") as HTMLElement & { currentTimeMs: number };
+    const seekTarget = document.createElement("div") as unknown as HTMLElement & { currentTimeMs: number };
     seekTarget.id = "seek-target-region";
     (seekTarget as any).currentTimeMs = 5000;
     container.appendChild(seekTarget);

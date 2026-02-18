@@ -443,7 +443,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
 
       expect(positionChangedHandler).toHaveBeenCalled();
       const event = positionChangedHandler.mock
-        .calls[0][0] as CustomEvent<OverlayItemPosition>;
+        .calls[0]![0] as CustomEvent<OverlayItemPosition>;
 
       // The position should be relative to the overlay layer
       const targetRect = target.getBoundingClientRect();
@@ -583,7 +583,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       // Verify rotation is captured
       expect(positionChangedHandler).toHaveBeenCalled();
       const event = positionChangedHandler.mock
-        .calls[0][0] as CustomEvent<OverlayItemPosition>;
+        .calls[0]![0] as CustomEvent<OverlayItemPosition>;
       expect(event.detail.rotation).toBeCloseTo(45, 1);
 
       // Overlay item should apply the rotation
@@ -715,7 +715,6 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
 
       const target1Rect = target1.getBoundingClientRect();
       const target2Rect = target2.getBoundingClientRect();
-      const overlayLayerRect = overlayLayer.getBoundingClientRect();
 
       // Verify each overlay tracks its own target
       expect(parseFloat(overlayItem1.style.width)).toBeCloseTo(

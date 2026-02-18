@@ -26,11 +26,11 @@ const ITERATIONS = 30;
 function stats(values: number[]) {
   const sorted = [...values].sort((a, b) => a - b);
   return {
-    min: sorted[0],
-    max: sorted[sorted.length - 1],
+    min: sorted[0]!,
+    max: sorted[sorted.length - 1]!,
     avg: values.reduce((s, v) => s + v, 0) / values.length,
-    p50: sorted[Math.floor(sorted.length * 0.5)],
-    p95: sorted[Math.floor(sorted.length * 0.95)],
+    p50: sorted[Math.floor(sorted.length * 0.5)]!,
+    p95: sorted[Math.floor(sorted.length * 0.95)]!,
   };
 }
 

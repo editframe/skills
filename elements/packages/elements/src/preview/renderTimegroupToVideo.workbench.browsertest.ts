@@ -49,7 +49,7 @@ async function decodeFirstFrame(videoBuffer: Uint8Array): Promise<{
   samplePixel: [number, number, number, number];
   nonBlackPercentage: number;
 }> {
-  const blob = new Blob([videoBuffer], { type: "video/mp4" });
+  const blob = new Blob([videoBuffer as unknown as BlobPart], { type: "video/mp4" });
   const url = URL.createObjectURL(blob);
   
   const video = document.createElement("video");

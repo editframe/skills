@@ -32,8 +32,8 @@ describe("serializeTimelineDirect scaling", () => {
     const heightMatch = svgContent.match(/height="(\d+)"/);
     
     return {
-      width: widthMatch ? parseInt(widthMatch[1], 10) : 0,
-      height: heightMatch ? parseInt(heightMatch[1], 10) : 0,
+      width: widthMatch ? parseInt(widthMatch[1]!, 10) : 0,
+      height: heightMatch ? parseInt(heightMatch[1]!, 10) : 0,
       html: svgContent,
     };
   }

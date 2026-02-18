@@ -206,7 +206,7 @@ describe.skip("Canvas-Hierarchy-Timeline Sync", () => {
       await hierarchy.updateComplete;
 
       expect(selectEventDetail).toBeTruthy();
-      expect(selectEventDetail?.elementId).toBe(timegroup1Id);
+      expect((selectEventDetail as { elementId: string | null } | null)?.elementId).toBe(timegroup1Id);
     }, 1000);
   });
 

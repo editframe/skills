@@ -44,11 +44,11 @@ async function measureFrame(
 function stats(values: number[]): { min: number; max: number; avg: number; p50: number; p95: number } {
   const sorted = [...values].sort((a, b) => a - b);
   return {
-    min: sorted[0],
-    max: sorted[sorted.length - 1],
+    min: sorted[0]!,
+    max: sorted[sorted.length - 1]!,
     avg: values.reduce((s, v) => s + v, 0) / values.length,
-    p50: sorted[Math.floor(sorted.length * 0.5)],
-    p95: sorted[Math.floor(sorted.length * 0.95)],
+    p50: sorted[Math.floor(sorted.length * 0.5)]!,
+    p95: sorted[Math.floor(sorted.length * 0.95)]!,
   };
 }
 
@@ -98,7 +98,7 @@ describe("serialization pipeline performance", () => {
       console.log(formatStats("serialize    ", results.map(r => r.serializeMs)));
       console.log(formatStats("imageLoad    ", results.map(r => r.imageLoadMs)));
       console.log(formatStats("total        ", results.map(r => r.totalMs)));
-      console.log(`dataUri size:  ${(results[0].dataUriLength / 1024).toFixed(1)} KB`);
+      console.log(`dataUri size:  ${(results[0]!.dataUriLength / 1024).toFixed(1)} KB`);
       console.log(`effective fps: ${(1000 / stats(results.map(r => r.totalMs)).avg).toFixed(1)} fps`);
 
       // Sanity: should complete, no assertion on speed
@@ -148,7 +148,7 @@ describe("serialization pipeline performance", () => {
       console.log(formatStats("serialize    ", results.map(r => r.serializeMs)));
       console.log(formatStats("imageLoad    ", results.map(r => r.imageLoadMs)));
       console.log(formatStats("total        ", results.map(r => r.totalMs)));
-      console.log(`dataUri size:  ${(results[0].dataUriLength / 1024).toFixed(1)} KB`);
+      console.log(`dataUri size:  ${(results[0]!.dataUriLength / 1024).toFixed(1)} KB`);
       console.log(`effective fps: ${(1000 / stats(results.map(r => r.totalMs)).avg).toFixed(1)} fps`);
 
       expect(results.length).toBe(ITERATIONS);
@@ -207,7 +207,7 @@ describe("serialization pipeline performance", () => {
       console.log(formatStats("serialize    ", results.map(r => r.serializeMs)));
       console.log(formatStats("imageLoad    ", results.map(r => r.imageLoadMs)));
       console.log(formatStats("total        ", results.map(r => r.totalMs)));
-      console.log(`dataUri size:  ${(results[0].dataUriLength / 1024).toFixed(1)} KB`);
+      console.log(`dataUri size:  ${(results[0]!.dataUriLength / 1024).toFixed(1)} KB`);
       console.log(`effective fps: ${(1000 / stats(results.map(r => r.totalMs)).avg).toFixed(1)} fps`);
       console.log(`DOM nodes:     ~${grid.querySelectorAll("*").length + 1}`);
 
@@ -279,7 +279,7 @@ describe("serialization pipeline performance", () => {
       console.log(formatStats("serialize    ", results.map(r => r.serializeMs)));
       console.log(formatStats("imageLoad    ", results.map(r => r.imageLoadMs)));
       console.log(formatStats("total        ", results.map(r => r.totalMs)));
-      console.log(`dataUri size:  ${(results[0].dataUriLength / 1024).toFixed(1)} KB`);
+      console.log(`dataUri size:  ${(results[0]!.dataUriLength / 1024).toFixed(1)} KB`);
       console.log(`effective fps: ${(1000 / stats(results.map(r => r.totalMs)).avg).toFixed(1)} fps`);
 
       expect(results.length).toBe(ITERATIONS);
@@ -368,14 +368,14 @@ describe("serialization pipeline performance", () => {
 
     // Warmup
     for (let i = 0; i < 2; i++) {
-      await pool.execute((worker) => encodeCanvasInWorker(worker, bigCanvas, false, 630, 354));
+      await pool.execute((worker) => encodeCanvasInWorker(worker, bigCanvas, false));
     }
 
     const resizeTimes: number[] = [];
     let resizeSize = 0;
     for (let i = 0; i < 10; i++) {
       const t = performance.now();
-      const result = await pool.execute((worker) => encodeCanvasInWorker(worker, bigCanvas, false, 630, 354));
+      const result = await pool.execute((worker) => encodeCanvasInWorker(worker, bigCanvas, false));
       resizeTimes.push(performance.now() - t);
       if (i === 0) resizeSize = result.length;
     }
@@ -457,7 +457,7 @@ describe("serialization pipeline performance", () => {
       for (let i = 0; i < 20; i++) {
         // Phase 1: DOM walk + XHTML generation
         const t0 = performance.now();
-        const xhtml = await serializeElementToXHTML(tg, 1920, 1080, { canvasScale: 1, timeMs: 0 });
+        await serializeElementToXHTML(tg, 1920, 1080, { canvasScale: 1, timeMs: 0 });
         xhtmlTimes.push(performance.now() - t0);
 
         // Phase 2: Full pipeline (DOM walk + XHTML + SVG wrap + base64 encode)

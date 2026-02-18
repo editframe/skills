@@ -30,8 +30,8 @@ export function captureCanvasAsDataUrl(
   
   // Otherwise, draw to temp canvas first
   const canvas = document.createElement('canvas');
-  canvas.width = source.width as number;
-  canvas.height = source.height as number;
+  canvas.width = (source as any).width as number;
+  canvas.height = (source as any).height as number;
   const ctx = canvas.getContext("2d");
   if (!ctx) {
     throw new Error("Failed to get canvas 2d context");
@@ -197,7 +197,7 @@ export async function expectCanvasToMatchSnapshot(
     acceptableDiffPercentage?: number;
   } = {},
 ): Promise<void> {
-  const result = await assertCanvasSnapshot(source, testName, snapshotName, options);
+  const result = await assertCanvasSnapshot(source as unknown as HTMLCanvasElement, testName, snapshotName, options);
   
   if (result.baselineCreated) {
     console.log(`✅ Created baseline: ${testName}/${snapshotName}`);

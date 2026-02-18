@@ -1433,8 +1433,9 @@ describe("EFTimeline", () => {
       await timeline.updateComplete;
 
       expect(selectEventDetail).toBeTruthy();
-      expect(selectEventDetail?.elementId).toBe(timegroupId);
-      expect(selectEventDetail?.element).toBe(timegroup);
+      const sed = selectEventDetail as { elementId: string; element: HTMLElement } | null;
+      expect(sed?.elementId).toBe(timegroupId);
+      expect(sed?.element).toBe(timegroup);
     });
 
     test("clicking timeline row updates canvas selection when canvas present", async () => {

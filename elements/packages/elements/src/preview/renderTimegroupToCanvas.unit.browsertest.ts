@@ -207,8 +207,8 @@ describe("captureTimegroupAtTime", () => {
       const result = await captureTimegroupAtTime(timegroup, { timeMs: 0 });
 
       expect(result instanceof HTMLCanvasElement || result instanceof HTMLImageElement).toBe(true);
-      expect(result.width).toBeGreaterThan(0);
-      expect(result.height).toBeGreaterThan(0);
+      expect((result as any).width).toBeGreaterThan(0);
+      expect((result as any).height).toBeGreaterThan(0);
     } finally {
       document.body.removeChild(container);
     }
@@ -233,8 +233,8 @@ describe("captureTimegroupAtTime", () => {
       });
 
       expect(result instanceof HTMLCanvasElement || result instanceof HTMLImageElement).toBe(true);
-      expect(result.width).toBeGreaterThan(0);
-      expect(result.width).toBeLessThanOrEqual(400 * window.devicePixelRatio);
+      expect((result as any).width).toBeGreaterThan(0);
+      expect((result as any).width).toBeLessThanOrEqual(400 * window.devicePixelRatio);
     } finally {
       document.body.removeChild(container);
     }

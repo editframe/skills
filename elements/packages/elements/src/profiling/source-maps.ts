@@ -103,7 +103,7 @@ export class SourceMapResolver {
       return null;
     }
 
-    let sourceMapUrl = match[1];
+    let sourceMapUrl = match[1]!;
     if (!sourceMapUrl.startsWith("http") && !sourceMapUrl.startsWith("data:")) {
       const scriptBase = scriptUrl.substring(0, scriptUrl.lastIndexOf("/") + 1);
       sourceMapUrl = scriptBase + sourceMapUrl;
@@ -113,7 +113,7 @@ export class SourceMapResolver {
     if (sourceMapUrl.startsWith("data:")) {
       const dataMatch = sourceMapUrl.match(/^data:[^,]*base64,(.*)$/);
       if (dataMatch) {
-        sourceMapJson = Buffer.from(dataMatch[1], "base64").toString("utf-8");
+        sourceMapJson = Buffer.from(dataMatch[1]!, "base64").toString("utf-8");
       } else {
         sourceMapJson = null;
       }

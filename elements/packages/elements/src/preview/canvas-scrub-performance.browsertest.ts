@@ -251,7 +251,7 @@ describe("Canvas Scrub Performance Profile", () => {
 
     const gaps: number[] = [];
     for (let i = 1; i < frameTimestamps.length; i++) {
-      gaps.push(frameTimestamps[i] - frameTimestamps[i - 1]);
+      gaps.push(frameTimestamps[i]! - frameTimestamps[i - 1]!);
     }
     const avgGap =
       gaps.length > 0 ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 0;

@@ -18,7 +18,7 @@ export function formatHotspotsTable(hotspots: HotspotInfo[], options: FormatOpti
   const displayHotspots = hotspots.slice(0, topN);
 
   for (let i = 0; i < displayHotspots.length; i++) {
-    const h = displayHotspots[i];
+    const h = displayHotspots[i]!;
     const rank = (i + 1).toString().padStart(3);
     const time = h.selfTime.toFixed(1).padStart(7);
     const pct = h.selfTimePct.toFixed(1).padStart(5);
@@ -58,7 +58,7 @@ export function generateRecommendations(hotspots: HotspotInfo[]): string[] {
   
   // Top hotspot recommendations
   for (let i = 0; i < Math.min(3, hotspots.length); i++) {
-    const h = hotspots[i];
+    const h = hotspots[i]!;
     if (h.selfTimePct > 15) {
       const callInfo = h.callCount && h.callCount > 1 ? ` (called ${h.callCount} times)` : "";
       recommendations.push(
@@ -295,7 +295,7 @@ export function printHotspots(hotspots: HotspotInfo[], topN: number = 10): void 
   const displayHotspots = hotspots.slice(0, topN);
   console.log(`    Top ${displayHotspots.length} hotspots:`);
   for (let i = 0; i < displayHotspots.length; i++) {
-    const hotspot = displayHotspots[i];
+    const hotspot = displayHotspots[i]!;
     const location = `${hotspot.file}:${hotspot.line}`;
     const rank = (i + 1).toString().padStart(2);
     console.log(

@@ -49,7 +49,7 @@ async function decodeFirstFrame(videoBuffer: Uint8Array): Promise<{
   samplePixel: [number, number, number, number];
   nonBlackPercentage: number;
 }> {
-  const blob = new Blob([videoBuffer], { type: "video/mp4" });
+  const blob = new Blob([videoBuffer as unknown as BlobPart], { type: "video/mp4" });
   const url = URL.createObjectURL(blob);
   
   const video = document.createElement("video");
@@ -195,7 +195,7 @@ describe("renderTimegroupToVideo foreignObject path with ef-video", () => {
       });
       
       const thumbnailResult = canvasHasContent(thumbnailCanvas as HTMLCanvasElement | HTMLImageElement);
-      logger.debug(`[ForeignObject Path Test] Thumbnail capture: ${thumbnailCanvas.width}x${thumbnailCanvas.height}, hasContent: ${thumbnailResult.hasContent}, nonBlack: ${thumbnailResult.nonBlackPercentage.toFixed(1)}%`);
+      logger.debug(`[ForeignObject Path Test] Thumbnail capture: ${(thumbnailCanvas as any).width}x${(thumbnailCanvas as any).height}, hasContent: ${thumbnailResult.hasContent}, nonBlack: ${thumbnailResult.nonBlackPercentage.toFixed(1)}%`);
       
       expect(thumbnailResult.hasContent, "Thumbnail capture should have non-black content").toBe(true);
       

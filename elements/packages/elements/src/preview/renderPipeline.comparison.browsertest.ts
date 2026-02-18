@@ -83,9 +83,9 @@ function compareCanvases(c1: HTMLCanvasElement, c2: HTMLCanvasElement): { match:
   const threshold = 10; // Allow small color differences
 
   for (let i = 0; i < d1.length; i += 4) {
-    const dr = Math.abs(d1[i] - d2[i]);
-    const dg = Math.abs(d1[i + 1] - d2[i + 1]);
-    const db = Math.abs(d1[i + 2] - d2[i + 2]);
+    const dr = Math.abs(d1[i]! - d2[i]!);
+    const dg = Math.abs(d1[i + 1]! - d2[i + 1]!);
+    const db = Math.abs(d1[i + 2]! - d2[i + 2]!);
     if (dr <= threshold && dg <= threshold && db <= threshold) {
       matching++;
     }
@@ -194,7 +194,7 @@ describe("native vs foreignObject output comparison", () => {
     const data = resultCtx.getImageData(0, 0, c.width, c.height).data;
     let nonZeroPixels = 0;
     for (let i = 3; i < data.length; i += 4) {
-      if (data[i] > 0) nonZeroPixels++;
+      if (data[i]! > 0) nonZeroPixels++;
     }
     const totalPixels = c.width * c.height;
 

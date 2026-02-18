@@ -21,7 +21,7 @@ afterEach(() => {
 function parseTransformX(element: HTMLElement): number {
   const transform = element.style.transform;
   const match = transform.match(/translateX\((-?\d+(?:\.\d+)?)px\)/);
-  return match ? parseFloat(match[1]) : NaN;
+  return match ? parseFloat(match[1]!) : NaN;
 }
 
 // Skip all EFTimelineRuler tests - failing tests need investigation
@@ -183,7 +183,7 @@ describe.skip("EFTimelineRuler", () => {
     expect(labels.length).toBeGreaterThan(1);
 
     if (labels.length > 1) {
-      expect(labels[1].x).toBeGreaterThan(labels[0].x);
+      expect(labels[1]!.x).toBeGreaterThan(labels[0]!.x);
     }
   });
 
@@ -417,8 +417,8 @@ describe.skip("EFTimelineRuler", () => {
       .sort((a, b) => a - b);
 
     if (initialPositions.length > 1 && zoomedPositions.length > 1) {
-      const initialSpacing = initialPositions[1] - initialPositions[0];
-      const zoomedSpacing = zoomedPositions[1] - zoomedPositions[0];
+      const initialSpacing = initialPositions[1]! - initialPositions[0]!;
+      const zoomedSpacing = zoomedPositions[1]! - zoomedPositions[0]!;
       expect(zoomedSpacing).toBeGreaterThanOrEqual(initialSpacing);
     }
   });
