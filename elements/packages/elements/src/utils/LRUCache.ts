@@ -104,6 +104,13 @@ export class SizeAwareLRUCache<K> {
         throw error;
       });
 
+    // Suppress unhandled rejection on the derived promise. This promise sits in
+    // the cache and may reject before any caller retrieves and awaits it.
+    // Zone.js checks for handlers synchronously at rejection time — without this,
+    // the re-thrown error triggers an unhandledrejection event. Callers who later
+    // await the cached promise still see the rejection (this just adds a no-op branch).
+    sizeTrackingPromise.catch(() => {});
+
     this.cache.set(key, sizeTrackingPromise);
   }
 

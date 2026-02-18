@@ -722,6 +722,8 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     await new Promise((resolve) => requestAnimationFrame(resolve));
 
     // WARMUP: Do a seek to the first timestamp to "prime" the clone
+    // Guard: clone may have been disposed during prior awaits
+    if (!this.#timegroupClone) return;
     if (timestamps.length > 0) {
       await this.#timegroupClone.clone.seekForRender(timestamps[0]!);
     }
@@ -746,6 +748,9 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       }
     }
     await Promise.all(imagePromises);
+
+    // Guard: clone may have been disposed during prior awaits
+    if (!this.#timegroupClone) return;
 
     // Initialize queue
     this.#timegroupQueue.reset(timestamps);
