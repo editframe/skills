@@ -6,7 +6,6 @@ import { customElement, property } from "lit/decorators.js";
 import { quantizeToFrameTimeS } from "../utils/frameTime.js";
 import { getCloneFactory } from "./cloneFactoryRegistry.js";
 import { EF_RENDERING } from "../EF_RENDERING.js";
-import { isContextMixin } from "../gui/ContextMixin.js";
 import { efContext } from "../gui/efContext.js";
 import { TWMixin } from "../gui/TWMixin.js";
 import { isTracingEnabled, withSpan } from "../otel/tracingHelpers.js";
@@ -21,11 +20,9 @@ import { deepGetMediaElements, type EFMedia } from "./EFMedia.js";
 import {
   EFTemporal,
   flushStartTimeMsCache,
-  isEFTemporal,
   resetTemporalCache,
   shallowGetTemporalElements,
   timegroupContext,
-  type ContentReadyState,
   type TemporalMixinInterface,
 } from "./EFTemporal.js";
 import { parseTimeToMs } from "./parseTimeToMs.js";
@@ -536,7 +533,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
 
   #syncChildListeners(): void {
     const currentChildren = new Set(
-      shallowGetTemporalElements(this),
+      shallowGetTemporalElements(this) as Array<TemporalMixinInterface & HTMLElement>,
     );
 
     // Remove listeners from children that left
@@ -2156,17 +2153,6 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     return shallowGetTemporalElements(this);
   }
 
-  get #contextProvider() {
-    let parent = this.parentNode;
-    while (parent) {
-      if (isContextMixin(parent)) {
-        return parent;
-      }
-      parent = parent.parentNode;
-    }
-    return null;
-  }
-
   /**
    * Returns true if the timegroup should be wrapped with a workbench.
    *
@@ -2308,14 +2294,6 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     workbench.append(filmstrip);
   }
 
-  get #efElements() {
-    return Array.from(
-      this.querySelectorAll(
-        "ef-audio, ef-video, ef-image, ef-captions, ef-waveform",
-      ),
-    );
-  }
-
   /**
    * Returns media elements for playback audio rendering
    * For standalone media, returns [this]; for timegroups, returns all descendants
@@ -2336,57 +2314,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     return renderTemporalAudio(this, fromMs, toMs, signal);
   }
 
-  /**
-   * TEMPORARY TEST METHOD: Renders audio and immediately plays it back
-   * Usage: timegroup.testPlayAudio(0, 5000) // Play first 5 seconds
-   */
-  async #testPlayAudio(fromMs: number, toMs: number) {
-    // Render the audio using the existing renderAudio method
-    const renderedBuffer = await this.renderAudio(fromMs, toMs);
 
-    // Create a regular AudioContext for playback
-    const playbackContext = new AudioContext();
-
-    // Create a buffer source and connect it
-    const bufferSource = playbackContext.createBufferSource();
-    bufferSource.buffer = renderedBuffer;
-    bufferSource.connect(playbackContext.destination);
-
-    // Start playback immediately
-    bufferSource.start(0);
-
-    // Return a promise that resolves when playback ends
-    return new Promise<void>((resolve) => {
-      bufferSource.onended = () => {
-        playbackContext.close();
-        resolve();
-      };
-    });
-  }
-
-  async #loadMd5Sums() {
-    const efElements = this.#efElements;
-    const loaderTasks: Promise<any>[] = [];
-    for (const el of efElements) {
-      const md5SumLoader = (el as any).md5SumLoader;
-      // Check for any object with run() and taskComplete
-      if (md5SumLoader && typeof md5SumLoader.run === 'function') {
-        // Attach .catch() to prevent unhandled rejection warning - errors handled via taskComplete
-        md5SumLoader.run().catch(() => {});
-        if (md5SumLoader.taskComplete) {
-          loaderTasks.push(md5SumLoader.taskComplete);
-        }
-      }
-    }
-
-    await Promise.all(loaderTasks);
-
-    efElements.forEach((el) => {
-      if ("productionSrc" in el && el.productionSrc instanceof Function) {
-        el.setAttribute("src", el.productionSrc());
-      }
-    });
-  }
 
   async #executeCustomFrameTasks() {
     if (this.#customFrameTasks.size > 0) {

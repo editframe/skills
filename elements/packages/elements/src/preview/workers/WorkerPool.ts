@@ -20,7 +20,6 @@ export class WorkerPool {
   private taskQueue: QueuedTask<unknown>[] = [];
   private isTerminated = false;
   private workerUrl: string;
-  private taskIdCounter = 0;
 
   constructor(
     workerScriptUrl: string,

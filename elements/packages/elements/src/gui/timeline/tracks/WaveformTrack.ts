@@ -1,4 +1,4 @@
-import { html, nothing, type TemplateResult } from "lit";
+import { nothing, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
 import { phosphorIcon, ICONS } from "../../icons.js";
 // TrackItem must be pre-loaded before this module is imported

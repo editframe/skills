@@ -212,7 +212,7 @@ export function formatProfileAnalysisJSON(
 /**
  * Format profile comparison for text output
  */
-export function formatProfileComparison(comparison: ProfileComparison, options: FormatOptions = {}): string {
+export function formatProfileComparison(comparison: ProfileComparison, _options: FormatOptions = {}): string {
   const lines: string[] = [];
 
   lines.push("=== PROFILE COMPARISON ===");

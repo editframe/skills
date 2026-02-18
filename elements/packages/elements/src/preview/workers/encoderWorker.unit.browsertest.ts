@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { getEncoderWorkerUrl } from "./encoderWorkerInline.js";
 
 /**

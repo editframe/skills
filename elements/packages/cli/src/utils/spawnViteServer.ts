@@ -43,7 +43,7 @@ export async function spawnViteServer(
       // Format: "  ➜  Local:   http://localhost:5173/"
       const match = output.match(/Local:\s+(https?:\/\/[^\s]+)/);
       if (match && !resolved) {
-        url = match[1].trim();
+        url = match[1]!.trim();
         resolved = true;
         log("Vite server ready at:", url);
         resolve({

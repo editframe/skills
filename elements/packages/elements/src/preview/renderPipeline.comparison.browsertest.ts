@@ -10,8 +10,7 @@ import { captureTimelineToDataUri } from "./rendering/serializeTimelineDirect.js
 import { loadImageFromDataUri } from "./rendering/loadImage.js";
 import { renderToImageNative } from "./rendering/renderToImageNative.js";
 import { isNativeCanvasApiAvailable } from "./previewSettings.js";
-import { FrameController } from "./FrameController.js";
-import { updateAnimations } from "../elements/updateAnimations.js";
+
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
 import "../elements/EFTimegroup.js";
 

@@ -12,7 +12,6 @@ import { customElement, property } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 
 import {
-  isEFTemporal,
   type TemporalMixinInterface,
 } from "../../../elements/EFTemporal.js";
 import { EFTimegroup } from "../../../elements/EFTimegroup.js";
@@ -78,13 +77,6 @@ class ElementTrackController implements ReactiveController {
     // Duration changes are now handled separately via checkDuration()
   }
 }
-
-const CommonEffectKeys = new Set([
-  "offset",
-  "easing",
-  "composite",
-  "computedOffset",
-]);
 
 @customElement("ef-track-item")
 export class TrackItem extends TWMixin(LitElement) {

@@ -19,12 +19,10 @@ import {
   setRenderMode,
   type RenderMode,
   getPreviewResolutionScale,
-  setPreviewResolutionScale,
   type PreviewResolutionScale,
   getShowStats,
   getShowThumbnailTimestamps,
   setShowThumbnailTimestamps,
-  onPreviewSettingsChanged,
 } from "../preview/previewSettings.js";
 import { setShowStats } from "../preview/previewSettings.js";
 import { AdaptiveResolutionTracker } from "../preview/AdaptiveResolutionTracker.js";
@@ -591,8 +589,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   private savePanZoomDebounceTimer: number | null = null;
   
   
-  // Canvas renderer (kept for thumbnail generation, not displayed)
-  private canvasRefresh: (() => Promise<void>) | null = null;
   
   // Canvas preview mode state
   private canvasPreviewRef = createRef<HTMLDivElement>();
@@ -686,8 +682,8 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     this.stopMotionStateTracking();
     
     // Clean up cache stats updates
-    if (typeof this.stopCacheStatsUpdates === 'function') {
-      this.stopCacheStatsUpdates();
+    if (typeof (this as any).stopCacheStatsUpdates === 'function') {
+      (this as any).stopCacheStatsUpdates();
     }
     
     // Clean up adaptive tracker
@@ -1212,9 +1208,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     // Clamp to reasonable bounds [10%, 100%]
     const finalScale = Math.max(0.1, Math.min(1, targetScale));
     
-    const renderWidth = Math.floor(compositionWidth * finalScale);
-    const renderHeight = Math.floor(compositionHeight * finalScale);
-    
     return finalScale;
   }
   
@@ -1264,10 +1257,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     // Track zoom level for detecting significant changes
     this.lastCanvasZoom = this.panZoomTransform.scale;
     
-    // Store composition dimensions for stats calculation
-    const compositionWidth = timegroup.offsetWidth || 1920;
-    const compositionHeight = timegroup.offsetHeight || 1080;
-    
     try {
       // CRITICAL: Wait for any in-progress seek to complete AND let playback controller initialize
       // The playback controller may be restoring time from localStorage
@@ -1295,7 +1284,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       // Store the full result for dynamic resolution changes
       this.canvasPreviewResult = result;
       
-      const { container, canvas, refresh, getResolutionScale } = result;
+      const { container, canvas, refresh } = result;
       
       canvas.classList.add("clone-content");
       
@@ -1387,7 +1376,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       // Dynamic import to avoid loading render utilities during SSR
       const { renderTimegroupToCanvas } = await import("../preview/renderTimegroupToCanvas.js");
       const { canvas, refresh } = renderTimegroupToCanvas(timegroup, 1);
-      this.canvasRefresh = refresh;
       return { canvas, refresh };
     } catch (e) {
       console.error("Failed to init canvas renderer:", e);
@@ -1415,7 +1403,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     
     try {
       // Dynamic import to avoid loading render utilities during SSR
-      const { renderTimegroupToVideo, RenderCancelledError } = await import("../preview/renderTimegroupToVideo.js");
+      const { renderTimegroupToVideo } = await import("../preview/renderTimegroupToVideo.js");
       await renderTimegroupToVideo(timegroup, {
         ...options,
         signal: this.exportAbortController.signal,
@@ -1555,32 +1543,6 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   private handleRenderModeChange(mode: RenderMode) {
     setRenderMode(mode);
     this.previewSettings = { ...this.previewSettings, renderMode: mode };
-  }
-  
-  private handleResolutionScaleChange(scale: PreviewResolutionScale) {
-    console.log(`[EFWorkbench] Resolution scale changed to ${scale}, presentationMode=${this.presentationMode}`);
-    setPreviewResolutionScale(scale);
-    this.previewSettings = { ...this.previewSettings, resolutionScale: scale };
-    
-    // Reset adaptive tracker when switching to auto mode
-    if (scale === "auto") {
-      this.adaptiveTracker?.reset();
-      this.currentAdaptiveScale = 1;
-    }
-    
-    // Apply new resolution scale dynamically if canvas mode is active
-    if (this.presentationMode === "canvas" && this.canvasPreviewResult) {
-      console.log("[EFWorkbench] Applying new resolution scale to canvas");
-      const timegroup = this.getTimegroup();
-      const canvasContainer = this.canvasPreviewRef.value;
-      if (timegroup && canvasContainer) {
-        const newScale = scale === "auto"
-          ? this.getEffectiveResolutionScale(timegroup, canvasContainer)
-          : this.getResolutionScale(timegroup, canvasContainer);
-        
-        this.canvasPreviewResult.setResolutionScale(newScale);
-      }
-    }
   }
   
   private handleShowStatsToggle(enabled: boolean) {

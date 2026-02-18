@@ -62,7 +62,7 @@ class CurrentTimeController implements ReactiveController {
 }
 
 export const useTimingInfo = (
-  timegroupRef: React.RefObject<EFTimegroup> = useRef<EFTimegroup>(null),
+  timegroupRef: React.RefObject<EFTimegroup | null> = useRef<EFTimegroup>(null),
 ) => {
   const [timeInfo, setTimeInfo] = useState<TimeInfo>({
     ownCurrentTimeMs: 0,

@@ -1,4 +1,3 @@
-import type { ContainerInfo } from "../elements/ContainerInfo.js";
 import { getContainerInfoFromElement } from "../elements/ContainerInfo.js";
 
 /**

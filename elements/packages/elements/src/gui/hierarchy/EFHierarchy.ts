@@ -257,6 +257,7 @@ export class EFHierarchy extends TWMixin(LitElement) {
 
   @provide({ context: hierarchyContext })
   @state()
+  // @ts-ignore
   private providedContext: HierarchyContext = {
     state: this.hierarchyState,
     actions: this.hierarchyActions,

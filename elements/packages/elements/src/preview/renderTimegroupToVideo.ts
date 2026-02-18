@@ -28,8 +28,7 @@ import {
   type AudioCodec,
 } from "mediabunny";
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
-import type { EFVideo } from "../elements/EFVideo.js";
-import type { RenderProgress, RenderToVideoOptions } from "./renderTimegroupToVideo.types.js";
+import type { RenderToVideoOptions } from "./renderTimegroupToVideo.types.js";
 import type { ContentReadyMode } from "./renderTimegroupToCanvas.types.js";
 import {
   resetRenderState,

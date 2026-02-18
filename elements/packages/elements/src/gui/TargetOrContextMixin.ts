@@ -129,11 +129,11 @@ export function TargetOrContextMixin<T extends Constructor<LitElement>>(
       if (isEFTemporal(this.targetElement)) {
         const target = this.targetElement as unknown as TemporalMixinInterface & HTMLElement;
         target.updateComplete.then(() => {
-          if (this.targetElement !== target) return;
+          if ((this.targetElement as unknown) !== target) return;
           if (!this.#tryDirectTemporalSubscription()) {
             // Still not ready — one more cycle (PlaybackController created in updateComplete.then)
             target.updateComplete.then(() => {
-              if (this.targetElement !== target) return;
+              if ((this.targetElement as unknown) !== target) return;
               this.#tryDirectTemporalSubscription();
             });
           }

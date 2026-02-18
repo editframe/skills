@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, vi } from "vitest";
 import { test as baseTest } from "../../test/useMSW.js";
 import type { EFCanvas } from "./EFCanvas.js";
 import type { EFTransformHandles } from "../gui/EFTransformHandles.js";
@@ -268,7 +268,6 @@ describe("Canvas Nested and Rotated Element Overlays - Visual Verification", () 
     // For rotated elements, we check that:
     // 1. Centers match (since rotation is around center)
     // 2. Handles show actual dimensions (not bounding box)
-    const elementRect = element.getBoundingClientRect();
     const bounds = handles.bounds;
 
     expect(bounds).toBeTruthy();

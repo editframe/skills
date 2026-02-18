@@ -44,16 +44,6 @@ export abstract class BaseMediaEngine {
   }
 
   /**
-   * Generate cache key for segment requests
-   */
-  private getSegmentCacheKey(
-    segmentId: number,
-    rendition: { src: string; trackId: number | undefined; id?: string },
-  ): string {
-    return `${rendition.src}-${rendition.id}-${segmentId}-${rendition.trackId}`;
-  }
-
-  /**
    * Unified fetch method with caching and global deduplication
    * All requests (media, manifest, init segments) go through this method
    */
@@ -394,7 +384,7 @@ export abstract class BaseMediaEngine {
    */
   async extractThumbnails(
     timestamps: number[],
-    signal?: AbortSignal,
+    _signal?: AbortSignal,
   ): Promise<(ThumbnailResult | null)[]> {
     const engineName = this.constructor.name;
     console.warn(

@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, test } from "vitest";
 import type { EFWorkbench } from "./EFWorkbench.js";
 import "./EFWorkbench.js";
 import "../elements/EFTimegroup.js";
-import type { VideoRenderOptions } from "@editframe/assets";
 
 // Skip all EFWorkbench tests - failing tests need investigation
 describe.skip("EFWorkbench", () => {
@@ -60,18 +59,6 @@ describe.skip("EFWorkbench", () => {
 
     // Initially, rendering should be false
     expect(workbench.rendering).toBe(false);
-
-    // Simulate framegen initialization (this is what EF_FRAMEGEN.initialize does)
-    const renderOptions: VideoRenderOptions = {
-      encoderOptions: {
-        video: { width: 1920, height: 1080, framerate: 30 },
-        audio: { sampleRate: 48000, channels: 2 },
-        fromMs: 0,
-        toMs: 2000,
-        alignedFromUs: 0,
-        alignedToUs: 2_000_000,
-      },
-    };
 
     // Simulate what EF_FRAMEGEN.initialize does
     workbench.rendering = true;

@@ -1,6 +1,5 @@
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
 import type {
-  ContentReadyMode,
   CaptureOptions,
   CaptureFromCloneOptions,
   GeneratedThumbnail,
@@ -12,7 +11,7 @@ import type {
 import { RenderContext } from "./RenderContext.js";
 import { FrameController } from "./FrameController.js";
 import { captureTimelineToDataUri } from "./rendering/serializeTimelineDirect.js";
-import { updateAnimations } from "../elements/updateAnimations.js";
+import { updateAnimations, type AnimatableElement } from "../elements/updateAnimations.js";
 
 // Re-export renderer types for external use
 export type { RenderOptions, RenderResult, Renderer } from "./renderers.js";
@@ -317,7 +316,7 @@ export async function waitForVideoContent(
  */
 export async function captureFromClone(
   renderClone: EFTimegroup,
-  renderContainer: HTMLElement,
+  _renderContainer: HTMLElement,
   options: CaptureFromCloneOptions = {},
 ): Promise<CanvasImageSource> {
   const {
@@ -338,9 +337,6 @@ export async function captureFromClone(
   const sourceForDimensions = originalTimegroup ?? renderClone;
   const width = sourceForDimensions.offsetWidth || DEFAULT_WIDTH;
   const height = sourceForDimensions.offsetHeight || DEFAULT_HEIGHT;
-  
-  const cloneComputedWidth = getComputedStyle(renderClone).width;
-  const cloneComputedHeight = getComputedStyle(renderClone).height;
   
   // NOTE: seekForRender() has already:
   // 1. Called frameController.renderFrame() to coordinate FrameRenderable elements
@@ -841,7 +837,7 @@ export function renderTimegroupToCanvas(
       await frameController.renderFrame(userTimeMs, {
         waitForLitUpdate: false,
         onAnimationsUpdate: (root) => {
-          updateAnimations(root);
+          updateAnimations(root as AnimatableElement);
         },
       });
       const fcMs = performance.now() - tFC0;

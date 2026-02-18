@@ -6,7 +6,7 @@
  * frame is currently available without blocking.
  */
 import { html, render } from "lit";
-import { describe, expect, afterEach } from "vitest";
+import { describe, expect } from "vitest";
 import { test as baseTest } from "../../test/useMSW.js";
 import { getApiHost } from "../../test/setup.js";
 import { renderTimegroupToCanvas } from "./renderTimegroupToCanvas.js";
@@ -140,7 +140,7 @@ describe("Canvas Video Performance", () => {
   }, 30000);
 
   test("foreignObject: RAF loop with video+HTML content", async ({
-    videoTimegroup: { tg, container },
+    videoTimegroup: { tg },
   }) => {
     const renderContext = new RenderContext();
     const width = tg.offsetWidth || 800;

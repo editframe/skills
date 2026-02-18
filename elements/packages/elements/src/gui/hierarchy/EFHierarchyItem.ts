@@ -12,8 +12,7 @@ import { EFTimegroup } from "../../elements/EFTimegroup.js";
 import { EFVideo } from "../../elements/EFVideo.js";
 import { EFWaveform } from "../../elements/EFWaveform.js";
 import { selectionContext } from "../../canvas/selection/selectionContext.js";
-import { findRootTemporal } from "../../elements/findRootTemporal.js";
-import { isEFTemporal } from "../../elements/EFTemporal.js";
+
 import { TWMixin } from "../TWMixin.js";
 import { phosphorIcon, ICONS } from "../icons.js";
 import { type HierarchyContext, hierarchyContext } from "./hierarchyContext.js";

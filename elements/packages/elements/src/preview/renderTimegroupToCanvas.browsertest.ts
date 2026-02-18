@@ -27,7 +27,7 @@ import {
   isNativeCanvasApiAvailable,
   setNativeCanvasApiEnabled,
 } from "./previewSettings.js";
-import { commands } from "vitest/browser";
+import { commands } from "@vitest/browser";
 import { logger } from "./logger.js";
 import "../elements/EFTimegroup.js";
 import "../elements/EFVideo.js";
@@ -37,7 +37,7 @@ import "../gui/EFWorkbench.js";
 import "../gui/EFConfiguration.js";
 import "../canvas/EFCanvas.js";
 
-const TEST_CAPTURE_SCALE = 0.1; // Small scale like real thumbnail strip uses
+
 
 beforeAll(async () => {
   console.clear();
@@ -380,70 +380,7 @@ function hasCanvasContent(source: CanvasImageSource | HTMLCanvasElement): boolea
   return imageData.data.some((value, index) => index % 4 !== 3 && value !== 0);
 }
 
-/**
- * Check if canvas has meaningful visual content (not just a solid color background).
- * This detects blank thumbnails that have a background but no actual rendered content.
- * 
- * Uses statistical analysis of pixel variance to detect solid-color frames.
- */
-function hasMeaningfulContent(canvas: HTMLCanvasElement): boolean {
-  const ctx = canvas.getContext("2d")!;
-  const width = canvas.width;
-  const height = canvas.height;
-  
-  if (width === 0 || height === 0) return false;
-  
-  // Sample a grid of pixels across the canvas
-  const sampleSize = 20; // 20x20 grid = 400 samples
-  const stepX = Math.max(1, Math.floor(width / sampleSize));
-  const stepY = Math.max(1, Math.floor(height / sampleSize));
-  
-  const samples: Array<[number, number, number]> = [];
-  
-  for (let y = stepY; y < height - stepY; y += stepY) {
-    for (let x = stepX; x < width - stepX; x += stepX) {
-      const pixel = ctx.getImageData(x, y, 1, 1).data;
-      samples.push([pixel[0]!, pixel[1]!, pixel[2]!]);
-    }
-  }
-  
-  if (samples.length < 10) return false;
-  
-  // Calculate variance for each channel
-  const calcVariance = (values: number[]): number => {
-    const mean = values.reduce((a, b) => a + b, 0) / values.length;
-    const squaredDiffs = values.map(v => (v - mean) ** 2);
-    return squaredDiffs.reduce((a, b) => a + b, 0) / values.length;
-  };
-  
-  const rVariance = calcVariance(samples.map(s => s[0]));
-  const gVariance = calcVariance(samples.map(s => s[1]));
-  const bVariance = calcVariance(samples.map(s => s[2]));
-  
-  // Total variance - sum of channel variances
-  const totalVariance = rVariance + gVariance + bVariance;
-  
-  // A solid color (or near-solid gradient) will have very low variance
-  // Blank JPG thumbnails (like those at 22500-32500ms) have ~1265 bytes
-  // and near-zero variance. Real content has variance > 500 typically.
-  // Use threshold of 100 to catch blank frames
-  const VARIANCE_THRESHOLD = 100;
-  
-  const hasContent = totalVariance > VARIANCE_THRESHOLD;
-  
-  if (!hasContent) {
-    // Log for debugging
-    const avgColor = samples.reduce(
-      (acc, s) => [acc[0] + s[0], acc[1] + s[1], acc[2] + s[2]],
-      [0, 0, 0],
-    ).map(c => Math.round(c / samples.length));
-    console.log(
-      `Low variance detected: ${totalVariance.toFixed(1)} (threshold: ${VARIANCE_THRESHOLD}), avg color: rgb(${avgColor.join(",")})`,
-    );
-  }
-  
-  return hasContent;
-}
+
 
 // Re-enabled 2026-01-24: Tests were passing when skipped for beta release
 describe("renderTimegroupToCanvas", () => {

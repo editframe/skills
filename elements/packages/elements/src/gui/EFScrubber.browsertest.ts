@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test } from "vitest";
 import "./EFScrubber.js";
 import { EFScrubber } from "./EFScrubber.js";
 import { html, render as litRender } from "lit";

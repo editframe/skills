@@ -609,7 +609,6 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
     const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
 
     // Find the topmost selectable element (not overlay/transform handles)
-    let topmostElement: HTMLElement | null = null;
     let topmostElementId: string | null = null;
 
     for (const el of elementsAtPoint) {
@@ -644,7 +643,6 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
         const elementId = el.id || el.getAttribute(this.elementIdAttribute);
 
         if (elementId && this.elementRegistry.has(elementId)) {
-          topmostElement = el;
           topmostElementId = elementId;
           break;
         }
@@ -661,7 +659,6 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
             current.id || current.getAttribute(this.elementIdAttribute);
 
           if (elementId && this.elementRegistry.has(elementId)) {
-            topmostElement = current;
             topmostElementId = elementId;
             break;
           }

@@ -1,5 +1,5 @@
 import { html, render } from "lit";
-import { beforeEach, describe, expect } from "vitest";
+import { beforeEach, describe, vi } from "vitest";
 import { test as baseTest } from "../../../test/useMSW.js";
 import "../EFCanvas.js";
 import "./SelectionOverlay.js";
@@ -314,7 +314,7 @@ describe("SelectionOverlay", () => {
       expect(overlay).toBeTruthy();
 
       // Get the canvas area's bounding rect to understand the offset
-      const canvasAreaRect = canvasArea.getBoundingClientRect();
+      canvasArea.getBoundingClientRect();
       const panZoomRect = panZoom.getBoundingClientRect();
 
       // Start box selection at canvas position (50, 50)

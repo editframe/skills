@@ -38,7 +38,7 @@ describe("EFVideo paint in render clones", () => {
       await tg.updateComplete;
       
       // Create a render clone
-      const { clone: renderClone, container, cleanup } = await tg.createRenderClone();
+      const { clone: renderClone, cleanup } = await tg.createRenderClone();
       
       try {
         // Verify the clone is in a render clone container
@@ -98,7 +98,7 @@ describe("EFVideo paint in render clones", () => {
       await tg.updateComplete;
       
       // Create a render clone
-      const { clone: renderClone, container, cleanup } = await tg.createRenderClone();
+      const { clone: renderClone, cleanup } = await tg.createRenderClone();
       
       try {
         const cloneVideo = renderClone.querySelector("ef-video") as EFVideo;

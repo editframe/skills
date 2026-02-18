@@ -353,9 +353,6 @@ describe("EFTransformHandles", () => {
       const seHandle = Array.from(
         el.shadowRoot!.querySelectorAll(".handle"),
       ).find((h) => h.classList.contains("se")) as HTMLDivElement;
-      const overlay = el.shadowRoot!.querySelector(
-        ".overlay",
-      ) as HTMLDivElement;
 
       // Start resize from SE corner
       const downEvent = new MouseEvent("mousedown", {
@@ -480,11 +477,6 @@ describe("EFTransformHandles", () => {
       )!;
       await el.updateComplete;
 
-      let eventDispatched = false;
-      el.addEventListener("bounds-change", () => {
-        eventDispatched = true;
-      });
-
       // Try to resize (but handles shouldn't exist)
       const handles = el.shadowRoot!.querySelectorAll(".handle");
       expect(handles.length).toBe(0);
@@ -510,9 +502,6 @@ describe("EFTransformHandles", () => {
 
       const rotateHandle = el.shadowRoot!.querySelector(
         ".rotate-handle",
-      ) as HTMLDivElement;
-      const overlay = el.shadowRoot!.querySelector(
-        ".overlay",
       ) as HTMLDivElement;
 
       // Start rotation from center-right of element
@@ -611,11 +600,6 @@ describe("EFTransformHandles", () => {
       )!;
       await el.updateComplete;
 
-      let eventDispatched = false;
-      el.addEventListener("rotation-change", () => {
-        eventDispatched = true;
-      });
-
       // Try to rotate (but rotate handle shouldn't exist)
       const rotateHandle = el.shadowRoot!.querySelector(".rotate-handle");
       expect(rotateHandle).toBeFalsy();
@@ -640,9 +624,6 @@ describe("EFTransformHandles", () => {
       const seHandle = Array.from(
         el.shadowRoot!.querySelectorAll(".handle"),
       ).find((h) => h.classList.contains("se")) as HTMLDivElement;
-      const rotateHandle = el.shadowRoot!.querySelector(
-        ".rotate-handle",
-      ) as HTMLDivElement;
 
       // Start drag
       const dragDown = new MouseEvent("mousedown", {
@@ -1011,9 +992,6 @@ describe("EFTransformHandles", () => {
 
       const rotateHandle = el.shadowRoot!.querySelector(
         ".rotate-handle",
-      ) as HTMLDivElement;
-      const overlay = el.shadowRoot!.querySelector(
-        ".overlay",
       ) as HTMLDivElement;
 
       // Element center at 2x zoom: (200 + 200/2, 200 + 150/2) = (300, 275) screen pixels

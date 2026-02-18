@@ -82,10 +82,8 @@ async function fetchText(url: string): Promise<string | null> {
  */
 export class SourceMapResolver {
   #traceMaps = new Map<string, any>();
-  #baseUrl: string;
 
-  constructor(baseUrl: string) {
-    this.#baseUrl = baseUrl;
+  constructor(_baseUrl: string) {
   }
 
   async getTraceMap(scriptUrl: string): Promise<any | null> {

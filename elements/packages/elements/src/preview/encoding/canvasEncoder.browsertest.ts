@@ -2,9 +2,9 @@
  * Tests for canvas encoding module.
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { encodeCanvasesInParallel, resetWorkerPool } from "./canvasEncoder.js";
-import { encodeCanvasOnMainThread, JPEG_QUALITY_HIGH, JPEG_QUALITY_MEDIUM } from "./mainThreadEncoder.js";
+import { encodeCanvasOnMainThread } from "./mainThreadEncoder.js";
 
 describe("canvasEncoder", () => {
   beforeEach(() => {

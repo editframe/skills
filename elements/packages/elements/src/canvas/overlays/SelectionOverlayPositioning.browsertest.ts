@@ -5,7 +5,7 @@ import "../../elements/EFVideo.js";
 import "../EFCanvas.js";
 import "./SelectionOverlay.js";
 import type { EFCanvas } from "../EFCanvas.js";
-import type { SelectionOverlay } from "./SelectionOverlay.js";
+
 import { CanvasAPI } from "../api/CanvasAPI.js";
 
 /**

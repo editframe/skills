@@ -6,6 +6,7 @@ import { encodeCanvasInWorker } from "../encoding/workerEncoder.js";
 const getWorkerUrl = () => {
   // In browser test environment, we need to construct the worker URL
   // This assumes the worker file is accessible at this path
+  // @ts-ignore
   return new URL("./encoderWorker.ts", import.meta.url).href;
 };
 
@@ -151,7 +152,7 @@ describe("WorkerPool", () => {
 
     // Test main thread encoding
     const mainThreadStart = performance.now();
-    const mainThreadDataUrl = canvas.toDataURL("image/jpeg", 0.95);
+    canvas.toDataURL("image/jpeg", 0.95);
     const mainThreadTime = performance.now() - mainThreadStart;
 
     // Test worker encoding

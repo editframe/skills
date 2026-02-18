@@ -1,5 +1,5 @@
 import type { ReactiveController, ReactiveControllerHost } from "lit";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 export interface MediaInfo {
   intrinsicDurationMs: number | undefined;

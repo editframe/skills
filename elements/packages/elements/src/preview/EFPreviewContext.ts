@@ -32,6 +32,7 @@ export class EFPreviewContext extends LitElement {
   `;
 
   @provide({ context: previewContext })
+  // @ts-ignore
   private _isPreview = true;
 
   render() {

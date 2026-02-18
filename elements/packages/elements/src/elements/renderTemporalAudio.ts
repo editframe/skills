@@ -34,7 +34,7 @@ export async function renderTemporalAudio(
   const audioContext = new OfflineAudioContext(2, contextSize, 48000);
 
   if (host.waitForMediaDurations) {
-    await host.waitForMediaDurations(signal);
+    await host.waitForMediaDurations();
     // Check abort after potentially slow operation
     signal?.throwIfAborted();
   }

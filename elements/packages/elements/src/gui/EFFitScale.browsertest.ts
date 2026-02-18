@@ -21,25 +21,6 @@ async function waitFrames(count = 5): Promise<void> {
   }
 }
 
-async function waitForVideoCanvas(
-  video: EFVideo,
-  expectedWidth: number,
-  expectedHeight: number,
-) {
-  const canvas = (video as any).canvasElement;
-  let attempts = 0;
-  while (attempts < 50) {
-    if (canvas.width === expectedWidth && canvas.height === expectedHeight) {
-      return;
-    }
-    await new Promise((resolve) => requestAnimationFrame(resolve));
-    attempts++;
-  }
-  throw new Error(
-    `Canvas did not resize to ${expectedWidth}x${expectedHeight} after 50 frames. Got ${canvas.width}x${canvas.height}`,
-  );
-}
-
 describe("EFFitScale", () => {
   beforeEach(async () => {
     await fetch("/@ef-clear-cache", { method: "DELETE" });
@@ -761,8 +742,6 @@ describe("EFFitScale — ResizeObserver behavior", () => {
 
     const fitScale = wrapper.querySelector("ef-fit-scale") as EFFitScale;
     const content = fitScale.querySelector("div") as HTMLElement;
-    const initialTransform = window.getComputedStyle(content).transform;
-
     // Change content size — the ResizeObserver on content should trigger an update
     // Note: because FitScale sets width/height on the content, we need to change the
     // actual intrinsic size in a way the observer can detect

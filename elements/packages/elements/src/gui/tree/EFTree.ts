@@ -143,6 +143,7 @@ export class EFTree extends LitElement {
 
   @provide({ context: treeContext })
   @state()
+  // @ts-ignore
   private providedContext: TreeContext = {
     state: this.treeState,
     actions: this.treeActions,

@@ -14,20 +14,6 @@ export interface BoxBounds {
 
 type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
 
-function mapHandleToLegacy(handle: ResizeHandle): string {
-  const map: Record<ResizeHandle, string> = {
-    nw: "top-left",
-    n: "top",
-    ne: "top-right",
-    e: "right",
-    se: "bottom-right",
-    s: "bottom",
-    sw: "bottom-left",
-    w: "left",
-  };
-  return map[handle];
-}
-
 @customElement("ef-resizable-box")
 export class EFResizableBox extends LitElement {
   @property({ type: Object })

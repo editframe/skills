@@ -144,7 +144,6 @@ export function formatAssertionResults(results: ProfileAssertionResult[]): strin
 
   for (const result of results) {
     const status = result.passed ? "✓" : "✗";
-    const color = result.passed ? "green" : "red";
     lines.push(`${status} ${result.message}`);
     
     if (!result.passed && result.actual) {

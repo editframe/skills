@@ -1,7 +1,7 @@
 import { context, trace } from "@opentelemetry/api";
 import debug from "debug";
 import { css, html, type PropertyValueMap } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, state } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
 import type { VideoSample } from "mediabunny";
 import { DelayedLoadingState } from "../DelayedLoadingState.js";
@@ -49,6 +49,29 @@ export interface ScrubSegmentLoadingDetail {
   total: number;
   /** Current status: "loading" or "loaded" */
   status: "loading" | "loaded";
+}
+
+class VideoSeekTask {
+  value: VideoSample | undefined = undefined;
+  task: ((...args: any[]) => any) | undefined = undefined;
+
+  #resolve: ((v: VideoSample | undefined) => void) | undefined;
+  taskComplete: Promise<VideoSample | undefined> = Promise.resolve(undefined);
+
+  begin(): void {
+    this.taskComplete = new Promise<VideoSample | undefined>((resolve) => {
+      this.#resolve = resolve;
+    });
+  }
+
+  complete(sample: VideoSample | undefined): void {
+    this.value = sample;
+    this.#resolve?.(sample);
+  }
+
+  abort(): void {
+    this.#resolve?.(undefined);
+  }
 }
 
 @customElement("ef-video")
@@ -117,6 +140,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     `,
   ];
   canvasRef = createRef<HTMLCanvasElement>();
+  unifiedVideoSeekTask = new VideoSeekTask();
 
   // ============================================================================
   // FrameRenderable Implementation
@@ -193,6 +217,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
    */
   async prepareFrame(_timeMs: number, signal: AbortSignal): Promise<void> {
     signal.throwIfAborted();
+    this.unifiedVideoSeekTask.begin();
     
     // Use element's source time, not the passed root timegroup time.
     // currentSourceTimeMs = ownCurrentTimeMs + (sourceIn || trimStart || 0)
@@ -203,6 +228,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     if (!mediaEngine) {
       this.#cachedVideoSample = undefined;
       this.#cachedVideoSampleTimeMs = sourceTimeMs;
+      this.unifiedVideoSeekTask.complete(undefined);
       return;
     }
     
@@ -218,9 +244,11 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       // Cache the result
       this.#cachedVideoSample = videoSample;
       this.#cachedVideoSampleTimeMs = sourceTimeMs;
+      this.unifiedVideoSeekTask.complete(videoSample);
     } catch (error) {
       // Re-throw abort errors to properly handle cancellation
       if (error instanceof DOMException && error.name === "AbortError") {
+        this.unifiedVideoSeekTask.abort();
         throw error;
       }
       
@@ -229,6 +257,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       console.warn(`Video seek error at ${sourceTimeMs}ms:`, error);
       this.#cachedVideoSample = undefined;
       this.#cachedVideoSampleTimeMs = sourceTimeMs;
+      this.unifiedVideoSeekTask.complete(undefined);
     }
   }
 

@@ -100,12 +100,12 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
      */
     md5SumLoader = new Proxy({
       run: () => this.loadMd5Sum(),
-      _host: this,
+      _host: this as unknown,
     } as {
       run: () => Promise<string | undefined>;
       value: string | undefined;
       taskComplete: Promise<string | undefined>;
-      _host: typeof this;
+      _host: unknown;
     }, {
       get(target, prop) {
         if (prop === 'value') {

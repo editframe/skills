@@ -1,4 +1,4 @@
-import { describe, test, expect } from "vitest";
+import { describe, test } from "vitest";
 
 /**
  * Validation tests for audioSeekTask usage

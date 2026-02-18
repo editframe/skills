@@ -13,7 +13,7 @@ import {
   type GeneratedThumbnail,
   type ThumbnailQueue 
 } from "../../../preview/renderTimegroupToCanvas.js";
-import { createPreviewContainer } from "../../../preview/previewTypes.js";
+
 import { quantizeToFrameTimeMs } from "../../../utils/frameTime.js";
 import { TWMixin } from "../../TWMixin.js";
 import {
@@ -683,7 +683,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     
     // WARMUP: Do a seek to the first timestamp to "prime" the clone
     if (timestamps.length > 0) {
-      await this.#timegroupClone.clone.seekForRender(timestamps[0]);
+      await this.#timegroupClone.clone.seekForRender(timestamps[0]!);
     }
     
     // CRITICAL: Wait for fonts to load
@@ -695,7 +695,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     const imagePromises: Promise<void>[] = [];
     for (const img of images) {
       if (!img.complete) {
-        imagePromises.push(new Promise((resolve, reject) => {
+        imagePromises.push(new Promise((resolve, _reject) => {
           img.onload = () => resolve();
           img.onerror = () => resolve(); // Don't block on errors
           // Timeout after 5s

@@ -625,15 +625,13 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
         if (this.#subscribedController && this.#subscribedController !== currentController) {
           this.#subscribedController.removeListener(this.#onControllerUpdate);
         }
-        this.#targetTemporal.playbackController.addListener(
-          this.#onControllerUpdate,
-        );
+        currentController.addListener(this.#onControllerUpdate);
         this.#controllerSubscribed = true;
-        this.#subscribedController = this.#targetTemporal.playbackController;
+        this.#subscribedController = currentController;
 
         // Apply stored loop value when playbackController becomes available
         if (this.#loop) {
-          this.#targetTemporal.playbackController.setLoop(this.#loop);
+          currentController.setLoop(this.#loop);
         }
 
         // Trigger initial sync of context providers

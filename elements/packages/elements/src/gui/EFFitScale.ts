@@ -1,5 +1,5 @@
 import { LitElement } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { createRef } from "lit/directives/ref.js";
 
 /* ━━ Pure scale calculation ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
@@ -77,8 +77,7 @@ export class EFFitScale extends LitElement {
 
   uniqueId = Math.random().toString(36).substring(2, 15);
 
-  @state()
-  private scale = 1;
+
 
   @property({ type: Boolean })
   paused = false;
@@ -287,7 +286,6 @@ export class EFFitScale extends LitElement {
         transform: `translate(${result.translateX.toFixed(4)}px, ${result.translateY.toFixed(4)}px) scale(${result.scale.toFixed(4)})`,
         transformOrigin: "top left",
       });
-      this.scale = result.scale;
       this.scaleLastSetOn = this.contentChild;
     }
   };

@@ -1,6 +1,6 @@
 import { css, html, LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { EFTemporal, type TemporalMixinInterface } from "./EFTemporal.ts";
+import { EFTemporal } from "./EFTemporal.ts";
 import { EFText } from "./EFText.js";
 
 // Global registry for animation stylesheets shared across all text segments

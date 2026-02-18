@@ -34,7 +34,7 @@ export function getElementTypeColor(
     .getPropertyValue(varName)
     .trim();
 
-  return computedValue || fallbackTypeColors[type] || fallbackTypeColors.timegroup;
+  return computedValue || fallbackTypeColors[type] || fallbackTypeColors.timegroup!;
 }
 
 /**

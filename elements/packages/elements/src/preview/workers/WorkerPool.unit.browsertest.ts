@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { WorkerPool } from "./WorkerPool.js";
 
 /**
@@ -111,8 +111,6 @@ describe("WorkerPool Unit Tests", () => {
       
       expect(pool.workerCount).toBeGreaterThanOrEqual(0);
       expect(pool.workerCount).toBeLessThanOrEqual(5);
-      
-      const initialCount = pool.workerCount;
       
       pool.terminate();
       

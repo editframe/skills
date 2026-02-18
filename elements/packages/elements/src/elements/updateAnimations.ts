@@ -104,7 +104,7 @@ const discoverAndTrackAnimations = (
   element: AnimatableElement,
   providedAnimations?: Animation[],
 ): { tracked: Set<Animation>; current: Animation[] } => {
-  const hasTrackedAnimations = animationTracker.has(element);
+  animationTracker.has(element);
   const structureChanged = domStructureChanged.get(element) ?? true;
   
   // REMOVED: Clone optimization that cached animation references.
@@ -380,23 +380,8 @@ class VisibilityPolicy implements BoundaryPolicy {
   }
 }
 
-/**
- * Animation policy: determines when animations should be coordinated.
- *
- * WHY: When an animation reaches exactly the end time of an element, using exclusive
- * end would make the element invisible, causing the animation to be removed from the
- * DOM and creating a visual jump. By using inclusive end, we ensure animations remain
- * coordinated even at exact boundary times, providing smooth visual transitions.
- */
-class AnimationPolicy implements BoundaryPolicy {
-  shouldIncludeEndBoundary(_element: AnimatableElement): boolean {
-    return true;
-  }
-}
-
 // Policy instances (singleton pattern for stateless policies)
 const visibilityPolicy = new VisibilityPolicy();
-const animationPolicy = new AnimationPolicy();
 
 /**
  * Determines if an element should be visible based on its phase and visibility policy.
@@ -430,8 +415,8 @@ const shouldBeVisible = (
  * - The benefit is correct animation state at all times, regardless of phase
  */
 const shouldCoordinateAnimations = (
-  phase: ElementPhase,
-  element: AnimatableElement,
+  _phase: ElementPhase,
+  _element: AnimatableElement,
 ): boolean => {
   return true;
 };

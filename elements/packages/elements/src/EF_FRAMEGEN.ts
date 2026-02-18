@@ -2,7 +2,7 @@ import type { VideoRenderOptions } from "@editframe/assets";
 
 import { shallowGetTimegroups } from "./elements/EFTimegroup.js";
 import { setupTemporalHierarchy } from "./elements/setupTemporalHierarchy.js";
-import { updateAnimations } from "./elements/updateAnimations.js";
+
 import { setupBrowserTracing } from "./otel/setupBrowserTracing.js";
 import {
   clearCurrentFrameSpan,

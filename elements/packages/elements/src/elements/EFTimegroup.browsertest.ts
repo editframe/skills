@@ -13,7 +13,7 @@ import { EFTemporal, resetTemporalCache } from "./EFTemporal.js";
 // Need workbench to make workbench wrapping occurs
 import "../gui/EFWorkbench.js";
 // Import EF_INTERACTIVE to allow controlling it in tests
-import { EF_INTERACTIVE, setEFInteractive } from "../EF_INTERACTIVE.js";
+import { setEFInteractive } from "../EF_INTERACTIVE.js";
 // Additional imports for sequence boundary test
 import "./EFVideo.js";
 import "../gui/EFConfiguration.js";
@@ -773,7 +773,7 @@ describe.skip("Dynamic content updates", () => {
       const media = timegroup.querySelector("timegroup-test-media")!;
 
       // Before seek, media may not be loaded
-      const beforeSeek = media.getAttribute("data-media-loaded");
+      media.getAttribute("data-media-loaded");
 
       // Seek should wait for media to load
       await timegroup.seek(0);

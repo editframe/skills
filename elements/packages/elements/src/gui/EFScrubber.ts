@@ -21,7 +21,7 @@ const BASE_PIXELS_PER_SECOND = 100;
 function timeToPixels(
   timeMs: number,
   durationMs: number,
-  containerWidth: number,
+  _containerWidth: number,
   zoomScale: number,
 ): number {
   if (durationMs <= 0) return 0;
@@ -32,7 +32,7 @@ function timeToPixels(
 function pixelsToTime(
   pixels: number,
   durationMs: number,
-  containerWidth: number,
+  _containerWidth: number,
   zoomScale: number,
 ): number {
   if (durationMs <= 0) return 0;

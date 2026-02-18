@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { WorkerPool } from "./WorkerPool.js";
 import { encodeCanvasInWorker } from "../encoding/workerEncoder.js";
-import { getEncoderWorkerUrl, revokeEncoderWorkerUrl } from "./encoderWorkerInline.js";
+import { getEncoderWorkerUrl } from "./encoderWorkerInline.js";
 
 /**
  * Test helper: Create a test canvas with specific content

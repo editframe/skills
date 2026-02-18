@@ -11,7 +11,7 @@ import { html, render } from "lit";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { getApiHost } from "../../test/setup.js";
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
-import type { EFVideo } from "../elements/EFVideo.js";
+
 import "../elements/EFTimegroup.js";
 import "../elements/EFVideo.js";
 import "../elements/EFText.js";

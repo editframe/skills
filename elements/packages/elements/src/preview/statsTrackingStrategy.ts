@@ -5,7 +5,6 @@
  * allowing each mode to report what stats it supports and provide its own implementation.
  */
 
-import { logger } from "./logger.js";
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
 import type { AdaptiveResolutionTracker } from "./AdaptiveResolutionTracker.js";
 import type { CanvasPreviewResult } from "./renderTimegroupToCanvas.js";
@@ -345,15 +344,12 @@ export function createStatsTrackingStrategy(
       });
     
     case "dom":
-    case "original": // "dom" maps to "original" mode
       return new DomStatsStrategy({
         timegroup: options.timegroup,
         adaptiveTracker: options.adaptiveTracker,
       });
     
-    case "clone":
-    case "computed": // "clone" maps to "computed" mode
-      // These modes don't support stats tracking
+    case "canvas":
       return null;
     
     default:

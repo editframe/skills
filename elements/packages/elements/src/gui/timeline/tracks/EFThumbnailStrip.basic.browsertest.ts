@@ -189,12 +189,6 @@ describe("EFThumbnailStrip - Basic Functionality", () => {
 
     // The strip should have rendered thumbnails for the 10s timegroup.
     // Now force a readystatechange on the target to verify re-render.
-    let renderScheduled = false;
-    const origScheduleRender = (strip as any).__proto__.constructor.prototype;
-    
-    // Instead, observe that the strip re-renders after a readystatechange event
-    const thumbnailsBefore = strip.shadowRoot?.querySelectorAll("canvas").length ?? 0;
-    
     // Dispatch readystatechange on target
     timegroup.dispatchEvent(new CustomEvent("readystatechange", {
       detail: { state: "ready" },

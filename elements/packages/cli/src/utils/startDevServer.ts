@@ -36,7 +36,6 @@ const startDevServer = async (directory: string) => {
         },
       },
       esbuild: {
-        target: "es2022",
         include: /\.(m?[jt]s|[jt]sx)$/,
         exclude: [],
       },

@@ -1,5 +1,5 @@
 import { html, render } from "lit";
-import { beforeEach, describe, expect, test } from "vitest";
+import { beforeEach, describe } from "vitest";
 import { test as baseTest } from "../../../test/useMSW.js";
 import "../EFCanvas.js";
 import { CanvasAPI } from "./CanvasAPI.js";
@@ -61,9 +61,6 @@ describe("CanvasAPI", () => {
   });
 
   test("updates element position", async ({ api, canvas, expect }) => {
-    const element = canvas.querySelector(
-      '[data-element-id="element-1"]',
-    ) as HTMLElement;
     api.updateElement("element-1", { x: 200, y: 300 });
     await (canvas as any).updateComplete;
     const data = api.getElement("element-1");
