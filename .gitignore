@@ -34,3 +34,6 @@ skills/skills-generated/
 
 # Self-signed TLS certs for local Traefik HTTPS
 scripts/certs/
+
+./.claude/**
+./.cursor/**
