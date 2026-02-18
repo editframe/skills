@@ -231,15 +231,17 @@ export abstract class BaseMediaEngine {
     }
 
     // Return a promise that respects the caller's abort signal
-    // but doesn't affect the underlying cached request
-    return Promise.race([
-      promise,
-      new Promise<never>((_, reject) => {
-        signal.addEventListener("abort", () => {
-          reject(new DOMException("Aborted", "AbortError"));
-        });
-      }),
-    ]);
+    // but doesn't affect the underlying cached request.
+    // The abort promise must have .catch(() => {}) to prevent unhandled rejections
+    // when the main promise resolves first and the abort fires later during cleanup.
+    const abortPromise = new Promise<never>((_, reject) => {
+      signal.addEventListener("abort", () => {
+        reject(new DOMException("Aborted", "AbortError"));
+      });
+    });
+    abortPromise.catch(() => {});
+
+    return Promise.race([promise, abortPromise]);
   }
 
   // Public wrapper methods that delegate to fetchWithCache
