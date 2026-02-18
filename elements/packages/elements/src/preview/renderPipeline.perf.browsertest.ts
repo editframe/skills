@@ -23,27 +23,6 @@ const H = 1080;
 const WARMUP = 3;
 const ITERATIONS = 30;
 
-function stats(values: number[]) {
-  const sorted = [...values].sort((a, b) => a - b);
-  return {
-    min: sorted[0]!,
-    max: sorted[sorted.length - 1]!,
-    avg: values.reduce((s, v) => s + v, 0) / values.length,
-    p50: sorted[Math.floor(sorted.length * 0.5)]!,
-    p95: sorted[Math.floor(sorted.length * 0.95)]!,
-  };
-}
-
-function fmt(label: string, values: number[]): string {
-  const s = stats(values);
-  return `${label}: avg=${s.avg.toFixed(2)}ms p50=${s.p50.toFixed(2)}ms p95=${s.p95.toFixed(2)}ms min=${s.min.toFixed(2)}ms max=${s.max.toFixed(2)}ms`;
-}
-
-function fmtFps(values: number[]): string {
-  const s = stats(values);
-  return `effective fps: ${(1000 / s.avg).toFixed(1)} (p95: ${(1000 / s.p95).toFixed(1)})`;
-}
-
 /**
  * Create a representative timegroup with HTML content similar to a real composition.
  * No GUI elements - just the timegroup and content.
@@ -159,10 +138,6 @@ describe("render pipeline performance", () => {
       times.push(performance.now() - t0);
     }
 
-    console.log("\n=== PHASE: DOM UPDATE (currentTimeMs + updateComplete) ===");
-    console.log(fmt("dom update", times));
-    console.log(fmtFps(times));
-
     tg.remove();
     expect(times.length).toBe(ITERATIONS);
   }, 30000);
@@ -190,10 +165,6 @@ describe("render pipeline performance", () => {
       times.push(performance.now() - t0);
     }
 
-    console.log("\n=== PHASE: FRAMECONTROLLER.renderFrame() ===");
-    console.log(fmt("renderFrame", times));
-    console.log(fmtFps(times));
-
     tg.remove();
     expect(times.length).toBe(ITERATIONS);
   }, 30000);
@@ -219,10 +190,6 @@ describe("render pipeline performance", () => {
       times.push(performance.now() - t0);
     }
 
-    console.log("\n=== PHASE: updateAnimations() ===");
-    console.log(fmt("updateAnimations", times));
-    console.log(fmtFps(times));
-
     tg.remove();
     expect(times.length).toBe(ITERATIONS);
   }, 30000);
@@ -233,7 +200,6 @@ describe("render pipeline performance", () => {
     await tg.updateComplete;
 
     const times: number[] = [];
-    let dataUriLen = 0;
 
     for (let i = 0; i < WARMUP; i++) {
       await captureTimelineToDataUri(tg, W, H, { canvasScale: 1, timeMs: 0 });
@@ -241,18 +207,12 @@ describe("render pipeline performance", () => {
 
     for (let i = 0; i < ITERATIONS; i++) {
       const t0 = performance.now();
-      const uri = await captureTimelineToDataUri(tg, W, H, {
+      await captureTimelineToDataUri(tg, W, H, {
         canvasScale: 1,
         timeMs: 0,
       });
       times.push(performance.now() - t0);
-      if (i === 0) dataUriLen = uri.length;
     }
-
-    console.log("\n=== PHASE: captureTimelineToDataUri (HTML-only) ===");
-    console.log(fmt("serialize", times));
-    console.log(`dataUri size: ${(dataUriLen / 1024).toFixed(1)} KB`);
-    console.log(fmtFps(times));
 
     tg.remove();
     expect(times.length).toBe(ITERATIONS);
@@ -281,10 +241,6 @@ describe("render pipeline performance", () => {
       await loadImageFromDataUri(dataUri);
       times.push(performance.now() - t0);
     }
-
-    console.log("\n=== PHASE: loadImageFromDataUri (HTML-only) ===");
-    console.log(fmt("imageLoad", times));
-    console.log(fmtFps(times));
 
     expect(times.length).toBe(ITERATIONS);
   }, 30000);
@@ -342,12 +298,6 @@ describe("render pipeline performance", () => {
       totalTimes.push(t3 - t0);
     }
 
-    console.log("\n=== E2E: FOREIGNOBJECT PIPELINE (HTML-only) ===");
-    console.log(fmt("serialize    ", serializeTimes));
-    console.log(fmt("imageLoad    ", loadTimes));
-    console.log(fmt("total        ", totalTimes));
-    console.log(fmtFps(totalTimes));
-
     tg.remove();
     expect(totalTimes.length).toBe(ITERATIONS);
   }, 30000);
@@ -402,23 +352,14 @@ describe("render pipeline performance", () => {
       totalTimes.push(t3 - t0);
     }
 
-    console.log("\n=== E2E: FOREIGNOBJECT PIPELINE (HTML + 4 canvases) ===");
-    console.log(fmt("serialize    ", serializeTimes));
-    console.log(fmt("imageLoad    ", loadTimes));
-    console.log(fmt("total        ", totalTimes));
-    console.log(fmtFps(totalTimes));
-
     tg.remove();
     expect(totalTimes.length).toBe(ITERATIONS);
   }, 30000);
 
   it("e2e: native pipeline (HTML-only)", async () => {
     const nativeAvailable = isNativeCanvasApiAvailable();
-    console.log(`\n=== E2E: NATIVE PIPELINE (HTML-only) ===`);
-    console.log(`drawElementImage available: ${nativeAvailable}`);
 
     if (!nativeAvailable) {
-      console.log("SKIPPED: native canvas API not available in this browser");
       expect(true).toBe(true);
       return;
     }
@@ -457,20 +398,14 @@ describe("render pipeline performance", () => {
       renderTimes.push(t1 - t0);
     }
 
-    console.log(fmt("total        ", renderTimes));
-    console.log(fmtFps(renderTimes));
-
     tg.remove();
     expect(renderTimes.length).toBe(ITERATIONS);
   }, 30000);
 
   it("e2e: native pipeline (HTML + 4 canvases)", async () => {
     const nativeAvailable = isNativeCanvasApiAvailable();
-    console.log(`\n=== E2E: NATIVE PIPELINE (HTML + 4 canvases) ===`);
-    console.log(`drawElementImage available: ${nativeAvailable}`);
 
     if (!nativeAvailable) {
-      console.log("SKIPPED: native canvas API not available in this browser");
       expect(true).toBe(true);
       return;
     }
@@ -508,9 +443,6 @@ describe("render pipeline performance", () => {
 
       renderTimes.push(t1 - t0);
     }
-
-    console.log(fmt("total        ", renderTimes));
-    console.log(fmtFps(renderTimes));
 
     tg.remove();
     expect(renderTimes.length).toBe(ITERATIONS);
@@ -548,10 +480,6 @@ describe("render pipeline performance", () => {
       refreshTimes.push(performance.now() - t0);
     }
 
-    console.log("\n=== E2E: renderTimegroupToCanvas.refresh() (HTML-only) ===");
-    console.log(fmt("refresh      ", refreshTimes));
-    console.log(fmtFps(refreshTimes));
-
     preview.dispose();
     tg.remove();
     expect(refreshTimes.length).toBe(ITERATIONS);
@@ -584,12 +512,6 @@ describe("render pipeline performance", () => {
       refreshTimes.push(performance.now() - t0);
     }
 
-    console.log(
-      "\n=== E2E: renderTimegroupToCanvas.refresh() (HTML + 4 canvases) ===",
-    );
-    console.log(fmt("refresh      ", refreshTimes));
-    console.log(fmtFps(refreshTimes));
-
     preview.dispose();
     tg.remove();
     expect(refreshTimes.length).toBe(ITERATIONS);
@@ -604,11 +526,8 @@ describe("render pipeline performance", () => {
     document.body.appendChild(tg);
     await tg.updateComplete;
 
-    console.log("\n=== RESOLUTION SCALING COMPARISON (HTML-only) ===");
-
     for (const scale of [1, 0.5, 0.25] as const) {
       const times: number[] = [];
-      let uriLen = 0;
 
       for (let i = 0; i < WARMUP; i++) {
         await captureTimelineToDataUri(tg, W, H, {
@@ -623,17 +542,9 @@ describe("render pipeline performance", () => {
           canvasScale: scale,
           timeMs: 0,
         });
-        const img = await loadImageFromDataUri(uri);
+        await loadImageFromDataUri(uri);
         times.push(performance.now() - t0);
-        if (i === 0) {
-          uriLen = uri.length;
-          console.log(
-            `  scale=${scale}: image=${img.width}x${img.height}, dataUri=${(uriLen / 1024).toFixed(1)}KB`,
-          );
-        }
       }
-      console.log(`  ${fmt(`scale=${scale}`, times)}`);
-      console.log(`  ${fmtFps(times)}`);
     }
 
     tg.remove();
@@ -668,8 +579,6 @@ describe("render pipeline performance", () => {
       await loadImageFromDataUri(uri);
     }
 
-    const scrubStart = performance.now();
-
     for (let i = 0; i < FRAMES; i++) {
       const timeMs = i * 33; // ~30fps scrub speed
       tg.currentTimeMs = timeMs;
@@ -688,18 +597,6 @@ describe("render pipeline performance", () => {
       await loadImageFromDataUri(dataUri);
       frameTimes.push(performance.now() - t0);
     }
-
-    const totalScrubMs = performance.now() - scrubStart;
-
-    console.log(
-      "\n=== SCRUB SIMULATION: 60 frames, foreignObject, scale=0.5 ===",
-    );
-    console.log(fmt("per frame    ", frameTimes));
-    console.log(
-      `total time:  ${totalScrubMs.toFixed(0)}ms for ${FRAMES} frames`,
-    );
-    console.log(`actual fps:  ${(FRAMES / (totalScrubMs / 1000)).toFixed(1)}`);
-    console.log(`budget:      ${(16.67).toFixed(2)}ms/frame @ 60fps`);
 
     tg.remove();
     expect(frameTimes.length).toBe(FRAMES);
@@ -728,8 +625,6 @@ describe("render pipeline performance", () => {
       await loadImageFromDataUri(uri);
     }
 
-    const scrubStart = performance.now();
-
     for (let i = 0; i < FRAMES; i++) {
       const timeMs = i * 33;
       tg.currentTimeMs = timeMs;
@@ -749,28 +644,14 @@ describe("render pipeline performance", () => {
       frameTimes.push(performance.now() - t0);
     }
 
-    const totalScrubMs = performance.now() - scrubStart;
-
-    console.log(
-      "\n=== SCRUB SIMULATION: 60 frames, HTML+canvases, foreignObject, scale=0.5 ===",
-    );
-    console.log(fmt("per frame    ", frameTimes));
-    console.log(
-      `total time:  ${totalScrubMs.toFixed(0)}ms for ${FRAMES} frames`,
-    );
-    console.log(`actual fps:  ${(FRAMES / (totalScrubMs / 1000)).toFixed(1)}`);
-
     tg.remove();
     expect(frameTimes.length).toBe(FRAMES);
   }, 60000);
 
   it("scrub simulation: native path (if available)", async () => {
     const nativeAvailable = isNativeCanvasApiAvailable();
-    console.log(`\n=== SCRUB SIMULATION: NATIVE PATH ===`);
-    console.log(`drawElementImage available: ${nativeAvailable}`);
 
     if (!nativeAvailable) {
-      console.log("SKIPPED: native canvas API not available");
       expect(true).toBe(true);
       return;
     }
@@ -793,8 +674,6 @@ describe("render pipeline performance", () => {
       await renderToImageNative(tg, W, H, { skipDprScaling: true });
     }
 
-    const scrubStart = performance.now();
-
     for (let i = 0; i < FRAMES; i++) {
       const timeMs = i * 33;
       tg.currentTimeMs = timeMs;
@@ -809,15 +688,6 @@ describe("render pipeline performance", () => {
       await renderToImageNative(tg, W, H, { skipDprScaling: true });
       frameTimes.push(performance.now() - t0);
     }
-
-    const totalScrubMs = performance.now() - scrubStart;
-
-    console.log(fmt("per frame    ", frameTimes));
-    console.log(
-      `total time:  ${totalScrubMs.toFixed(0)}ms for ${FRAMES} frames`,
-    );
-    console.log(`actual fps:  ${(FRAMES / (totalScrubMs / 1000)).toFixed(1)}`);
-    console.log(`budget:      ${(16.67).toFixed(2)}ms/frame @ 60fps`);
 
     tg.remove();
     expect(frameTimes.length).toBe(FRAMES);

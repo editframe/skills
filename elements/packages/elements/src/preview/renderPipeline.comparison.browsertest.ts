@@ -70,40 +70,6 @@ function createCanvasTimegroup(): EFTimegroup {
   return tg;
 }
 
-/**
- * Compare two canvases pixel-by-pixel and return the percentage of matching pixels.
- */
-function compareCanvases(
-  c1: HTMLCanvasElement,
-  c2: HTMLCanvasElement,
-): { match: number; totalPixels: number; diffPixels: number } {
-  const w = Math.min(c1.width, c2.width);
-  const h = Math.min(c1.height, c2.height);
-  const ctx1 = c1.getContext("2d", { willReadFrequently: true })!;
-  const ctx2 = c2.getContext("2d", { willReadFrequently: true })!;
-  const d1 = ctx1.getImageData(0, 0, w, h).data;
-  const d2 = ctx2.getImageData(0, 0, w, h).data;
-
-  let matching = 0;
-  const totalPixels = w * h;
-  const threshold = 10; // Allow small color differences
-
-  for (let i = 0; i < d1.length; i += 4) {
-    const dr = Math.abs(d1[i]! - d2[i]!);
-    const dg = Math.abs(d1[i + 1]! - d2[i + 1]!);
-    const db = Math.abs(d1[i + 2]! - d2[i + 2]!);
-    if (dr <= threshold && dg <= threshold && db <= threshold) {
-      matching++;
-    }
-  }
-
-  return {
-    match: matching / totalPixels,
-    totalPixels,
-    diffPixels: totalPixels - matching,
-  };
-}
-
 describe("native vs foreignObject output comparison", () => {
   beforeAll(async () => {
     await customElements.whenDefined("ef-timegroup");
@@ -112,7 +78,6 @@ describe("native vs foreignObject output comparison", () => {
   it("HTML-only: native and foreignObject produce similar output", async () => {
     const nativeAvailable = isNativeCanvasApiAvailable();
     if (!nativeAvailable) {
-      console.log("SKIPPED: native canvas API not available");
       expect(true).toBe(true);
       return;
     }
@@ -138,15 +103,6 @@ describe("native vs foreignObject output comparison", () => {
       skipDprScaling: true,
     });
 
-    const result = compareCanvases(foreignCanvas, nativeCanvas);
-    console.log(`\n=== HTML-only comparison ===`);
-    console.log(
-      `Match: ${(result.match * 100).toFixed(1)}% (${result.diffPixels} pixels differ out of ${result.totalPixels})`,
-    );
-    console.log(
-      `Foreign: ${foreignCanvas.width}x${foreignCanvas.height}, Native: ${nativeCanvas.width}x${nativeCanvas.height}`,
-    );
-
     // Both should produce non-empty output
     expect(foreignCanvas.width).toBeGreaterThan(0);
     expect(nativeCanvas.width).toBeGreaterThan(0);
@@ -157,7 +113,6 @@ describe("native vs foreignObject output comparison", () => {
   it("HTML+canvas: native and foreignObject produce similar output", async () => {
     const nativeAvailable = isNativeCanvasApiAvailable();
     if (!nativeAvailable) {
-      console.log("SKIPPED: native canvas API not available");
       expect(true).toBe(true);
       return;
     }
@@ -183,12 +138,6 @@ describe("native vs foreignObject output comparison", () => {
       skipDprScaling: true,
     });
 
-    const result = compareCanvases(foreignCanvas, nativeCanvas);
-    console.log(`\n=== HTML+canvas comparison ===`);
-    console.log(
-      `Match: ${(result.match * 100).toFixed(1)}% (${result.diffPixels} pixels differ out of ${result.totalPixels})`,
-    );
-
     expect(foreignCanvas.width).toBeGreaterThan(0);
     expect(nativeCanvas.width).toBeGreaterThan(0);
 
@@ -198,7 +147,6 @@ describe("native vs foreignObject output comparison", () => {
   it("native preview path: renderTimegroupToCanvas with drawElementImage", async () => {
     const nativeAvailable = isNativeCanvasApiAvailable();
     if (!nativeAvailable) {
-      console.log("SKIPPED: native canvas API not available");
       expect(true).toBe(true);
       return;
     }
@@ -228,14 +176,6 @@ describe("native vs foreignObject output comparison", () => {
     for (let i = 3; i < data.length; i += 4) {
       if (data[i]! > 0) nonZeroPixels++;
     }
-    const totalPixels = c.width * c.height;
-
-    console.log(`\n=== renderTimegroupToCanvas native preview ===`);
-    console.log(`Canvas: ${c.width}x${c.height}`);
-    console.log(
-      `Non-zero alpha pixels: ${nonZeroPixels} / ${totalPixels} (${((nonZeroPixels / totalPixels) * 100).toFixed(1)}%)`,
-    );
-    console.log(`Native path active: ${nativeAvailable}`);
 
     // Should have rendered something
     expect(nonZeroPixels).toBeGreaterThan(0);
@@ -248,7 +188,6 @@ describe("native vs foreignObject output comparison", () => {
   it("dispose restores timegroup to original DOM position", async () => {
     const nativeAvailable = isNativeCanvasApiAvailable();
     if (!nativeAvailable) {
-      console.log("SKIPPED: native canvas API not available");
       expect(true).toBe(true);
       return;
     }

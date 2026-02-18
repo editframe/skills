@@ -72,7 +72,6 @@ describe("Canvas Video Performance", () => {
   }) => {
     const hasNative = isNativeCanvasApiAvailable();
     if (!hasNative) {
-      console.log("Skipping native test - drawElementImage not available");
       return;
     }
 
@@ -89,7 +88,6 @@ describe("Canvas Video Performance", () => {
 
     // Simulate scrubbing: rapidly change time with RAF cadence
     const FRAMES = 60;
-    const frameDurations: number[] = [];
     const frameTimestamps: number[] = [];
     let paintCount = 0;
 
@@ -104,7 +102,6 @@ describe("Canvas Video Performance", () => {
       const t0 = performance.now();
       await refresh();
       const elapsed = performance.now() - t0;
-      frameDurations.push(elapsed);
       if (elapsed > PAINT_THRESHOLD_MS) paintCount++;
     }
 
@@ -114,20 +111,6 @@ describe("Canvas Video Performance", () => {
     }
     const avgGap =
       gaps.length > 0 ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 0;
-    const maxGap = gaps.length > 0 ? Math.max(...gaps) : 0;
-    const avgRender =
-      frameDurations.reduce((a, b) => a + b, 0) / frameDurations.length;
-
-    console.log(`\n=== NATIVE: VIDEO+HTML RAF LOOP ===`);
-    console.log(`frames: ${FRAMES}  painted: ${paintCount}`);
-    console.log(
-      `avg frame gap: ${avgGap.toFixed(1)}ms  max gap: ${maxGap.toFixed(1)}ms`,
-    );
-    console.log(`avg render: ${avgRender.toFixed(2)}ms`);
-    console.log(`effective fps: ${(1000 / avgGap).toFixed(0)}`);
-    console.log(
-      `video durationMs: ${tg.durationMs}  hasPlaybackController: ${!!tg.playbackController}`,
-    );
 
     // The key assertion: with the fix, the RAF loop should NOT be blocked
     // by video preparation. Average frame gaps should be well under the
@@ -156,7 +139,6 @@ describe("Canvas Video Performance", () => {
     });
 
     const FRAMES = 30;
-    const frameDurations: number[] = [];
     const frameTimestamps: number[] = [];
     let paintCount = 0;
 
@@ -176,7 +158,6 @@ describe("Canvas Video Performance", () => {
         timeMs: tg.currentTimeMs,
       });
       const elapsed = performance.now() - t0;
-      frameDurations.push(elapsed);
       if (elapsed > PAINT_THRESHOLD_MS) paintCount++;
     }
 
@@ -186,17 +167,6 @@ describe("Canvas Video Performance", () => {
     }
     const avgGap =
       gaps.length > 0 ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 0;
-    const maxGap = gaps.length > 0 ? Math.max(...gaps) : 0;
-    const avgRender =
-      frameDurations.reduce((a, b) => a + b, 0) / frameDurations.length;
-
-    console.log(`\n=== FOREIGNOBJECT: VIDEO+HTML RAF LOOP ===`);
-    console.log(`frames: ${FRAMES}  painted: ${paintCount}`);
-    console.log(
-      `avg frame gap: ${avgGap.toFixed(1)}ms  max gap: ${maxGap.toFixed(1)}ms`,
-    );
-    console.log(`avg render: ${avgRender.toFixed(2)}ms`);
-    console.log(`effective fps: ${(1000 / avgGap).toFixed(0)}`);
 
     // ForeignObject is slower due to serialization, but should not be blocked
     // by video preparation. Should achieve >20fps for interactive scrubbing.
@@ -210,9 +180,6 @@ describe("Canvas Video Performance", () => {
     videoTimegroup: { tg, container },
   }) => {
     const hasNative = isNativeCanvasApiAvailable();
-    console.log(`\n=== VIDEO+HTML PERFORMANCE COMPARISON ===`);
-    console.log(`native available: ${hasNative}`);
-    console.log(`video durationMs: ${tg.durationMs}`);
 
     // Warm up
     tg.currentTimeMs = 0;
@@ -240,9 +207,6 @@ describe("Canvas Video Performance", () => {
     renderContext.dispose();
 
     const foAvg = foTimes.reduce((a, b) => a + b, 0) / foTimes.length;
-    console.log(
-      `foreignObject: avg=${foAvg.toFixed(2)}ms (${(1000 / foAvg).toFixed(0)} fps)`,
-    );
 
     // --- Native path (if available) ---
     if (hasNative) {
@@ -265,10 +229,6 @@ describe("Canvas Video Performance", () => {
 
       const nativeAvg =
         nativeTimes.reduce((a, b) => a + b, 0) / nativeTimes.length;
-      console.log(
-        `native:        avg=${nativeAvg.toFixed(2)}ms (${(1000 / nativeAvg).toFixed(0)} fps)`,
-      );
-      console.log(`speedup:       ${(foAvg / nativeAvg).toFixed(1)}x`);
 
       // Native with video: drawElementImage renders live DOM including video canvas.
       // ~9-12ms for 800x450 with video is expected (capture cost, not idle time).

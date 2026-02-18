@@ -97,10 +97,6 @@ describe("Canvas Scrub Performance Profile", () => {
     const STEPS = 60;
     const timings: FrameTiming[] = [];
 
-    console.log(
-      `durationMs=${tg.durationMs} playbackController=${!!tg.playbackController}`,
-    );
-
     for (let i = 0; i < STEPS; i++) {
       const timeMs = Math.round((i / STEPS) * 10000);
       tg.currentTimeMs = timeMs;
@@ -123,22 +119,6 @@ describe("Canvas Scrub Performance Profile", () => {
     }
 
     const painted = timings.filter((t) => t.painted);
-    const avgPaintMs =
-      painted.length > 0
-        ? painted.reduce((a, t) => a + t.totalMs, 0) / painted.length
-        : 0;
-    const maxMs = Math.max(...timings.map((t) => t.totalMs));
-
-    console.log(`\n=== CANVAS SCRUB PERFORMANCE ===`);
-    console.log(
-      `painted: ${painted.length}/${STEPS} (${((painted.length / STEPS) * 100).toFixed(0)}%)`,
-    );
-    console.log(
-      `avg paint: ${avgPaintMs.toFixed(2)}ms  max: ${maxMs.toFixed(2)}ms`,
-    );
-    console.log(
-      `effective render rate: ${(1000 / avgPaintMs).toFixed(0)} fps potential`,
-    );
 
     // Verify time reads were correct (no large regressions).
     // Allow <=34ms jitter from 30fps frame-boundary quantization.
@@ -148,11 +128,6 @@ describe("Canvas Scrub Performance Profile", () => {
         idx > 0 &&
         timings[idx - 1]!.readTimeMs - t.readTimeMs > QUANT_JITTER_MS,
     );
-    if (staleReads.length > 0) {
-      console.log(
-        `WARNING: ${staleReads.length} stale time reads detected (>${QUANT_JITTER_MS}ms regression)`,
-      );
-    }
 
     // At least 80% of distinct time values should produce paints
     expect(painted.length).toBeGreaterThan(STEPS * 0.8);
@@ -196,18 +171,6 @@ describe("Canvas Scrub Performance Profile", () => {
       });
     }
 
-    const painted = timings.filter((t) => t.painted);
-    const avgMs = timings.reduce((a, t) => a + t.totalMs, 0) / timings.length;
-
-    console.log(`\n=== BURST MODE (no RAF gaps) ===`);
-    console.log(
-      `painted: ${painted.length}/${STEPS} (${((painted.length / STEPS) * 100).toFixed(0)}%)`,
-    );
-    console.log(`avg frame: ${avgMs.toFixed(2)}ms`);
-    console.log(
-      `throughput: ${(1000 / avgMs).toFixed(0)} frames/sec potential`,
-    );
-
     // Burst mode completes all frames
     expect(timings.length).toBe(STEPS);
 
@@ -230,7 +193,6 @@ describe("Canvas Scrub Performance Profile", () => {
     //   requestAnimationFrame → await refresh() → requestAnimationFrame
     const FRAMES = 30;
     const frameTimestamps: number[] = [];
-    const frameDurations: number[] = [];
     let paintCount = 0;
 
     for (let i = 0; i < FRAMES; i++) {
@@ -244,7 +206,6 @@ describe("Canvas Scrub Performance Profile", () => {
       const renderStart = performance.now();
       await refresh();
       const renderMs = performance.now() - renderStart;
-      frameDurations.push(renderMs);
       if (renderMs > PAINT_THRESHOLD_MS) paintCount++;
     }
 
@@ -252,19 +213,7 @@ describe("Canvas Scrub Performance Profile", () => {
     for (let i = 1; i < frameTimestamps.length; i++) {
       gaps.push(frameTimestamps[i]! - frameTimestamps[i - 1]!);
     }
-    const avgGap =
-      gaps.length > 0 ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 0;
     const maxGap = gaps.length > 0 ? Math.max(...gaps) : 0;
-    const avgRender =
-      frameDurations.reduce((a, b) => a + b, 0) / frameDurations.length;
-
-    console.log(`\n=== RAF LOOP PATTERN ===`);
-    console.log(`frames: ${FRAMES}  painted: ${paintCount}`);
-    console.log(
-      `avg frame gap: ${avgGap.toFixed(1)}ms  max gap: ${maxGap.toFixed(1)}ms`,
-    );
-    console.log(`avg render: ${avgRender.toFixed(2)}ms`);
-    console.log(`effective fps: ${(1000 / avgGap).toFixed(0)}`);
 
     expect(paintCount).toBeGreaterThan(FRAMES * 0.5);
     expect(maxGap).toBeLessThan(100);
@@ -325,32 +274,12 @@ describe("Canvas Scrub Performance Profile", () => {
       });
     }
 
-    const painted = timings.filter((t) => t.painted);
-    const avgPaintMs =
-      painted.length > 0
-        ? painted.reduce((a, t) => a + t.totalMs, 0) / painted.length
-        : 0;
-    const maxMs = Math.max(...timings.map((t) => t.totalMs));
-
-    console.log(`\n=== FOREIGNOBJECT SCRUB PERFORMANCE ===`);
-    console.log(
-      `painted: ${painted.length}/${STEPS} (${((painted.length / STEPS) * 100).toFixed(0)}%)`,
-    );
-    console.log(
-      `avg paint: ${avgPaintMs.toFixed(2)}ms  max: ${maxMs.toFixed(2)}ms`,
-    );
-    console.log(
-      `effective render rate: ${(1000 / avgPaintMs).toFixed(0)} fps potential`,
-    );
-
     // ForeignObject is slower but should still complete all steps
     expect(timings.length).toBe(STEPS);
   }, 30000);
 
   test("scrub: native vs foreignObject comparison", async () => {
     const hasNative = isNativeCanvasApiAvailable();
-    console.log(`\n=== RENDERING PATH COMPARISON ===`);
-    console.log(`native API available: ${hasNative}`);
 
     const tg = await createTimegroup();
     const frameController = new FrameController(tg);
@@ -387,9 +316,6 @@ describe("Canvas Scrub Performance Profile", () => {
     }
 
     const foAvg = foTimes.reduce((a, b) => a + b, 0) / foTimes.length;
-    console.log(
-      `foreignObject: avg=${foAvg.toFixed(2)}ms (${(1000 / foAvg).toFixed(0)} fps)`,
-    );
 
     // Measure native path (if available)
     if (hasNative) {
@@ -401,22 +327,12 @@ describe("Canvas Scrub Performance Profile", () => {
       container.appendChild(result.container);
       await refresh();
 
-      const nativeTimes: number[] = [];
       for (let i = 0; i < 20; i++) {
         const timeMs = Math.round((i / 20) * 10000);
         tg.currentTimeMs = timeMs;
         await new Promise((resolve) => requestAnimationFrame(resolve));
-        const t0 = performance.now();
         await refresh();
-        nativeTimes.push(performance.now() - t0);
       }
-
-      const nativeAvg =
-        nativeTimes.reduce((a, b) => a + b, 0) / nativeTimes.length;
-      console.log(
-        `native:        avg=${nativeAvg.toFixed(2)}ms (${(1000 / nativeAvg).toFixed(0)} fps)`,
-      );
-      console.log(`speedup:       ${(foAvg / nativeAvg).toFixed(1)}x`);
 
       dispose();
     }

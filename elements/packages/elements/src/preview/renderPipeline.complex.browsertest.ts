@@ -7,7 +7,6 @@
 
 import { describe, it, expect, beforeAll } from "vitest";
 import { renderTimegroupToCanvas } from "./renderTimegroupToCanvas.js";
-import { isNativeCanvasApiAvailable } from "./previewSettings.js";
 import { FrameController } from "./FrameController.js";
 import { updateAnimations } from "../elements/updateAnimations.js";
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
@@ -190,7 +189,6 @@ describe("complex composition profiling", () => {
 
     const fc = new FrameController(tg);
     const N = 60;
-    const animsTimes: number[] = [];
     const totalTimes: number[] = [];
 
     for (let i = 0; i < 3; i++) {
@@ -215,37 +213,12 @@ describe("complex composition profiling", () => {
       await fc.renderFrame(timeMs, {
         waitForLitUpdate: false,
         onAnimationsUpdate: (root) => {
-          const tA = performance.now();
           updateAnimations(root as any);
-
-          animsTimes.push(performance.now() - tA);
         },
       });
 
       totalTimes.push(performance.now() - tTotal);
     }
-
-    console.log(
-      `\n=== FRAMECONTROLLER COMPLEX DOM PROFILING (${N} frames) ===`,
-    );
-    const avg = (arr: number[]) =>
-      arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0;
-    const p95 = (arr: number[]) => {
-      if (!arr.length) return 0;
-      const sorted = [...arr].sort((a, b) => a - b);
-      return sorted[Math.floor(sorted.length * 0.95)]!;
-    };
-    console.log(
-      `Total per frame:     avg=${avg(totalTimes).toFixed(2)}ms p95=${p95(totalTimes).toFixed(2)}ms → ${(1000 / avg(totalTimes)).toFixed(0)}fps`,
-    );
-    console.log(
-      `  updateAnimations:  avg=${avg(animsTimes).toFixed(2)}ms p95=${p95(animsTimes).toFixed(2)}ms`,
-    );
-
-    // Count DOM elements
-    const allEls = tg.querySelectorAll("*");
-    console.log(`DOM elements: ${allEls.length}`);
-    console.log(`Native available: ${isNativeCanvasApiAvailable()}`);
 
     fc.abort();
     tg.remove();
@@ -286,23 +259,6 @@ describe("complex composition profiling", () => {
       frameTimes.push(performance.now() - t0);
     }
 
-    const avg = (arr: number[]) =>
-      arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0;
-    const p95 = (arr: number[]) => {
-      if (!arr.length) return 0;
-      const sorted = [...arr].sort((a, b) => a - b);
-      return sorted[Math.floor(sorted.length * 0.95)]!;
-    };
-
-    console.log(`\n=== CANVAS REFRESH COMPLEX DOM (${N} frames) ===`);
-    console.log(
-      `Mode: ${isNativeCanvasApiAvailable() ? "native" : "foreignObject"}`,
-    );
-    console.log(
-      `Per frame: avg=${avg(frameTimes).toFixed(2)}ms p95=${p95(frameTimes).toFixed(2)}ms → ${(1000 / avg(frameTimes)).toFixed(0)}fps`,
-    );
-    console.log(`Canvas: ${preview.canvas.width}x${preview.canvas.height}`);
-
     preview.dispose();
     tg.remove();
     expect(frameTimes.length).toBe(N);
@@ -321,40 +277,13 @@ describe("complex composition profiling", () => {
     await new Promise((r) => setTimeout(r, 500));
 
     const N = 120;
-    const frameTimes: number[] = [];
 
     for (let i = 0; i < N; i++) {
       const timeMs = Math.random() * 40000;
       await tg.seek(timeMs);
       await tg.updateComplete;
-
-      const t0 = performance.now();
       await preview.refresh();
-      frameTimes.push(performance.now() - t0);
     }
-
-    const avg = (arr: number[]) =>
-      arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0;
-    const p95 = (arr: number[]) => {
-      if (!arr.length) return 0;
-      const sorted = [...arr].sort((a, b) => a - b);
-      return sorted[Math.floor(sorted.length * 0.95)]!;
-    };
-    const rendered = frameTimes.filter((t) => t > 0.01);
-
-    console.log(
-      `\n=== SCRUB SIMULATION (${N} seeks, ${rendered.length} rendered) ===`,
-    );
-    console.log(
-      `Mode: ${isNativeCanvasApiAvailable() ? "native" : "foreignObject"}`,
-    );
-    console.log(`Resolution: 0.5x (${W * 0.5}x${H * 0.5})`);
-    if (rendered.length > 0) {
-      console.log(
-        `Per frame: avg=${avg(rendered).toFixed(2)}ms p95=${p95(rendered).toFixed(2)}ms → ${(1000 / avg(rendered)).toFixed(0)}fps`,
-      );
-    }
-    console.log(`Skipped (dedup): ${N - rendered.length}`);
 
     preview.dispose();
     tg.remove();
@@ -378,23 +307,6 @@ describe("complex composition profiling", () => {
       times.push(performance.now() - t0);
     }
 
-    const avg = (arr: number[]) => arr.reduce((s, v) => s + v, 0) / arr.length;
-    const p95 = (arr: number[]) => {
-      const sorted = [...arr].sort((a, b) => a - b);
-      return sorted[Math.floor(sorted.length * 0.95)]!;
-    };
-
-    const segments = tg.querySelectorAll("ef-text-segment");
-    const animations = tg.getAnimations({ subtree: true });
-
-    console.log(`\n=== UPDATE ANIMATIONS PROFILING (${N} frames) ===`);
-    console.log(
-      `Per call: avg=${avg(times).toFixed(2)}ms p95=${p95(times).toFixed(2)}ms`,
-    );
-    console.log(
-      `Text segments: ${segments.length}, Active animations: ${animations.length}`,
-    );
-
     tg.remove();
     expect(times.length).toBe(N);
   }, 30000);
@@ -416,20 +328,6 @@ describe("complex composition profiling", () => {
       await fc.renderFrame(timeMs, { waitForLitUpdate: false });
       times.push(performance.now() - t0);
     }
-
-    const avg = (arr: number[]) => arr.reduce((s, v) => s + v, 0) / arr.length;
-    const p95 = (arr: number[]) => {
-      const sorted = [...arr].sort((a, b) => a - b);
-      return sorted[Math.floor(sorted.length * 0.95)]!;
-    };
-
-    console.log(`\n=== FRAMECONTROLLER QUERY + RENDER (${N} frames) ===`);
-    console.log(
-      `Per call: avg=${avg(times).toFixed(2)}ms p95=${p95(times).toFixed(2)}ms → ${(1000 / avg(times)).toFixed(0)}fps`,
-    );
-
-    const allEls = tg.querySelectorAll("*");
-    console.log(`Total DOM elements: ${allEls.length}`);
 
     fc.abort();
     tg.remove();

@@ -44,28 +44,6 @@ async function measureFrame(
   };
 }
 
-function stats(values: number[]): {
-  min: number;
-  max: number;
-  avg: number;
-  p50: number;
-  p95: number;
-} {
-  const sorted = [...values].sort((a, b) => a - b);
-  return {
-    min: sorted[0]!,
-    max: sorted[sorted.length - 1]!,
-    avg: values.reduce((s, v) => s + v, 0) / values.length,
-    p50: sorted[Math.floor(sorted.length * 0.5)]!,
-    p95: sorted[Math.floor(sorted.length * 0.95)]!,
-  };
-}
-
-function formatStats(label: string, values: number[]): string {
-  const s = stats(values);
-  return `${label}: avg=${s.avg.toFixed(1)}ms p50=${s.p50.toFixed(1)}ms p95=${s.p95.toFixed(1)}ms min=${s.min.toFixed(1)}ms max=${s.max.toFixed(1)}ms`;
-}
-
 describe("serialization pipeline performance", () => {
   beforeAll(async () => {
     await customElements.whenDefined("ef-timegroup");
@@ -104,32 +82,6 @@ describe("serialization pipeline performance", () => {
       for (let i = 0; i < ITERATIONS; i++) {
         results.push(await measureFrame(tg, 1920, 1080, 0));
       }
-
-      console.log("\n=== SIMPLE HTML (1920x1080, 20 elements) ===");
-      console.log(
-        formatStats(
-          "serialize    ",
-          results.map((r) => r.serializeMs),
-        ),
-      );
-      console.log(
-        formatStats(
-          "imageLoad    ",
-          results.map((r) => r.imageLoadMs),
-        ),
-      );
-      console.log(
-        formatStats(
-          "total        ",
-          results.map((r) => r.totalMs),
-        ),
-      );
-      console.log(
-        `dataUri size:  ${(results[0]!.dataUriLength / 1024).toFixed(1)} KB`,
-      );
-      console.log(
-        `effective fps: ${(1000 / stats(results.map((r) => r.totalMs)).avg).toFixed(1)} fps`,
-      );
 
       // Sanity: should complete, no assertion on speed
       expect(results.length).toBe(ITERATIONS);
@@ -187,32 +139,6 @@ describe("serialization pipeline performance", () => {
         });
       }
 
-      console.log("\n=== SIMPLE HTML (1920x1080 @ 0.5x scale) ===");
-      console.log(
-        formatStats(
-          "serialize    ",
-          results.map((r) => r.serializeMs),
-        ),
-      );
-      console.log(
-        formatStats(
-          "imageLoad    ",
-          results.map((r) => r.imageLoadMs),
-        ),
-      );
-      console.log(
-        formatStats(
-          "total        ",
-          results.map((r) => r.totalMs),
-        ),
-      );
-      console.log(
-        `dataUri size:  ${(results[0]!.dataUriLength / 1024).toFixed(1)} KB`,
-      );
-      console.log(
-        `effective fps: ${(1000 / stats(results.map((r) => r.totalMs)).avg).toFixed(1)} fps`,
-      );
-
       expect(results.length).toBe(ITERATIONS);
     } finally {
       tg.remove();
@@ -267,35 +193,6 @@ describe("serialization pipeline performance", () => {
       for (let i = 0; i < ITERATIONS; i++) {
         results.push(await measureFrame(tg, 1920, 1080, 0));
       }
-
-      console.log(
-        "\n=== COMPLEX HTML (1920x1080, 25 cards with nested elements) ===",
-      );
-      console.log(
-        formatStats(
-          "serialize    ",
-          results.map((r) => r.serializeMs),
-        ),
-      );
-      console.log(
-        formatStats(
-          "imageLoad    ",
-          results.map((r) => r.imageLoadMs),
-        ),
-      );
-      console.log(
-        formatStats(
-          "total        ",
-          results.map((r) => r.totalMs),
-        ),
-      );
-      console.log(
-        `dataUri size:  ${(results[0]!.dataUriLength / 1024).toFixed(1)} KB`,
-      );
-      console.log(
-        `effective fps: ${(1000 / stats(results.map((r) => r.totalMs)).avg).toFixed(1)} fps`,
-      );
-      console.log(`DOM nodes:     ~${grid.querySelectorAll("*").length + 1}`);
 
       expect(results.length).toBe(ITERATIONS);
     } finally {
@@ -363,34 +260,6 @@ describe("serialization pipeline performance", () => {
         results.push(await measureFrame(tg, 1920, 1080, 0));
       }
 
-      console.log(
-        "\n=== HTML + 4 CANVASES (1920x1080 main + 3x 400x200 overlay) ===",
-      );
-      console.log(
-        formatStats(
-          "serialize    ",
-          results.map((r) => r.serializeMs),
-        ),
-      );
-      console.log(
-        formatStats(
-          "imageLoad    ",
-          results.map((r) => r.imageLoadMs),
-        ),
-      );
-      console.log(
-        formatStats(
-          "total        ",
-          results.map((r) => r.totalMs),
-        ),
-      );
-      console.log(
-        `dataUri size:  ${(results[0]!.dataUriLength / 1024).toFixed(1)} KB`,
-      );
-      console.log(
-        `effective fps: ${(1000 / stats(results.map((r) => r.totalMs)).avg).toFixed(1)} fps`,
-      );
-
       expect(results.length).toBe(ITERATIONS);
     } finally {
       tg.remove();
@@ -410,22 +279,17 @@ describe("serialization pipeline performance", () => {
     const workerUrl = getEncoderWorkerUrl();
     const pool = new WorkerPool(workerUrl);
     if (!pool.isAvailable()) {
-      console.log("Workers not available, skipping");
       expect(true).toBe(true);
       return;
     }
 
     const resolutions = [
-      { w: 1920, h: 1080, label: "1920x1080 (full)" },
-      { w: 960, h: 540, label: "960x540 (0.5x)" },
-      { w: 630, h: 354, label: "630x354 (display)" },
+      { w: 1920, h: 1080 },
+      { w: 960, h: 540 },
+      { w: 630, h: 354 },
     ];
 
-    console.log(
-      "\n=== WORKER ENCODING: JPEG vs PNG at various resolutions ===",
-    );
-
-    for (const { w, h, label } of resolutions) {
+    for (const { w, h } of resolutions) {
       const canvas = document.createElement("canvas");
       canvas.width = w;
       canvas.height = h;
@@ -447,40 +311,17 @@ describe("serialization pipeline performance", () => {
         );
       }
 
-      const jpegTimes: number[] = [];
-      const pngTimes: number[] = [];
-      let jpegSize = 0;
-      let pngSize = 0;
-
       for (let i = 0; i < 10; i++) {
-        let t = performance.now();
-        const jpg = await pool.execute((worker) =>
+        await pool.execute((worker) =>
           encodeCanvasInWorker(worker, canvas, false),
         );
-        jpegTimes.push(performance.now() - t);
-        if (i === 0) jpegSize = jpg.length;
-
-        t = performance.now();
-        const png = await pool.execute((worker) =>
+        await pool.execute((worker) =>
           encodeCanvasInWorker(worker, canvas, true),
         );
-        pngTimes.push(performance.now() - t);
-        if (i === 0) pngSize = png.length;
       }
-
-      console.log(`\n--- ${label} ---`);
-      console.log(formatStats("JPEG worker  ", jpegTimes));
-      console.log(formatStats("PNG worker   ", pngTimes));
-      console.log(
-        `JPEG size: ${(jpegSize / 1024).toFixed(1)}KB, PNG size: ${(pngSize / 1024).toFixed(1)}KB`,
-      );
-      console.log(
-        `JPEG speedup: ${(stats(pngTimes).avg / stats(jpegTimes).avg).toFixed(1)}x`,
-      );
     }
 
     // Test resize-before-encode: 1920x1080 canvas → 630x354 via worker
-    console.log("\n--- Resize in worker: 1920x1080 → 630x354 ---");
     const bigCanvas = document.createElement("canvas");
     bigCanvas.width = 1920;
     bigCanvas.height = 1080;
@@ -498,33 +339,17 @@ describe("serialization pipeline performance", () => {
       );
     }
 
-    const resizeTimes: number[] = [];
-    let resizeSize = 0;
     for (let i = 0; i < 10; i++) {
-      const t = performance.now();
-      const result = await pool.execute((worker) =>
+      await pool.execute((worker) =>
         encodeCanvasInWorker(worker, bigCanvas, false),
       );
-      resizeTimes.push(performance.now() - t);
-      if (i === 0) resizeSize = result.length;
     }
-    console.log(formatStats("JPEG resize  ", resizeTimes));
-    console.log(`Output size: ${(resizeSize / 1024).toFixed(1)}KB`);
 
     pool.terminate();
     expect(true).toBe(true);
   }, 60000);
 
   it("diagnostic: worker pool and JPEG vs PNG encoding", async () => {
-    const hasWorker = typeof Worker !== "undefined";
-    const hasOffscreen = typeof OffscreenCanvas !== "undefined";
-    const hasBitmap = typeof createImageBitmap !== "undefined";
-    console.log(`\n=== WORKER DIAGNOSTICS ===`);
-    console.log(
-      `Worker: ${hasWorker}, OffscreenCanvas: ${hasOffscreen}, createImageBitmap: ${hasBitmap}`,
-    );
-    console.log(`hardwareConcurrency: ${navigator.hardwareConcurrency}`);
-
     const canvas = document.createElement("canvas");
     canvas.width = 1920;
     canvas.height = 1080;
@@ -538,28 +363,10 @@ describe("serialization pipeline performance", () => {
     canvas.toDataURL("image/png");
     canvas.toDataURL("image/jpeg", 0.92);
 
-    const pngTimes: number[] = [];
-    const jpgTimes: number[] = [];
     for (let i = 0; i < 10; i++) {
-      let t = performance.now();
-      const png = canvas.toDataURL("image/png");
-      pngTimes.push(performance.now() - t);
-
-      t = performance.now();
-      const jpg = canvas.toDataURL("image/jpeg", 0.92);
-      jpgTimes.push(performance.now() - t);
-
-      if (i === 0) {
-        console.log(`PNG size: ${(png.length / 1024).toFixed(1)} KB`);
-        console.log(`JPEG size: ${(jpg.length / 1024).toFixed(1)} KB`);
-      }
+      canvas.toDataURL("image/png");
+      canvas.toDataURL("image/jpeg", 0.92);
     }
-
-    console.log(formatStats("PNG encode   ", pngTimes));
-    console.log(formatStats("JPEG encode  ", jpgTimes));
-    console.log(
-      `JPEG speedup: ${(stats(pngTimes).avg / stats(jpgTimes).avg).toFixed(1)}x`,
-    );
 
     expect(true).toBe(true);
   });
@@ -613,30 +420,6 @@ describe("serialization pipeline performance", () => {
         await loadImageFromDataUri(dataUri);
         imageLoadTimes.push(performance.now() - t2);
       }
-
-      console.log("\n=== PHASE BREAKDOWN (1920x1080, simple content) ===");
-      console.log(formatStats("serializeXHTML ", xhtmlTimes));
-      console.log(formatStats("captureDataUri ", dataUriTimes));
-      console.log(formatStats("imageLoad      ", imageLoadTimes));
-
-      const avgTotal = stats(dataUriTimes).avg + stats(imageLoadTimes).avg;
-      const avgXhtml = stats(xhtmlTimes).avg;
-      const avgBase64 = stats(dataUriTimes).avg - avgXhtml;
-      const avgImgLoad = stats(imageLoadTimes).avg;
-
-      console.log("\n--- Approximate breakdown ---");
-      console.log(
-        `DOM walk + XHTML: ${avgXhtml.toFixed(1)}ms (${((avgXhtml / avgTotal) * 100).toFixed(0)}%)`,
-      );
-      console.log(
-        `SVG wrap + base64: ${avgBase64.toFixed(1)}ms (${((avgBase64 / avgTotal) * 100).toFixed(0)}%)`,
-      );
-      console.log(
-        `Image load:        ${avgImgLoad.toFixed(1)}ms (${((avgImgLoad / avgTotal) * 100).toFixed(0)}%)`,
-      );
-      console.log(
-        `Total:             ${avgTotal.toFixed(1)}ms → ${(1000 / avgTotal).toFixed(1)} fps`,
-      );
 
       expect(xhtmlTimes.length).toBe(20);
     } finally {

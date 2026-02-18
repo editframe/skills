@@ -36,22 +36,6 @@ const SCENE_COUNTS = [1, 5, 20, 50, 100];
 // Helpers
 // ============================================================================
 
-function stats(values: number[]) {
-  const sorted = [...values].sort((a, b) => a - b);
-  return {
-    min: sorted[0]!,
-    max: sorted[sorted.length - 1]!,
-    avg: values.reduce((s, v) => s + v, 0) / values.length,
-    p50: sorted[Math.floor(sorted.length * 0.5)]!,
-    p95: sorted[Math.floor(sorted.length * 0.95)]!,
-  };
-}
-
-function fmt(label: string, values: number[]): string {
-  const s = stats(values);
-  return `${label}: avg=${s.avg.toFixed(2)}ms p50=${s.p50.toFixed(2)}ms p95=${s.p95.toFixed(2)}ms min=${s.min.toFixed(2)}ms max=${s.max.toFixed(2)}ms`;
-}
-
 function injectAnimations() {
   if (document.getElementById("scaling-test-anims")) return;
   const style = document.createElement("style");
@@ -183,11 +167,6 @@ describe("temporal culling scaling", () => {
    * If this scales with N, it's collecting invisible elements.
    */
   it("scaling: deepGetTemporalElements", async () => {
-    console.log("\n=== SCALING: deepGetTemporalElements ===");
-    console.log(
-      "Collects all temporal elements from root. Should ideally be O(visible), is likely O(total).\n",
-    );
-
     for (const sceneCount of SCENE_COUNTS) {
       const tg = createScalingTimeline(sceneCount);
       document.body.appendChild(tg);
@@ -206,17 +185,9 @@ describe("temporal culling scaling", () => {
       }
       for (let i = 0; i < ITERATIONS; i++) {
         const t0 = performance.now();
-        const result = deepGetTemporalElements(tg, timeMs);
+        deepGetTemporalElements(tg, timeMs);
         times.push(performance.now() - t0);
-        if (i === 0) {
-          console.log(
-            `  scenes=${sceneCount}: collected ${result.elements.length} temporal elements (${result.pruned.size} pruned)`,
-          );
-        }
       }
-      console.log(
-        `  ${fmt(`scenes=${String(sceneCount).padStart(3)}`, times)}`,
-      );
 
       tg.remove();
     }
@@ -229,11 +200,6 @@ describe("temporal culling scaling", () => {
    * This is a browser DOM API call that returns all animations in the tree.
    */
   it("scaling: getAnimations({ subtree: true })", async () => {
-    console.log("\n=== SCALING: getAnimations({ subtree: true }) ===");
-    console.log(
-      "Browser API to collect all CSS animations. Walks entire subtree.\n",
-    );
-
     for (const sceneCount of SCENE_COUNTS) {
       const tg = createScalingTimeline(sceneCount);
       document.body.appendChild(tg);
@@ -250,17 +216,9 @@ describe("temporal culling scaling", () => {
       }
       for (let i = 0; i < ITERATIONS; i++) {
         const t0 = performance.now();
-        const result = tg.getAnimations({ subtree: true });
+        tg.getAnimations({ subtree: true });
         times.push(performance.now() - t0);
-        if (i === 0) {
-          console.log(
-            `  scenes=${sceneCount}: found ${result.length} animations`,
-          );
-        }
       }
-      console.log(
-        `  ${fmt(`scenes=${String(sceneCount).padStart(3)}`, times)}`,
-      );
 
       tg.remove();
     }
@@ -274,11 +232,6 @@ describe("temporal culling scaling", () => {
    * animation partitioning + visual state application.
    */
   it("scaling: updateAnimations()", async () => {
-    console.log("\n=== SCALING: updateAnimations() ===");
-    console.log(
-      "Full animation update pass. Includes element collection, phase eval, animation coordination.\n",
-    );
-
     for (const sceneCount of SCENE_COUNTS) {
       const tg = createScalingTimeline(sceneCount);
       document.body.appendChild(tg);
@@ -298,9 +251,6 @@ describe("temporal culling scaling", () => {
         updateAnimations(tg);
         times.push(performance.now() - t0);
       }
-      console.log(
-        `  ${fmt(`scenes=${String(sceneCount).padStart(3)}`, times)}`,
-      );
 
       tg.remove();
     }
@@ -312,11 +262,6 @@ describe("temporal culling scaling", () => {
    * Measures FrameController.renderFrame() — queryVisibleElements + prepare + render + animations.
    */
   it("scaling: FrameController.renderFrame()", async () => {
-    console.log("\n=== SCALING: FrameController.renderFrame() ===");
-    console.log(
-      "Full frame render: query visible elements + prepare + render + updateAnimations.\n",
-    );
-
     for (const sceneCount of SCENE_COUNTS) {
       const tg = createScalingTimeline(sceneCount);
       document.body.appendChild(tg);
@@ -345,9 +290,6 @@ describe("temporal culling scaling", () => {
         });
         times.push(performance.now() - t0);
       }
-      console.log(
-        `  ${fmt(`scenes=${String(sceneCount).padStart(3)}`, times)}`,
-      );
 
       fc.abort();
       tg.remove();
@@ -361,11 +303,6 @@ describe("temporal culling scaling", () => {
    * This walk DOES prune invisible subtrees, so it should scale better.
    */
   it("scaling: captureTimelineToDataUri()", async () => {
-    console.log("\n=== SCALING: captureTimelineToDataUri() ===");
-    console.log(
-      "DOM serialization. Has subtree pruning — should scale better than others.\n",
-    );
-
     for (const sceneCount of SCENE_COUNTS) {
       const tg = createScalingTimeline(sceneCount);
       document.body.appendChild(tg);
@@ -386,9 +323,6 @@ describe("temporal culling scaling", () => {
         await captureTimelineToDataUri(tg, W, H, { canvasScale: 1, timeMs });
         times.push(performance.now() - t0);
       }
-      console.log(
-        `  ${fmt(`scenes=${String(sceneCount).padStart(3)}`, times)}`,
-      );
 
       tg.remove();
     }
@@ -401,11 +335,6 @@ describe("temporal culling scaling", () => {
    * This is the end-to-end cost per frame including all the walks.
    */
   it("scaling: seekForRender() (full video export frame)", async () => {
-    console.log("\n=== SCALING: seekForRender() ===");
-    console.log(
-      "Full video export frame pipeline: time set + Lit updates + FrameController + updateAnimations.\n",
-    );
-
     for (const sceneCount of SCENE_COUNTS) {
       const tg = createScalingTimeline(sceneCount);
       document.body.appendChild(tg);
@@ -423,9 +352,6 @@ describe("temporal culling scaling", () => {
         await tg.seekForRender(timeMs + WARMUP + i * 0.01);
         times.push(performance.now() - t0);
       }
-      console.log(
-        `  ${fmt(`scenes=${String(sceneCount).padStart(3)}`, times)}`,
-      );
 
       tg.remove();
     }
@@ -438,11 +364,6 @@ describe("temporal culling scaling", () => {
    * and reports total cost to produce one frame of video output at each scale.
    */
   it("scaling: full frame (seekForRender + captureTimelineToDataUri)", async () => {
-    console.log("\n=== SCALING: FULL VIDEO FRAME (seek + serialize) ===");
-    console.log("Complete cost to produce one frame during video export.\n");
-
-    const results: Array<{ scenes: number; avg: number; p95: number }> = [];
-
     for (const sceneCount of SCENE_COUNTS) {
       const tg = createScalingTimeline(sceneCount);
       document.body.appendChild(tg);
@@ -467,24 +388,7 @@ describe("temporal culling scaling", () => {
         times.push(performance.now() - t0);
       }
 
-      const s = stats(times);
-      results.push({ scenes: sceneCount, avg: s.avg, p95: s.p95 });
-      console.log(
-        `  ${fmt(`scenes=${String(sceneCount).padStart(3)}`, times)}`,
-      );
-
       tg.remove();
-    }
-
-    // Print scaling summary
-    console.log("\n  --- Scaling Summary ---");
-    const baseline = results[0]!;
-    for (const r of results) {
-      const ratio = r.avg / baseline.avg;
-      console.log(
-        `  scenes=${String(r.scenes).padStart(3)}: avg=${r.avg.toFixed(2)}ms  ` +
-          `${ratio.toFixed(1)}x vs baseline (${r.scenes}x more scenes)`,
-      );
     }
 
     expect(true).toBe(true);

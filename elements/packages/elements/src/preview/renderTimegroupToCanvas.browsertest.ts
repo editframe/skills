@@ -1548,7 +1548,6 @@ describe("benchmark: 2026 Chromium optimizations", () => {
 
     // Test 1: Data URI
     let dataUriTaintError = false;
-    const dataUriStart = performance.now();
     for (const svg of svgs1) {
       const img = await loadViaDataUri(svg);
       ctx.drawImage(img, 0, 0);
@@ -1558,25 +1557,18 @@ describe("benchmark: 2026 Chromium optimizations", () => {
         dataUriTaintError = true;
       }
     }
-    const dataUriTime = performance.now() - dataUriStart;
 
     // Test 2: Blob URL
-    let blobUrlTaintError = false;
-    const blobUrlStart = performance.now();
     for (const svg of svgs2) {
       const img = await loadViaBlobUrl(svg);
       ctx.drawImage(img, 0, 0);
       try {
         ctx.getImageData(0, 0, 1, 1); // Test for tainting
       } catch (e) {
-        blobUrlTaintError = true;
       }
     }
-    const blobUrlTime = performance.now() - blobUrlStart;
 
     // Test 3: createImageBitmap
-    let imageBitmapTaintError = false;
-    const imageBitmapStart = performance.now();
     for (const svg of svgs3) {
       const bitmap = await loadViaImageBitmap(svg);
       ctx.drawImage(bitmap, 0, 0);
@@ -1584,43 +1576,12 @@ describe("benchmark: 2026 Chromium optimizations", () => {
       try {
         ctx.getImageData(0, 0, 1, 1); // Test for tainting
       } catch (e) {
-        imageBitmapTaintError = true;
       }
     }
-    const imageBitmapTime = performance.now() - imageBitmapStart;
-
-    console.log(
-      `\n========== 2026 CHROMIUM OPTIMIZATIONS BENCHMARK ==========`,
-    );
-    console.log(`Images: ${NUM_IMAGES} @ ${WIDTH}x${HEIGHT}`);
-    console.log(`-----------------------------------------------------------`);
-    console.log(
-      `Data URI:        ${dataUriTime.toFixed(0)}ms total, ${(dataUriTime / NUM_IMAGES).toFixed(1)}ms/frame, tainted: ${dataUriTaintError}`,
-    );
-    console.log(
-      `Blob URL:        ${blobUrlTime.toFixed(0)}ms total, ${(blobUrlTime / NUM_IMAGES).toFixed(1)}ms/frame, tainted: ${blobUrlTaintError}`,
-    );
-    console.log(
-      `createImageBitmap: ${imageBitmapTime.toFixed(0)}ms total, ${(imageBitmapTime / NUM_IMAGES).toFixed(1)}ms/frame, tainted: ${imageBitmapTaintError}`,
-    );
-    console.log(`-----------------------------------------------------------`);
-    console.log(
-      `Blob URL vs Data URI: ${((dataUriTime / blobUrlTime - 1) * 100).toFixed(0)}% ${blobUrlTime < dataUriTime ? "faster" : "slower"}`,
-    );
-    console.log(
-      `ImageBitmap vs Data URI: ${((dataUriTime / imageBitmapTime - 1) * 100).toFixed(0)}% ${imageBitmapTime < dataUriTime ? "faster" : "slower"}`,
-    );
-    console.log(
-      `===========================================================\n`,
-    );
 
     // Data URI is the only method that doesn't taint (as of 2025)
     // Blob URLs and createImageBitmap still cause tainting with foreignObject
-    expect(dataUriTaintError).toBe(false); // Data URI must work
-    // Note: blobUrlTaintError and imageBitmapTaintError are expected to be true
-    console.log(
-      `[INFO] Blob URL tainting: ${blobUrlTaintError ? "CONFIRMED (expected)" : "NOT TAINTED (2026 improvement available!)"}`,
-    );
+    expect(dataUriTaintError).toBe(false);
   }, 60000);
 });
 
@@ -1730,24 +1691,15 @@ describe("benchmark: parallel image loading queue depth", () => {
       });
     }
 
-    const sampleUri = createTestSvgDataUri(0);
-    console.log(
-      `Generated SVG data URIs (~${(sampleUri.length / 1024).toFixed(1)}KB each)`,
-    );
-
     // SEQUENTIAL: Load one at a time, draw after each (fresh data URIs)
     const seqUris = generateFreshDataUris();
-    const seqStart = performance.now();
     for (const uri of seqUris) {
       const img = await loadImage(uri);
       drawImage(img);
     }
-    const seqTime = performance.now() - seqStart;
-    const seqPerFrame = seqTime / NUM_IMAGES;
 
     // PARALLEL QUEUE DEPTH 2: Load 2 at a time, draw in order
     const q2Uris = generateFreshDataUris();
-    const q2Start = performance.now();
     {
       const pending: Array<{
         idx: number;
@@ -1789,12 +1741,9 @@ describe("benchmark: parallel image loading queue depth", () => {
         }
       }
     }
-    const q2Time = performance.now() - q2Start;
-    const q2PerFrame = q2Time / NUM_IMAGES;
 
     // PARALLEL QUEUE DEPTH 4
     const q4Uris = generateFreshDataUris();
-    const q4Start = performance.now();
     {
       const pending: Array<{
         idx: number;
@@ -1831,12 +1780,9 @@ describe("benchmark: parallel image loading queue depth", () => {
         }
       }
     }
-    const q4Time = performance.now() - q4Start;
-    const q4PerFrame = q4Time / NUM_IMAGES;
 
     // PARALLEL QUEUE DEPTH 8
     const q8Uris = generateFreshDataUris();
-    const q8Start = performance.now();
     {
       const pending: Array<{
         idx: number;
@@ -1873,38 +1819,14 @@ describe("benchmark: parallel image loading queue depth", () => {
         }
       }
     }
-    const q8Time = performance.now() - q8Start;
-    const q8PerFrame = q8Time / NUM_IMAGES;
 
     // FULLY PARALLEL: Load all at once, draw in order
     const allUris = generateFreshDataUris();
-    const allStart = performance.now();
     const allImages = await Promise.all(allUris.map(loadImage));
     for (const img of allImages) {
       drawImage(img);
     }
-    const allTime = performance.now() - allStart;
-    const allPerFrame = allTime / NUM_IMAGES;
 
-    console.log(`\n========== PARALLEL IMAGE LOADING BENCHMARK ==========`);
-    console.log(`Images: ${NUM_IMAGES} @ ${WIDTH}x${HEIGHT}`);
-    console.log(`-------------------------------------------------------`);
-    console.log(
-      `Sequential (depth=1): ${seqTime.toFixed(0)}ms total, ${seqPerFrame.toFixed(1)}ms/frame`,
-    );
-    console.log(
-      `Queue depth=2:        ${q2Time.toFixed(0)}ms total, ${q2PerFrame.toFixed(1)}ms/frame (${((seqTime / q2Time - 1) * 100).toFixed(0)}% faster)`,
-    );
-    console.log(
-      `Queue depth=4:        ${q4Time.toFixed(0)}ms total, ${q4PerFrame.toFixed(1)}ms/frame (${((seqTime / q4Time - 1) * 100).toFixed(0)}% faster)`,
-    );
-    console.log(
-      `Queue depth=8:        ${q8Time.toFixed(0)}ms total, ${q8PerFrame.toFixed(1)}ms/frame (${((seqTime / q8Time - 1) * 100).toFixed(0)}% faster)`,
-    );
-    console.log(
-      `Fully parallel:       ${allTime.toFixed(0)}ms total, ${allPerFrame.toFixed(1)}ms/frame (${((seqTime / allTime - 1) * 100).toFixed(0)}% faster)`,
-    );
-    console.log(`=======================================================\n`);
   }, 60000);
 });
 
@@ -1944,11 +1866,6 @@ describe("clone-timeline video rendition (reproduction)", () => {
     expect(originalMediaEngine).toBeTruthy();
 
     const originalVideoRendition = originalMediaEngine.getVideoRendition();
-    console.log("Original video rendition:", originalVideoRendition);
-    console.log(
-      "Original media engine type:",
-      originalMediaEngine.constructor.name,
-    );
     expect(originalVideoRendition).toBeTruthy();
 
     // Create render clone
@@ -1961,16 +1878,10 @@ describe("clone-timeline video rendition (reproduction)", () => {
 
       // Verify cloned video has media engine
       const clonedMediaEngine = clonedVideo.mediaEngineTask?.value;
-      console.log("Cloned media engine:", clonedMediaEngine);
-      console.log(
-        "Cloned media engine type:",
-        clonedMediaEngine?.constructor.name,
-      );
       expect(clonedMediaEngine).toBeTruthy();
 
       // KEY TEST: Does the clone have videoRendition?
       const clonedVideoRendition = clonedMediaEngine.getVideoRendition();
-      console.log("Cloned video rendition:", clonedVideoRendition);
 
       // This is the assertion that should fail if the hypothesis is correct
       expect(clonedVideoRendition).toBeTruthy();
@@ -2021,19 +1932,10 @@ describe("clone-timeline video rendition (reproduction)", () => {
     // Get original video's configuration context
     const originalVideo = timegroup.querySelector("ef-video") as any;
     const originalConfig = originalVideo.closest("ef-configuration");
-    console.log("Original ef-configuration:", originalConfig);
-    console.log(
-      "Original media-engine attribute:",
-      originalConfig?.mediaEngine,
-    );
     expect(originalConfig).toBeTruthy();
     expect(originalConfig.mediaEngine).toBe("local");
 
     const originalMediaEngine = originalVideo.mediaEngineTask?.value;
-    console.log(
-      "Original media engine type:",
-      originalMediaEngine?.constructor.name,
-    );
     expect(originalMediaEngine.constructor.name).toBe("AssetMediaEngine");
 
     // Create render clone
@@ -2044,18 +1946,11 @@ describe("clone-timeline video rendition (reproduction)", () => {
       const clonedVideo = clone.querySelector("ef-video") as any;
       const clonedConfig = clonedVideo.closest("ef-configuration");
 
-      console.log("Cloned ef-configuration:", clonedConfig);
-      console.log("Cloned media-engine attribute:", clonedConfig?.mediaEngine);
-
       // Clone should have ef-configuration parent with same settings
       expect(clonedConfig).toBeTruthy();
       expect(clonedConfig.mediaEngine).toBe("local");
 
       const clonedMediaEngine = clonedVideo.mediaEngineTask?.value;
-      console.log(
-        "Cloned media engine type:",
-        clonedMediaEngine?.constructor.name,
-      );
 
       // Clone should use same media engine type as original
       expect(clonedMediaEngine.constructor.name).toBe("AssetMediaEngine");
@@ -2143,35 +2038,19 @@ describe("clone-timeline video rendition (reproduction)", () => {
     try {
       await timegroup.waitForMediaDurations();
     } catch (e) {
-      console.log(
-        "waitForMediaDurations error (expected for remote URL without track index):",
-        e,
-      );
       container.remove();
       // Skip this test if the URL isn't served properly
       return;
     }
 
     const originalMediaEngine = originalVideo.mediaEngineTask?.value;
-    console.log(
-      "Local-remote original media engine type:",
-      originalMediaEngine?.constructor.name,
-    );
-    console.log("Local-remote original src:", originalVideo.src);
 
     if (!originalMediaEngine) {
-      console.log(
-        "No media engine - test infrastructure may not support this URL",
-      );
       container.remove();
       return;
     }
 
     const originalVideoRendition = originalMediaEngine.getVideoRendition();
-    console.log(
-      "Local-remote original video rendition:",
-      originalVideoRendition,
-    );
 
     // With media-engine="local", remote URLs use AssetMediaEngine which requires
     // the server to provide track fragment index at /@ef-track/<src>/index.json
@@ -2185,13 +2064,7 @@ describe("clone-timeline video rendition (reproduction)", () => {
       const clonedVideo = clone.querySelector("ef-video") as any;
       const clonedMediaEngine = clonedVideo.mediaEngineTask?.value;
 
-      console.log(
-        "Local-remote cloned media engine type:",
-        clonedMediaEngine?.constructor.name,
-      );
-
       const clonedVideoRendition = clonedMediaEngine?.getVideoRendition();
-      console.log("Local-remote cloned video rendition:", clonedVideoRendition);
 
       expect(clonedMediaEngine).toBeTruthy();
       expect(clonedVideoRendition).toBeTruthy();
@@ -2252,10 +2125,6 @@ describe("captions rendering in foreignObject path", () => {
       expect(cloneCaptions).toBeTruthy();
 
       const cloneCaptionsData = cloneCaptions.unifiedCaptionsDataTask?.value;
-      console.log(`Clone captions data loaded: ${!!cloneCaptionsData}`);
-      console.log(
-        `Clone captions segments: ${cloneCaptionsData?.segments?.length || 0}`,
-      );
 
       // The clone should have captions data
       expect(cloneCaptionsData).toBeTruthy();
@@ -2269,7 +2138,6 @@ describe("captions rendering in foreignObject path", () => {
       await cloneActiveWord?.updateComplete;
 
       const cloneWordText = cloneActiveWord?.textContent?.trim();
-      console.log(`Clone caption text at 500ms: "${cloneWordText}"`);
       expect(cloneWordText).toBeTruthy();
     } finally {
       cleanup();
@@ -2341,10 +2209,6 @@ describe("captions rendering in foreignObject path", () => {
 
       // The key test: captionsData should be copied to the clone
       expect(cloneCaptions.captionsData).toBeTruthy();
-      console.log(`Clone captionsData copied: ${!!cloneCaptions.captionsData}`);
-      console.log(
-        `Clone captionsData segments: ${cloneCaptions.captionsData?.segments?.length || 0}`,
-      );
 
       expect(cloneCaptions.captionsData.segments?.length).toBe(2);
       expect(cloneCaptions.captionsData.word_segments?.length).toBe(2);
@@ -2366,7 +2230,6 @@ describe("captions rendering in foreignObject path", () => {
       await cloneActiveWord?.updateComplete;
 
       const cloneWordText = cloneActiveWord?.textContent?.trim();
-      console.log(`Clone caption text at 500ms (JS data): "${cloneWordText}"`);
       expect(cloneWordText).toBe("JSWord1");
     } finally {
       cleanup();
@@ -2447,7 +2310,6 @@ describe("captions rendering in foreignObject path", () => {
 
     // Verify the source element has correct text (light DOM — wordText setter uses this.textContent)
     const sourceText = activeWord.textContent?.trim();
-    console.log(`Source element text at 500ms: "${sourceText}"`);
     expect(sourceText).toBe("Hello");
 
     // Build clone structure at this time
@@ -2459,7 +2321,6 @@ describe("captions rendering in foreignObject path", () => {
     // Find the cloned active word element (it becomes a div in the clone)
     // The clone should have the text "Hello"
     const cloneText = cloneContainer.textContent?.trim();
-    console.log(`Clone text content at 500ms: "${cloneText}"`);
 
     // This should contain "Hello" from the initial clone building
     expect(cloneText).toContain("Hello");
@@ -2469,7 +2330,6 @@ describe("captions rendering in foreignObject path", () => {
 
     // Verify source element now has "World" (light DOM)
     const sourceText2 = activeWord.textContent?.trim();
-    console.log(`Source element text at 1500ms: "${sourceText2}"`);
     expect(sourceText2).toBe("World");
 
     // Sync styles to update the clone
@@ -2479,7 +2339,6 @@ describe("captions rendering in foreignObject path", () => {
     // Currently syncStyles only syncs light DOM text, not shadow DOM text,
     // so the clone will still have "Hello"
     const cloneText2 = cloneContainer.textContent?.trim();
-    console.log(`Clone text content at 1500ms after sync: "${cloneText2}"`);
 
     // This assertion will FAIL with the current implementation,
     // proving the bug exists
@@ -2520,17 +2379,6 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
     await timegroup.updateComplete;
 
-    console.log(
-      `[DIAG pre] Timegroup offsetWidth: ${timegroup.offsetWidth}, offsetHeight: ${timegroup.offsetHeight}`,
-    );
-    console.log(
-      `[DIAG pre] Timegroup currentTimeMs: ${timegroup.currentTimeMs}, userTimeMs: ${(timegroup as any).userTimeMs}`,
-    );
-    console.log(
-      `[DIAG pre] Timegroup startTimeMs: ${timegroup.startTimeMs}, endTimeMs: ${(timegroup as any).endTimeMs}`,
-    );
-    console.log(`[DIAG pre] Timegroup durationMs: ${timegroup.durationMs}`);
-
     // This is the exact code path the workbench uses
     const result = renderTimegroupToCanvas(timegroup, { scale: 1 });
     const { canvas, refresh, dispose } = result;
@@ -2540,19 +2388,8 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     await new Promise((r) => setTimeout(r, 500));
 
     // Now force a new render by updating time
-    console.log(
-      `[DIAG] After initial wait - Timegroup currentTimeMs: ${timegroup.currentTimeMs}, userTimeMs: ${(timegroup as any).userTimeMs}`,
-    );
 
     // Check canvas dimensions
-    console.log(`[DIAG] Canvas dimensions: ${canvas.width}x${canvas.height}`);
-    console.log(
-      `[DIAG] Canvas CSS size: ${canvas.style.width}x${canvas.style.height}`,
-    );
-    console.log(
-      `[DIAG] Timegroup computedStyle width: ${getComputedStyle(timegroup).width}, height: ${getComputedStyle(timegroup).height}`,
-    );
-    console.log(`[DIAG] Timegroup inline style: ${timegroup.style.cssText}`);
 
     // Check if canvas has any content
     const ctx = canvas.getContext("2d")!;
@@ -2561,42 +2398,9 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     for (let i = 3; i < imageData.data.length; i += 4) {
       if (imageData.data[i]! > 0) nonZeroPixels++;
     }
-    const totalPixels = canvas.width * canvas.height;
-    console.log(
-      `[DIAG] Canvas after initial render: ${nonZeroPixels}/${totalPixels} non-zero pixels`,
-    );
 
-    // If initial render produced nothing, try direct captureTimegroupAtTime for comparison
+    // If initial render produced nothing, try calling refresh with a different time to bypass dedup
     if (nonZeroPixels === 0) {
-      console.log(
-        `[DIAG] Initial render blank! Trying captureTimegroupAtTime for comparison...`,
-      );
-      const captureResult = await captureTimegroupAtTime(timegroup, {
-        timeMs: 0,
-        scale: 1,
-      });
-      if (captureResult instanceof HTMLCanvasElement) {
-        const captureCtx = captureResult.getContext("2d")!;
-        const captureData = captureCtx.getImageData(
-          0,
-          0,
-          captureResult.width,
-          captureResult.height,
-        );
-        let captureNonZero = 0;
-        for (let i = 3; i < captureData.data.length; i += 4) {
-          if (captureData.data[i]! > 0) captureNonZero++;
-        }
-        console.log(
-          `[DIAG] captureTimegroupAtTime: ${captureNonZero}/${captureResult.width * captureResult.height} non-zero (${captureResult.width}x${captureResult.height})`,
-        );
-      } else if (captureResult instanceof HTMLImageElement) {
-        console.log(
-          `[DIAG] captureTimegroupAtTime returned image: ${captureResult.width}x${captureResult.height}`,
-        );
-      }
-
-      // Also try calling refresh with a different time to bypass dedup
       (timegroup as any).currentTimeMs = 1;
       (timegroup as any).userTimeMs = 1;
       await timegroup.updateComplete;
@@ -2607,9 +2411,6 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
       for (let i = 3; i < imageData.data.length; i += 4) {
         if (imageData.data[i]! > 0) nonZeroPixels++;
       }
-      console.log(
-        `[DIAG] Canvas after forced time change + refresh: ${nonZeroPixels}/${totalPixels} non-zero`,
-      );
     }
 
     expect(canvas.width).toBeGreaterThan(0);
@@ -2661,11 +2462,6 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     for (let i = 3; i < imageData.data.length; i += 4) {
       if (imageData.data[i]! > 0) nonZeroPixels++;
     }
-    const totalPixels = canvas.width * canvas.height;
-    const percentNonZero = ((nonZeroPixels / totalPixels) * 100).toFixed(1);
-    console.log(
-      `[DIAG clipPath] Canvas: ${canvas.width}x${canvas.height}, content: ${percentNonZero}% non-zero`,
-    );
 
     expect(nonZeroPixels).toBeGreaterThan(0);
 
@@ -2696,25 +2492,11 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     document.body.appendChild(container);
 
     const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
-    const fitScale = container.querySelector("ef-fit-scale") as any;
     await timegroup.updateComplete;
 
     // Wait for EFFitScale to apply transforms
     await new Promise((r) =>
       requestAnimationFrame(() => requestAnimationFrame(r)),
-    );
-
-    console.log(
-      `[DIAG fitscale] Timegroup offsetWidth: ${timegroup.offsetWidth}, offsetHeight: ${timegroup.offsetHeight}`,
-    );
-    console.log(
-      `[DIAG fitscale] Timegroup inline style: ${timegroup.style.cssText}`,
-    );
-    console.log(
-      `[DIAG fitscale] Timegroup computed transform: ${getComputedStyle(timegroup).transform}`,
-    );
-    console.log(
-      `[DIAG fitscale] FitScale offsetWidth: ${fitScale?.offsetWidth}, offsetHeight: ${fitScale?.offsetHeight}`,
     );
 
     // Mimic workbench canvas mode
@@ -2735,11 +2517,6 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     for (let i = 3; i < imageData.data.length; i += 4) {
       if (imageData.data[i]! > 0) nonZeroPixels++;
     }
-    const totalPixels = canvas.width * canvas.height;
-    const percentNonZero = ((nonZeroPixels / totalPixels) * 100).toFixed(1);
-    console.log(
-      `[DIAG fitscale] Canvas: ${canvas.width}x${canvas.height}, content: ${percentNonZero}% non-zero`,
-    );
 
     expect(nonZeroPixels).toBeGreaterThan(0);
 
@@ -2779,7 +2556,6 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     );
 
     // ===== 1. TRUE CDP SCREENSHOT (Playwright element.screenshot - compositor output) =====
-    console.log("[VISUAL] Taking true CDP browser screenshot as baseline...");
     const cdpDataUrl = await (commands as any).captureElementScreenshot(
       "#diag-visual-tg",
     );
@@ -2788,23 +2564,15 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
       "1-cdp-browser-screenshot",
       cdpDataUrl,
     );
-    console.log(
-      "[VISUAL] CDP screenshot saved (true browser compositor output)",
-    );
 
     // ===== 2. LIVE PREVIEW: renderTimegroupToCanvas (the workbench path) =====
-    console.log("[VISUAL] Capturing renderTimegroupToCanvas live preview...");
     const liveResult = renderTimegroupToCanvas(timegroup, { scale: 1 });
     await new Promise((r) => setTimeout(r, 1500));
     const liveDataUrl = captureCanvasAsDataUrl(liveResult.canvas, "image/png");
     await writeSnapshot("visual-inspection", "2-live-preview", liveDataUrl);
-    console.log(
-      `[VISUAL] Live preview saved: ${liveResult.canvas.width}x${liveResult.canvas.height}`,
-    );
     liveResult.dispose();
 
     // ===== 3. LIVE PREVIEW with clipPath inset(100%) =====
-    console.log("[VISUAL] Capturing live preview WITH clipPath inset(100%)...");
     timegroup.style.clipPath = "inset(100%)";
     timegroup.style.pointerEvents = "none";
     const clippedResult = renderTimegroupToCanvas(timegroup, { scale: 1 });
@@ -2818,15 +2586,11 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
       "3-live-preview-clipped",
       clippedDataUrl,
     );
-    console.log(
-      `[VISUAL] Clipped live preview saved: ${clippedResult.canvas.width}x${clippedResult.canvas.height}`,
-    );
     clippedResult.dispose();
     timegroup.style.clipPath = "";
     timegroup.style.pointerEvents = "";
 
     // ===== 4. CLONE-BASED CAPTURE: foreignObject path =====
-    console.log("[VISUAL] Capturing foreignObject clone-based capture...");
     setNativeCanvasApiEnabled(false);
     const foreignResult = await captureTimegroupAtTime(timegroup, {
       timeMs: 0,
@@ -2838,10 +2602,8 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
       "4-clone-foreignobject",
       foreignDataUrl,
     );
-    console.log(`[VISUAL] ForeignObject clone saved`);
 
     // ===== 5. CLONE-BASED CAPTURE: native drawElementImage path =====
-    console.log("[VISUAL] Capturing native clone-based capture...");
     setNativeCanvasApiEnabled(true);
     const nativeResult = await captureTimegroupAtTime(timegroup, {
       timeMs: 0,
@@ -2849,11 +2611,9 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     });
     const nativeDataUrl = captureCanvasAsDataUrl(nativeResult, "image/png");
     await writeSnapshot("visual-inspection", "5-clone-native", nativeDataUrl);
-    console.log(`[VISUAL] Native clone saved`);
 
     // ===== VISUAL DIFF COMPARISONS using odiff =====
     // Compare each canvas rendering path against the CDP baseline
-    console.log("\n[VISUAL] ===== ODIFF VISUAL COMPARISONS =====");
 
     // Helper: load a data URL into a canvas for comparison
     function dataUrlToCanvas(
@@ -2906,42 +2666,14 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     ];
 
     for (const { name, canvas } of comparisons) {
-      const result = await compareTwoCanvases(
+      await compareTwoCanvases(
         cdpCanvas,
         canvas,
         "visual-inspection",
         name,
         { threshold: 0.1, acceptableDiffPercentage: 5.0 },
       );
-      const diffPct = result.diffPercentage?.toFixed(2) ?? "N/A";
-      const status = result.match ? "MATCH" : "DIFF";
-      console.log(
-        `[VISUAL] ${name}: ${status} (${diffPct}% different, ${result.diffCount ?? 0} pixels)`,
-      );
     }
-
-    console.log("[VISUAL] ========================================");
-    console.log(
-      "[VISUAL] Images saved to: elements/test-assets/test/__snapshots__/visual-inspection/",
-    );
-    console.log("[VISUAL] Files:");
-    console.log(
-      "[VISUAL]   1-cdp-browser-screenshot.actual.png - TRUE CDP browser screenshot (baseline)",
-    );
-    console.log(
-      "[VISUAL]   2-live-preview.actual.png           - renderTimegroupToCanvas (workbench path)",
-    );
-    console.log(
-      "[VISUAL]   3-live-preview-clipped.actual.png   - same with clipPath: inset(100%)",
-    );
-    console.log(
-      "[VISUAL]   4-clone-foreignobject.actual.png    - captureTimegroupAtTime foreignObject",
-    );
-    console.log(
-      "[VISUAL]   5-clone-native.actual.png           - captureTimegroupAtTime native",
-    );
-    console.log("[VISUAL]   + diff images: cdp-vs-*.compare-diff.png");
-    console.log("[VISUAL] ========================================\n");
 
     container.remove();
   }, 60000);
@@ -2987,9 +2719,6 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     for (let i = 3; i < imageData.data.length; i += 4) {
       if (imageData.data[i]! > 0) nonZeroPixels++;
     }
-    console.log(
-      `[DIAG dedup] First render: ${nonZeroPixels} non-zero pixels out of ${canvas.width * canvas.height}`,
-    );
     expect(nonZeroPixels).toBeGreaterThan(0);
 
     // Change resolution scale (triggers re-render)
@@ -3004,9 +2733,6 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     for (let i = 3; i < imageData.data.length; i += 4) {
       if (imageData.data[i]! > 0) nonZeroPixels++;
     }
-    console.log(
-      `[DIAG dedup] After resolution change: ${nonZeroPixels} non-zero pixels out of ${canvas.width * canvas.height}`,
-    );
     expect(nonZeroPixels).toBeGreaterThan(0);
 
     dispose();

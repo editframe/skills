@@ -155,7 +155,6 @@ describe("renderTimegroupToVideo - workbench integration", () => {
       );
 
       const progressUpdates: RenderProgress[] = [];
-      const startTime = performance.now();
 
       // Export like the workbench does - with progress callbacks
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
@@ -176,21 +175,6 @@ describe("renderTimegroupToVideo - workbench integration", () => {
           );
         },
       });
-
-      const totalTime = performance.now() - startTime;
-      const avgSpeedMultiplier =
-        progressUpdates.length > 0
-          ? progressUpdates.reduce((sum, p) => sum + p.speedMultiplier, 0) /
-            progressUpdates.length
-          : 0;
-      const frameCount =
-        progressUpdates.length > 0
-          ? progressUpdates[progressUpdates.length - 1]!.totalFrames
-          : 0;
-
-      console.log(
-        `[PERF] Workbench progress callbacks: ${totalTime.toFixed(0)}ms, ${frameCount} frames, ${avgSpeedMultiplier.toFixed(2)}x realtime, ${(totalTime / Math.max(frameCount, 1)).toFixed(1)}ms/frame`,
-      );
 
       expect(videoBuffer).toBeDefined();
       expect(videoBuffer!.length).toBeGreaterThan(1000);
@@ -291,9 +275,6 @@ describe("renderTimegroupToVideo - workbench integration", () => {
         "[Temporal Culling Test] Starting export across all time ranges...",
       );
 
-      const progressUpdates: RenderProgress[] = [];
-      const startTime = performance.now();
-
       // Export the full 5 seconds - this will exercise temporal culling as elements appear/disappear
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
         fps: 15, // 75 frames total - good stress test
@@ -304,25 +285,7 @@ describe("renderTimegroupToVideo - workbench integration", () => {
         streaming: false,
         contentReadyMode: "blocking",
         blockingTimeoutMs: 5000,
-        onProgress: (progress) => {
-          progressUpdates.push({ ...progress });
-        },
       });
-
-      const totalTime = performance.now() - startTime;
-      const avgSpeedMultiplier =
-        progressUpdates.length > 0
-          ? progressUpdates.reduce((sum, p) => sum + p.speedMultiplier, 0) /
-            progressUpdates.length
-          : 0;
-      const frameCount =
-        progressUpdates.length > 0
-          ? progressUpdates[progressUpdates.length - 1]!.totalFrames
-          : 0;
-
-      console.log(
-        `[PERF] Temporal culling: ${totalTime.toFixed(0)}ms, ${frameCount} frames, ${avgSpeedMultiplier.toFixed(2)}x realtime, ${(totalTime / Math.max(frameCount, 1)).toFixed(1)}ms/frame`,
-      );
 
       expect(videoBuffer).toBeDefined();
       expect(videoBuffer!.length).toBeGreaterThan(1000);
@@ -393,9 +356,6 @@ describe("renderTimegroupToVideo - workbench integration", () => {
         "[Nested Timegroups Test] Starting export with scene transitions...",
       );
 
-      const progressUpdates: RenderProgress[] = [];
-      const startTime = performance.now();
-
       // Export across the scene boundary
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
         fps: 10,
@@ -406,25 +366,7 @@ describe("renderTimegroupToVideo - workbench integration", () => {
         streaming: false,
         contentReadyMode: "blocking",
         blockingTimeoutMs: 5000,
-        onProgress: (progress) => {
-          progressUpdates.push({ ...progress });
-        },
       });
-
-      const totalTime = performance.now() - startTime;
-      const avgSpeedMultiplier =
-        progressUpdates.length > 0
-          ? progressUpdates.reduce((sum, p) => sum + p.speedMultiplier, 0) /
-            progressUpdates.length
-          : 0;
-      const frameCount =
-        progressUpdates.length > 0
-          ? progressUpdates[progressUpdates.length - 1]!.totalFrames
-          : 0;
-
-      console.log(
-        `[PERF] Nested timegroups: ${totalTime.toFixed(0)}ms, ${frameCount} frames, ${avgSpeedMultiplier.toFixed(2)}x realtime, ${(totalTime / Math.max(frameCount, 1)).toFixed(1)}ms/frame`,
-      );
 
       expect(videoBuffer).toBeDefined();
       expect(videoBuffer!.length).toBeGreaterThan(1000);
@@ -504,9 +446,6 @@ describe("renderTimegroupToVideo - workbench integration", () => {
         "[DOM Mutation Test] Starting export with complex DOM changes...",
       );
 
-      const progressUpdates: RenderProgress[] = [];
-      const startTime = performance.now();
-
       // Export 30+ frames to stress test DOM restoration logic
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
         fps: 12, // 36 frames - enough to catch state accumulation issues
@@ -517,25 +456,7 @@ describe("renderTimegroupToVideo - workbench integration", () => {
         streaming: false,
         contentReadyMode: "blocking",
         blockingTimeoutMs: 5000,
-        onProgress: (progress) => {
-          progressUpdates.push({ ...progress });
-        },
       });
-
-      const totalTime = performance.now() - startTime;
-      const avgSpeedMultiplier =
-        progressUpdates.length > 0
-          ? progressUpdates.reduce((sum, p) => sum + p.speedMultiplier, 0) /
-            progressUpdates.length
-          : 0;
-      const frameCount =
-        progressUpdates.length > 0
-          ? progressUpdates[progressUpdates.length - 1]!.totalFrames
-          : 0;
-
-      console.log(
-        `[PERF] DOM mutations: ${totalTime.toFixed(0)}ms, ${frameCount} frames, ${avgSpeedMultiplier.toFixed(2)}x realtime, ${(totalTime / Math.max(frameCount, 1)).toFixed(1)}ms/frame`,
-      );
 
       expect(videoBuffer).toBeDefined();
       expect(videoBuffer!.length).toBeGreaterThan(1000);
@@ -620,8 +541,6 @@ describe("renderTimegroupToVideo - workbench integration", () => {
 
       let lastProgress = 0;
       let progressCallCount = 0;
-      const progressUpdates: RenderProgress[] = [];
-      const startTime = performance.now();
 
       // This is the key test - 30 frames at 720p with elements appearing/disappearing
       // Would have caught the insertBefore error from improper DOM restoration
@@ -637,7 +556,6 @@ describe("renderTimegroupToVideo - workbench integration", () => {
         onProgress: (progress) => {
           progressCallCount++;
           lastProgress = progress.progress;
-          progressUpdates.push({ ...progress });
 
           // Log every 10th frame
           if (progress.currentFrame % 10 === 0) {
@@ -648,21 +566,6 @@ describe("renderTimegroupToVideo - workbench integration", () => {
           }
         },
       });
-
-      const totalTime = performance.now() - startTime;
-      const avgSpeedMultiplier =
-        progressUpdates.length > 0
-          ? progressUpdates.reduce((sum, p) => sum + p.speedMultiplier, 0) /
-            progressUpdates.length
-          : 0;
-      const frameCount =
-        progressUpdates.length > 0
-          ? progressUpdates[progressUpdates.length - 1]!.totalFrames
-          : 0;
-
-      console.log(
-        `[PERF] Clone reuse 720p: ${totalTime.toFixed(0)}ms, ${frameCount} frames, ${avgSpeedMultiplier.toFixed(2)}x realtime, ${(totalTime / Math.max(frameCount, 1)).toFixed(1)}ms/frame`,
-      );
 
       expect(videoBuffer).toBeDefined();
       expect(videoBuffer!.length).toBeGreaterThan(1000);
@@ -741,9 +644,6 @@ describe("renderTimegroupToVideo - workbench integration", () => {
 
       logger.debug("[1080p Test] Starting high-resolution export...");
 
-      const progressUpdates: RenderProgress[] = [];
-      const startTime = performance.now();
-
       // Export at 50% scale (960x540) for 30 frames
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
         fps: 15, // 30 frames
@@ -754,25 +654,7 @@ describe("renderTimegroupToVideo - workbench integration", () => {
         streaming: false,
         contentReadyMode: "blocking",
         blockingTimeoutMs: 5000,
-        onProgress: (progress) => {
-          progressUpdates.push({ ...progress });
-        },
       });
-
-      const totalTime = performance.now() - startTime;
-      const avgSpeedMultiplier =
-        progressUpdates.length > 0
-          ? progressUpdates.reduce((sum, p) => sum + p.speedMultiplier, 0) /
-            progressUpdates.length
-          : 0;
-      const frameCount =
-        progressUpdates.length > 0
-          ? progressUpdates[progressUpdates.length - 1]!.totalFrames
-          : 0;
-
-      console.log(
-        `[PERF] 1080p export: ${totalTime.toFixed(0)}ms, ${frameCount} frames, ${avgSpeedMultiplier.toFixed(2)}x realtime, ${(totalTime / Math.max(frameCount, 1)).toFixed(1)}ms/frame`,
-      );
 
       expect(videoBuffer).toBeDefined();
       expect(videoBuffer!.length).toBeGreaterThan(1000);
@@ -797,10 +679,6 @@ describe("renderTimegroupToVideo - workbench integration", () => {
       { name: "720p", width: 1280, height: 720 },
       { name: "1080p", width: 1920, height: 1080 },
     ];
-
-    console.log("[PERF] ========================================");
-    console.log("[PERF] Performance Benchmark Test");
-    console.log("[PERF] ========================================");
 
     for (const res of resolutions) {
       const container = document.createElement("div");
@@ -854,15 +732,6 @@ describe("renderTimegroupToVideo - workbench integration", () => {
         await timegroup.waitForMediaDurations();
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        console.log(
-          `[PERF] Testing ${res.name} (${res.width}x${res.height})...`,
-        );
-
-        const progressUpdates: RenderProgress[] = [];
-        const startTime = performance.now();
-        let firstFrameTime: number | null = null;
-        let encodingStartTime: number | null = null;
-
         // Export 30 frames to get meaningful performance data
         const videoBuffer = await renderTimegroupToVideo(timegroup, {
           fps: 15, // 30 frames
@@ -873,66 +742,7 @@ describe("renderTimegroupToVideo - workbench integration", () => {
           streaming: false,
           contentReadyMode: "blocking",
           blockingTimeoutMs: 5000,
-          onProgress: (progress) => {
-            if (firstFrameTime === null && progress.currentFrame === 1) {
-              firstFrameTime = performance.now();
-            }
-            if (
-              encodingStartTime === null &&
-              progress.currentFrame === progress.totalFrames
-            ) {
-              encodingStartTime = performance.now();
-            }
-            progressUpdates.push({ ...progress });
-          },
         });
-
-        const totalTime = performance.now() - startTime;
-        const avgSpeedMultiplier =
-          progressUpdates.length > 0
-            ? progressUpdates.reduce((sum, p) => sum + p.speedMultiplier, 0) /
-              progressUpdates.length
-            : 0;
-        const frameCount =
-          progressUpdates.length > 0
-            ? progressUpdates[progressUpdates.length - 1]!.totalFrames
-            : 0;
-        const msPerFrame = totalTime / Math.max(frameCount, 1);
-
-        // Calculate timing breakdown
-        const timeToFirstFrame = firstFrameTime
-          ? firstFrameTime - startTime
-          : 0;
-        const encodingTime = encodingStartTime
-          ? totalTime - (encodingStartTime - startTime)
-          : 0;
-        const renderTime = totalTime - encodingTime;
-
-        console.log(
-          `[PERF] ${res.name}: ${totalTime.toFixed(0)}ms, ${frameCount} frames, ${avgSpeedMultiplier.toFixed(2)}x realtime, ${msPerFrame.toFixed(1)}ms/frame`,
-        );
-        console.log(`[PERF]   - Setup: ${timeToFirstFrame.toFixed(0)}ms`);
-        console.log(
-          `[PERF]   - Render: ${renderTime.toFixed(0)}ms (${(renderTime / frameCount).toFixed(1)}ms/frame)`,
-        );
-        console.log(`[PERF]   - Encoding: ${encodingTime.toFixed(0)}ms`);
-        console.log(`[PERF]   - Speed details by frame:`);
-
-        // Log speed multiplier progression for first, middle, and last frames
-        if (progressUpdates.length >= 3) {
-          const first = progressUpdates[0]!;
-          const mid = progressUpdates[Math.floor(progressUpdates.length / 2)]!;
-          const last = progressUpdates[progressUpdates.length - 1]!;
-          console.log(
-            `[PERF]     Frame 1: ${first.speedMultiplier.toFixed(2)}x`,
-          );
-          console.log(
-            `[PERF]     Frame ${mid.currentFrame}: ${mid.speedMultiplier.toFixed(2)}x`,
-          );
-          console.log(
-            `[PERF]     Frame ${last.currentFrame}: ${last.speedMultiplier.toFixed(2)}x`,
-          );
-        }
 
         expect(videoBuffer).toBeDefined();
         expect(videoBuffer!.length).toBeGreaterThan(1000);
@@ -945,9 +755,5 @@ describe("renderTimegroupToVideo - workbench integration", () => {
         container.remove();
       }
     }
-
-    console.log("[PERF] ========================================");
-    console.log("[PERF] Benchmark Complete");
-    console.log("[PERF] ========================================");
   }, 180000);
 });
