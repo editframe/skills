@@ -4,6 +4,7 @@
   "description": "Editframe Elements Development package",
   "main": "index.js",
   "scripts": {
+    "postinstall": "node scripts/patch-rolldown-plugin-dts.mjs",
     "test": "npx vitest --config vitest.config.ts --configLoader bundle --run",
     "test:watch": "npx vitest --config vitest.config.ts --configLoader bundle --watch",
     "browsertest": "npx vitest --config vitest.config.browser.ts --configLoader bundle --run",

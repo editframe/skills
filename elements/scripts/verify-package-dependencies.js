@@ -72,6 +72,7 @@ for (const [name, pkg] of Object.entries(packages)) {
     if (file.endsWith("browsertest.ts")) continue;
     if (file.endsWith("browsertest.tsx")) continue;
     if (file.includes("templates/")) continue;
+    if (file.includes("profiling/")) continue;
     console.log("Checking for imports in", file);
     const filePath = join(pkgDir, file);
     const fileImports = await extractImports(filePath);

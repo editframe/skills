@@ -9,16 +9,16 @@
         "default": "./dist/index.js"
       }
     },
-    "./server": {
-      "import": {
-        "types": "./dist/server.d.ts",
-        "default": "./dist/server.js"
-      }
-    },
     "./r3f": {
       "import": {
         "types": "./dist/r3f/index.d.ts",
         "default": "./dist/r3f/index.js"
+      }
+    },
+    "./server": {
+      "import": {
+        "types": "./dist/server.d.ts",
+        "default": "./dist/server.js"
       }
     },
     "./package.json": "./package.json",
@@ -41,7 +41,7 @@
     "lit": "^3.3.1",
     "mitt": "^3.0.1",
     "react": "^19.0.0",
-    "react-dom": "^18.3.1",
+    "react-dom": "^19.0.0",
     "three": "^0.182.0"
   },
   "devDependencies": {
@@ -54,8 +54,6 @@
     "typescript": "^5.9.3",
     "vitest": "^4.0.0"
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "publishConfig": {
     "exports": {
@@ -80,5 +78,7 @@
       "./package.json": "./package.json",
       "./types.json": "./types.json"
     }
-  }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js"
 }

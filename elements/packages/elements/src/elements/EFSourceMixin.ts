@@ -96,28 +96,37 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
       return data.md5 ?? undefined;
     }
 
+    /** @internal Exposes md5 state for md5SumLoader proxy without private field access in handler */
+    _getMd5Value(): string | undefined {
+      return this.#md5Value;
+    }
+
+    /** @internal Exposes md5 promise state for md5SumLoader proxy */
+    _getMd5Promise(): Promise<string | undefined> | null {
+      return this.#md5Promise;
+    }
+
     /**
      * Compatibility wrapper for code expecting md5SumLoader.value
      */
     md5SumLoader = new Proxy(
       {
         run: () => this.loadMd5Sum(),
-        _host: this as unknown,
-      } as {
+        host: this,
+      } as unknown as {
         run: () => Promise<string | undefined>;
+        host: { _getMd5Value: () => string | undefined; _getMd5Promise: () => Promise<string | undefined> | null };
         value: string | undefined;
         taskComplete: Promise<string | undefined>;
-        _host: unknown;
       },
       {
         get(target, prop) {
           if (prop === "value") {
-            const host = target._host as any;
-            return host.#md5Value;
+            return target.host._getMd5Value();
           }
           if (prop === "taskComplete") {
-            const host = target._host as any;
-            return host.#md5Promise || Promise.resolve(host.#md5Value);
+            const p = target.host._getMd5Promise();
+            return p || Promise.resolve(target.host._getMd5Value());
           }
           return (target as any)[prop];
         },
