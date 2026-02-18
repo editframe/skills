@@ -1,6 +1,6 @@
 {
   "name": "@editframe/react",
-  "version": "0.37.3-beta",
+  "version": "0.38.0",
   "description": "",
   "exports": {
     ".": {
@@ -34,7 +34,7 @@
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
-    "@editframe/elements": "0.37.3-beta",
+    "@editframe/elements": "0.38.0",
     "@lit/task": "^1.0.1",
     "@react-three/fiber": "^9.5.0",
     "@react-three/offscreen": "^0.0.8",
