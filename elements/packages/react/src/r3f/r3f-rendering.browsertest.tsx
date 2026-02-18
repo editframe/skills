@@ -8,7 +8,16 @@
  *    while main-thread WebGL may freeze.
  */
 
-import { describe, test, assert, beforeEach } from "vitest";
+import { describe, test, assert, beforeEach, beforeAll } from "vitest";
+
+function isWebGLAvailable(): boolean {
+  try {
+    const canvas = document.createElement("canvas");
+    return !!(canvas.getContext("webgl2") || canvas.getContext("webgl"));
+  } catch {
+    return false;
+  }
+}
 import { commands } from "vitest/browser";
 import * as THREE from "three";
 import type { EFTimegroup } from "@editframe/elements/elements/EFTimegroup.js";
@@ -22,7 +31,7 @@ beforeEach(() => {
 
 /* ━━ 1. Three.js WebGL rendering via addFrameTask ━━━━━━━━━━━━━━━━━ */
 
-describe("Three.js WebGL rendering via addFrameTask", () => {
+describe.runIf(isWebGLAvailable())("Three.js WebGL rendering via addFrameTask", () => {
   test("renders different colors at different time positions using Three.js", async () => {
     const tg = document.createElement("ef-timegroup") as EFTimegroup;
     tg.style.width = "200px";
@@ -194,7 +203,7 @@ describe("Three.js WebGL rendering via addFrameTask", () => {
 
 /* ━━ 2. OffscreenCanvas + Worker WebGL rendering ━━━━━━━━━━━━━━━━━━ */
 
-describe("OffscreenCanvas + Worker WebGL rendering", () => {
+describe.runIf(isWebGLAvailable())("OffscreenCanvas + Worker WebGL rendering", () => {
   test("Worker renders WebGL to OffscreenCanvas and returns ImageBitmap", async () => {
     const blitCanvas = document.createElement("canvas");
     blitCanvas.width = 128;

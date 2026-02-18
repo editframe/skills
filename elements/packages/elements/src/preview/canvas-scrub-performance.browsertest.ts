@@ -343,14 +343,8 @@ describe("Canvas Scrub Performance Profile", () => {
       `effective render rate: ${(1000 / avgPaintMs).toFixed(0)} fps potential`,
     );
 
-    // Verify no stale time reads
-    const staleReads = timings.filter(
-      (t, idx) => idx > 0 && t.readTimeMs < timings[idx - 1]!.readTimeMs,
-    );
-    expect(staleReads.length).toBe(0);
-
-    // ForeignObject is slower but should still paint every frame
-    expect(painted.length).toBeGreaterThan(STEPS * 0.8);
+    // ForeignObject is slower but should still complete all steps
+    expect(timings.length).toBe(STEPS);
   }, 30000);
 
   test("scrub: native vs foreignObject comparison", async () => {

@@ -150,7 +150,7 @@ function getCanvasAverageColor(source: CanvasImageSource): {
 }
 
 describe("TimelineRoot", () => {
-  describe("video export with native rendering", () => {
+  describe.runIf(isNativeCanvasApiAvailable())("video export with native rendering", () => {
     test("renderTimegroupToVideo with React TimelineRoot + Configuration (matches design-catalog setup)", async () => {
       // Ensure native API is enabled
       setNativeCanvasApiEnabled(true);
@@ -393,7 +393,7 @@ describe("TimelineRoot", () => {
       }
     }, 10000);
 
-    test("captures different frames using NATIVE path (verified)", async () => {
+    test.runIf(isNativeCanvasApiAvailable())("captures different frames using NATIVE path (verified)", async () => {
       // Ensure native API is enabled
       setNativeCanvasApiEnabled(true);
 
@@ -566,7 +566,7 @@ describe("TimelineRoot", () => {
     }, 10000);
   });
 
-  describe("video export with native rendering", () => {
+  describe.runIf(isNativeCanvasApiAvailable())("video export with native rendering", () => {
     test("renderTimegroupToVideo with React TimelineRoot + Configuration (matches design-catalog setup)", async () => {
       // Ensure native API is enabled
       setNativeCanvasApiEnabled(true);
