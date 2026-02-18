@@ -355,12 +355,10 @@ export class EFFramegen {
 
     // These times are aligned to the audio frame boundaries
     // And they include padding if any.
-    console.log("[EF_FRAMEGEN.initialize] About to call renderAudio");
     this.audioBufferPromise = firstGroup.renderAudio(
       renderOptions.encoderOptions.alignedFromUs / 1000,
       renderOptions.encoderOptions.alignedToUs / 1000,
     );
-    console.log("[EF_FRAMEGEN.initialize] renderAudio promise created");
   }
 
   async beginFrame(frameNumber: number, isLast: boolean) {

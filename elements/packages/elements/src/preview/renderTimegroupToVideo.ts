@@ -496,10 +496,7 @@ export async function renderTimegroupToVideo(
     thumbCtx = thumbCanvas.getContext("2d");
   }
 
-  let totalSeekMs = 0;
-  let totalSyncMs = 0;
-  let totalEncodeMs = 0;
-  let totalImageWaitMs = 0; // time spent blocked waiting for image.onload
+
 
   try {
     // ========================================================================
@@ -526,14 +523,9 @@ export async function renderTimegroupToVideo(
     const pendingFrames: PendingFrame[] = [];
     let nextSeekFrame = 0;
     let encodedFrames = 0;
-    let pipelineHits = 0; // image was ready when we needed it
-    let pipelineMisses = 0; // had to await image load
 
-    console.log(
-      `[Render] starting ${config.totalFrames} frames, ` +
-        `${config.width}x${config.height} @ ${config.fps}fps, ` +
-        `mode=${config.canvasMode}, pipeline=${MAX_AHEAD}`,
-    );
+
+
 
     while (encodedFrames < config.totalFrames) {
       checkCancelled();
@@ -549,10 +541,7 @@ export async function renderTimegroupToVideo(
         const timeMs = timestamps[fi]!;
         const timestampS = (fi * config.frameDurationMs) / 1000;
 
-        const seekStart = performance.now();
         await renderClone.seekForRender(timeMs);
-        const seekTime = performance.now() - seekStart;
-        totalSeekMs += seekTime;
 
         const entry: PendingFrame = {
           frameIndex: fi,
@@ -572,7 +561,6 @@ export async function renderTimegroupToVideo(
         }
 
         if (config.canvasMode === "native") {
-          const renderStart = performance.now();
           const canvas = await renderToImageNative(
             renderClone,
             config.width,
@@ -581,11 +569,6 @@ export async function renderTimegroupToVideo(
               skipDprScaling: true,
             },
           );
-          const renderTime = performance.now() - renderStart;
-          totalSyncMs += renderTime;
-          console.log(
-            `[Render] frame ${fi}: seek=${seekTime.toFixed(1)}ms native=${renderTime.toFixed(1)}ms`,
-          );
           entry.resolved = canvas as any as HTMLImageElement;
           entry.promise = Promise.resolve(entry.resolved);
         } else {
@@ -593,7 +576,6 @@ export async function renderTimegroupToVideo(
           // Returns immediately — clone is free for next seek.
           // Encoding (canvas→base64, SVG assembly) and image loading
           // all resolve in the background.
-          const captureStart = performance.now();
           const dataUriPromise = captureTimelineToDataUri(
             renderClone,
             config.width,
@@ -604,8 +586,6 @@ export async function renderTimegroupToVideo(
               timeMs,
             },
           );
-          const captureTime = performance.now() - captureStart;
-          totalSyncMs += captureTime;
 
           entry.promise = dataUriPromise.then((dataUri) => {
             return new Promise<HTMLImageElement>((resolve, reject) => {
@@ -622,10 +602,7 @@ export async function renderTimegroupToVideo(
             });
           });
 
-          console.log(
-            `[Render] frame ${fi}: seek=${seekTime.toFixed(1)}ms capture=${captureTime.toFixed(1)}ms ` +
-              `queue=${pendingFrames.length + 1}/${MAX_AHEAD}`,
-          );
+
         }
 
         pendingFrames.push(entry);
@@ -637,30 +614,14 @@ export async function renderTimegroupToVideo(
       // ==================================================================
       const head = pendingFrames.shift()!;
       const preloaded = head.resolved !== null;
-      if (preloaded) pipelineHits++;
-      else pipelineMisses++;
-      let encodeWaitMs = 0;
       let image: HTMLImageElement;
       if (preloaded) {
         image = head.resolved!;
       } else {
-        const waitStart = performance.now();
         image = await head.promise;
-        encodeWaitMs = performance.now() - waitStart;
-        totalImageWaitMs += encodeWaitMs;
       }
 
-      if (encodedFrames % 30 === 0 || encodeWaitMs > 50) {
-        const total = pipelineHits + pipelineMisses;
-        const hitRate =
-          total > 0 ? ((pipelineHits / total) * 100).toFixed(0) : "0";
-        console.log(
-          `[Pipeline] frame=${encodedFrames}/${config.totalFrames} ` +
-            `depth=${pendingFrames.length + 1}/${MAX_AHEAD} ` +
-            `preloaded=${preloaded}${encodeWaitMs > 0 ? ` waited=${encodeWaitMs.toFixed(1)}ms` : ""} ` +
-            `hitRate=${hitRate}% (${pipelineHits}/${total})`,
-        );
-      }
+
 
       if (
         audioSource &&
@@ -686,7 +647,6 @@ export async function renderTimegroupToVideo(
       }
 
       if (videoSource && output && encodingCtx) {
-        const encodeStart = performance.now();
         encodingCtx.drawImage(
           image,
           0,
@@ -699,7 +659,6 @@ export async function renderTimegroupToVideo(
           config.videoHeight,
         );
         await videoSource.add(head.timestampS, config.frameDurationS);
-        totalEncodeMs += performance.now() - encodeStart;
       }
 
       // ==================================================================
@@ -751,37 +710,6 @@ export async function renderTimegroupToVideo(
         /* Audio render failures are non-fatal */
       }
     }
-
-    const totalTime = performance.now() - renderStartTime;
-
-    // Calculate percentages and averages for performance analysis
-    const avgSeek = totalSeekMs / config.totalFrames;
-    const avgSync = totalSyncMs / config.totalFrames;
-    const avgEncode = totalEncodeMs / config.totalFrames;
-    const avgWait = totalImageWaitMs / config.totalFrames;
-    const avgTotal = totalTime / config.totalFrames;
-
-    const tracked =
-      totalSeekMs + totalSyncMs + totalImageWaitMs + totalEncodeMs;
-    const untracked = totalTime - tracked;
-
-    const pipelineTotal = pipelineHits + pipelineMisses;
-    console.log(
-      `\n=== Video Export Performance Breakdown ===\n` +
-        `Mode: Direct Serialization\n` +
-        `Total frames: ${config.totalFrames}\n` +
-        `Total time: ${totalTime.toFixed(0)}ms (${avgTotal.toFixed(1)}ms/frame)\n` +
-        `\nPer-stage totals (sequential — these should sum to ~100%):\n` +
-        `  Seek:       ${totalSeekMs.toFixed(0)}ms (${((totalSeekMs / totalTime) * 100).toFixed(1)}%) - avg ${avgSeek.toFixed(1)}ms/frame\n` +
-        `  Capture:    ${totalSyncMs.toFixed(0)}ms (${((totalSyncMs / totalTime) * 100).toFixed(1)}%) - avg ${avgSync.toFixed(1)}ms/frame\n` +
-        `  Image wait: ${totalImageWaitMs.toFixed(0)}ms (${((totalImageWaitMs / totalTime) * 100).toFixed(1)}%) - avg ${avgWait.toFixed(1)}ms/frame\n` +
-        `  Encode:     ${totalEncodeMs.toFixed(0)}ms (${((totalEncodeMs / totalTime) * 100).toFixed(1)}%) - avg ${avgEncode.toFixed(1)}ms/frame\n` +
-        `  Other:      ${untracked.toFixed(0)}ms (${((untracked / totalTime) * 100).toFixed(1)}%)\n` +
-        `\nPipeline (MAX_AHEAD=${MAX_AHEAD}):\n` +
-        `  Preloaded: ${pipelineHits}/${pipelineTotal} (${((pipelineHits / Math.max(1, pipelineTotal)) * 100).toFixed(0)}% hit rate)\n` +
-        `  Awaited:   ${pipelineMisses}\n` +
-        `==========================================`,
-    );
 
     if (config.benchmarkMode) {
       return undefined;

@@ -378,27 +378,7 @@ function syncElementStyles(
       cloneStyle.width = `${clone.width}px`;
       cloneStyle.height = `${clone.height}px`;
 
-      // DIAGNOSTIC: Log what CSS dimensions we're setting
-      if ((source as HTMLElement).tagName === "EF-IMAGE") {
-        console.log(
-          "[ASPECT_DIAG] syncElementStyles:",
-          JSON.stringify({
-            tag: (source as HTMLElement).tagName,
-            canvasBuffer: {
-              width: clone.width,
-              height: clone.height,
-            },
-            cssBeingSet: {
-              width: cloneStyle.width,
-              height: cloneStyle.height,
-            },
-            hostComputed: {
-              width: cs.width,
-              height: cs.height,
-            },
-          }),
-        );
-      }
+
     }
 
     cloneStyle.display = "block";
@@ -683,35 +663,7 @@ export function buildCloneStructure(
         clone.width = shadowCanvas.width || srcEl.clientWidth;
         clone.height = shadowCanvas.height || srcEl.clientHeight;
 
-        // DIAGNOSTIC: Log dimensions for shadow canvas path
-        if (srcEl.tagName === "EF-IMAGE") {
-          const srcCs = getComputedStyle(srcEl);
-          const shadowCs = getComputedStyle(shadowCanvas);
-          console.log(
-            "[ASPECT_DIAG] Shadow Canvas Path:",
-            JSON.stringify({
-              tag: srcEl.tagName,
-              src: (srcEl as any).src || "unknown",
-              hostElement: {
-                offsetWidth: srcEl.clientWidth,
-                offsetHeight: srcEl.clientHeight,
-                computedWidth: srcCs.width,
-                computedHeight: srcCs.height,
-                objectFit: srcCs.objectFit,
-              },
-              shadowCanvas: {
-                bufferWidth: shadowCanvas.width,
-                bufferHeight: shadowCanvas.height,
-                computedWidth: shadowCs.width,
-                computedHeight: shadowCs.height,
-              },
-              cloneCanvas: {
-                bufferWidth: clone.width,
-                bufferHeight: clone.height,
-              },
-            }),
-          );
-        }
+
 
         // Check if the element actually has alpha channel before preserving it
         // ef-image tracks hasAlpha based on MIME type (JPEG=false, PNG/WebP=true)
@@ -759,38 +711,7 @@ export function buildCloneStructure(
         clone.width = shadowImg.naturalWidth;
         clone.height = shadowImg.naturalHeight;
 
-        // DIAGNOSTIC: Log dimensions for shadow img path
-        if (srcEl.tagName === "EF-IMAGE") {
-          const srcCs = getComputedStyle(srcEl);
-          const shadowCs = getComputedStyle(shadowImg);
-          console.log(
-            "[ASPECT_DIAG] Shadow Img Path:",
-            JSON.stringify({
-              tag: srcEl.tagName,
-              src: (srcEl as any).src || shadowImg.src || "unknown",
-              hostElement: {
-                offsetWidth: srcEl.clientWidth,
-                offsetHeight: srcEl.clientHeight,
-                computedWidth: srcCs.width,
-                computedHeight: srcCs.height,
-                objectFit: srcCs.objectFit,
-              },
-              shadowImg: {
-                naturalWidth: shadowImg.naturalWidth,
-                naturalHeight: shadowImg.naturalHeight,
-                width: shadowImg.width,
-                height: shadowImg.height,
-                computedWidth: shadowCs.width,
-                computedHeight: shadowCs.height,
-                objectFit: shadowCs.objectFit,
-              },
-              cloneCanvas: {
-                bufferWidth: clone.width,
-                bufferHeight: clone.height,
-              },
-            }),
-          );
-        }
+
 
         // Check if the element actually has alpha channel before preserving it
         // For direct img elements, check the element's hasAlpha property

@@ -90,56 +90,13 @@ function setWorkbenchRendering(rendering: boolean): void {
 async function waitForTimegroupDimensions(
   timegroup: EFTimegroup,
 ): Promise<void> {
-  // Wait for all stylesheets to load first
-  console.log("[EFRenderAPI] Waiting for stylesheets to load...");
-  console.log(`[EFRenderAPI] Found ${document.styleSheets.length} stylesheets`);
-
-  const styleLinks = Array.from(
-    document.querySelectorAll('link[rel="stylesheet"]'),
-  );
-  console.log(
-    `[EFRenderAPI] Found ${styleLinks.length} stylesheet <link> elements`,
-  );
-  styleLinks.forEach((link, i) => {
-    const href = (link as HTMLLinkElement).href;
-    const sheet = (link as HTMLLinkElement).sheet;
-    console.log(`[EFRenderAPI]   [${i}] ${href}`);
-    try {
-      const rulesCount = sheet ? sheet.cssRules.length : 0;
-      console.log(
-        `[EFRenderAPI]       loaded: ${!!sheet}, rules: ${rulesCount}`,
-      );
-      if (sheet && sheet.cssRules.length > 0) {
-        // Log first few rules to see what CSS is loaded
-        const firstRules = Array.from(sheet.cssRules)
-          .slice(0, 5)
-          .map((r) => r.cssText.substring(0, 100));
-        console.log(`[EFRenderAPI]       first rules:`, firstRules);
-
-        // Search for the specific Tailwind classes we need
-        const hasWidthClass = Array.from(sheet.cssRules).some(
-          (r) =>
-            r.cssText.includes("w-\\[1080px\\]") ||
-            r.cssText.includes("width: 1080px"),
-        );
-        console.log(
-          `[EFRenderAPI]       has w-[1080px] class: ${hasWidthClass}`,
-        );
-      }
-    } catch (e) {
-      console.log(`[EFRenderAPI]       Error reading stylesheet rules:`, e);
-    }
-  });
-
   await Promise.all(
     Array.from(document.styleSheets).map((sheet) => {
       if (sheet.href) {
-        // Check if stylesheet is from a <link> tag and wait for it
         const link = Array.from(
           document.querySelectorAll('link[rel="stylesheet"]'),
         ).find((l) => (l as HTMLLinkElement).href === sheet.href);
         if (link && !(link as HTMLLinkElement).sheet) {
-          console.log(`[EFRenderAPI] Waiting for stylesheet: ${sheet.href}`);
           return new Promise((resolve) => {
             link.addEventListener("load", resolve);
             link.addEventListener("error", resolve);
@@ -174,9 +131,6 @@ async function waitForTimegroupDimensions(
     );
   }
 
-  console.log(
-    `[EFRenderAPI] Timegroup dimensions ready: ${timegroup.offsetWidth}x${timegroup.offsetHeight}`,
-  );
 }
 
 const api: IEFRenderAPI = {

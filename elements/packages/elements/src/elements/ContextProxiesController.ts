@@ -34,7 +34,6 @@ export class ContextProxyController implements ReactiveController {
   private pendingRequests: ContextEvent<any>[] = [];
 
   constructor(host: LitElement, config: ContextProxyConfig) {
-    console.log("targetGetter? constructor");
     this.host = host;
     this.host.addController(this);
 
@@ -45,7 +44,6 @@ export class ContextProxyController implements ReactiveController {
   }
 
   hostConnected(): void {
-    console.log("targetGetter? hostConnected");
   }
 
   hostDisconnected(): void {
