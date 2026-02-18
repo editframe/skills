@@ -36,6 +36,7 @@
     "playwright": "^1.53.0",
     "tailwindcss": "^3.4.3",
     "vite": "npm:rolldown-vite@^7.1.15",
+    "mediabunny": "^1.31.1",
     "tar": "^7.1.0",
     "zod": "^3.23.8"
   },
