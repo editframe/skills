@@ -7,7 +7,7 @@
   },
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
+    "typecheck": "tsc --noEmit",
     "build": "tsdown",
     "build:watch": "tsdown --watch",
     "postinstall": "echo 'Skipping Playwright browser download - uses system Chrome'"

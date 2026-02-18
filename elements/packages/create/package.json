@@ -14,7 +14,7 @@
     "typescript": "^5.9.3"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
+    "typecheck": "tsc --noEmit",
     "build": "tsdown",
     "build:watch": "tsdown --watch"
   },

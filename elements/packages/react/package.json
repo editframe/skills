@@ -26,7 +26,7 @@
   },
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
+    "typecheck": "tsc --noEmit",
     "build": "tsdown",
     "build:watch": "tsdown --watch",
     "typedoc": "(typedoc --json ./types.json --plugin typedoc-plugin-zod --excludeExternals ./src || true) && ([ -f ./types.json ] && jq -c . ./types.json > ./types.tmp.json && mv ./types.tmp.json ./types.json || true)"

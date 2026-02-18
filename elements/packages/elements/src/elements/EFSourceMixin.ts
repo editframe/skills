@@ -18,9 +18,9 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
   class EFSourceElement extends superClass {
     get apiHost() {
       const apiHost =
-        this.closest("ef-configuration")?.apiHost ??
-        this.closest("ef-workbench")?.apiHost ??
-        this.closest("ef-preview")?.apiHost;
+        (this.closest("ef-configuration") as any)?.apiHost ??
+        (this.closest("ef-workbench") as any)?.apiHost ??
+        (this.closest("ef-preview") as any)?.apiHost;
 
       // Return undefined instead of defaulting to external URL
       // This allows components to use current origin when apiHost is not set
@@ -79,11 +79,12 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
       }
     }
 
-    async #doLoadMd5(src: string, signal?: AbortSignal): Promise<string | undefined> {
+    async #doLoadMd5(
+      src: string,
+      signal?: AbortSignal,
+    ): Promise<string | undefined> {
       // Normalize the path: remove leading slash and any double slashes
-      let normalizedSrc = src.startsWith("/")
-        ? src.slice(1)
-        : src;
+      let normalizedSrc = src.startsWith("/") ? src.slice(1) : src;
       normalizedSrc = normalizedSrc.replace(/^\/+/, "");
       // Use production API format for local files
       const md5Path = `/api/v1/files/local/md5?src=${encodeURIComponent(normalizedSrc)}`;
@@ -98,26 +99,30 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
     /**
      * Compatibility wrapper for code expecting md5SumLoader.value
      */
-    md5SumLoader = new Proxy({
-      run: () => this.loadMd5Sum(),
-      _host: this as unknown,
-    } as {
-      run: () => Promise<string | undefined>;
-      value: string | undefined;
-      taskComplete: Promise<string | undefined>;
-      _host: unknown;
-    }, {
-      get(target, prop) {
-        if (prop === 'value') {
-          return (target._host as any).#md5Value;
-        }
-        if (prop === 'taskComplete') {
-          const host = target._host as any;
-          return host.#md5Promise || Promise.resolve(host.#md5Value);
-        }
-        return (target as any)[prop];
+    md5SumLoader = new Proxy(
+      {
+        run: () => this.loadMd5Sum(),
+        _host: this as unknown,
+      } as {
+        run: () => Promise<string | undefined>;
+        value: string | undefined;
+        taskComplete: Promise<string | undefined>;
+        _host: unknown;
       },
-    });
+      {
+        get(target, prop) {
+          if (prop === "value") {
+            const host = target._host as any;
+            return host.#md5Value;
+          }
+          if (prop === "taskComplete") {
+            const host = target._host as any;
+            return host.#md5Promise || Promise.resolve(host.#md5Value);
+          }
+          return (target as any)[prop];
+        },
+      },
+    );
   }
 
   return EFSourceElement as Constructor<EFSourceMixinInterface> & T;
