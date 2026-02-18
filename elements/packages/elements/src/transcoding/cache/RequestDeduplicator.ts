@@ -25,6 +25,12 @@ export class RequestDeduplicator {
     const requestPromise = requestFactory();
     this.pendingRequests.set(key, requestPromise);
 
+    // Prevent unhandled rejection on the raw factory promise. Chrome's V8
+    // may detect a rejection as unhandled if no synchronous .catch() is
+    // attached before any microtask boundary, even when the promise is
+    // currently being await-ed. The error still propagates via the try/catch.
+    requestPromise.catch(() => {});
+
     try {
       const result = await requestPromise;
       this.pendingRequests.delete(key);

@@ -183,12 +183,15 @@ export abstract class BaseMediaEngine {
         // Cache the promise (not the result) to handle concurrent requests
         mediaCache.set(cacheKey, promise);
 
-        // Handle the case where the promise might be aborted
+        // Suppress unhandled rejection on the cached promise — errors still propagate
+        // to awaiters. Without this, a rejection while the promise sits in cache (with
+        // no active awaiter) registers as an unhandled rejection in the browser/runtime.
         promise.catch((error) => {
-          // If the request was aborted, remove it from cache to prevent corrupted data
           if (error instanceof DOMException && error.name === "AbortError") {
             mediaCache.delete(cacheKey);
           }
+          // All other errors are intentionally swallowed here; they will be thrown
+          // again when the caller awaits fetchWithCache (lines below).
         });
 
         // If the caller has a signal, handle abort logic without affecting the underlying request

@@ -1417,7 +1417,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       if (!signal.aborted) {
         this.playbackController?.runThrottledFrameTask();
       }
-    })();
+    })().catch(() => {});
   }
 
   /**

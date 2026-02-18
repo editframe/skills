@@ -359,6 +359,8 @@ export class EFFramegen {
       renderOptions.encoderOptions.alignedFromUs / 1000,
       renderOptions.encoderOptions.alignedToUs / 1000,
     );
+    // Suppress unhandled rejection while the promise sits in storage before being awaited.
+    this.audioBufferPromise.catch(() => {});
   }
 
   async beginFrame(frameNumber: number, isLast: boolean) {

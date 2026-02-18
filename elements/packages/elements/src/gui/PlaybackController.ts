@@ -599,7 +599,7 @@ export class PlaybackController implements ReactiveController {
       }
       const canFillBuffer = await queueBufferSource();
       if (canFillBuffer) {
-        fillBuffer();
+        fillBuffer().catch(() => {});
       }
     };
 
@@ -641,11 +641,11 @@ export class PlaybackController implements ReactiveController {
             this.maybeLoopPlayback();
           } else {
             // Looping: continue filling buffer after wrap
-            fillBuffer();
+            fillBuffer().catch(() => {});
           }
         } else {
           // Continue filling buffer
-          fillBuffer();
+          fillBuffer().catch(() => {});
         }
       };
 
