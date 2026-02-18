@@ -29,7 +29,6 @@ describe("SyncImage", async () => {
       test("prepare() probes image", async () => {
         const syncImage = new SyncImage(await cacheImage(image!), image!.md5);
         await expect(syncImage.prepare()).resolves.toBeUndefined();
-        console.log(syncImage.probeResult);
         expect(syncImage.probeResult.data.format).toMatchObject({
           format_name: "png_pipe",
         });

@@ -61,13 +61,10 @@ export class SelectionOverlay extends LitElement {
     // When createRenderRoot returns this, Lit injects styles as a <style> element
     // Verify styles are present - only warn if not in a test environment
     const styleElement = this.querySelector("style");
-    if (!styleElement) {
-      const isInTestContainer = this.closest("[data-test-container]") !== null;
-      if (!isInTestContainer) {
-        console.warn(
-          "[SelectionOverlay] No style element found - styles may not be applied",
-        );
-      }
+    if (!styleElement && !this.closest("[data-test-container]")) {
+      console.warn(
+        "[SelectionOverlay] No style element found - styles may not be applied",
+      );
     }
   }
 

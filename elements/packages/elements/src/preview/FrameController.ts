@@ -279,10 +279,6 @@ export class FrameController {
       this.#totalAnimsMs += animsMs;
 
       if (this.#frameCount % 60 === 0) {
-        const n = this.#frameCount;
-        console.debug(
-          `[FrameController] ${n} frames avg: query=${(this.#totalQueryMs / n).toFixed(1)}ms(${elements.length}els) prepare=${(this.#totalPrepareMs / n).toFixed(1)}ms(${elementsNeedingPreparation.length}prep) render=${(this.#totalRenderMs / n).toFixed(1)}ms anims=${(this.#totalAnimsMs / n).toFixed(1)}ms`,
-        );
         this.#frameCount = 0;
         this.#totalQueryMs = 0;
         this.#totalPrepareMs = 0;

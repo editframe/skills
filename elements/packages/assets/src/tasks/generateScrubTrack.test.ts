@@ -38,8 +38,6 @@ describe("generateScrubTrack", () => {
     const allData = Buffer.concat(chunks);
     const ftypIndex = allData.indexOf("ftyp");
     assert.isAbove(ftypIndex, -1, "Should contain ftyp box (valid MP4)");
-
-    console.log(`Generated ${totalSize} bytes for scrub track`);
   }, 30000);
 
   test("should handle files without video streams", async () => {

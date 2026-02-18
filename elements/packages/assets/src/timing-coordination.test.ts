@@ -74,11 +74,5 @@ describe("timing coordination", () => {
     expect(chunks.length).toBeGreaterThan(0);
     const totalSize = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
     expect(totalSize).toBeGreaterThan(0);
-
-    console.log(`Fragment index completed at: ${fragmentIndexCompleteTime}ms`);
-    console.log(`Stream ended at: ${streamEndTime}ms`);
-    console.log(
-      `Coordination gap: ${streamEndTime! - fragmentIndexCompleteTime!}ms`,
-    );
   }, 10000);
 });

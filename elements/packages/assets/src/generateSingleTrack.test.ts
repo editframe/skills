@@ -41,10 +41,6 @@ describe("generateSingleTrack", () => {
     assert.isAbove(track.segments.length, 0, "Should have segments");
     assert.equal(track.initSegment.offset, 0, "Init segment should start at 0");
     assert.isAbove(track.initSegment.size, 0, "Init segment should have size");
-
-    console.log(
-      `Generated ${totalSize} bytes for video track with ${track.segments.length} segments`,
-    );
   }, 15000);
 
   test("should generate single audio track stream and fragment index", async () => {
@@ -80,10 +76,6 @@ describe("generateSingleTrack", () => {
     assert.isAbove(track.segments.length, 0, "Should have segments");
     assert.equal(track.initSegment.offset, 0, "Init segment should start at 0");
     assert.isAbove(track.initSegment.size, 0, "Init segment should have size");
-
-    console.log(
-      `Generated ${totalSize} bytes for audio track with ${track.segments.length} segments`,
-    );
   }, 15000);
 
   test("should handle track extraction with fragment index events", async () => {
@@ -121,11 +113,6 @@ describe("generateSingleTrack", () => {
     const track = fragmentIndex[trackIds[0]!];
     assert.equal(track.type, "video", "Should be video track");
     assert.isAbove(track.segments.length, 0, "Should have segments");
-
-    const totalSize = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-    console.log(
-      `Event-based: ${totalSize} bytes, ${track.segments.length} segments`,
-    );
   }, 15000);
 
   test("should handle invalid track IDs gracefully", async () => {
@@ -163,8 +150,6 @@ describe("generateSingleTrack", () => {
     ];
 
     for (const testFile of testFiles) {
-      console.log(`\nTesting ${testFile.path} track ${testFile.trackIndex}...`);
-
       const result = await generateSingleTrackFromPath(
         testFile.path,
         testFile.trackIndex,
@@ -202,10 +187,6 @@ describe("generateSingleTrack", () => {
         `${testFile.path} should be ${testFile.expectedType}`,
       );
 
-      const totalSize = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-      console.log(
-        `${testFile.path} track ${testFile.trackIndex}: ${totalSize} bytes, ${track.segments.length} segments`,
-      );
     }
   }, 30000);
 });

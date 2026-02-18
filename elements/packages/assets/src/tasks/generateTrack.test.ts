@@ -30,8 +30,6 @@ describe("generateTrack", () => {
     const allData = Buffer.concat(chunks);
     const ftypIndex = allData.indexOf("ftyp");
     assert.isAbove(ftypIndex, -1, "Should contain ftyp box (valid MP4)");
-
-    console.log(`Generated ${totalSize} bytes for video track`);
   }, 15000);
 
   test("should generate audio track", async () => {
@@ -60,8 +58,6 @@ describe("generateTrack", () => {
     const allData = Buffer.concat(chunks);
     const ftypIndex = allData.indexOf("ftyp");
     assert.isAbove(ftypIndex, -1, "Should contain ftyp box (valid MP4)");
-
-    console.log(`Generated ${totalSize} bytes for audio track`);
   }, 15000);
 
   test("should handle invalid track IDs gracefully", async () => {
@@ -96,7 +92,5 @@ describe("generateTrack", () => {
       1000,
       "Should generate data for single track file",
     );
-
-    console.log(`Generated ${totalSize} bytes for single track file`);
   }, 15000);
 });

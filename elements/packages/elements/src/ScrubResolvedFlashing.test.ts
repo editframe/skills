@@ -55,10 +55,6 @@ describe("Scrub Loading Flashing Resolution", () => {
   });
 
   test("scrubbing through cached segments shows no loading flashes", async () => {
-    console.log(
-      "\n--- Simulating rapid scrubbing through cached data (original issue) ---",
-    );
-
     // Simulate the original user issue: rapid scrubbing through timeline
     const scrubOperations = [
       { seekTo: 1000, duration: 6 }, // 6ms - cached
@@ -69,8 +65,6 @@ describe("Scrub Loading Flashing Resolution", () => {
     ];
 
     for (const operation of scrubOperations) {
-      const startTime = Date.now();
-
       // Show loading (would happen before operation starts)
       setLoadingState(true, `Loading segment at ${operation.seekTo}ms...`);
 
@@ -80,11 +74,6 @@ describe("Scrub Loading Flashing Resolution", () => {
       // Clear loading (operation completed fast)
       setLoadingState(false);
 
-      const endTime = Date.now();
-      console.log(
-        `Seek to ${operation.seekTo}ms: ${endTime - startTime}ms (simulated ${operation.duration}ms operation)`,
-      );
-
       // Brief pause between scrubs (realistic user behavior)
       await new Promise((resolve) => setTimeout(resolve, 10));
     }
@@ -92,31 +81,16 @@ describe("Scrub Loading Flashing Resolution", () => {
     // Wait for any remaining grace periods
     await new Promise((resolve) => setTimeout(resolve, 300));
 
-    console.log(`Total scrub operations: ${scrubOperations.length}`);
-    console.log(`Loading state changes: ${loadingStates.length}`);
-
     const showEvents = loadingStates.filter((s) => s.isLoading);
     const hideEvents = loadingStates.filter((s) => !s.isLoading);
-
-    console.log(
-      `Show events: ${showEvents.length}, Hide events: ${hideEvents.length}`,
-    );
 
     // With 250ms grace period, all fast operations should be hidden
     expect(showEvents.length).toBe(0);
     expect(hideEvents.length).toBe(scrubOperations.length);
-
-    console.log("✅ No loading flashes during rapid scrubbing!");
   });
 
   test("slow scrub operations still show loading when needed", async () => {
-    console.log(
-      "\n--- Verifying slow operations still show loading feedback ---",
-    );
-
     // Simulate a slow scrub operation (uncached segment)
-    const startTime = Date.now();
-
     setLoadingState(true, "Loading uncached scrub segment...");
 
     // Simulate slow operation that exceeds grace period
@@ -124,32 +98,19 @@ describe("Scrub Loading Flashing Resolution", () => {
 
     setLoadingState(false);
 
-    const endTime = Date.now();
-    console.log(`Slow operation duration: ${endTime - startTime}ms`);
-
     // Wait a bit more for any delayed events
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    console.log(`Loading state changes: ${loadingStates.length}`);
-
     const showEvents = loadingStates.filter((s) => s.isLoading);
     const hideEvents = loadingStates.filter((s) => !s.isLoading);
-
-    console.log(
-      `Show events: ${showEvents.length}, Hide events: ${hideEvents.length}`,
-    );
 
     // Should show loading for slow operations
     expect(showEvents.length).toBe(1);
     expect(hideEvents.length).toBe(1);
     expect(showEvents[0]?.message).toContain("uncached");
-
-    console.log("✅ Loading indicator correctly shown for slow operations!");
   });
 
   test("mixed fast and slow operations handle loading appropriately", async () => {
-    console.log("\n--- Testing mixed operation speeds ---");
-
     const operations = [
       { type: "fast", duration: 50, expectLoading: false },
       { type: "slow", duration: 350, expectLoading: true },
@@ -168,15 +129,8 @@ describe("Scrub Loading Flashing Resolution", () => {
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       const showEvents = loadingStates.filter((s) => s.isLoading);
-      const shouldShow = operation.expectLoading;
 
-      console.log(
-        `${operation.type} (${operation.duration}ms): expected loading=${shouldShow}, actual loading=${showEvents.length > 0}`,
-      );
-
-      expect(showEvents.length > 0).toBe(shouldShow);
+      expect(showEvents.length > 0).toBe(operation.expectLoading);
     }
-
-    console.log("✅ Mixed operation speeds handled correctly!");
   });
 });

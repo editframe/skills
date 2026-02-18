@@ -3,6 +3,7 @@ import "./EFTimegroup.js";
 import type { EFTimegroup } from "./EFTimegroup.js";
 
 beforeEach(() => {
+  (window as any).__EDITFRAME_FILL_MODE_WARNINGS__ = true;
   // Clean up DOM
   while (document.body.children.length) {
     document.body.children[0]?.remove();

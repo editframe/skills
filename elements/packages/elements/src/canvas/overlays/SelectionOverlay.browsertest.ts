@@ -140,34 +140,13 @@ describe("SelectionOverlay", () => {
     // Wait for overlay to be created
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const shadowRoot = canvas.shadowRoot;
-    const overlay = shadowRoot?.querySelector(
-      "ef-canvas-selection-overlay",
-    ) as any;
-
     // Start box selection at canvas position (50, 50)
     // Screen position should account for pan
     const panZoomRect = panZoom.getBoundingClientRect();
-    const canvasRect = canvas.getBoundingClientRect();
-
-    console.log("=== DIAGNOSTIC TEST: Box Selection with Pan-Zoom ===");
-    console.log("PanZoom rect:", panZoomRect);
-    console.log("Canvas rect:", canvasRect);
-    console.log("PanZoom transform:", {
-      x: panZoom.x,
-      y: panZoom.y,
-      scale: panZoom.scale,
-    });
-
     // Calculate expected screen position for canvas (50, 50)
     // Using EFPanZoom.canvasToScreen formula: rect.left + canvasX * scale + x
     const expectedScreenX = panZoomRect.left + 50 * panZoom.scale + panZoom.x;
     const expectedScreenY = panZoomRect.top + 50 * panZoom.scale + panZoom.y;
-
-    console.log("Canvas position (50, 50) should map to screen:", {
-      x: expectedScreenX,
-      y: expectedScreenY,
-    });
 
     // Simulate pointer down at the calculated screen position
     canvas.dispatchEvent(
@@ -199,51 +178,6 @@ describe("SelectionOverlay", () => {
 
     await canvas.updateComplete;
     await new Promise((resolve) => setTimeout(resolve, 100));
-
-    // Check overlay state
-    if (overlay) {
-      const boxSelectBounds = overlay.boxSelectBounds;
-      const selection = overlay.selection;
-
-      console.log("Selection mode:", selection?.selectionMode);
-      console.log(
-        "Box select bounds (canvas coords):",
-        selection?.boxSelectBounds,
-      );
-      console.log("Box select bounds (screen coords):", boxSelectBounds);
-
-      // Expected screen bounds for canvas (50, 50) to (150, 150)
-      const expectedBounds = new DOMRect(
-        expectedScreenX,
-        expectedScreenY,
-        expectedEndX - expectedScreenX,
-        expectedEndY - expectedScreenY,
-      );
-
-      console.log("Expected screen bounds:", expectedBounds);
-
-      if (boxSelectBounds) {
-        console.log("Actual screen bounds:", boxSelectBounds);
-        console.log("Difference:", {
-          x: boxSelectBounds.x - expectedBounds.x,
-          y: boxSelectBounds.y - expectedBounds.y,
-          width: boxSelectBounds.width - expectedBounds.width,
-          height: boxSelectBounds.height - expectedBounds.height,
-        });
-      }
-    }
-
-    // Visual check - the box should be visible
-    const boxSelectDiv = overlay?.querySelector(".box-select");
-    if (boxSelectDiv) {
-      const computedStyle = window.getComputedStyle(boxSelectDiv);
-      console.log("Box select div position:", {
-        left: computedStyle.left,
-        top: computedStyle.top,
-        width: computedStyle.width,
-        height: computedStyle.height,
-      });
-    }
 
     container.remove();
 

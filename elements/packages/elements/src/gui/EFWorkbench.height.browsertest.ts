@@ -46,8 +46,6 @@ describe("EFWorkbench height consistency", () => {
 
     // Get initial dimensions
     const initialRect = workbench.getBoundingClientRect();
-    console.log("Initial workbench height:", initialRect.height);
-    console.log("Container height:", container.getBoundingClientRect().height);
 
     // CRITICAL: Workbench should fill container
     expect(initialRect.height).toBeGreaterThan(700);
@@ -77,7 +75,6 @@ describe("EFWorkbench height consistency", () => {
 
         // Check workbench height after collapse
         const collapsedRect = workbench.getBoundingClientRect();
-        console.log("Collapsed workbench height:", collapsedRect.height);
 
         // CRITICAL TEST: Workbench should maintain the same height
         expect(

@@ -5,8 +5,6 @@ import { describe, expect, test, vi } from "vitest";
  */
 describe("Manual Scrubbing Functionality", () => {
   test("paintTask processes seek operations correctly", async () => {
-    console.log("\n--- Testing manual scrubbing logic isolation ---");
-
     // Mock the core paintTask logic without scrub track complexity
     const mockVideoAsset = {
       seekToTime: vi.fn().mockResolvedValue({
@@ -30,10 +28,8 @@ describe("Manual Scrubbing Functionality", () => {
 
     // This simulates the core paintTask logic for asset mode
     const targetSeekTimeSeconds = seekToMs / 1000;
-    console.log(`Target seek time: ${targetSeekTimeSeconds}s`);
 
     const frame = await mockVideoAsset.seekToTime(targetSeekTimeSeconds);
-    console.log("Frame received:", frame ? "Yes" : "No");
 
     if (frame && mockCanvasElement) {
       // Update canvas dimensions if needed
@@ -43,9 +39,6 @@ describe("Manual Scrubbing Functionality", () => {
       ) {
         mockCanvasElement.width = frame.codedWidth;
         mockCanvasElement.height = frame.codedHeight;
-        console.log(
-          `Canvas resized to ${frame.codedWidth}x${frame.codedHeight}`,
-        );
       }
 
       // Draw frame to canvas
@@ -58,7 +51,6 @@ describe("Manual Scrubbing Functionality", () => {
           mockCanvasElement.width,
           mockCanvasElement.height,
         );
-        console.log("Frame drawn to canvas successfully");
       }
     }
 
@@ -67,13 +59,9 @@ describe("Manual Scrubbing Functionality", () => {
     expect(mockCanvasElement.width).toBe(640);
     expect(mockCanvasElement.height).toBe(480);
     expect(mockCanvasElement.getContext).toHaveBeenCalledWith("2d");
-
-    console.log("✅ Manual scrubbing logic works correctly in asset mode");
   });
 
   test("JIT mode scrubbing logic flow", async () => {
-    console.log("\n--- Testing JIT mode scrubbing decision flow ---");
-
     // Mock scrub track manager
     const mockScrubTrackManager = {
       shouldUseScrub: vi.fn(),
@@ -95,26 +83,17 @@ describe("Manual Scrubbing Functionality", () => {
       format: "rgba",
     });
 
-    console.log("Case 1: Should use scrub track");
-
     const shouldUseScrub = mockScrubTrackManager.shouldUseScrub(seekToMs);
     const isFastSeeking = mockScrubTrackManager.isFastSeeking(
       lastSeekTimeMs,
       seekToMs,
     );
 
-    console.log(
-      `shouldUseScrub: ${shouldUseScrub}, isFastSeeking: ${isFastSeeking}`,
-    );
-
     if (shouldUseScrub || isFastSeeking) {
       const scrubFrame = await mockScrubTrackManager.getScrubFrame(seekToMs);
-      console.log("Scrub frame received:", scrubFrame ? "Yes" : "No");
 
       if (scrubFrame) {
         mockScrubTrackManager.recordCacheMiss();
-        console.log("Using scrub track - recorded cache miss");
-        // Would display frame and return early
       }
     }
 
@@ -127,26 +106,16 @@ describe("Manual Scrubbing Functionality", () => {
     mockScrubTrackManager.shouldUseScrub.mockReturnValue(false);
     mockScrubTrackManager.isFastSeeking.mockReturnValue(false);
 
-    console.log("\nCase 2: Should use normal video");
-
     const shouldUseScrubCase2 = mockScrubTrackManager.shouldUseScrub(seekToMs);
     const isFastSeekingCase2 = mockScrubTrackManager.isFastSeeking(
       lastSeekTimeMs,
       seekToMs,
     );
 
-    console.log(
-      `shouldUseScrub: ${shouldUseScrubCase2}, isFastSeeking: ${isFastSeekingCase2}`,
-    );
-
     if (!(shouldUseScrubCase2 || isFastSeekingCase2)) {
       mockScrubTrackManager.recordCacheHit();
-      console.log("Using normal video - recorded cache hit");
-      // Would proceed to normal video rendering
     }
 
     expect(mockScrubTrackManager.recordCacheHit).toHaveBeenCalled();
-
-    console.log("✅ JIT mode decision logic flows correctly");
   });
 });

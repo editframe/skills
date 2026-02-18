@@ -935,10 +935,6 @@ export function renderTimegroupToCanvas(
 
         defaultProfiler.incrementRenderCount();
         if (defaultProfiler.shouldLogByFrameCount(60)) {
-          const n = frameCount;
-          console.debug(
-            `[perf] native ${n} frames avg: total=${(totalFrameMs / n).toFixed(1)}ms frameController=${(totalFrameControllerMs / n).toFixed(1)}ms capture=${(totalCaptureMs / n).toFixed(1)}ms copy=${(totalCopyMs / n).toFixed(1)}ms (effective ${(1000 / (totalFrameMs / n)).toFixed(0)}fps)`,
-          );
           frameCount = 0;
           totalFrameControllerMs = 0;
           totalCaptureMs = 0;
@@ -987,10 +983,6 @@ export function renderTimegroupToCanvas(
 
         defaultProfiler.incrementRenderCount();
         if (defaultProfiler.shouldLogByFrameCount(60)) {
-          const n = frameCount;
-          console.debug(
-            `[perf] foreignObject ${n} frames avg: total=${(totalFrameMs / n).toFixed(1)}ms frameController=${(totalFrameControllerMs / n).toFixed(1)}ms serialize=${(totalCaptureMs / n).toFixed(1)}ms imageLoad=${(totalCopyMs / n).toFixed(1)}ms (effective ${(1000 / (totalFrameMs / n)).toFixed(0)}fps)`,
-          );
           frameCount = 0;
           totalFrameControllerMs = 0;
           totalCaptureMs = 0;

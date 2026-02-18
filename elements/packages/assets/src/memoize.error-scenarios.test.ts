@@ -438,7 +438,6 @@ describe("Memoize Error Scenarios", () => {
         const originalGet = descriptor.get;
         if (originalGet) {
           descriptor.get = function () {
-            console.log(`Getting ${String(propertyKey)}`);
             return originalGet.call(this);
           };
         }

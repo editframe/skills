@@ -44,7 +44,6 @@ export class SyncStatus {
   }
 
   async markSynced(info: SyncStatusInfo) {
-    process.stderr.write(`✏️  Marking asset as synced: ${this.basePath}\n`);
     await fs.writeFile(this.infoPath, JSON.stringify(info, null, 2), "utf-8");
   }
 }
