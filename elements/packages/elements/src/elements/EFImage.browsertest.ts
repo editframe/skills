@@ -101,7 +101,9 @@ describe("EFImage", () => {
     test("assetPath preserves local file behavior", () => {
       const image = document.createElement("ef-image");
       image.src = "local-image.jpg";
-      expect(image.assetPath()).toBe("/api/v1/assets/local/image?src=local-image.jpg");
+      expect(image.assetPath()).toBe(
+        "/api/v1/assets/local/image?src=local-image.jpg",
+      );
     });
 
     test("assetPath preserves asset-id priority over direct URL", () => {
@@ -135,7 +137,8 @@ describe("EFImage", () => {
       document.body.appendChild(image);
 
       // Use data URI for SVG with only viewBox (no width/height)
-      const svgContent = '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="#3b82f6" /></svg>';
+      const svgContent =
+        '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="#3b82f6" /></svg>';
       const dataUri = "data:image/svg+xml," + encodeURIComponent(svgContent);
 
       image.src = dataUri;
@@ -164,7 +167,11 @@ describe("EFImage", () => {
 
     test("image with src transitions to ready after load", async () => {
       const image = document.createElement("ef-image");
-      const src = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="red"/></svg>');
+      const src =
+        "data:image/svg+xml," +
+        encodeURIComponent(
+          '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="red"/></svg>',
+        );
 
       image.src = src;
       image.style.width = "100px";
@@ -179,7 +186,11 @@ describe("EFImage", () => {
 
     test("emits contentchange on src change", async () => {
       const image = document.createElement("ef-image");
-      const src1 = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="red"/></svg>');
+      const src1 =
+        "data:image/svg+xml," +
+        encodeURIComponent(
+          '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="red"/></svg>',
+        );
       image.src = src1;
       image.style.width = "100px";
       image.style.height = "100px";
@@ -192,7 +203,11 @@ describe("EFImage", () => {
         reasons.push(e.detail.reason);
       }) as EventListener);
 
-      const src2 = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="blue"/></svg>');
+      const src2 =
+        "data:image/svg+xml," +
+        encodeURIComponent(
+          '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="blue"/></svg>',
+        );
       image.src = src2;
       await image.updateComplete;
 

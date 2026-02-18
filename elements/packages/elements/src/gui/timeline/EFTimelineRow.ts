@@ -283,8 +283,10 @@ export class EFTimelineRow extends TWMixin(LitElement) {
 
     // Update root/nested timegroup classes
     if (changedProperties.has("element")) {
-      const isRoot = this.element instanceof EFTimegroup && this.element.isRootTimegroup;
-      const isNested = this.element instanceof EFTimegroup && !this.element.isRootTimegroup;
+      const isRoot =
+        this.element instanceof EFTimegroup && this.element.isRootTimegroup;
+      const isNested =
+        this.element instanceof EFTimegroup && !this.element.isRootTimegroup;
       this.classList.toggle("root-timegroup", isRoot);
       this.classList.toggle("nested-timegroup", isNested);
     }
@@ -295,7 +297,7 @@ export class EFTimelineRow extends TWMixin(LitElement) {
     if (this.editingContext && !this.editingContext.canInteract()) {
       return;
     }
-    
+
     this.dispatchEvent(
       new CustomEvent("row-hover", {
         detail: { element: this.element },
@@ -310,7 +312,7 @@ export class EFTimelineRow extends TWMixin(LitElement) {
     if (this.editingContext && !this.editingContext.canInteract()) {
       return;
     }
-    
+
     this.dispatchEvent(
       new CustomEvent("row-hover", {
         detail: { element: null },
@@ -363,18 +365,18 @@ export class EFTimelineRow extends TWMixin(LitElement) {
   private getElementLabel(element: Element): string {
     const id = element.id || "";
     const type = this.getElementType(element);
-    
+
     // If element has a meaningful ID (not auto-generated), use it
     if (id && !id.includes("-") && !id.match(/^\d+$/)) {
       return id;
     }
-    
+
     // For auto-generated IDs, create a friendly name based on type
     // Count siblings of same type to generate "Video 1", "Video 2", etc.
     const parent = element.parentElement;
     if (parent) {
       const siblings = Array.from(parent.children).filter(
-        (child) => this.getElementType(child) === type
+        (child) => this.getElementType(child) === type,
       );
       const index = siblings.indexOf(element) + 1;
       const typeLabels: Record<string, string> = {
@@ -387,14 +389,14 @@ export class EFTimelineRow extends TWMixin(LitElement) {
         unknown: "Layer",
       };
       const label = typeLabels[type] || "Layer";
-      
+
       // If there's only one of this type, don't add number
       if (siblings.length === 1) {
         return label;
       }
       return `${label} ${index}`;
     }
-    
+
     // Fallback: capitalize the type
     return type.charAt(0).toUpperCase() + type.slice(1);
   }
@@ -415,12 +417,14 @@ export class EFTimelineRow extends TWMixin(LitElement) {
     if (element instanceof EFText) {
       // Get text preview
       const textContent = Array.from(element.childNodes)
-        .filter(node => node.nodeType === Node.TEXT_NODE)
-        .map(node => node.textContent?.trim())
+        .filter((node) => node.nodeType === Node.TEXT_NODE)
+        .map((node) => node.textContent?.trim())
         .filter(Boolean)
         .join(" ");
       if (textContent) {
-        return textContent.length > 20 ? textContent.slice(0, 20) + "..." : textContent;
+        return textContent.length > 20
+          ? textContent.slice(0, 20) + "..."
+          : textContent;
       }
     }
     return null;
@@ -483,7 +487,7 @@ export class EFTimelineRow extends TWMixin(LitElement) {
       <div
         class="row-label"
         part="label"
-        style=${styleMap({ 
+        style=${styleMap({
           paddingLeft: `${indentPx}px`,
           borderLeftColor: typeColor,
           borderLeftWidth: "3px",
@@ -494,11 +498,15 @@ export class EFTimelineRow extends TWMixin(LitElement) {
           ${icon}
         </span>
         <span style="flex-shrink: 0;">${label}</span>
-        ${detail ? html`
+        ${
+          detail
+            ? html`
           <span style="margin-left: 6px; opacity: 0.6; font-size: 10px; overflow: hidden; text-overflow: ellipsis;">
             ${detail}
           </span>
-        ` : nothing}
+        `
+            : nothing
+        }
       </div>
       <div class="row-track" part="track">${this.renderTrack()}</div>
     `;
@@ -510,4 +518,3 @@ declare global {
     "ef-timeline-row": EFTimelineRow;
   }
 }
-

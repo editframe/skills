@@ -314,7 +314,7 @@ export class EFFramegen {
       this.setWorkbenchRendering(true);
       workbench.playing = false;
     }
-    
+
     // Find timegroups either in workbench or directly in document
     const searchRoot = workbench || document.body;
     const timegroups = shallowGetTimegroups(searchRoot);
@@ -324,13 +324,13 @@ export class EFFramegen {
     }
     const startingTimeMs = renderOptions.encoderOptions.fromMs;
     await firstGroup.waitForMediaDurations();
-    
+
     // CRITICAL: Manually wire up temporal hierarchy since Lit Context fails with our connection order
     // When loading via loadURL(), elements connect depth-first (children before parents), causing
     // children to miss the context-request event since parents aren't listening yet.
     // See setupTemporalHierarchy.ts for detailed explanation.
     setupTemporalHierarchy(searchRoot, firstGroup);
-    
+
     // Use seekForRender for proper time seeking during rendering
     await firstGroup.seekForRender(startingTimeMs);
 
@@ -383,7 +383,7 @@ export class EFFramegen {
       this.renderOptions.encoderOptions.fromMs +
       frameNumber * this.frameDurationMs;
     const frameTimeMs = Number(Number(frameTime).toFixed(5));
-    
+
     // Use seekForRender for proper time seeking during rendering
     await firstGroup.seekForRender(frameTimeMs);
     if (this.showFrameBox) {
@@ -431,7 +431,7 @@ export class EFFramegen {
         });
         return fileReader.result;
       }
-      
+
       // Rendering is complete after the last frame
       this.setWorkbenchRendering(false);
     } else {

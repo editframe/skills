@@ -34,8 +34,6 @@
     "@types/node": "^22.0.0",
     "typescript": "^5.9.3"
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "publishConfig": {
     "exports": {
@@ -47,5 +45,7 @@
       },
       "./package.json": "./package.json"
     }
-  }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js"
 }

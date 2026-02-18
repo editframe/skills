@@ -1,6 +1,6 @@
 /**
  * Shared singleton cache instances for video seeking.
- * 
+ *
  * IMPORTANT: Import these from this module only to ensure single instances.
  * Do not create your own MainVideoInputCache or ScrubInputCache instances.
  */

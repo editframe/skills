@@ -67,9 +67,7 @@ export async function spawnViteServer(
     viteProcess.on("error", (error) => {
       if (!resolved) {
         resolved = true;
-        reject(
-          new Error(`Failed to spawn vite: ${error.message}\n${stderr}`),
-        );
+        reject(new Error(`Failed to spawn vite: ${error.message}\n${stderr}`));
       }
     });
 

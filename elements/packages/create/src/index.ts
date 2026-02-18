@@ -152,14 +152,14 @@ async function main() {
   if (!skipSkills && !cliAgent && !nonInteractive) {
     // Get agent choices sorted by detection
     const agentChoices = await getAgentChoices();
-    
+
     promptQuestions.push({
       type: "confirm",
       name: "installSkills",
       message: "Install AI agent skills for better coding assistance?",
       initial: true,
     });
-    
+
     promptQuestions.push({
       type: (_prev, values) => (values.installSkills ? "select" : null),
       name: "agent",
@@ -183,13 +183,12 @@ async function main() {
   }
 
   // Use CLI args or prompted values (with defaults for non-interactive mode)
-  const directoryName =
-    cliDirectory || answers.directoryName || "my-project";
+  const directoryName = cliDirectory || answers.directoryName || "my-project";
   const templateName = cliTemplate || answers.templateName || templates[0];
-  
+
   // Determine agent selection from CLI or prompts
   let selectedAgent = cliAgent || answers.agent;
-  
+
   // Default to cursor in non-interactive mode if skills not skipped
   if (!skipSkills && !selectedAgent && nonInteractive) {
     selectedAgent = "cursor";
@@ -228,7 +227,7 @@ async function main() {
   let skillsInstalled = false;
 
   // All questions have been asked - now do the work
-  
+
   // Install dependencies unless skipped
   if (!skipInstall) {
     depsInstalled = await installDependencies(targetDir);
@@ -248,7 +247,7 @@ async function main() {
 
   if (skillsInstalled) {
     process.stderr.write(
-      chalk.green(`✓ Agent skills installed (${selectedAgent})\n`)
+      chalk.green(`✓ Agent skills installed (${selectedAgent})\n`),
     );
   }
 
@@ -268,27 +267,27 @@ async function main() {
   if (skillsInstalled) {
     process.stderr.write(chalk.bold("\nAI Agent Skills installed:\n"));
     process.stderr.write(
-      chalk.dim("  • elements-composition - HTML/Web Components\n")
+      chalk.dim("  • elements-composition - HTML/Web Components\n"),
     );
     process.stderr.write(
-      chalk.dim("  • react-composition - React components\n")
+      chalk.dim("  • react-composition - React components\n"),
     );
     process.stderr.write(
-      chalk.dim("  • motion-design - Animation principles\n")
+      chalk.dim("  • motion-design - Animation principles\n"),
     );
 
     process.stderr.write(chalk.bold("\nTry asking your AI agent:\n"));
     process.stderr.write(
-      chalk.dim('  "Create a 5-second video with fade-in text"\n')
+      chalk.dim('  "Create a 5-second video with fade-in text"\n'),
     );
     process.stderr.write(chalk.dim('  "Add a waveform visualization"\n'));
     process.stderr.write(
-      chalk.dim('  "Animate this element with spring physics"\n')
+      chalk.dim('  "Animate this element with spring physics"\n'),
     );
   }
 
   process.stderr.write(
-    chalk.dim("\nDocumentation: https://editframe.com/docs\n")
+    chalk.dim("\nDocumentation: https://editframe.com/docs\n"),
   );
   process.stderr.write(chalk.dim("Happy coding! 🎬\n\n"));
 }

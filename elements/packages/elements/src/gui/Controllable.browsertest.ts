@@ -46,7 +46,8 @@ describe("Controllable Interface", () => {
         `;
 
         const video = container.querySelector<EFVideo>("#my-video")!;
-        const togglePlay = container.querySelector<EFTogglePlay>("ef-toggle-play")!;
+        const togglePlay =
+          container.querySelector<EFTogglePlay>("ef-toggle-play")!;
 
         // Wait for video to have playbackController (root temporal element)
         await vi.waitUntil(() => video.playbackController !== undefined, {
@@ -74,8 +75,10 @@ describe("Controllable Interface", () => {
           </ef-toggle-loop>
         `;
 
-        const timegroup = container.querySelector<EFTimegroup>("#my-timegroup")!;
-        const toggleLoop = container.querySelector<EFToggleLoop>("ef-toggle-loop")!;
+        const timegroup =
+          container.querySelector<EFTimegroup>("#my-timegroup")!;
+        const toggleLoop =
+          container.querySelector<EFToggleLoop>("ef-toggle-loop")!;
 
         // Wait for timegroup to have playbackController
         await vi.waitUntil(() => timegroup.playbackController !== undefined, {
@@ -135,8 +138,10 @@ describe("Controllable Interface", () => {
           <ef-time-display target="my-timegroup"></ef-time-display>
         `;
 
-        const timegroup = container.querySelector<EFTimegroup>("#my-timegroup")!;
-        const timeDisplay = container.querySelector<EFTimeDisplay>("ef-time-display")!;
+        const timegroup =
+          container.querySelector<EFTimegroup>("#my-timegroup")!;
+        const timeDisplay =
+          container.querySelector<EFTimeDisplay>("ef-time-display")!;
 
         // Wait for timegroup to have playbackController
         await vi.waitUntil(() => timegroup.playbackController !== undefined, {
@@ -144,9 +149,12 @@ describe("Controllable Interface", () => {
         });
 
         // Wait for time display to resolve target
-        await vi.waitUntil(() => (timeDisplay as any).effectiveContext !== null, {
-          timeout: 1000,
-        });
+        await vi.waitUntil(
+          () => (timeDisplay as any).effectiveContext !== null,
+          {
+            timeout: 1000,
+          },
+        );
 
         expect((timeDisplay as any).effectiveContext).toBe(timegroup);
       },
@@ -165,13 +173,17 @@ describe("Controllable Interface", () => {
           </ef-timegroup>
         `;
 
-        const parentTimegroup = container.querySelector<EFTimegroup>("#parent")!;
+        const parentTimegroup =
+          container.querySelector<EFTimegroup>("#parent")!;
         const nestedVideo = container.querySelector<EFVideo>("#nested-video")!;
 
         // Wait for parent to have playbackController (it's a root)
-        await vi.waitUntil(() => parentTimegroup.playbackController !== undefined, {
-          timeout: 1000,
-        });
+        await vi.waitUntil(
+          () => parentTimegroup.playbackController !== undefined,
+          {
+            timeout: 1000,
+          },
+        );
 
         await nestedVideo.updateComplete;
 
@@ -203,8 +215,10 @@ describe("Controllable Interface", () => {
             </ef-toggle-play>
           `;
 
-          const nestedVideo = container.querySelector<EFVideo>("#nested-video")!;
-          const togglePlay = container.querySelector<EFTogglePlay>("ef-toggle-play")!;
+          const nestedVideo =
+            container.querySelector<EFVideo>("#nested-video")!;
+          const togglePlay =
+            container.querySelector<EFTogglePlay>("ef-toggle-play")!;
 
           await nestedVideo.updateComplete;
           await togglePlay.updateComplete;
@@ -218,7 +232,9 @@ describe("Controllable Interface", () => {
           // Invariant: nested video has no playbackController
           expect(nestedVideo.playbackController).toBeUndefined();
           // Warning should have been issued
-          expect(warnings.some((w) => w.includes("non-root temporal element"))).toBe(true);
+          expect(
+            warnings.some((w) => w.includes("non-root temporal element")),
+          ).toBe(true);
         } finally {
           console.warn = originalWarn;
         }
@@ -241,7 +257,8 @@ describe("Controllable Interface", () => {
         `;
 
         const timegroup = container.querySelector<EFTimegroup>("#tg")!;
-        const togglePlay = container.querySelector<EFTogglePlay>("ef-toggle-play")!;
+        const togglePlay =
+          container.querySelector<EFTogglePlay>("ef-toggle-play")!;
 
         // Wait for timegroup playbackController
         await vi.waitUntil(() => timegroup.playbackController !== undefined, {
@@ -289,7 +306,8 @@ describe("Controllable Interface", () => {
         `;
 
         const timegroup = container.querySelector<EFTimegroup>("#tg")!;
-        const toggleLoop = container.querySelector<EFToggleLoop>("ef-toggle-loop")!;
+        const toggleLoop =
+          container.querySelector<EFToggleLoop>("ef-toggle-loop")!;
 
         // Wait for timegroup playbackController
         await vi.waitUntil(() => timegroup.playbackController !== undefined, {
@@ -297,9 +315,12 @@ describe("Controllable Interface", () => {
         });
 
         // Wait for control to resolve target
-        await vi.waitUntil(() => (toggleLoop as any).effectiveContext !== null, {
-          timeout: 1000,
-        });
+        await vi.waitUntil(
+          () => (toggleLoop as any).effectiveContext !== null,
+          {
+            timeout: 1000,
+          },
+        );
 
         // Change loop state directly on temporal
         timegroup.playbackController!.setLoop(true);
@@ -328,7 +349,8 @@ describe("Controllable Interface", () => {
         `;
 
         const timegroup = container.querySelector<EFTimegroup>("#tg")!;
-        const togglePlay = container.querySelector<EFTogglePlay>("ef-toggle-play")!;
+        const togglePlay =
+          container.querySelector<EFTogglePlay>("ef-toggle-play")!;
 
         // Wait for timegroup playbackController
         await vi.waitUntil(() => timegroup.playbackController !== undefined, {
@@ -347,18 +369,24 @@ describe("Controllable Interface", () => {
         togglePlay.click();
 
         // Observable behavior: temporal's playback should start
-        await vi.waitUntil(() => timegroup.playbackController!.playing === true, {
-          timeout: 1000,
-        });
+        await vi.waitUntil(
+          () => timegroup.playbackController!.playing === true,
+          {
+            timeout: 1000,
+          },
+        );
 
         expect(timegroup.playbackController!.playing).toBe(true);
 
         // Click again to pause
         togglePlay.click();
 
-        await vi.waitUntil(() => timegroup.playbackController!.playing === false, {
-          timeout: 1000,
-        });
+        await vi.waitUntil(
+          () => timegroup.playbackController!.playing === false,
+          {
+            timeout: 1000,
+          },
+        );
 
         expect(timegroup.playbackController!.playing).toBe(false);
       },
@@ -377,7 +405,8 @@ describe("Controllable Interface", () => {
         `;
 
         const timegroup = container.querySelector<EFTimegroup>("#tg")!;
-        const toggleLoop = container.querySelector<EFToggleLoop>("ef-toggle-loop")!;
+        const toggleLoop =
+          container.querySelector<EFToggleLoop>("ef-toggle-loop")!;
 
         // Wait for timegroup playbackController
         await vi.waitUntil(() => timegroup.playbackController !== undefined, {
@@ -385,9 +414,12 @@ describe("Controllable Interface", () => {
         });
 
         // Wait for control to resolve target
-        await vi.waitUntil(() => (toggleLoop as any).effectiveContext !== null, {
-          timeout: 1000,
-        });
+        await vi.waitUntil(
+          () => (toggleLoop as any).effectiveContext !== null,
+          {
+            timeout: 1000,
+          },
+        );
 
         // Initial state: loop off
         expect(timegroup.playbackController!.loop).toBe(false);
@@ -424,7 +456,8 @@ describe("Controllable Interface", () => {
 
         const timegroup = container.querySelector<EFTimegroup>("#tg")!;
         const controls = container.querySelector<EFControls>("ef-controls")!;
-        const togglePlay = container.querySelector<EFTogglePlay>("ef-toggle-play")!;
+        const togglePlay =
+          container.querySelector<EFTogglePlay>("ef-toggle-play")!;
 
         // Wait for timegroup playbackController
         await vi.waitUntil(() => timegroup.playbackController !== undefined, {
@@ -462,7 +495,8 @@ describe("Controllable Interface", () => {
 
         const timegroup = container.querySelector<EFTimegroup>("#tg")!;
         const controls = container.querySelector<EFControls>("ef-controls")!;
-        const togglePlay = container.querySelector<EFTogglePlay>("ef-toggle-play")!;
+        const togglePlay =
+          container.querySelector<EFTogglePlay>("ef-toggle-play")!;
 
         // Wait for setup
         await vi.waitUntil(() => timegroup.playbackController !== undefined, {
@@ -475,9 +509,12 @@ describe("Controllable Interface", () => {
         // Test: control → temporal
         togglePlay.click();
 
-        await vi.waitUntil(() => timegroup.playbackController!.playing === true, {
-          timeout: 1000,
-        });
+        await vi.waitUntil(
+          () => timegroup.playbackController!.playing === true,
+          {
+            timeout: 1000,
+          },
+        );
 
         expect(timegroup.playbackController!.playing).toBe(true);
 
@@ -506,7 +543,8 @@ describe("Controllable Interface", () => {
 
         const timegroup = container.querySelector<EFTimegroup>("#tg")!;
         const controls = container.querySelector<EFControls>("ef-controls")!;
-        const timeDisplay = container.querySelector<EFTimeDisplay>("ef-time-display")!;
+        const timeDisplay =
+          container.querySelector<EFTimeDisplay>("ef-time-display")!;
 
         // Wait for setup
         await vi.waitUntil(() => timegroup.playbackController !== undefined, {
@@ -545,7 +583,8 @@ describe("Controllable Interface", () => {
 
         const video = container.querySelector<EFVideo>("#my-video")!;
         const controls = container.querySelector<EFControls>("ef-controls")!;
-        const togglePlay = container.querySelector<EFTogglePlay>("ef-toggle-play")!;
+        const togglePlay =
+          container.querySelector<EFTogglePlay>("ef-toggle-play")!;
 
         // Wait for video playbackController
         await vi.waitUntil(() => video.playbackController !== undefined, {
@@ -625,7 +664,9 @@ describe("Controllable Interface", () => {
         preview.appendChild(timegroup);
         container.appendChild(preview);
 
-        const togglePlay = document.createElement("ef-toggle-play") as EFTogglePlay;
+        const togglePlay = document.createElement(
+          "ef-toggle-play",
+        ) as EFTogglePlay;
         togglePlay.target = "my-preview";
         togglePlay.innerHTML = `
           <button slot="play">Play</button>
@@ -682,7 +723,9 @@ describe("Controllable Interface", () => {
 
         const controls = document.createElement("ef-controls") as EFControls;
         controls.target = "my-preview";
-        const togglePlay = document.createElement("ef-toggle-play") as EFTogglePlay;
+        const togglePlay = document.createElement(
+          "ef-toggle-play",
+        ) as EFTogglePlay;
         togglePlay.innerHTML = `
           <button slot="play">Play</button>
           <button slot="pause">Pause</button>

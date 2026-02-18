@@ -1,6 +1,6 @@
 /**
  * Stats tracking strategy for different presentation modes.
- * 
+ *
  * Uses strategy pattern to encapsulate mode-specific stats tracking logic,
  * allowing each mode to report what stats it supports and provide its own implementation.
  */
@@ -51,7 +51,7 @@ export interface StatsTrackingStrategy {
   getStats(): PlaybackStats | null;
   /** Check if this strategy supports a specific stat type */
   supportsStat(stat: StatType): boolean;
-  /** 
+  /**
    * Record render timing (optional - only implemented by canvas stats).
    * Called by EFWorkbench after each canvas refresh.
    */
@@ -61,7 +61,7 @@ export interface StatsTrackingStrategy {
 /**
  * Canvas mode stats tracking strategy.
  * Tracks all stats including render time, headroom, resolution scale, and adaptive resolution.
- * 
+ *
  * This strategy is PASSIVE - it receives render timing from EFWorkbench rather than
  * driving its own render loop. This prevents race conditions and ensures accurate measurements.
  */
@@ -72,7 +72,7 @@ export class CanvasStatsStrategy implements StatsTrackingStrategy {
   private getResolutionScale: () => number;
   private isAtRest: () => boolean;
   private isExporting: () => boolean;
-  
+
   private lastStatsUpdateTime = 0;
   private currentStats: PlaybackStats | null = null;
 
@@ -110,7 +110,7 @@ export class CanvasStatsStrategy implements StatsTrackingStrategy {
   recordRenderTime(renderTimeMs: number, timestamp: number): void {
     // Skip during export
     if (this.isExporting()) return;
-    
+
     // Only record frame timing when in motion (playing/scrubbing)
     // This prevents inflated stats at rest and focuses tracking on actual playback
     if (!this.isAtRest()) {
@@ -137,7 +137,11 @@ export class CanvasStatsStrategy implements StatsTrackingStrategy {
     return true;
   }
 
-  private updateStats(renderWidth: number, renderHeight: number, resolutionScale: number): void {
+  private updateStats(
+    renderWidth: number,
+    renderHeight: number,
+    resolutionScale: number,
+  ): void {
     const trackerStats = this.adaptiveTracker.getStats();
 
     this.currentStats = {
@@ -163,18 +167,18 @@ export class CanvasStatsStrategy implements StatsTrackingStrategy {
 export class DomStatsStrategy implements StatsTrackingStrategy {
   private timegroup: EFTimegroup;
   private adaptiveTracker: AdaptiveResolutionTracker;
-  
+
   private animationFrame: number | null = null;
   private lastFrameTime = 0;
   private frameIntervals: number[] = [];
   private lastStatsUpdateTime = 0;
   private currentStats: PlaybackStats | null = null;
-  
+
   // Frame seek time tracking
   private seekStartTime = 0;
   private seekTimes: number[] = [];
   private frameTaskCleanup: (() => void) | null = null;
-  
+
   private readonly ROLLING_WINDOW_SIZE = 30; // ~1 second at 30fps
   private readonly TARGET_FRAME_TIME_MS = 33.33; // 30fps target
 
@@ -188,7 +192,7 @@ export class DomStatsStrategy implements StatsTrackingStrategy {
 
   start(): void {
     if (this.animationFrame !== null) return;
-    
+
     // Track frame seek times using frameTask callback
     // This measures how long it takes for the timegroup to fully update after a seek
     const frameTaskCallback = async () => {
@@ -201,13 +205,13 @@ export class DomStatsStrategy implements StatsTrackingStrategy {
         this.seekStartTime = 0; // Reset after recording
       }
     };
-    
+
     this.timegroup.addFrameTask(frameTaskCallback);
     this.frameTaskCleanup = () => {
       // Note: EFTimegroup doesn't have removeFrameTask, but this is fine
       // The callback will be cleaned up when the timegroup is destroyed
     };
-    
+
     // Track currentTimeMs changes to detect seeks
     let lastCurrentTimeMs = this.timegroup.currentTimeMs;
     const checkSeek = () => {
@@ -218,13 +222,13 @@ export class DomStatsStrategy implements StatsTrackingStrategy {
         lastCurrentTimeMs = currentTimeMs;
       }
     };
-    
+
     const loop = (timestamp: number) => {
       if (this.animationFrame === null) return; // Stopped
-      
+
       // Check for seeks
       checkSeek();
-      
+
       // Track frame intervals for FPS calculation
       if (this.lastFrameTime > 0) {
         const interval = timestamp - this.lastFrameTime;
@@ -234,16 +238,16 @@ export class DomStatsStrategy implements StatsTrackingStrategy {
         }
       }
       this.lastFrameTime = timestamp;
-      
+
       // Update stats every 100ms (10 times per second)
       if (timestamp - this.lastStatsUpdateTime > 100) {
         this.lastStatsUpdateTime = timestamp;
         this.updateStats();
       }
-      
+
       this.animationFrame = requestAnimationFrame(loop);
     };
-    
+
     this.animationFrame = requestAnimationFrame(loop);
   }
 
@@ -270,29 +274,37 @@ export class DomStatsStrategy implements StatsTrackingStrategy {
   supportsStat(stat: StatType): boolean {
     // DOM mode supports: fps, resolution, cpuPressure, renderTime (seek time), headroom
     // Does NOT support: resolutionScale, adaptiveResolution
-    return stat === "fps" || stat === "resolution" || stat === "cpuPressure" || stat === "renderTime" || stat === "headroom";
+    return (
+      stat === "fps" ||
+      stat === "resolution" ||
+      stat === "cpuPressure" ||
+      stat === "renderTime" ||
+      stat === "headroom"
+    );
   }
 
   private updateStats(): void {
     // Calculate FPS from frame intervals
-    const avgFrameInterval = this.frameIntervals.length > 0
-      ? this.frameIntervals.reduce((a, b) => a + b, 0) / this.frameIntervals.length
-      : 16.67;
+    const avgFrameInterval =
+      this.frameIntervals.length > 0
+        ? this.frameIntervals.reduce((a, b) => a + b, 0) /
+          this.frameIntervals.length
+        : 16.67;
     const fps = avgFrameInterval > 0 ? 1000 / avgFrameInterval : 0;
-    
+
     // Calculate average seek time (frame update time)
-    const avgSeekTime = this.seekTimes.length > 0
-      ? this.seekTimes.reduce((a, b) => a + b, 0) / this.seekTimes.length
-      : 0;
-    
+    const avgSeekTime =
+      this.seekTimes.length > 0
+        ? this.seekTimes.reduce((a, b) => a + b, 0) / this.seekTimes.length
+        : 0;
+
     // Calculate headroom (positive = faster than target, negative = slower)
-    const headroom = avgSeekTime > 0
-      ? this.TARGET_FRAME_TIME_MS - avgSeekTime
-      : 0;
-    
+    const headroom =
+      avgSeekTime > 0 ? this.TARGET_FRAME_TIME_MS - avgSeekTime : 0;
+
     // Get CPU pressure from adaptive tracker
     const trackerStats = this.adaptiveTracker.getStats();
-    
+
     // Calculate displayed resolution from timegroup bounding rect
     const rect = this.timegroup.getBoundingClientRect();
     const renderWidth = Math.round(rect.width);
@@ -326,11 +338,16 @@ export function createStatsTrackingStrategy(
     getResolutionScale?: () => number;
     isAtRest?: () => boolean;
     isExporting?: () => boolean;
-  }
+  },
 ): StatsTrackingStrategy | null {
   switch (mode) {
     case "canvas":
-      if (!options.canvasPreviewResult || !options.getResolutionScale || !options.isAtRest || !options.isExporting) {
+      if (
+        !options.canvasPreviewResult ||
+        !options.getResolutionScale ||
+        !options.isAtRest ||
+        !options.isExporting
+      ) {
         return null;
       }
       return new CanvasStatsStrategy({
@@ -342,16 +359,16 @@ export function createStatsTrackingStrategy(
         isAtRest: options.isAtRest,
         isExporting: options.isExporting,
       });
-    
+
     case "dom":
       return new DomStatsStrategy({
         timegroup: options.timegroup,
         adaptiveTracker: options.adaptiveTracker,
       });
-    
+
     case "canvas":
       return null;
-    
+
     default:
       return null;
   }

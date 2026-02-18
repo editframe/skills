@@ -1,11 +1,11 @@
 #!/usr/bin/env npx tsx
 /**
  * Parallel Agent Runner
- * 
+ *
  * Run cursor-agent on multiple files in parallel.
  * Files come from stdin (piped) or --glob/--files.
  * Prompt from --prompt or --prompt-file.
- * 
+ *
  * Examples:
  *   grep -rl "pattern" src | ./parallel-agents.ts -P prompt.md -x
  *   ./parallel-agents.ts -g "src/*.ts" -p "Review {file}" -x
@@ -97,16 +97,16 @@ export async function readFilesFromStdin(): Promise<string[]> {
       input: process.stdin,
       terminal: false,
     });
-    
+
     rl.on("line", (line) => {
       const trimmed = line.trim();
       if (trimmed && !trimmed.startsWith("#")) {
         files.push(trimmed);
       }
     });
-    
+
     rl.on("close", () => resolve(files));
-    
+
     // Handle case where stdin is empty/TTY
     if (process.stdin.isTTY) {
       resolve([]);
@@ -121,32 +121,33 @@ export function hasStdin(): boolean {
 
 export async function findFiles(
   selector: FileSelector,
-  workspace: string
+  workspace: string,
 ): Promise<string[]> {
   let files: string[] = [];
   const baseDir = selector.baseDir || workspace;
 
   // Start with explicit files if provided
   if (selector.files && selector.files.length > 0) {
-    files = selector.files.map(f => 
-      f.startsWith("/") ? f : join(workspace, f)
+    files = selector.files.map((f) =>
+      f.startsWith("/") ? f : join(workspace, f),
     );
   }
   // Or use glob pattern
   else if (selector.glob) {
-    const pattern = selector.glob.startsWith("/") 
-      ? selector.glob 
+    const pattern = selector.glob.startsWith("/")
+      ? selector.glob
       : join(baseDir, selector.glob);
     files = await glob(pattern, { nodir: true });
   }
 
   // Apply grep filter
   if (selector.grep) {
-    const regex = typeof selector.grep === "string" 
-      ? new RegExp(selector.grep) 
-      : selector.grep;
-    
-    files = files.filter(file => {
+    const regex =
+      typeof selector.grep === "string"
+        ? new RegExp(selector.grep)
+        : selector.grep;
+
+    files = files.filter((file) => {
       try {
         const content = readFileSync(file, "utf-8");
         return regex.test(content);
@@ -158,7 +159,7 @@ export async function findFiles(
 
   // Apply custom filter
   if (selector.filter) {
-    files = files.filter(file => {
+    files = files.filter((file) => {
       try {
         const content = readFileSync(file, "utf-8");
         return selector.filter!(file, content);
@@ -169,14 +170,17 @@ export async function findFiles(
   }
 
   // Convert to relative paths
-  return files.map(f => relative(workspace, f));
+  return files.map((f) => relative(workspace, f));
 }
 
 // ============================================================================
 // Prompt Generation
 // ============================================================================
 
-export function buildPrompt(template: PromptTemplate, filePath: string): string {
+export function buildPrompt(
+  template: PromptTemplate,
+  filePath: string,
+): string {
   const preamble = template.preamble ?? DEFAULT_PREAMBLE;
   const body = template.template.replace(/\{file\}/g, filePath);
   return preamble + body;
@@ -209,7 +213,7 @@ async function runAgent(
   prompt: string,
   workerId: number,
   config: AgentConfig,
-  onProgress: (workerId: number, status: string) => void
+  onProgress: (workerId: number, status: string) => void,
 ): Promise<WorkerResult> {
   const output: string[] = [];
   const startTime = Date.now();
@@ -237,15 +241,18 @@ async function runAgent(
   let hasError = false;
 
   proc.stdout?.on("data", (data) => {
-    const lines = data.toString().split("\n").filter((l: string) => l.trim());
+    const lines = data
+      .toString()
+      .split("\n")
+      .filter((l: string) => l.trim());
     for (const line of lines) {
       try {
         const json = JSON.parse(line);
-        
+
         if (json.type === "thinking" && json.subtype === "delta") {
           onProgress(workerId, "thinking");
         }
-        
+
         if (json.type === "assistant" && json.message?.content) {
           for (const item of json.message.content) {
             if (item.type === "text" && item.text) {
@@ -253,12 +260,12 @@ async function runAgent(
             }
           }
         }
-        
+
         if (json.type === "tool_call") {
           onProgress(workerId, `tool: ${json.name || "unknown"}`);
           output.push(chalk.cyan(`  → ${json.name || "tool"}`));
         }
-        
+
         if (json.type === "result" && json.is_error) {
           hasError = true;
           output.push(chalk.red(`Error: ${json.result || "Unknown error"}`));
@@ -307,15 +314,21 @@ async function worker(
   config: AgentConfig,
   results: WorkerResult[],
   onProgress: (workerId: number, status: string) => void,
-  onComplete: (result: WorkerResult) => void
+  onComplete: (result: WorkerResult) => void,
 ): Promise<void> {
   while (true) {
     const filePath = queue.shift();
     if (!filePath) break;
-    
+
     onProgress(workerId, `starting: ${basename(filePath)}`);
     const prompt = buildPrompt(promptTemplate, filePath);
-    const result = await runAgent(filePath, prompt, workerId, config, onProgress);
+    const result = await runAgent(
+      filePath,
+      prompt,
+      workerId,
+      config,
+      onProgress,
+    );
     results.push(result);
     onComplete(result);
   }
@@ -329,30 +342,36 @@ function updateProgressLine(
   workerStatus: Map<number, string>,
   completed: number,
   total: number,
-  failed: number
+  failed: number,
 ): void {
   const statusParts: string[] = [];
   for (const [id, status] of workerStatus) {
-    statusParts.push(chalk.cyan(`W${id}:`) + chalk.gray(status.substring(0, 20)));
+    statusParts.push(
+      chalk.cyan(`W${id}:`) + chalk.gray(status.substring(0, 20)),
+    );
   }
-  
+
   const progress = `${completed}/${total}`;
   const failedStr = failed > 0 ? chalk.red(` ✗${failed}`) : "";
-  
+
   process.stdout.write(
-    `\r${chalk.yellow("⏳")} ${progress}${failedStr} | ${statusParts.join(" | ")}`.padEnd(120) + "\r"
+    `\r${chalk.yellow("⏳")} ${progress}${failedStr} | ${statusParts.join(" | ")}`.padEnd(
+      120,
+    ) + "\r",
   );
 }
 
 function printResult(result: WorkerResult): void {
   process.stdout.write("\r" + " ".repeat(120) + "\r");
-  
+
   const status = result.success ? chalk.green("✓") : chalk.red("✗");
   const duration = (result.durationMs / 1000).toFixed(1);
   const fileName = basename(result.filePath);
-  
-  console.log(`${status} ${chalk.blue(`W${result.workerId}`)} ${fileName} ${chalk.gray(`(${duration}s)`)}`);
-  
+
+  console.log(
+    `${status} ${chalk.blue(`W${result.workerId}`)} ${fileName} ${chalk.gray(`(${duration}s)`)}`,
+  );
+
   // Show unique output lines
   const seen = new Set<string>();
   for (const line of result.output) {
@@ -370,10 +389,10 @@ function printResult(result: WorkerResult): void {
 export async function runParallelAgents(
   files: string[],
   promptTemplate: PromptTemplate,
-  config: AgentConfig
+  config: AgentConfig,
 ): Promise<RunResult> {
   const results: WorkerResult[] = [];
-  
+
   if (config.dryRun) {
     console.log(chalk.yellow("DRY RUN - Would process:"));
     for (const file of files) {
@@ -388,35 +407,35 @@ export async function runParallelAgents(
   }
 
   console.log(chalk.yellow(`Starting ${config.maxAgents} worker(s)...\n`));
-  
+
   const queue = [...files];
   const workerStatus = new Map<number, string>();
   let completedCount = 0;
   let failedCount = 0;
-  
+
   const onProgress = (workerId: number, status: string) => {
     workerStatus.set(workerId, status);
     updateProgressLine(workerStatus, completedCount, files.length, failedCount);
   };
-  
+
   const onComplete = (result: WorkerResult) => {
     completedCount++;
     if (!result.success) failedCount++;
     workerStatus.delete(result.workerId);
     printResult(result);
   };
-  
+
   // Start workers
   const workerPromises: Promise<void>[] = [];
   for (let i = 0; i < config.maxAgents; i++) {
     workerStatus.set(i, "starting");
     workerPromises.push(
-      worker(i, queue, promptTemplate, config, results, onProgress, onComplete)
+      worker(i, queue, promptTemplate, config, results, onProgress, onComplete),
     );
   }
-  
+
   await Promise.all(workerPromises);
-  
+
   // Clear progress line
   process.stdout.write("\r" + " ".repeat(120) + "\r");
 
@@ -546,13 +565,15 @@ Examples:
 
 async function main() {
   const options = parseArgs();
-  
+
   // Check for stdin
   const stdinAvailable = hasStdin();
 
   // Validate options
   if (!stdinAvailable && !options.glob && !options.files?.length) {
-    console.error(chalk.red("Error: Must pipe files or specify --glob or --files"));
+    console.error(
+      chalk.red("Error: Must pipe files or specify --glob or --files"),
+    );
     console.error(chalk.gray("Run with --help for usage"));
     process.exit(1);
   }
@@ -567,7 +588,9 @@ async function main() {
   let promptText = options.prompt || "";
   if (options.promptFile) {
     if (!existsSync(options.promptFile)) {
-      console.error(chalk.red(`Error: Prompt file not found: ${options.promptFile}`));
+      console.error(
+        chalk.red(`Error: Prompt file not found: ${options.promptFile}`),
+      );
       process.exit(1);
     }
     promptText = readFileSync(options.promptFile, "utf-8").trim();
@@ -575,13 +598,15 @@ async function main() {
 
   // Find files
   let files: string[];
-  
+
   if (stdinAvailable) {
     // Read from stdin
     console.error(chalk.cyan("Reading files from stdin..."));
     files = await readFilesFromStdin();
     // Normalize paths relative to workspace
-    files = files.map(f => f.startsWith("/") ? relative(options.workspace, f) : f);
+    files = files.map((f) =>
+      f.startsWith("/") ? relative(options.workspace, f) : f,
+    );
   } else {
     console.error(chalk.cyan("Finding files..."));
     files = await findFiles(
@@ -590,7 +615,7 @@ async function main() {
         grep: options.grep,
         files: options.files,
       },
-      options.workspace
+      options.workspace,
     );
   }
 
@@ -611,13 +636,17 @@ async function main() {
       workspace: options.workspace,
       model: options.model,
       dryRun: !options.execute,
-    }
+    },
   );
 
   // Summary
   console.error("");
   console.error(chalk.cyan("━".repeat(60)));
-  console.error(options.execute ? chalk.green("✓ Complete") : chalk.green("✓ Dry run complete"));
+  console.error(
+    options.execute
+      ? chalk.green("✓ Complete")
+      : chalk.green("✓ Dry run complete"),
+  );
   console.error(chalk.cyan("━".repeat(60)));
   console.error(`  Total: ${result.total}`);
   if (options.execute) {
@@ -626,7 +655,7 @@ async function main() {
       console.error(chalk.red(`  Failed: ${result.failed}`));
     }
   }
-  
+
   if (!options.execute) {
     console.error("");
     console.error(chalk.yellow("Add -x to execute"));

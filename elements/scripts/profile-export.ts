@@ -1,12 +1,12 @@
 #!/usr/bin/env npx ts-node
 /**
  * CPU Profiling Harness for Video Export
- * 
+ *
  * Captures Chrome DevTools CPU profiles during export to identify hotspots.
- * 
+ *
  * Usage:
  *   npx tsx scripts/profile-export.ts [options]
- * 
+ *
  * Options:
  *   --project <name>   Dev project to profile (default: design-catalog)
  *   --duration <ms>    Max export duration in ms (default: 30000)
@@ -15,11 +15,11 @@
  *   --headless         Run in headless mode (default: false)
  *   --benchmark        Skip video encoding (measure pure rendering speed)
  *   --no-native        Disable native HTML-in-Canvas API, use foreignObject fallback
- * 
+ *
  * Examples:
  *   npx tsx scripts/profile-export.ts --focus renderTimegroupPreview
  *   npx tsx scripts/profile-export.ts --focus syncStyles --duration 5000
- * 
+ *
  * Output:
  *   - .cpuprofile file that can be loaded in Chrome DevTools
  *   - Console summary of top hotspots
@@ -69,9 +69,9 @@ interface HotspotInfo {
 
 /** Resolved source location after applying source maps */
 interface ResolvedLocation {
-  source: string;      // Original source file path (e.g., "renderTimegroupPreview.ts")
-  line: number;        // Original line number
-  column: number;      // Original column number
+  source: string; // Original source file path (e.g., "renderTimegroupPreview.ts")
+  line: number; // Original line number
+  column: number; // Original column number
   name: string | null; // Original symbol name (if available)
 }
 
@@ -80,11 +80,11 @@ class SourceMapResolver {
   private traceMaps = new Map<string, TraceMap | null>();
   private fetchCache = new Map<string, Promise<string | null>>();
   private baseUrl: string;
-  
+
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
   }
-  
+
   /** Fetch text from URL with caching */
   private async fetchText(url: string): Promise<string | null> {
     if (this.fetchCache.has(url)) {
@@ -102,27 +102,27 @@ class SourceMapResolver {
     this.fetchCache.set(url, promise);
     return promise;
   }
-  
+
   /** Get or load source map for a script URL */
   async getTraceMap(scriptUrl: string): Promise<TraceMap | null> {
     if (this.traceMaps.has(scriptUrl)) {
       return this.traceMaps.get(scriptUrl)!;
     }
-    
+
     // Fetch the script to find sourceMappingURL
     const scriptContent = await this.fetchText(scriptUrl);
     if (!scriptContent) {
       this.traceMaps.set(scriptUrl, null);
       return null;
     }
-    
+
     // Extract sourceMappingURL from the script
     const match = scriptContent.match(/\/\/[#@]\s*sourceMappingURL=([^\s]+)/);
     if (!match) {
       this.traceMaps.set(scriptUrl, null);
       return null;
     }
-    
+
     // Resolve source map URL (could be relative or absolute)
     let sourceMapUrl = match[1];
     if (!sourceMapUrl.startsWith("http") && !sourceMapUrl.startsWith("data:")) {
@@ -130,7 +130,7 @@ class SourceMapResolver {
       const scriptBase = scriptUrl.substring(0, scriptUrl.lastIndexOf("/") + 1);
       sourceMapUrl = scriptBase + sourceMapUrl;
     }
-    
+
     // Handle data: URLs (inline source maps)
     let sourceMapJson: string | null;
     if (sourceMapUrl.startsWith("data:")) {
@@ -143,12 +143,12 @@ class SourceMapResolver {
     } else {
       sourceMapJson = await this.fetchText(sourceMapUrl);
     }
-    
+
     if (!sourceMapJson) {
       this.traceMaps.set(scriptUrl, null);
       return null;
     }
-    
+
     try {
       const traceMap = new TraceMap(sourceMapJson);
       this.traceMaps.set(scriptUrl, traceMap);
@@ -158,29 +158,36 @@ class SourceMapResolver {
       return null;
     }
   }
-  
+
   /** Resolve original source location for a bundled position */
-  async resolve(scriptUrl: string, line0Based: number, column: number): Promise<ResolvedLocation | null> {
+  async resolve(
+    scriptUrl: string,
+    line0Based: number,
+    column: number,
+  ): Promise<ResolvedLocation | null> {
     const traceMap = await this.getTraceMap(scriptUrl);
     if (!traceMap) return null;
-    
+
     // V8 uses 0-based lines, trace-mapping also uses 0-based internally
     // but the input line must be >= 0
     if (line0Based < 0) return null;
-    
+
     try {
-      const result = originalPositionFor(traceMap, { line: line0Based, column });
-      
+      const result = originalPositionFor(traceMap, {
+        line: line0Based,
+        column,
+      });
+
       if (!result.source) return null;
-      
+
       // Extract just the filename from the source path
       const sourcePath = result.source;
       const sourceFile = sourcePath.split("/").pop() || sourcePath;
-      
+
       // result.line is 1-based (from the source map)
       return {
         source: sourceFile,
-        line: result.line ?? (line0Based + 1),
+        line: result.line ?? line0Based + 1,
         column: result.column ?? column,
         name: result.name,
       };
@@ -257,12 +264,16 @@ async function main() {
 
   const context = await browser.newContext();
   const page = await context.newPage();
-  
+
   // Capture console messages
   page.on("console", (msg) => {
     const text = msg.text();
     // Only show our debug logs and renderToVideo logs
-    if (text.includes("[renderToVideo]") || text.includes("[renderToImage]") || text.includes("DEBUG")) {
+    if (
+      text.includes("[renderToVideo]") ||
+      text.includes("[renderToImage]") ||
+      text.includes("DEBUG")
+    ) {
       console.log(`[browser] ${text}`);
     }
   });
@@ -293,10 +304,13 @@ async function main() {
     // Wait for timegroup to be ready
     console.log(`⏳ Waiting for timegroup...`);
     await page.waitForSelector("ef-timegroup", { timeout: 30000 });
-    await page.waitForFunction(() => {
-      const tg = document.querySelector("ef-timegroup") as any;
-      return tg && tg.durationMs > 0;
-    }, { timeout: 30000 });
+    await page.waitForFunction(
+      () => {
+        const tg = document.querySelector("ef-timegroup") as any;
+        return tg && tg.durationMs > 0;
+      },
+      { timeout: 30000 },
+    );
 
     // Get timegroup info
     const timegroupInfo = await page.evaluate(() => {
@@ -307,7 +321,9 @@ async function main() {
         height: tg.offsetHeight,
       };
     });
-    console.log(`✅ Timegroup ready: ${timegroupInfo.width}x${timegroupInfo.height}, ${timegroupInfo.durationMs}ms`);
+    console.log(
+      `✅ Timegroup ready: ${timegroupInfo.width}x${timegroupInfo.height}, ${timegroupInfo.durationMs}ms`,
+    );
 
     // Enable profiler
     await cdp.send("Profiler.enable");
@@ -315,9 +331,10 @@ async function main() {
 
     // Quick benchmark: VideoFrame creation speed from different canvas types
     const vfBenchmark = await page.evaluate(async () => {
-      const width = 1920, height = 1080;
+      const width = 1920,
+        height = 1080;
       const iterations = 50;
-      
+
       // HTMLCanvasElement
       const htmlCanvas = document.createElement("canvas");
       htmlCanvas.width = width;
@@ -325,13 +342,13 @@ async function main() {
       const htmlCtx = htmlCanvas.getContext("2d")!;
       htmlCtx.fillStyle = "red";
       htmlCtx.fillRect(0, 0, width, height);
-      
+
       // OffscreenCanvas
       const offscreen = new OffscreenCanvas(width, height);
       const offCtx = offscreen.getContext("2d")!;
       offCtx.fillStyle = "blue";
       offCtx.fillRect(0, 0, width, height);
-      
+
       // Benchmark HTMLCanvasElement → VideoFrame
       const htmlStart = performance.now();
       for (let i = 0; i < iterations; i++) {
@@ -339,21 +356,23 @@ async function main() {
         vf.close();
       }
       const htmlTime = performance.now() - htmlStart;
-      
-      // Benchmark OffscreenCanvas → VideoFrame  
+
+      // Benchmark OffscreenCanvas → VideoFrame
       const offStart = performance.now();
       for (let i = 0; i < iterations; i++) {
         const vf = new VideoFrame(offscreen, { timestamp: i * 33333 });
         vf.close();
       }
       const offTime = performance.now() - offStart;
-      
+
       return {
-        html: `${htmlTime.toFixed(1)}ms (${(htmlTime/iterations).toFixed(2)}ms/frame)`,
-        offscreen: `${offTime.toFixed(1)}ms (${(offTime/iterations).toFixed(2)}ms/frame)`,
+        html: `${htmlTime.toFixed(1)}ms (${(htmlTime / iterations).toFixed(2)}ms/frame)`,
+        offscreen: `${offTime.toFixed(1)}ms (${(offTime / iterations).toFixed(2)}ms/frame)`,
       };
     });
-    console.log(`\n📊 VideoFrame Creation Benchmark (${1920}x${1080}, 50 frames):`);
+    console.log(
+      `\n📊 VideoFrame Creation Benchmark (${1920}x${1080}, 50 frames):`,
+    );
     console.log(`   HTMLCanvasElement → VideoFrame: ${vfBenchmark.html}`);
     console.log(`   OffscreenCanvas → VideoFrame:   ${vfBenchmark.offscreen}`);
 
@@ -362,7 +381,7 @@ async function main() {
 
     // Trigger export via workbench
     const exportStartTime = Date.now();
-    
+
     // Mock file picker to avoid dialog
     await page.evaluate(() => {
       // @ts-ignore
@@ -375,61 +394,81 @@ async function main() {
     });
 
     // Trigger export directly on timegroup (skip workbench to get buffer back)
-    const exportPromise = page.evaluate(async ({ maxDur, benchmark }) => {
-      const timegroup = document.querySelector("ef-timegroup") as any;
-      if (timegroup?.renderToVideo) {
-        try {
-          const exportDuration = timegroup.durationMs;
-          const buffer = await timegroup.renderToVideo({
-            toMs: exportDuration,
-            streaming: false,
-            includeAudio: true,
-            returnBuffer: true,
-            benchmarkMode: benchmark,
-            contentReadyMode: "immediate",
-          });
-          if (buffer) {
-            return { success: true, videoBuffer: Array.from(new Uint8Array(buffer)) };
+    const exportPromise = page.evaluate(
+      async ({ maxDur, benchmark }) => {
+        const timegroup = document.querySelector("ef-timegroup") as any;
+        if (timegroup?.renderToVideo) {
+          try {
+            const exportDuration = timegroup.durationMs;
+            const buffer = await timegroup.renderToVideo({
+              toMs: exportDuration,
+              streaming: false,
+              includeAudio: true,
+              returnBuffer: true,
+              benchmarkMode: benchmark,
+              contentReadyMode: "immediate",
+            });
+            if (buffer) {
+              return {
+                success: true,
+                videoBuffer: Array.from(new Uint8Array(buffer)),
+              };
+            }
+            return { success: true };
+          } catch (e: any) {
+            return {
+              success: false,
+              error: `${e.name}: ${e.message}\n${e.stack}`,
+            };
           }
-          return { success: true };
-        } catch (e: any) {
-          return { success: false, error: `${e.name}: ${e.message}\n${e.stack}` };
         }
-      }
 
-      return { success: false, error: "No export method found" };
-    }, { maxDur: maxDuration, benchmark: benchmarkMode });
+        return { success: false, error: "No export method found" };
+      },
+      { maxDur: maxDuration, benchmark: benchmarkMode },
+    );
 
     // Wait for export with timeout (use 10x the max duration to allow for encoding time)
     const exportTimeout = Math.max(maxDuration * 10, 60000);
     const result = await Promise.race([
       exportPromise,
       new Promise<{ success: false; error: string }>((resolve) =>
-        setTimeout(() => resolve({ success: false, error: "Timeout" }), exportTimeout)
+        setTimeout(
+          () => resolve({ success: false, error: "Timeout" }),
+          exportTimeout,
+        ),
       ),
     ]);
 
     const exportDuration = Date.now() - exportStartTime;
-    console.log(`⏱️  Export completed in ${(exportDuration / 1000).toFixed(2)}s`);
+    console.log(
+      `⏱️  Export completed in ${(exportDuration / 1000).toFixed(2)}s`,
+    );
     console.log(`   Result keys: ${Object.keys(result).join(", ")}`);
     if ((result as any).videoBuffer) {
-      console.log(`   Video buffer size: ${(result as any).videoBuffer.length} bytes`);
+      console.log(
+        `   Video buffer size: ${(result as any).videoBuffer.length} bytes`,
+      );
     }
 
     // Stop profiler and get results
-    const { profile } = await cdp.send("Profiler.stop") as { profile: CPUProfile };
+    const { profile } = (await cdp.send("Profiler.stop")) as {
+      profile: CPUProfile;
+    };
     await cdp.send("Profiler.disable");
 
     // Save raw profile
     const profileJson = JSON.stringify(profile, null, 2);
     fs.writeFileSync(outputPath, profileJson);
     console.log(`\n💾 Profile saved to: ${outputPath}`);
-    console.log(`   Load in Chrome DevTools: chrome://inspect → Open dedicated DevTools → Performance → Load profile`);
+    console.log(
+      `   Load in Chrome DevTools: chrome://inspect → Open dedicated DevTools → Performance → Load profile`,
+    );
 
     // Initialize source map resolver
     sourceMapResolver = new SourceMapResolver(devUrl);
     console.log(`\n🗺️  Resolving source maps...`);
-    
+
     // Pre-fetch source maps for all unique script URLs in the profile
     const scriptUrls = new Set<string>();
     for (const node of profile.nodes) {
@@ -437,7 +476,7 @@ async function main() {
         scriptUrls.add(node.callFrame.url.split("?")[0]); // Strip query params
       }
     }
-    
+
     let resolvedCount = 0;
     for (const url of scriptUrls) {
       const traceMap = await sourceMapResolver.getTraceMap(url);
@@ -448,12 +487,13 @@ async function main() {
     // Analyze and print hotspots
     console.log(`\n📊 Top Hotspots:`);
     const hotspots = await analyzeProfile(profile);
-    
+
     // Filter to our code
-    const ourCode = hotspots.filter(h => 
-      h.url.includes("/elements/") || 
-      h.url.includes("renderTimegroup") ||
-      h.url.includes("preview/")
+    const ourCode = hotspots.filter(
+      (h) =>
+        h.url.includes("/elements/") ||
+        h.url.includes("renderTimegroup") ||
+        h.url.includes("preview/"),
     );
 
     console.log(`\n   === Our Code ===`);
@@ -465,7 +505,7 @@ async function main() {
     if (!result.success) {
       console.warn(`\n⚠️  Export may not have completed: ${result.error}`);
     }
-    
+
     // Save video buffer if returned
     if ((result as any).videoBuffer) {
       const videoPath = path.join(__dirname, "../profile-export-test.mp4");
@@ -473,7 +513,6 @@ async function main() {
       fs.writeFileSync(videoPath, videoBuffer);
       console.log(`\n🎬 Video saved to: ${videoPath}`);
     }
-
   } finally {
     // Close page and context quickly - don't wait for cleanup
     page.close().catch(() => {});
@@ -484,7 +523,7 @@ async function main() {
   }
 
   console.log(`\n✅ Profiling complete!`);
-  
+
   // Force exit immediately - don't wait for any pending cleanup
   process.exit(0);
 }
@@ -505,17 +544,17 @@ function findMonorepoRoot(): string | null {
 
 interface DetailedHotspot {
   functionName: string;
-  file: string;              // Resolved source file (e.g., "renderTimegroupPreview.ts")
-  url: string;               // Original bundled URL
-  line: number;              // Resolved source line
-  column: number;            // Resolved source column
-  bundledLine: number;       // Original bundled line (for debugging)
-  bundledColumn: number;     // Original bundled column
+  file: string; // Resolved source file (e.g., "renderTimegroupPreview.ts")
+  url: string; // Original bundled URL
+  line: number; // Resolved source line
+  column: number; // Resolved source column
+  bundledLine: number; // Original bundled line (for debugging)
+  bundledColumn: number; // Original bundled column
   selfTimeMs: number;
   selfTimePct: number;
   hitCount: number;
   callers: string[];
-  positionTicks: { line: number; ticks: number; resolvedLine?: number }[];  // line is resolved
+  positionTicks: { line: number; ticks: number; resolvedLine?: number }[]; // line is resolved
 }
 
 interface LineTiming {
@@ -533,7 +572,7 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
 }> {
   const nodeMap = new Map<number, ProfileNode>();
   const nodeChildren = new Map<number, number[]>();
-  
+
   for (const node of profile.nodes) {
     nodeMap.set(node.id, node);
     if (node.children) {
@@ -556,12 +595,14 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
   }
 
   // Sample interval in microseconds
-  const sampleIntervalUs = profile.timeDeltas.length > 0
-    ? profile.timeDeltas.reduce((a, b) => a + b, 0) / profile.timeDeltas.length
-    : 1000;
+  const sampleIntervalUs =
+    profile.timeDeltas.length > 0
+      ? profile.timeDeltas.reduce((a, b) => a + b, 0) /
+        profile.timeDeltas.length
+      : 1000;
 
   const totalSamples = profile.samples.length;
-  const totalTimeMs = totalSamples * sampleIntervalUs / 1000;
+  const totalTimeMs = (totalSamples * sampleIntervalUs) / 1000;
 
   // Resolve source locations for all nodes (batch for efficiency)
   const resolvedLocations = new Map<number, ResolvedLocation | null>();
@@ -572,7 +613,7 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
         const resolved = await sourceMapResolver.resolve(
           scriptUrl,
           node.callFrame.lineNumber,
-          node.callFrame.columnNumber
+          node.callFrame.columnNumber,
         );
         resolvedLocations.set(node.id, resolved);
       }
@@ -581,13 +622,14 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
 
   // Build call graph: caller -> callee -> count
   const callGraph = new Map<string, Map<string, number>>();
-  
+
   const getNodeKey = (node: ProfileNode) => {
     const resolved = resolvedLocations.get(node.id);
     if (resolved) {
       return `${node.callFrame.functionName || "(anonymous)"} @ ${resolved.source}:${resolved.line}`;
     }
-    const file = node.callFrame.url?.split("/").slice(-1)[0]?.split("?")[0] || "(native)";
+    const file =
+      node.callFrame.url?.split("/").slice(-1)[0]?.split("?")[0] || "(native)";
     return `${node.callFrame.functionName || "(anonymous)"} @ ${file}:${node.callFrame.lineNumber + 1}`;
   };
 
@@ -597,26 +639,26 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
   for (const sample of profile.samples) {
     let nodeId: number | undefined = sample;
     let childKey: string | undefined;
-    
+
     while (nodeId !== undefined) {
       const node = nodeMap.get(nodeId);
       if (!node) break;
-      
+
       const key = getNodeKey(node);
-      
+
       if (childKey) {
         // Record call edge
         if (!callGraph.has(key)) callGraph.set(key, new Map());
         const edges = callGraph.get(key)!;
         edges.set(childKey, (edges.get(childKey) || 0) + 1);
       }
-      
+
       // Track callers
       if (!callerMap.has(sample)) callerMap.set(sample, new Set());
       if (nodeId !== sample) {
         callerMap.get(sample)!.add(key);
       }
-      
+
       childKey = key;
       nodeId = parentMap.get(nodeId);
     }
@@ -629,15 +671,18 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
     const hitCount = hitCounts.get(node.id) || 0;
     if (hitCount === 0) continue;
 
-    const selfTimeMs = hitCount * sampleIntervalUs / 1000;
+    const selfTimeMs = (hitCount * sampleIntervalUs) / 1000;
     const selfTimePct = (hitCount / totalSamples) * 100;
-    
+
     // Use resolved location if available
     const resolved = resolvedLocations.get(node.id);
-    const file = resolved?.source || node.callFrame.url?.split("/").slice(-1)[0]?.split("?")[0] || "(native)";
-    const line = resolved?.line ?? (node.callFrame.lineNumber + 1);
-    const column = resolved?.column ?? (node.callFrame.columnNumber + 1);
-    
+    const file =
+      resolved?.source ||
+      node.callFrame.url?.split("/").slice(-1)[0]?.split("?")[0] ||
+      "(native)";
+    const line = resolved?.line ?? node.callFrame.lineNumber + 1;
+    const column = resolved?.column ?? node.callFrame.columnNumber + 1;
+
     // Get unique callers
     const callers: string[] = [];
     const callerSet = callerMap.get(node.id);
@@ -646,12 +691,20 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
     }
 
     // Resolve positionTicks line numbers too
-    const resolvedPositionTicks: { line: number; ticks: number; resolvedLine?: number }[] = [];
+    const resolvedPositionTicks: {
+      line: number;
+      ticks: number;
+      resolvedLine?: number;
+    }[] = [];
     if (node.positionTicks && sourceMapResolver && node.callFrame.url) {
       const scriptUrl = node.callFrame.url.split("?")[0];
       for (const pt of node.positionTicks) {
         // positionTicks lines are 1-based in V8, need to convert to 0-based for resolution
-        const resolvedPt = await sourceMapResolver.resolve(scriptUrl, pt.line - 1, 0);
+        const resolvedPt = await sourceMapResolver.resolve(
+          scriptUrl,
+          pt.line - 1,
+          0,
+        );
         resolvedPositionTicks.push({
           line: resolvedPt?.line ?? pt.line,
           ticks: pt.ticks,
@@ -687,7 +740,7 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
 
 async function analyzeProfile(profile: CPUProfile): Promise<HotspotInfo[]> {
   const { hotspots } = await analyzeProfileDetailed(profile);
-  return hotspots.map(h => ({
+  return hotspots.map((h) => ({
     functionName: h.functionName,
     url: h.file,
     line: h.line,
@@ -701,50 +754,66 @@ function printHotspots(hotspots: HotspotInfo[]) {
   for (const h of hotspots) {
     const shortUrl = h.url.split("/").slice(-2).join("/");
     const location = h.url ? `${shortUrl}:${h.line}` : "(native)";
-    console.log(`   ${h.selfTime.toFixed(1).padStart(7)}ms  ${h.functionName.slice(0, 40).padEnd(40)} ${location}`);
+    console.log(
+      `   ${h.selfTime.toFixed(1).padStart(7)}ms  ${h.functionName.slice(0, 40).padEnd(40)} ${location}`,
+    );
   }
 }
 
-async function printDetailedAnalysis(profile: CPUProfile, focusFile: string = "") {
-  const { hotspots, totalTimeMs, sampleIntervalUs } = await analyzeProfileDetailed(profile);
-  
+async function printDetailedAnalysis(
+  profile: CPUProfile,
+  focusFile: string = "",
+) {
+  const { hotspots, totalTimeMs, sampleIntervalUs } =
+    await analyzeProfileDetailed(profile);
+
   console.log(`\n${"=".repeat(80)}`);
   console.log(`DETAILED PROFILE ANALYSIS`);
   console.log(`${"=".repeat(80)}`);
   console.log(`Total profile time: ${totalTimeMs.toFixed(1)}ms`);
   console.log(`Sample interval: ${sampleIntervalUs.toFixed(0)}µs`);
   console.log(`Total samples: ${profile.samples.length}`);
-  
+
   // Filter to our code
-  const ourCode = hotspots.filter(h => 
-    h.file.includes(".ts") && 
-    !h.file.includes("node_modules") &&
-    (h.file.includes("render") || h.file.includes("preview") || h.file.includes("element") || h.file.includes("sync"))
+  const ourCode = hotspots.filter(
+    (h) =>
+      h.file.includes(".ts") &&
+      !h.file.includes("node_modules") &&
+      (h.file.includes("render") ||
+        h.file.includes("preview") ||
+        h.file.includes("element") ||
+        h.file.includes("sync")),
   );
-  
-  const nativeCode = hotspots.filter(h => h.file === "(native)" || !h.file.includes(".ts"));
-  
+
+  const nativeCode = hotspots.filter(
+    (h) => h.file === "(native)" || !h.file.includes(".ts"),
+  );
+
   // Summary by file
   const byFile = new Map<string, number>();
   for (const h of hotspots) {
     byFile.set(h.file, (byFile.get(h.file) || 0) + h.selfTimeMs);
   }
   const sortedFiles = Array.from(byFile.entries()).sort((a, b) => b[1] - a[1]);
-  
+
   console.log(`\n--- TIME BY FILE ---`);
   for (const [file, time] of sortedFiles.slice(0, 15)) {
-    const pct = (time / totalTimeMs * 100).toFixed(1);
-    console.log(`  ${time.toFixed(1).padStart(8)}ms (${pct.padStart(5)}%)  ${file}`);
+    const pct = ((time / totalTimeMs) * 100).toFixed(1);
+    console.log(
+      `  ${time.toFixed(1).padStart(8)}ms (${pct.padStart(5)}%)  ${file}`,
+    );
   }
-  
+
   // LINE-LEVEL PROFILING for focused file or auto-detected hot files
-  const focusedFiles = focusFile 
-    ? hotspots.filter(h => h.file.includes(focusFile) || h.url.includes(focusFile))
-    : ourCode.filter(h => h.selfTimeMs > 50); // Auto-focus on hot functions
-  
+  const focusedFiles = focusFile
+    ? hotspots.filter(
+        (h) => h.file.includes(focusFile) || h.url.includes(focusFile),
+      )
+    : ourCode.filter((h) => h.selfTimeMs > 50); // Auto-focus on hot functions
+
   if (focusedFiles.length > 0) {
     console.log(`\n--- LINE-LEVEL PROFILING ---`);
-    
+
     // Group by file
     const byFileDetailed = new Map<string, DetailedHotspot[]>();
     for (const h of focusedFiles) {
@@ -752,103 +821,134 @@ async function printDetailedAnalysis(profile: CPUProfile, focusFile: string = ""
       if (!byFileDetailed.has(key)) byFileDetailed.set(key, []);
       byFileDetailed.get(key)!.push(h);
     }
-    
+
     for (const [file, fileHotspots] of byFileDetailed) {
       // Aggregate line-level data across all functions in this file
-      const lineData = new Map<number, { ticks: number; functions: string[] }>();
+      const lineData = new Map<
+        number,
+        { ticks: number; functions: string[] }
+      >();
       let fileTotalTicks = 0;
-      
+
       for (const h of fileHotspots) {
         // Add function's own line
         if (h.hitCount > 0) {
-          if (!lineData.has(h.line)) lineData.set(h.line, { ticks: 0, functions: [] });
+          if (!lineData.has(h.line))
+            lineData.set(h.line, { ticks: 0, functions: [] });
           const ld = lineData.get(h.line)!;
           ld.ticks += h.hitCount;
-          if (!ld.functions.includes(h.functionName)) ld.functions.push(h.functionName);
+          if (!ld.functions.includes(h.functionName))
+            ld.functions.push(h.functionName);
           fileTotalTicks += h.hitCount;
         }
-        
+
         // Add positionTicks data (line-level detail within function)
         for (const pt of h.positionTicks) {
-          if (!lineData.has(pt.line)) lineData.set(pt.line, { ticks: 0, functions: [] });
+          if (!lineData.has(pt.line))
+            lineData.set(pt.line, { ticks: 0, functions: [] });
           const ld = lineData.get(pt.line)!;
           ld.ticks += pt.ticks;
-          if (!ld.functions.includes(h.functionName)) ld.functions.push(h.functionName);
+          if (!ld.functions.includes(h.functionName))
+            ld.functions.push(h.functionName);
           fileTotalTicks += pt.ticks;
         }
       }
-      
+
       if (lineData.size === 0) continue;
-      
-      const fileTimeMs = fileTotalTicks * sampleIntervalUs / 1000;
-      const filePct = (fileTimeMs / totalTimeMs * 100).toFixed(1);
+
+      const fileTimeMs = (fileTotalTicks * sampleIntervalUs) / 1000;
+      const filePct = ((fileTimeMs / totalTimeMs) * 100).toFixed(1);
       console.log(`\n  📄 ${file} (${fileTimeMs.toFixed(1)}ms, ${filePct}%)`);
-      
+
       // Sort lines by ticks descending
       const sortedLines = Array.from(lineData.entries())
         .sort((a, b) => b[1].ticks - a[1].ticks)
         .slice(0, 25);
-      
-      console.log(`  ${"Line".padStart(6)}  ${"Time".padStart(8)}  ${"Pct".padStart(6)}  Function/Context`);
-      console.log(`  ${"-".repeat(6)}  ${"-".repeat(8)}  ${"-".repeat(6)}  ${"-".repeat(40)}`);
-      
+
+      console.log(
+        `  ${"Line".padStart(6)}  ${"Time".padStart(8)}  ${"Pct".padStart(6)}  Function/Context`,
+      );
+      console.log(
+        `  ${"-".repeat(6)}  ${"-".repeat(8)}  ${"-".repeat(6)}  ${"-".repeat(40)}`,
+      );
+
       for (const [line, data] of sortedLines) {
-        const lineTimeMs = data.ticks * sampleIntervalUs / 1000;
-        const linePct = (lineTimeMs / totalTimeMs * 100).toFixed(1);
+        const lineTimeMs = (data.ticks * sampleIntervalUs) / 1000;
+        const linePct = ((lineTimeMs / totalTimeMs) * 100).toFixed(1);
         const funcNames = data.functions.slice(0, 2).join(", ");
-        console.log(`  ${String(line).padStart(6)}  ${lineTimeMs.toFixed(1).padStart(7)}ms  ${linePct.padStart(5)}%  ${funcNames}`);
+        console.log(
+          `  ${String(line).padStart(6)}  ${lineTimeMs.toFixed(1).padStart(7)}ms  ${linePct.padStart(5)}%  ${funcNames}`,
+        );
       }
     }
   }
-  
+
   // Detailed hotspots with context
   console.log(`\n--- TOP HOTSPOTS IN OUR CODE (with callers) ---`);
   for (const h of ourCode.slice(0, 20)) {
     const pct = h.selfTimePct.toFixed(1);
-    console.log(`\n  ${h.selfTimeMs.toFixed(1)}ms (${pct}%) - ${h.functionName}`);
+    console.log(
+      `\n  ${h.selfTimeMs.toFixed(1)}ms (${pct}%) - ${h.functionName}`,
+    );
     console.log(`    Location: ${h.file}:${h.line}:${h.column}`);
     if (h.callers.length > 0) {
       console.log(`    Called by: ${h.callers.slice(0, 2).join(", ")}`);
     }
     // Show line-level breakdown if available
     if (h.positionTicks.length > 0) {
-      const sortedTicks = [...h.positionTicks].sort((a, b) => b.ticks - a.ticks).slice(0, 5);
+      const sortedTicks = [...h.positionTicks]
+        .sort((a, b) => b.ticks - a.ticks)
+        .slice(0, 5);
       console.log(`    Hot lines:`);
       for (const pt of sortedTicks) {
-        const lineTimeMs = pt.ticks * sampleIntervalUs / 1000;
-        console.log(`      L${pt.line}: ${lineTimeMs.toFixed(1)}ms (${pt.ticks} samples)`);
+        const lineTimeMs = (pt.ticks * sampleIntervalUs) / 1000;
+        console.log(
+          `      L${pt.line}: ${lineTimeMs.toFixed(1)}ms (${pt.ticks} samples)`,
+        );
       }
     }
   }
-  
+
   // Native API breakdown
   console.log(`\n--- NATIVE API TIME ---`);
   const nativeByName = new Map<string, number>();
   for (const h of nativeCode) {
-    nativeByName.set(h.functionName, (nativeByName.get(h.functionName) || 0) + h.selfTimeMs);
+    nativeByName.set(
+      h.functionName,
+      (nativeByName.get(h.functionName) || 0) + h.selfTimeMs,
+    );
   }
-  const sortedNative = Array.from(nativeByName.entries()).sort((a, b) => b[1] - a[1]);
+  const sortedNative = Array.from(nativeByName.entries()).sort(
+    (a, b) => b[1] - a[1],
+  );
   for (const [name, time] of sortedNative.slice(0, 15)) {
-    const pct = (time / totalTimeMs * 100).toFixed(1);
-    console.log(`  ${time.toFixed(1).padStart(8)}ms (${pct.padStart(5)}%)  ${name}`);
+    const pct = ((time / totalTimeMs) * 100).toFixed(1);
+    console.log(
+      `  ${time.toFixed(1).padStart(8)}ms (${pct.padStart(5)}%)  ${name}`,
+    );
   }
-  
+
   // Actionable summary
   console.log(`\n--- ACTIONABLE OPTIMIZATION TARGETS ---`);
-  
+
   // Find biggest optimization opportunities
-  const opportunities: { description: string; timeMs: number; suggestion: string }[] = [];
-  
+  const opportunities: {
+    description: string;
+    timeMs: number;
+    suggestion: string;
+  }[] = [];
+
   // Check for expensive native calls
   const getAnimationsTime = nativeByName.get("getAnimations") || 0;
   if (getAnimationsTime > 100) {
     opportunities.push({
       description: "getAnimations() calls",
       timeMs: getAnimationsTime,
-      suggestion: "Cache animations or use animation tracking to avoid repeated discovery",
+      suggestion:
+        "Cache animations or use animation tracking to avoid repeated discovery",
     });
   }
-  
+
   const appendChildTime = nativeByName.get("appendChild") || 0;
   const removeChildTime = nativeByName.get("removeChild") || 0;
   if (appendChildTime + removeChildTime > 50) {
@@ -858,7 +958,7 @@ async function printDetailedAnalysis(profile: CPUProfile, focusFile: string = ""
       suggestion: "Reuse DOM elements instead of creating/destroying per frame",
     });
   }
-  
+
   const gcTime = nativeByName.get("(garbage collector)") || 0;
   if (gcTime > 100) {
     opportunities.push({
@@ -867,7 +967,7 @@ async function printDetailedAnalysis(profile: CPUProfile, focusFile: string = ""
       suggestion: "Reduce allocations by reusing objects/arrays",
     });
   }
-  
+
   // Check for hot functions in our code
   for (const h of ourCode.slice(0, 5)) {
     if (h.selfTimeMs > 100) {
@@ -878,18 +978,18 @@ async function printDetailedAnalysis(profile: CPUProfile, focusFile: string = ""
       });
     }
   }
-  
+
   opportunities.sort((a, b) => b.timeMs - a.timeMs);
-  
+
   for (const opp of opportunities) {
     console.log(`\n  🎯 ${opp.description}: ${opp.timeMs.toFixed(1)}ms`);
     console.log(`     → ${opp.suggestion}`);
   }
-  
+
   if (opportunities.length === 0) {
     console.log(`  ✅ No major optimization opportunities found!`);
   }
-  
+
   console.log(`\n${"=".repeat(80)}\n`);
 }
 
@@ -897,4 +997,3 @@ main().catch((error) => {
   console.error("Error:", error);
   process.exit(1);
 });
-

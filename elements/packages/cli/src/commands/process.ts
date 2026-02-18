@@ -18,7 +18,7 @@ program
     // If running from the dev script (via tsx), ORIGINAL_CWD contains the user's actual directory
     const baseCwd = process.env.ORIGINAL_CWD || process.cwd();
     const resolvedDirectory = path.resolve(baseCwd, directory);
-    
+
     const distDir = path.join(resolvedDirectory, "dist");
     await withSpinner("Building\n", async () => {
       spawnSync("npx", ["vite", "build", resolvedDirectory], {

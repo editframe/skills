@@ -32,7 +32,7 @@ export const getLatestMediaEngine = async (
 export const handleMediaEngineComplete = (host: EFMedia): void => {
   host.requestUpdate("intrinsicDurationMs");
   host.requestUpdate("ownCurrentTimeMs");
-  
+
   if (host.rootTimegroup) {
     queueMicrotask(() => {
       host.rootTimegroup?.requestUpdate("ownCurrentTimeMs");

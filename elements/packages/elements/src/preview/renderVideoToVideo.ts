@@ -1,9 +1,9 @@
 /**
  * Direct video-to-video rendering — fast path for single video elements.
- * 
+ *
  * Bypasses the full DOM serialization pipeline (foreignObject/native canvas)
  * by decoding frames directly from the media engine and re-encoding to MP4.
- * 
+ *
  * Supports CSS effects via canvas 2D context:
  * - filter (ctx.filter)
  * - opacity (ctx.globalAlpha)
@@ -80,19 +80,25 @@ async function resolveVideoConfig(
   const intrinsicDurationMs = video.intrinsicDurationMs;
 
   if (!intrinsicDurationMs || intrinsicDurationMs <= 0) {
-    throw new Error("Video has no intrinsic duration. Ensure the media engine is loaded.");
+    throw new Error(
+      "Video has no intrinsic duration. Ensure the media engine is loaded.",
+    );
   }
 
   const effectiveDurationMs = intrinsicDurationMs - trimStartMs - trimEndMs;
   if (effectiveDurationMs <= 0) {
     throw new Error(
       `Invalid trim range: trimStart=${trimStartMs}ms, trimEnd=${trimEndMs}ms, ` +
-      `intrinsicDuration=${intrinsicDurationMs}ms leaves no content.`
+        `intrinsicDuration=${intrinsicDurationMs}ms leaves no content.`,
     );
   }
 
-  const startMs = options.fromMs !== undefined ? Math.max(0, options.fromMs) : 0;
-  const endMs = options.toMs !== undefined ? Math.min(options.toMs, effectiveDurationMs) : effectiveDurationMs;
+  const startMs =
+    options.fromMs !== undefined ? Math.max(0, options.fromMs) : 0;
+  const endMs =
+    options.toMs !== undefined
+      ? Math.min(options.toMs, effectiveDurationMs)
+      : effectiveDurationMs;
   const renderDurationMs = endMs - startMs;
 
   if (renderDurationMs <= 0) {
@@ -104,13 +110,16 @@ async function resolveVideoConfig(
   let width: number;
   let height: number;
 
-  const videoRendition = mediaEngine?.getVideoRendition?.() || (mediaEngine as any)?.videoRendition;
+  const videoRendition =
+    mediaEngine?.getVideoRendition?.() || (mediaEngine as any)?.videoRendition;
   if (videoRendition?.width && videoRendition?.height) {
     width = videoRendition.width;
     height = videoRendition.height;
   } else {
     // Fall back: decode first frame to get dimensions
-    const firstFrame = await video.getVideoFrameAtSourceTime(trimStartMs, { quality: "main" });
+    const firstFrame = await video.getVideoFrameAtSourceTime(trimStartMs, {
+      quality: "main",
+    });
     try {
       width = firstFrame.displayWidth;
       height = firstFrame.displayHeight;
@@ -164,7 +173,10 @@ function isFileSystemAccessSupported(): boolean {
 
 async function getFileWritableStream(
   filename: string,
-): Promise<{ writable: WritableStream<Uint8Array>; close: () => Promise<void> } | null> {
+): Promise<{
+  writable: WritableStream<Uint8Array>;
+  close: () => Promise<void>;
+} | null> {
   if (!isFileSystemAccessSupported()) {
     return null;
   }
@@ -175,7 +187,12 @@ async function getFileWritableStream(
       types: [{ description: "MP4 Video", accept: { "video/mp4": [".mp4"] } }],
     });
     const writable = await fileHandle.createWritable();
-    return { writable, close: async () => { await writable.close(); } };
+    return {
+      writable,
+      close: async () => {
+        await writable.close();
+      },
+    };
   } catch (e) {
     if ((e as Error).name !== "AbortError") {
       logger.warn("[renderVideoToVideo] File System Access failed:", e);
@@ -197,7 +214,11 @@ function downloadBlob(blob: Blob, filename: string): void {
 
 async function selectAudioCodec(
   preferredCodecs: AudioCodec[],
-  encodingOptions: { numberOfChannels: number; sampleRate: number; bitrate: number },
+  encodingOptions: {
+    numberOfChannels: number;
+    sampleRate: number;
+    bitrate: number;
+  },
 ): Promise<AudioCodec> {
   for (const codec of preferredCodecs) {
     try {
@@ -207,7 +228,10 @@ async function selectAudioCodec(
       logger.warn(`[selectAudioCodec] Check failed for ${codec}:`, e);
     }
   }
-  const availableCodecs = await getEncodableAudioCodecs(undefined, encodingOptions);
+  const availableCodecs = await getEncodableAudioCodecs(
+    undefined,
+    encodingOptions,
+  );
   throw new NoSupportedAudioCodecError(preferredCodecs, availableCodecs);
 }
 
@@ -217,7 +241,7 @@ async function selectAudioCodec(
 
 /**
  * Render a single EFVideo element directly to MP4.
- * 
+ *
  * This is the fast path: frames are decoded from the media engine,
  * drawn to an encoding canvas (with CSS filter/opacity applied),
  * and encoded to video. No DOM serialization involved.
@@ -247,9 +271,9 @@ export async function renderVideoToVideo(
 
   logger.debug(
     `[renderVideoToVideo] starting: ${config.totalFrames} frames, ` +
-    `${config.videoWidth}x${config.videoHeight} @ ${config.fps}fps, ` +
-    `trim=[${config.trimStartMs}, -${(video.trimEndMs ?? 0)}], ` +
-    `css: filter=${hasFilter ? cssFilter : "none"}, opacity=${cssOpacity}`
+      `${config.videoWidth}x${config.videoHeight} @ ${config.fps}fps, ` +
+      `trim=[${config.trimStartMs}, -${video.trimEndMs ?? 0}], ` +
+      `css: filter=${hasFilter ? cssFilter : "none"}, opacity=${cssOpacity}`,
   );
 
   // =========================================================================
@@ -259,12 +283,19 @@ export async function renderVideoToVideo(
   let videoSource: CanvasSource | null = null;
   let audioSource: AudioBufferSource | null = null;
   let target: BufferTarget | StreamTarget | null = null;
-  let fileStream: { writable: WritableStream<Uint8Array>; close: () => Promise<void> } | null = null;
+  let fileStream: {
+    writable: WritableStream<Uint8Array>;
+    close: () => Promise<void>;
+  } | null = null;
   let useStreaming = false;
 
-  const encodingCanvas = new OffscreenCanvas(config.videoWidth, config.videoHeight);
-  const encodingCtx = encodingCanvas.getContext("2d",
-    hasFilter || hasOpacity ? { willReadFrequently: true } : undefined
+  const encodingCanvas = new OffscreenCanvas(
+    config.videoWidth,
+    config.videoHeight,
+  );
+  const encodingCtx = encodingCanvas.getContext(
+    "2d",
+    hasFilter || hasOpacity ? { willReadFrequently: true } : undefined,
   );
   if (!encodingCtx) {
     throw new Error("Failed to get encoding canvas context");
@@ -276,7 +307,6 @@ export async function renderVideoToVideo(
   if (hasOpacity) {
     encodingCtx.globalAlpha = cssOpacity;
   }
-
 
   if (options.customWritableStream) {
     target = new StreamTarget(options.customWritableStream as any);
@@ -312,18 +342,21 @@ export async function renderVideoToVideo(
     bitrate: config.bitrate,
     keyFrameInterval: config.keyFrameInterval,
   };
-  
+
   // Use CanvasSource directly - filter and opacity don't require special handling
   videoSource = new CanvasSource(encodingCanvas, videoConfig);
   output.addVideoTrack(videoSource);
 
   if (config.includeAudio) {
     try {
-      const selectedCodec = await selectAudioCodec(config.preferredAudioCodecs, {
-        numberOfChannels: 2,
-        sampleRate: 48000,
-        bitrate: config.audioBitrate,
-      });
+      const selectedCodec = await selectAudioCodec(
+        config.preferredAudioCodecs,
+        {
+          numberOfChannels: 2,
+          sampleRate: 48000,
+          bitrate: config.audioBitrate,
+        },
+      );
       const audioConfig: AudioEncodingConfig = {
         codec: selectedCodec,
         bitrate: config.audioBitrate,
@@ -331,7 +364,10 @@ export async function renderVideoToVideo(
       audioSource = new AudioBufferSource(audioConfig);
       output.addAudioTrack(audioSource);
     } catch (e) {
-      logger.warn("[renderVideoToVideo] Audio codec selection failed, rendering without audio:", e);
+      logger.warn(
+        "[renderVideoToVideo] Audio codec selection failed, rendering without audio:",
+        e,
+      );
     }
   }
 
@@ -363,7 +399,8 @@ export async function renderVideoToVideo(
     for (let frameIndex = 0; frameIndex < config.totalFrames; frameIndex++) {
       checkCancelled();
 
-      const timelineTimeMs = config.startMs + frameIndex * config.frameDurationMs;
+      const timelineTimeMs =
+        config.startMs + frameIndex * config.frameDurationMs;
       const sourceTimeMs = timelineTimeMs + config.trimStartMs;
       const timestampS = (frameIndex * config.frameDurationMs) / 1000;
 
@@ -380,8 +417,14 @@ export async function renderVideoToVideo(
 
         encodingCtx.drawImage(
           videoFrame,
-          0, 0, videoFrame.displayWidth, videoFrame.displayHeight,
-          0, 0, config.videoWidth, config.videoHeight,
+          0,
+          0,
+          videoFrame.displayWidth,
+          videoFrame.displayHeight,
+          0,
+          0,
+          config.videoWidth,
+          config.videoHeight,
         );
 
         totalDrawMs += performance.now() - drawStart;
@@ -395,10 +438,19 @@ export async function renderVideoToVideo(
       totalEncodeMs += performance.now() - encodeStart;
 
       // Render audio in chunks
-      if (audioSource && timelineTimeMs >= lastRenderedAudioEndMs + audioChunkDurationMs) {
-        const chunkEndMs = Math.min(timelineTimeMs + audioChunkDurationMs, config.endMs);
+      if (
+        audioSource &&
+        timelineTimeMs >= lastRenderedAudioEndMs + audioChunkDurationMs
+      ) {
+        const chunkEndMs = Math.min(
+          timelineTimeMs + audioChunkDurationMs,
+          config.endMs,
+        );
         try {
-          const audioBuffer = await video.renderAudio(lastRenderedAudioEndMs, chunkEndMs);
+          const audioBuffer = await video.renderAudio(
+            lastRenderedAudioEndMs,
+            chunkEndMs,
+          );
           if (audioBuffer && audioBuffer.length > 0) {
             await audioSource.add(audioBuffer);
           }
@@ -409,8 +461,18 @@ export async function renderVideoToVideo(
       }
 
       // Progress preview thumbnail
-      if (thumbCanvas && thumbCtx && frameIndex % config.progressPreviewInterval === 0) {
-        thumbCtx.drawImage(encodingCanvas as any, 0, 0, thumbCanvas.width, thumbCanvas.height);
+      if (
+        thumbCanvas &&
+        thumbCtx &&
+        frameIndex % config.progressPreviewInterval === 0
+      ) {
+        thumbCtx.drawImage(
+          encodingCanvas as any,
+          0,
+          0,
+          thumbCanvas.width,
+          thumbCanvas.height,
+        );
       }
 
       // Progress reporting
@@ -439,7 +501,10 @@ export async function renderVideoToVideo(
     // Render remaining audio
     if (audioSource && lastRenderedAudioEndMs < config.endMs) {
       try {
-        const audioBuffer = await video.renderAudio(lastRenderedAudioEndMs, config.endMs);
+        const audioBuffer = await video.renderAudio(
+          lastRenderedAudioEndMs,
+          config.endMs,
+        );
         if (audioBuffer && audioBuffer.length > 0) {
           await audioSource.add(audioBuffer);
         }
@@ -454,8 +519,8 @@ export async function renderVideoToVideo(
     const totalElapsed = performance.now() - renderStartTime;
     logger.debug(
       `[renderVideoToVideo] complete: ${config.totalFrames} frames in ${totalElapsed.toFixed(0)}ms ` +
-      `(seek=${totalSeekMs.toFixed(0)}ms, draw=${totalDrawMs.toFixed(0)}ms, encode=${totalEncodeMs.toFixed(0)}ms) ` +
-      `speed=${(config.renderDurationMs / totalElapsed).toFixed(1)}x`
+        `(seek=${totalSeekMs.toFixed(0)}ms, draw=${totalDrawMs.toFixed(0)}ms, encode=${totalEncodeMs.toFixed(0)}ms) ` +
+        `speed=${(config.renderDurationMs / totalElapsed).toFixed(1)}x`,
     );
 
     await output.finalize();
@@ -480,7 +545,6 @@ export async function renderVideoToVideo(
       downloadBlob(videoBlob, config.filename);
       return undefined;
     }
-
   } catch (error) {
     // Clean up output on failure
     try {

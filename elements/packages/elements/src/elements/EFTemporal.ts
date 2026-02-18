@@ -607,7 +607,7 @@ export const deepGetTemporalElements = (
 const getChildrenIncludingSlotted = (element: Element): Element[] => {
   // If element has shadowRoot with slots, get assigned elements
   if (element.shadowRoot) {
-    const slots = element.shadowRoot.querySelectorAll('slot');
+    const slots = element.shadowRoot.querySelectorAll("slot");
     if (slots.length > 0) {
       const assignedElements: Element[] = [];
       for (const slot of slots) {
@@ -615,18 +615,17 @@ const getChildrenIncludingSlotted = (element: Element): Element[] => {
       }
       // Also include shadow DOM children that aren't slots (for mixed content)
       for (const child of element.shadowRoot.children) {
-        if (child.tagName !== 'SLOT') {
+        if (child.tagName !== "SLOT") {
           assignedElements.push(child);
         }
       }
       return assignedElements;
     }
   }
-  
+
   // Fallback to regular children
   return Array.from(element.children);
 };
-
 
 let temporalCache: Map<Element, TemporalMixinInterface[]>;
 let temporalCacheResetScheduled = false;
@@ -655,7 +654,7 @@ export const shallowGetTemporalElements = (
   }
   // Get children to walk - handle both regular children and slotted content
   const children = getChildrenIncludingSlotted(element);
-  
+
   for (const child of children) {
     if (isEFTemporal(child)) {
       temporals.push(child);
@@ -669,7 +668,7 @@ export const shallowGetTemporalElements = (
 
 export class OwnCurrentTimeController implements ReactiveController {
   #lastKnownTimeMs: number | undefined = undefined;
-  
+
   constructor(
     private host: EFTimegroup,
     private temporal: TemporalMixinInterface & LitElement,
@@ -686,7 +685,7 @@ export class OwnCurrentTimeController implements ReactiveController {
       return; // Time hasn't changed, no need to update children
     }
     this.#lastKnownTimeMs = currentTimeMs;
-    
+
     // Defer update via queueMicrotask to avoid Lit warning about scheduling
     // updates during hostUpdated. Unlike setTimeout(0) this fires as a microtask,
     // so it resolves between await points without yielding a full macrotask turn
@@ -753,7 +752,6 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
           composed: false,
         }),
       );
-
     }
 
     emitContentChange(reason: ContentChangeReason): void {
@@ -776,7 +774,7 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
 
     #parentTimegroup?: EFTimegroup;
     #rootTimegroupLocked = false; // When true, rootTimegroup won't be auto-recalculated
-    
+
     @consume({ context: timegroupContext, subscribe: true })
     set parentTimegroup(value: EFTimegroup | undefined) {
       const oldParent = this.#parentTimegroup;
@@ -807,7 +805,7 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
         }
       }
     }
-    
+
     /**
      * Lock the rootTimegroup to prevent auto-recalculation.
      * Used for render clones where the root must be fixed.
@@ -863,7 +861,8 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       // If there's NO ancestor timegroup, this is a true root → create PlaybackController.
       // If there IS an ancestor, wait for context to propagate (handled by parentTimegroup setter).
       // Note: closest() includes self, so we check from parentElement to find true ancestors.
-      const hasAncestorTimegroup = this.parentElement?.closest('ef-timegroup') != null;
+      const hasAncestorTimegroup =
+        this.parentElement?.closest("ef-timegroup") != null;
 
       if (!hasAncestorTimegroup && !this.playbackController) {
         // True root: no ancestor timegroup in DOM
@@ -1054,9 +1053,14 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       // change (the timeline-to-source mapping is different, so the visible
       // frame changes even though currentTimeMs hasn't).
       // Also render the initial frame when a standalone root becomes ready.
-      const sourceChanged = changedProperties.has("_sourceInMs") || changedProperties.has("_sourceOutMs");
-      const trimChanged = changedProperties.has("_trimStartMs") || changedProperties.has("_trimEndMs");
-      const becameReady = changedProperties.has("contentReadyState") &&
+      const sourceChanged =
+        changedProperties.has("_sourceInMs") ||
+        changedProperties.has("_sourceOutMs");
+      const trimChanged =
+        changedProperties.has("_trimStartMs") ||
+        changedProperties.has("_trimEndMs");
+      const becameReady =
+        changedProperties.has("contentReadyState") &&
         changedProperties.get("contentReadyState") !== "ready" &&
         this.contentReadyState === "ready";
 
@@ -1068,7 +1072,6 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
         }
       }
     }
-
 
     @property({
       type: Number,
@@ -1267,12 +1270,15 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       // 1. Explicitly disabled via attribute (e.g., for render clones)
       // 2. Already exists
       // 3. In headless rendering mode (EF_FRAMEGEN active)
-      const noPlayback = (this as any).hasAttribute?.('data-no-playback-controller');
-      const isRendering = typeof window !== 'undefined' && 'FRAMEGEN_BRIDGE' in window;
+      const noPlayback = (this as any).hasAttribute?.(
+        "data-no-playback-controller",
+      );
+      const isRendering =
+        typeof window !== "undefined" && "FRAMEGEN_BRIDGE" in window;
       if (noPlayback || this.playbackController || isRendering) {
         return;
       }
-      
+
       this.playbackController = new PlaybackController(this as any);
       if (this.#loop) {
         this.playbackController.setLoop(this.#loop);

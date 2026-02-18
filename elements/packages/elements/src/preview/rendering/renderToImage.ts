@@ -4,16 +4,18 @@
  */
 
 import type { RenderContext } from "../RenderContext.js";
-import { serializeToSvgDataUri } from "./renderToImageForeignObject.js";
+import { captureTimelineToDataUri } from "./serializeTimelineDirect.js";
 import { defaultProfiler } from "../RenderProfiler.js";
 
 /**
  * Load an image from a data URI. Returns a Promise that resolves when loaded.
  */
-export function loadImageFromDataUri(dataUri: string): Promise<HTMLImageElement> {
+export function loadImageFromDataUri(
+  dataUri: string,
+): Promise<HTMLImageElement> {
   const img = new Image();
   const imageLoadStart = performance.now();
-  
+
   return new Promise<HTMLImageElement>((resolve, reject) => {
     img.onload = () => {
       defaultProfiler.addTime("imageLoad", performance.now() - imageLoadStart);
@@ -27,12 +29,12 @@ export function loadImageFromDataUri(dataUri: string): Promise<HTMLImageElement>
 /**
  * Render a pre-built clone container to an image WITHOUT cloning it again.
  * This is the fast path for reusing clone structures across frames.
- * 
+ *
  * Key difference from renderToImage:
  * - Does NOT call cloneNode (avoids expensive DOM duplication)
  * - Converts canvases to images in-place, then restores them after serialization
  * - Assumes the container already has refreshed canvas content
- * 
+ *
  * @param container - Pre-built clone container with refreshed canvas content
  * @param width - Output width
  * @param height - Output height
@@ -49,23 +51,19 @@ export async function renderToImageDirect(
   },
 ): Promise<HTMLImageElement> {
   defaultProfiler.incrementRenderCount();
-  
-  // Use common serialization pipeline (modifies in-place, restores after)
-  const { dataUri, restore } = await serializeToSvgDataUri(container, width, height, {
-    inlineImages: true,
-    logEarlyRenders: true,
+
+  const dataUri = await captureTimelineToDataUri(container, width, height, {
     renderContext: options?.renderContext,
-    sourceMap: options?.sourceMap,
     canvasScale: options?.canvasScale ?? 1,
+    timeMs: 0,
   });
-  restore();
-  
+
   // Load as image
   const image = await loadImageFromDataUri(dataUri);
-  
+
   // Log timing breakdown periodically
   defaultProfiler.shouldLogByFrameCount(100);
-  
+
   return image;
 }
 
@@ -80,10 +78,9 @@ export async function prepareFrameDataUri(
   height: number,
 ): Promise<string> {
   defaultProfiler.incrementRenderCount();
-  
-  // Use common serialization pipeline (modifies in-place, restores after)
-  const { dataUri, restore } = await serializeToSvgDataUri(container, width, height);
-  restore();
-  
-  return dataUri;
+
+  return captureTimelineToDataUri(container, width, height, {
+    canvasScale: 1,
+    timeMs: 0,
+  });
 }

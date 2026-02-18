@@ -7,15 +7,17 @@ import { provide } from "@lit/context";
  * Context key for preview mode.
  * Elements can consume this to check if they're in a preview context.
  */
-export const previewContext = createContext<boolean>(Symbol("ef-preview-context"));
+export const previewContext = createContext<boolean>(
+  Symbol("ef-preview-context"),
+);
 
 /**
  * Preview context element.
- * 
+ *
  * Wraps content that should render in "preview mode" - timegroups inside
  * this context will not create workbenches and can be freely manipulated
  * for thumbnail/preview rendering.
- * 
+ *
  * Usage:
  * ```html
  * <ef-preview-context>
@@ -45,4 +47,3 @@ declare global {
     "ef-preview-context": EFPreviewContext;
   }
 }
-

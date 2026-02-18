@@ -41,19 +41,21 @@ interface CaptionOutput {
   }>;
 }
 
-const convertWhisperToEditframeFormat = (whisperData: WhisperOutput): CaptionOutput => {
-  const segments = whisperData.segments.map(segment => ({
+const convertWhisperToEditframeFormat = (
+  whisperData: WhisperOutput,
+): CaptionOutput => {
+  const segments = whisperData.segments.map((segment) => ({
     start: Math.round(segment.start * 1000), // Convert to milliseconds
     end: Math.round(segment.end * 1000),
     text: segment.text.trim(),
   }));
 
-  const word_segments = whisperData.segments.flatMap(segment =>
-    segment.words.map(word => ({
+  const word_segments = whisperData.segments.flatMap((segment) =>
+    segment.words.map((word) => ({
       text: word.text,
       start: Math.round(word.start * 1000), // Convert to milliseconds
       end: Math.round(word.end * 1000),
-    }))
+    })),
   );
 
   return { segments, word_segments };
@@ -63,7 +65,7 @@ export const generateCaptionDataFromPath = async (absolutePath: string) => {
   const command = `whisper_timestamped --language en --efficient --output_format json ${absolutePath}`;
   log(`Running command: ${command}`);
   const { stdout } = await execPromise(command);
-  
+
   try {
     const whisperData = JSON.parse(stdout) as WhisperOutput;
     const captionData = convertWhisperToEditframeFormat(whisperData);

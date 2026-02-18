@@ -1,11 +1,11 @@
 /**
  * This module pre-loads all track components to ensure they're registered before use.
- * 
+ *
  * CRITICAL: This module MUST be imported before any code that:
  * - Uses track components (ef-audio-track, ef-video-track, etc.)
  * - Uses renderTrackChildren (which renders track custom elements)
  * - Dynamically imports sandbox files that use track components
- * 
+ *
  * The import order is critical:
  * 1. TrackItem must be fully initialized first
  * 2. Then all track components can safely extend TrackItem

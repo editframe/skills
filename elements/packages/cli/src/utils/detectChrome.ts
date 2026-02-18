@@ -18,7 +18,8 @@ export function detectChrome(): ChromeDetectionResult {
 
   if (osPlatform === "darwin") {
     // macOS: Check for Google Chrome.app
-    const chromePath = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+    const chromePath =
+      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
     if (existsSync(chromePath)) {
       return { found: true, path: chromePath };
     }
@@ -38,7 +39,9 @@ export function detectChrome(): ChromeDetectionResult {
   if (osPlatform === "linux") {
     // Linux: Try to find chrome/chromium via which
     try {
-      const chromePath = execSync("which google-chrome", { encoding: "utf-8" }).trim();
+      const chromePath = execSync("which google-chrome", {
+        encoding: "utf-8",
+      }).trim();
       if (chromePath && existsSync(chromePath)) {
         return { found: true, path: chromePath };
       }
@@ -47,7 +50,9 @@ export function detectChrome(): ChromeDetectionResult {
     }
 
     try {
-      const chromiumPath = execSync("which chromium", { encoding: "utf-8" }).trim();
+      const chromiumPath = execSync("which chromium", {
+        encoding: "utf-8",
+      }).trim();
       if (chromiumPath && existsSync(chromiumPath)) {
         return { found: true, path: chromiumPath };
       }
@@ -56,7 +61,9 @@ export function detectChrome(): ChromeDetectionResult {
     }
 
     try {
-      const chromiumBrowserPath = execSync("which chromium-browser", { encoding: "utf-8" }).trim();
+      const chromiumBrowserPath = execSync("which chromium-browser", {
+        encoding: "utf-8",
+      }).trim();
       if (chromiumBrowserPath && existsSync(chromiumBrowserPath)) {
         return { found: true, path: chromiumBrowserPath };
       }
@@ -66,16 +73,35 @@ export function detectChrome(): ChromeDetectionResult {
 
     return {
       found: false,
-      error: "Chrome not found. Install with: apt-get install google-chrome-stable",
+      error:
+        "Chrome not found. Install with: apt-get install google-chrome-stable",
     };
   }
 
   if (osPlatform === "win32") {
     // Windows: Check common installation paths
     const possiblePaths = [
-      path.join(process.env.LOCALAPPDATA || "", "Google", "Chrome", "Application", "chrome.exe"),
-      path.join(process.env.PROGRAMFILES || "", "Google", "Chrome", "Application", "chrome.exe"),
-      path.join(process.env["PROGRAMFILES(X86)"] || "", "Google", "Chrome", "Application", "chrome.exe"),
+      path.join(
+        process.env.LOCALAPPDATA || "",
+        "Google",
+        "Chrome",
+        "Application",
+        "chrome.exe",
+      ),
+      path.join(
+        process.env.PROGRAMFILES || "",
+        "Google",
+        "Chrome",
+        "Application",
+        "chrome.exe",
+      ),
+      path.join(
+        process.env["PROGRAMFILES(X86)"] || "",
+        "Google",
+        "Chrome",
+        "Application",
+        "chrome.exe",
+      ),
     ];
 
     for (const chromePath of possiblePaths) {

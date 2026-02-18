@@ -4,5 +4,8 @@ export const EF_RENDERING = () =>
 export const EF_NO_WORKBENCH = () => {
   if (typeof window === "undefined") return false;
   const params = new URLSearchParams(window.location.search);
-  return params.get("noWorkbench") === "true" || params.get("no-workbench") === "true";
+  return (
+    params.get("noWorkbench") === "true" ||
+    params.get("no-workbench") === "true"
+  );
 };

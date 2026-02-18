@@ -49,22 +49,25 @@ export type ControllableElement =
 // This enumeration makes the mental model explicit.
 // ============================================================================
 
-export type ControllableTargetType = "context-provider" | "direct-temporal" | "none";
+export type ControllableTargetType =
+  | "context-provider"
+  | "direct-temporal"
+  | "none";
 
 /**
  * Determines the type of controllable target for subscription purposes.
- * 
+ *
  * - "context-provider": Target is a ContextMixin (like EFPreview) that provides contexts
  * - "direct-temporal": Target is a root temporal element with its own playbackController
  * - "none": Target is not controllable (null, undefined, or nested temporal)
  */
 export function determineTargetType(target: unknown): ControllableTargetType {
   if (!target) return "none";
-  
+
   if (isContextMixin(target)) {
     return "context-provider";
   }
-  
+
   if (isEFTemporal(target)) {
     const temporal = target as TemporalMixinInterface;
     // Only root temporal elements have playbackController
@@ -73,7 +76,7 @@ export function determineTargetType(target: unknown): ControllableTargetType {
       return "direct-temporal";
     }
   }
-  
+
   return "none";
 }
 
@@ -106,14 +109,14 @@ export function createDirectTemporalSubscription(
   callbacks: SubscriptionCallbacks,
 ): ControllableSubscription {
   const controller = target.playbackController!;
-  
+
   // Initial sync - propagate current state immediately
   callbacks.onPlayingChange(controller.playing);
   callbacks.onLoopChange(controller.loop);
   callbacks.onCurrentTimeMsChange(controller.currentTimeMs);
   callbacks.onDurationMsChange(target.durationMs);
   callbacks.onTargetTemporalChange(target);
-  
+
   // Subscribe to playback controller updates
   const listener = (event: PlaybackControllerUpdateEvent) => {
     switch (event.property) {
@@ -129,22 +132,28 @@ export function createDirectTemporalSubscription(
     }
   };
   controller.addListener(listener);
-  
+
   // Watch for duration changes via MutationObserver on duration-affecting attributes
   const durationObserver = new MutationObserver(() => {
     callbacks.onDurationMsChange(target.durationMs);
   });
   durationObserver.observe(target, {
     attributes: true,
-    attributeFilter: ["duration", "trimstart", "trimend", "sourcein", "sourceout"],
+    attributeFilter: [
+      "duration",
+      "trimstart",
+      "trimend",
+      "sourcein",
+      "sourceout",
+    ],
     subtree: true,
   });
-  
+
   // For media elements (ef-video, ef-audio), also watch for intrinsic duration changes
   // The intrinsicDurationMs comes from mediaEngineTask which loads asynchronously
   let lastKnownDuration = target.durationMs;
   let durationPollInterval: ReturnType<typeof setInterval> | null = null;
-  
+
   // If duration is currently 0, poll until it becomes available
   // This handles the case where media hasn't loaded yet
   if (lastKnownDuration === 0) {
@@ -161,7 +170,7 @@ export function createDirectTemporalSubscription(
       }
     }, 100); // Check every 100ms
   }
-  
+
   return {
     unsubscribe: () => {
       controller.removeListener(listener);

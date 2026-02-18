@@ -54,6 +54,7 @@
       "@editframe/react": ["./packages/react/src/index.ts"],
       "@editframe/elements": ["./packages/elements/src/index.ts"],
       "@editframe/elements/node": ["./packages/elements/src/node.ts"],
+      "@editframe/elements/server": ["./packages/elements/src/server.ts"],
       "TEST/*": ["./test/*"]
     }
   },

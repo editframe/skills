@@ -32,13 +32,15 @@ describe("RenderContext", () => {
     test("caches dataURL for element with renderVersion", () => {
       const element = createMockVersionedElement("test-image", 1);
       context.setCachedCanvasDataUrl(element, "data:image/png;base64,abc");
-      expect(context.getCachedCanvasDataUrl(element)).toBe("data:image/png;base64,abc");
+      expect(context.getCachedCanvasDataUrl(element)).toBe(
+        "data:image/png;base64,abc",
+      );
     });
 
     test("returns undefined for different renderVersion", () => {
       const element1 = createMockVersionedElement("test-image", 1);
       context.setCachedCanvasDataUrl(element1, "data:image/png;base64,abc");
-      
+
       // Create element with different version (simulates version change)
       const element2 = createMockVersionedElement("test-image", 2);
       expect(context.getCachedCanvasDataUrl(element2)).toBeUndefined();
@@ -64,7 +66,11 @@ describe("RenderContext", () => {
       const video = document.createElement("div");
       video.id = "test-video";
 
-      const frame = { dataUrl: "data:image/jpeg;base64,xyz", width: 1920, height: 1080 };
+      const frame = {
+        dataUrl: "data:image/jpeg;base64,xyz",
+        width: 1920,
+        height: 1080,
+      };
       context.setCachedVideoFrame(video, 5000, frame);
 
       const cached = context.getCachedVideoFrame(video, 5000);
@@ -75,7 +81,11 @@ describe("RenderContext", () => {
       const video = document.createElement("div");
       video.id = "test-video";
 
-      const frame = { dataUrl: "data:image/jpeg;base64,xyz", width: 1920, height: 1080 };
+      const frame = {
+        dataUrl: "data:image/jpeg;base64,xyz",
+        width: 1920,
+        height: 1080,
+      };
       context.setCachedVideoFrame(video, 5000, frame);
 
       expect(context.getCachedVideoFrame(video, 5001)).toBeUndefined();
@@ -87,21 +97,37 @@ describe("RenderContext", () => {
       const video2 = document.createElement("div");
       video2.id = "video-2";
 
-      const frame1 = { dataUrl: "data:image/jpeg;base64,frame1", width: 1920, height: 1080 };
-      const frame2 = { dataUrl: "data:image/jpeg;base64,frame2", width: 1920, height: 1080 };
+      const frame1 = {
+        dataUrl: "data:image/jpeg;base64,frame1",
+        width: 1920,
+        height: 1080,
+      };
+      const frame2 = {
+        dataUrl: "data:image/jpeg;base64,frame2",
+        width: 1920,
+        height: 1080,
+      };
 
       context.setCachedVideoFrame(video1, 5000, frame1);
       context.setCachedVideoFrame(video2, 5000, frame2);
 
-      expect(context.getCachedVideoFrame(video1, 5000)?.dataUrl).toBe("data:image/jpeg;base64,frame1");
-      expect(context.getCachedVideoFrame(video2, 5000)?.dataUrl).toBe("data:image/jpeg;base64,frame2");
+      expect(context.getCachedVideoFrame(video1, 5000)?.dataUrl).toBe(
+        "data:image/jpeg;base64,frame1",
+      );
+      expect(context.getCachedVideoFrame(video2, 5000)?.dataUrl).toBe(
+        "data:image/jpeg;base64,frame2",
+      );
     });
 
     test("rounds timestamps to nearest ms", () => {
       const video = document.createElement("div");
       video.id = "test-video";
 
-      const frame = { dataUrl: "data:image/jpeg;base64,xyz", width: 1920, height: 1080 };
+      const frame = {
+        dataUrl: "data:image/jpeg;base64,xyz",
+        width: 1920,
+        height: 1080,
+      };
       context.setCachedVideoFrame(video, 5000.4, frame);
 
       // Should find it at rounded value
@@ -118,7 +144,11 @@ describe("RenderContext", () => {
       expect(context.metrics.videoFrameCacheHits).toBe(0);
 
       // Set and hit
-      context.setCachedVideoFrame(video, 5000, { dataUrl: "test", width: 100, height: 100 });
+      context.setCachedVideoFrame(video, 5000, {
+        dataUrl: "test",
+        width: 100,
+        height: 100,
+      });
       context.getCachedVideoFrame(video, 5000);
       expect(context.metrics.videoFrameCacheHits).toBe(1);
     });
@@ -131,7 +161,11 @@ describe("RenderContext", () => {
 
       const video = document.createElement("div");
       video.id = "test-video";
-      context.setCachedVideoFrame(video, 5000, { dataUrl: "test", width: 100, height: 100 });
+      context.setCachedVideoFrame(video, 5000, {
+        dataUrl: "test",
+        width: 100,
+        height: 100,
+      });
 
       expect(context.canvasCacheSize).toBeGreaterThan(0);
       expect(context.videoFrameCacheSize).toBeGreaterThan(0);
@@ -154,7 +188,11 @@ describe("RenderContext", () => {
 
       const video = document.createElement("div");
       video.id = "test-video";
-      context.setCachedVideoFrame(video, 5000, { dataUrl: "test", width: 100, height: 100 });
+      context.setCachedVideoFrame(video, 5000, {
+        dataUrl: "test",
+        width: 100,
+        height: 100,
+      });
       expect(context.getCachedVideoFrame(video, 5000)).toBeUndefined();
     });
 
@@ -187,10 +225,10 @@ describe("RenderContext", () => {
       video.id = "test-video";
 
       for (let i = 0; i < 5; i++) {
-        smallContext.setCachedVideoFrame(video, i * 1000, { 
-          dataUrl: `data:${i}`, 
-          width: 100, 
-          height: 100 
+        smallContext.setCachedVideoFrame(video, i * 1000, {
+          dataUrl: `data:${i}`,
+          width: 100,
+          height: 100,
         });
       }
 

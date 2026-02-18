@@ -185,7 +185,9 @@ describe("EFText", () => {
       expect(spaceSegment).toBeTruthy();
       // Space should not be inside a word wrapper span
       const parentSpan = spaceSegment?.parentElement;
-      const isInWordWrapper = parentSpan?.tagName === "SPAN" && parentSpan?.style.whiteSpace === "nowrap";
+      const isInWordWrapper =
+        parentSpan?.tagName === "SPAN" &&
+        parentSpan?.style.whiteSpace === "nowrap";
       expect(isInWordWrapper).toBe(false);
     });
 
@@ -1446,12 +1448,12 @@ describe("EFText", () => {
       text.textContent = "ONE TWO THREE";
       text.setAttribute("stagger", "100ms");
       text.duration = "3s";
-      
+
       text.style.animationName = "test-fade";
       text.style.animationDuration = "0.4s";
       text.style.animationTimingFunction = "ease-out";
       text.style.animationFillMode = "both";
-      
+
       timegroup.appendChild(text);
       document.body.appendChild(timegroup);
       testElements.push(timegroup);
@@ -1462,7 +1464,9 @@ describe("EFText", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
-      const wordSegments = segments.filter(seg => !/^\s+$/.test(seg.segmentText));
+      const wordSegments = segments.filter(
+        (seg) => !/^\s+$/.test(seg.segmentText),
+      );
       expect(wordSegments.length).toBe(3);
 
       // Each segment should have the animation applied
@@ -1497,7 +1501,7 @@ describe("EFText", () => {
       text.setAttribute("stagger", "50ms");
       text.duration = "3s";
       text.classList.add("slide-anim");
-      
+
       timegroup.appendChild(text);
       document.body.appendChild(timegroup);
       testElements.push(timegroup);
@@ -1531,12 +1535,12 @@ describe("EFText", () => {
       text.textContent = "A B";
       text.setAttribute("stagger", "100ms");
       text.duration = "3s";
-      
+
       text.style.animationName = "test-fade";
       text.style.animationDuration = "0.4s";
       text.style.animationFillMode = "both";
       text.style.animationDelay = "500ms";
-      
+
       timegroup.appendChild(text);
       document.body.appendChild(timegroup);
       testElements.push(timegroup);
@@ -1547,7 +1551,9 @@ describe("EFText", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
-      const wordSegments = segments.filter(seg => !/^\s+$/.test(seg.segmentText));
+      const wordSegments = segments.filter(
+        (seg) => !/^\s+$/.test(seg.segmentText),
+      );
       expect(wordSegments.length).toBe(2);
 
       // Segments should NOT have the parent's animation-delay copied
@@ -1587,7 +1593,7 @@ describe("EFText", () => {
       text.setAttribute("stagger", "80ms");
       text.duration = "3s";
       text.classList.add("fade-anim");
-      
+
       timegroup.appendChild(text);
       document.body.appendChild(timegroup);
       testElements.push(timegroup);
@@ -1599,7 +1605,9 @@ describe("EFText", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
       // Verify initial animation
-      const wordSegments = segments.filter(seg => !/^\s+$/.test(seg.segmentText));
+      const wordSegments = segments.filter(
+        (seg) => !/^\s+$/.test(seg.segmentText),
+      );
       for (const seg of wordSegments) {
         expect(seg.style.animationName).toBe("test-fade");
       }
@@ -1636,7 +1644,7 @@ describe("EFText", () => {
       text.style.animationName = "test-fade";
       text.style.animationDuration = "0.4s";
       text.style.animationFillMode = "both";
-      
+
       timegroup.appendChild(text);
       document.body.appendChild(timegroup);
       testElements.push(timegroup);
@@ -1648,14 +1656,16 @@ describe("EFText", () => {
 
       // Change content
       text.textContent = "NEW CONTENT HERE";
-      
+
       await text.updateComplete;
       segments = await text.whenSegmentsReady();
       await Promise.all(segments.map((seg) => seg.updateComplete));
       await new Promise((resolve) => requestAnimationFrame(resolve));
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
-      const wordSegments = segments.filter(seg => !/^\s+$/.test(seg.segmentText));
+      const wordSegments = segments.filter(
+        (seg) => !/^\s+$/.test(seg.segmentText),
+      );
       expect(wordSegments.length).toBe(3);
 
       // New segments should have the animation
@@ -1671,12 +1681,14 @@ describe("EFText", () => {
     for (const splitMode of ["word", "char", "line"] as const) {
       test(`${splitMode} split produces identical bounding box to unsplit text`, async () => {
         const container = document.createElement("div");
-        container.style.cssText = "position:relative;width:400px;height:300px;font:bold 20px/1.4 sans-serif;";
+        container.style.cssText =
+          "position:relative;width:400px;height:300px;font:bold 20px/1.4 sans-serif;";
 
         // Reference: unsplit ef-text (default split=word but no stagger so no animation)
         const ref = document.createElement("ef-text");
         ref.textContent = "HELLO WORLD TEST";
-        ref.style.cssText = "position:absolute;bottom:16px;left:16px;right:16px;text-align:center;";
+        ref.style.cssText =
+          "position:absolute;bottom:16px;left:16px;right:16px;text-align:center;";
         container.appendChild(ref);
 
         document.body.appendChild(container);
@@ -1691,7 +1703,8 @@ describe("EFText", () => {
         const split = document.createElement("ef-text");
         split.split = splitMode;
         split.textContent = "HELLO WORLD TEST";
-        split.style.cssText = "position:absolute;bottom:16px;left:16px;right:16px;text-align:center;";
+        split.style.cssText =
+          "position:absolute;bottom:16px;left:16px;right:16px;text-align:center;";
         container.appendChild(split);
 
         await split.updateComplete;
@@ -1720,7 +1733,8 @@ describe("EFText", () => {
 
     test("all split modes produce identical layout to each other", async () => {
       const container = document.createElement("div");
-      container.style.cssText = "position:relative;width:400px;height:300px;font:bold 20px/1.4 sans-serif;";
+      container.style.cssText =
+        "position:relative;width:400px;height:300px;font:bold 20px/1.4 sans-serif;";
 
       const modes = ["word", "char", "line"] as const;
       const rects: Record<string, DOMRect> = {};

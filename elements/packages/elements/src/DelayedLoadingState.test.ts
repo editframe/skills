@@ -8,7 +8,13 @@ describe("DelayedLoadingState", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     mockStateChange = vi.fn();
-    delayedLoadingState = new DelayedLoadingState(250, mockStateChange);
+    delayedLoadingState = new DelayedLoadingState(
+      250,
+      mockStateChange as unknown as (
+        isLoading: boolean,
+        message: string,
+      ) => void,
+    );
   });
 
   afterEach(() => {

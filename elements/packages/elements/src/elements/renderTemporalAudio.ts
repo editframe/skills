@@ -40,12 +40,16 @@ export async function renderTemporalAudio(
   }
 
   const mediaElements = host.getMediaElements();
-  logger.debug(`[renderTemporalAudio] Found ${mediaElements.length} media elements, time range: ${fromMs}-${toMs}ms`);
-  
+  logger.debug(
+    `[renderTemporalAudio] Found ${mediaElements.length} media elements, time range: ${fromMs}-${toMs}ms`,
+  );
+
   await Promise.all(
     mediaElements.map(async (mediaElement) => {
-      logger.debug(`[renderTemporalAudio] Checking ${mediaElement.tagName} at ${mediaElement.startTimeMs}-${mediaElement.endTimeMs}ms, mute=${mediaElement.mute}`);
-      
+      logger.debug(
+        `[renderTemporalAudio] Checking ${mediaElement.tagName} at ${mediaElement.startTimeMs}-${mediaElement.endTimeMs}ms, mute=${mediaElement.mute}`,
+      );
+
       if (mediaElement.mute) {
         return;
       }
@@ -54,7 +58,9 @@ export async function renderTemporalAudio(
       const mediaEndsAfterStart = mediaElement.endTimeMs >= fromMs;
       const mediaOverlaps = mediaStartsBeforeEnd && mediaEndsAfterStart;
       if (!mediaOverlaps) {
-        logger.debug(`[renderTemporalAudio] ${mediaElement.tagName} does not overlap`);
+        logger.debug(
+          `[renderTemporalAudio] ${mediaElement.tagName} does not overlap`,
+        );
         return;
       }
 
@@ -75,21 +81,27 @@ export async function renderTemporalAudio(
 
       // Check abort before processing each media element
       signal?.throwIfAborted();
-      
-      logger.debug(`[renderTemporalAudio] Fetching audio for ${mediaElement.tagName} from ${mediaSourceFromMs}-${mediaSourceToMs}ms`);
+
+      logger.debug(
+        `[renderTemporalAudio] Fetching audio for ${mediaElement.tagName} from ${mediaSourceFromMs}-${mediaSourceToMs}ms`,
+      );
       const audio = await mediaElement.fetchAudioSpanningTime(
         mediaSourceFromMs,
         mediaSourceToMs,
         signal,
       );
       if (!audio) {
-        logger.debug(`[renderTemporalAudio] No audio returned for ${mediaElement.tagName}`);
+        logger.debug(
+          `[renderTemporalAudio] No audio returned for ${mediaElement.tagName}`,
+        );
         return;
       }
-      logger.debug(`[renderTemporalAudio] Got audio blob size: ${audio.blob.size}, range: ${audio.startMs}-${audio.endMs}ms`);
+      logger.debug(
+        `[renderTemporalAudio] Got audio blob size: ${audio.blob.size}, range: ${audio.startMs}-${audio.endMs}ms`,
+      );
 
       const bufferSource = audioContext.createBufferSource();
-      
+
       // Decode audio data with error handling for invalid/incomplete audio
       let decodedBuffer;
       try {
@@ -102,13 +114,15 @@ export async function renderTemporalAudio(
       } catch (decodeError) {
         // Unable to decode audio data - skip this segment silently
         // This can happen with corrupted/incomplete audio segments
-        if (decodeError instanceof Error && 
-            decodeError.message.includes("Unable to decode audio data")) {
+        if (
+          decodeError instanceof Error &&
+          decodeError.message.includes("Unable to decode audio data")
+        ) {
           return;
         }
         throw decodeError;
       }
-      
+
       bufferSource.buffer = decodedBuffer;
       bufferSource.connect(audioContext.destination);
 

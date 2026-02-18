@@ -77,7 +77,7 @@ export interface FrameState {
   /**
    * Rendering priority hint. Lower numbers render first.
    * Used to order render calls for elements with dependencies.
-   * 
+   *
    * Standard priorities:
    * - PRIORITY_VIDEO (1): Video elements
    * - PRIORITY_CAPTIONS (2): Caption overlays
@@ -121,7 +121,9 @@ export interface FrameRenderable {
 /**
  * Type guard to check if an element implements FrameRenderable.
  */
-export function isFrameRenderable(element: unknown): element is FrameRenderable {
+export function isFrameRenderable(
+  element: unknown,
+): element is FrameRenderable {
   return (
     typeof element === "object" &&
     element !== null &&
@@ -202,7 +204,7 @@ export class FrameController {
    */
   async renderFrame(
     timeMs: number,
-    options: RenderFrameOptions = {}
+    options: RenderFrameOptions = {},
   ): Promise<void> {
     const { waitForLitUpdate = true, onAnimationsUpdate } = options;
 
@@ -239,12 +241,14 @@ export class FrameController {
 
       const tPrepare = performance.now();
       const elementsNeedingPreparation = elements.filter(
-        (el) => el.getFrameState(timeMs).needsPreparation
+        (el) => el.getFrameState(timeMs).needsPreparation,
       );
 
       if (elementsNeedingPreparation.length > 0) {
         await Promise.all(
-          elementsNeedingPreparation.map((el) => el.prepareFrame(timeMs, signal))
+          elementsNeedingPreparation.map((el) =>
+            el.prepareFrame(timeMs, signal),
+          ),
         );
         signal.throwIfAborted();
       }
@@ -252,7 +256,8 @@ export class FrameController {
 
       const tRender = performance.now();
       const sortedElements = [...elements].sort(
-        (a, b) => a.getFrameState(timeMs).priority - b.getFrameState(timeMs).priority
+        (a, b) =>
+          a.getFrameState(timeMs).priority - b.getFrameState(timeMs).priority,
       );
 
       for (const element of sortedElements) {
@@ -275,7 +280,9 @@ export class FrameController {
 
       if (this.#frameCount % 60 === 0) {
         const n = this.#frameCount;
-        console.debug(`[FrameController] ${n} frames avg: query=${(this.#totalQueryMs/n).toFixed(1)}ms(${elements.length}els) prepare=${(this.#totalPrepareMs/n).toFixed(1)}ms(${elementsNeedingPreparation.length}prep) render=${(this.#totalRenderMs/n).toFixed(1)}ms anims=${(this.#totalAnimsMs/n).toFixed(1)}ms`);
+        console.debug(
+          `[FrameController] ${n} frames avg: query=${(this.#totalQueryMs / n).toFixed(1)}ms(${elements.length}els) prepare=${(this.#totalPrepareMs / n).toFixed(1)}ms(${elementsNeedingPreparation.length}prep) render=${(this.#totalRenderMs / n).toFixed(1)}ms anims=${(this.#totalAnimsMs / n).toFixed(1)}ms`,
+        );
         this.#frameCount = 0;
         this.#totalQueryMs = 0;
         this.#totalPrepareMs = 0;
@@ -302,12 +309,12 @@ export class FrameController {
   /**
    * Query all visible FrameRenderable elements in the tree.
    * Uses temporal visibility to filter out elements not visible at current time.
-   * 
+   *
    * IMPORTANT: For temporal elements, we use temporal visibility (startTimeMs/endTimeMs)
    * instead of CSS visibility. This is because updateAnimations sets display:none on
    * elements outside their time range, but that CSS state is from the PREVIOUS frame.
    * When seeking, we need to evaluate visibility based on the NEW time, not stale CSS.
-   * 
+   *
    * @param timeMs - The time to use for visibility checks. This should be the target
    *                 render time, not read from root element (which may be stale).
    */
@@ -319,19 +326,21 @@ export class FrameController {
       // For temporal elements (ef-timegroup, ef-video, etc.), use temporal visibility
       // instead of CSS visibility. CSS display:none may be stale from previous frame.
       const isTemporal = "startTimeMs" in element && "endTimeMs" in element;
-      
+
       if (isTemporal) {
         // Temporal element: check time-based visibility
         // Use exclusive end (< not <=) to avoid overlap at boundaries
-        const startMs = (element as { startTimeMs?: number }).startTimeMs ?? -Infinity;
+        const startMs =
+          (element as { startTimeMs?: number }).startTimeMs ?? -Infinity;
         const endMs = (element as { endTimeMs?: number }).endTimeMs ?? Infinity;
-        const isTemporallyVisible = currentTimeMs >= startMs && currentTimeMs < endMs;
-        
+        const isTemporallyVisible =
+          currentTimeMs >= startMs && currentTimeMs < endMs;
+
         if (!isTemporallyVisible) {
           // Skip this element AND its children (children's times are relative to parent)
           return;
         }
-        
+
         // Element is temporally visible - include if it implements FrameRenderable
         if (isFrameRenderable(element)) {
           result.push(element);
@@ -341,7 +350,10 @@ export class FrameController {
         // Skip getComputedStyle — it forces synchronous style recalc and is
         // unnecessary because FrameRenderable elements are always temporal.
         // We only walk non-temporal elements to reach temporal children.
-        if (element instanceof HTMLElement && element.style.display === "none") {
+        if (
+          element instanceof HTMLElement &&
+          element.style.display === "none"
+        ) {
           return;
         }
 
@@ -369,7 +381,7 @@ export class FrameController {
   #getChildrenIncludingSlotted(element: Element): Iterable<Element> {
     // If element has shadowRoot with slots, get assigned elements
     if (element.shadowRoot) {
-      const slots = element.shadowRoot.querySelectorAll('slot');
+      const slots = element.shadowRoot.querySelectorAll("slot");
       if (slots.length > 0) {
         const assignedElements: Element[] = [];
         for (const slot of slots) {
@@ -377,7 +389,7 @@ export class FrameController {
         }
         // Also include shadow DOM children that aren't slots (for mixed content)
         for (const child of element.shadowRoot.children) {
-          if (child.tagName !== 'SLOT') {
+          if (child.tagName !== "SLOT") {
             assignedElements.push(child);
           }
         }
@@ -411,9 +423,9 @@ export const DEFAULT_FRAME_STATE: FrameState = {
  * Helper to create a FrameRenderable mixin for elements.
  * Provides default implementations that can be overridden.
  */
-export function createFrameRenderableMixin<T extends { new (...args: any[]): HTMLElement }>(
-  Base: T
-) {
+export function createFrameRenderableMixin<
+  T extends { new (...args: any[]): HTMLElement },
+>(Base: T) {
   return class FrameRenderableMixin extends Base implements FrameRenderable {
     getFrameState(_timeMs: number): FrameState {
       return DEFAULT_FRAME_STATE;
@@ -428,4 +440,3 @@ export function createFrameRenderableMixin<T extends { new (...args: any[]): HTM
     }
   };
 }
-

@@ -3,10 +3,10 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import debug from 'debug';
+import debug from "debug";
 import { TEST_SERVER_PORT } from "./constants.js";
 
-const log = debug('ef:recordReplayProxyPlugin');
+const log = debug("ef:recordReplayProxyPlugin");
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = join(__dirname, "__cache__");
@@ -125,9 +125,7 @@ export function recordReplayProxyPlugin() {
             responseHeaders["content-length"] = body.length.toString();
           }
 
-          log(
-            `[Proxy] ✓ Rewrote cached URLs: ${originalHost} → ${proxyHost}`,
-          );
+          log(`[Proxy] ✓ Rewrote cached URLs: ${originalHost} → ${proxyHost}`);
         } catch (error) {
           console.warn(
             `[Proxy] Failed to rewrite cached URLs: ${error.message}`,
@@ -260,9 +258,7 @@ export function recordReplayProxyPlugin() {
         try {
           const metadataFile = join(cacheDir, "metadata.json");
           if (existsSync(metadataFile)) {
-            log(
-              `[Proxy] ✓ CACHE-ONLY: Serving from cache: ${cacheKey}`,
-            );
+            log(`[Proxy] ✓ CACHE-ONLY: Serving from cache: ${cacheKey}`);
             await serveCachedResponse(res, cacheDir, req);
             return;
           }
@@ -342,9 +338,7 @@ export function recordReplayProxyPlugin() {
                 responseHeaders["content-length"] = body.length.toString();
               }
 
-              log(
-                `[Proxy] ✓ Rewrote URLs: ${originalHost} → ${proxyHost}`,
-              );
+              log(`[Proxy] ✓ Rewrote URLs: ${originalHost} → ${proxyHost}`);
             } catch (error) {
               console.warn(`[Proxy] Failed to rewrite URLs: ${error.message}`);
               // Continue with original body on error
@@ -404,9 +398,7 @@ export function recordReplayProxyPlugin() {
                 const metadata = JSON.parse(
                   await readFile(metadataFile, "utf-8"),
                 );
-                log(
-                  `[Proxy] ✓ Serving from cache (${metadata.timestamp})`,
-                );
+                log(`[Proxy] ✓ Serving from cache (${metadata.timestamp})`);
                 await serveCachedResponse(res, cacheDir, req);
                 return;
               }

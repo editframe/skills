@@ -33,7 +33,11 @@ interface VitePluginEditframeOptions {
 /**
  * Parse a data URL and return the buffer, mime type, and file extension.
  */
-function parseDataUrl(dataUrl: string): { buffer: Buffer; mimeType: string; extension: string } {
+function parseDataUrl(dataUrl: string): {
+  buffer: Buffer;
+  mimeType: string;
+  extension: string;
+} {
   const matches = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
   if (!matches) {
     throw new Error("Invalid data URL format");
@@ -41,7 +45,7 @@ function parseDataUrl(dataUrl: string): { buffer: Buffer; mimeType: string; exte
   const mimeType = matches[1]!;
   const base64Data = matches[2]!;
   const buffer = Buffer.from(base64Data, "base64");
-  
+
   // Determine file extension from mime type
   let extension = "png";
   if (mimeType === "image/jpeg" || mimeType === "image/jpg") {
@@ -49,7 +53,7 @@ function parseDataUrl(dataUrl: string): { buffer: Buffer; mimeType: string; exte
   } else if (mimeType === "image/webp") {
     extension = "webp";
   }
-  
+
   return { buffer, mimeType, extension };
 }
 
@@ -64,7 +68,11 @@ function getSnapshotDir(root: string, testName: string): string {
 /**
  * Get snapshot file paths for a given test and snapshot name.
  */
-function getSnapshotPaths(root: string, testName: string, snapshotName: string) {
+function getSnapshotPaths(
+  root: string,
+  testName: string,
+  snapshotName: string,
+) {
   const dir = getSnapshotDir(root, testName);
   return {
     dir,
@@ -110,45 +118,51 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
       ) => {
         const log = debug("ef:vite-plugin:assets");
         const reqUrl = req.url || "";
-        
+
         if (!reqUrl.startsWith("/api/v1/assets/local/")) {
           return next();
         }
-        
+
         const url = new URL(reqUrl, `http://${req.headers.host}`);
         const urlPath = url.pathname;
         const src = url.searchParams.get("src");
-        
+
         if (!src) {
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "src parameter is required" }));
           return;
         }
-        
+
         // Resolve src to absolute file path
         const absolutePath = src.startsWith("http")
           ? src
           : path.join(options.root, src).replace("dist/", "src/");
-        
+
         log(`Handling local assets API: ${urlPath} for ${absolutePath}`);
-        
+
         try {
           // Handle /api/v1/assets/local/captions - captions/transcriptions
           if (urlPath === "/api/v1/assets/local/captions") {
             log(`Serving captions for ${absolutePath}`);
-            const taskResult = await findOrCreateCaptions(options.cacheRoot, absolutePath);
+            const taskResult = await findOrCreateCaptions(
+              options.cacheRoot,
+              absolutePath,
+            );
             sendTaskResult(req, res, taskResult);
             return;
           }
-          
+
           // Handle /api/v1/assets/local/image - cached images
           if (urlPath === "/api/v1/assets/local/image") {
             log(`Serving image for ${absolutePath}`);
-            const taskResult = await cacheImage(options.cacheRoot, absolutePath);
+            const taskResult = await cacheImage(
+              options.cacheRoot,
+              absolutePath,
+            );
             sendTaskResult(req, res, taskResult);
             return;
           }
-          
+
           // Unknown endpoint
           res.writeHead(404, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Unknown assets endpoint" }));
@@ -173,39 +187,51 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
       ) => {
         const log = debug("ef:vite-plugin:isobmff");
         const reqUrl = req.url || "";
-        
-        if (!reqUrl.startsWith("/api/v1/files/local/") && !reqUrl.startsWith("/api/v1/isobmff_files/local/")) {
+
+        if (
+          !reqUrl.startsWith("/api/v1/files/local/") &&
+          !reqUrl.startsWith("/api/v1/isobmff_files/local/")
+        ) {
           return next();
         }
-        
+
         const url = new URL(reqUrl, `http://${req.headers.host}`);
         const urlPath = url.pathname;
         const src = url.searchParams.get("src");
-        
+
         if (!src) {
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "src parameter is required" }));
           return;
         }
-        
+
         // Resolve src to absolute file path
         const absolutePath = src.startsWith("http")
           ? src
           : path.join(options.root, src).replace("dist/", "src/");
-        
+
         log(`Handling local isobmff API: ${urlPath} for ${absolutePath}`);
-        
+
         try {
           // Handle /api/v1/files/local/index or /api/v1/isobmff_files/local/index - fragment index
-          if (urlPath === "/api/v1/files/local/index" || urlPath === "/api/v1/isobmff_files/local/index") {
+          if (
+            urlPath === "/api/v1/files/local/index" ||
+            urlPath === "/api/v1/isobmff_files/local/index"
+          ) {
             log(`Serving track fragment index for ${absolutePath}`);
-            const taskResult = await generateTrackFragmentIndex(options.cacheRoot, absolutePath);
+            const taskResult = await generateTrackFragmentIndex(
+              options.cacheRoot,
+              absolutePath,
+            );
             sendTaskResult(req, res, taskResult);
             return;
           }
-          
+
           // Handle /api/v1/files/local/md5 or /api/v1/isobmff_files/local/md5 - get MD5 hash for a file
-          if (urlPath === "/api/v1/files/local/md5" || urlPath === "/api/v1/isobmff_files/local/md5") {
+          if (
+            urlPath === "/api/v1/files/local/md5" ||
+            urlPath === "/api/v1/isobmff_files/local/md5"
+          ) {
             log(`Getting MD5 for ${absolutePath}`);
             try {
               const md5 = await md5FilePath(absolutePath);
@@ -222,36 +248,50 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
             }
             return;
           }
-          
+
           // Handle /api/v1/files/local/track or /api/v1/isobmff_files/local/track - track segments
-          if (urlPath === "/api/v1/files/local/track" || urlPath === "/api/v1/isobmff_files/local/track") {
+          if (
+            urlPath === "/api/v1/files/local/track" ||
+            urlPath === "/api/v1/isobmff_files/local/track"
+          ) {
             const trackIdStr = url.searchParams.get("trackId");
             const segmentIdStr = url.searchParams.get("segmentId");
-            
+
             if (!trackIdStr) {
               res.writeHead(400, { "Content-Type": "application/json" });
-              res.end(JSON.stringify({ error: "trackId parameter is required" }));
+              res.end(
+                JSON.stringify({ error: "trackId parameter is required" }),
+              );
               return;
             }
-            
+
             const trackId = parseInt(trackIdStr, 10);
-            
+
             // For scrub track (trackId -1), use generateScrubTrack
             if (trackId === -1) {
               log(`Serving scrub track for ${absolutePath}`);
-              const taskResult = await generateScrubTrack(options.cacheRoot, absolutePath);
+              const taskResult = await generateScrubTrack(
+                options.cacheRoot,
+                absolutePath,
+              );
               sendTaskResult(req, res, taskResult);
               return;
             }
-            
+
             // For regular tracks, use generateTrack
-            log(`Serving track ${trackId} segment ${segmentIdStr || "all"} for ${absolutePath}`);
+            log(
+              `Serving track ${trackId} segment ${segmentIdStr || "all"} for ${absolutePath}`,
+            );
             const trackUrl = `/@ef-track/${src}?trackId=${trackId}${segmentIdStr ? `&segmentId=${segmentIdStr}` : ""}`;
-            const taskResult = await generateTrack(options.cacheRoot, absolutePath, trackUrl);
+            const taskResult = await generateTrack(
+              options.cacheRoot,
+              absolutePath,
+              trackUrl,
+            );
             sendTaskResult(req, res, taskResult);
             return;
           }
-          
+
           // Unknown endpoint
           res.writeHead(404, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Unknown isobmff endpoint" }));
@@ -320,13 +360,19 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                 }
                 if (error.code === "ENOTEMPTY" && attempt < maxRetries - 1) {
                   // Wait a bit and retry
-                  await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1)));
+                  await new Promise((resolve) =>
+                    setTimeout(resolve, 100 * (attempt + 1)),
+                  );
                   continue;
                 }
                 // Log but don't fail - cache clearing is best-effort
-                log(`Warning: Cache clear attempt ${attempt + 1} failed: ${error.message}`);
+                log(
+                  `Warning: Cache clear attempt ${attempt + 1} failed: ${error.message}`,
+                );
                 if (attempt === maxRetries - 1) {
-                  log(`Cache clear failed after ${maxRetries} attempts, continuing anyway`);
+                  log(
+                    `Cache clear failed after ${maxRetries} attempts, continuing anyway`,
+                  );
                 }
               }
             }
@@ -488,7 +534,11 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
               }>(req);
 
               const { testName, snapshotName, dataUrl, isBaseline } = body;
-              const paths = getSnapshotPaths(options.root, testName, snapshotName);
+              const paths = getSnapshotPaths(
+                options.root,
+                testName,
+                snapshotName,
+              );
 
               // Ensure directory exists
               await mkdir(paths.dir, { recursive: true });
@@ -534,7 +584,11 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                 acceptableDiffPercentage = 1.0,
               } = body;
 
-              const paths = getSnapshotPaths(options.root, testName, snapshotName);
+              const paths = getSnapshotPaths(
+                options.root,
+                testName,
+                snapshotName,
+              );
 
               // Ensure directory exists
               await mkdir(paths.dir, { recursive: true });
@@ -550,10 +604,12 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                 await writeFile(paths.baseline, buffer);
                 log(`Created baseline at ${paths.baseline}`);
                 res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({
-                  match: true,
-                  baselineCreated: true,
-                }));
+                res.end(
+                  JSON.stringify({
+                    match: true,
+                    baselineCreated: true,
+                  }),
+                );
                 break;
               }
 
@@ -571,34 +627,44 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
 
               if (result.match) {
                 res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({
-                  match: true,
-                  diffCount: 0,
-                  diffPercentage: 0,
-                }));
+                res.end(
+                  JSON.stringify({
+                    match: true,
+                    diffCount: 0,
+                    diffPercentage: 0,
+                  }),
+                );
               } else if (result.reason === "pixel-diff") {
                 const diffPercentage = result.diffPercentage ?? 0;
                 const match = diffPercentage <= acceptableDiffPercentage;
-                log(`Diff: ${result.diffCount} pixels (${diffPercentage.toFixed(2)}%), match: ${match}`);
+                log(
+                  `Diff: ${result.diffCount} pixels (${diffPercentage.toFixed(2)}%), match: ${match}`,
+                );
                 res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({
-                  match,
-                  diffCount: result.diffCount,
-                  diffPercentage,
-                }));
+                res.end(
+                  JSON.stringify({
+                    match,
+                    diffCount: result.diffCount,
+                    diffPercentage,
+                  }),
+                );
               } else if (result.reason === "layout-diff") {
                 log(`Layout diff detected`);
                 res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({
-                  match: false,
-                  error: "Images have different dimensions",
-                }));
+                res.end(
+                  JSON.stringify({
+                    match: false,
+                    error: "Images have different dimensions",
+                  }),
+                );
               } else {
                 res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({
-                  match: false,
-                  error: `Comparison failed: ${result.reason}`,
-                }));
+                res.end(
+                  JSON.stringify({
+                    match: false,
+                    error: `Comparison failed: ${result.reason}`,
+                  }),
+                );
               }
             } catch (error) {
               log(`Error comparing snapshot: ${error}`);
@@ -661,33 +727,43 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
 
               if (result.match) {
                 res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({
-                  match: true,
-                  diffCount: 0,
-                  diffPercentage: 0,
-                }));
+                res.end(
+                  JSON.stringify({
+                    match: true,
+                    diffCount: 0,
+                    diffPercentage: 0,
+                  }),
+                );
               } else if (result.reason === "pixel-diff") {
                 const diffPercentage = result.diffPercentage ?? 0;
                 const match = diffPercentage <= acceptableDiffPercentage;
-                log(`Diff: ${result.diffCount} pixels (${diffPercentage.toFixed(2)}%), match: ${match}`);
+                log(
+                  `Diff: ${result.diffCount} pixels (${diffPercentage.toFixed(2)}%), match: ${match}`,
+                );
                 res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({
-                  match,
-                  diffCount: result.diffCount,
-                  diffPercentage,
-                }));
+                res.end(
+                  JSON.stringify({
+                    match,
+                    diffCount: result.diffCount,
+                    diffPercentage,
+                  }),
+                );
               } else if (result.reason === "layout-diff") {
                 res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({
-                  match: false,
-                  error: "Images have different dimensions",
-                }));
+                res.end(
+                  JSON.stringify({
+                    match: false,
+                    error: "Images have different dimensions",
+                  }),
+                );
               } else {
                 res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({
-                  match: false,
-                  error: `Comparison failed: ${result.reason}`,
-                }));
+                res.end(
+                  JSON.stringify({
+                    match: false,
+                    error: `Comparison failed: ${result.reason}`,
+                  }),
+                );
               }
             } catch (error) {
               log(`Error comparing images: ${error}`);

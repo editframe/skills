@@ -46,7 +46,7 @@ export async function inlineImages(container: HTMLElement): Promise<void> {
       const blob = await response.blob();
       const dataUrl = await blobToDataURL(blob);
       image.setAttribute("src", dataUrl);
-      
+
       // Evict oldest entries if cache is full (simple FIFO eviction)
       if (_inlineImageCache.size >= MAX_INLINE_IMAGE_CACHE_SIZE) {
         const firstKey = _inlineImageCache.keys().next().value;

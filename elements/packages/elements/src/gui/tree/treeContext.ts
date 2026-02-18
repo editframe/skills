@@ -58,7 +58,7 @@ export const treeContext = createContext<TreeContext>("ef-tree-context");
  */
 export function collectAllIds(items: TreeItem[]): Set<string> {
   const ids = new Set<string>();
-  
+
   function traverse(item: TreeItem) {
     ids.add(item.id);
     if (item.children) {
@@ -67,10 +67,10 @@ export function collectAllIds(items: TreeItem[]): Set<string> {
       }
     }
   }
-  
+
   for (const item of items) {
     traverse(item);
   }
-  
+
   return ids;
 }

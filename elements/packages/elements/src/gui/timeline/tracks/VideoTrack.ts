@@ -8,10 +8,7 @@ import { EFVideo } from "../../../elements/EFVideo.js";
 // TrackItem must be pre-loaded before this module is imported
 // See preloadTracks.ts for the initialization sequence
 import { TrackItem } from "./TrackItem.js";
-import {
-  extractWaveformData,
-  type WaveformData,
-} from "./waveformUtils.js";
+import { extractWaveformData, type WaveformData } from "./waveformUtils.js";
 import {
   timelineStateContext,
   type TimelineState,
@@ -150,7 +147,8 @@ export class EFVideoTrack extends TrackItem {
 
     // Calculate visible region
     const visibleLeftPx = scrollLeft - VIRTUAL_RENDER_PADDING_PX;
-    const visibleRightPx = scrollLeft + viewportWidth + VIRTUAL_RENDER_PADDING_PX;
+    const visibleRightPx =
+      scrollLeft + viewportWidth + VIRTUAL_RENDER_PADDING_PX;
     const trackEndPx = trackStartPx + trackWidthPx;
 
     // Check visibility
@@ -162,7 +160,10 @@ export class EFVideoTrack extends TrackItem {
 
     // Calculate visible portion within track
     const visibleStartInTrack = Math.max(0, visibleLeftPx - trackStartPx);
-    const visibleEndInTrack = Math.min(trackWidthPx, visibleRightPx - trackStartPx);
+    const visibleEndInTrack = Math.min(
+      trackWidthPx,
+      visibleRightPx - trackStartPx,
+    );
     const visibleWidthPx = visibleEndInTrack - visibleStartInTrack;
 
     if (visibleWidthPx <= 0) return;
@@ -194,7 +195,14 @@ export class EFVideoTrack extends TrackItem {
     const timeEndMs = sourceInMs + visibleEndInTrack / pixelsPerMs;
 
     // Draw waveform in dedicated section
-    this.#drawAudioWaveform(ctx, waveformData, visibleWidthPx, height, timeStartMs, timeEndMs);
+    this.#drawAudioWaveform(
+      ctx,
+      waveformData,
+      visibleWidthPx,
+      height,
+      timeStartMs,
+      timeEndMs,
+    );
   }
 
   #drawAudioWaveform(
@@ -214,11 +222,13 @@ export class EFVideoTrack extends TrackItem {
     if (sampleCount <= 0 || width <= 0) return;
 
     const centerY = height / 2;
-    const halfHeight = (height / 2) - 1;
+    const halfHeight = height / 2 - 1;
     const pixelsPerSample = width / sampleCount;
 
     // Draw filled waveform
-    ctx.fillStyle = getComputedStyle(this).getPropertyValue("--ef-color-success").trim() || "rgb(74, 222, 128)";
+    ctx.fillStyle =
+      getComputedStyle(this).getPropertyValue("--ef-color-success").trim() ||
+      "rgb(74, 222, 128)";
     ctx.globalAlpha = 0.9;
     ctx.beginPath();
 
@@ -257,7 +267,9 @@ export class EFVideoTrack extends TrackItem {
 
     // Draw center line
     ctx.globalAlpha = 0.3;
-    ctx.strokeStyle = getComputedStyle(this).getPropertyValue("--ef-color-success").trim() || "rgb(74, 222, 128)";
+    ctx.strokeStyle =
+      getComputedStyle(this).getPropertyValue("--ef-color-success").trim() ||
+      "rgb(74, 222, 128)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(0, centerY);
@@ -285,7 +297,10 @@ export class EFVideoTrack extends TrackItem {
       this.#checkAndLoadAudioWaveform();
     }
 
-    if (changedProperties.has("_timelineState") || changedProperties.has("_waveformData")) {
+    if (
+      changedProperties.has("_timelineState") ||
+      changedProperties.has("_waveformData")
+    ) {
       this.#scheduleRender();
     }
 
@@ -322,7 +337,7 @@ export class EFVideoTrack extends TrackItem {
     const hasAudioSection = this._hasAudio && this._waveformData;
 
     const typeColor = this.getElementTypeColor();
-    
+
     return html`<div style=${styleMap(this.gutterStyles)}>
       <div
         ?data-focused=${this.isFocused}
@@ -359,11 +374,12 @@ export class EFVideoTrack extends TrackItem {
                 pixels-per-ms=${this.pixelsPerMs}
               ></ef-thumbnail-strip>
             </div>
-            ${hasAudioSection
-              ? html`<div class="audio-section">
+            ${
+              hasAudioSection
+                ? html`<div class="audio-section">
                   <canvas ${ref(this.audioCanvasRef)} class="audio-section-canvas"></canvas>
                 </div>`
-              : nothing
+                : nothing
             }
           </div>
           ${

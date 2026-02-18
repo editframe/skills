@@ -35,7 +35,8 @@ export class EFTimeDisplay extends TargetOrContextMixin(LitElement, efContext) {
 
   get effectiveCurrentTimeMs(): number {
     if (!Number.isNaN(this.currentTimeMs)) return this.currentTimeMs;
-    if (!Number.isNaN(this.contextCurrentTimeMs)) return this.contextCurrentTimeMs;
+    if (!Number.isNaN(this.contextCurrentTimeMs))
+      return this.contextCurrentTimeMs;
     return 0;
   }
 

@@ -13,11 +13,7 @@ import {
   type UnprocessedFileUploadDetails,
   uploadUnprocessedReadableStream,
 } from "./resources/unprocessed-file.js";
-import {
-  createFile,
-  type FileType,
-  uploadFile,
-} from "./resources/file.js";
+import { createFile, type FileType, uploadFile } from "./resources/file.js";
 
 export { createReadableStreamFromReadable } from "./utils/createReadableStreamFromReadable.js";
 
@@ -127,9 +123,8 @@ export const upload = async (client: Client, filePath: string) => {
 
   const { createReadStream } = await import("node:fs");
   const readStream = createReadStream(filePath);
-  const { createReadableStreamFromReadable } = await import(
-    "./utils/createReadableStreamFromReadable.ts"
-  );
+  const { createReadableStreamFromReadable } =
+    await import("./utils/createReadableStreamFromReadable.ts");
 
   const uploadIterator = uploadFile(
     client,

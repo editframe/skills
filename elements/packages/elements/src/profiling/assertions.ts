@@ -14,7 +14,7 @@ import { findHotspot } from "./analyzer.js";
  */
 export function checkProfileAssertions(
   hotspots: HotspotInfo[],
-  assertions: ProfileAssertion[]
+  assertions: ProfileAssertion[],
 ): ProfileAssertionResult[] {
   const results: ProfileAssertionResult[] = [];
 
@@ -23,7 +23,11 @@ export function checkProfileAssertions(
     let message = "";
     let actual: ProfileAssertionResult["actual"] = {};
 
-    const hotspot = findHotspot(hotspots, assertion.functionName, assertion.fileName);
+    const hotspot = findHotspot(
+      hotspots,
+      assertion.functionName,
+      assertion.fileName,
+    );
 
     switch (assertion.type) {
       case "topHotspot": {
@@ -127,14 +131,18 @@ export function checkProfileAssertions(
 /**
  * Check if all assertions passed
  */
-export function allAssertionsPassed(results: ProfileAssertionResult[]): boolean {
+export function allAssertionsPassed(
+  results: ProfileAssertionResult[],
+): boolean {
   return results.every((r) => r.passed);
 }
 
 /**
  * Format assertion results for console output
  */
-export function formatAssertionResults(results: ProfileAssertionResult[]): string {
+export function formatAssertionResults(
+  results: ProfileAssertionResult[],
+): string {
   const lines: string[] = [];
   const passed = results.filter((r) => r.passed).length;
   const failed = results.length - passed;
@@ -145,7 +153,7 @@ export function formatAssertionResults(results: ProfileAssertionResult[]): strin
   for (const result of results) {
     const status = result.passed ? "✓" : "✗";
     lines.push(`${status} ${result.message}`);
-    
+
     if (!result.passed && result.actual) {
       const actualStr = Object.entries(result.actual)
         .map(([key, value]) => `${key}: ${value}`)

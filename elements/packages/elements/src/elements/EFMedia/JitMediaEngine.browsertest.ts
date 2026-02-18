@@ -154,5 +154,4 @@ describe.skip("JitMediaEngine", () => {
       mediaSegment: `${expectedApiHost}/api/v1/transcode/{rendition}/{segmentId}.m4s?url=http%3A%2F%2Fweb%3A3000%2Fhead-moov-480p.mp4`,
     });
   });
-
 });

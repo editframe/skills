@@ -49,11 +49,11 @@ export class WorkerPool {
       try {
         // Create worker from URL (typically a blob URL from inlined worker code)
         const worker = new Worker(this.workerUrl, { type: "module" });
-        
+
         // Test if worker is responding - cleanup handler after confirmation
         let testTimeout: number | null = null;
         let testHandler: ((event: MessageEvent) => void) | null = null;
-        
+
         const cleanupTest = () => {
           if (testTimeout !== null) {
             clearTimeout(testTimeout);
@@ -64,19 +64,23 @@ export class WorkerPool {
             testHandler = null;
           }
         };
-        
+
         testTimeout = window.setTimeout(() => {
           cleanupTest();
         }, WORKER_INIT_TEST_TIMEOUT_MS);
-        
+
         testHandler = (event: MessageEvent) => {
           // Check if this is a test response (worker startup message)
-          if (event.data && typeof event.data === "string" && event.data.includes("encoderWorker")) {
+          if (
+            event.data &&
+            typeof event.data === "string" &&
+            event.data.includes("encoderWorker")
+          ) {
             cleanupTest();
           }
         };
         worker.addEventListener("message", testHandler);
-        
+
         worker.onerror = (error) => {
           cleanupTest();
           logger.error(`[WorkerPool] Worker ${i} error:`, {
@@ -92,11 +96,16 @@ export class WorkerPool {
         this.workers.push(worker);
         this.availableWorkers.push(worker);
       } catch (error) {
-        logger.error(`[WorkerPool] Failed to create worker ${i}:`, error instanceof Error ? error.message : String(error));
+        logger.error(
+          `[WorkerPool] Failed to create worker ${i}:`,
+          error instanceof Error ? error.message : String(error),
+        );
       }
     }
     if (this.workers.length === 0) {
-      logger.error(`[WorkerPool] Failed to create any workers. URL: ${this.workerUrl}`);
+      logger.error(
+        `[WorkerPool] Failed to create any workers. URL: ${this.workerUrl}`,
+      );
       logger.error(`[WorkerPool] Browser support check:`, {
         Worker: typeof Worker !== "undefined",
         OffscreenCanvas: typeof OffscreenCanvas !== "undefined",
@@ -117,9 +126,7 @@ export class WorkerPool {
    */
   isAvailable(): boolean {
     return (
-      this.hasBrowserSupport() &&
-      this.workers.length > 0 &&
-      !this.isTerminated
+      this.hasBrowserSupport() && this.workers.length > 0 && !this.isTerminated
     );
   }
 
@@ -137,10 +144,10 @@ export class WorkerPool {
     }
 
     return new Promise<T>((resolve, reject) => {
-      this.taskQueue.push({ 
-        resolve: resolve as (value: unknown) => void, 
-        reject, 
-        task 
+      this.taskQueue.push({
+        resolve: resolve as (value: unknown) => void,
+        reject,
+        task,
       });
       this.processQueue();
     });
@@ -151,7 +158,7 @@ export class WorkerPool {
     while (this.availableWorkers.length > 0 && this.taskQueue.length > 0) {
       const worker = this.availableWorkers.shift();
       const queuedTask = this.taskQueue.shift();
-      
+
       if (!worker || !queuedTask) {
         // Safety check - should not happen but prevents crashes
         break;

@@ -385,12 +385,15 @@ export class EFHierarchy extends TWMixin(LitElement) {
     super.updated(changedProperties);
 
     // Re-initialize when target changes
-    if (changedProperties.has("targetElement") || changedProperties.has("target")) {
+    if (
+      changedProperties.has("targetElement") ||
+      changedProperties.has("target")
+    ) {
       this.initializeExpandedState();
       this.removeSelectionListener();
       this.selectionChangeHandler = undefined;
       this.setupSelectionListener();
-      
+
       // Auto-select first root timegroup if nothing is selected
       this.autoSelectFirstRootTimegroup();
     }

@@ -60,7 +60,7 @@ let cachedBlobUrl: string | null = null;
 /**
  * Creates a blob URL for the encoder worker.
  * The blob URL is cached so multiple calls return the same URL.
- * 
+ *
  * @returns The blob URL that can be passed to `new Worker(url, { type: "module" })`
  */
 export function getEncoderWorkerUrl(): string {

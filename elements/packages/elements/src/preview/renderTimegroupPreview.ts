@@ -3,7 +3,7 @@
  * Canvas pixels must be explicitly cleared and redrawn in syncNodeStyles
  * to ensure video frames are captured correctly during foreignObject rendering.
  * Without clearRect, stale frames from previous seeks may be serialized.
- * 
+ *
  * See FOREIGNOBJECT_BUG_FIX.md for detailed explanation.
  */
 
@@ -26,46 +26,100 @@ const SKIP_TAGS = new Set([
  * All CSS properties to sync (camelCase for style[] access).
  */
 const SYNC_PROPERTIES = [
-  "display", "visibility", "opacity",
-  "position", "top", "right", "bottom", "left", "zIndex",
-  "width", "height", "minWidth", "minHeight", "maxWidth", "maxHeight",
-  "flexGrow", "flexShrink", "flexBasis", "flexDirection", "flexWrap",
-  "justifyContent", "alignItems", "alignContent", "alignSelf", "gap",
-  "gridTemplate", "gridColumn", "gridRow", "gridArea",
-  "margin", "padding", "boxSizing",
-  "border", "borderTop", "borderRight", "borderBottom", "borderLeft", "borderRadius",
-  "background", "color", "boxShadow", "filter", "backdropFilter", "clipPath",
-  "fontFamily", "fontSize", "fontWeight", "fontStyle", "fontVariant",
-  "textAlign", "textDecoration", "textTransform",
-  "letterSpacing", "wordSpacing", "whiteSpace", "textOverflow", "lineHeight",
+  "display",
+  "visibility",
+  "opacity",
+  "position",
+  "top",
+  "right",
+  "bottom",
+  "left",
+  "zIndex",
+  "width",
+  "height",
+  "minWidth",
+  "minHeight",
+  "maxWidth",
+  "maxHeight",
+  "flexGrow",
+  "flexShrink",
+  "flexBasis",
+  "flexDirection",
+  "flexWrap",
+  "justifyContent",
+  "alignItems",
+  "alignContent",
+  "alignSelf",
+  "gap",
+  "gridTemplate",
+  "gridColumn",
+  "gridRow",
+  "gridArea",
+  "margin",
+  "padding",
+  "boxSizing",
+  "border",
+  "borderTop",
+  "borderRight",
+  "borderBottom",
+  "borderLeft",
+  "borderRadius",
+  "background",
+  "color",
+  "boxShadow",
+  "filter",
+  "backdropFilter",
+  "clipPath",
+  "fontFamily",
+  "fontSize",
+  "fontWeight",
+  "fontStyle",
+  "fontVariant",
+  "textAlign",
+  "textDecoration",
+  "textTransform",
+  "letterSpacing",
+  "wordSpacing",
+  "whiteSpace",
+  "textOverflow",
+  "lineHeight",
   "verticalAlign",
-  "transform", "transformOrigin", "transformStyle",
-  "perspective", "perspectiveOrigin", "backfaceVisibility",
-  "cursor", "pointerEvents", "userSelect", "overflow",
+  "transform",
+  "transformOrigin",
+  "transformStyle",
+  "perspective",
+  "perspectiveOrigin",
+  "backfaceVisibility",
+  "cursor",
+  "pointerEvents",
+  "userSelect",
+  "overflow",
 ] as const;
 
 /**
  * Kebab-case versions for computedStyleMap.get() - pre-computed for speed.
  */
-const SYNC_PROPERTIES_KEBAB = SYNC_PROPERTIES.map(prop =>
-  prop.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`)
+const SYNC_PROPERTIES_KEBAB = SYNC_PROPERTIES.map((prop) =>
+  prop.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`),
 );
 
 /**
  * Feature detection: computedStyleMap is ~15% faster for style syncing.
  */
-const HAS_COMPUTED_STYLE_MAP = typeof Element !== "undefined" && typeof Element.prototype.computedStyleMap === "function";
+const HAS_COMPUTED_STYLE_MAP =
+  typeof Element !== "undefined" &&
+  typeof Element.prototype.computedStyleMap === "function";
 
 /**
  * CSS initial/default values for SAFE-TO-SKIP properties.
  * Only includes NON-INHERITED properties where skipping the default
  * won't affect visual output.
- * 
+ *
  * EXCLUDED (must always serialize):
  * - Inherited properties (color, font, text-*, visibility, cursor)
  * - Display (affects layout significantly)
  * - Properties where "auto" computes to a specific value
- * 
+ *
  * INCLUDED (safe to skip):
  * - Transform/filter effects (none = no effect)
  * - Box shadows (none = no shadow)
@@ -78,7 +132,7 @@ const CSS_SAFE_DEFAULT_VALUES: Record<string, string | string[]> = {
   filter: "none",
   backdropFilter: "none",
   boxShadow: "none",
-  
+
   // Borders - safe to skip when none/0
   border: ["none", "0px none", "0px", "0px none rgb(0, 0, 0)"],
   borderTop: ["none", "0px none", "0px", "0px none rgb(0, 0, 0)"],
@@ -86,13 +140,13 @@ const CSS_SAFE_DEFAULT_VALUES: Record<string, string | string[]> = {
   borderBottom: ["none", "0px none", "0px", "0px none rgb(0, 0, 0)"],
   borderLeft: ["none", "0px none", "0px", "0px none rgb(0, 0, 0)"],
   borderRadius: ["0px", "0"],
-  
+
   // Positioning - safe to skip "static"
   position: "static",
-  
+
   // Z-index - "auto" is safe when position is static
   zIndex: "auto",
-  
+
   // 3D transforms - safe to skip defaults
   transformStyle: "flat",
   perspective: "none",
@@ -121,14 +175,14 @@ function isDefaultValue(prop: string, value: string): boolean {
  */
 function resolveNaturalDisplay(element: Element): string {
   const htmlEl = element as HTMLElement;
-  const inlineDisplay = htmlEl.style?.getPropertyValue('display');
-  if (inlineDisplay === 'none' && htmlEl.style) {
-    htmlEl.style.removeProperty('display');
-    const natural = getComputedStyle(element).getPropertyValue('display');
-    htmlEl.style.setProperty('display', 'none');
-    return natural || 'block';
+  const inlineDisplay = htmlEl.style?.getPropertyValue("display");
+  if (inlineDisplay === "none" && htmlEl.style) {
+    htmlEl.style.removeProperty("display");
+    const natural = getComputedStyle(element).getPropertyValue("display");
+    htmlEl.style.setProperty("display", "none");
+    return natural || "block";
   }
-  return 'block';
+  return "block";
 }
 
 // Re-export temporal types from shared module
@@ -140,9 +194,7 @@ export {
 } from "./previewTypes.js";
 
 // Import for internal use
-import {
-  getTemporalBounds,
-} from "./previewTypes.js";
+import { getTemporalBounds } from "./previewTypes.js";
 
 /**
  * Tree node representing a source/clone pair with children.
@@ -167,7 +219,7 @@ export interface CloneTree {
 /** Sync state with tree structure and delta tracking */
 export interface SyncState {
   tree: CloneTree;
-  nodeCount: number;  // Total number of nodes (for debugging/logging)
+  nodeCount: number; // Total number of nodes (for debugging/logging)
   /** Maps clone canvases to their original source elements (ef-video, ef-image, etc.) */
   canvasSourceMap: WeakMap<HTMLCanvasElement, Element>;
   /** Previous frame's visible set for delta tracking */
@@ -186,21 +238,23 @@ interface RemovedNodeInfo {
 /**
  * Remove hidden nodes from the clone DOM for serialization.
  * Returns info needed to restore them afterward.
- * 
+ *
  * This physically removes non-visible nodes so they won't be serialized,
  * avoiding the cost of serializing hidden elements and their resources.
  */
-export function removeHiddenNodesForSerialization(state: SyncState): RemovedNodeInfo[] {
+export function removeHiddenNodesForSerialization(
+  state: SyncState,
+): RemovedNodeInfo[] {
   const removed: RemovedNodeInfo[] = [];
   const visibleSet = state.currentVisibleSet;
-  
+
   // Traverse all nodes and remove those not in visible set
   function visit(node: CloneNode): void {
     // First recurse to children (before potentially removing this node)
     for (const child of node.children) {
       visit(child);
     }
-    
+
     // If this node isn't visible, remove it from DOM
     if (!visibleSet.has(node)) {
       const parent = node.clone.parentNode;
@@ -211,11 +265,11 @@ export function removeHiddenNodesForSerialization(state: SyncState): RemovedNode
       }
     }
   }
-  
+
   if (state.tree.root) {
     visit(state.tree.root);
   }
-  
+
   return removed;
 }
 
@@ -252,7 +306,10 @@ export function getVisibleCanvases(state: SyncState): Set<HTMLCanvasElement> {
 /**
  * Traverse all nodes in the clone tree, calling the callback for each.
  */
-export function traverseCloneTree(state: SyncState, callback: (node: CloneNode) => void): void {
+export function traverseCloneTree(
+  state: SyncState,
+  callback: (node: CloneNode) => void,
+): void {
   function visit(node: CloneNode): void {
     callback(node);
     for (const child of node.children) {
@@ -266,10 +323,10 @@ export function traverseCloneTree(state: SyncState, callback: (node: CloneNode) 
 
 /**
  * Unified CSS property sync for all elements (canvas clones and regular elements).
- * 
+ *
  * Canvas clones use a limited property set matching the original implementation
  * to avoid dimension/layout issues. Regular elements use the full SYNC_PROPERTIES array.
- * 
+ *
  * @param source - Source element to read styles from
  * @param clone - Clone element to write styles to
  * @param contentSource - Optional content element for width/height (canvas clones only)
@@ -282,15 +339,17 @@ function syncElementStyles(
   const cloneStyle = clone.style as any;
   const tagName = (source as HTMLElement).tagName;
   const isCanvasClone = !!contentSource;
-  
+
   // Canvas clones: Use exact property list from original implementation
   if (isCanvasClone) {
     let cs: CSSStyleDeclaration;
-    
+
     try {
       cs = getComputedStyle(source);
-    } catch { return; }
-    
+    } catch {
+      return;
+    }
+
     // Exact properties from original copyCanvasCloneStyles + syncNodeStyles
     cloneStyle.position = cs.position;
     cloneStyle.top = cs.top;
@@ -305,84 +364,92 @@ function syncElementStyles(
     cloneStyle.visibility = cs.visibility;
     cloneStyle.backfaceVisibility = cs.backfaceVisibility;
     cloneStyle.transformStyle = cs.transformStyle;
-    
+
     // Visual properties (safe for canvas clones - don't affect dimensions)
     cloneStyle.background = cs.background;
     cloneStyle.color = cs.color;
     cloneStyle.boxShadow = cs.boxShadow;
     cloneStyle.filter = cs.filter;
     cloneStyle.backdropFilter = cs.backdropFilter;
-    
+
     // Width/height from canvas buffer dimensions to preserve aspect ratio
     // Use the clone's canvas buffer dimensions directly, not computed styles from shadow content
     if (clone instanceof HTMLCanvasElement) {
       cloneStyle.width = `${clone.width}px`;
       cloneStyle.height = `${clone.height}px`;
-      
+
       // DIAGNOSTIC: Log what CSS dimensions we're setting
       if ((source as HTMLElement).tagName === "EF-IMAGE") {
-        console.log("[ASPECT_DIAG] syncElementStyles:", JSON.stringify({
-          tag: (source as HTMLElement).tagName,
-          canvasBuffer: {
-            width: clone.width,
-            height: clone.height,
-          },
-          cssBeingSet: {
-            width: cloneStyle.width,
-            height: cloneStyle.height,
-          },
-          hostComputed: {
-            width: cs.width,
-            height: cs.height,
-          }
-        }));
+        console.log(
+          "[ASPECT_DIAG] syncElementStyles:",
+          JSON.stringify({
+            tag: (source as HTMLElement).tagName,
+            canvasBuffer: {
+              width: clone.width,
+              height: clone.height,
+            },
+            cssBeingSet: {
+              width: cloneStyle.width,
+              height: cloneStyle.height,
+            },
+            hostComputed: {
+              width: cs.width,
+              height: cs.height,
+            },
+          }),
+        );
       }
     }
-    
+
     cloneStyle.display = "block";
     cloneStyle.animation = "none";
     cloneStyle.transition = "none";
-    
+
     return;
   }
-  
+
   // Regular elements: full property sync from SYNC_PROPERTIES
   const propLen = SYNC_PROPERTIES.length;
-  
+
   if (HAS_COMPUTED_STYLE_MAP) {
     let srcMap: StylePropertyMapReadOnly;
-    
+
     try {
       srcMap = source.computedStyleMap();
-    } catch { return; }
-    
+    } catch {
+      return;
+    }
+
     for (let j = 0; j < propLen; j++) {
       const kebab = SYNC_PROPERTIES_KEBAB[j]!;
       const camel = SYNC_PROPERTIES[j]!;
-      
+
       const srcVal = srcMap.get(kebab);
       if (!srcVal) continue;
-      
+
       const strVal = srcVal.toString();
-      
+
       if (camel === "display") {
         // For caption child elements, preserve display:none when explicitly set
         // (they use it to hide empty content, not for temporal visibility)
-        const isCaptionChild = tagName && (
-          tagName === 'EF-CAPTIONS-ACTIVE-WORD' ||
-          tagName === 'EF-CAPTIONS-BEFORE-ACTIVE-WORD' ||
-          tagName === 'EF-CAPTIONS-AFTER-ACTIVE-WORD' ||
-          tagName === 'EF-CAPTIONS-SEGMENT'
-        );
-        const targetDisplay = (strVal === "none" && !isCaptionChild) ? resolveNaturalDisplay(source) : strVal;
+        const isCaptionChild =
+          tagName &&
+          (tagName === "EF-CAPTIONS-ACTIVE-WORD" ||
+            tagName === "EF-CAPTIONS-BEFORE-ACTIVE-WORD" ||
+            tagName === "EF-CAPTIONS-AFTER-ACTIVE-WORD" ||
+            tagName === "EF-CAPTIONS-SEGMENT");
+        const targetDisplay =
+          strVal === "none" && !isCaptionChild
+            ? resolveNaturalDisplay(source)
+            : strVal;
         cloneStyle.display = targetDisplay;
         continue;
       }
-      
+
       // Skip clipPath - clones always have clipPath: none for rendering
       // (source may have clip-path: inset(100%) from proxy mode)
       if (camel === "clipPath") continue;
-      
+
       // OPTIMIZATION: Skip default values to reduce serialized HTML size
       // If the computed value is the CSS default, don't set it as inline style
       if (isDefaultValue(camel, strVal)) {
@@ -390,50 +457,55 @@ function syncElementStyles(
         if (cloneStyle[camel]) cloneStyle[camel] = "";
         continue;
       }
-      
+
       cloneStyle[camel] = strVal;
     }
   } else {
     let cs: CSSStyleDeclaration;
-    
+
     try {
       cs = getComputedStyle(source);
-    } catch { return; }
-    
+    } catch {
+      return;
+    }
+
     const srcStyle = cs as any;
-    
+
     for (const prop of SYNC_PROPERTIES) {
       const srcVal = srcStyle[prop];
       if (!srcVal) continue;
-      
+
       if (prop === "display") {
         // For caption child elements, preserve display:none when explicitly set
         // (they use it to hide empty content, not for temporal visibility)
-        const isCaptionChild = tagName && (
-          tagName === 'EF-CAPTIONS-ACTIVE-WORD' ||
-          tagName === 'EF-CAPTIONS-BEFORE-ACTIVE-WORD' ||
-          tagName === 'EF-CAPTIONS-AFTER-ACTIVE-WORD' ||
-          tagName === 'EF-CAPTIONS-SEGMENT'
-        );
-        const targetDisplay = (srcVal === "none" && !isCaptionChild) ? resolveNaturalDisplay(source) : srcVal;
+        const isCaptionChild =
+          tagName &&
+          (tagName === "EF-CAPTIONS-ACTIVE-WORD" ||
+            tagName === "EF-CAPTIONS-BEFORE-ACTIVE-WORD" ||
+            tagName === "EF-CAPTIONS-AFTER-ACTIVE-WORD" ||
+            tagName === "EF-CAPTIONS-SEGMENT");
+        const targetDisplay =
+          srcVal === "none" && !isCaptionChild
+            ? resolveNaturalDisplay(source)
+            : srcVal;
         cloneStyle.display = targetDisplay;
         continue;
       }
-      
+
       // Skip clipPath - clones always have clipPath: none for rendering
       // (source may have clip-path: inset(100%) from proxy mode)
       if (prop === "clipPath") continue;
-      
+
       // OPTIMIZATION: Skip default values to reduce serialized HTML size
       if (isDefaultValue(prop, srcVal)) {
         if (cloneStyle[prop]) cloneStyle[prop] = "";
         continue;
       }
-      
+
       cloneStyle[prop] = srcVal;
     }
   }
-  
+
   // Disable animations/transitions to prevent re-animation
   cloneStyle.animation = "none";
   cloneStyle.transition = "none";
@@ -448,12 +520,13 @@ function refreshCanvasPixels(node: CloneNode): void {
   const canvas = clone as HTMLCanvasElement;
   const shadowCanvas = source.shadowRoot?.querySelector("canvas");
   const shadowImg = source.shadowRoot?.querySelector("img");
-  
+
   if (shadowCanvas) {
     // Update buffer dimensions if needed
     if (canvas.width !== shadowCanvas.width) canvas.width = shadowCanvas.width;
-    if (canvas.height !== shadowCanvas.height) canvas.height = shadowCanvas.height;
-    
+    if (canvas.height !== shadowCanvas.height)
+      canvas.height = shadowCanvas.height;
+
     // Copy pixels with explicit clear
     const ctx = canvas.getContext("2d");
     if (ctx && shadowCanvas.width > 0 && shadowCanvas.height > 0) {
@@ -466,14 +539,18 @@ function refreshCanvasPixels(node: CloneNode): void {
     }
   } else if (shadowImg?.complete && shadowImg.naturalWidth > 0) {
     // Update buffer dimensions if needed
-    if (canvas.width !== shadowImg.naturalWidth) canvas.width = shadowImg.naturalWidth;
-    if (canvas.height !== shadowImg.naturalHeight) canvas.height = shadowImg.naturalHeight;
-    
+    if (canvas.width !== shadowImg.naturalWidth)
+      canvas.width = shadowImg.naturalWidth;
+    if (canvas.height !== shadowImg.naturalHeight)
+      canvas.height = shadowImg.naturalHeight;
+
     // Copy pixels with explicit clear
     const ctx = canvas.getContext("2d");
     if (ctx) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      try { ctx.drawImage(shadowImg, 0, 0); } catch {}
+      try {
+        ctx.drawImage(shadowImg, 0, 0);
+      } catch {}
     }
   }
 }
@@ -486,10 +563,11 @@ function syncTextContent(source: Element, clone: HTMLElement): void {
   if (srcTextNode?.nodeType === Node.TEXT_NODE) {
     const srcText = srcTextNode.textContent || "";
     const cloneTextNode = clone.childNodes[0];
-    
+
     if (cloneTextNode?.nodeType === Node.TEXT_NODE) {
       // Update existing text node
-      if (cloneTextNode.textContent !== srcText) cloneTextNode.textContent = srcText;
+      if (cloneTextNode.textContent !== srcText)
+        cloneTextNode.textContent = srcText;
     } else if (!clone.childNodes.length) {
       // Only create text node if clone has NO children (was empty when initially cloned)
       // Don't set textContent as it would delete element children!
@@ -517,22 +595,29 @@ function syncInputValue(source: Element, clone: HTMLElement): void {
  * Caches temporal bounds on each node for visibility checks.
  * Optionally syncs styles in the same pass if timeMs is provided.
  */
-export function buildCloneStructure(source: Element, timeMs?: number): {
+export function buildCloneStructure(
+  source: Element,
+  timeMs?: number,
+): {
   container: HTMLDivElement;
   syncState: SyncState;
 } {
   const container = document.createElement("div");
-  container.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%";
-  
+  container.style.cssText =
+    "position:absolute;top:0;left:0;width:100%;height:100%";
+
   let nodeCount = 0;
   const canvasSourceMap = new WeakMap<HTMLCanvasElement, Element>();
-  
-  function cloneElement(srcEl: Element, parentNode: CloneNode | null): CloneNode | null {
+
+  function cloneElement(
+    srcEl: Element,
+    parentNode: CloneNode | null,
+  ): CloneNode | null {
     if (SKIP_TAGS.has(srcEl.tagName)) return null;
-    
+
     // Get temporal bounds upfront for indexing
     const bounds = getTemporalBounds(srcEl);
-    
+
     // Canvas - copy pixels
     // NOTE: Raw canvases are always recopied (no caching) since we can't detect when their content changes.
     // Long-term solution: Create EFCanvas wrapper element to track modifications.
@@ -541,20 +626,22 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
       // Use intrinsic buffer dimensions (not affected by zoom/transforms)
       canvas.width = srcEl.width;
       canvas.height = srcEl.height;
-      
+
       // Raw canvases must preserve alpha - we don't know what they contain
       canvas.dataset.preserveAlpha = "true";
-      
+
       const ctx = canvas.getContext("2d");
       if (ctx) {
-        try { ctx.drawImage(srcEl, 0, 0); } catch {}
+        try {
+          ctx.drawImage(srcEl, 0, 0);
+        } catch {}
       }
-      
+
       // Set explicit CSS dimensions based on buffer size to avoid zoom-affected computed styles
       // This ensures the canvas renders at its natural size regardless of workspace zoom
       canvas.style.width = `${srcEl.width}px`;
       canvas.style.height = `${srcEl.height}px`;
-      
+
       // Sync positioning/transform styles from source, but dimensions are already set above
       try {
         const cs = getComputedStyle(srcEl);
@@ -571,10 +658,10 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
         canvas.style.visibility = cs.visibility;
         canvas.style.display = "block";
       } catch {}
-      
+
       // Map clone canvas to source for RenderContext (though caching won't help here)
       canvasSourceMap.set(canvas, srcEl);
-      
+
       const node: CloneNode = {
         source: srcEl,
         clone: canvas,
@@ -586,7 +673,7 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
       nodeCount++;
       return node;
     }
-    
+
     // Custom elements with shadow canvas (e.g., ef-video, ef-image)
     const isCustom = srcEl.tagName.includes("-");
     if (isCustom && srcEl.shadowRoot) {
@@ -595,34 +682,37 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
         const clone = document.createElement("canvas");
         clone.width = shadowCanvas.width || srcEl.clientWidth;
         clone.height = shadowCanvas.height || srcEl.clientHeight;
-        
+
         // DIAGNOSTIC: Log dimensions for shadow canvas path
         if (srcEl.tagName === "EF-IMAGE") {
           const srcCs = getComputedStyle(srcEl);
           const shadowCs = getComputedStyle(shadowCanvas);
-          console.log("[ASPECT_DIAG] Shadow Canvas Path:", JSON.stringify({
-            tag: srcEl.tagName,
-            src: (srcEl as any).src || "unknown",
-            hostElement: {
-              offsetWidth: srcEl.clientWidth,
-              offsetHeight: srcEl.clientHeight,
-              computedWidth: srcCs.width,
-              computedHeight: srcCs.height,
-              objectFit: srcCs.objectFit,
-            },
-            shadowCanvas: {
-              bufferWidth: shadowCanvas.width,
-              bufferHeight: shadowCanvas.height,
-              computedWidth: shadowCs.width,
-              computedHeight: shadowCs.height,
-            },
-            cloneCanvas: {
-              bufferWidth: clone.width,
-              bufferHeight: clone.height,
-            }
-          }));
+          console.log(
+            "[ASPECT_DIAG] Shadow Canvas Path:",
+            JSON.stringify({
+              tag: srcEl.tagName,
+              src: (srcEl as any).src || "unknown",
+              hostElement: {
+                offsetWidth: srcEl.clientWidth,
+                offsetHeight: srcEl.clientHeight,
+                computedWidth: srcCs.width,
+                computedHeight: srcCs.height,
+                objectFit: srcCs.objectFit,
+              },
+              shadowCanvas: {
+                bufferWidth: shadowCanvas.width,
+                bufferHeight: shadowCanvas.height,
+                computedWidth: shadowCs.width,
+                computedHeight: shadowCs.height,
+              },
+              cloneCanvas: {
+                bufferWidth: clone.width,
+                bufferHeight: clone.height,
+              },
+            }),
+          );
         }
-        
+
         // Check if the element actually has alpha channel before preserving it
         // ef-image tracks hasAlpha based on MIME type (JPEG=false, PNG/WebP=true)
         // ef-waveform always needs alpha for proper rendering
@@ -634,21 +724,23 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
             clone.dataset.preserveAlpha = "true";
           }
         }
-        
+
         const ctx = clone.getContext("2d");
         if (ctx) {
-          try { ctx.drawImage(shadowCanvas, 0, 0); } catch {}
+          try {
+            ctx.drawImage(shadowCanvas, 0, 0);
+          } catch {}
         }
-        
+
         // Copy initial CSS styles using unified sync
         // Pass shadowCanvas as contentSource for width/height
         try {
           syncElementStyles(srcEl, clone, shadowCanvas);
         } catch {}
-        
+
         // Map clone canvas to source element for RenderContext caching
         canvasSourceMap.set(clone, srcEl);
-        
+
         const node: CloneNode = {
           source: srcEl,
           clone,
@@ -660,43 +752,46 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
         nodeCount++;
         return node;
       }
-      
+
       const shadowImg = srcEl.shadowRoot.querySelector("img");
       if (shadowImg?.complete && shadowImg.naturalWidth > 0) {
         const clone = document.createElement("canvas");
         clone.width = shadowImg.naturalWidth;
         clone.height = shadowImg.naturalHeight;
-        
+
         // DIAGNOSTIC: Log dimensions for shadow img path
         if (srcEl.tagName === "EF-IMAGE") {
           const srcCs = getComputedStyle(srcEl);
           const shadowCs = getComputedStyle(shadowImg);
-          console.log("[ASPECT_DIAG] Shadow Img Path:", JSON.stringify({
-            tag: srcEl.tagName,
-            src: (srcEl as any).src || shadowImg.src || "unknown",
-            hostElement: {
-              offsetWidth: srcEl.clientWidth,
-              offsetHeight: srcEl.clientHeight,
-              computedWidth: srcCs.width,
-              computedHeight: srcCs.height,
-              objectFit: srcCs.objectFit,
-            },
-            shadowImg: {
-              naturalWidth: shadowImg.naturalWidth,
-              naturalHeight: shadowImg.naturalHeight,
-              width: shadowImg.width,
-              height: shadowImg.height,
-              computedWidth: shadowCs.width,
-              computedHeight: shadowCs.height,
-              objectFit: shadowCs.objectFit,
-            },
-            cloneCanvas: {
-              bufferWidth: clone.width,
-              bufferHeight: clone.height,
-            }
-          }));
+          console.log(
+            "[ASPECT_DIAG] Shadow Img Path:",
+            JSON.stringify({
+              tag: srcEl.tagName,
+              src: (srcEl as any).src || shadowImg.src || "unknown",
+              hostElement: {
+                offsetWidth: srcEl.clientWidth,
+                offsetHeight: srcEl.clientHeight,
+                computedWidth: srcCs.width,
+                computedHeight: srcCs.height,
+                objectFit: srcCs.objectFit,
+              },
+              shadowImg: {
+                naturalWidth: shadowImg.naturalWidth,
+                naturalHeight: shadowImg.naturalHeight,
+                width: shadowImg.width,
+                height: shadowImg.height,
+                computedWidth: shadowCs.width,
+                computedHeight: shadowCs.height,
+                objectFit: shadowCs.objectFit,
+              },
+              cloneCanvas: {
+                bufferWidth: clone.width,
+                bufferHeight: clone.height,
+              },
+            }),
+          );
         }
-        
+
         // Check if the element actually has alpha channel before preserving it
         // For direct img elements, check the element's hasAlpha property
         if (srcEl.tagName === "EF-IMAGE") {
@@ -707,18 +802,20 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
         }
         const ctx = clone.getContext("2d");
         if (ctx) {
-          try { ctx.drawImage(shadowImg, 0, 0); } catch {}
+          try {
+            ctx.drawImage(shadowImg, 0, 0);
+          } catch {}
         }
-        
+
         // Copy initial CSS styles using unified sync
         // Pass shadowImg as contentSource for width/height
         try {
           syncElementStyles(srcEl, clone, shadowImg);
         } catch {}
-        
+
         // Map clone canvas to source element for RenderContext caching
         canvasSourceMap.set(clone, srcEl);
-        
+
         const node: CloneNode = {
           source: srcEl,
           clone,
@@ -731,16 +828,21 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
         return node;
       }
     }
-    
+
     // Standard element clone
     // SVG elements need createElementNS, HTML elements use createElement
     let clone: HTMLElement;
     if (srcEl instanceof SVGElement) {
-      clone = document.createElementNS("http://www.w3.org/2000/svg", srcEl.tagName) as unknown as HTMLElement;
+      clone = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        srcEl.tagName,
+      ) as unknown as HTMLElement;
     } else {
-      clone = document.createElement(isCustom ? "div" : srcEl.tagName.toLowerCase()) as HTMLElement;
+      clone = document.createElement(
+        isCustom ? "div" : srcEl.tagName.toLowerCase(),
+      ) as HTMLElement;
     }
-    
+
     // Copy attributes - OPTIMIZATION: Early exit if no attributes
     const attrs = srcEl.attributes;
     const attrLen = attrs.length;
@@ -750,17 +852,19 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
         const name = attr.name.toLowerCase();
         if (name === "id" || name.startsWith("on")) continue;
         if (isCustom && name !== "class" && !name.startsWith("data-")) continue;
-        try { clone.setAttribute(attr.name, attr.value); } catch {}
+        try {
+          clone.setAttribute(attr.name, attr.value);
+        } catch {}
       }
     }
-    
+
     if (srcEl instanceof HTMLImageElement && srcEl.src) {
       (clone as HTMLImageElement).src = srcEl.src;
     }
     if (srcEl instanceof HTMLInputElement) {
       (clone as HTMLInputElement).value = srcEl.value;
     }
-    
+
     const node: CloneNode = {
       source: srcEl,
       clone,
@@ -770,7 +874,7 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
       parent: parentNode,
     };
     nodeCount++;
-    
+
     // Shadow DOM children - OPTIMIZATION: Early exit if no childNodes
     if (srcEl.shadowRoot) {
       const shadowChildren = srcEl.shadowRoot.childNodes;
@@ -778,16 +882,18 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
       if (shadowLen > 0) {
         // For text segments, ALWAYS create a text node placeholder even if empty.
         // Caption elements now use light DOM, so they don't need special handling here.
-        const isTextSegment = srcEl.tagName === 'EF-TEXT-SEGMENT';
+        const isTextSegment = srcEl.tagName === "EF-TEXT-SEGMENT";
         let hasTextNode = false;
-        
+
         for (let i = 0; i < shadowLen; i++) {
           const child = shadowChildren[i]!;
           if (child.nodeType === Node.TEXT_NODE) {
             const text = child.textContent?.trim();
             // Always include text for text segments (even if whitespace-only, e.g., " ")
             if (text || isTextSegment) {
-              clone.appendChild(document.createTextNode(child.textContent || ""));
+              clone.appendChild(
+                document.createTextNode(child.textContent || ""),
+              );
               hasTextNode = true;
             }
           } else if (child.nodeType === Node.ELEMENT_NODE) {
@@ -800,14 +906,14 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
             }
           }
         }
-        
+
         // For text segments, ensure there's always a text node for syncStyles to update
         if (isTextSegment && !hasTextNode) {
           clone.appendChild(document.createTextNode(""));
         }
       }
     }
-    
+
     // Light DOM children - OPTIMIZATION: Use indexed loop for performance
     const lightChildren = srcEl.childNodes;
     const lightLen = lightChildren.length;
@@ -824,13 +930,13 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
         }
       }
     }
-    
+
     return node;
   }
-  
+
   const root = cloneElement(source, null);
   if (root) container.appendChild(root.clone);
-  
+
   const syncState: SyncState = {
     tree: { root },
     nodeCount,
@@ -838,12 +944,12 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
     previousVisibleSet: new Set(),
     currentVisibleSet: new Set(),
   };
-  
+
   // Sync styles in the same pass if timeMs is provided
   if (timeMs !== undefined && root) {
     syncStylesWithIndex(syncState, timeMs);
   }
-  
+
   return {
     container,
     syncState,
@@ -859,19 +965,21 @@ export function buildCloneStructure(source: Element, timeMs?: number): {
  */
 function syncNodeStyles(node: CloneNode): void {
   const { source, clone, isCanvasClone } = node;
-  
+
   // 1. Canvas-specific: Refresh pixel content from shadow DOM
   if (isCanvasClone) {
     refreshCanvasPixels(node);
   }
-  
+
   // 2. Unified: Sync ALL CSS properties using SYNC_PROPERTIES array
   // For canvas clones, pass content source (shadow canvas/img) for width/height
   const contentSource = isCanvasClone
-    ? (source.shadowRoot?.querySelector("canvas") || source.shadowRoot?.querySelector("img") || undefined)
+    ? source.shadowRoot?.querySelector("canvas") ||
+      source.shadowRoot?.querySelector("img") ||
+      undefined
     : undefined;
   syncElementStyles(source, clone, contentSource);
-  
+
   // 3. Element-specific: Sync text content and input values
   syncTextContent(source, clone);
   syncInputValue(source, clone);
@@ -883,9 +991,9 @@ interface SyncStats {
   nodesCulledByParent: number;
   nodesCulledByTemporal: number;
   nodesProcessed: number;
-  nodesFullSync: number;      // Newly visible nodes (full sync)
+  nodesFullSync: number; // Newly visible nodes (full sync)
   nodesIncrementalSync: number; // Still visible nodes (incremental sync)
-  nodesHidden: number;        // Newly hidden nodes
+  nodesHidden: number; // Newly hidden nodes
   indexQueryTimeMs: number;
   syncTimeMs: number;
 }
@@ -907,9 +1015,9 @@ let syncStats: SyncStats = {
  * Used for incremental updates - only sync what changed.
  */
 interface VisibilityDelta {
-  nowVisible: Set<CloneNode>;    // Need full style sync + show
-  stillVisible: Set<CloneNode>;  // Only sync animated properties (or skip if same time)
-  nowHidden: Set<CloneNode>;     // Just set display:none
+  nowVisible: Set<CloneNode>; // Need full style sync + show
+  stillVisible: Set<CloneNode>; // Only sync animated properties (or skip if same time)
+  nowHidden: Set<CloneNode>; // Just set display:none
 }
 
 /**
@@ -922,7 +1030,7 @@ function computeVisibilityDelta(
   const nowVisible = new Set<CloneNode>();
   const stillVisible = new Set<CloneNode>();
   const nowHidden = new Set<CloneNode>();
-  
+
   // Find nodes that became visible or stayed visible
   for (const node of currentSet) {
     if (previousSet.has(node)) {
@@ -931,14 +1039,14 @@ function computeVisibilityDelta(
       nowVisible.add(node);
     }
   }
-  
+
   // Find nodes that became hidden
   for (const node of previousSet) {
     if (!currentSet.has(node)) {
       nowHidden.add(node);
     }
   }
-  
+
   return { nowVisible, stillVisible, nowHidden };
 }
 
@@ -953,13 +1061,13 @@ function buildVisibleSetRecursive(
   visibleSet: Set<CloneNode>,
 ): void {
   const { children, source } = node;
-  
+
   // Get fresh bounds from source element (not cached - timegroup bounds are dynamic)
   const bounds = getTemporalBounds(source);
-  
+
   // Check if this node is visible at current time
   const isVisible = timeMs >= bounds.startMs && timeMs <= bounds.endMs;
-  
+
   if (isVisible) {
     visibleSet.add(node);
     // Recurse to children
@@ -972,7 +1080,7 @@ function buildVisibleSetRecursive(
 
 /**
  * Sync styles with recursive visibility check and delta tracking.
- * 
+ *
  * DELTA TRACKING: Tracks visibility changes between frames to minimize work:
  * - nowVisible nodes: Full style sync + show
  * - stillVisible nodes: Incremental sync (source DOM may have changed)
@@ -980,25 +1088,25 @@ function buildVisibleSetRecursive(
  */
 function syncStylesWithIndex(state: SyncState, timeMs: number): void {
   const queryStart = performance.now();
-  
+
   // Build the set of visible nodes by recursive traversal
   const visibleSet = new Set<CloneNode>();
   if (state.tree.root) {
     buildVisibleSetRecursive(state.tree.root, timeMs, visibleSet);
   }
-  
+
   // Compute delta from previous frame
   const delta = computeVisibilityDelta(state.previousVisibleSet, visibleSet);
-  
+
   syncStats.indexQueryTimeMs = performance.now() - queryStart;
-  
+
   // Now traverse the tree but use the delta for O(1) sync decisions
   const syncStart = performance.now();
   if (state.tree.root) {
     syncNodeWithDelta(state.tree.root, visibleSet, delta);
   }
   syncStats.syncTimeMs = performance.now() - syncStart;
-  
+
   // Update state for next frame and expose current visible set
   state.previousVisibleSet = visibleSet;
   state.currentVisibleSet = visibleSet;
@@ -1006,7 +1114,7 @@ function syncStylesWithIndex(state: SyncState, timeMs: number): void {
 
 /**
  * Sync a node using visibility delta for incremental updates.
- * 
+ *
  * DELTA TRACKING optimization:
  * - nowVisible: Full style sync (element just appeared)
  * - stillVisible: Incremental sync (source DOM may have changed)
@@ -1019,9 +1127,9 @@ function syncNodeWithDelta(
   delta: VisibilityDelta,
 ): void {
   syncStats.nodesVisited++;
-  
+
   const isVisible = visibleSet.has(node);
-  
+
   if (!isVisible) {
     // Node is not visible - ALWAYS set display:none
     // This handles both "just became hidden" and "initial build with node outside time range"
@@ -1033,7 +1141,7 @@ function syncNodeWithDelta(
     syncStats.nodesCulledByTemporal++;
     return;
   }
-  
+
   // Node is visible - determine sync strategy
   if (delta.nowVisible.has(node)) {
     // Just became visible - need full style sync
@@ -1046,9 +1154,9 @@ function syncNodeWithDelta(
     syncNodeStyles(node);
     syncStats.nodesIncrementalSync++;
   }
-  
+
   syncStats.nodesProcessed++;
-  
+
   // Recurse to children
   for (const child of node.children) {
     syncNodeWithDelta(child, visibleSet, delta);
@@ -1063,7 +1171,7 @@ function syncNodeWithDelta(
 export function syncNodeRecursiveLegacy(node: CloneNode, timeMs: number): void {
   const { clone, children, bounds } = node;
   syncStats.nodesVisited++;
-  
+
   // Temporal culling - check if this node is visible at current time
   // NOTE: Canvas clones now participate in temporal culling (lazy canvas copying).
   // Invalid bounds [0,0] are treated as [-Infinity, Infinity] by getTemporalBounds.
@@ -1078,7 +1186,7 @@ export function syncNodeRecursiveLegacy(node: CloneNode, timeMs: number): void {
         return;
       }
     }
-    
+
     // Use cached bounds from node instead of calling getTemporalBounds
     const { startMs, endMs } = bounds;
     if (timeMs < startMs || timeMs > endMs) {
@@ -1088,11 +1196,11 @@ export function syncNodeRecursiveLegacy(node: CloneNode, timeMs: number): void {
       return;
     }
   }
-  
+
   // Sync this node's styles
   syncNodeStyles(node);
   syncStats.nodesProcessed++;
-  
+
   // Recursively sync children
   for (const child of children) {
     syncNodeRecursiveLegacy(child, timeMs);
@@ -1117,7 +1225,7 @@ export function syncStyles(state: SyncState, timeMs: number): void {
     indexQueryTimeMs: 0,
     syncTimeMs: 0,
   };
-  
+
   // Use interval-index-based sync with delta tracking
   syncStylesWithIndex(state, timeMs);
 }
@@ -1141,7 +1249,6 @@ export function collectDocumentStyles(): string {
   return rules.join("\n");
 }
 
-
 // Backward-compatible aliases
 export const syncStaticStyles = syncStyles;
 export const syncAnimatedStyles = syncStyles;
@@ -1149,14 +1256,17 @@ export const syncAnimatedStyles = syncStyles;
 /**
  * Override clip-path, opacity, and optionally transform on the root clone element.
  * The source may have these properties set for proxy mode or workbench scaling.
- * 
+ *
  * @param syncState - The sync state containing the clone tree
  * @param fullReset - If true, also resets opacity and transform (for capture operations)
  */
-export function overrideRootCloneStyles(syncState: SyncState, fullReset: boolean = false): void {
+export function overrideRootCloneStyles(
+  syncState: SyncState,
+  fullReset: boolean = false,
+): void {
   const rootClone = syncState.tree.root?.clone;
   if (!rootClone) return;
-  
+
   rootClone.style.clipPath = "none";
   if (fullReset) {
     rootClone.style.opacity = "1";
@@ -1167,7 +1277,7 @@ export function overrideRootCloneStyles(syncState: SyncState, fullReset: boolean
 /**
  * Create a live preview of a timegroup with a refresh function.
  * Used by EFWorkbench for the "computed" preview mode.
- * 
+ *
  * @param source - The source timegroup to preview
  * @returns Object with preview container and refresh function
  */
@@ -1176,10 +1286,10 @@ export function renderTimegroupPreview(source: Element): {
   refresh: (timeMs?: number) => void;
 } {
   const { container, syncState } = buildCloneStructure(source);
-  
+
   // Initial style sync
   syncStyles(syncState, 0);
-  
+
   return {
     container,
     refresh: (timeMs?: number) => {

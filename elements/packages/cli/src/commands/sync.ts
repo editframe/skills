@@ -10,7 +10,7 @@ program
     // If running from the dev script (via tsx), ORIGINAL_CWD contains the user's actual directory
     const baseCwd = process.env.ORIGINAL_CWD || process.cwd();
     const resolvedDirectory = path.resolve(baseCwd, directory);
-    
+
     await syncAssetDirectory(
       join(resolvedDirectory, "src", "assets", ".cache"),
     );

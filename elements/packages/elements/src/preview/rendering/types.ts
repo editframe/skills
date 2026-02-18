@@ -47,11 +47,11 @@ export interface NativeRenderOptions {
    * The canvas must have layoutsubtree enabled and be in the DOM.
    */
   reuseCanvas?: HTMLCanvasElement;
-  
+
   /**
    * Skip device pixel ratio scaling. When true, renders at 1x regardless of display DPR.
    * Default: false (respects display DPR for crisp rendering)
-   * 
+   *
    * Set to true for video export where retina resolution isn't needed.
    * This can provide a 4x speedup on 2x DPR displays!
    */

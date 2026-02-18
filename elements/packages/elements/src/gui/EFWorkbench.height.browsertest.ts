@@ -8,7 +8,7 @@ import "../elements/EFTimegroup.js";
 
 describe("EFWorkbench height consistency", () => {
   let container: HTMLDivElement;
-  
+
   beforeEach(() => {
     container = document.createElement("div");
     container.style.width = "1200px";
@@ -16,14 +16,14 @@ describe("EFWorkbench height consistency", () => {
     container.style.position = "relative";
     document.body.appendChild(container);
   });
-  
+
   test("workbench maintains container height when hierarchy collapses", async () => {
     // Create configuration inside container
     const config = document.createElement("ef-configuration");
     config.style.width = "100%";
     config.style.height = "100%";
     container.appendChild(config);
-    
+
     // Create timegroup with workbench attribute
     const timegroup = document.createElement("ef-timegroup");
     timegroup.id = "test-timegroup";
@@ -33,51 +33,57 @@ describe("EFWorkbench height consistency", () => {
     timegroup.style.width = "400px";
     timegroup.style.height = "300px";
     config.appendChild(timegroup);
-    
+
     // Wait for workbench to wrap
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
     const workbench = container.querySelector<EFWorkbench>("ef-workbench");
     expect(workbench).toBeDefined();
-    
+
     if (!workbench) {
       throw new Error("Workbench not found");
     }
-    
+
     // Get initial dimensions
     const initialRect = workbench.getBoundingClientRect();
     console.log("Initial workbench height:", initialRect.height);
     console.log("Container height:", container.getBoundingClientRect().height);
-    
+
     // CRITICAL: Workbench should fill container
     expect(initialRect.height).toBeGreaterThan(700);
-    
+
     // Find hierarchy and collapse it
     const hierarchy = workbench.querySelector("ef-hierarchy");
     expect(hierarchy).toBeDefined();
-    
+
     if (!hierarchy) {
       throw new Error("Hierarchy not found");
     }
-    
+
     // Find the root hierarchy item and collapse it
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const hierarchyItem = hierarchy.shadowRoot?.querySelector("ef-timegroup-hierarchy-item");
-    
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const hierarchyItem = hierarchy.shadowRoot?.querySelector(
+      "ef-timegroup-hierarchy-item",
+    );
+
     if (hierarchyItem) {
       // Click the expand icon to collapse
-      const expandIcon = hierarchyItem.shadowRoot?.querySelector(".expand-icon") as HTMLElement;
+      const expandIcon = hierarchyItem.shadowRoot?.querySelector(
+        ".expand-icon",
+      ) as HTMLElement;
       if (expandIcon) {
         expandIcon.click();
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
         // Check workbench height after collapse
         const collapsedRect = workbench.getBoundingClientRect();
         console.log("Collapsed workbench height:", collapsedRect.height);
-        
+
         // CRITICAL TEST: Workbench should maintain the same height
-        expect(Math.abs(collapsedRect.height - initialRect.height)).toBeLessThan(5);
-        
+        expect(
+          Math.abs(collapsedRect.height - initialRect.height),
+        ).toBeLessThan(5);
+
         // Also verify it's still close to container height
         expect(collapsedRect.height).toBeGreaterThan(700);
       }

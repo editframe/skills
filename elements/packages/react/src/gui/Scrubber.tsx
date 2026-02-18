@@ -17,10 +17,7 @@ export interface ScrubberProps {
   style?: React.CSSProperties;
 }
 
-const BaseScrubber = createComponent<
-  EFScrubber,
-  { onSeek: "seek" }
->({
+const BaseScrubber = createComponent<EFScrubber, { onSeek: "seek" }>({
   tagName: "ef-scrubber",
   elementClass: EFScrubber,
   react: React,
@@ -28,7 +25,9 @@ const BaseScrubber = createComponent<
   events: {
     onSeek: "seek",
   },
-}) as React.ForwardRefExoticComponent<ScrubberProps & React.RefAttributes<EFScrubber>>;
+}) as React.ForwardRefExoticComponent<
+  ScrubberProps & React.RefAttributes<EFScrubber>
+>;
 
 export const Scrubber = React.forwardRef<EFScrubber, ScrubberProps>(
   (props, ref) => {

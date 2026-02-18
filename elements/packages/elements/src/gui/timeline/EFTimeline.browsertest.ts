@@ -225,7 +225,7 @@ describe("EFTimeline", () => {
     test.skip("reinitializes timeline ruler and thumbnails after clearing and re-selecting", async () => {
       await import("../../canvas/EFCanvas.js");
       await import("../EFTimelineRuler.js");
-      
+
       const canvas = document.createElement("ef-canvas");
       canvas.style.width = "800px";
       canvas.style.height = "600px";
@@ -257,63 +257,65 @@ describe("EFTimeline", () => {
 
       // Initially no selection - timeline should show empty state
       expect(timeline.targetTemporal).toBe(null);
-      
+
       // Select element - timeline should initialize
       (canvas as any).selectionContext.select("test-element");
       await timeline.updateComplete;
       await new Promise((resolve) => setTimeout(resolve, 100)); // Wait for ResizeObserver
-      
+
       expect(timeline.targetTemporal).toBe(timegroup);
       expect(timeline.durationMs).toBe(10000);
-      
+
       // Verify initial state is correct
       const timelinePrivate = timeline as any;
       const initialViewportWidth = timelinePrivate.cachedViewportWidth;
       expect(initialViewportWidth).toBeGreaterThan(0);
       expect(initialViewportWidth).not.toBe(800); // Should not be default value
-      
+
       const initialTimelineState = timeline.timelineState;
       expect(initialTimelineState.viewportWidth).toBeGreaterThan(0);
       expect(initialTimelineState.viewportWidth).not.toBe(800);
-      
+
       // Get ruler and verify it has correct content-width
       const ruler = timeline.shadowRoot?.querySelector("ef-timeline-ruler");
       expect(ruler).toBeTruthy();
       const rulerContentWidth = (ruler as any).contentWidth;
       expect(rulerContentWidth).toBeGreaterThan(0);
-      
+
       // Clear selection - timeline should show empty state
       (canvas as any).selectionContext.clear();
       await timeline.updateComplete;
       expect(timeline.targetTemporal).toBe(null);
-      
+
       // Re-select element - timeline should reinitialize properly
       (canvas as any).selectionContext.select("test-element");
       await timeline.updateComplete;
       await new Promise((resolve) => setTimeout(resolve, 100)); // Wait for ResizeObserver
-      
+
       expect(timeline.targetTemporal).toBe(timegroup);
       expect(timeline.durationMs).toBe(10000);
-      
+
       // Verify viewport width is correctly set after re-selection (not default 800)
       const reinitViewportWidth = timelinePrivate.cachedViewportWidth;
       expect(reinitViewportWidth).toBeGreaterThan(0);
       expect(reinitViewportWidth).not.toBe(800); // Should not be default value
       expect(reinitViewportWidth).toBe(initialViewportWidth); // Should match initial value
-      
+
       // Verify timeline state has correct viewport width
       const reinitTimelineState = timeline.timelineState;
       expect(reinitTimelineState.viewportWidth).toBeGreaterThan(0);
       expect(reinitTimelineState.viewportWidth).not.toBe(800);
-      expect(reinitTimelineState.viewportWidth).toBe(initialTimelineState.viewportWidth);
-      
+      expect(reinitTimelineState.viewportWidth).toBe(
+        initialTimelineState.viewportWidth,
+      );
+
       // Verify ruler has correct content-width after re-selection
-      const reinitRuler = timeline.shadowRoot?.querySelector("ef-timeline-ruler");
+      const reinitRuler =
+        timeline.shadowRoot?.querySelector("ef-timeline-ruler");
       expect(reinitRuler).toBeTruthy();
       const reinitRulerContentWidth = (reinitRuler as any).contentWidth;
       expect(reinitRulerContentWidth).toBeGreaterThan(0);
       expect(reinitRulerContentWidth).toBe(rulerContentWidth);
-      
     });
   });
 
@@ -646,7 +648,7 @@ describe("EFTimeline", () => {
 
       const rect = tracksScroll.getBoundingClientRect();
       const hierarchyWidth = 200; // Default hierarchy width
-      
+
       // Position cursor in the middle of the track area
       const cursorX = rect.left + hierarchyWidth + 200;
       const cursorY = rect.top + rect.height / 2;
@@ -736,8 +738,7 @@ describe("EFTimeline", () => {
       await timeline.updateComplete;
 
       // New unified row architecture
-      const timelineRow =
-        timeline.shadowRoot?.querySelector("ef-timeline-row");
+      const timelineRow = timeline.shadowRoot?.querySelector("ef-timeline-row");
       expect(timelineRow).toBeTruthy();
 
       // Track component is inside the row's shadow DOM
@@ -766,13 +767,11 @@ describe("EFTimeline", () => {
       await timeline.updateComplete;
 
       // New unified row architecture - rows container
-      const tracksRows =
-        timeline.shadowRoot?.querySelector(".tracks-rows");
+      const tracksRows = timeline.shadowRoot?.querySelector(".tracks-rows");
       expect(tracksRows).toBeTruthy();
 
       // Label is inside the row's shadow DOM
-      const timelineRow =
-        timeline.shadowRoot?.querySelector("ef-timeline-row");
+      const timelineRow = timeline.shadowRoot?.querySelector("ef-timeline-row");
       const trackLabel = timelineRow?.shadowRoot?.querySelector(".row-label");
       expect(trackLabel).toBeTruthy();
       expect(trackLabel?.textContent).toContain(timegroupId);
@@ -910,7 +909,7 @@ describe("EFTimeline", () => {
 
       const hierarchyWidth = 200;
       const scrollOffset = 500;
-      
+
       tracksScroll.scrollLeft = scrollOffset;
       // Wait for scroll event to fire and update viewportScrollLeft
       await new Promise((resolve) => setTimeout(resolve, 10));
@@ -964,12 +963,18 @@ describe("EFTimeline", () => {
       const tracksScrollRect = tracksScroll.getBoundingClientRect();
       // Use the actual scrollLeft from the DOM, which should match viewportScrollLeft after sync
       const actualScrollLeft = tracksScroll.scrollLeft;
-      const expectedDragX = dragX - tracksScrollRect.left + actualScrollLeft - hierarchyWidth;
-      const expectedDragTimeMs = Math.max(0, expectedDragX / timeline.pixelsPerMs);
+      const expectedDragX =
+        dragX - tracksScrollRect.left + actualScrollLeft - hierarchyWidth;
+      const expectedDragTimeMs = Math.max(
+        0,
+        expectedDragX / timeline.pixelsPerMs,
+      );
 
       // The fix ensures viewportScrollLeft is synced, so the playhead should match the cursor
       // Allow small tolerance for sub-pixel rounding (up to 20ms = 2 pixels at 0.1 px/ms)
-      expect(Math.abs(timegroup.currentTimeMs - expectedDragTimeMs)).toBeLessThanOrEqual(20);
+      expect(
+        Math.abs(timegroup.currentTimeMs - expectedDragTimeMs),
+      ).toBeLessThanOrEqual(20);
 
       const pointerUpEvent = new PointerEvent("pointerup", {
         bubbles: true,
@@ -1415,12 +1420,9 @@ describe("EFTimeline", () => {
         elementId: string;
         element: HTMLElement;
       } | null = null;
-      document.addEventListener(
-        "row-select",
-        ((e: CustomEvent) => {
-          selectEventDetail = e.detail;
-        }) as EventListener,
-      );
+      document.addEventListener("row-select", ((e: CustomEvent) => {
+        selectEventDetail = e.detail;
+      }) as EventListener);
 
       const timelineRow = timeline.shadowRoot?.querySelector(
         "ef-timeline-row",
@@ -1433,7 +1435,10 @@ describe("EFTimeline", () => {
       await timeline.updateComplete;
 
       expect(selectEventDetail).toBeTruthy();
-      const sed = selectEventDetail as { elementId: string; element: HTMLElement } | null;
+      const sed = selectEventDetail as {
+        elementId: string;
+        element: HTMLElement;
+      } | null;
       expect(sed?.elementId).toBe(timegroupId);
       expect(sed?.element).toBe(timegroup);
     });

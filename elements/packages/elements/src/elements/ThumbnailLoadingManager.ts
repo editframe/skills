@@ -1,10 +1,10 @@
 /**
  * ThumbnailLoadingManager - Coordinates thumbnail capture separately from layout.
- * 
+ *
  * State tracking:
  * - #activelyCapturing: Set of times currently being captured (in the loop)
  * - #pendingRetry: Set of times that failed/blank and will be retried
- * 
+ *
  * The UI should show loading indicators for times in EITHER set.
  */
 
@@ -35,9 +35,13 @@ const MAX_RETRIES = 3;
 /**
  * Get identifiers for cache key generation.
  */
-export function getCacheIdentifiers(element: EFVideo | EFTimegroup): { rootId: string; elementId: string } {
+export function getCacheIdentifiers(element: EFVideo | EFTimegroup): {
+  rootId: string;
+  elementId: string;
+} {
   const rootTemporal = findRootTemporal(element);
-  const rootTimegroup = rootTemporal && isEFTimegroup(rootTemporal) ? rootTemporal : null;
+  const rootTimegroup =
+    rootTemporal && isEFTimegroup(rootTemporal) ? rootTemporal : null;
   const rootId = rootTimegroup?.id || "default";
 
   const elementId = isEFVideo(element)
@@ -56,13 +60,13 @@ export class ThumbnailLoadingManager {
   #target: EFVideo | EFTimegroup | null = null;
   #abortController: AbortController | null = null;
   #captureHeight = 0;
-  
+
   // State tracking
   #activelyCapturing = new Set<number>(); // Times in current capture loop
-  #pendingRetry = new Set<number>();      // Times that will be retried
+  #pendingRetry = new Set<number>(); // Times that will be retried
   #retryCount = new Map<number, number>(); // Track retry attempts per time
   #retryTimeout: ReturnType<typeof setTimeout> | null = null;
-  
+
   // Callbacks
   #onImageCaptured: ((result: CaptureResult) => void) | null = null;
   #onStateChange: (() => void) | null = null;
@@ -104,7 +108,9 @@ export class ThumbnailLoadingManager {
    * Check if a specific time is in any loading state.
    */
   isLoading(timeMs: number): boolean {
-    return this.#activelyCapturing.has(timeMs) || this.#pendingRetry.has(timeMs);
+    return (
+      this.#activelyCapturing.has(timeMs) || this.#pendingRetry.has(timeMs)
+    );
   }
 
   /**
@@ -166,7 +172,7 @@ export class ThumbnailLoadingManager {
     const { rootId, elementId } = getCacheIdentifiers(target);
 
     // Filter out times already in cache
-    const timesToCapture = times.filter(timeMs => {
+    const timesToCapture = times.filter((timeMs) => {
       const key = getCacheKey(rootId, elementId, timeMs);
       return !sessionThumbnailCache.has(key);
     });
@@ -192,25 +198,37 @@ export class ThumbnailLoadingManager {
 
     try {
       if (isEFTimegroup(target)) {
-        const failed = await this.#captureTimegroupThumbnails(target, timesToCapture, rootId, elementId, signal);
+        const failed = await this.#captureTimegroupThumbnails(
+          target,
+          timesToCapture,
+          rootId,
+          elementId,
+          signal,
+        );
         failedTimes.push(...failed);
       } else if (isEFVideo(target)) {
-        const failed = await this.#captureVideoThumbnails(target, timesToCapture, rootId, elementId, signal);
+        const failed = await this.#captureVideoThumbnails(
+          target,
+          timesToCapture,
+          rootId,
+          elementId,
+          signal,
+        );
         failedTimes.push(...failed);
       }
     } catch (error: any) {
-      if (error.name !== 'AbortError') {
-        console.warn('[THUMB_LOADING] Capture failed:', error);
+      if (error.name !== "AbortError") {
+        console.warn("[THUMB_LOADING] Capture failed:", error);
       }
       // On error, all remaining active times are failed
       failedTimes.push(...this.#activelyCapturing);
     } finally {
       this.#abortController = null;
       this.#activelyCapturing.clear();
-      
+
       // Schedule retry for failed times (if under max retries)
       this.#scheduleRetry(failedTimes);
-      
+
       this.#notifyStateChange();
     }
   }
@@ -220,26 +238,26 @@ export class ThumbnailLoadingManager {
    */
   #scheduleRetry(failedTimes: number[]): void {
     const timesToRetry: number[] = [];
-    
+
     for (const timeMs of failedTimes) {
       const attempts = (this.#retryCount.get(timeMs) || 0) + 1;
       this.#retryCount.set(timeMs, attempts);
-      
+
       if (attempts < MAX_RETRIES) {
         timesToRetry.push(timeMs);
         this.#pendingRetry.add(timeMs);
       }
       // If max retries exceeded, give up on this time
     }
-    
+
     if (timesToRetry.length > 0 && !this.#retryTimeout) {
       this.#retryTimeout = setTimeout(() => {
         this.#retryTimeout = null;
-        
+
         // Clear pending retry and attempt capture
         const times = [...this.#pendingRetry];
         this.#pendingRetry.clear();
-        
+
         if (times.length > 0 && this.#target) {
           times.sort((a, b) => a - b);
           this.startCapture(times);
@@ -256,44 +274,52 @@ export class ThumbnailLoadingManager {
    * Check if a canvas has actual content (not blank/white/transparent).
    */
   #hasContent(canvas: CanvasImageSource): boolean {
-    const width = (canvas as any).width || (canvas as HTMLImageElement).naturalWidth || 0;
-    const height = (canvas as any).height || (canvas as HTMLImageElement).naturalHeight || 0;
-    
+    const width =
+      (canvas as any).width || (canvas as HTMLImageElement).naturalWidth || 0;
+    const height =
+      (canvas as any).height || (canvas as HTMLImageElement).naturalHeight || 0;
+
     if (width === 0 || height === 0) return false;
 
-    const tempCanvas = document.createElement('canvas');
+    const tempCanvas = document.createElement("canvas");
     const sampleSize = Math.min(32, width, height);
     tempCanvas.width = sampleSize;
     tempCanvas.height = sampleSize;
-    
-    const ctx = tempCanvas.getContext('2d', { willReadFrequently: true });
+
+    const ctx = tempCanvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return true;
-    
+
     ctx.drawImage(canvas, 0, 0, sampleSize, sampleSize);
     const imageData = ctx.getImageData(0, 0, sampleSize, sampleSize);
     const data = imageData.data;
-    
+
     let hasVariation = false;
     let hasNonWhite = false;
-    const firstR = data[0], firstG = data[1], firstB = data[2];
-    
+    const firstR = data[0],
+      firstG = data[1],
+      firstB = data[2];
+
     for (let i = 0; i < data.length; i += 16) {
       const r = data[i]!;
       const g = data[i + 1]!;
       const b = data[i + 2]!;
       const a = data[i + 3]!;
-      
+
       if (a > 0 && (r < 250 || g < 250 || b < 250)) {
         hasNonWhite = true;
       }
-      
-      if (Math.abs(r - firstR!) > 10 || Math.abs(g - firstG!) > 10 || Math.abs(b - firstB!) > 10) {
+
+      if (
+        Math.abs(r - firstR!) > 10 ||
+        Math.abs(g - firstG!) > 10 ||
+        Math.abs(b - firstB!) > 10
+      ) {
         hasVariation = true;
       }
-      
+
       if (hasNonWhite && hasVariation) return true;
     }
-    
+
     return hasNonWhite || hasVariation;
   }
 
@@ -306,21 +332,25 @@ export class ThumbnailLoadingManager {
     times: number[],
     rootId: string,
     elementId: string,
-    signal: AbortSignal
+    signal: AbortSignal,
   ): Promise<number[]> {
     const timegroupWidth = target.offsetWidth || 1920;
     const timegroupHeight = target.offsetHeight || 1080;
-    const scale = Math.min(1, this.#captureHeight / timegroupHeight, MAX_CAPTURE_WIDTH / timegroupWidth);
+    const scale = Math.min(
+      1,
+      this.#captureHeight / timegroupHeight,
+      MAX_CAPTURE_WIDTH / timegroupWidth,
+    );
 
     const failedTimes: number[] = [];
 
     for (const timeMs of times) {
       if (signal.aborted) {
-        throw new DOMException('Capture aborted', 'AbortError');
+        throw new DOMException("Capture aborted", "AbortError");
       }
 
       try {
-        const canvases = await target.captureBatch([timeMs], {
+        const canvases = await (target as any).captureBatch([timeMs], {
           scale,
           contentReadyMode: "blocking",
           blockingTimeoutMs: 5000,
@@ -358,7 +388,7 @@ export class ThumbnailLoadingManager {
     times: number[],
     rootId: string,
     elementId: string,
-    signal: AbortSignal
+    signal: AbortSignal,
   ): Promise<number[]> {
     if (target.mediaEngineTask) {
       await target.mediaEngineTask.taskComplete;

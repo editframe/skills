@@ -14,7 +14,7 @@ import type { EFCaptions } from "./elements/EFCaptions.js";
 import type { EFImage } from "./elements/EFImage.js";
 import { z } from "zod";
 
-export const RenderInfo = z.object({
+export const RenderInfoSchema = z.object({
   width: z.number().positive(),
   height: z.number().positive(),
   fps: z.number().positive(),
@@ -25,6 +25,8 @@ export const RenderInfo = z.object({
     efImage: z.array(z.string()),
   }),
 });
+
+export type RenderInfo = z.infer<typeof RenderInfoSchema>;
 
 export const getRenderInfo = async () => {
   const rootTimeGroup = document.querySelector("ef-timegroup") as

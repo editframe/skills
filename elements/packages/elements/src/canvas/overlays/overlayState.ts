@@ -100,7 +100,9 @@ export function getOverlayTargets(
   highlightedElement: HTMLElement | null,
 ): OverlayTargets {
   return {
-    selectedIds: selection?.selectedIds ? new Set(selection.selectedIds) : new Set(),
+    selectedIds: selection?.selectedIds
+      ? new Set(selection.selectedIds)
+      : new Set(),
     boxSelectBounds: selection?.boxSelectBounds ?? null,
     highlightedElementId:
       highlightedElement?.getAttribute("data-element-id") ??
@@ -249,7 +251,10 @@ export function calculateBoxSelectBounds(
   // Try to use EFPanZoom's canvasToScreen method if available
   const pz = panZoomElement as any;
   if (typeof pz.canvasToScreen === "function") {
-    const topLeft = pz.canvasToScreen(boxSelectBounds.left, boxSelectBounds.top);
+    const topLeft = pz.canvasToScreen(
+      boxSelectBounds.left,
+      boxSelectBounds.top,
+    );
     const bottomRight = pz.canvasToScreen(
       boxSelectBounds.right,
       boxSelectBounds.bottom,
@@ -365,4 +370,3 @@ export function hasVisibleOverlays(state: OverlayState): boolean {
     isOverlayVisible(state.highlight)
   );
 }
-

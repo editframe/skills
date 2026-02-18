@@ -19,21 +19,25 @@ import type { EFTimegroup } from "../elements/EFTimegroup.js";
 function canvasHasContent(canvas: HTMLCanvasElement): boolean {
   const ctx = canvas.getContext("2d");
   if (!ctx) return false;
-  
+
   // Sample pixels from center region (faster than checking all pixels)
-  const sampleSize = Math.min(100, Math.floor(canvas.width / 4), Math.floor(canvas.height / 4));
+  const sampleSize = Math.min(
+    100,
+    Math.floor(canvas.width / 4),
+    Math.floor(canvas.height / 4),
+  );
   const startX = Math.floor((canvas.width - sampleSize) / 2);
   const startY = Math.floor((canvas.height - sampleSize) / 2);
-  
+
   const imageData = ctx.getImageData(startX, startY, sampleSize, sampleSize);
-  
+
   // Check if any pixel is non-transparent/non-black
   for (let i = 0; i < imageData.data.length; i += 4) {
     const r = imageData.data[i]!;
     const g = imageData.data[i + 1]!;
     const b = imageData.data[i + 2]!;
     const a = imageData.data[i + 3]!;
-    
+
     // Consider pixel "content" if it has alpha and is not pure black
     if (a > 0 && (r > 10 || g > 10 || b > 10)) {
       return true;
@@ -66,12 +70,12 @@ async function waitForCanvasContent(
 function getWorkbenchCanvas(workbench: EFWorkbench): HTMLCanvasElement | null {
   const shadowRoot = workbench.shadowRoot;
   if (!shadowRoot) return null;
-  
+
   // Canvas container has class "clone-overlay" and is visible when presentationMode is "canvas"
   // Find all clone-overlay divs and check which one is visible (has display: block)
   const overlays = shadowRoot.querySelectorAll(".clone-overlay");
   let canvasContainer: HTMLElement | null = null;
-  
+
   for (const overlay of overlays) {
     const style = window.getComputedStyle(overlay as HTMLElement);
     if (style.display === "block") {
@@ -79,14 +83,14 @@ function getWorkbenchCanvas(workbench: EFWorkbench): HTMLCanvasElement | null {
       break;
     }
   }
-  
+
   if (!canvasContainer) return null;
-  
+
   // Canvas is inside a wrapper div (created by renderTimegroupToCanvas)
   // Structure: container > wrapper div > canvas
   const canvasWrapper = canvasContainer.querySelector("div");
   if (!canvasWrapper) return null;
-  
+
   return canvasWrapper.querySelector("canvas");
 }
 
@@ -115,8 +119,13 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
 
   beforeEach(() => {
     // Save original values
-    originalPresentationMode = localStorage.getItem("ef-preview-presentation-mode") as PreviewPresentationMode || "original";
-    originalRenderMode = localStorage.getItem("ef-preview-render-mode") as RenderMode || "foreignObject";
+    originalPresentationMode =
+      (localStorage.getItem(
+        "ef-preview-presentation-mode",
+      ) as PreviewPresentationMode) || "dom";
+    originalRenderMode =
+      (localStorage.getItem("ef-preview-render-mode") as RenderMode) ||
+      "foreignObject";
 
     // Enable interactive mode for workbench wrapping
     setEFInteractive(true);
@@ -133,7 +142,7 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
     // Restore original values
     setPreviewPresentationMode(originalPresentationMode);
     setRenderMode(originalRenderMode);
-    
+
     // Clean up
     container.remove();
     document.body.innerHTML = "";
@@ -143,7 +152,9 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
   // Skip canvas initialization tests - these are failing due to timing/assertion issues
   // Canvas rendering tests need more investigation. Not blocking for beta release.
   describe.skip("Rendering Mode Tests", () => {
-    test("canvas mode renders first frame in native mode with autoInit", async ({ expect }) => {
+    test("canvas mode renders first frame in native mode with autoInit", async ({
+      expect,
+    }) => {
       // Set presentation mode to canvas
       setPreviewPresentationMode("canvas");
       setRenderMode("native");
@@ -169,16 +180,16 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
 
       // Wait for workbench to wrap
       await new Promise((resolve) => setTimeout(resolve, 100));
-      
+
       const timegroup = document.querySelector("ef-timegroup") as EFTimegroup;
       expect(timegroup).toBeTruthy();
-      
+
       const workbench = timegroup.closest("ef-workbench") as EFWorkbench;
       expect(workbench).toBeTruthy();
 
       // Wait for workbench to initialize
       await workbench.updateComplete;
-      
+
       // Wait for canvas mode to initialize (may be async)
       await new Promise((resolve) => setTimeout(resolve, 200));
 
@@ -191,7 +202,7 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
       // Wait for canvas to appear and render
       const canvas = await waitForWorkbenchCanvas(workbench, 3000);
       expect(canvas).toBeTruthy();
-      
+
       if (canvas) {
         const hasContent = await waitForCanvasContent(canvas, 3000);
         expect(hasContent).toBe(true);
@@ -200,7 +211,9 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
       }
     });
 
-    test("canvas mode renders first frame in foreignObject mode with autoInit", async ({ expect }) => {
+    test("canvas mode renders first frame in foreignObject mode with autoInit", async ({
+      expect,
+    }) => {
       // Set presentation mode to canvas
       setPreviewPresentationMode("canvas");
       setRenderMode("foreignObject");
@@ -226,16 +239,16 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
 
       // Wait for workbench to wrap
       await new Promise((resolve) => setTimeout(resolve, 100));
-      
+
       const timegroup = document.querySelector("ef-timegroup") as EFTimegroup;
       expect(timegroup).toBeTruthy();
-      
+
       const workbench = timegroup.closest("ef-workbench") as EFWorkbench;
       expect(workbench).toBeTruthy();
 
       // Wait for workbench to initialize
       await workbench.updateComplete;
-      
+
       // Wait for canvas mode to initialize
       await new Promise((resolve) => setTimeout(resolve, 200));
 
@@ -248,7 +261,7 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
       // Wait for canvas to appear and render
       const canvas = await waitForWorkbenchCanvas(workbench, 3000);
       expect(canvas).toBeTruthy();
-      
+
       if (canvas) {
         const hasContent = await waitForCanvasContent(canvas, 3000);
         expect(hasContent).toBe(true);
@@ -257,7 +270,9 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
       }
     });
 
-    test("canvas mode renders first frame in native mode without autoInit", async ({ expect }) => {
+    test("canvas mode renders first frame in native mode without autoInit", async ({
+      expect,
+    }) => {
       // Set presentation mode to canvas
       setPreviewPresentationMode("canvas");
       setRenderMode("native");
@@ -281,16 +296,16 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
 
       // Wait for workbench to wrap
       await new Promise((resolve) => setTimeout(resolve, 100));
-      
+
       const timegroup = document.querySelector("ef-timegroup") as EFTimegroup;
       expect(timegroup).toBeTruthy();
-      
+
       const workbench = timegroup.closest("ef-workbench") as EFWorkbench;
       expect(workbench).toBeTruthy();
 
       // Wait for workbench to initialize
       await workbench.updateComplete;
-      
+
       // Wait for canvas mode to initialize
       await new Promise((resolve) => setTimeout(resolve, 200));
 
@@ -303,14 +318,16 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
       // Wait for canvas to appear and render
       const canvas = await waitForWorkbenchCanvas(workbench, 3000);
       expect(canvas).toBeTruthy();
-      
+
       if (canvas) {
         const hasContent = await waitForCanvasContent(canvas, 3000);
         expect(hasContent).toBe(true);
       }
     });
 
-    test("canvas mode renders first frame in foreignObject mode without autoInit", async ({ expect }) => {
+    test("canvas mode renders first frame in foreignObject mode without autoInit", async ({
+      expect,
+    }) => {
       // Set presentation mode to canvas
       setPreviewPresentationMode("canvas");
       setRenderMode("foreignObject");
@@ -334,16 +351,16 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
 
       // Wait for workbench to wrap
       await new Promise((resolve) => setTimeout(resolve, 100));
-      
+
       const timegroup = document.querySelector("ef-timegroup") as EFTimegroup;
       expect(timegroup).toBeTruthy();
-      
+
       const workbench = timegroup.closest("ef-workbench") as EFWorkbench;
       expect(workbench).toBeTruthy();
 
       // Wait for workbench to initialize
       await workbench.updateComplete;
-      
+
       // Wait for canvas mode to initialize
       await new Promise((resolve) => setTimeout(resolve, 200));
 
@@ -356,16 +373,18 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
       // Wait for canvas to appear and render
       const canvas = await waitForWorkbenchCanvas(workbench, 3000);
       expect(canvas).toBeTruthy();
-      
+
       if (canvas) {
         const hasContent = await waitForCanvasContent(canvas, 3000);
         expect(hasContent).toBe(true);
       }
     });
 
-    test("DOM mode renders content directly (no canvas)", async ({ expect }) => {
+    test("DOM mode renders content directly (no canvas)", async ({
+      expect,
+    }) => {
       // Set presentation mode to original (DOM mode)
-      setPreviewPresentationMode("original");
+      setPreviewPresentationMode("dom");
 
       // Create timegroup
       render(
@@ -388,16 +407,16 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
 
       // Wait for workbench to wrap
       await new Promise((resolve) => setTimeout(resolve, 100));
-      
+
       const timegroup = document.querySelector("ef-timegroup") as EFTimegroup;
       expect(timegroup).toBeTruthy();
-      
+
       const workbench = timegroup.closest("ef-workbench") as EFWorkbench;
       expect(workbench).toBeTruthy();
 
       // Wait for workbench to initialize
       await workbench.updateComplete;
-      
+
       // Wait for initial seek
       if (timegroup.isRootTimegroup) {
         await timegroup.waitForMediaDurations().catch(() => {});
@@ -407,7 +426,7 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
       // In DOM mode, content should be visible directly
       const contentDiv = timegroup.querySelector("div");
       expect(contentDiv).toBeTruthy();
-      
+
       // Canvas should not exist in DOM mode
       const canvas = getWorkbenchCanvas(workbench);
       expect(canvas).toBeFalsy();
@@ -417,7 +436,9 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
   // Skip initialization race condition tests - failing due to timing issues
   // These tests need more investigation but aren't blocking for beta release.
   describe.skip("Initialization Race Condition Tests", () => {
-    test("canvas renders after workbench wraps timegroup", async ({ expect }) => {
+    test("canvas renders after workbench wraps timegroup", async ({
+      expect,
+    }) => {
       setPreviewPresentationMode("canvas");
       setRenderMode("foreignObject");
 
@@ -441,33 +462,35 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
 
       // Wait for wrapping and initialization
       await new Promise((resolve) => setTimeout(resolve, 100));
-      
+
       const timegroup = document.querySelector("ef-timegroup") as EFTimegroup;
       const workbench = timegroup?.closest("ef-workbench") as EFWorkbench;
-      
+
       expect(workbench).toBeTruthy();
       await workbench?.updateComplete;
-      
+
       // Wait for initialization sequence
       await new Promise((resolve) => setTimeout(resolve, 200));
-      
+
       if (timegroup?.isRootTimegroup) {
         await timegroup.waitForMediaDurations().catch(() => {});
         await timegroup.seek(0).catch(() => {});
       }
-      
+
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       const canvas = getWorkbenchCanvas(workbench!);
       expect(canvas).toBeTruthy();
-      
+
       if (canvas) {
         const hasContent = await waitForCanvasContent(canvas, 3000);
         expect(hasContent).toBe(true);
       }
     });
 
-    test("canvas renders with pure DOM content (no media)", async ({ expect }) => {
+    test("canvas renders with pure DOM content (no media)", async ({
+      expect,
+    }) => {
       setPreviewPresentationMode("canvas");
       setRenderMode("foreignObject");
 
@@ -490,25 +513,25 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
       );
 
       await new Promise((resolve) => setTimeout(resolve, 100));
-      
+
       const timegroup = document.querySelector("ef-timegroup") as EFTimegroup;
       const workbench = timegroup?.closest("ef-workbench") as EFWorkbench;
-      
+
       expect(workbench).toBeTruthy();
       await workbench?.updateComplete;
-      
+
       await new Promise((resolve) => setTimeout(resolve, 200));
-      
+
       if (timegroup?.isRootTimegroup) {
         await timegroup.waitForMediaDurations().catch(() => {});
         await timegroup.seek(0).catch(() => {});
       }
-      
+
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       const canvas = getWorkbenchCanvas(workbench!);
       expect(canvas).toBeTruthy();
-      
+
       if (canvas) {
         const hasContent = await waitForCanvasContent(canvas, 3000);
         expect(hasContent).toBe(true);
@@ -539,45 +562,48 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
       );
 
       await new Promise((resolve) => setTimeout(resolve, 100));
-      
+
       const timegroup = document.querySelector("ef-timegroup") as EFTimegroup;
       const workbench = timegroup?.closest("ef-workbench") as EFWorkbench;
-      
+
       await workbench?.updateComplete;
       await new Promise((resolve) => setTimeout(resolve, 200));
-      
+
       if (timegroup?.isRootTimegroup) {
         await timegroup.waitForMediaDurations().catch(() => {});
         await timegroup.seek(0).catch(() => {});
       }
-      
+
       // Wait for canvas to appear and render
       const canvas = await waitForWorkbenchCanvas(workbench!, 3000);
       expect(canvas).toBeTruthy();
-      
+
       if (canvas) {
         // Verify initial frame renders
         const hasInitialContent = await waitForCanvasContent(canvas, 3000);
         expect(hasInitialContent).toBe(true);
-        
+
         // Seek to middle of timeline
         await timegroup!.seek(1000);
         await new Promise((resolve) => setTimeout(resolve, 300));
-        
+
         // Canvas should still have content after seek
         const hasContentAfterSeek = canvasHasContent(canvas);
         expect(hasContentAfterSeek).toBe(true);
       }
     });
 
-    test("canvas renders correctly after mode switch", { timeout: 10000 }, async ({ expect }) => {
-      // This test requires more time for mode switching and canvas rendering
-      // Skip for now as it's timing out with 3s limit - needs investigation
-      // Start in DOM mode
-      setPreviewPresentationMode("original");
+    test(
+      "canvas renders correctly after mode switch",
+      { timeout: 10000 },
+      async ({ expect }) => {
+        // This test requires more time for mode switching and canvas rendering
+        // Skip for now as it's timing out with 3s limit - needs investigation
+        // Start in DOM mode
+        setPreviewPresentationMode("dom");
 
-      render(
-        html`
+        render(
+          html`
           <ef-timegroup
             id="test-timegroup"
             workbench
@@ -591,37 +617,38 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
             </div>
           </ef-timegroup>
         `,
-        container,
-      );
+          container,
+        );
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      
-      const timegroup = document.querySelector("ef-timegroup") as EFTimegroup;
-      const workbench = timegroup?.closest("ef-workbench") as EFWorkbench;
-      
-      await workbench?.updateComplete;
-      
-      if (timegroup?.isRootTimegroup) {
-        await timegroup.waitForMediaDurations().catch(() => {});
-        await timegroup.seek(0).catch(() => {});
-      }
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
-      // Switch to canvas mode
-      setPreviewPresentationMode("canvas");
-      setRenderMode("foreignObject");
-      
-      // Trigger mode change
-      await workbench?.updateComplete;
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      
-      // Wait for canvas to appear and render
-      const canvas = await waitForWorkbenchCanvas(workbench!, 3000);
-      expect(canvas).toBeTruthy();
-      
-      if (canvas) {
-        const hasContent = await waitForCanvasContent(canvas, 3000);
-        expect(hasContent).toBe(true);
-      }
-    });
+        const timegroup = document.querySelector("ef-timegroup") as EFTimegroup;
+        const workbench = timegroup?.closest("ef-workbench") as EFWorkbench;
+
+        await workbench?.updateComplete;
+
+        if (timegroup?.isRootTimegroup) {
+          await timegroup.waitForMediaDurations().catch(() => {});
+          await timegroup.seek(0).catch(() => {});
+        }
+
+        // Switch to canvas mode
+        setPreviewPresentationMode("canvas");
+        setRenderMode("foreignObject");
+
+        // Trigger mode change
+        await workbench?.updateComplete;
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Wait for canvas to appear and render
+        const canvas = await waitForWorkbenchCanvas(workbench!, 3000);
+        expect(canvas).toBeTruthy();
+
+        if (canvas) {
+          const hasContent = await waitForCanvasContent(canvas, 3000);
+          expect(hasContent).toBe(true);
+        }
+      },
+    );
   });
 });

@@ -36,15 +36,22 @@ describe("Three.js WebGL rendering via addFrameTask", () => {
     tg.appendChild(canvas);
 
     tg.initializer = (instance) => {
-      const c = instance.querySelector("[data-test-canvas='three']") as HTMLCanvasElement;
+      const c = instance.querySelector(
+        "[data-test-canvas='three']",
+      ) as HTMLCanvasElement;
       if (!c) return;
 
-      const renderer = new THREE.WebGLRenderer({ canvas: c, preserveDrawingBuffer: true });
+      const renderer = new THREE.WebGLRenderer({
+        canvas: c,
+        preserveDrawingBuffer: true,
+      });
       renderer.setSize(200, 200, false);
       const scene = new THREE.Scene();
       const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
       const geometry = new THREE.PlaneGeometry(2, 2);
-      const material = new THREE.MeshBasicMaterial({ color: new THREE.Color(1, 0, 0) });
+      const material = new THREE.MeshBasicMaterial({
+        color: new THREE.Color(1, 0, 0),
+      });
       const mesh = new THREE.Mesh(geometry, material);
       scene.add(mesh);
 
@@ -62,12 +69,15 @@ describe("Three.js WebGL rendering via addFrameTask", () => {
     const { clone, cleanup } = await tg.createRenderClone();
 
     try {
-      const cloneCanvas = clone.querySelector("[data-test-canvas='three']") as HTMLCanvasElement;
+      const cloneCanvas = clone.querySelector(
+        "[data-test-canvas='three']",
+      ) as HTMLCanvasElement;
       assert.isNotNull(cloneCanvas, "Clone should have the canvas");
 
       await clone.seekForRender(0);
-      const gl0 = cloneCanvas.getContext("webgl2", { preserveDrawingBuffer: true })
-        || cloneCanvas.getContext("webgl", { preserveDrawingBuffer: true });
+      const gl0 =
+        cloneCanvas.getContext("webgl2", { preserveDrawingBuffer: true }) ||
+        cloneCanvas.getContext("webgl", { preserveDrawingBuffer: true });
       assert.isNotNull(gl0, "Should have WebGL context");
       const pixel0 = new Uint8Array(4);
       gl0!.readPixels(100, 100, 1, 1, gl0!.RGBA, gl0!.UNSIGNED_BYTE, pixel0);
@@ -77,17 +87,37 @@ describe("Three.js WebGL rendering via addFrameTask", () => {
       gl0!.readPixels(100, 100, 1, 1, gl0!.RGBA, gl0!.UNSIGNED_BYTE, pixel900);
 
       // At 0ms: red dominant
-      assert.isAbove(pixel0[0], 150, `At t=0 red should be high, got ${pixel0[0]}`);
-      assert.isBelow(pixel0[2], 100, `At t=0 blue should be low, got ${pixel0[2]}`);
+      assert.isAbove(
+        pixel0[0],
+        150,
+        `At t=0 red should be high, got ${pixel0[0]}`,
+      );
+      assert.isBelow(
+        pixel0[2],
+        100,
+        `At t=0 blue should be low, got ${pixel0[2]}`,
+      );
 
       // At 900ms: blue dominant over red (WebGL gamma/sRGB may shift values)
-      assert.isAbove(pixel900[2], pixel900[0], `At t=900 blue (${pixel900[2]}) should exceed red (${pixel900[0]})`);
-      assert.isAbove(pixel900[2], 150, `At t=900 blue should be high, got ${pixel900[2]}`);
+      assert.isAbove(
+        pixel900[2],
+        pixel900[0],
+        `At t=900 blue (${pixel900[2]}) should exceed red (${pixel900[0]})`,
+      );
+      assert.isAbove(
+        pixel900[2],
+        150,
+        `At t=900 blue should be high, got ${pixel900[2]}`,
+      );
 
       // Colors at t=0 and t=900 should be significantly different
-      const colorDiff = Math.abs(pixel0[0] - pixel900[0]) + Math.abs(pixel0[2] - pixel900[2]);
-      assert.isAbove(colorDiff, 100, `Color difference should be >100, got ${colorDiff}`);
-
+      const colorDiff =
+        Math.abs(pixel0[0] - pixel900[0]) + Math.abs(pixel0[2] - pixel900[2]);
+      assert.isAbove(
+        colorDiff,
+        100,
+        `Color difference should be >100, got ${colorDiff}`,
+      );
     } finally {
       cleanup();
       tg.remove();
@@ -107,10 +137,15 @@ describe("Three.js WebGL rendering via addFrameTask", () => {
     tg.appendChild(canvas);
 
     tg.initializer = (instance) => {
-      const c = instance.querySelector("[data-test-canvas='det']") as HTMLCanvasElement;
+      const c = instance.querySelector(
+        "[data-test-canvas='det']",
+      ) as HTMLCanvasElement;
       if (!c) return;
 
-      const renderer = new THREE.WebGLRenderer({ canvas: c, preserveDrawingBuffer: true });
+      const renderer = new THREE.WebGLRenderer({
+        canvas: c,
+        preserveDrawingBuffer: true,
+      });
       renderer.setSize(100, 100, false);
       const scene = new THREE.Scene();
       const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -131,9 +166,12 @@ describe("Three.js WebGL rendering via addFrameTask", () => {
     const { clone, cleanup } = await tg.createRenderClone();
 
     try {
-      const cloneCanvas = clone.querySelector("[data-test-canvas='det']") as HTMLCanvasElement;
-      const gl = cloneCanvas.getContext("webgl2", { preserveDrawingBuffer: true })
-        || cloneCanvas.getContext("webgl", { preserveDrawingBuffer: true });
+      const cloneCanvas = clone.querySelector(
+        "[data-test-canvas='det']",
+      ) as HTMLCanvasElement;
+      const gl =
+        cloneCanvas.getContext("webgl2", { preserveDrawingBuffer: true }) ||
+        cloneCanvas.getContext("webgl", { preserveDrawingBuffer: true });
 
       await clone.seekForRender(500);
       const px1 = new Uint8Array(4);
@@ -147,7 +185,6 @@ describe("Three.js WebGL rendering via addFrameTask", () => {
       assert.equal(px1[1], px2[1], "Green channel should be identical");
       assert.equal(px1[2], px2[2], "Blue channel should be identical");
       assert.equal(px1[3], px2[3], "Alpha channel should be identical");
-
     } finally {
       cleanup();
       tg.remove();
@@ -191,7 +228,10 @@ describe("OffscreenCanvas + Worker WebGL rendering", () => {
       const offscreen = new OffscreenCanvas(128, 128);
 
       const bitmap = await new Promise<ImageBitmap>((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error("Worker render timeout")), 5000);
+        const timeout = setTimeout(
+          () => reject(new Error("Worker render timeout")),
+          5000,
+        );
         worker.onmessage = (e) => {
           clearTimeout(timeout);
           if (e.data.type === "rendered") resolve(e.data.bitmap);
@@ -211,8 +251,16 @@ describe("OffscreenCanvas + Worker WebGL rendering", () => {
       bitmap.close();
 
       const pixel = ctx.getImageData(64, 64, 1, 1).data;
-      assert.isAbove(pixel[1]!, 200, `Green channel should be >200, got ${pixel[1]}`);
-      assert.isBelow(pixel[0]!, 50, `Red channel should be <50, got ${pixel[0]}`);
+      assert.isAbove(
+        pixel[1]!,
+        200,
+        `Green channel should be >200, got ${pixel[1]}`,
+      );
+      assert.isBelow(
+        pixel[0]!,
+        50,
+        `Red channel should be <50, got ${pixel[0]}`,
+      );
       assert.equal(pixel[3]!, 255, "Should be fully opaque");
     } finally {
       worker.terminate();
@@ -236,63 +284,112 @@ describe("OffscreenCanvas + Worker WebGL rendering", () => {
  */
 
 describe("Worker renders while main thread is halted (Debugger.pause)", () => {
-  test("Worker renders all frames during main-thread pause, main thread resumes after", { timeout: 30000 }, async () => {
-    const result = await (commands as any).testWorkerRendersWhileMainThreadFrozen();
+  test(
+    "Worker renders all frames during main-thread pause, main thread resumes after",
+    { timeout: 30000 },
+    async () => {
+      const result = await (
+        commands as any
+      ).testWorkerRendersWhileMainThreadFrozen();
 
-    console.log("[Freeze Test] Pause duration:", result.pauseDuration, "ms");
-    console.log("[Freeze Test] Worker frames:", result.workerResults?.length);
-    console.log("[Freeze Test] Main frames:", result.mainResults?.length);
+      console.log("[Freeze Test] Pause duration:", result.pauseDuration, "ms");
+      console.log("[Freeze Test] Worker frames:", result.workerResults?.length);
+      console.log("[Freeze Test] Main frames:", result.mainResults?.length);
 
-    // ── Worker rendered ALL frames ──
-    assert.isNotNull(result.workerResults, "Worker results should exist");
-    assert.equal(result.workerResults.length, 5,
-      `Worker should render 5 frames, got ${result.workerResults?.length}`);
+      // ── Worker rendered ALL frames ──
+      assert.isNotNull(result.workerResults, "Worker results should exist");
+      assert.equal(
+        result.workerResults.length,
+        5,
+        `Worker should render 5 frames, got ${result.workerResults?.length}`,
+      );
 
-    // ── Worker pixels are correct ──
-    const expectedColors: [number, number, number][] = [
-      [255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 0], [255, 0, 255],
-    ];
-    for (let i = 0; i < result.workerResults.length; i++) {
-      const frame = result.workerResults[i];
-      const [er, eg, eb] = expectedColors[i];
-      assert.isAbove(frame.pixel.r, er - 50, `Worker frame ${frame.frameId} red`);
-      assert.isAbove(frame.pixel.g, eg - 50, `Worker frame ${frame.frameId} green`);
-      assert.isAbove(frame.pixel.b, eb - 50, `Worker frame ${frame.frameId} blue`);
-    }
+      // ── Worker pixels are correct ──
+      const expectedColors: [number, number, number][] = [
+        [255, 0, 0],
+        [0, 255, 0],
+        [0, 0, 255],
+        [255, 255, 0],
+        [255, 0, 255],
+      ];
+      for (let i = 0; i < result.workerResults.length; i++) {
+        const frame = result.workerResults[i];
+        const [er, eg, eb] = expectedColors[i];
+        assert.isAbove(
+          frame.pixel.r,
+          er - 50,
+          `Worker frame ${frame.frameId} red`,
+        );
+        assert.isAbove(
+          frame.pixel.g,
+          eg - 50,
+          `Worker frame ${frame.frameId} green`,
+        );
+        assert.isAbove(
+          frame.pixel.b,
+          eb - 50,
+          `Worker frame ${frame.frameId} blue`,
+        );
+      }
 
-    // ── Worker timestamps are DURING the pause period ──
-    const workerFirst = result.workerResults[0].timestamp;
-    const workerLast = result.workerResults[result.workerResults.length - 1].timestamp;
-    const workerSpan = workerLast - workerFirst;
-    assert.isAbove(workerSpan, 500,
-      `Worker frame span should be >500ms (actual rendering), got ${workerSpan}ms`);
-    assert.isBelow(workerLast, result.unfreezeTime,
-      "Worker should complete BEFORE main thread resumes");
+      // ── Worker timestamps are DURING the pause period ──
+      const workerFirst = result.workerResults[0].timestamp;
+      const workerLast =
+        result.workerResults[result.workerResults.length - 1].timestamp;
+      const workerSpan = workerLast - workerFirst;
+      assert.isAbove(
+        workerSpan,
+        500,
+        `Worker frame span should be >500ms (actual rendering), got ${workerSpan}ms`,
+      );
+      assert.isBelow(
+        workerLast,
+        result.unfreezeTime,
+        "Worker should complete BEFORE main thread resumes",
+      );
 
-    console.log(`[Freeze Test] Worker: T=${workerFirst - result.freezeStartTime}ms to T=${workerLast - result.freezeStartTime}ms (span: ${workerSpan}ms)`);
+      console.log(
+        `[Freeze Test] Worker: T=${workerFirst - result.freezeStartTime}ms to T=${workerLast - result.freezeStartTime}ms (span: ${workerSpan}ms)`,
+      );
 
-    // ── Main thread frames are AFTER the resume ──
-    assert.isNotNull(result.mainResults, "Main thread results should exist");
-    assert.isAbove(result.mainResults.length, 0, "Main thread should have rendered some frames");
+      // ── Main thread frames are AFTER the resume ──
+      assert.isNotNull(result.mainResults, "Main thread results should exist");
+      assert.isAbove(
+        result.mainResults.length,
+        0,
+        "Main thread should have rendered some frames",
+      );
 
-    if (result.mainResults.length > 1) {
-      const mainSecond = result.mainResults[1].timestamp;
-      assert.isAbove(mainSecond, result.unfreezeTime - 200,
-        `Main thread frame 2 (T=${mainSecond - result.freezeStartTime}ms) should be after ` +
-        `resume (T=${result.unfreezeTime - result.freezeStartTime}ms)`);
+      if (result.mainResults.length > 1) {
+        const mainSecond = result.mainResults[1].timestamp;
+        assert.isAbove(
+          mainSecond,
+          result.unfreezeTime - 200,
+          `Main thread frame 2 (T=${mainSecond - result.freezeStartTime}ms) should be after ` +
+            `resume (T=${result.unfreezeTime - result.freezeStartTime}ms)`,
+        );
 
-      console.log(`[Freeze Test] Main:   frame 2 at T=${mainSecond - result.freezeStartTime}ms (after resume at T=${result.unfreezeTime - result.freezeStartTime}ms)`);
-    }
+        console.log(
+          `[Freeze Test] Main:   frame 2 at T=${mainSecond - result.freezeStartTime}ms (after resume at T=${result.unfreezeTime - result.freezeStartTime}ms)`,
+        );
+      }
 
-    // ── The definitive comparison ──
-    const workerMedian = result.workerResults[2].timestamp;
-    const mainMedian = result.mainResults.length > 2
-      ? result.mainResults[2].timestamp
-      : result.mainResults[result.mainResults.length - 1].timestamp;
+      // ── The definitive comparison ──
+      const workerMedian = result.workerResults[2].timestamp;
+      const mainMedian =
+        result.mainResults.length > 2
+          ? result.mainResults[2].timestamp
+          : result.mainResults[result.mainResults.length - 1].timestamp;
 
-    assert.isBelow(workerMedian, mainMedian,
-      "Worker median timestamp should be before main thread (Worker was active during pause)");
+      assert.isBelow(
+        workerMedian,
+        mainMedian,
+        "Worker median timestamp should be before main thread (Worker was active during pause)",
+      );
 
-    console.log("[Freeze Test] PROVEN: Worker rendered DURING pause, main thread rendered AFTER resume");
-  });
+      console.log(
+        "[Freeze Test] PROVEN: Worker rendered DURING pause, main thread rendered AFTER resume",
+      );
+    },
+  );
 });

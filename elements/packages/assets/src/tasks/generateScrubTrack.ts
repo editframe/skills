@@ -7,9 +7,7 @@ import { generateFragmentIndex } from "../generateFragmentIndex.js";
 
 const log = debug("ef:generateScrubTrack");
 
-export const generateScrubTrackFromPath = async (
-  absolutePath: string,
-) => {
+export const generateScrubTrackFromPath = async (absolutePath: string) => {
   log(`Generating scrub track for ${absolutePath}`);
 
   const probe = await Probe.probePath(absolutePath);
@@ -106,7 +104,7 @@ export const generateScrubTrackTask = idempotentTask({
     `${basename(absolutePath)}.scrub-track.mp4`,
   runner: async (absolutePath: string) => {
     const probe = await Probe.probePath(absolutePath);
-    
+
     if (probe.videoStreams.length === 0) {
       throw new Error("No video stream found for scrub track generation");
     }
@@ -181,4 +179,3 @@ export const generateScrubTrack = async (
     throw error;
   }
 };
-

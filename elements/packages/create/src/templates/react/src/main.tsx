@@ -9,6 +9,4 @@ if (!root) {
   throw new Error("Root element not found");
 }
 
-ReactDOM.createRoot(root).render(
-  <TimelineRoot id="root" component={Video} />
-);
+ReactDOM.createRoot(root).render(<TimelineRoot id="root" component={Video} />);

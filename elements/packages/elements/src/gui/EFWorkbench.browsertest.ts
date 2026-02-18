@@ -37,7 +37,9 @@ describe.skip("EFWorkbench", () => {
     container.remove();
   });
 
-  test("rendering state is correctly tracked when framegen bridge is active", async ({ expect }) => {
+  test("rendering state is correctly tracked when framegen bridge is active", async ({
+    expect,
+  }) => {
     // Mock FRAMEGEN_BRIDGE
     const mockBridge = {
       onInitialize: () => {},
@@ -85,7 +87,9 @@ describe.skip("EFWorkbench", () => {
     expect(toolbar).toBeTruthy();
   });
 
-  test("workbench shows canvas-only view only when rendering=true, not based on FRAMEGEN_BRIDGE existence", async ({ expect }) => {
+  test("workbench shows canvas-only view only when rendering=true, not based on FRAMEGEN_BRIDGE existence", async ({
+    expect,
+  }) => {
     // Mock FRAMEGEN_BRIDGE to simulate bridge being set up
     const mockBridge = {
       onInitialize: () => {},
@@ -111,19 +115,21 @@ describe.skip("EFWorkbench", () => {
     // because rendering=false (after fix, the hack is removed)
     const shadowRoot = workbench.shadowRoot;
     const toolbar = shadowRoot?.querySelector(".toolbar");
-    
+
     // After fix: Should show full UI when rendering=false
     expect(toolbar).toBeTruthy();
-    
+
     // When rendering=false, the canvas slot should be inside the grid layout,
     // not the only element rendered. Check that the grid container exists.
-    const gridContainer = shadowRoot?.querySelector('.grid');
+    const gridContainer = shadowRoot?.querySelector(".grid");
     expect(gridContainer).toBeTruthy();
-    
+
     // Canvas slot exists but should be inside the grid, not as the root
     const canvasSlot = shadowRoot?.querySelector('slot[name="canvas"]');
     expect(canvasSlot).toBeTruthy();
-    expect(canvasSlot?.parentElement?.classList.contains('canvas-container')).toBe(true);
+    expect(
+      canvasSlot?.parentElement?.classList.contains("canvas-container"),
+    ).toBe(true);
 
     // Now set rendering=true (simulating active rendering)
     workbench.rendering = true;
@@ -133,19 +139,21 @@ describe.skip("EFWorkbench", () => {
     expect(workbench.rendering).toBe(true);
 
     // Now it should show canvas-only view (only the canvas slot, no grid/toolbar)
-    const canvasSlotWhenRendering = shadowRoot?.querySelector('slot[name="canvas"]');
+    const canvasSlotWhenRendering = shadowRoot?.querySelector(
+      'slot[name="canvas"]',
+    );
     expect(canvasSlotWhenRendering).toBeTruthy();
-    
+
     // When rendering=true, canvas slot should be a direct child of shadowRoot
     // (parentNode works in shadow DOM, parentElement doesn't)
     expect(canvasSlotWhenRendering?.parentNode).toBe(shadowRoot);
-    
+
     // Toolbar should not exist when rendering
     const toolbarWhenRendering = shadowRoot?.querySelector(".toolbar");
     expect(toolbarWhenRendering).toBeNull();
-    
+
     // Grid container should not exist when rendering
-    const gridContainerWhenRendering = shadowRoot?.querySelector('.grid');
+    const gridContainerWhenRendering = shadowRoot?.querySelector(".grid");
     expect(gridContainerWhenRendering).toBeNull();
 
     // Simulate rendering completion
@@ -155,15 +163,20 @@ describe.skip("EFWorkbench", () => {
     // After rendering completes: Should show full UI again
     const toolbarAfterRendering = shadowRoot?.querySelector(".toolbar");
     expect(toolbarAfterRendering).toBeTruthy();
-    
+
     // Grid container should exist again
-    const gridContainerAfterRendering = shadowRoot?.querySelector('.grid');
+    const gridContainerAfterRendering = shadowRoot?.querySelector(".grid");
     expect(gridContainerAfterRendering).toBeTruthy();
-    
+
     // Canvas slot should be inside the grid container again
-    const canvasSlotAfterRendering = shadowRoot?.querySelector('slot[name="canvas"]');
+    const canvasSlotAfterRendering = shadowRoot?.querySelector(
+      'slot[name="canvas"]',
+    );
     expect(canvasSlotAfterRendering).toBeTruthy();
-    expect(canvasSlotAfterRendering?.parentElement?.classList.contains('canvas-container')).toBe(true);
+    expect(
+      canvasSlotAfterRendering?.parentElement?.classList.contains(
+        "canvas-container",
+      ),
+    ).toBe(true);
   });
 });
-

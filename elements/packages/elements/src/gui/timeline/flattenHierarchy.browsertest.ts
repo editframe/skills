@@ -152,4 +152,3 @@ describe("flattenHierarchy", () => {
     ]);
   });
 });
-

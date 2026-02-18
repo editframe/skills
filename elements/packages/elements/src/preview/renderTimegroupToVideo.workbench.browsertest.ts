@@ -1,12 +1,12 @@
 /**
  * Integration tests for renderTimegroupToVideo that replicate the full workbench export path.
- * 
+ *
  * These tests exercise the same code path as the UI, including:
  * - Progress callbacks
  * - Temporal culling (elements appearing/disappearing over time)
  * - DOM mutations between frames (canvas, video, text changes)
  * - Multi-frame exports (30+ frames to catch state accumulation issues)
- * 
+ *
  * These tests would have caught the insertBefore error that wasn't caught by unit tests.
  */
 
@@ -24,7 +24,10 @@ import "../gui/EFWorkbench.js";
 import "../gui/EFPreview.js";
 import "../canvas/EFCanvas.js";
 import "../elements/EFPanZoom.js";
-import { renderTimegroupToVideo, type RenderProgress } from "./renderTimegroupToVideo.js";
+import {
+  renderTimegroupToVideo,
+  type RenderProgress,
+} from "./renderTimegroupToVideo.js";
 import { logger } from "./logger.js";
 
 beforeAll(async () => {
@@ -49,33 +52,35 @@ async function decodeFirstFrame(videoBuffer: Uint8Array): Promise<{
   samplePixel: [number, number, number, number];
   nonBlackPercentage: number;
 }> {
-  const blob = new Blob([videoBuffer as unknown as BlobPart], { type: "video/mp4" });
+  const blob = new Blob([videoBuffer as unknown as BlobPart], {
+    type: "video/mp4",
+  });
   const url = URL.createObjectURL(blob);
-  
+
   const video = document.createElement("video");
   video.src = url;
   video.muted = true;
-  
+
   await new Promise<void>((resolve, reject) => {
     video.onloadedmetadata = () => resolve();
     video.onerror = () => reject(new Error("Failed to load video"));
   });
-  
+
   video.currentTime = 0;
   await new Promise<void>((resolve) => {
     video.onseeked = () => resolve();
   });
-  
+
   const canvas = document.createElement("canvas");
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   const ctx = canvas.getContext("2d")!;
   ctx.drawImage(video, 0, 0);
-  
+
   const centerX = Math.floor(canvas.width / 2);
   const centerY = Math.floor(canvas.height / 2);
   const centerPixel = ctx.getImageData(centerX, centerY, 1, 1).data;
-  
+
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   let nonBlackPixels = 0;
   for (let i = 0; i < imageData.data.length; i += 4) {
@@ -86,28 +91,32 @@ async function decodeFirstFrame(videoBuffer: Uint8Array): Promise<{
       nonBlackPixels++;
     }
   }
-  
+
   const totalPixels = canvas.width * canvas.height;
   const nonBlackPercentage = (nonBlackPixels / totalPixels) * 100;
   const hasContent = nonBlackPixels > totalPixels * 0.1;
-  
+
   URL.revokeObjectURL(url);
-  
+
   return {
     width: canvas.width,
     height: canvas.height,
     hasContent,
-    samplePixel: [centerPixel[0]!, centerPixel[1]!, centerPixel[2]!, centerPixel[3]!],
+    samplePixel: [
+      centerPixel[0]!,
+      centerPixel[1]!,
+      centerPixel[2]!,
+      centerPixel[3]!,
+    ],
     nonBlackPercentage,
   };
 }
 
 describe("renderTimegroupToVideo - workbench integration", () => {
-  
   it("should export video through workbench path with progress callbacks", async () => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
-    
+
     render(
       html`
       <ef-configuration api-host="${apiHost}" signing-url="/@ef-sign-url">
@@ -130,20 +139,24 @@ describe("renderTimegroupToVideo - workbench integration", () => {
       container,
     );
     document.body.appendChild(container);
-    
+
     try {
       const workbench = container.querySelector("ef-workbench") as EFWorkbench;
-      const timegroup = container.querySelector("#workbench-test") as EFTimegroup;
-      
+      const timegroup = container.querySelector(
+        "#workbench-test",
+      ) as EFTimegroup;
+
       await workbench.updateComplete;
       await timegroup.updateComplete;
       await timegroup.waitForMediaDurations();
-      
-      logger.debug("[Workbench Integration Test] Starting export with progress tracking...");
-      
+
+      logger.debug(
+        "[Workbench Integration Test] Starting export with progress tracking...",
+      );
+
       const progressUpdates: RenderProgress[] = [];
       const startTime = performance.now();
-      
+
       // Export like the workbench does - with progress callbacks
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
         fps: 10,
@@ -158,46 +171,60 @@ describe("renderTimegroupToVideo - workbench integration", () => {
           progressUpdates.push({ ...progress });
           logger.debug(
             `[Workbench Integration Test] Progress: ${progress.progress.toFixed(1)}%, ` +
-            `Frame ${progress.currentFrame}/${progress.totalFrames}, ` +
-            `Speed: ${progress.speedMultiplier.toFixed(2)}x`
+              `Frame ${progress.currentFrame}/${progress.totalFrames}, ` +
+              `Speed: ${progress.speedMultiplier.toFixed(2)}x`,
           );
         },
       });
-      
+
       const totalTime = performance.now() - startTime;
-      const avgSpeedMultiplier = progressUpdates.length > 0 
-        ? progressUpdates.reduce((sum, p) => sum + p.speedMultiplier, 0) / progressUpdates.length 
-        : 0;
-      const frameCount = progressUpdates.length > 0 ? progressUpdates[progressUpdates.length - 1]!.totalFrames : 0;
-      
-      console.log(`[PERF] Workbench progress callbacks: ${totalTime.toFixed(0)}ms, ${frameCount} frames, ${avgSpeedMultiplier.toFixed(2)}x realtime, ${(totalTime / Math.max(frameCount, 1)).toFixed(1)}ms/frame`);
-      
+      const avgSpeedMultiplier =
+        progressUpdates.length > 0
+          ? progressUpdates.reduce((sum, p) => sum + p.speedMultiplier, 0) /
+            progressUpdates.length
+          : 0;
+      const frameCount =
+        progressUpdates.length > 0
+          ? progressUpdates[progressUpdates.length - 1]!.totalFrames
+          : 0;
+
+      console.log(
+        `[PERF] Workbench progress callbacks: ${totalTime.toFixed(0)}ms, ${frameCount} frames, ${avgSpeedMultiplier.toFixed(2)}x realtime, ${(totalTime / Math.max(frameCount, 1)).toFixed(1)}ms/frame`,
+      );
+
       expect(videoBuffer).toBeDefined();
       expect(videoBuffer!.length).toBeGreaterThan(1000);
-      
+
       // Verify progress callbacks were called (may be infrequent for short exports)
       expect(progressUpdates.length).toBeGreaterThan(0);
-      logger.debug(`[Workbench Integration Test] Received ${progressUpdates.length} progress updates`);
+      logger.debug(
+        `[Workbench Integration Test] Received ${progressUpdates.length} progress updates`,
+      );
       if (progressUpdates.length > 0) {
-        logger.debug(`[Workbench Integration Test] First progress: ${progressUpdates[0]?.progress}%`);
-        logger.debug(`[Workbench Integration Test] Last progress: ${progressUpdates[progressUpdates.length - 1]?.progress}%`);
+        logger.debug(
+          `[Workbench Integration Test] First progress: ${progressUpdates[0]?.progress}%`,
+        );
+        logger.debug(
+          `[Workbench Integration Test] Last progress: ${progressUpdates[progressUpdates.length - 1]?.progress}%`,
+        );
       }
-      
+
       // Verify video has content
       const frameData = await decodeFirstFrame(videoBuffer!);
       expect(frameData.hasContent).toBe(true);
-      
-      logger.debug(`[Workbench Integration Test] Export completed with ${progressUpdates.length} progress updates`);
-      
+
+      logger.debug(
+        `[Workbench Integration Test] Export completed with ${progressUpdates.length} progress updates`,
+      );
     } finally {
       container.remove();
     }
   }, 60000);
-  
+
   it("should handle temporal culling - elements appearing and disappearing over time", async () => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
-    
+
     // Create a composition with elements that appear/disappear at different times
     render(
       html`
@@ -249,20 +276,24 @@ describe("renderTimegroupToVideo - workbench integration", () => {
       container,
     );
     document.body.appendChild(container);
-    
+
     try {
       const workbench = container.querySelector("ef-workbench") as EFWorkbench;
-      const timegroup = container.querySelector("#temporal-culling-test") as EFTimegroup;
-      
+      const timegroup = container.querySelector(
+        "#temporal-culling-test",
+      ) as EFTimegroup;
+
       await workbench.updateComplete;
       await timegroup.updateComplete;
       await timegroup.waitForMediaDurations();
-      
-      logger.debug("[Temporal Culling Test] Starting export across all time ranges...");
-      
+
+      logger.debug(
+        "[Temporal Culling Test] Starting export across all time ranges...",
+      );
+
       const progressUpdates: RenderProgress[] = [];
       const startTime = performance.now();
-      
+
       // Export the full 5 seconds - this will exercise temporal culling as elements appear/disappear
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
         fps: 15, // 75 frames total - good stress test
@@ -277,32 +308,40 @@ describe("renderTimegroupToVideo - workbench integration", () => {
           progressUpdates.push({ ...progress });
         },
       });
-      
+
       const totalTime = performance.now() - startTime;
-      const avgSpeedMultiplier = progressUpdates.length > 0 
-        ? progressUpdates.reduce((sum, p) => sum + p.speedMultiplier, 0) / progressUpdates.length 
-        : 0;
-      const frameCount = progressUpdates.length > 0 ? progressUpdates[progressUpdates.length - 1]!.totalFrames : 0;
-      
-      console.log(`[PERF] Temporal culling: ${totalTime.toFixed(0)}ms, ${frameCount} frames, ${avgSpeedMultiplier.toFixed(2)}x realtime, ${(totalTime / Math.max(frameCount, 1)).toFixed(1)}ms/frame`);
-      
+      const avgSpeedMultiplier =
+        progressUpdates.length > 0
+          ? progressUpdates.reduce((sum, p) => sum + p.speedMultiplier, 0) /
+            progressUpdates.length
+          : 0;
+      const frameCount =
+        progressUpdates.length > 0
+          ? progressUpdates[progressUpdates.length - 1]!.totalFrames
+          : 0;
+
+      console.log(
+        `[PERF] Temporal culling: ${totalTime.toFixed(0)}ms, ${frameCount} frames, ${avgSpeedMultiplier.toFixed(2)}x realtime, ${(totalTime / Math.max(frameCount, 1)).toFixed(1)}ms/frame`,
+      );
+
       expect(videoBuffer).toBeDefined();
       expect(videoBuffer!.length).toBeGreaterThan(1000);
-      
+
       const frameData = await decodeFirstFrame(videoBuffer!);
       expect(frameData.hasContent).toBe(true);
-      
-      logger.debug("[Temporal Culling Test] Successfully exported video with temporal culling");
-      
+
+      logger.debug(
+        "[Temporal Culling Test] Successfully exported video with temporal culling",
+      );
     } finally {
       container.remove();
     }
   }, 90000);
-  
+
   it("should handle nested timegroups with different time ranges", async () => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
-    
+
     render(
       html`
       <ef-configuration api-host="${apiHost}" signing-url="/@ef-sign-url">
@@ -341,26 +380,28 @@ describe("renderTimegroupToVideo - workbench integration", () => {
       container,
     );
     document.body.appendChild(container);
-    
+
     try {
       const workbench = container.querySelector("ef-workbench") as EFWorkbench;
       const timegroup = container.querySelector("#nested-test") as EFTimegroup;
-      
+
       await workbench.updateComplete;
       await timegroup.updateComplete;
       await timegroup.waitForMediaDurations();
-      
-      logger.debug("[Nested Timegroups Test] Starting export with scene transitions...");
-      
+
+      logger.debug(
+        "[Nested Timegroups Test] Starting export with scene transitions...",
+      );
+
       const progressUpdates: RenderProgress[] = [];
       const startTime = performance.now();
-      
+
       // Export across the scene boundary
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
         fps: 10,
         scale: 0.5,
         fromMs: 1000, // Start in scene 1
-        toMs: 3000,   // End in scene 2
+        toMs: 3000, // End in scene 2
         returnBuffer: true,
         streaming: false,
         contentReadyMode: "blocking",
@@ -369,32 +410,40 @@ describe("renderTimegroupToVideo - workbench integration", () => {
           progressUpdates.push({ ...progress });
         },
       });
-      
+
       const totalTime = performance.now() - startTime;
-      const avgSpeedMultiplier = progressUpdates.length > 0 
-        ? progressUpdates.reduce((sum, p) => sum + p.speedMultiplier, 0) / progressUpdates.length 
-        : 0;
-      const frameCount = progressUpdates.length > 0 ? progressUpdates[progressUpdates.length - 1]!.totalFrames : 0;
-      
-      console.log(`[PERF] Nested timegroups: ${totalTime.toFixed(0)}ms, ${frameCount} frames, ${avgSpeedMultiplier.toFixed(2)}x realtime, ${(totalTime / Math.max(frameCount, 1)).toFixed(1)}ms/frame`);
-      
+      const avgSpeedMultiplier =
+        progressUpdates.length > 0
+          ? progressUpdates.reduce((sum, p) => sum + p.speedMultiplier, 0) /
+            progressUpdates.length
+          : 0;
+      const frameCount =
+        progressUpdates.length > 0
+          ? progressUpdates[progressUpdates.length - 1]!.totalFrames
+          : 0;
+
+      console.log(
+        `[PERF] Nested timegroups: ${totalTime.toFixed(0)}ms, ${frameCount} frames, ${avgSpeedMultiplier.toFixed(2)}x realtime, ${(totalTime / Math.max(frameCount, 1)).toFixed(1)}ms/frame`,
+      );
+
       expect(videoBuffer).toBeDefined();
       expect(videoBuffer!.length).toBeGreaterThan(1000);
-      
+
       const frameData = await decodeFirstFrame(videoBuffer!);
       expect(frameData.hasContent).toBe(true);
-      
-      logger.debug("[Nested Timegroups Test] Successfully exported video across scene transitions");
-      
+
+      logger.debug(
+        "[Nested Timegroups Test] Successfully exported video across scene transitions",
+      );
     } finally {
       container.remove();
     }
   }, 90000);
-  
+
   it("should handle DOM mutations between frames - canvas, video, changing text", async () => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
-    
+
     // Create a complex composition with multiple canvas elements and changing content
     render(
       html`
@@ -440,20 +489,24 @@ describe("renderTimegroupToVideo - workbench integration", () => {
       container,
     );
     document.body.appendChild(container);
-    
+
     try {
       const workbench = container.querySelector("ef-workbench") as EFWorkbench;
-      const timegroup = container.querySelector("#dom-mutation-test") as EFTimegroup;
-      
+      const timegroup = container.querySelector(
+        "#dom-mutation-test",
+      ) as EFTimegroup;
+
       await workbench.updateComplete;
       await timegroup.updateComplete;
       await timegroup.waitForMediaDurations();
-      
-      logger.debug("[DOM Mutation Test] Starting export with complex DOM changes...");
-      
+
+      logger.debug(
+        "[DOM Mutation Test] Starting export with complex DOM changes...",
+      );
+
       const progressUpdates: RenderProgress[] = [];
       const startTime = performance.now();
-      
+
       // Export 30+ frames to stress test DOM restoration logic
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
         fps: 12, // 36 frames - enough to catch state accumulation issues
@@ -468,32 +521,40 @@ describe("renderTimegroupToVideo - workbench integration", () => {
           progressUpdates.push({ ...progress });
         },
       });
-      
+
       const totalTime = performance.now() - startTime;
-      const avgSpeedMultiplier = progressUpdates.length > 0 
-        ? progressUpdates.reduce((sum, p) => sum + p.speedMultiplier, 0) / progressUpdates.length 
-        : 0;
-      const frameCount = progressUpdates.length > 0 ? progressUpdates[progressUpdates.length - 1]!.totalFrames : 0;
-      
-      console.log(`[PERF] DOM mutations: ${totalTime.toFixed(0)}ms, ${frameCount} frames, ${avgSpeedMultiplier.toFixed(2)}x realtime, ${(totalTime / Math.max(frameCount, 1)).toFixed(1)}ms/frame`);
-      
+      const avgSpeedMultiplier =
+        progressUpdates.length > 0
+          ? progressUpdates.reduce((sum, p) => sum + p.speedMultiplier, 0) /
+            progressUpdates.length
+          : 0;
+      const frameCount =
+        progressUpdates.length > 0
+          ? progressUpdates[progressUpdates.length - 1]!.totalFrames
+          : 0;
+
+      console.log(
+        `[PERF] DOM mutations: ${totalTime.toFixed(0)}ms, ${frameCount} frames, ${avgSpeedMultiplier.toFixed(2)}x realtime, ${(totalTime / Math.max(frameCount, 1)).toFixed(1)}ms/frame`,
+      );
+
       expect(videoBuffer).toBeDefined();
       expect(videoBuffer!.length).toBeGreaterThan(1000);
-      
+
       const frameData = await decodeFirstFrame(videoBuffer!);
       expect(frameData.hasContent).toBe(true);
-      
-      logger.debug("[DOM Mutation Test] Successfully exported 36 frames with DOM mutations");
-      
+
+      logger.debug(
+        "[DOM Mutation Test] Successfully exported 36 frames with DOM mutations",
+      );
     } finally {
       container.remove();
     }
   }, 90000);
-  
+
   it("should reuse clone structure across all frames without DOM corruption", async () => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
-    
+
     render(
       html`
       <ef-configuration api-host="${apiHost}" signing-url="/@ef-sign-url">
@@ -544,22 +605,24 @@ describe("renderTimegroupToVideo - workbench integration", () => {
       container,
     );
     document.body.appendChild(container);
-    
+
     try {
       const workbench = container.querySelector("ef-workbench") as EFWorkbench;
-      const timegroup = container.querySelector("#clone-reuse-test") as EFTimegroup;
-      
+      const timegroup = container.querySelector(
+        "#clone-reuse-test",
+      ) as EFTimegroup;
+
       await workbench.updateComplete;
       await timegroup.updateComplete;
       await timegroup.waitForMediaDurations();
-      
+
       logger.debug("[Clone Reuse Test] Testing 720p export with 30 frames...");
-      
+
       let lastProgress = 0;
       let progressCallCount = 0;
       const progressUpdates: RenderProgress[] = [];
       const startTime = performance.now();
-      
+
       // This is the key test - 30 frames at 720p with elements appearing/disappearing
       // Would have caught the insertBefore error from improper DOM restoration
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
@@ -575,49 +638,59 @@ describe("renderTimegroupToVideo - workbench integration", () => {
           progressCallCount++;
           lastProgress = progress.progress;
           progressUpdates.push({ ...progress });
-          
+
           // Log every 10th frame
           if (progress.currentFrame % 10 === 0) {
             logger.debug(
               `[Clone Reuse Test] Frame ${progress.currentFrame}/${progress.totalFrames}, ` +
-              `${progress.progress.toFixed(1)}%`
+                `${progress.progress.toFixed(1)}%`,
             );
           }
         },
       });
-      
+
       const totalTime = performance.now() - startTime;
-      const avgSpeedMultiplier = progressUpdates.length > 0 
-        ? progressUpdates.reduce((sum, p) => sum + p.speedMultiplier, 0) / progressUpdates.length 
-        : 0;
-      const frameCount = progressUpdates.length > 0 ? progressUpdates[progressUpdates.length - 1]!.totalFrames : 0;
-      
-      console.log(`[PERF] Clone reuse 720p: ${totalTime.toFixed(0)}ms, ${frameCount} frames, ${avgSpeedMultiplier.toFixed(2)}x realtime, ${(totalTime / Math.max(frameCount, 1)).toFixed(1)}ms/frame`);
-      
+      const avgSpeedMultiplier =
+        progressUpdates.length > 0
+          ? progressUpdates.reduce((sum, p) => sum + p.speedMultiplier, 0) /
+            progressUpdates.length
+          : 0;
+      const frameCount =
+        progressUpdates.length > 0
+          ? progressUpdates[progressUpdates.length - 1]!.totalFrames
+          : 0;
+
+      console.log(
+        `[PERF] Clone reuse 720p: ${totalTime.toFixed(0)}ms, ${frameCount} frames, ${avgSpeedMultiplier.toFixed(2)}x realtime, ${(totalTime / Math.max(frameCount, 1)).toFixed(1)}ms/frame`,
+      );
+
       expect(videoBuffer).toBeDefined();
       expect(videoBuffer!.length).toBeGreaterThan(1000);
-      
+
       // Verify progress callbacks were called
       // Note: Progress callbacks may be infrequent depending on encoding performance
       expect(progressCallCount).toBeGreaterThan(0);
-      logger.debug(`[Clone Reuse Test] Received ${progressCallCount} progress callbacks, last progress: ${lastProgress}%`);
-      
+      logger.debug(
+        `[Clone Reuse Test] Received ${progressCallCount} progress callbacks, last progress: ${lastProgress}%`,
+      );
+
       const frameData = await decodeFirstFrame(videoBuffer!);
       expect(frameData.width).toBe(1280);
       expect(frameData.height).toBe(720);
       expect(frameData.hasContent).toBe(true);
-      
-      logger.debug("[Clone Reuse Test] Successfully exported 30 frames at 720p without DOM errors");
-      
+
+      logger.debug(
+        "[Clone Reuse Test] Successfully exported 30 frames at 720p without DOM errors",
+      );
     } finally {
       container.remove();
     }
   }, 90000);
-  
+
   it("should handle 1080p multi-frame export without errors", async () => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
-    
+
     render(
       html`
       <ef-configuration api-host="${apiHost}" signing-url="/@ef-sign-url">
@@ -655,20 +728,22 @@ describe("renderTimegroupToVideo - workbench integration", () => {
       container,
     );
     document.body.appendChild(container);
-    
+
     try {
       const workbench = container.querySelector("ef-workbench") as EFWorkbench;
-      const timegroup = container.querySelector("#hd-1080p-test") as EFTimegroup;
-      
+      const timegroup = container.querySelector(
+        "#hd-1080p-test",
+      ) as EFTimegroup;
+
       await workbench.updateComplete;
       await timegroup.updateComplete;
       await timegroup.waitForMediaDurations();
-      
+
       logger.debug("[1080p Test] Starting high-resolution export...");
-      
+
       const progressUpdates: RenderProgress[] = [];
       const startTime = performance.now();
-      
+
       // Export at 50% scale (960x540) for 30 frames
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
         fps: 15, // 30 frames
@@ -683,36 +758,44 @@ describe("renderTimegroupToVideo - workbench integration", () => {
           progressUpdates.push({ ...progress });
         },
       });
-      
+
       const totalTime = performance.now() - startTime;
-      const avgSpeedMultiplier = progressUpdates.length > 0 
-        ? progressUpdates.reduce((sum, p) => sum + p.speedMultiplier, 0) / progressUpdates.length 
-        : 0;
-      const frameCount = progressUpdates.length > 0 ? progressUpdates[progressUpdates.length - 1]!.totalFrames : 0;
-      
-      console.log(`[PERF] 1080p export: ${totalTime.toFixed(0)}ms, ${frameCount} frames, ${avgSpeedMultiplier.toFixed(2)}x realtime, ${(totalTime / Math.max(frameCount, 1)).toFixed(1)}ms/frame`);
-      
+      const avgSpeedMultiplier =
+        progressUpdates.length > 0
+          ? progressUpdates.reduce((sum, p) => sum + p.speedMultiplier, 0) /
+            progressUpdates.length
+          : 0;
+      const frameCount =
+        progressUpdates.length > 0
+          ? progressUpdates[progressUpdates.length - 1]!.totalFrames
+          : 0;
+
+      console.log(
+        `[PERF] 1080p export: ${totalTime.toFixed(0)}ms, ${frameCount} frames, ${avgSpeedMultiplier.toFixed(2)}x realtime, ${(totalTime / Math.max(frameCount, 1)).toFixed(1)}ms/frame`,
+      );
+
       expect(videoBuffer).toBeDefined();
       expect(videoBuffer!.length).toBeGreaterThan(1000);
-      
+
       const frameData = await decodeFirstFrame(videoBuffer!);
       expect(frameData.width).toBe(960);
       expect(frameData.height).toBe(540);
       expect(frameData.hasContent).toBe(true);
-      
-      logger.debug("[1080p Test] Successfully exported 1080p composition scaled to 960x540");
-      
+
+      logger.debug(
+        "[1080p Test] Successfully exported 1080p composition scaled to 960x540",
+      );
     } finally {
       container.remove();
     }
   }, 90000);
-  
+
   it("performance: measure actual export speed at multiple resolutions", async () => {
     const apiHost = getApiHost();
 
     const resolutions = [
       { name: "720p", width: 1280, height: 720 },
-      { name: "1080p", width: 1920, height: 1080 }
+      { name: "1080p", width: 1920, height: 1080 },
     ];
 
     console.log("[PERF] ========================================");
@@ -757,23 +840,29 @@ describe("renderTimegroupToVideo - workbench integration", () => {
         container,
       );
       document.body.appendChild(container);
-      
+
       try {
-        const workbench = container.querySelector("ef-workbench") as EFWorkbench;
-        const timegroup = container.querySelector(`#perf-test-${res.name}`) as EFTimegroup;
-        
+        const workbench = container.querySelector(
+          "ef-workbench",
+        ) as EFWorkbench;
+        const timegroup = container.querySelector(
+          `#perf-test-${res.name}`,
+        ) as EFTimegroup;
+
         await workbench.updateComplete;
         await timegroup.updateComplete;
         await timegroup.waitForMediaDurations();
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        console.log(`[PERF] Testing ${res.name} (${res.width}x${res.height})...`);
-        
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        console.log(
+          `[PERF] Testing ${res.name} (${res.width}x${res.height})...`,
+        );
+
         const progressUpdates: RenderProgress[] = [];
         const startTime = performance.now();
         let firstFrameTime: number | null = null;
         let encodingStartTime: number | null = null;
-        
+
         // Export 30 frames to get meaningful performance data
         const videoBuffer = await renderTimegroupToVideo(timegroup, {
           fps: 15, // 30 frames
@@ -788,58 +877,77 @@ describe("renderTimegroupToVideo - workbench integration", () => {
             if (firstFrameTime === null && progress.currentFrame === 1) {
               firstFrameTime = performance.now();
             }
-            if (encodingStartTime === null && progress.currentFrame === progress.totalFrames) {
+            if (
+              encodingStartTime === null &&
+              progress.currentFrame === progress.totalFrames
+            ) {
               encodingStartTime = performance.now();
             }
             progressUpdates.push({ ...progress });
           },
         });
-        
+
         const totalTime = performance.now() - startTime;
-        const avgSpeedMultiplier = progressUpdates.length > 0 
-          ? progressUpdates.reduce((sum, p) => sum + p.speedMultiplier, 0) / progressUpdates.length 
-          : 0;
-        const frameCount = progressUpdates.length > 0 ? progressUpdates[progressUpdates.length - 1]!.totalFrames : 0;
+        const avgSpeedMultiplier =
+          progressUpdates.length > 0
+            ? progressUpdates.reduce((sum, p) => sum + p.speedMultiplier, 0) /
+              progressUpdates.length
+            : 0;
+        const frameCount =
+          progressUpdates.length > 0
+            ? progressUpdates[progressUpdates.length - 1]!.totalFrames
+            : 0;
         const msPerFrame = totalTime / Math.max(frameCount, 1);
-        
+
         // Calculate timing breakdown
-        const timeToFirstFrame = firstFrameTime ? firstFrameTime - startTime : 0;
-        const encodingTime = encodingStartTime ? totalTime - (encodingStartTime - startTime) : 0;
+        const timeToFirstFrame = firstFrameTime
+          ? firstFrameTime - startTime
+          : 0;
+        const encodingTime = encodingStartTime
+          ? totalTime - (encodingStartTime - startTime)
+          : 0;
         const renderTime = totalTime - encodingTime;
-        
-        console.log(`[PERF] ${res.name}: ${totalTime.toFixed(0)}ms, ${frameCount} frames, ${avgSpeedMultiplier.toFixed(2)}x realtime, ${msPerFrame.toFixed(1)}ms/frame`);
+
+        console.log(
+          `[PERF] ${res.name}: ${totalTime.toFixed(0)}ms, ${frameCount} frames, ${avgSpeedMultiplier.toFixed(2)}x realtime, ${msPerFrame.toFixed(1)}ms/frame`,
+        );
         console.log(`[PERF]   - Setup: ${timeToFirstFrame.toFixed(0)}ms`);
-        console.log(`[PERF]   - Render: ${renderTime.toFixed(0)}ms (${(renderTime / frameCount).toFixed(1)}ms/frame)`);
+        console.log(
+          `[PERF]   - Render: ${renderTime.toFixed(0)}ms (${(renderTime / frameCount).toFixed(1)}ms/frame)`,
+        );
         console.log(`[PERF]   - Encoding: ${encodingTime.toFixed(0)}ms`);
         console.log(`[PERF]   - Speed details by frame:`);
-        
+
         // Log speed multiplier progression for first, middle, and last frames
         if (progressUpdates.length >= 3) {
           const first = progressUpdates[0]!;
           const mid = progressUpdates[Math.floor(progressUpdates.length / 2)]!;
           const last = progressUpdates[progressUpdates.length - 1]!;
-          console.log(`[PERF]     Frame 1: ${first.speedMultiplier.toFixed(2)}x`);
-          console.log(`[PERF]     Frame ${mid.currentFrame}: ${mid.speedMultiplier.toFixed(2)}x`);
-          console.log(`[PERF]     Frame ${last.currentFrame}: ${last.speedMultiplier.toFixed(2)}x`);
+          console.log(
+            `[PERF]     Frame 1: ${first.speedMultiplier.toFixed(2)}x`,
+          );
+          console.log(
+            `[PERF]     Frame ${mid.currentFrame}: ${mid.speedMultiplier.toFixed(2)}x`,
+          );
+          console.log(
+            `[PERF]     Frame ${last.currentFrame}: ${last.speedMultiplier.toFixed(2)}x`,
+          );
         }
-        
+
         expect(videoBuffer).toBeDefined();
         expect(videoBuffer!.length).toBeGreaterThan(1000);
-        
+
         const frameData = await decodeFirstFrame(videoBuffer!);
         expect(frameData.width).toBe(res.width);
         expect(frameData.height).toBe(res.height);
         expect(frameData.hasContent).toBe(true);
-        
       } finally {
         container.remove();
       }
     }
-    
+
     console.log("[PERF] ========================================");
     console.log("[PERF] Benchmark Complete");
     console.log("[PERF] ========================================");
-    
   }, 180000);
-  
 });

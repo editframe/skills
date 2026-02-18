@@ -127,29 +127,42 @@ export abstract class BaseMediaEngine {
               // For JSON responses, check both status and content type before consuming body
               if (responseType === "json") {
                 // If response is not ok or content type is wrong, clone to read body for error message
-                if (!response.ok || (contentType && !contentType.includes("application/json") && !contentType.includes("text/json"))) {
+                if (
+                  !response.ok ||
+                  (contentType &&
+                    !contentType.includes("application/json") &&
+                    !contentType.includes("text/json"))
+                ) {
                   const text = await response.clone().text();
                   if (!response.ok) {
-                    throw new Error(`Failed to fetch: ${response.status} ${text.substring(0, 100)}`);
+                    throw new Error(
+                      `Failed to fetch: ${response.status} ${text.substring(0, 100)}`,
+                    );
                   }
-                  throw new Error(`Expected JSON but got ${contentType}: ${text.substring(0, 100)}`);
+                  throw new Error(
+                    `Expected JSON but got ${contentType}: ${text.substring(0, 100)}`,
+                  );
                 }
-                
+
                 // Response is ok and content type is correct, parse as JSON
                 try {
                   return await response.json();
                 } catch (error) {
                   // Body already consumed, can't read again for error details
-                  throw new Error(`Failed to parse JSON response: ${error instanceof Error ? error.message : String(error)}`);
+                  throw new Error(
+                    `Failed to parse JSON response: ${error instanceof Error ? error.message : String(error)}`,
+                  );
                 }
               }
-              
+
               // For arrayBuffer responses, check status before consuming body
               if (!response.ok) {
                 const text = await response.clone().text();
-                throw new Error(`Failed to fetch: ${response.status} ${text.substring(0, 100)}`);
+                throw new Error(
+                  `Failed to fetch: ${response.status} ${text.substring(0, 100)}`,
+                );
               }
-              
+
               const buffer = await response.arrayBuffer();
               span.setAttribute("sizeBytes", buffer.byteLength);
               return buffer;
@@ -259,7 +272,6 @@ export abstract class BaseMediaEngine {
     });
   }
 
-
   /**
    * Abstract method for actual segment fetching - implemented by subclasses
    */
@@ -278,7 +290,6 @@ export abstract class BaseMediaEngine {
     desiredSeekTimeMs: number,
     rendition: MediaRendition,
   ): number | undefined;
-
 
   /**
    * Calculate audio segments needed for a time range
@@ -376,7 +387,6 @@ export abstract class BaseMediaEngine {
     segmentId: number,
     rendition: AudioRendition | VideoRendition,
   ): boolean;
-
 
   /**
    * Extract thumbnail canvases at multiple timestamps efficiently

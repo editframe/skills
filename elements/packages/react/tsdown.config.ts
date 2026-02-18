@@ -46,8 +46,15 @@ const inlineCssPlugin = (): Plugin => ({
 
 export default defineConfig(
   createTsdownConfig({
+    entry: ["src/index.ts", "src/server.ts", "src/r3f/index.ts"],
     plugins: [inlineCssPlugin()],
-    external: [/@editframe\/(elements|assets)/, "react", "react-dom", "react-dom/client", "react/jsx-runtime"],
+    external: [
+      /@editframe\/(elements|assets)/,
+      "react",
+      "react-dom",
+      "react-dom/client",
+      "react/jsx-runtime",
+    ],
     additionalExports: {
       "./types.json": "./types.json",
     },

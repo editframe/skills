@@ -1,6 +1,6 @@
 /**
  * Visual regression utilities for browser tests.
- * 
+ *
  * These utilities enable capturing canvas/element snapshots in browser tests
  * and comparing them against baseline images using odiff for pixel-perfect
  * visual regression testing.
@@ -27,9 +27,9 @@ export function captureCanvasAsDataUrl(
   if (source instanceof HTMLCanvasElement) {
     return source.toDataURL(format, quality);
   }
-  
+
   // Otherwise, draw to temp canvas first
-  const canvas = document.createElement('canvas');
+  const canvas = document.createElement("canvas");
   canvas.width = (source as any).width as number;
   canvas.height = (source as any).height as number;
   const ctx = canvas.getContext("2d");
@@ -52,19 +52,22 @@ export async function captureElementAsDataUrl(
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
-  
+
   const ctx = canvas.getContext("2d");
   if (!ctx) {
     throw new Error("Failed to get canvas 2d context");
   }
-  
+
   // Use html2canvas-style rendering through SVG foreignObject
   const clone = element.cloneNode(true) as HTMLElement;
-  
+
   // Create wrapper with XHTML namespace
   const wrapper = document.createElement("div");
   wrapper.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-  wrapper.setAttribute("style", `width:${width}px;height:${height}px;overflow:hidden;position:relative;`);
+  wrapper.setAttribute(
+    "style",
+    `width:${width}px;height:${height}px;overflow:hidden;position:relative;`,
+  );
   wrapper.appendChild(clone);
 
   // Serialize to XHTML
@@ -81,7 +84,7 @@ export async function captureElementAsDataUrl(
   // Convert to data URL
   const base64 = btoa(unescape(encodeURIComponent(svg)));
   const svgDataUri = `data:image/svg+xml;base64,${base64}`;
-  
+
   // Draw to canvas
   const img = await new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image();
@@ -89,7 +92,7 @@ export async function captureElementAsDataUrl(
     image.onerror = reject;
     image.src = svgDataUri;
   });
-  
+
   ctx.drawImage(img, 0, 0);
   return canvas.toDataURL("image/png");
 }
@@ -116,7 +119,7 @@ export async function writeSnapshot(
       isBaseline,
     }),
   });
-  
+
   if (!response.ok) {
     const error = await response.text();
     throw new Error(`Failed to write snapshot: ${error}`);
@@ -142,7 +145,7 @@ export async function compareSnapshot(
     antialiasing = true,
     acceptableDiffPercentage = 1.0,
   } = options;
-  
+
   const response = await fetch("/@ef-compare-snapshot", {
     method: "POST",
     headers: {
@@ -157,12 +160,12 @@ export async function compareSnapshot(
       acceptableDiffPercentage,
     }),
   });
-  
+
   if (!response.ok) {
     const error = await response.text();
     throw new Error(`Failed to compare snapshot: ${error}`);
   }
-  
+
   return response.json();
 }
 
@@ -197,18 +200,26 @@ export async function expectCanvasToMatchSnapshot(
     acceptableDiffPercentage?: number;
   } = {},
 ): Promise<void> {
-  const result = await assertCanvasSnapshot(source as unknown as HTMLCanvasElement, testName, snapshotName, options);
-  
+  const result = await assertCanvasSnapshot(
+    source as unknown as HTMLCanvasElement,
+    testName,
+    snapshotName,
+    options,
+  );
+
   if (result.baselineCreated) {
     console.log(`✅ Created baseline: ${testName}/${snapshotName}`);
     return;
   }
-  
+
   if (!result.match) {
-    const diffInfo = result.diffPercentage !== undefined
-      ? `${result.diffPercentage.toFixed(2)}% different`
-      : result.error || "comparison failed";
-    throw new Error(`Visual regression detected for ${testName}/${snapshotName}: ${diffInfo}`);
+    const diffInfo =
+      result.diffPercentage !== undefined
+        ? `${result.diffPercentage.toFixed(2)}% different`
+        : result.error || "comparison failed";
+    throw new Error(
+      `Visual regression detected for ${testName}/${snapshotName}: ${diffInfo}`,
+    );
   }
 }
 
@@ -226,15 +237,12 @@ export async function compareTwoCanvases(
     acceptableDiffPercentage?: number;
   } = {},
 ): Promise<SnapshotComparisonResult> {
-  const {
-    threshold = 0.1,
-    acceptableDiffPercentage = 1.0,
-  } = options;
-  
+  const { threshold = 0.1, acceptableDiffPercentage = 1.0 } = options;
+
   // Use PNG format for consistent comparison (odiff works best with PNG)
   const dataUrl1 = captureCanvasAsDataUrl(source1, "image/png");
   const dataUrl2 = captureCanvasAsDataUrl(source2, "image/png");
-  
+
   const response = await fetch("/@ef-compare-two-images", {
     method: "POST",
     headers: {
@@ -249,12 +257,12 @@ export async function compareTwoCanvases(
       acceptableDiffPercentage,
     }),
   });
-  
+
   if (!response.ok) {
     const error = await response.text();
     throw new Error(`Failed to compare canvases: ${error}`);
   }
-  
+
   return response.json();
 }
 
@@ -272,13 +280,21 @@ export async function expectCanvasesToMatch(
     acceptableDiffPercentage?: number;
   } = {},
 ): Promise<void> {
-  const result = await compareTwoCanvases(canvas1, canvas2, testName, comparisonName, options);
-  
+  const result = await compareTwoCanvases(
+    canvas1,
+    canvas2,
+    testName,
+    comparisonName,
+    options,
+  );
+
   if (!result.match) {
-    const diffInfo = result.diffPercentage !== undefined
-      ? `${result.diffPercentage.toFixed(2)}% different`
-      : result.error || "comparison failed";
-    throw new Error(`Canvas comparison failed for ${testName}/${comparisonName}: ${diffInfo}`);
+    const diffInfo =
+      result.diffPercentage !== undefined
+        ? `${result.diffPercentage.toFixed(2)}% different`
+        : result.error || "comparison failed";
+    throw new Error(
+      `Canvas comparison failed for ${testName}/${comparisonName}: ${diffInfo}`,
+    );
   }
 }
-

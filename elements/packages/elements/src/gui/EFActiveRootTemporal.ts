@@ -6,7 +6,7 @@ import type { TemporalMixinInterface } from "../elements/EFTemporal.js";
 /**
  * Displays the ID of the active root temporal element from a canvas.
  * Automatically updates when selection changes.
- * 
+ *
  * @example
  * ```html
  * <ef-active-root-temporal canvas="canvas"></ef-active-root-temporal>
@@ -45,7 +45,9 @@ export class EFActiveRootTemporal extends LitElement {
     this.removeListener();
   }
 
-  protected updated(changedProperties: Map<string | number | symbol, unknown>): void {
+  protected updated(
+    changedProperties: Map<string | number | symbol, unknown>,
+  ): void {
     if (changedProperties.has("canvas")) {
       this.findCanvas();
       this.setupListener();
@@ -66,7 +68,9 @@ export class EFActiveRootTemporal extends LitElement {
 
       // Try as selector
       try {
-        const bySelector = document.querySelector(this.canvas) as EFCanvas | null;
+        const bySelector = document.querySelector(
+          this.canvas,
+        ) as EFCanvas | null;
         if (bySelector && bySelector.tagName === "EF-CANVAS") {
           this.canvasElement = bySelector;
           return;
@@ -138,4 +142,3 @@ declare global {
     "ef-active-root-temporal": EFActiveRootTemporal;
   }
 }
-

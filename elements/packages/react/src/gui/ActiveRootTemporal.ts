@@ -7,7 +7,3 @@ export const ActiveRootTemporal = createComponent({
   elementClass: EFActiveRootTemporalElement,
   react: React,
 });
-
-
-
-

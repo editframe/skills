@@ -27,7 +27,7 @@ export class TimelineStateProvider extends LitElement {
     },
     zoomIn: () => {
       const currentZoom = pixelsPerMsToZoom(this._state.pixelsPerMs);
-      this.pixelsPerMs = (currentZoom * 1.25) * DEFAULT_PIXELS_PER_MS;
+      this.pixelsPerMs = currentZoom * 1.25 * DEFAULT_PIXELS_PER_MS;
     },
     zoomOut: () => {
       const currentZoom = pixelsPerMsToZoom(this._state.pixelsPerMs);

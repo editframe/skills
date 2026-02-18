@@ -2,7 +2,10 @@ import { type Context, createContext, provide } from "@lit/context";
 import { css, LitElement, type PropertyValueMap } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { attachContextRoot } from "../attachContextRoot.js";
-import { isEFTemporal, type TemporalMixinInterface } from "../elements/EFTemporal.js";
+import {
+  isEFTemporal,
+  type TemporalMixinInterface,
+} from "../elements/EFTemporal.js";
 import { TargetController } from "../elements/TargetController.js";
 import { targetTemporalContext } from "./ContextMixin.js";
 import {
@@ -213,7 +216,7 @@ export class EFControls extends LitElement {
    * Wait for a temporal element to initialize its playbackController.
    * This handles the case where we target a temporal element before it has
    * completed initialization and created its playbackController.
-   * 
+   *
    * Note: playbackController is created in EFTemporal's connectedCallback via
    * `this.updateComplete.then(() => this.didBecomeRoot())`, so we need to wait
    * past updateComplete for the .then() callback to run.

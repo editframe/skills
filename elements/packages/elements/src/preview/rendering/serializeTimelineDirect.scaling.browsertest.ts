@@ -1,6 +1,6 @@
 /**
  * Tests for scaling architecture in timeline serialization.
- * 
+ *
  * These tests verify the multi-stage scaling system and serve as
  * characterization tests for the refactoring to ScaleConfig.
  */
@@ -23,14 +23,18 @@ describe("serializeTimelineDirect scaling", () => {
   });
 
   // Helper to decode SVG from data URI
-  function decodeSVG(dataUri: string): { width: number; height: number; html: string } {
-    const base64 = dataUri.substring('data:image/svg+xml;base64,'.length);
+  function decodeSVG(dataUri: string): {
+    width: number;
+    height: number;
+    html: string;
+  } {
+    const base64 = dataUri.substring("data:image/svg+xml;base64,".length);
     const svgContent = atob(base64);
-    
+
     // Parse SVG to extract dimensions
     const widthMatch = svgContent.match(/width="(\d+)"/);
     const heightMatch = svgContent.match(/height="(\d+)"/);
-    
+
     return {
       width: widthMatch ? parseInt(widthMatch[1]!, 10) : 0,
       height: heightMatch ? parseInt(heightMatch[1]!, 10) : 0,
@@ -45,25 +49,25 @@ describe("serializeTimelineDirect scaling", () => {
     displayWidth?: string;
     displayHeight?: string;
   }): HTMLElement {
-    const wrapper = document.createElement('div');
-    const canvas = document.createElement('canvas');
+    const wrapper = document.createElement("div");
+    const canvas = document.createElement("canvas");
     canvas.width = options.canvasWidth;
     canvas.height = options.canvasHeight;
-    
+
     if (options.displayWidth) {
       canvas.style.width = options.displayWidth;
     }
     if (options.displayHeight) {
       canvas.style.height = options.displayHeight;
     }
-    
+
     // Draw something so canvas isn't empty
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (ctx) {
-      ctx.fillStyle = 'red';
+      ctx.fillStyle = "red";
       ctx.fillRect(0, 0, options.canvasWidth, options.canvasHeight);
     }
-    
+
     wrapper.appendChild(canvas);
     return wrapper;
   }
@@ -147,7 +151,7 @@ describe("serializeTimelineDirect scaling", () => {
       });
 
       const svg = decodeSVG(dataUri);
-      expect(svg.html).toContain('transform:scale(0.5)');
+      expect(svg.html).toContain("transform:scale(0.5)");
     });
 
     it("should NOT apply transform:scale wrapper when canvasScale = 1", async () => {
@@ -162,7 +166,7 @@ describe("serializeTimelineDirect scaling", () => {
       });
 
       const svg = decodeSVG(dataUri);
-      expect(svg.html).not.toContain('transform:scale');
+      expect(svg.html).not.toContain("transform:scale");
     });
 
     it("should apply transform:scale wrapper when canvasScale = 0.25", async () => {
@@ -177,7 +181,7 @@ describe("serializeTimelineDirect scaling", () => {
       });
 
       const svg = decodeSVG(dataUri);
-      expect(svg.html).toContain('transform:scale(0.25)');
+      expect(svg.html).toContain("transform:scale(0.25)");
     });
   });
 
@@ -187,10 +191,10 @@ describe("serializeTimelineDirect scaling", () => {
       const element = createElementWithCanvas({
         canvasWidth: 1920,
         canvasHeight: 1080,
-        displayWidth: '420px',
-        displayHeight: '236px',
+        displayWidth: "420px",
+        displayHeight: "236px",
       });
-      
+
       container.appendChild(element);
 
       const dataUri = await captureTimelineToDataUri(element, 1920, 1080, {
@@ -202,10 +206,10 @@ describe("serializeTimelineDirect scaling", () => {
       // optimalScale = min(1.0, (420/1920) * 0.5 * 1.5) ≈ 0.164
       // Encoded canvas should be ~315px wide (1920 * 0.164)
       const svg = decodeSVG(dataUri);
-      
+
       // Verify the canvas was encoded (contains img tag with data URL)
-      expect(svg.html).toContain('<img');
-      expect(svg.html).toContain('data:image/');
+      expect(svg.html).toContain("<img");
+      expect(svg.html).toContain("data:image/");
     });
 
     it("should not upscale canvas beyond natural resolution", async () => {
@@ -213,10 +217,10 @@ describe("serializeTimelineDirect scaling", () => {
       const element = createElementWithCanvas({
         canvasWidth: 500,
         canvasHeight: 500,
-        displayWidth: '1000px',
-        displayHeight: '1000px',
+        displayWidth: "1000px",
+        displayHeight: "1000px",
       });
-      
+
       container.appendChild(element);
 
       const dataUri = await captureTimelineToDataUri(element, 1920, 1080, {
@@ -227,16 +231,16 @@ describe("serializeTimelineDirect scaling", () => {
       // Canvas should not be upscaled beyond 500x500
       // optimalScale should be capped at 1.0
       const svg = decodeSVG(dataUri);
-      expect(svg.html).toContain('<img');
+      expect(svg.html).toContain("<img");
     });
 
     it("should skip empty canvases", async () => {
-      const wrapper = document.createElement('div');
-      const canvas = document.createElement('canvas');
+      const wrapper = document.createElement("div");
+      const canvas = document.createElement("canvas");
       canvas.width = 0;
       canvas.height = 0;
       wrapper.appendChild(canvas);
-      
+
       container.appendChild(wrapper);
 
       const dataUri = await captureTimelineToDataUri(wrapper, 1920, 1080, {
@@ -246,7 +250,7 @@ describe("serializeTimelineDirect scaling", () => {
 
       const svg = decodeSVG(dataUri);
       // Empty canvas should not produce img tag
-      expect(svg.html).not.toContain('data:image/');
+      expect(svg.html).not.toContain("data:image/");
     });
   });
 
@@ -256,10 +260,10 @@ describe("serializeTimelineDirect scaling", () => {
       const element = createElementWithCanvas({
         canvasWidth: 1000,
         canvasHeight: 1000,
-        displayWidth: '500px',
-        displayHeight: '500px',
+        displayWidth: "500px",
+        displayHeight: "500px",
       });
-      
+
       container.appendChild(element);
 
       const dataUri = await captureTimelineToDataUri(element, 1920, 1080, {
@@ -271,7 +275,7 @@ describe("serializeTimelineDirect scaling", () => {
       // optimalScale = min(1.0, 0.5 * 1.0 * 1.5) = 0.75
       // Canvas should be encoded at 750x750
       const svg = decodeSVG(dataUri);
-      expect(svg.html).toContain('<img');
+      expect(svg.html).toContain("<img");
     });
   });
 
@@ -281,7 +285,7 @@ describe("serializeTimelineDirect scaling", () => {
       const text = document.createElement("ef-text") as EFText;
       text.textContent = "Thumbnail Test";
       timegroup.appendChild(text);
-      
+
       container.appendChild(timegroup);
       await timegroup.updateComplete;
       await text.updateComplete;
@@ -294,7 +298,7 @@ describe("serializeTimelineDirect scaling", () => {
       const svg = decodeSVG(dataUri);
       expect(svg.width).toBe(480);
       expect(svg.height).toBe(270);
-      expect(svg.html).toContain('transform:scale(0.25)');
+      expect(svg.html).toContain("transform:scale(0.25)");
     });
 
     it("should handle preview rendering (1.0 scale)", async () => {
@@ -302,7 +306,7 @@ describe("serializeTimelineDirect scaling", () => {
       const text = document.createElement("ef-text") as EFText;
       text.textContent = "Preview Test";
       timegroup.appendChild(text);
-      
+
       container.appendChild(timegroup);
       await timegroup.updateComplete;
       await text.updateComplete;
@@ -315,7 +319,7 @@ describe("serializeTimelineDirect scaling", () => {
       const svg = decodeSVG(dataUri);
       expect(svg.width).toBe(1920);
       expect(svg.height).toBe(1080);
-      expect(svg.html).not.toContain('transform:scale');
+      expect(svg.html).not.toContain("transform:scale");
     });
 
     it("should handle video export (0.5 scale)", async () => {
@@ -323,7 +327,7 @@ describe("serializeTimelineDirect scaling", () => {
       const text = document.createElement("ef-text") as EFText;
       text.textContent = "Video Export Test";
       timegroup.appendChild(text);
-      
+
       container.appendChild(timegroup);
       await timegroup.updateComplete;
       await text.updateComplete;
@@ -336,7 +340,7 @@ describe("serializeTimelineDirect scaling", () => {
       const svg = decodeSVG(dataUri);
       expect(svg.width).toBe(960);
       expect(svg.height).toBe(540);
-      expect(svg.html).toContain('transform:scale(0.5)');
+      expect(svg.html).toContain("transform:scale(0.5)");
     });
   });
 

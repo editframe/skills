@@ -80,7 +80,11 @@ export interface ProfileAnalysis {
 /**
  * Profile assertion types for performance testing
  */
-export type ProfileAssertionType = "topHotspot" | "notInTopN" | "maxPercentage" | "maxSelfTime";
+export type ProfileAssertionType =
+  | "topHotspot"
+  | "notInTopN"
+  | "maxPercentage"
+  | "maxSelfTime";
 
 export interface ProfileAssertion {
   type: ProfileAssertionType;

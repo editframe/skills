@@ -8,7 +8,8 @@ const STORAGE_KEY_PRESENTATION_MODE = "ef-preview-presentation-mode";
 const STORAGE_KEY_RENDER_MODE = "ef-preview-render-mode";
 const STORAGE_KEY_RESOLUTION_SCALE = "ef-preview-resolution-scale";
 const STORAGE_KEY_SHOW_STATS = "ef-preview-show-stats";
-const STORAGE_KEY_SHOW_THUMBNAIL_TIMESTAMPS = "ef-preview-show-thumbnail-timestamps";
+const STORAGE_KEY_SHOW_THUMBNAIL_TIMESTAMPS =
+  "ef-preview-show-thumbnail-timestamps";
 
 /**
  * Render mode for HTML-to-canvas capture operations.
@@ -48,7 +49,7 @@ let _nativeApiAvailable: boolean | null = null;
 /**
  * Detect if the native HTML-in-Canvas API (drawElementImage) is available in this browser.
  * This checks browser capability, not user preference.
- * 
+ *
  * The API is available in Chrome Canary with chrome://flags/#canvas-draw-element
  * @see https://github.com/WICG/html-in-canvas
  */
@@ -66,14 +67,14 @@ export function isNativeCanvasApiAvailable(): boolean {
  * Returns true only if:
  * 1. The API is available in the browser
  * 2. The user has not explicitly disabled it
- * 
+ *
  * Default is enabled when available (opt-out model).
  */
 export function isNativeCanvasApiEnabled(): boolean {
   if (!isNativeCanvasApiAvailable()) {
     return false;
   }
-  
+
   try {
     const stored = localStorage.getItem(STORAGE_KEY_NATIVE_CANVAS_API);
     // Default to true (enabled) when available, unless explicitly disabled
@@ -97,11 +98,13 @@ export function setNativeCanvasApiEnabled(enabled: boolean): void {
   } catch {
     // localStorage not available
   }
-  
+
   // Dispatch event so components can react to the change
-  window.dispatchEvent(new CustomEvent("ef-preview-settings-changed", {
-    detail: { nativeCanvasApiEnabled: enabled }
-  }));
+  window.dispatchEvent(
+    new CustomEvent("ef-preview-settings-changed", {
+      detail: { nativeCanvasApiEnabled: enabled },
+    }),
+  );
 }
 
 /**
@@ -125,13 +128,14 @@ export function getNativeCanvasApiPreference(): boolean | null {
  * @returns Unsubscribe function
  */
 export function onPreviewSettingsChanged(
-  callback: (detail: PreviewSettingsChangedDetail) => void
+  callback: (detail: PreviewSettingsChangedDetail) => void,
 ): () => void {
   const handler = (event: Event) => {
     callback((event as CustomEvent).detail);
   };
   window.addEventListener("ef-preview-settings-changed", handler);
-  return () => window.removeEventListener("ef-preview-settings-changed", handler);
+  return () =>
+    window.removeEventListener("ef-preview-settings-changed", handler);
 }
 
 /**
@@ -166,23 +170,27 @@ export function getPreviewPresentationMode(): PreviewPresentationMode {
  * Set the preview presentation mode.
  * Persists to localStorage and dispatches a change event.
  */
-export function setPreviewPresentationMode(mode: PreviewPresentationMode): void {
+export function setPreviewPresentationMode(
+  mode: PreviewPresentationMode,
+): void {
   try {
     localStorage.setItem(STORAGE_KEY_PRESENTATION_MODE, mode);
   } catch {
     // localStorage not available
   }
-  
+
   // Dispatch event so components can react to the change
-  window.dispatchEvent(new CustomEvent("ef-preview-settings-changed", {
-    detail: { presentationMode: mode }
-  }));
+  window.dispatchEvent(
+    new CustomEvent("ef-preview-settings-changed", {
+      detail: { presentationMode: mode },
+    }),
+  );
 }
 
 /**
  * Get the current render mode for HTML-to-canvas capture.
  * Defaults to "native" if available, otherwise "foreignObject".
- * 
+ *
  * Checks EF_NATIVE_RENDER URL parameter to force native mode when set.
  */
 export function getRenderMode(): RenderMode {
@@ -219,11 +227,13 @@ export function setRenderMode(mode: RenderMode): void {
   } catch {
     // localStorage not available
   }
-  
+
   // Dispatch event so components can react to the change
-  window.dispatchEvent(new CustomEvent("ef-preview-settings-changed", {
-    detail: { renderMode: mode }
-  }));
+  window.dispatchEvent(
+    new CustomEvent("ef-preview-settings-changed", {
+      detail: { renderMode: mode },
+    }),
+  );
 }
 
 /**
@@ -265,11 +275,13 @@ export function setPreviewResolutionScale(scale: PreviewResolutionScale): void {
   } catch {
     // localStorage not available
   }
-  
+
   // Dispatch event so components can react to the change
-  window.dispatchEvent(new CustomEvent("ef-preview-settings-changed", {
-    detail: { resolutionScale: scale }
-  }));
+  window.dispatchEvent(
+    new CustomEvent("ef-preview-settings-changed", {
+      detail: { resolutionScale: scale },
+    }),
+  );
 }
 
 /**
@@ -295,11 +307,13 @@ export function setShowStats(enabled: boolean): void {
   } catch {
     // localStorage not available
   }
-  
+
   // Dispatch event so components can react to the change
-  window.dispatchEvent(new CustomEvent("ef-preview-settings-changed", {
-    detail: { showStats: enabled }
-  }));
+  window.dispatchEvent(
+    new CustomEvent("ef-preview-settings-changed", {
+      detail: { showStats: enabled },
+    }),
+  );
 }
 
 /**
@@ -321,14 +335,18 @@ export function getShowThumbnailTimestamps(): boolean {
  */
 export function setShowThumbnailTimestamps(enabled: boolean): void {
   try {
-    localStorage.setItem(STORAGE_KEY_SHOW_THUMBNAIL_TIMESTAMPS, String(enabled));
+    localStorage.setItem(
+      STORAGE_KEY_SHOW_THUMBNAIL_TIMESTAMPS,
+      String(enabled),
+    );
   } catch {
     // localStorage not available
   }
-  
-  // Dispatch event so components can react to the change
-  window.dispatchEvent(new CustomEvent("ef-preview-settings-changed", {
-    detail: { showThumbnailTimestamps: enabled }
-  }));
-}
 
+  // Dispatch event so components can react to the change
+  window.dispatchEvent(
+    new CustomEvent("ef-preview-settings-changed", {
+      detail: { showThumbnailTimestamps: enabled },
+    }),
+  );
+}

@@ -70,15 +70,12 @@ export const mockGetUploadFile = ({
   filename?: string;
   fixture: Fixture;
 }) =>
-  http.get(
-    `http://localhost:3000/api/v1/files/${id}/upload`,
-    async () => {
-      return HttpResponse.json({
-        id,
-        status,
-      });
-    },
-  );
+  http.get(`http://localhost:3000/api/v1/files/${id}/upload`, async () => {
+    return HttpResponse.json({
+      id,
+      status,
+    });
+  });
 
 export const mockCreateFileTrack = ({
   complete = true,
@@ -127,11 +124,7 @@ export const mockGetFileTrackUpload = ({
     },
   );
 
-export const mockUploadFileIndex = ({
-  id = "123",
-}: {
-  id?: string;
-}) =>
+export const mockUploadFileIndex = ({ id = "123" }: { id?: string }) =>
   http.post(
     `http://localhost:3000/api/v1/files/${id}/index/upload`,
     async () => {

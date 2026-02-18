@@ -159,12 +159,9 @@ export const lookupFileByMd5 = async (
   client: Client,
   md5: string,
 ): Promise<LookupFileByMd5Result | null> => {
-  const response = await client.authenticatedFetch(
-    `/api/v1/files/md5/${md5}`,
-    {
-      method: "GET",
-    },
-  );
+  const response = await client.authenticatedFetch(`/api/v1/files/md5/${md5}`, {
+    method: "GET",
+  });
 
   if (response.ok) {
     return (await response.json()) as LookupFileByMd5Result;
@@ -196,10 +193,7 @@ export const deleteFile = async (client: Client, id: string) => {
   );
 };
 
-export const getFileProcessingProgress = async (
-  client: Client,
-  id: string,
-) => {
+export const getFileProcessingProgress = async (client: Client, id: string) => {
   const eventSource = await client.authenticatedEventSource(
     `/api/v1/files/${id}/progress`,
   );

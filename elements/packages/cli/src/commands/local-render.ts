@@ -8,11 +8,20 @@ import { PreviewServer } from "../utils/startPreviewServer.js";
 import { withSpinner } from "../utils/withSpinner.js";
 import { withProfiling } from "../utils/profileRender.js";
 
+declare global {
+  interface Window {
+    EF_RENDER_DATA: any;
+    EF_RENDER: any;
+  }
+}
+
 const log = debug("ef:cli:local-render");
 
 program
   .command("local-render [directory]")
-  .description("Render a directory's index.html file as a video locally using Playwright")
+  .description(
+    "Render a directory's index.html file as a video locally using Playwright",
+  )
   .option("-o, --output <path>", "Output file path", "output.mp4")
   .option("-d, --data <json>", "Custom render data (JSON string)")
   .option("--data-file <path>", "Custom render data from JSON file")
@@ -23,7 +32,11 @@ program
   .option("--from-ms <number>", "Start time in milliseconds")
   .option("--to-ms <number>", "End time in milliseconds")
   .option("--profile", "Enable CPU profiling")
-  .option("--profile-output <path>", "Profile output path", "./render-profile.cpuprofile")
+  .option(
+    "--profile-output <path>",
+    "Profile output path",
+    "./render-profile.cpuprofile",
+  )
   .action(async (directory = ".", options) => {
     // If running from the dev script (via tsx), ORIGINAL_CWD contains the user's actual directory
     const baseCwd = process.env.ORIGINAL_CWD || process.cwd();
@@ -75,13 +88,18 @@ program
             let totalBytes = 0;
 
             // Expose chunk handler - writes directly to file
-            await page.exposeFunction("onRenderChunk", (chunkArray: number[]) => {
-              const chunk = Buffer.from(chunkArray);
-              outputStream.write(chunk);
-              chunkCount++;
-              totalBytes += chunk.length;
-              log(`Received chunk ${chunkCount}: ${chunk.length} bytes (total: ${totalBytes} bytes)`);
-            });
+            await page.exposeFunction(
+              "onRenderChunk",
+              (chunkArray: number[]) => {
+                const chunk = Buffer.from(chunkArray);
+                outputStream.write(chunk);
+                chunkCount++;
+                totalBytes += chunk.length;
+                log(
+                  `Received chunk ${chunkCount}: ${chunk.length} bytes (total: ${totalBytes} bytes)`,
+                );
+              },
+            );
 
             // Set custom render data if provided
             if (renderData) {
@@ -98,9 +116,13 @@ program
             );
 
             // Check if ready
-            const isReady = await page.evaluate(() => window.EF_RENDER?.isReady());
+            const isReady = await page.evaluate(() =>
+              window.EF_RENDER?.isReady(),
+            );
             if (!isReady) {
-              throw new Error("Render API is not ready. No ef-timegroup found.");
+              throw new Error(
+                "Render API is not ready. No ef-timegroup found.",
+              );
             }
 
             // Render with streaming
@@ -129,7 +151,9 @@ program
             // Wait for stream to finish
             await new Promise<void>((resolve, reject) => {
               outputStream.on("finish", () => {
-                log(`Render complete: ${chunkCount} chunks, ${totalBytes} bytes written to ${outputPath}`);
+                log(
+                  `Render complete: ${chunkCount} chunks, ${totalBytes} bytes written to ${outputPath}`,
+                );
                 resolve();
               });
               outputStream.on("error", reject);

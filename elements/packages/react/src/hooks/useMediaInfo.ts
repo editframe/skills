@@ -66,10 +66,7 @@ export const useMediaInfo = (
   useEffect(() => {
     if (!mediaRef.current) return;
 
-    const controller = new MediaInfoController(
-      mediaRef.current,
-      setMediaInfo,
-    );
+    const controller = new MediaInfoController(mediaRef.current, setMediaInfo);
 
     if (mediaRef.current.isConnected) {
       controller.hostConnected();

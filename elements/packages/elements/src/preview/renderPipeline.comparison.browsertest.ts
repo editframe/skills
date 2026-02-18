@@ -22,12 +22,14 @@ function createTimegroup(): EFTimegroup {
   tg.style.cssText = `width:${W}px;height:${H}px;background:linear-gradient(135deg,#1a1a2e,#16213e);position:relative;overflow:hidden;font-family:system-ui,sans-serif;`;
 
   const title = document.createElement("div");
-  title.style.cssText = "position:absolute;top:40px;left:40px;color:white;font-size:48px;font-weight:bold;";
+  title.style.cssText =
+    "position:absolute;top:40px;left:40px;color:white;font-size:48px;font-weight:bold;";
   title.textContent = "Comparison Test";
   tg.appendChild(title);
 
   const grid = document.createElement("div");
-  grid.style.cssText = "position:absolute;top:120px;left:40px;right:40px;bottom:40px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;";
+  grid.style.cssText =
+    "position:absolute;top:120px;left:40px;right:40px;bottom:40px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;";
   for (let i = 0; i < 6; i++) {
     const card = document.createElement("div");
     card.style.cssText = `background:hsl(${i * 60},60%,45%);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-size:24px;`;
@@ -60,7 +62,8 @@ function createCanvasTimegroup(): EFTimegroup {
   tg.appendChild(c);
 
   const overlay = document.createElement("div");
-  overlay.style.cssText = "position:absolute;bottom:20px;right:20px;color:white;font-size:18px;background:rgba(0,0,0,0.5);padding:8px 16px;border-radius:4px;";
+  overlay.style.cssText =
+    "position:absolute;bottom:20px;right:20px;color:white;font-size:18px;background:rgba(0,0,0,0.5);padding:8px 16px;border-radius:4px;";
   overlay.textContent = "Overlay Text";
   tg.appendChild(overlay);
 
@@ -70,7 +73,10 @@ function createCanvasTimegroup(): EFTimegroup {
 /**
  * Compare two canvases pixel-by-pixel and return the percentage of matching pixels.
  */
-function compareCanvases(c1: HTMLCanvasElement, c2: HTMLCanvasElement): { match: number; totalPixels: number; diffPixels: number } {
+function compareCanvases(
+  c1: HTMLCanvasElement,
+  c2: HTMLCanvasElement,
+): { match: number; totalPixels: number; diffPixels: number } {
   const w = Math.min(c1.width, c2.width);
   const h = Math.min(c1.height, c2.height);
   const ctx1 = c1.getContext("2d", { willReadFrequently: true })!;
@@ -91,7 +97,11 @@ function compareCanvases(c1: HTMLCanvasElement, c2: HTMLCanvasElement): { match:
     }
   }
 
-  return { match: matching / totalPixels, totalPixels, diffPixels: totalPixels - matching };
+  return {
+    match: matching / totalPixels,
+    totalPixels,
+    diffPixels: totalPixels - matching,
+  };
 }
 
 describe("native vs foreignObject output comparison", () => {
@@ -112,7 +122,10 @@ describe("native vs foreignObject output comparison", () => {
     await tg.updateComplete;
 
     // Capture via foreignObject
-    const dataUri = await captureTimelineToDataUri(tg, W, H, { canvasScale: 1, timeMs: 0 });
+    const dataUri = await captureTimelineToDataUri(tg, W, H, {
+      canvasScale: 1,
+      timeMs: 0,
+    });
     const foreignImg = await loadImageFromDataUri(dataUri);
     const foreignCanvas = document.createElement("canvas");
     foreignCanvas.width = W;
@@ -121,12 +134,18 @@ describe("native vs foreignObject output comparison", () => {
     fCtx.drawImage(foreignImg, 0, 0, W, H);
 
     // Capture via native
-    const nativeCanvas = await renderToImageNative(tg, W, H, { skipDprScaling: true });
+    const nativeCanvas = await renderToImageNative(tg, W, H, {
+      skipDprScaling: true,
+    });
 
     const result = compareCanvases(foreignCanvas, nativeCanvas);
     console.log(`\n=== HTML-only comparison ===`);
-    console.log(`Match: ${(result.match * 100).toFixed(1)}% (${result.diffPixels} pixels differ out of ${result.totalPixels})`);
-    console.log(`Foreign: ${foreignCanvas.width}x${foreignCanvas.height}, Native: ${nativeCanvas.width}x${nativeCanvas.height}`);
+    console.log(
+      `Match: ${(result.match * 100).toFixed(1)}% (${result.diffPixels} pixels differ out of ${result.totalPixels})`,
+    );
+    console.log(
+      `Foreign: ${foreignCanvas.width}x${foreignCanvas.height}, Native: ${nativeCanvas.width}x${nativeCanvas.height}`,
+    );
 
     // Both should produce non-empty output
     expect(foreignCanvas.width).toBeGreaterThan(0);
@@ -148,7 +167,10 @@ describe("native vs foreignObject output comparison", () => {
     await tg.updateComplete;
 
     // Capture via foreignObject
-    const dataUri = await captureTimelineToDataUri(tg, W, H, { canvasScale: 1, timeMs: 0 });
+    const dataUri = await captureTimelineToDataUri(tg, W, H, {
+      canvasScale: 1,
+      timeMs: 0,
+    });
     const foreignImg = await loadImageFromDataUri(dataUri);
     const foreignCanvas = document.createElement("canvas");
     foreignCanvas.width = W;
@@ -157,11 +179,15 @@ describe("native vs foreignObject output comparison", () => {
     fCtx.drawImage(foreignImg, 0, 0, W, H);
 
     // Capture via native
-    const nativeCanvas = await renderToImageNative(tg, W, H, { skipDprScaling: true });
+    const nativeCanvas = await renderToImageNative(tg, W, H, {
+      skipDprScaling: true,
+    });
 
     const result = compareCanvases(foreignCanvas, nativeCanvas);
     console.log(`\n=== HTML+canvas comparison ===`);
-    console.log(`Match: ${(result.match * 100).toFixed(1)}% (${result.diffPixels} pixels differ out of ${result.totalPixels})`);
+    console.log(
+      `Match: ${(result.match * 100).toFixed(1)}% (${result.diffPixels} pixels differ out of ${result.totalPixels})`,
+    );
 
     expect(foreignCanvas.width).toBeGreaterThan(0);
     expect(nativeCanvas.width).toBeGreaterThan(0);
@@ -182,11 +208,17 @@ describe("native vs foreignObject output comparison", () => {
     await tg.updateComplete;
 
     // Import dynamically to test the actual preview path
-    const { renderTimegroupToCanvas } = await import("./renderTimegroupToCanvas.js");
-    const preview = renderTimegroupToCanvas(tg, { scale: 1, resolutionScale: 1 });
+    const { renderTimegroupToCanvas } =
+      await import("./renderTimegroupToCanvas.js");
+    const preview = renderTimegroupToCanvas(tg, {
+      scale: 1,
+      resolutionScale: 1,
+    });
 
     // Wait for initial render
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await new Promise((r) =>
+      requestAnimationFrame(() => requestAnimationFrame(r)),
+    );
 
     // The canvas should have content
     const c = preview.canvas;
@@ -200,7 +232,9 @@ describe("native vs foreignObject output comparison", () => {
 
     console.log(`\n=== renderTimegroupToCanvas native preview ===`);
     console.log(`Canvas: ${c.width}x${c.height}`);
-    console.log(`Non-zero alpha pixels: ${nonZeroPixels} / ${totalPixels} (${((nonZeroPixels / totalPixels) * 100).toFixed(1)}%)`);
+    console.log(
+      `Non-zero alpha pixels: ${nonZeroPixels} / ${totalPixels} (${((nonZeroPixels / totalPixels) * 100).toFixed(1)}%)`,
+    );
     console.log(`Native path active: ${nativeAvailable}`);
 
     // Should have rendered something
@@ -235,7 +269,8 @@ describe("native vs foreignObject output comparison", () => {
     expect(tg.parentNode).toBe(container);
     expect(tg.nextSibling).toBe(marker);
 
-    const { renderTimegroupToCanvas } = await import("./renderTimegroupToCanvas.js");
+    const { renderTimegroupToCanvas } =
+      await import("./renderTimegroupToCanvas.js");
     const preview = renderTimegroupToCanvas(tg, 1);
 
     // During: timegroup has been reparented to capture canvas

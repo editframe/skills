@@ -161,10 +161,13 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
   private boxSelectModifierKeys = false; // Track if modifier keys were pressed when box select started
   private emptySpaceClickPos: { x: number; y: number } | null = null;
   private selectionChangeHandler?: () => void;
-  private elementHoverHandlers = new Map<string, {
-    mouseenter: () => void;
-    mouseleave: () => void;
-  }>();
+  private elementHoverHandlers = new Map<
+    string,
+    {
+      mouseenter: () => void;
+      mouseleave: () => void;
+    }
+  >();
 
   @state()
   private _activeRootTemporal: (TemporalMixinInterface & HTMLElement) | null =
@@ -378,10 +381,10 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
         elementToUnregister.removeAttribute("data-selected");
         elementToUnregister.removeAttribute("data-highlighted");
       }
-      
+
       // Remove hover listeners
       this.removeElementHoverListeners(elementId);
-      
+
       this.elementRegistry.delete(elementId);
       this.elementMetadata.delete(elementId);
       this.selectionController.selectionContext.deselect(elementId);
@@ -1294,7 +1297,9 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
       // On unpause, force a full metadata refresh for all selected elements
       if (this.wasPaused) {
         this.wasPaused = false;
-        const selectedIds = Array.from(this.selectionController.getModel().selectedIds);
+        const selectedIds = Array.from(
+          this.selectionController.getModel().selectedIds,
+        );
         for (const id of selectedIds) {
           this.updateElementMetadata(id);
         }

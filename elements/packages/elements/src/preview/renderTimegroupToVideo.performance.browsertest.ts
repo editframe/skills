@@ -17,14 +17,16 @@ describe("renderTimegroupToVideo performance", () => {
   it("should render video with worker pool parallelization", async () => {
     // Create a simple timegroup with some content
     const tg = document.createElement("ef-timegroup") as EFTimegroup;
-    tg.style.cssText = "width: 640px; height: 360px; background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);";
+    tg.style.cssText =
+      "width: 640px; height: 360px; background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);";
     tg.setAttribute("mode", "fixed");
     tg.setAttribute("duration", "2s");
-    
+
     // Add some complex content to make serialization take time
     const shapes = document.createElement("div");
-    shapes.style.cssText = "width: 100%; height: 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: center;";
-    
+    shapes.style.cssText =
+      "width: 100%; height: 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: center;";
+
     for (let i = 0; i < 20; i++) {
       const shape = document.createElement("div");
       shape.style.cssText = `
@@ -32,21 +34,21 @@ describe("renderTimegroupToVideo performance", () => {
         height: 50px;
         margin: 5px;
         background: hsl(${i * 18}, 70%, 60%);
-        border-radius: ${i % 3 === 0 ? '50%' : '0'};
+        border-radius: ${i % 3 === 0 ? "50%" : "0"};
         animation: spin-${i} ${1 + i * 0.1}s linear infinite;
       `;
       shapes.appendChild(shape);
     }
-    
+
     tg.appendChild(shapes);
     document.body.appendChild(tg);
-    
+
     try {
       await tg.updateComplete;
-      
+
       // Render a short video (30 frames at 30fps = 1 second)
       const startTime = performance.now();
-      
+
       const result = await renderTimegroupToVideo(tg, {
         fps: 30,
         fromMs: 0,
@@ -59,30 +61,34 @@ describe("renderTimegroupToVideo performance", () => {
           if (progress.currentFrame % 10 === 0) {
             logger.debug(
               `[Perf test] Frame ${progress.currentFrame}/${progress.totalFrames} ` +
-              `(${(progress.progress * 100).toFixed(1)}%) - ` +
-              `Speed: ${progress.speedMultiplier.toFixed(2)}x`
+                `(${(progress.progress * 100).toFixed(1)}%) - ` +
+                `Speed: ${progress.speedMultiplier.toFixed(2)}x`,
             );
           }
-        }
+        },
       });
-      
+
       const elapsedTime = performance.now() - startTime;
       const fps = 30;
       const totalFrames = 30;
       const msPerFrame = elapsedTime / totalFrames;
-      
+
       logger.debug(`[Perf test] ===== PERFORMANCE RESULTS =====`);
       logger.debug(`[Perf test] Total time: ${elapsedTime.toFixed(0)}ms`);
       logger.debug(`[Perf test] Frames: ${totalFrames}`);
       logger.debug(`[Perf test] Time per frame: ${msPerFrame.toFixed(2)}ms`);
-      logger.debug(`[Perf test] Render speed: ${((totalFrames * (1000 / fps)) / elapsedTime).toFixed(2)}x realtime`);
-      
+      logger.debug(
+        `[Perf test] Render speed: ${((totalFrames * (1000 / fps)) / elapsedTime).toFixed(2)}x realtime`,
+      );
+
       expect(result).toBeTruthy();
       if (result) {
         expect(result.byteLength).toBeGreaterThan(0);
-        logger.debug(`[Perf test] Output size: ${(result.byteLength / 1024).toFixed(2)} KB`);
+        logger.debug(
+          `[Perf test] Output size: ${(result.byteLength / 1024).toFixed(2)} KB`,
+        );
       }
-      
+
       // Performance expectations (should complete in reasonable time)
       expect(elapsedTime).toBeLessThan(10000); // Should complete in under 10 seconds
       expect(msPerFrame).toBeLessThan(333); // Should be faster than 3fps minimum
@@ -97,21 +103,22 @@ describe("renderTimegroupToVideo performance", () => {
     tg.style.cssText = "width: 320px; height: 240px; background: #1a1a2e;";
     tg.setAttribute("mode", "fixed");
     tg.setAttribute("duration", "3s");
-    
+
     // Simple content
     const content = document.createElement("div");
-    content.style.cssText = "width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;";
+    content.style.cssText =
+      "width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;";
     content.textContent = "Performance Test";
-    
+
     tg.appendChild(content);
     document.body.appendChild(tg);
-    
+
     try {
       await tg.updateComplete;
-      
+
       // Render multiple frames to see parallelization benefits
       const startTime = performance.now();
-      
+
       await renderTimegroupToVideo(tg, {
         fps: 30,
         fromMs: 0,
@@ -121,16 +128,16 @@ describe("renderTimegroupToVideo performance", () => {
         returnBuffer: true,
         benchmarkMode: false,
       });
-      
+
       const elapsedTime = performance.now() - startTime;
       const totalFrames = 60;
       const msPerFrame = elapsedTime / totalFrames;
-      
+
       logger.debug(`[Perf test] ===== PARALLEL SPEEDUP TEST =====`);
       logger.debug(`[Perf test] Total time: ${elapsedTime.toFixed(0)}ms`);
       logger.debug(`[Perf test] Frames: ${totalFrames}`);
       logger.debug(`[Perf test] Time per frame: ${msPerFrame.toFixed(2)}ms`);
-      
+
       // With worker parallelization, we should see good performance
       expect(elapsedTime).toBeLessThan(15000); // Should complete in under 15 seconds
     } finally {

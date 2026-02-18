@@ -37,7 +37,7 @@ export function quantizeToFrameTimeS(timeSeconds: number, fps: number): number {
 /**
  * Clamp and quantize a seek time to valid range.
  * Prevents "Sample not found" errors at video boundaries.
- * 
+ *
  * @param desiredSeekTimeMs - The desired seek time in milliseconds
  * @param durationMs - The total duration in milliseconds
  * @param fps - Frames per second (defaults to 30)
@@ -60,7 +60,3 @@ export function clampAndQuantizeSeekTimeMs(
   const maxValidTime = Math.max(0, durationMs - frameDurationMs);
   return Math.max(0, Math.min(quantizedMs, maxValidTime));
 }
-
-
-
-

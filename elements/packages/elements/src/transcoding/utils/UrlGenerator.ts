@@ -28,7 +28,7 @@ export class UrlGenerator {
     // Video renditions: "high", "scrub", "low", "medium", etc.
     const audioRendition = metadata.audioRendition;
     const videoRendition = metadata.videoRendition;
-    
+
     let rendition;
     if (renditionId === "audio") {
       rendition = audioRendition;
@@ -36,10 +36,17 @@ export class UrlGenerator {
       // For all other rendition IDs (high, scrub, low, medium), use video rendition
       rendition = videoRendition;
     }
-    
+
     if (!rendition) {
-      console.error("Rendition not found", { renditionId, hasAudio: !!audioRendition, hasVideo: !!videoRendition, metadata });
-      throw new Error(`Rendition ${renditionId} not found (hasAudio=${!!audioRendition}, hasVideo=${!!videoRendition})`);
+      console.error("Rendition not found", {
+        renditionId,
+        hasAudio: !!audioRendition,
+        hasVideo: !!videoRendition,
+        metadata,
+      });
+      throw new Error(
+        `Rendition ${renditionId} not found (hasAudio=${!!audioRendition}, hasVideo=${!!videoRendition})`,
+      );
     }
 
     const template =
@@ -73,9 +80,7 @@ export class UrlGenerator {
    */
   generateTrackFragmentIndexUrl(mediaUrl: string): string {
     // Normalize the path: remove leading slash and any double slashes
-    let normalizedSrc = mediaUrl.startsWith("/")
-      ? mediaUrl.slice(1)
-      : mediaUrl;
+    let normalizedSrc = mediaUrl.startsWith("/") ? mediaUrl.slice(1) : mediaUrl;
     // Remove any remaining leading slashes (handles cases like "//assets/video.mp4")
     normalizedSrc = normalizedSrc.replace(/^\/+/, "");
     // Legacy format - kept for backward compatibility but should not be used

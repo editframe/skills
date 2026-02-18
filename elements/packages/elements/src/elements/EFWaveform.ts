@@ -16,7 +16,10 @@ import type { EFVideo } from "./EFVideo.js";
 import { TargetController } from "./TargetController.ts";
 
 @customElement("ef-waveform")
-export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements FrameRenderable {
+export class EFWaveform
+  extends EFTemporal(TWMixin(LitElement))
+  implements FrameRenderable
+{
   static styles = css`
       :host {
         all: inherit;
@@ -116,7 +119,10 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
     // Style changes are handled by FrameController
     this.mutationObserver = new MutationObserver((mutationsList) => {
       for (const mutation of mutationsList) {
-        if (mutation.type === "attributes" && mutation.attributeName !== "style") {
+        if (
+          mutation.type === "attributes" &&
+          mutation.attributeName !== "style"
+        ) {
           this.requestUpdate();
         }
       }
@@ -503,9 +509,8 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
   getFrameState(timeMs: number): FrameState {
     // Waveform is ready when we have cached data for this time
     const hasTarget = !!this.targetElement;
-    const hasData = hasTarget && 
-      this.#dataTimeMs === timeMs &&
-      this.#frequencyData !== null;
+    const hasData =
+      hasTarget && this.#dataTimeMs === timeMs && this.#frequencyData !== null;
 
     return {
       needsPreparation: hasTarget && !hasData,
@@ -526,11 +531,11 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
     if (!this.ctx) {
       // Force layout computation
       void this.offsetWidth;
-      
+
       // Wait for next frame to ensure layout is fully stable
-      await new Promise(resolve => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
       signal.throwIfAborted();
-      
+
       this.ctx = this.initCanvas();
     }
 
@@ -560,7 +565,7 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
     if (!this.ctx) {
       this.ctx = this.initCanvas();
     }
-    
+
     const ctx = this.ctx;
     if (!ctx) return;
 
@@ -607,7 +612,7 @@ export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements Frame
     }
 
     ctx.restore();
-    
+
     this.#renderVersion++;
   }
 

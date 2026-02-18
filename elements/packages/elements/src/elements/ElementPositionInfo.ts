@@ -27,9 +27,10 @@ export interface ElementPositionInfo {
  * Mixin that adds getPositionInfo() method to LitElement.
  * Elements can use this to expose their position information.
  */
-export function PositionInfoMixin<T extends Constructor<LitElement>>(superClass: T) {
+export function PositionInfoMixin<T extends Constructor<LitElement>>(
+  superClass: T,
+) {
   class PositionInfoElement extends superClass {
-
     /**
      * Get position information for this element.
      * Returns computed bounds, transform, and rotation.

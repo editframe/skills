@@ -489,7 +489,7 @@ describe.skip("EFControls", () => {
 
       // Seek the timegroup - seek() internally sets currentTimeMs and runs seekTask
       await timegroup.seek(5000);
-      
+
       // Wait for PlaybackController's notification to propagate
       // The seekTask completes and notifies listeners before seek() returns,
       // but we need to wait for Lit's reactive update cycle

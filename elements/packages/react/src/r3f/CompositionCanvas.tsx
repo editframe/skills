@@ -19,7 +19,14 @@
  */
 
 import * as React from "react";
-import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { flushSync } from "react-dom";
 import type { CanvasProps } from "@react-three/fiber";
@@ -88,42 +95,50 @@ export function CompositionCanvas({
     if (!el) return;
 
     // Walk up to find the ef-timegroup ancestor
-    const tg = el.closest("ef-timegroup") as HTMLElement & {
-      addFrameTask?: (
-        cb: (info: { ownCurrentTimeMs: number; durationMs: number }) => void,
-      ) => () => void;
-      durationMs?: number;
-    } | null;
+    const tg = el.closest("ef-timegroup") as
+      | (HTMLElement & {
+          addFrameTask?: (
+            cb: (info: {
+              ownCurrentTimeMs: number;
+              durationMs: number;
+            }) => void,
+          ) => () => void;
+          durationMs?: number;
+        })
+      | null;
 
     if (!tg) {
       console.warn(
         "[CompositionCanvas] No ef-timegroup ancestor found. " +
-        "Wrap CompositionCanvas inside a <Timegroup>.",
+          "Wrap CompositionCanvas inside a <Timegroup>.",
       );
       return;
     }
 
     if (tg.durationMs) setDurationMs(tg.durationMs);
 
-    const cleanup = tg.addFrameTask?.(({ ownCurrentTimeMs, durationMs: dur }) => {
-      // flushSync commits the state update synchronously so the
-      // useLayoutEffect → invalidate() fires before we return.
-      // R3F's demand render then runs useFrame subscribers (which
-      // update instancedMesh matrices, cameras, etc.) and gl.render
-      // in a single pass — no duplicate GPU work.
-      flushSync(() => {
-        setTimeMs(ownCurrentTimeMs);
-        setDurationMs(dur);
-      });
-    });
+    const cleanup = tg.addFrameTask?.(
+      ({ ownCurrentTimeMs, durationMs: dur }) => {
+        // flushSync commits the state update synchronously so the
+        // useLayoutEffect → invalidate() fires before we return.
+        // R3F's demand render then runs useFrame subscribers (which
+        // update instancedMesh matrices, cameras, etc.) and gl.render
+        // in a single pass — no duplicate GPU work.
+        flushSync(() => {
+          setTimeMs(ownCurrentTimeMs);
+          setDurationMs(dur);
+        });
+      },
+    );
 
     return cleanup;
   }, []);
 
   // Merge user gl options with required defaults
-  const mergedGl = typeof glProp === "object"
-    ? { preserveDrawingBuffer: true, ...glProp }
-    : glProp ?? { preserveDrawingBuffer: true };
+  const mergedGl =
+    typeof glProp === "object"
+      ? { preserveDrawingBuffer: true, ...glProp }
+      : (glProp ?? { preserveDrawingBuffer: true });
 
   return (
     <div

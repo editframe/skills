@@ -28,7 +28,7 @@ export function flattenHierarchy(
       if (isEFTemporal(child)) {
         // Skip child elements that are consolidated into their parent track
         const tagName = (child as Element).tagName?.toUpperCase();
-        
+
         // Skip captions child elements - they're shown inline in the captions track
         if (
           tagName === "EF-CAPTIONS-ACTIVE-WORD" ||
@@ -38,12 +38,12 @@ export function flattenHierarchy(
         ) {
           continue;
         }
-        
+
         // Skip text segments - they're shown inline in the text track
         if (tagName === "EF-TEXT-SEGMENT") {
           continue;
         }
-        
+
         rows.push(
           ...flattenHierarchy(
             child as TemporalMixinInterface & Element,
@@ -56,4 +56,3 @@ export function flattenHierarchy(
 
   return rows;
 }
-

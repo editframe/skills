@@ -293,7 +293,10 @@ export interface MediaEngine {
    * Returns null for any timestamps that fail to extract
    * @param signal - Optional AbortSignal to cancel in-flight requests when element is disconnected
    */
-  extractThumbnails(timestamps: number[], signal?: AbortSignal): Promise<(ThumbnailResult | null)[]>;
+  extractThumbnails(
+    timestamps: number[],
+    signal?: AbortSignal,
+  ): Promise<(ThumbnailResult | null)[]>;
 }
 
 export interface ThumbnailResult {

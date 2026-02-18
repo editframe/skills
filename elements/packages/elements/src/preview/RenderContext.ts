@@ -1,10 +1,10 @@
 /**
  * RenderContext manages scoped caches for the rendering pipeline.
- * 
+ *
  * Used during foreignObject serialization to cache:
  * - Video frames by source timestamp (useful for freeze frames, slow-mo)
  * - Static element canvases by element identity + renderVersion
- * 
+ *
  * The context should be created at the start of a render operation
  * and disposed when the render completes (success or failure).
  */
@@ -15,8 +15,13 @@ import type { EFVideo } from "../elements/EFVideo.js";
 /**
  * Check if an element has a renderVersion property.
  */
-function hasRenderVersion(element: Element): element is Element & { renderVersion: number } {
-  return "renderVersion" in element && typeof (element as any).renderVersion === "number";
+function hasRenderVersion(
+  element: Element,
+): element is Element & { renderVersion: number } {
+  return (
+    "renderVersion" in element &&
+    typeof (element as any).renderVersion === "number"
+  );
 }
 
 /**
@@ -67,7 +72,7 @@ export interface RenderContextOptions {
 
 /**
  * RenderContext provides scoped caching for render operations.
- * 
+ *
  * Create at the start of a render, dispose when complete:
  * ```typescript
  * const context = new RenderContext();
@@ -81,16 +86,16 @@ export interface RenderContextOptions {
 export class RenderContext {
   /** Cache for static element canvases (ef-image, ef-waveform) */
   #canvasCache: LRUCache<string, string>;
-  
+
   /** Cache for video frames by source timestamp */
   #videoFrameCache: LRUCache<string, CapturedFrame>;
-  
+
   /** Cache for document styles (computed once per render session) */
   #documentStylesCache: string | null = null;
-  
+
   /** Whether this context has been disposed */
   #disposed = false;
-  
+
   /** Metrics for monitoring cache effectiveness */
   #metrics = {
     canvasCacheHits: 0,
@@ -144,10 +149,10 @@ export class RenderContext {
    */
   getCachedCanvasDataUrl(element: Element): string | undefined {
     if (this.#disposed) return undefined;
-    
+
     const key = this.#getCanvasCacheKey(element);
     if (!key) return undefined;
-    
+
     const cached = this.#canvasCache.get(key);
     if (cached) {
       this.#metrics.canvasCacheHits++;
@@ -163,7 +168,7 @@ export class RenderContext {
    */
   setCachedCanvasDataUrl(element: Element, dataUrl: string): void {
     if (this.#disposed) return;
-    
+
     const key = this.#getCanvasCacheKey(element);
     if (key) {
       this.#canvasCache.set(key, dataUrl);
@@ -190,9 +195,12 @@ export class RenderContext {
    * Get a cached video frame.
    * Returns undefined if not cached.
    */
-  getCachedVideoFrame(videoElement: Element, sourceTimeMs: number): CapturedFrame | undefined {
+  getCachedVideoFrame(
+    videoElement: Element,
+    sourceTimeMs: number,
+  ): CapturedFrame | undefined {
     if (this.#disposed) return undefined;
-    
+
     const key = this.#getVideoFrameCacheKey(videoElement, sourceTimeMs);
     const cached = this.#videoFrameCache.get(key);
     if (cached) {
@@ -206,9 +214,13 @@ export class RenderContext {
   /**
    * Cache a video frame.
    */
-  setCachedVideoFrame(videoElement: Element, sourceTimeMs: number, frame: CapturedFrame): void {
+  setCachedVideoFrame(
+    videoElement: Element,
+    sourceTimeMs: number,
+    frame: CapturedFrame,
+  ): void {
     if (this.#disposed) return;
-    
+
     const key = this.#getVideoFrameCacheKey(videoElement, sourceTimeMs);
     this.#videoFrameCache.set(key, frame);
   }
@@ -216,7 +228,7 @@ export class RenderContext {
   /**
    * Convenience method to get or capture a video frame.
    * Checks cache first, then captures if not cached.
-   * 
+   *
    * @param video - The ef-video element
    * @param sourceTimeMs - Source media timestamp
    * @param options - Capture options including quality and signal
@@ -228,7 +240,7 @@ export class RenderContext {
     options: {
       quality?: "auto" | "scrub" | "main";
       signal?: AbortSignal;
-    } = {}
+    } = {},
   ): Promise<CapturedFrame> {
     // Check cache first
     const cached = this.getCachedVideoFrame(video, sourceTimeMs);
@@ -238,10 +250,10 @@ export class RenderContext {
 
     // Capture frame using direct API
     const frame = await video.captureFrameAtSourceTime(sourceTimeMs, options);
-    
+
     // Cache for future use
     this.setCachedVideoFrame(video, sourceTimeMs, frame);
-    
+
     return frame;
   }
 
@@ -276,7 +288,7 @@ export class RenderContext {
    */
   dispose(): void {
     if (this.#disposed) return;
-    
+
     this.#canvasCache.clear();
     this.#videoFrameCache.clear();
     this.#documentStylesCache = null;
@@ -285,7 +297,7 @@ export class RenderContext {
 
   /**
    * Symbol.dispose implementation for use with the `using` keyword.
-   * 
+   *
    * @example
    * ```typescript
    * using context = new RenderContext();

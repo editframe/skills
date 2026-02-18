@@ -30,11 +30,9 @@ export class EFAudio extends TWMixin(EFMedia) implements FrameRenderable {
 
   #mediaEngineLoaded = false;
 
-  protected updated(
-    changedProperties: Map<PropertyKey, unknown>,
-  ): void {
+  protected updated(changedProperties: Map<PropertyKey, unknown>): void {
     super.updated(changedProperties);
-    
+
     // Sync volume property to HTMLAudioElement whenever it changes or element is first rendered
     if (this.audioElementRef.value) {
       if (changedProperties.has("volume") || changedProperties.size === 0) {
@@ -57,7 +55,8 @@ export class EFAudio extends TWMixin(EFMedia) implements FrameRenderable {
    */
   getFrameState(_timeMs: number): FrameState {
     // Check if media engine is loaded
-    const isReady = this.#mediaEngineLoaded && this.mediaEngineTask.status === 2; // COMPLETE
+    const isReady =
+      this.#mediaEngineLoaded && this.mediaEngineTask.status === 2; // COMPLETE
 
     return {
       needsPreparation: !isReady,

@@ -264,7 +264,10 @@ function calculateSegmentByteRange(
   const lastFrag = accumulatedFragments[accumulatedFragments.length - 1]!;
   return {
     offset: firstFrag.fragment.offset,
-    size: lastFrag.fragment.offset + lastFrag.fragment.size - firstFrag.fragment.offset,
+    size:
+      lastFrag.fragment.offset +
+      lastFrag.fragment.size -
+      firstFrag.fragment.offset,
   };
 }
 
@@ -275,7 +278,10 @@ type SegmentAccumulationState =
       type: "accumulating";
       startPts: number;
       startDts: number;
-      fragments: Array<{ fragment: Fragment; fragmentData: FragmentTimingData }>;
+      fragments: Array<{
+        fragment: Fragment;
+        fragmentData: FragmentTimingData;
+      }>;
     };
 
 // Invariant: Segment must start on keyframe (for video) and have minimum duration
@@ -470,9 +476,10 @@ class SegmentAccumulator {
     }
   }
 
-  private getLastPacket(
-    fragmentData: FragmentTimingData,
-  ): { pts: number; duration?: number } {
+  private getLastPacket(fragmentData: FragmentTimingData): {
+    pts: number;
+    duration?: number;
+  } {
     if (this.context.streamType === "video") {
       const packets = fragmentData.videoPackets;
       return packets[packets.length - 1]!;
@@ -623,7 +630,10 @@ export const generateFragmentIndex = async (
       streamIndex,
     };
 
-    const accumulator = new SegmentAccumulator(context, MIN_SEGMENT_DURATION_MS);
+    const accumulator = new SegmentAccumulator(
+      context,
+      MIN_SEGMENT_DURATION_MS,
+    );
 
     for (let i = 0; i < fragmentTimingData.length; i++) {
       const fragmentData = fragmentTimingData[i]!;
@@ -646,9 +656,7 @@ export const generateFragmentIndex = async (
 
       if (streamType === "video") {
         // Video: segments must start on keyframes
-        const keyframe = fragmentData.videoPackets.find(
-          (p) => p.isKeyframe,
-        );
+        const keyframe = fragmentData.videoPackets.find((p) => p.isKeyframe);
         const hasKeyframe = keyframe !== undefined;
 
         // Start new segment on keyframe if none exists
@@ -668,7 +676,9 @@ export const generateFragmentIndex = async (
 
         // Check if we should finalize when encountering a new keyframe
         if (hasKeyframe) {
-          if (accumulator.shouldFinalize({ pts: keyframe.pts, dts: keyframe.dts })) {
+          if (
+            accumulator.shouldFinalize({ pts: keyframe.pts, dts: keyframe.dts })
+          ) {
             // Duration should be to the start of this keyframe (start of next segment)
             const nextBoundary = { pts: keyframe.pts };
             const evaluation = accumulator.evaluateSegment(nextBoundary);
@@ -731,9 +741,7 @@ export const generateFragmentIndex = async (
     const streamPackets = (probe.packets as ProbePacket[]).filter(
       (p) => p.stream_index === videoStream.index,
     );
-    const keyframePackets = streamPackets.filter((p) =>
-      p.flags?.includes("K"),
-    );
+    const keyframePackets = streamPackets.filter((p) => p.flags?.includes("K"));
     const totalSampleCount = keyframePackets.length;
 
     log(

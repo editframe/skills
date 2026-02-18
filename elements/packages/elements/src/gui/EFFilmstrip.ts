@@ -121,7 +121,7 @@ export class EFFilmstrip extends TWMixin(LitElement) {
 
   render() {
     const targetId = this.targetTemporal
-      ? ((this.targetTemporal as unknown as HTMLElement).id || this.target)
+      ? (this.targetTemporal as unknown as HTMLElement).id || this.target
       : this.target;
 
     return html`

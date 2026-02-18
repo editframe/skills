@@ -283,7 +283,9 @@ describe.skip("EFTimelineRow", () => {
   describe("track positioning", () => {
     test("audio inside sequence timegroup is positioned at absolute start time", async () => {
       // Create a root sequence with two child timegroups
-      const rootTimegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const rootTimegroup = document.createElement(
+        "ef-timegroup",
+      ) as EFTimegroup;
       rootTimegroup.id = "root";
       rootTimegroup.setAttribute("mode", "sequence");
 
@@ -321,7 +323,9 @@ describe.skip("EFTimelineRow", () => {
 
       // Create a timeline row for the audio element (flat row architecture)
       const pixelsPerMs = 0.1;
-      const audioRow = document.createElement("ef-timeline-row") as EFTimelineRow;
+      const audioRow = document.createElement(
+        "ef-timeline-row",
+      ) as EFTimelineRow;
       audioRow.element = audio;
       audioRow.depth = 2;
       audioRow.pixelsPerMs = pixelsPerMs;
@@ -337,7 +341,8 @@ describe.skip("EFTimelineRow", () => {
       await (audioTrack as any)?.updateComplete;
 
       // Get the outer gutter div that positions the track
-      const gutterDiv = audioTrack?.shadowRoot?.firstElementChild as HTMLElement;
+      const gutterDiv = audioTrack?.shadowRoot
+        ?.firstElementChild as HTMLElement;
       expect(gutterDiv).toBeTruthy();
 
       // The track should be positioned at absolute start time (5000ms * 0.1 = 500px)
@@ -366,18 +371,23 @@ describe.skip("EFTimelineRow", () => {
       expect(row.classList.contains("root-timegroup")).toBe(true);
 
       // The timegroup track should have show-filmstrip attribute
-      const timegroupTrack = row.shadowRoot?.querySelector("ef-timegroup-track");
+      const timegroupTrack =
+        row.shadowRoot?.querySelector("ef-timegroup-track");
       expect(timegroupTrack).toBeTruthy();
       expect(timegroupTrack?.hasAttribute("show-filmstrip")).toBe(true);
     });
 
     test("should not show filmstrip for nested timegroup", async () => {
-      const rootTimegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const rootTimegroup = document.createElement(
+        "ef-timegroup",
+      ) as EFTimegroup;
       rootTimegroup.id = "root";
       rootTimegroup.setAttribute("mode", "sequence");
       document.body.appendChild(rootTimegroup);
 
-      const nestedTimegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const nestedTimegroup = document.createElement(
+        "ef-timegroup",
+      ) as EFTimegroup;
       nestedTimegroup.id = "nested";
       nestedTimegroup.setAttribute("mode", "fixed");
       nestedTimegroup.setAttribute("duration", "5s");
@@ -397,10 +407,10 @@ describe.skip("EFTimelineRow", () => {
       expect(row.classList.contains("root-timegroup")).toBe(false);
 
       // The timegroup track should NOT have show-filmstrip attribute
-      const timegroupTrack = row.shadowRoot?.querySelector("ef-timegroup-track");
+      const timegroupTrack =
+        row.shadowRoot?.querySelector("ef-timegroup-track");
       expect(timegroupTrack).toBeTruthy();
       expect(timegroupTrack?.hasAttribute("show-filmstrip")).toBe(false);
     });
   });
 });
-

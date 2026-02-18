@@ -1,6 +1,6 @@
 /**
  * Editframe GUI Theme Utilities
- * 
+ *
  * Shared utilities for working with theme tokens.
  */
 
@@ -20,33 +20,35 @@ const fallbackTypeColors: Record<string, string> = {
 /**
  * Get the color for a specific element type from CSS variables.
  * Falls back to hardcoded values if the CSS variable is not defined.
- * 
+ *
  * @param type - The element type (video, audio, image, text, captions, timegroup)
  * @param element - Optional element to compute styles from (defaults to document.documentElement)
  * @returns The color string (rgb format)
  */
 export function getElementTypeColor(
   type: string,
-  element: Element = document.documentElement
+  element: Element = document.documentElement,
 ): string {
   const varName = `--ef-color-type-${type}`;
   const computedValue = getComputedStyle(element)
     .getPropertyValue(varName)
     .trim();
 
-  return computedValue || fallbackTypeColors[type] || fallbackTypeColors.timegroup!;
+  return (
+    computedValue || fallbackTypeColors[type] || fallbackTypeColors.timegroup!
+  );
 }
 
 /**
  * Get a theme token value from CSS variables.
- * 
+ *
  * @param tokenName - The CSS variable name (with or without -- prefix)
  * @param element - Optional element to compute styles from (defaults to document.documentElement)
  * @returns The token value, or empty string if not defined
  */
 export function getThemeToken(
   tokenName: string,
-  element: Element = document.documentElement
+  element: Element = document.documentElement,
 ): string {
   const varName = tokenName.startsWith("--") ? tokenName : `--${tokenName}`;
   return getComputedStyle(element).getPropertyValue(varName).trim();
@@ -54,7 +56,7 @@ export function getThemeToken(
 
 /**
  * Check if light mode is active on the given element or any ancestor.
- * 
+ *
  * @param element - The element to check
  * @returns true if light mode is active
  */

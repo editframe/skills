@@ -90,21 +90,21 @@ export class EFTextTrack extends TrackItem {
    */
   #getTextContent(segments: EFTextSegment[]): string {
     const text = this.element as EFText;
-    
+
     // If there are segments, use their text
     if (segments.length > 0) {
-      return segments.map(s => s.segmentText).join(" ");
+      return segments.map((s) => s.segmentText).join(" ");
     }
-    
+
     // Try direct text nodes (excluding templates and other elements)
     const directText = Array.from(text.childNodes)
-      .filter(node => node.nodeType === Node.TEXT_NODE)
-      .map(node => node.textContent?.trim())
+      .filter((node) => node.nodeType === Node.TEXT_NODE)
+      .map((node) => node.textContent?.trim())
       .filter(Boolean)
       .join(" ");
-    
+
     if (directText) return directText;
-    
+
     // Ultimate fallback: use the element's full text content
     // (excluding script/style content but including nested text)
     const fullText = text.textContent?.trim() || "";
@@ -114,7 +114,10 @@ export class EFTextTrack extends TrackItem {
   /**
    * Check if segments can fit individually based on track width
    */
-  #canShowSegmentsIndividually(segments: EFTextSegment[], trackWidthPx: number): boolean {
+  #canShowSegmentsIndividually(
+    segments: EFTextSegment[],
+    trackWidthPx: number,
+  ): boolean {
     if (segments.length === 0) return false;
     // Need at least 20px per segment
     return trackWidthPx >= segments.length * 20;
@@ -122,11 +125,16 @@ export class EFTextTrack extends TrackItem {
 
   render() {
     const text = this.element as EFText;
-    const segments = Array.from(text.querySelectorAll("ef-text-segment")) as EFTextSegment[];
+    const segments = Array.from(
+      text.querySelectorAll("ef-text-segment"),
+    ) as EFTextSegment[];
     const textContent = this.#getTextContent(segments);
     const durationMs = text.durationMs ?? 0;
     const trackWidthPx = durationMs * this.pixelsPerMs;
-    const canShowSegments = this.#canShowSegmentsIndividually(segments, trackWidthPx);
+    const canShowSegments = this.#canShowSegmentsIndividually(
+      segments,
+      trackWidthPx,
+    );
 
     return html`<div style=${styleMap(this.gutterStyles)}>
       <div
@@ -157,9 +165,11 @@ export class EFTextTrack extends TrackItem {
             borderLeftWidth: "3px",
           })}
         >
-          ${segments.length > 0 && canShowSegments
-            ? this.#renderSegments(segments, durationMs)
-            : this.#renderCompactText(textContent)}
+          ${
+            segments.length > 0 && canShowSegments
+              ? this.#renderSegments(segments, durationMs)
+              : this.#renderCompactText(textContent)
+          }
         </div>
       </div>
       ${this.renderChildren()}
@@ -178,7 +188,7 @@ export class EFTextTrack extends TrackItem {
       const staggerOffset = segment.staggerOffsetMs ?? 0;
       // Segment becomes active at its stagger offset
       const isActive = textLocalTimeMs >= staggerOffset;
-      
+
       // Calculate segment width - distribute evenly or use stagger spacing
       const nextSegment = segments[index + 1];
       const nextStagger = nextSegment?.staggerOffsetMs ?? durationMs;
@@ -203,7 +213,7 @@ export class EFTextTrack extends TrackItem {
    */
   #renderCompactText(textContent: string) {
     if (!textContent) return nothing;
-    
+
     return html`
       <div class="text-compact-block">
         <span class="segment-text">${textContent}</span>
@@ -213,13 +223,13 @@ export class EFTextTrack extends TrackItem {
 
   renderChildren(): Array<TemplateResult<1> | typeof nothing> | typeof nothing {
     const nonSegmentChildren = Array.from(this.element.children).filter(
-      (child) => child.tagName?.toUpperCase() !== "EF-TEXT-SEGMENT"
+      (child) => child.tagName?.toUpperCase() !== "EF-TEXT-SEGMENT",
     );
-    
+
     if (nonSegmentChildren.length === 0) {
       return nothing;
     }
-    
+
     return renderTrackChildren(
       nonSegmentChildren,
       this.pixelsPerMs,
@@ -292,4 +302,3 @@ declare global {
     "ef-text-segment-track": EFTextSegmentTrack;
   }
 }
-

@@ -37,8 +37,6 @@ import "../gui/EFWorkbench.js";
 import "../gui/EFConfiguration.js";
 import "../canvas/EFCanvas.js";
 
-
-
 beforeAll(async () => {
   console.clear();
   await fetch("/@ef-clear-cache", {
@@ -360,27 +358,32 @@ const test = baseTest.extend<{
   },
 });
 
-function hasCanvasContent(source: CanvasImageSource | HTMLCanvasElement): boolean {
+function hasCanvasContent(
+  source: CanvasImageSource | HTMLCanvasElement,
+): boolean {
   let canvas: HTMLCanvasElement;
-  
+
   if (source instanceof HTMLCanvasElement) {
     canvas = source;
   } else {
     // Draw to temp canvas
-    canvas = document.createElement('canvas');
-    const s = source as unknown as { naturalWidth?: number; width: number; naturalHeight?: number; height: number };
+    canvas = document.createElement("canvas");
+    const s = source as unknown as {
+      naturalWidth?: number;
+      width: number;
+      naturalHeight?: number;
+      height: number;
+    };
     canvas.width = s.naturalWidth ?? s.width;
     canvas.height = s.naturalHeight ?? s.height;
     const ctx = canvas.getContext("2d")!;
     ctx.drawImage(source, 0, 0);
   }
-  
+
   const ctx = canvas.getContext("2d")!;
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   return imageData.data.some((value, index) => index % 4 !== 3 && value !== 0);
 }
-
-
 
 // Re-enabled 2026-01-24: Tests were passing when skipped for beta release
 describe("renderTimegroupToCanvas", () => {
@@ -391,7 +394,10 @@ describe("renderTimegroupToCanvas", () => {
   describe("simple HTML content", () => {
     test("native: captures and matches baseline", async ({ htmlTimegroup }) => {
       setNativeCanvasApiEnabled(true);
-      const canvas = await captureTimegroupAtTime(htmlTimegroup, { timeMs: 0, scale: 1 });
+      const canvas = await captureTimegroupAtTime(htmlTimegroup, {
+        timeMs: 0,
+        scale: 1,
+      });
 
       expect(hasCanvasContent(canvas)).toBe(true);
       await expectCanvasToMatchSnapshot(
@@ -406,7 +412,10 @@ describe("renderTimegroupToCanvas", () => {
       htmlTimegroup,
     }) => {
       setNativeCanvasApiEnabled(false);
-      const canvas = await captureTimegroupAtTime(htmlTimegroup, { timeMs: 0, scale: 1 });
+      const canvas = await captureTimegroupAtTime(htmlTimegroup, {
+        timeMs: 0,
+        scale: 1,
+      });
 
       expect(hasCanvasContent(canvas)).toBe(true);
       await expectCanvasToMatchSnapshot(
@@ -421,10 +430,16 @@ describe("renderTimegroupToCanvas", () => {
       htmlTimegroup,
     }) => {
       setNativeCanvasApiEnabled(false);
-      const foreignCanvas = await captureTimegroupAtTime(htmlTimegroup, { timeMs: 0, scale: 1 });
+      const foreignCanvas = await captureTimegroupAtTime(htmlTimegroup, {
+        timeMs: 0,
+        scale: 1,
+      });
 
       setNativeCanvasApiEnabled(true);
-      const nativeCanvas = await captureTimegroupAtTime(htmlTimegroup, { timeMs: 0, scale: 1 });
+      const nativeCanvas = await captureTimegroupAtTime(htmlTimegroup, {
+        timeMs: 0,
+        scale: 1,
+      });
 
       expect(hasCanvasContent(foreignCanvas)).toBe(true);
       expect(hasCanvasContent(nativeCanvas)).toBe(true);
@@ -436,7 +451,10 @@ describe("renderTimegroupToCanvas", () => {
       complexHtmlTimegroup,
     }) => {
       setNativeCanvasApiEnabled(true);
-      const canvas = await captureTimegroupAtTime(complexHtmlTimegroup, { timeMs: 0, scale: 1 });
+      const canvas = await captureTimegroupAtTime(complexHtmlTimegroup, {
+        timeMs: 0,
+        scale: 1,
+      });
 
       expect(hasCanvasContent(canvas)).toBe(true);
       await expectCanvasToMatchSnapshot(
@@ -451,7 +469,10 @@ describe("renderTimegroupToCanvas", () => {
       complexHtmlTimegroup,
     }) => {
       setNativeCanvasApiEnabled(false);
-      const canvas = await captureTimegroupAtTime(complexHtmlTimegroup, { timeMs: 0, scale: 1 });
+      const canvas = await captureTimegroupAtTime(complexHtmlTimegroup, {
+        timeMs: 0,
+        scale: 1,
+      });
 
       expect(hasCanvasContent(canvas)).toBe(true);
       await expectCanvasToMatchSnapshot(
@@ -466,10 +487,16 @@ describe("renderTimegroupToCanvas", () => {
       complexHtmlTimegroup,
     }) => {
       setNativeCanvasApiEnabled(false);
-      const foreignCanvas = await captureTimegroupAtTime(complexHtmlTimegroup, { timeMs: 0, scale: 0.5 });
+      const foreignCanvas = await captureTimegroupAtTime(complexHtmlTimegroup, {
+        timeMs: 0,
+        scale: 0.5,
+      });
 
       setNativeCanvasApiEnabled(true);
-      const nativeCanvas = await captureTimegroupAtTime(complexHtmlTimegroup, { timeMs: 0, scale: 0.5 });
+      const nativeCanvas = await captureTimegroupAtTime(complexHtmlTimegroup, {
+        timeMs: 0,
+        scale: 0.5,
+      });
 
       expect(hasCanvasContent(foreignCanvas)).toBe(true);
       expect(hasCanvasContent(nativeCanvas)).toBe(true);
@@ -481,7 +508,10 @@ describe("renderTimegroupToCanvas", () => {
       videoTimegroup,
     }) => {
       setNativeCanvasApiEnabled(true);
-      const canvas = await captureTimegroupAtTime(videoTimegroup, { timeMs: 2000, scale: 1 });
+      const canvas = await captureTimegroupAtTime(videoTimegroup, {
+        timeMs: 2000,
+        scale: 1,
+      });
 
       expect(hasCanvasContent(canvas)).toBe(true);
       await expectCanvasToMatchSnapshot(
@@ -496,7 +526,10 @@ describe("renderTimegroupToCanvas", () => {
       videoTimegroup,
     }) => {
       setNativeCanvasApiEnabled(false);
-      const canvas = await captureTimegroupAtTime(videoTimegroup, { timeMs: 2000, scale: 1 });
+      const canvas = await captureTimegroupAtTime(videoTimegroup, {
+        timeMs: 2000,
+        scale: 1,
+      });
 
       expect(hasCanvasContent(canvas)).toBe(true);
       await expectCanvasToMatchSnapshot(
@@ -514,14 +547,14 @@ describe("renderTimegroupToCanvas", () => {
       // Video content may have a hole (transparent pixels), but the rendering paths should still
       // produce similar visual output for the HTML/CSS content around the video.
       setNativeCanvasApiEnabled(false);
-      const foreignCanvas = await captureTimegroupAtTime(videoTimegroup, { 
-        timeMs: 2000, 
+      const foreignCanvas = await captureTimegroupAtTime(videoTimegroup, {
+        timeMs: 2000,
         scale: 0.5,
       });
 
       setNativeCanvasApiEnabled(true);
-      const nativeCanvas = await captureTimegroupAtTime(videoTimegroup, { 
-        timeMs: 2000, 
+      const nativeCanvas = await captureTimegroupAtTime(videoTimegroup, {
+        timeMs: 2000,
         scale: 0.5,
       });
 
@@ -543,7 +576,10 @@ describe("renderTimegroupToCanvas", () => {
       setNativeCanvasApiEnabled(true);
 
       for (let i = 0; i < scales.length; i++) {
-        const result = await captureTimegroupAtTime(htmlTimegroup, { timeMs: 0, scale: scales[i]! });
+        const result = await captureTimegroupAtTime(htmlTimegroup, {
+          timeMs: 0,
+          scale: scales[i]!,
+        });
         // Native path uses skipDprScaling: true, so canvas is at 1x DPR
         expect((result as any).width).toBe(expectedWidths[i]!);
         expect(hasCanvasContent(result)).toBe(true);
@@ -556,7 +592,10 @@ describe("renderTimegroupToCanvas", () => {
       setNativeCanvasApiEnabled(false);
 
       for (let i = 0; i < scales.length; i++) {
-        const result = await captureTimegroupAtTime(htmlTimegroup, { timeMs: 0, scale: scales[i]! });
+        const result = await captureTimegroupAtTime(htmlTimegroup, {
+          timeMs: 0,
+          scale: scales[i]!,
+        });
         expect((result as any).width).toBe(expectedWidths[i]!);
         expect(hasCanvasContent(result)).toBe(true);
       }
@@ -611,7 +650,10 @@ describe("renderTimegroupToCanvas", () => {
         await videoTimegroup.updateComplete;
       }
 
-      const canvas = await captureTimegroupAtTime(videoTimegroup, { timeMs: 2000, scale: 1 });
+      const canvas = await captureTimegroupAtTime(videoTimegroup, {
+        timeMs: 2000,
+        scale: 1,
+      });
       expect(hasCanvasContent(canvas)).toBe(true);
     });
 
@@ -626,7 +668,10 @@ describe("renderTimegroupToCanvas", () => {
         await videoTimegroup.updateComplete;
       }
 
-      const canvas = await captureTimegroupAtTime(videoTimegroup, { timeMs: 2000, scale: 1 });
+      const canvas = await captureTimegroupAtTime(videoTimegroup, {
+        timeMs: 2000,
+        scale: 1,
+      });
       expect(hasCanvasContent(canvas)).toBe(true);
     });
 
@@ -638,28 +683,34 @@ describe("renderTimegroupToCanvas", () => {
       // into the element's time range, it would stay hidden because the cache thought
       // display hadn't changed.
       setNativeCanvasApiEnabled(true);
-      
+
       // The nested timegroup has:
       // - INTRO scene at 0-5000ms
       // - Video scene at 5000-15000ms (via sequence mode)
       // - Outro scene at 15000-20000ms
-      
+
       // Build clone structure once (like the preview does)
       const { syncState } = buildCloneStructure(nestedAnimatedTimegroup);
-      
+
       // Start at time 0 - INTRO should be visible
       syncStyles(syncState, 0);
-      const canvas0 = await captureTimegroupAtTime(nestedAnimatedTimegroup, { timeMs: 0, scale: 0.5 });
+      const canvas0 = await captureTimegroupAtTime(nestedAnimatedTimegroup, {
+        timeMs: 0,
+        scale: 0.5,
+      });
       expect(hasCanvasContent(canvas0)).toBe(true);
-      
+
       // Scrub to time 7500ms - past INTRO, into video scene
       // INTRO elements should now be hidden by temporal culling
       syncStyles(syncState, 7500);
-      
+
       // Scrub back to time 2500ms - INTRO should be visible again
       // This would fail before the fix because display cache wasn't invalidated
       syncStyles(syncState, 2500);
-      const canvas2500 = await captureTimegroupAtTime(nestedAnimatedTimegroup, { timeMs: 2500, scale: 0.5 });
+      const canvas2500 = await captureTimegroupAtTime(nestedAnimatedTimegroup, {
+        timeMs: 2500,
+        scale: 0.5,
+      });
       expect(hasCanvasContent(canvas2500)).toBe(true);
     });
   });
@@ -669,13 +720,20 @@ describe("renderTimegroupToCanvas", () => {
      * Check if video content within a canvas has been rendered.
      * Samples the area where video should be and checks for non-background pixels.
      */
-    function hasVideoContentInCenter(source: CanvasImageSource | HTMLCanvasElement): boolean {
+    function hasVideoContentInCenter(
+      source: CanvasImageSource | HTMLCanvasElement,
+    ): boolean {
       let canvas: HTMLCanvasElement;
       if (source instanceof HTMLCanvasElement) {
         canvas = source;
       } else {
         canvas = document.createElement("canvas");
-        const s = source as unknown as { naturalWidth?: number; width: number; naturalHeight?: number; height: number };
+        const s = source as unknown as {
+          naturalWidth?: number;
+          width: number;
+          naturalHeight?: number;
+          height: number;
+        };
         const w = s.naturalWidth ?? s.width;
         const h = s.naturalHeight ?? s.height;
         canvas.width = w;
@@ -701,9 +759,12 @@ describe("renderTimegroupToCanvas", () => {
       const data = imageData.data;
 
       // Check if there's variation (video content) vs solid color (hole/background)
-      let minR = 255, maxR = 0;
-      let minG = 255, maxG = 0;
-      let minB = 255, maxB = 0;
+      let minR = 255,
+        maxR = 0;
+      let minG = 255,
+        maxG = 0;
+      let minB = 255,
+        maxB = 0;
 
       for (let i = 0; i < data.length; i += 4) {
         const r = data[i]!;
@@ -727,7 +788,9 @@ describe("renderTimegroupToCanvas", () => {
       return totalRange > 50;
     }
 
-    test("blocking mode waits for video content", async ({ videoTimegroup }) => {
+    test("blocking mode waits for video content", async ({
+      videoTimegroup,
+    }) => {
       setNativeCanvasApiEnabled(true);
 
       // Seek to a different time to force video frame decode
@@ -746,7 +809,10 @@ describe("renderTimegroupToCanvas", () => {
     });
 
     test("ContentNotReadyError has correct structure", () => {
-      const error = new ContentNotReadyError(1000, 5000, ["video1.mp4", "video2.mp4"]);
+      const error = new ContentNotReadyError(1000, 5000, [
+        "video1.mp4",
+        "video2.mp4",
+      ]);
 
       expect(error).toBeInstanceOf(Error);
       expect(error.name).toBe("ContentNotReadyError");
@@ -867,7 +933,7 @@ describe("renderTimegroupToCanvas", () => {
     /**
      * Capture the original timegroup DOM directly to canvas (what DOM mode shows).
      * Uses native drawElementImage API to render the actual element.
-     * 
+     *
      * The element is temporarily moved into a capture canvas, then restored to its
      * original position in the DOM. This captures exactly what the user sees in DOM mode.
      */
@@ -904,7 +970,10 @@ describe("renderTimegroupToCanvas", () => {
         // Restore element to original position
         if (originalParent) {
           // Check if nextSibling is still valid (it might have been removed)
-          if (originalNextSibling && originalNextSibling.parentNode === originalParent) {
+          if (
+            originalNextSibling &&
+            originalNextSibling.parentNode === originalParent
+          ) {
             originalParent.insertBefore(timegroup, originalNextSibling);
           } else {
             originalParent.appendChild(timegroup);
@@ -930,7 +999,10 @@ describe("renderTimegroupToCanvas", () => {
 
       // Build clone structure (same as Clone mode in workbench)
       // Styles are synced during clone building in a single pass
-      const { container, syncState } = buildCloneStructure(timegroup, timegroup.currentTimeMs ?? 0);
+      const { container, syncState } = buildCloneStructure(
+        timegroup,
+        timegroup.currentTimeMs ?? 0,
+      );
 
       // Create wrapper with proper dimensions (mimics renderTimegroupPreview)
       const previewContainer = document.createElement("div");
@@ -1068,12 +1140,11 @@ describe("renderTimegroupToCanvas", () => {
   });
 
   describe("video export (reproduction test for blank frames)", () => {
-
     test("renderTimegroupToVideo with workbench-style timegroup produces non-blank frames", async () => {
       // Reproduce the exact workbench structure
       const container = document.createElement("div");
       const apiHost = getApiHost();
-      
+
       render(
         html`
         <ef-configuration api-host="${apiHost}" signing-url="/@ef-sign-url">
@@ -1096,11 +1167,13 @@ describe("renderTimegroupToCanvas", () => {
       document.body.appendChild(container);
 
       const workbench = container.querySelector("ef-workbench") as any;
-      const timegroup = container.querySelector("#video-export-test") as EFTimegroup;
+      const timegroup = container.querySelector(
+        "#video-export-test",
+      ) as EFTimegroup;
 
       await workbench.updateComplete;
       await timegroup.updateComplete;
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Render video using the same path as workbench
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
@@ -1114,15 +1187,22 @@ describe("renderTimegroupToCanvas", () => {
 
       expect(videoBuffer).toBeDefined();
       expect(videoBuffer!.length).toBeGreaterThan(1000);
-      
-      logger.debug(`[Workbench Video Export Test] Video buffer size: ${videoBuffer!.length} bytes`);
-      
+
+      logger.debug(
+        `[Workbench Video Export Test] Video buffer size: ${videoBuffer!.length} bytes`,
+      );
+
       // Decode first frame to verify it has content
       // Use VideoDecoder to check actual frame data
       const frameData = await decodeFirstFrame(videoBuffer!);
-      expect(frameData.hasContent, "First frame should have non-black content").toBe(true);
-      
-      logger.debug(`[Workbench Video Export Test] First frame: ${frameData.width}x${frameData.height}, hasContent: ${frameData.hasContent}, samplePixel: rgba(${frameData.samplePixel.join(",")})`);
+      expect(
+        frameData.hasContent,
+        "First frame should have non-black content",
+      ).toBe(true);
+
+      logger.debug(
+        `[Workbench Video Export Test] First frame: ${frameData.width}x${frameData.height}, hasContent: ${frameData.hasContent}, samplePixel: rgba(${frameData.samplePixel.join(",")})`,
+      );
 
       container.remove();
     }, 30000);
@@ -1134,7 +1214,7 @@ describe("renderTimegroupToCanvas", () => {
       // - nested scenes (mode="fixed")
       const container = document.createElement("div");
       const apiHost = getApiHost();
-      
+
       render(
         html`
         <ef-configuration api-host="${apiHost}" signing-url="/@ef-sign-url">
@@ -1187,12 +1267,13 @@ describe("renderTimegroupToCanvas", () => {
       document.body.appendChild(container);
 
       const workbench = container.querySelector("ef-workbench") as any;
-      const timegroup = container.querySelector("#root-timegroup") as EFTimegroup;
+      const timegroup = container.querySelector(
+        "#root-timegroup",
+      ) as EFTimegroup;
 
       await workbench.updateComplete;
       await timegroup.updateComplete;
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Render video using the same path as workbench
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
@@ -1206,14 +1287,16 @@ describe("renderTimegroupToCanvas", () => {
 
       expect(videoBuffer).toBeDefined();
       expect(videoBuffer!.length).toBeGreaterThan(1000);
-      
-      
+
       // Decode first frame to verify it has content (should be RED scene)
       const frameData = await decodeFirstFrame(videoBuffer!);
-      
+
       // First frame should have content
-      expect(frameData.hasContent, "First frame should have non-black content").toBe(true);
-      
+      expect(
+        frameData.hasContent,
+        "First frame should have non-black content",
+      ).toBe(true);
+
       // First frame should be RED (from Act 1) - check that R channel is high
       expect(frameData.samplePixel[0]).toBeGreaterThan(100); // Red channel should be high
 
@@ -1228,10 +1311,10 @@ describe("renderTimegroupToCanvas", () => {
       //
       // Note: The capture canvas IS at DPR dimensions (required by drawElementImage),
       // but the output video is correctly scaled to logical dimensions.
-      
+
       const container = document.createElement("div");
       const apiHost = getApiHost();
-      
+
       render(
         html`
         <ef-configuration api-host="${apiHost}" signing-url="/@ef-sign-url">
@@ -1247,11 +1330,11 @@ describe("renderTimegroupToCanvas", () => {
 
       const timegroup = container.querySelector("#dpr-test") as EFTimegroup;
       await timegroup.updateComplete;
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       // Capture timing metrics during export
       const startTime = performance.now();
-      
+
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
         fps: 30,
         scale: 1, // Full resolution - no scaling
@@ -1260,34 +1343,40 @@ describe("renderTimegroupToCanvas", () => {
         returnBuffer: true,
         streaming: false,
       });
-      
+
       const elapsed = performance.now() - startTime;
       const frames = 3;
       const msPerFrame = elapsed / frames;
-      
-      logger.debug(`[DPR Test] ${frames} frames in ${elapsed.toFixed(0)}ms (${msPerFrame.toFixed(1)}ms/frame)`);
-      
+
+      logger.debug(
+        `[DPR Test] ${frames} frames in ${elapsed.toFixed(0)}ms (${msPerFrame.toFixed(1)}ms/frame)`,
+      );
+
       // Performance check - native rendering at 1920x1080 is computationally expensive
       // Target: <500ms/frame (allows detection of major regressions)
       // Variance is expected due to Docker scheduling and concurrent test execution
       expect(msPerFrame).toBeLessThan(500);
-      
+
       // Verify output dimensions match logical dimensions (not DPR-scaled)
       const frameData = await decodeFirstFrame(videoBuffer!);
-      
+
       // Output should be at logical dimensions (1920x1080)
       expect(frameData.width).toBe(1920);
       expect(frameData.height).toBe(1080);
-      
+
       // Output should have actual content (not black/blank)
-      expect(frameData.hasContent, "Video output should have non-black content").toBe(true);
-      
-      logger.debug(`[DPR Test] Output: ${frameData.width}x${frameData.height}, hasContent: ${frameData.hasContent}`);
+      expect(
+        frameData.hasContent,
+        "Video output should have non-black content",
+      ).toBe(true);
+
+      logger.debug(
+        `[DPR Test] Output: ${frameData.width}x${frameData.height}, hasContent: ${frameData.hasContent}`,
+      );
 
       container.remove();
     }, 30000);
   });
-
 });
 
 /**
@@ -1300,37 +1389,39 @@ async function decodeFirstFrame(videoBuffer: Uint8Array): Promise<{
   samplePixel: [number, number, number, number];
 }> {
   // Create a video element and load the buffer
-  const blob = new Blob([videoBuffer as unknown as BlobPart], { type: "video/mp4" });
+  const blob = new Blob([videoBuffer as unknown as BlobPart], {
+    type: "video/mp4",
+  });
   const url = URL.createObjectURL(blob);
-  
+
   const video = document.createElement("video");
   video.src = url;
   video.muted = true;
-  
+
   // Wait for video to load metadata
   await new Promise<void>((resolve, reject) => {
     video.onloadedmetadata = () => resolve();
     video.onerror = () => reject(new Error("Failed to load video"));
   });
-  
+
   // Seek to first frame
   video.currentTime = 0;
   await new Promise<void>((resolve) => {
     video.onseeked = () => resolve();
   });
-  
+
   // Draw video frame to canvas
   const canvas = document.createElement("canvas");
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   const ctx = canvas.getContext("2d")!;
   ctx.drawImage(video, 0, 0);
-  
+
   // Sample pixel at center
   const centerX = Math.floor(canvas.width / 2);
   const centerY = Math.floor(canvas.height / 2);
   const centerPixel = ctx.getImageData(centerX, centerY, 1, 1).data;
-  
+
   // Check if frame has non-black content
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   let nonBlackPixels = 0;
@@ -1343,18 +1434,23 @@ async function decodeFirstFrame(videoBuffer: Uint8Array): Promise<{
       nonBlackPixels++;
     }
   }
-  
+
   const totalPixels = canvas.width * canvas.height;
   const hasContent = nonBlackPixels > totalPixels * 0.1; // At least 10% non-black
-  
+
   // Clean up
   URL.revokeObjectURL(url);
-  
+
   return {
     width: canvas.width,
     height: canvas.height,
     hasContent,
-    samplePixel: [centerPixel[0]!, centerPixel[1]!, centerPixel[2]!, centerPixel[3]!],
+    samplePixel: [
+      centerPixel[0]!,
+      centerPixel[1]!,
+      centerPixel[2]!,
+      centerPixel[3]!,
+    ],
   };
 }
 
@@ -1369,27 +1465,30 @@ describe("benchmark: 2026 Chromium optimizations", () => {
     const NUM_IMAGES = 20;
     const WIDTH = 1920;
     const HEIGHT = 1080;
-    
+
     // Create test SVG with foreignObject
     function createTestSvg(index: number): string {
       const html = `
         <div xmlns="http://www.w3.org/1999/xhtml" style="width:${WIDTH}px;height:${HEIGHT}px;background:linear-gradient(135deg,#667eea,#764ba2);font-family:sans-serif;">
           <h1 style="color:white;font-size:72px;margin:50px;">Frame ${index} - ${Date.now()}</h1>
-          ${Array.from({length: 50}, (_, i) => `
-            <div style="position:absolute;left:${(i%10)*180}px;top:${Math.floor(i/10)*200+150}px;width:160px;height:160px;background:hsl(${i*20},70%,50%);border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-size:24px;">
+          ${Array.from(
+            { length: 50 },
+            (_, i) => `
+            <div style="position:absolute;left:${(i % 10) * 180}px;top:${Math.floor(i / 10) * 200 + 150}px;width:160px;height:160px;background:hsl(${i * 20},70%,50%);border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-size:24px;">
               Item ${i}
             </div>
-          `).join('')}
+          `,
+          ).join("")}
         </div>
       `;
       return `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}"><foreignObject width="100%" height="100%">${html}</foreignObject></svg>`;
     }
-    
+
     const testCanvas = document.createElement("canvas");
     testCanvas.width = WIDTH;
     testCanvas.height = HEIGHT;
     const ctx = testCanvas.getContext("2d")!;
-    
+
     // METHOD 1: Data URI (current approach)
     async function loadViaDataUri(svg: string): Promise<HTMLImageElement> {
       const base64 = btoa(unescape(encodeURIComponent(svg)));
@@ -1401,7 +1500,7 @@ describe("benchmark: 2026 Chromium optimizations", () => {
         img.src = dataUri;
       });
     }
-    
+
     // METHOD 2: Blob URL (2026 non-tainting improvement)
     async function loadViaBlobUrl(svg: string): Promise<HTMLImageElement> {
       const blob = new Blob([svg], { type: "image/svg+xml" });
@@ -1419,7 +1518,7 @@ describe("benchmark: 2026 Chromium optimizations", () => {
         img.src = url;
       });
     }
-    
+
     // METHOD 3: createImageBitmap from loaded Image (GPU-ready texture)
     async function loadViaImageBitmap(svg: string): Promise<ImageBitmap> {
       // First load via blob URL, then create ImageBitmap for GPU transfer
@@ -1435,12 +1534,18 @@ describe("benchmark: 2026 Chromium optimizations", () => {
       // createImageBitmap creates a GPU-ready texture from the decoded image
       return createImageBitmap(img);
     }
-    
+
     // Generate unique SVGs for each test
-    const svgs1 = Array.from({length: NUM_IMAGES}, (_, i) => createTestSvg(i * 1000));
-    const svgs2 = Array.from({length: NUM_IMAGES}, (_, i) => createTestSvg(i * 2000));
-    const svgs3 = Array.from({length: NUM_IMAGES}, (_, i) => createTestSvg(i * 3000));
-    
+    const svgs1 = Array.from({ length: NUM_IMAGES }, (_, i) =>
+      createTestSvg(i * 1000),
+    );
+    const svgs2 = Array.from({ length: NUM_IMAGES }, (_, i) =>
+      createTestSvg(i * 2000),
+    );
+    const svgs3 = Array.from({ length: NUM_IMAGES }, (_, i) =>
+      createTestSvg(i * 3000),
+    );
+
     // Test 1: Data URI
     let dataUriTaintError = false;
     const dataUriStart = performance.now();
@@ -1454,7 +1559,7 @@ describe("benchmark: 2026 Chromium optimizations", () => {
       }
     }
     const dataUriTime = performance.now() - dataUriStart;
-    
+
     // Test 2: Blob URL
     let blobUrlTaintError = false;
     const blobUrlStart = performance.now();
@@ -1468,7 +1573,7 @@ describe("benchmark: 2026 Chromium optimizations", () => {
       }
     }
     const blobUrlTime = performance.now() - blobUrlStart;
-    
+
     // Test 3: createImageBitmap
     let imageBitmapTaintError = false;
     const imageBitmapStart = performance.now();
@@ -1483,23 +1588,39 @@ describe("benchmark: 2026 Chromium optimizations", () => {
       }
     }
     const imageBitmapTime = performance.now() - imageBitmapStart;
-    
-    console.log(`\n========== 2026 CHROMIUM OPTIMIZATIONS BENCHMARK ==========`);
+
+    console.log(
+      `\n========== 2026 CHROMIUM OPTIMIZATIONS BENCHMARK ==========`,
+    );
     console.log(`Images: ${NUM_IMAGES} @ ${WIDTH}x${HEIGHT}`);
     console.log(`-----------------------------------------------------------`);
-    console.log(`Data URI:        ${dataUriTime.toFixed(0)}ms total, ${(dataUriTime/NUM_IMAGES).toFixed(1)}ms/frame, tainted: ${dataUriTaintError}`);
-    console.log(`Blob URL:        ${blobUrlTime.toFixed(0)}ms total, ${(blobUrlTime/NUM_IMAGES).toFixed(1)}ms/frame, tainted: ${blobUrlTaintError}`);
-    console.log(`createImageBitmap: ${imageBitmapTime.toFixed(0)}ms total, ${(imageBitmapTime/NUM_IMAGES).toFixed(1)}ms/frame, tainted: ${imageBitmapTaintError}`);
+    console.log(
+      `Data URI:        ${dataUriTime.toFixed(0)}ms total, ${(dataUriTime / NUM_IMAGES).toFixed(1)}ms/frame, tainted: ${dataUriTaintError}`,
+    );
+    console.log(
+      `Blob URL:        ${blobUrlTime.toFixed(0)}ms total, ${(blobUrlTime / NUM_IMAGES).toFixed(1)}ms/frame, tainted: ${blobUrlTaintError}`,
+    );
+    console.log(
+      `createImageBitmap: ${imageBitmapTime.toFixed(0)}ms total, ${(imageBitmapTime / NUM_IMAGES).toFixed(1)}ms/frame, tainted: ${imageBitmapTaintError}`,
+    );
     console.log(`-----------------------------------------------------------`);
-    console.log(`Blob URL vs Data URI: ${((dataUriTime/blobUrlTime - 1) * 100).toFixed(0)}% ${blobUrlTime < dataUriTime ? 'faster' : 'slower'}`);
-    console.log(`ImageBitmap vs Data URI: ${((dataUriTime/imageBitmapTime - 1) * 100).toFixed(0)}% ${imageBitmapTime < dataUriTime ? 'faster' : 'slower'}`);
-    console.log(`===========================================================\n`);
-    
+    console.log(
+      `Blob URL vs Data URI: ${((dataUriTime / blobUrlTime - 1) * 100).toFixed(0)}% ${blobUrlTime < dataUriTime ? "faster" : "slower"}`,
+    );
+    console.log(
+      `ImageBitmap vs Data URI: ${((dataUriTime / imageBitmapTime - 1) * 100).toFixed(0)}% ${imageBitmapTime < dataUriTime ? "faster" : "slower"}`,
+    );
+    console.log(
+      `===========================================================\n`,
+    );
+
     // Data URI is the only method that doesn't taint (as of 2025)
     // Blob URLs and createImageBitmap still cause tainting with foreignObject
     expect(dataUriTaintError).toBe(false); // Data URI must work
     // Note: blobUrlTaintError and imageBitmapTaintError are expected to be true
-    console.log(`[INFO] Blob URL tainting: ${blobUrlTaintError ? 'CONFIRMED (expected)' : 'NOT TAINTED (2026 improvement available!)'}`);
+    console.log(
+      `[INFO] Blob URL tainting: ${blobUrlTaintError ? "CONFIRMED (expected)" : "NOT TAINTED (2026 improvement available!)"}`,
+    );
   }, 60000);
 });
 
@@ -1510,12 +1631,14 @@ describe("benchmark: parallel image loading queue depth", () => {
     const NUM_IMAGES = 30;
     const WIDTH = 1920;
     const HEIGHT = 1080;
-    
+
     // Create realistic SVG foreignObject content (similar to actual render ~200KB)
     function createTestSvgDataUri(index: number): string {
       // Create HTML content with complexity similar to design-catalog
       // Target: ~200KB serialized size to match real-world renders
-      const styles = Array.from({length: 50}, (_, i) => `
+      const styles = Array.from(
+        { length: 50 },
+        (_, i) => `
         .item-${i} { 
           position: absolute;
           width: ${50 + i * 2}px; 
@@ -1527,18 +1650,21 @@ describe("benchmark: parallel image loading queue depth", () => {
           opacity: ${0.5 + (i % 5) * 0.1};
           filter: blur(${i % 3}px);
         }
-      `).join('');
-      
-      const elements = Array.from({length: 100}, (_, i) => `
+      `,
+      ).join("");
+
+      const elements = Array.from(
+        { length: 100 },
+        (_, i) => `
         <div class="item-${i % 50}" style="
           left: ${(i % 15) * 120}px;
           top: ${Math.floor(i / 15) * 150}px;
           width: ${80 + (i % 20) * 5}px;
           height: ${80 + (i % 20) * 5}px;
           background-color: rgb(${(index * 10 + i * 3) % 256}, ${(i * 7) % 256}, ${(i * 11) % 256});
-          border: ${1 + i % 5}px solid rgba(255,255,255,0.${i % 10});
+          border: ${1 + (i % 5)}px solid rgba(255,255,255,0.${i % 10});
           font-family: Arial, sans-serif;
-          font-size: ${12 + i % 8}px;
+          font-size: ${12 + (i % 8)}px;
           color: white;
           display: flex;
           align-items: center;
@@ -1551,8 +1677,9 @@ describe("benchmark: parallel image loading queue depth", () => {
             <br/>Lorem ipsum dolor sit amet
           </span>
         </div>
-      `).join('');
-      
+      `,
+      ).join("");
+
       const html = `
         <div xmlns="http://www.w3.org/1999/xhtml" style="width:${WIDTH}px;height:${HEIGHT}px;background:linear-gradient(180deg, #0f0c29, #302b63, #24243e);position:relative;overflow:hidden;">
           <style>${styles}</style>
@@ -1562,12 +1689,12 @@ describe("benchmark: parallel image loading queue depth", () => {
           </div>
         </div>
       `;
-      
+
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}"><foreignObject width="100%" height="100%">${html}</foreignObject></svg>`;
       const base64 = btoa(unescape(encodeURIComponent(svg)));
       return `data:image/svg+xml;base64,${base64}`;
     }
-    
+
     // Test function: load image and return it (we'll draw after to ensure decode)
     function loadImage(dataUri: string): Promise<HTMLImageElement> {
       return new Promise((resolve, reject) => {
@@ -1577,32 +1704,37 @@ describe("benchmark: parallel image loading queue depth", () => {
         img.src = dataUri;
       });
     }
-    
+
     // Create canvas for drawing (forces full decode)
     const testCanvas = document.createElement("canvas");
     testCanvas.width = WIDTH;
     testCanvas.height = HEIGHT;
     const testCtx = testCanvas.getContext("2d")!;
-    
+
     // Draw image to canvas to ensure full decode
     function drawImage(img: HTMLImageElement): void {
       testCtx.clearRect(0, 0, testCanvas.width, testCanvas.height);
       testCtx.drawImage(img, 0, 0);
     }
-    
+
     // Generate data URIs fresh for each test to prevent caching
     // Add timestamp to make each truly unique
     function generateFreshDataUris(): string[] {
       const timestamp = performance.now();
-      return Array.from({length: NUM_IMAGES}, (_, i) => {
+      return Array.from({ length: NUM_IMAGES }, (_, i) => {
         // Add unique timestamp to prevent any caching
-        return createTestSvgDataUri(i).replace('Frame ', `Frame ${timestamp.toFixed(3)}-`);
+        return createTestSvgDataUri(i).replace(
+          "Frame ",
+          `Frame ${timestamp.toFixed(3)}-`,
+        );
       });
     }
-    
+
     const sampleUri = createTestSvgDataUri(0);
-    console.log(`Generated SVG data URIs (~${(sampleUri.length / 1024).toFixed(1)}KB each)`);
-    
+    console.log(
+      `Generated SVG data URIs (~${(sampleUri.length / 1024).toFixed(1)}KB each)`,
+    );
+
     // SEQUENTIAL: Load one at a time, draw after each (fresh data URIs)
     const seqUris = generateFreshDataUris();
     const seqStart = performance.now();
@@ -1612,35 +1744,43 @@ describe("benchmark: parallel image loading queue depth", () => {
     }
     const seqTime = performance.now() - seqStart;
     const seqPerFrame = seqTime / NUM_IMAGES;
-    
+
     // PARALLEL QUEUE DEPTH 2: Load 2 at a time, draw in order
     const q2Uris = generateFreshDataUris();
     const q2Start = performance.now();
     {
-      const pending: Array<{idx: number, promise: Promise<HTMLImageElement>}> = [];
+      const pending: Array<{
+        idx: number;
+        promise: Promise<HTMLImageElement>;
+      }> = [];
       let nextIdx = 0;
       let drawIdx = 0;
       const loaded: Map<number, HTMLImageElement> = new Map();
-      
+
       // Fill initial queue
       while (pending.length < 2 && nextIdx < NUM_IMAGES) {
         const idx = nextIdx++;
-        pending.push({idx, promise: loadImage(q2Uris[idx]!)});
+        pending.push({ idx, promise: loadImage(q2Uris[idx]!) });
       }
-      
+
       // Process queue
       while (drawIdx < NUM_IMAGES) {
         // Wait for any pending to complete
-        const completed = await Promise.race(pending.map(p => p.promise.then(img => ({idx: p.idx, img}))));
+        const completed = await Promise.race(
+          pending.map((p) => p.promise.then((img) => ({ idx: p.idx, img }))),
+        );
         loaded.set(completed.idx, completed.img);
-        pending.splice(pending.findIndex(p => p.idx === completed.idx), 1);
-        
+        pending.splice(
+          pending.findIndex((p) => p.idx === completed.idx),
+          1,
+        );
+
         // Add next to queue
         if (nextIdx < NUM_IMAGES) {
           const idx = nextIdx++;
-          pending.push({idx, promise: loadImage(q2Uris[idx]!)});
+          pending.push({ idx, promise: loadImage(q2Uris[idx]!) });
         }
-        
+
         // Draw in order
         while (loaded.has(drawIdx)) {
           drawImage(loaded.get(drawIdx)!);
@@ -1651,31 +1791,39 @@ describe("benchmark: parallel image loading queue depth", () => {
     }
     const q2Time = performance.now() - q2Start;
     const q2PerFrame = q2Time / NUM_IMAGES;
-    
+
     // PARALLEL QUEUE DEPTH 4
     const q4Uris = generateFreshDataUris();
     const q4Start = performance.now();
     {
-      const pending: Array<{idx: number, promise: Promise<HTMLImageElement>}> = [];
+      const pending: Array<{
+        idx: number;
+        promise: Promise<HTMLImageElement>;
+      }> = [];
       let nextIdx = 0;
       let drawIdx = 0;
       const loaded: Map<number, HTMLImageElement> = new Map();
-      
+
       while (pending.length < 4 && nextIdx < NUM_IMAGES) {
         const idx = nextIdx++;
-        pending.push({idx, promise: loadImage(q4Uris[idx]!)});
+        pending.push({ idx, promise: loadImage(q4Uris[idx]!) });
       }
-      
+
       while (drawIdx < NUM_IMAGES) {
-        const completed = await Promise.race(pending.map(p => p.promise.then(img => ({idx: p.idx, img}))));
+        const completed = await Promise.race(
+          pending.map((p) => p.promise.then((img) => ({ idx: p.idx, img }))),
+        );
         loaded.set(completed.idx, completed.img);
-        pending.splice(pending.findIndex(p => p.idx === completed.idx), 1);
-        
+        pending.splice(
+          pending.findIndex((p) => p.idx === completed.idx),
+          1,
+        );
+
         if (nextIdx < NUM_IMAGES) {
           const idx = nextIdx++;
-          pending.push({idx, promise: loadImage(q4Uris[idx]!)});
+          pending.push({ idx, promise: loadImage(q4Uris[idx]!) });
         }
-        
+
         while (loaded.has(drawIdx)) {
           drawImage(loaded.get(drawIdx)!);
           loaded.delete(drawIdx);
@@ -1685,31 +1833,39 @@ describe("benchmark: parallel image loading queue depth", () => {
     }
     const q4Time = performance.now() - q4Start;
     const q4PerFrame = q4Time / NUM_IMAGES;
-    
+
     // PARALLEL QUEUE DEPTH 8
     const q8Uris = generateFreshDataUris();
     const q8Start = performance.now();
     {
-      const pending: Array<{idx: number, promise: Promise<HTMLImageElement>}> = [];
+      const pending: Array<{
+        idx: number;
+        promise: Promise<HTMLImageElement>;
+      }> = [];
       let nextIdx = 0;
       let drawIdx = 0;
       const loaded: Map<number, HTMLImageElement> = new Map();
-      
+
       while (pending.length < 8 && nextIdx < NUM_IMAGES) {
         const idx = nextIdx++;
-        pending.push({idx, promise: loadImage(q8Uris[idx]!)});
+        pending.push({ idx, promise: loadImage(q8Uris[idx]!) });
       }
-      
+
       while (drawIdx < NUM_IMAGES) {
-        const completed = await Promise.race(pending.map(p => p.promise.then(img => ({idx: p.idx, img}))));
+        const completed = await Promise.race(
+          pending.map((p) => p.promise.then((img) => ({ idx: p.idx, img }))),
+        );
         loaded.set(completed.idx, completed.img);
-        pending.splice(pending.findIndex(p => p.idx === completed.idx), 1);
-        
+        pending.splice(
+          pending.findIndex((p) => p.idx === completed.idx),
+          1,
+        );
+
         if (nextIdx < NUM_IMAGES) {
           const idx = nextIdx++;
-          pending.push({idx, promise: loadImage(q8Uris[idx]!)});
+          pending.push({ idx, promise: loadImage(q8Uris[idx]!) });
         }
-        
+
         while (loaded.has(drawIdx)) {
           drawImage(loaded.get(drawIdx)!);
           loaded.delete(drawIdx);
@@ -1719,7 +1875,7 @@ describe("benchmark: parallel image loading queue depth", () => {
     }
     const q8Time = performance.now() - q8Start;
     const q8PerFrame = q8Time / NUM_IMAGES;
-    
+
     // FULLY PARALLEL: Load all at once, draw in order
     const allUris = generateFreshDataUris();
     const allStart = performance.now();
@@ -1729,22 +1885,32 @@ describe("benchmark: parallel image loading queue depth", () => {
     }
     const allTime = performance.now() - allStart;
     const allPerFrame = allTime / NUM_IMAGES;
-    
+
     console.log(`\n========== PARALLEL IMAGE LOADING BENCHMARK ==========`);
     console.log(`Images: ${NUM_IMAGES} @ ${WIDTH}x${HEIGHT}`);
     console.log(`-------------------------------------------------------`);
-    console.log(`Sequential (depth=1): ${seqTime.toFixed(0)}ms total, ${seqPerFrame.toFixed(1)}ms/frame`);
-    console.log(`Queue depth=2:        ${q2Time.toFixed(0)}ms total, ${q2PerFrame.toFixed(1)}ms/frame (${((seqTime/q2Time - 1) * 100).toFixed(0)}% faster)`);
-    console.log(`Queue depth=4:        ${q4Time.toFixed(0)}ms total, ${q4PerFrame.toFixed(1)}ms/frame (${((seqTime/q4Time - 1) * 100).toFixed(0)}% faster)`);
-    console.log(`Queue depth=8:        ${q8Time.toFixed(0)}ms total, ${q8PerFrame.toFixed(1)}ms/frame (${((seqTime/q8Time - 1) * 100).toFixed(0)}% faster)`);
-    console.log(`Fully parallel:       ${allTime.toFixed(0)}ms total, ${allPerFrame.toFixed(1)}ms/frame (${((seqTime/allTime - 1) * 100).toFixed(0)}% faster)`);
+    console.log(
+      `Sequential (depth=1): ${seqTime.toFixed(0)}ms total, ${seqPerFrame.toFixed(1)}ms/frame`,
+    );
+    console.log(
+      `Queue depth=2:        ${q2Time.toFixed(0)}ms total, ${q2PerFrame.toFixed(1)}ms/frame (${((seqTime / q2Time - 1) * 100).toFixed(0)}% faster)`,
+    );
+    console.log(
+      `Queue depth=4:        ${q4Time.toFixed(0)}ms total, ${q4PerFrame.toFixed(1)}ms/frame (${((seqTime / q4Time - 1) * 100).toFixed(0)}% faster)`,
+    );
+    console.log(
+      `Queue depth=8:        ${q8Time.toFixed(0)}ms total, ${q8PerFrame.toFixed(1)}ms/frame (${((seqTime / q8Time - 1) * 100).toFixed(0)}% faster)`,
+    );
+    console.log(
+      `Fully parallel:       ${allTime.toFixed(0)}ms total, ${allPerFrame.toFixed(1)}ms/frame (${((seqTime / allTime - 1) * 100).toFixed(0)}% faster)`,
+    );
     console.log(`=======================================================\n`);
   }, 60000);
 });
 
 /**
  * Reproduction test for clone-timeline video rendition issue.
- * 
+ *
  * Validates hypothesis: cloned ef-video elements should have their media engine
  * with videoRendition available after createRenderClone() completes.
  */
@@ -1752,7 +1918,7 @@ describe("clone-timeline video rendition (reproduction)", () => {
   test("createRenderClone: cloned video has same media engine type and videoRendition as original", async () => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
-    
+
     render(
       html`
       <ef-configuration api-host="${apiHost}" signing-url="">
@@ -1765,47 +1931,55 @@ describe("clone-timeline video rendition (reproduction)", () => {
       container,
     );
     document.body.appendChild(container);
-    
+
     const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
     await timegroup.updateComplete;
     await timegroup.waitForMediaDurations();
-    
+
     // Get original video and its media engine state
     const originalVideo = timegroup.querySelector("ef-video") as any;
     expect(originalVideo).toBeTruthy();
-    
+
     const originalMediaEngine = originalVideo.mediaEngineTask?.value;
     expect(originalMediaEngine).toBeTruthy();
-    
+
     const originalVideoRendition = originalMediaEngine.getVideoRendition();
     console.log("Original video rendition:", originalVideoRendition);
-    console.log("Original media engine type:", originalMediaEngine.constructor.name);
+    console.log(
+      "Original media engine type:",
+      originalMediaEngine.constructor.name,
+    );
     expect(originalVideoRendition).toBeTruthy();
-    
+
     // Create render clone
     const { clone, cleanup } = await timegroup.createRenderClone();
-    
+
     try {
       // Get cloned video
       const clonedVideo = clone.querySelector("ef-video") as any;
       expect(clonedVideo).toBeTruthy();
-      
+
       // Verify cloned video has media engine
       const clonedMediaEngine = clonedVideo.mediaEngineTask?.value;
       console.log("Cloned media engine:", clonedMediaEngine);
-      console.log("Cloned media engine type:", clonedMediaEngine?.constructor.name);
+      console.log(
+        "Cloned media engine type:",
+        clonedMediaEngine?.constructor.name,
+      );
       expect(clonedMediaEngine).toBeTruthy();
-      
+
       // KEY TEST: Does the clone have videoRendition?
       const clonedVideoRendition = clonedMediaEngine.getVideoRendition();
       console.log("Cloned video rendition:", clonedVideoRendition);
-      
+
       // This is the assertion that should fail if the hypothesis is correct
       expect(clonedVideoRendition).toBeTruthy();
-      
+
       // Verify same media engine type
-      expect(clonedMediaEngine.constructor.name).toBe(originalMediaEngine.constructor.name);
-      
+      expect(clonedMediaEngine.constructor.name).toBe(
+        originalMediaEngine.constructor.name,
+      );
+
       // Verify same rendition structure
       expect(clonedVideoRendition.trackId).toBe(originalVideoRendition.trackId);
       expect(clonedVideoRendition.src).toBe(originalVideoRendition.src);
@@ -1814,10 +1988,10 @@ describe("clone-timeline video rendition (reproduction)", () => {
       container.remove();
     }
   });
-  
+
   /**
    * Regression test: Clone preserves ef-configuration context
-   * 
+   *
    * Ensures createRenderClone() wraps the clone in a cloned ef-configuration element,
    * so media elements can access configuration settings like media-engine via closest().
    * Without this, clones would use a different media engine type than the original.
@@ -1825,7 +1999,7 @@ describe("clone-timeline video rendition (reproduction)", () => {
   test("createRenderClone preserves ef-configuration context (media-engine attribute)", async () => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
-    
+
     // Use media-engine="local" to force AssetMediaEngine
     render(
       html`
@@ -1839,54 +2013,62 @@ describe("clone-timeline video rendition (reproduction)", () => {
       container,
     );
     document.body.appendChild(container);
-    
+
     const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
     await timegroup.updateComplete;
     await timegroup.waitForMediaDurations();
-    
+
     // Get original video's configuration context
     const originalVideo = timegroup.querySelector("ef-video") as any;
     const originalConfig = originalVideo.closest("ef-configuration");
     console.log("Original ef-configuration:", originalConfig);
-    console.log("Original media-engine attribute:", originalConfig?.mediaEngine);
+    console.log(
+      "Original media-engine attribute:",
+      originalConfig?.mediaEngine,
+    );
     expect(originalConfig).toBeTruthy();
     expect(originalConfig.mediaEngine).toBe("local");
-    
+
     const originalMediaEngine = originalVideo.mediaEngineTask?.value;
-    console.log("Original media engine type:", originalMediaEngine?.constructor.name);
+    console.log(
+      "Original media engine type:",
+      originalMediaEngine?.constructor.name,
+    );
     expect(originalMediaEngine.constructor.name).toBe("AssetMediaEngine");
-    
+
     // Create render clone
     const { clone, cleanup } = await timegroup.createRenderClone();
-    
+
     try {
       // Get cloned video's configuration context
       const clonedVideo = clone.querySelector("ef-video") as any;
       const clonedConfig = clonedVideo.closest("ef-configuration");
-      
+
       console.log("Cloned ef-configuration:", clonedConfig);
       console.log("Cloned media-engine attribute:", clonedConfig?.mediaEngine);
-      
+
       // Clone should have ef-configuration parent with same settings
       expect(clonedConfig).toBeTruthy();
       expect(clonedConfig.mediaEngine).toBe("local");
-      
+
       const clonedMediaEngine = clonedVideo.mediaEngineTask?.value;
-      console.log("Cloned media engine type:", clonedMediaEngine?.constructor.name);
-      
+      console.log(
+        "Cloned media engine type:",
+        clonedMediaEngine?.constructor.name,
+      );
+
       // Clone should use same media engine type as original
-      expect(clonedMediaEngine.constructor.name).toBe("AssetMediaEngine")
-      
+      expect(clonedMediaEngine.constructor.name).toBe("AssetMediaEngine");
     } finally {
       cleanup();
       container.remove();
     }
   });
-  
+
   test("createRenderClone: seek on clone triggers unifiedVideoSeekTask without error", async () => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
-    
+
     render(
       html`
       <ef-configuration api-host="${apiHost}" signing-url="">
@@ -1899,26 +2081,26 @@ describe("clone-timeline video rendition (reproduction)", () => {
       container,
     );
     document.body.appendChild(container);
-    
+
     const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
     await timegroup.updateComplete;
     await timegroup.waitForMediaDurations();
-    
+
     // Create render clone
     const { clone, cleanup } = await timegroup.createRenderClone();
-    
+
     try {
       // Get cloned video
       const clonedVideo = clone.querySelector("ef-video") as any;
-      
+
       // This seek should trigger unifiedVideoSeekTask - if the bug exists, this will error
       await clone.seek(1000);
-      
+
       // Wait for video seek task to complete
       if (clonedVideo.unifiedVideoSeekTask) {
         await clonedVideo.unifiedVideoSeekTask.taskComplete;
       }
-      
+
       // If we get here without error, the rendition was available
       expect(true).toBe(true);
     } finally {
@@ -1926,7 +2108,7 @@ describe("clone-timeline video rendition (reproduction)", () => {
       container.remove();
     }
   });
-  
+
   /**
    * Test that reproduces the local-remote.html configuration:
    * - media-engine="local" with a remote HTTP URL
@@ -1935,7 +2117,7 @@ describe("clone-timeline video rendition (reproduction)", () => {
   test("createRenderClone with media-engine=local and remote URL", async () => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
-    
+
     // This mimics local-remote.html: media-engine="local" + http:// src
     // The difference is we use a URL that our test infrastructure can serve
     render(
@@ -1950,59 +2132,72 @@ describe("clone-timeline video rendition (reproduction)", () => {
       container,
     );
     document.body.appendChild(container);
-    
+
     const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
     await timegroup.updateComplete;
-    
+
     // Get original video and check which media engine it uses
     const originalVideo = timegroup.querySelector("ef-video") as any;
-    
+
     // Wait for media engine (this might fail if the URL isn't served with track index)
     try {
       await timegroup.waitForMediaDurations();
     } catch (e) {
-      console.log("waitForMediaDurations error (expected for remote URL without track index):", e);
+      console.log(
+        "waitForMediaDurations error (expected for remote URL without track index):",
+        e,
+      );
       container.remove();
       // Skip this test if the URL isn't served properly
       return;
     }
-    
+
     const originalMediaEngine = originalVideo.mediaEngineTask?.value;
-    console.log("Local-remote original media engine type:", originalMediaEngine?.constructor.name);
+    console.log(
+      "Local-remote original media engine type:",
+      originalMediaEngine?.constructor.name,
+    );
     console.log("Local-remote original src:", originalVideo.src);
-    
+
     if (!originalMediaEngine) {
-      console.log("No media engine - test infrastructure may not support this URL");
+      console.log(
+        "No media engine - test infrastructure may not support this URL",
+      );
       container.remove();
       return;
     }
-    
+
     const originalVideoRendition = originalMediaEngine.getVideoRendition();
-    console.log("Local-remote original video rendition:", originalVideoRendition);
-    
+    console.log(
+      "Local-remote original video rendition:",
+      originalVideoRendition,
+    );
+
     // With media-engine="local", remote URLs use AssetMediaEngine which requires
     // the server to provide track fragment index at /@ef-track/<src>/index.json
     expect(originalMediaEngine.constructor.name).toBe("AssetMediaEngine");
     expect(originalVideoRendition).toBeTruthy();
-    
+
     // Now test clone
     const { clone, cleanup } = await timegroup.createRenderClone();
-    
+
     try {
       const clonedVideo = clone.querySelector("ef-video") as any;
       const clonedMediaEngine = clonedVideo.mediaEngineTask?.value;
-      
-      console.log("Local-remote cloned media engine type:", clonedMediaEngine?.constructor.name);
-      
+
+      console.log(
+        "Local-remote cloned media engine type:",
+        clonedMediaEngine?.constructor.name,
+      );
+
       const clonedVideoRendition = clonedMediaEngine?.getVideoRendition();
       console.log("Local-remote cloned video rendition:", clonedVideoRendition);
-      
+
       expect(clonedMediaEngine).toBeTruthy();
       expect(clonedVideoRendition).toBeTruthy();
-      
+
       // Seek should work
       await clone.seek(1000);
-      
     } finally {
       cleanup();
       container.remove();
@@ -2016,13 +2211,13 @@ describe("captions rendering in foreignObject path", () => {
     // captions data to load before returning. This is critical for video export
     // because the foreignObject path needs the captions text to be present when
     // buildCloneStructure() is called.
-    
+
     const container = document.createElement("div");
     const apiHost = getApiHost();
-    
+
     // Import captions elements
     await import("../elements/EFCaptions.js");
-    
+
     render(
       html`
       <ef-configuration api-host="${apiHost}" signing-url="">
@@ -2039,40 +2234,43 @@ describe("captions rendering in foreignObject path", () => {
       container,
     );
     document.body.appendChild(container);
-    
+
     const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
     await timegroup.updateComplete;
     await timegroup.waitForMediaDurations();
-    
+
     // Wait for original captions to load
     const originalCaptions = container.querySelector("ef-captions") as any;
     await originalCaptions.unifiedCaptionsDataTask?.taskComplete;
-    
+
     // Create a render clone - this should wait for captions data
     const { clone, cleanup } = await timegroup.createRenderClone();
-    
+
     try {
       // Verify the clone's captions have data loaded
       const cloneCaptions = clone.querySelector("ef-captions") as any;
       expect(cloneCaptions).toBeTruthy();
-      
+
       const cloneCaptionsData = cloneCaptions.unifiedCaptionsDataTask?.value;
       console.log(`Clone captions data loaded: ${!!cloneCaptionsData}`);
-      console.log(`Clone captions segments: ${cloneCaptionsData?.segments?.length || 0}`);
-      
+      console.log(
+        `Clone captions segments: ${cloneCaptionsData?.segments?.length || 0}`,
+      );
+
       // The clone should have captions data
       expect(cloneCaptionsData).toBeTruthy();
       expect(cloneCaptionsData.segments?.length).toBeGreaterThan(0);
-      
+
       // Seek to a time with caption text and verify text is present
       await clone.seek(500);
-      const cloneActiveWord = clone.querySelector("ef-captions-active-word") as any;
+      const cloneActiveWord = clone.querySelector(
+        "ef-captions-active-word",
+      ) as any;
       await cloneActiveWord?.updateComplete;
-      
+
       const cloneWordText = cloneActiveWord?.textContent?.trim();
       console.log(`Clone caption text at 500ms: "${cloneWordText}"`);
       expect(cloneWordText).toBeTruthy();
-
     } finally {
       cleanup();
       container.remove();
@@ -2083,13 +2281,13 @@ describe("captions rendering in foreignObject path", () => {
     // This test verifies that when captionsData is set via JavaScript property
     // (not captions-src attribute), it gets copied to the render clone.
     // cloneNode() only copies attributes, not JS properties, so we must handle this.
-    
+
     const container = document.createElement("div");
     const apiHost = getApiHost();
-    
+
     // Import captions elements
     await import("../elements/EFCaptions.js");
-    
+
     render(
       html`
       <ef-configuration api-host="${apiHost}" signing-url="">
@@ -2106,10 +2304,10 @@ describe("captions rendering in foreignObject path", () => {
       container,
     );
     document.body.appendChild(container);
-    
+
     const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
     await timegroup.updateComplete;
-    
+
     // Set captions data via JavaScript property (simulating user code like improv-edit.html)
     const originalCaptions = container.querySelector("ef-captions") as any;
     originalCaptions.captionsData = {
@@ -2122,33 +2320,36 @@ describe("captions rendering in foreignObject path", () => {
         { start: 1.2, end: 1.8, text: "JSWord2" },
       ],
     };
-    
+
     // Wait for the task to process the new data
     await originalCaptions.updateComplete;
-    if (originalCaptions.unifiedCaptionsDataTask?.status === 0) { // INITIAL
+    if (originalCaptions.unifiedCaptionsDataTask?.status === 0) {
+      // INITIAL
       originalCaptions.unifiedCaptionsDataTask.run().catch(() => {
         // AbortErrors are expected during cleanup
       });
     }
     await originalCaptions.unifiedCaptionsDataTask?.taskComplete;
-    
+
     // Create a render clone - this should copy captionsData
     const { clone, cleanup } = await timegroup.createRenderClone();
-    
+
     try {
       // Verify the clone's captions have the JS-set data
       const cloneCaptions = clone.querySelector("ef-captions") as any;
       expect(cloneCaptions).toBeTruthy();
-      
+
       // The key test: captionsData should be copied to the clone
       expect(cloneCaptions.captionsData).toBeTruthy();
       console.log(`Clone captionsData copied: ${!!cloneCaptions.captionsData}`);
-      console.log(`Clone captionsData segments: ${cloneCaptions.captionsData?.segments?.length || 0}`);
-      
+      console.log(
+        `Clone captionsData segments: ${cloneCaptions.captionsData?.segments?.length || 0}`,
+      );
+
       expect(cloneCaptions.captionsData.segments?.length).toBe(2);
       expect(cloneCaptions.captionsData.word_segments?.length).toBe(2);
       expect(cloneCaptions.captionsData.word_segments[0].text).toBe("JSWord1");
-      
+
       // Wait for unified task to use the copied data
       if (cloneCaptions.unifiedCaptionsDataTask?.status === 0) {
         cloneCaptions.unifiedCaptionsDataTask.run().catch(() => {
@@ -2156,36 +2357,37 @@ describe("captions rendering in foreignObject path", () => {
         });
       }
       await cloneCaptions.unifiedCaptionsDataTask?.taskComplete;
-      
+
       // Seek to a time with caption text and verify
       await clone.seek(500);
-      const cloneActiveWord = clone.querySelector("ef-captions-active-word") as any;
+      const cloneActiveWord = clone.querySelector(
+        "ef-captions-active-word",
+      ) as any;
       await cloneActiveWord?.updateComplete;
-      
+
       const cloneWordText = cloneActiveWord?.textContent?.trim();
       console.log(`Clone caption text at 500ms (JS data): "${cloneWordText}"`);
       expect(cloneWordText).toBe("JSWord1");
-      
     } finally {
       cleanup();
       container.remove();
     }
   });
-  
+
   test("foreignObject: syncs shadow DOM text content for caption elements", async () => {
     // This test verifies that caption elements (which render text in shadow DOM)
     // have their text content properly synced when using the foreignObject path.
-    // 
+    //
     // The issue: buildCloneStructure captures initial shadow DOM text, but
     // syncStyles only syncs light DOM childNodes[0], not shadow DOM text.
     // When caption text changes (e.g., wordText updates), clones don't get updated.
-    
+
     const container = document.createElement("div");
     const apiHost = getApiHost();
-    
+
     // Import captions elements
     await import("../elements/EFCaptions.js");
-    
+
     render(
       html`
       <ef-configuration api-host="${apiHost}" signing-url="">
@@ -2202,13 +2404,15 @@ describe("captions rendering in foreignObject path", () => {
       container,
     );
     document.body.appendChild(container);
-    
+
     const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
     const captions = container.querySelector("ef-captions") as any;
-    const activeWord = container.querySelector("ef-captions-active-word") as any;
-    
+    const activeWord = container.querySelector(
+      "ef-captions-active-word",
+    ) as any;
+
     await timegroup.updateComplete;
-    
+
     // Set captions data with multiple words at different times
     captions.captionsData = {
       segments: [{ start: 0, end: 4, text: "Hello World Test" }],
@@ -2218,13 +2422,13 @@ describe("captions rendering in foreignObject path", () => {
         { text: "Test", start: 2, end: 4 },
       ],
     };
-    
+
     await captions.updateComplete;
     await captions.unifiedCaptionsDataTask?.taskComplete;
-    
+
     // Force foreignObject path
     setNativeCanvasApiEnabled(false);
-    
+
     // Helper to properly seek and wait for captions to update (from existing captions tests)
     const seekAndWait = async (timeMs: number) => {
       timegroup.currentTimeMs = timeMs;
@@ -2237,47 +2441,50 @@ describe("captions rendering in foreignObject path", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
       await activeWord.updateComplete;
     };
-    
+
     // Seek to time where "Hello" should be visible
     await seekAndWait(500);
-    
+
     // Verify the source element has correct text (light DOM — wordText setter uses this.textContent)
     const sourceText = activeWord.textContent?.trim();
     console.log(`Source element text at 500ms: "${sourceText}"`);
     expect(sourceText).toBe("Hello");
-    
+
     // Build clone structure at this time
-    const { container: cloneContainer, syncState } = buildCloneStructure(timegroup, 500);
-    
+    const { container: cloneContainer, syncState } = buildCloneStructure(
+      timegroup,
+      500,
+    );
+
     // Find the cloned active word element (it becomes a div in the clone)
     // The clone should have the text "Hello"
     const cloneText = cloneContainer.textContent?.trim();
     console.log(`Clone text content at 500ms: "${cloneText}"`);
-    
+
     // This should contain "Hello" from the initial clone building
     expect(cloneText).toContain("Hello");
-    
+
     // Now seek to a different time where "World" should be visible
     await seekAndWait(1500);
-    
+
     // Verify source element now has "World" (light DOM)
     const sourceText2 = activeWord.textContent?.trim();
     console.log(`Source element text at 1500ms: "${sourceText2}"`);
     expect(sourceText2).toBe("World");
-    
+
     // Sync styles to update the clone
     syncStyles(syncState, 1500);
-    
+
     // The clone should now have "World" - THIS IS THE BUG!
     // Currently syncStyles only syncs light DOM text, not shadow DOM text,
     // so the clone will still have "Hello"
     const cloneText2 = cloneContainer.textContent?.trim();
     console.log(`Clone text content at 1500ms after sync: "${cloneText2}"`);
-    
+
     // This assertion will FAIL with the current implementation,
     // proving the bug exists
     expect(cloneText2).toContain("World");
-    
+
     // Re-enable native for other tests
     setNativeCanvasApiEnabled(true);
     container.remove();
@@ -2291,7 +2498,8 @@ describe("captions rendering in foreignObject path", () => {
 describe("renderTimegroupToCanvas live preview (workbench path)", () => {
   test("basic: renderTimegroupToCanvas produces visible canvas content", async () => {
     const container = document.createElement("div");
-    container.style.cssText = "position: absolute; top: 0; left: 0; width: 800px; height: 600px;";
+    container.style.cssText =
+      "position: absolute; top: 0; left: 0; width: 800px; height: 600px;";
     const apiHost = getApiHost();
     render(
       html`
@@ -2312,9 +2520,15 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
     await timegroup.updateComplete;
 
-    console.log(`[DIAG pre] Timegroup offsetWidth: ${timegroup.offsetWidth}, offsetHeight: ${timegroup.offsetHeight}`);
-    console.log(`[DIAG pre] Timegroup currentTimeMs: ${timegroup.currentTimeMs}, userTimeMs: ${(timegroup as any).userTimeMs}`);
-    console.log(`[DIAG pre] Timegroup startTimeMs: ${timegroup.startTimeMs}, endTimeMs: ${(timegroup as any).endTimeMs}`);
+    console.log(
+      `[DIAG pre] Timegroup offsetWidth: ${timegroup.offsetWidth}, offsetHeight: ${timegroup.offsetHeight}`,
+    );
+    console.log(
+      `[DIAG pre] Timegroup currentTimeMs: ${timegroup.currentTimeMs}, userTimeMs: ${(timegroup as any).userTimeMs}`,
+    );
+    console.log(
+      `[DIAG pre] Timegroup startTimeMs: ${timegroup.startTimeMs}, endTimeMs: ${(timegroup as any).endTimeMs}`,
+    );
     console.log(`[DIAG pre] Timegroup durationMs: ${timegroup.durationMs}`);
 
     // This is the exact code path the workbench uses
@@ -2323,15 +2537,21 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
 
     // Wait for the initial (fire-and-forget) render to complete
     // Need enough time for: frameController.renderFrame + captureTimelineToDataUri + loadImageFromDataUri
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 500));
 
     // Now force a new render by updating time
-    console.log(`[DIAG] After initial wait - Timegroup currentTimeMs: ${timegroup.currentTimeMs}, userTimeMs: ${(timegroup as any).userTimeMs}`);
+    console.log(
+      `[DIAG] After initial wait - Timegroup currentTimeMs: ${timegroup.currentTimeMs}, userTimeMs: ${(timegroup as any).userTimeMs}`,
+    );
 
     // Check canvas dimensions
     console.log(`[DIAG] Canvas dimensions: ${canvas.width}x${canvas.height}`);
-    console.log(`[DIAG] Canvas CSS size: ${canvas.style.width}x${canvas.style.height}`);
-    console.log(`[DIAG] Timegroup computedStyle width: ${getComputedStyle(timegroup).width}, height: ${getComputedStyle(timegroup).height}`);
+    console.log(
+      `[DIAG] Canvas CSS size: ${canvas.style.width}x${canvas.style.height}`,
+    );
+    console.log(
+      `[DIAG] Timegroup computedStyle width: ${getComputedStyle(timegroup).width}, height: ${getComputedStyle(timegroup).height}`,
+    );
     console.log(`[DIAG] Timegroup inline style: ${timegroup.style.cssText}`);
 
     // Check if canvas has any content
@@ -2341,23 +2561,39 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     for (let i = 3; i < imageData.data.length; i += 4) {
       if (imageData.data[i]! > 0) nonZeroPixels++;
     }
-    const totalPixels = (canvas.width * canvas.height);
-    console.log(`[DIAG] Canvas after initial render: ${nonZeroPixels}/${totalPixels} non-zero pixels`);
+    const totalPixels = canvas.width * canvas.height;
+    console.log(
+      `[DIAG] Canvas after initial render: ${nonZeroPixels}/${totalPixels} non-zero pixels`,
+    );
 
     // If initial render produced nothing, try direct captureTimegroupAtTime for comparison
     if (nonZeroPixels === 0) {
-      console.log(`[DIAG] Initial render blank! Trying captureTimegroupAtTime for comparison...`);
-      const captureResult = await captureTimegroupAtTime(timegroup, { timeMs: 0, scale: 1 });
+      console.log(
+        `[DIAG] Initial render blank! Trying captureTimegroupAtTime for comparison...`,
+      );
+      const captureResult = await captureTimegroupAtTime(timegroup, {
+        timeMs: 0,
+        scale: 1,
+      });
       if (captureResult instanceof HTMLCanvasElement) {
         const captureCtx = captureResult.getContext("2d")!;
-        const captureData = captureCtx.getImageData(0, 0, captureResult.width, captureResult.height);
+        const captureData = captureCtx.getImageData(
+          0,
+          0,
+          captureResult.width,
+          captureResult.height,
+        );
         let captureNonZero = 0;
         for (let i = 3; i < captureData.data.length; i += 4) {
           if (captureData.data[i]! > 0) captureNonZero++;
         }
-        console.log(`[DIAG] captureTimegroupAtTime: ${captureNonZero}/${captureResult.width * captureResult.height} non-zero (${captureResult.width}x${captureResult.height})`);
+        console.log(
+          `[DIAG] captureTimegroupAtTime: ${captureNonZero}/${captureResult.width * captureResult.height} non-zero (${captureResult.width}x${captureResult.height})`,
+        );
       } else if (captureResult instanceof HTMLImageElement) {
-        console.log(`[DIAG] captureTimegroupAtTime returned image: ${captureResult.width}x${captureResult.height}`);
+        console.log(
+          `[DIAG] captureTimegroupAtTime returned image: ${captureResult.width}x${captureResult.height}`,
+        );
       }
 
       // Also try calling refresh with a different time to bypass dedup
@@ -2371,7 +2607,9 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
       for (let i = 3; i < imageData.data.length; i += 4) {
         if (imageData.data[i]! > 0) nonZeroPixels++;
       }
-      console.log(`[DIAG] Canvas after forced time change + refresh: ${nonZeroPixels}/${totalPixels} non-zero`);
+      console.log(
+        `[DIAG] Canvas after forced time change + refresh: ${nonZeroPixels}/${totalPixels} non-zero`,
+      );
     }
 
     expect(canvas.width).toBeGreaterThan(0);
@@ -2384,7 +2622,8 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
 
   test("with clipPath inset(100%) (mimics canvas mode hiding)", async () => {
     const container = document.createElement("div");
-    container.style.cssText = "position: absolute; top: 0; left: 0; width: 800px; height: 600px;";
+    container.style.cssText =
+      "position: absolute; top: 0; left: 0; width: 800px; height: 600px;";
     const apiHost = getApiHost();
     render(
       html`
@@ -2411,7 +2650,9 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     const result = renderTimegroupToCanvas(timegroup, { scale: 1 });
     const { canvas, refresh, dispose } = result;
 
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await new Promise((r) =>
+      requestAnimationFrame(() => requestAnimationFrame(r)),
+    );
     await refresh();
 
     const ctx = canvas.getContext("2d")!;
@@ -2422,7 +2663,9 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     }
     const totalPixels = canvas.width * canvas.height;
     const percentNonZero = ((nonZeroPixels / totalPixels) * 100).toFixed(1);
-    console.log(`[DIAG clipPath] Canvas: ${canvas.width}x${canvas.height}, content: ${percentNonZero}% non-zero`);
+    console.log(
+      `[DIAG clipPath] Canvas: ${canvas.width}x${canvas.height}, content: ${percentNonZero}% non-zero`,
+    );
 
     expect(nonZeroPixels).toBeGreaterThan(0);
 
@@ -2432,7 +2675,8 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
 
   test("with EFFitScale wrapper (mimics workbench layout)", async () => {
     const container = document.createElement("div");
-    container.style.cssText = "position: absolute; top: 0; left: 0; width: 800px; height: 600px;";
+    container.style.cssText =
+      "position: absolute; top: 0; left: 0; width: 800px; height: 600px;";
     const apiHost = getApiHost();
     render(
       html`
@@ -2456,12 +2700,22 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     await timegroup.updateComplete;
 
     // Wait for EFFitScale to apply transforms
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await new Promise((r) =>
+      requestAnimationFrame(() => requestAnimationFrame(r)),
+    );
 
-    console.log(`[DIAG fitscale] Timegroup offsetWidth: ${timegroup.offsetWidth}, offsetHeight: ${timegroup.offsetHeight}`);
-    console.log(`[DIAG fitscale] Timegroup inline style: ${timegroup.style.cssText}`);
-    console.log(`[DIAG fitscale] Timegroup computed transform: ${getComputedStyle(timegroup).transform}`);
-    console.log(`[DIAG fitscale] FitScale offsetWidth: ${fitScale?.offsetWidth}, offsetHeight: ${fitScale?.offsetHeight}`);
+    console.log(
+      `[DIAG fitscale] Timegroup offsetWidth: ${timegroup.offsetWidth}, offsetHeight: ${timegroup.offsetHeight}`,
+    );
+    console.log(
+      `[DIAG fitscale] Timegroup inline style: ${timegroup.style.cssText}`,
+    );
+    console.log(
+      `[DIAG fitscale] Timegroup computed transform: ${getComputedStyle(timegroup).transform}`,
+    );
+    console.log(
+      `[DIAG fitscale] FitScale offsetWidth: ${fitScale?.offsetWidth}, offsetHeight: ${fitScale?.offsetHeight}`,
+    );
 
     // Mimic workbench canvas mode
     timegroup.style.clipPath = "inset(100%)";
@@ -2470,7 +2724,9 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     const result = renderTimegroupToCanvas(timegroup, { scale: 1 });
     const { canvas, refresh, dispose } = result;
 
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await new Promise((r) =>
+      requestAnimationFrame(() => requestAnimationFrame(r)),
+    );
     await refresh();
 
     const ctx = canvas.getContext("2d")!;
@@ -2481,7 +2737,9 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     }
     const totalPixels = canvas.width * canvas.height;
     const percentNonZero = ((nonZeroPixels / totalPixels) * 100).toFixed(1);
-    console.log(`[DIAG fitscale] Canvas: ${canvas.width}x${canvas.height}, content: ${percentNonZero}% non-zero`);
+    console.log(
+      `[DIAG fitscale] Canvas: ${canvas.width}x${canvas.height}, content: ${percentNonZero}% non-zero`,
+    );
 
     expect(nonZeroPixels).toBeGreaterThan(0);
 
@@ -2491,7 +2749,8 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
 
   test("VISUAL INSPECTION: CDP screenshot baseline vs canvas rendering paths", async () => {
     const container = document.createElement("div");
-    container.style.cssText = "position: absolute; top: 0; left: 0; width: 800px; height: 600px;";
+    container.style.cssText =
+      "position: absolute; top: 0; left: 0; width: 800px; height: 600px;";
     const apiHost = getApiHost();
     render(
       html`
@@ -2515,21 +2774,33 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
     await timegroup.updateComplete;
     // Let layout settle
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await new Promise((r) =>
+      requestAnimationFrame(() => requestAnimationFrame(r)),
+    );
 
     // ===== 1. TRUE CDP SCREENSHOT (Playwright element.screenshot - compositor output) =====
     console.log("[VISUAL] Taking true CDP browser screenshot as baseline...");
-    const cdpDataUrl = await (commands as any).captureElementScreenshot("#diag-visual-tg");
-    await writeSnapshot("visual-inspection", "1-cdp-browser-screenshot", cdpDataUrl);
-    console.log("[VISUAL] CDP screenshot saved (true browser compositor output)");
+    const cdpDataUrl = await (commands as any).captureElementScreenshot(
+      "#diag-visual-tg",
+    );
+    await writeSnapshot(
+      "visual-inspection",
+      "1-cdp-browser-screenshot",
+      cdpDataUrl,
+    );
+    console.log(
+      "[VISUAL] CDP screenshot saved (true browser compositor output)",
+    );
 
     // ===== 2. LIVE PREVIEW: renderTimegroupToCanvas (the workbench path) =====
     console.log("[VISUAL] Capturing renderTimegroupToCanvas live preview...");
     const liveResult = renderTimegroupToCanvas(timegroup, { scale: 1 });
-    await new Promise(r => setTimeout(r, 1500));
+    await new Promise((r) => setTimeout(r, 1500));
     const liveDataUrl = captureCanvasAsDataUrl(liveResult.canvas, "image/png");
     await writeSnapshot("visual-inspection", "2-live-preview", liveDataUrl);
-    console.log(`[VISUAL] Live preview saved: ${liveResult.canvas.width}x${liveResult.canvas.height}`);
+    console.log(
+      `[VISUAL] Live preview saved: ${liveResult.canvas.width}x${liveResult.canvas.height}`,
+    );
     liveResult.dispose();
 
     // ===== 3. LIVE PREVIEW with clipPath inset(100%) =====
@@ -2537,10 +2808,19 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     timegroup.style.clipPath = "inset(100%)";
     timegroup.style.pointerEvents = "none";
     const clippedResult = renderTimegroupToCanvas(timegroup, { scale: 1 });
-    await new Promise(r => setTimeout(r, 1500));
-    const clippedDataUrl = captureCanvasAsDataUrl(clippedResult.canvas, "image/png");
-    await writeSnapshot("visual-inspection", "3-live-preview-clipped", clippedDataUrl);
-    console.log(`[VISUAL] Clipped live preview saved: ${clippedResult.canvas.width}x${clippedResult.canvas.height}`);
+    await new Promise((r) => setTimeout(r, 1500));
+    const clippedDataUrl = captureCanvasAsDataUrl(
+      clippedResult.canvas,
+      "image/png",
+    );
+    await writeSnapshot(
+      "visual-inspection",
+      "3-live-preview-clipped",
+      clippedDataUrl,
+    );
+    console.log(
+      `[VISUAL] Clipped live preview saved: ${clippedResult.canvas.width}x${clippedResult.canvas.height}`,
+    );
     clippedResult.dispose();
     timegroup.style.clipPath = "";
     timegroup.style.pointerEvents = "";
@@ -2548,15 +2828,25 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     // ===== 4. CLONE-BASED CAPTURE: foreignObject path =====
     console.log("[VISUAL] Capturing foreignObject clone-based capture...");
     setNativeCanvasApiEnabled(false);
-    const foreignResult = await captureTimegroupAtTime(timegroup, { timeMs: 0, scale: 1 });
+    const foreignResult = await captureTimegroupAtTime(timegroup, {
+      timeMs: 0,
+      scale: 1,
+    });
     const foreignDataUrl = captureCanvasAsDataUrl(foreignResult, "image/png");
-    await writeSnapshot("visual-inspection", "4-clone-foreignobject", foreignDataUrl);
+    await writeSnapshot(
+      "visual-inspection",
+      "4-clone-foreignobject",
+      foreignDataUrl,
+    );
     console.log(`[VISUAL] ForeignObject clone saved`);
 
     // ===== 5. CLONE-BASED CAPTURE: native drawElementImage path =====
     console.log("[VISUAL] Capturing native clone-based capture...");
     setNativeCanvasApiEnabled(true);
-    const nativeResult = await captureTimegroupAtTime(timegroup, { timeMs: 0, scale: 1 });
+    const nativeResult = await captureTimegroupAtTime(timegroup, {
+      timeMs: 0,
+      scale: 1,
+    });
     const nativeDataUrl = captureCanvasAsDataUrl(nativeResult, "image/png");
     await writeSnapshot("visual-inspection", "5-clone-native", nativeDataUrl);
     console.log(`[VISUAL] Native clone saved`);
@@ -2566,7 +2856,11 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     console.log("\n[VISUAL] ===== ODIFF VISUAL COMPARISONS =====");
 
     // Helper: load a data URL into a canvas for comparison
-    function dataUrlToCanvas(dataUrl: string, width: number, height: number): Promise<HTMLCanvasElement> {
+    function dataUrlToCanvas(
+      dataUrl: string,
+      width: number,
+      height: number,
+    ): Promise<HTMLCanvasElement> {
       return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
@@ -2588,9 +2882,21 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
 
     const cdpCanvas = await dataUrlToCanvas(cdpDataUrl, compareW, compareH);
     const liveCanvas = await dataUrlToCanvas(liveDataUrl, compareW, compareH);
-    const clippedCanvas = await dataUrlToCanvas(clippedDataUrl, compareW, compareH);
-    const foreignCanvas = await dataUrlToCanvas(foreignDataUrl, compareW, compareH);
-    const nativeCanvas = await dataUrlToCanvas(nativeDataUrl, compareW, compareH);
+    const clippedCanvas = await dataUrlToCanvas(
+      clippedDataUrl,
+      compareW,
+      compareH,
+    );
+    const foreignCanvas = await dataUrlToCanvas(
+      foreignDataUrl,
+      compareW,
+      compareH,
+    );
+    const nativeCanvas = await dataUrlToCanvas(
+      nativeDataUrl,
+      compareW,
+      compareH,
+    );
 
     const comparisons = [
       { name: "cdp-vs-live-preview", canvas: liveCanvas },
@@ -2609,17 +2915,31 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
       );
       const diffPct = result.diffPercentage?.toFixed(2) ?? "N/A";
       const status = result.match ? "MATCH" : "DIFF";
-      console.log(`[VISUAL] ${name}: ${status} (${diffPct}% different, ${result.diffCount ?? 0} pixels)`);
+      console.log(
+        `[VISUAL] ${name}: ${status} (${diffPct}% different, ${result.diffCount ?? 0} pixels)`,
+      );
     }
 
     console.log("[VISUAL] ========================================");
-    console.log("[VISUAL] Images saved to: elements/test-assets/test/__snapshots__/visual-inspection/");
+    console.log(
+      "[VISUAL] Images saved to: elements/test-assets/test/__snapshots__/visual-inspection/",
+    );
     console.log("[VISUAL] Files:");
-    console.log("[VISUAL]   1-cdp-browser-screenshot.actual.png - TRUE CDP browser screenshot (baseline)");
-    console.log("[VISUAL]   2-live-preview.actual.png           - renderTimegroupToCanvas (workbench path)");
-    console.log("[VISUAL]   3-live-preview-clipped.actual.png   - same with clipPath: inset(100%)");
-    console.log("[VISUAL]   4-clone-foreignobject.actual.png    - captureTimegroupAtTime foreignObject");
-    console.log("[VISUAL]   5-clone-native.actual.png           - captureTimegroupAtTime native");
+    console.log(
+      "[VISUAL]   1-cdp-browser-screenshot.actual.png - TRUE CDP browser screenshot (baseline)",
+    );
+    console.log(
+      "[VISUAL]   2-live-preview.actual.png           - renderTimegroupToCanvas (workbench path)",
+    );
+    console.log(
+      "[VISUAL]   3-live-preview-clipped.actual.png   - same with clipPath: inset(100%)",
+    );
+    console.log(
+      "[VISUAL]   4-clone-foreignobject.actual.png    - captureTimegroupAtTime foreignObject",
+    );
+    console.log(
+      "[VISUAL]   5-clone-native.actual.png           - captureTimegroupAtTime native",
+    );
     console.log("[VISUAL]   + diff images: cdp-vs-*.compare-diff.png");
     console.log("[VISUAL] ========================================\n");
 
@@ -2628,7 +2948,8 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
 
   test("FrameController dedup after resolution change", async () => {
     const container = document.createElement("div");
-    container.style.cssText = "position: absolute; top: 0; left: 0; width: 800px; height: 600px;";
+    container.style.cssText =
+      "position: absolute; top: 0; left: 0; width: 800px; height: 600px;";
     const apiHost = getApiHost();
     render(
       html`
@@ -2648,11 +2969,16 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
     await timegroup.updateComplete;
 
-    const result = renderTimegroupToCanvas(timegroup, { scale: 1, resolutionScale: 1 });
+    const result = renderTimegroupToCanvas(timegroup, {
+      scale: 1,
+      resolutionScale: 1,
+    });
     const { canvas, refresh, setResolutionScale, dispose } = result;
 
     // First render
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await new Promise((r) =>
+      requestAnimationFrame(() => requestAnimationFrame(r)),
+    );
     await refresh();
 
     const ctx = canvas.getContext("2d")!;
@@ -2661,12 +2987,16 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     for (let i = 3; i < imageData.data.length; i += 4) {
       if (imageData.data[i]! > 0) nonZeroPixels++;
     }
-    console.log(`[DIAG dedup] First render: ${nonZeroPixels} non-zero pixels out of ${canvas.width * canvas.height}`);
+    console.log(
+      `[DIAG dedup] First render: ${nonZeroPixels} non-zero pixels out of ${canvas.width * canvas.height}`,
+    );
     expect(nonZeroPixels).toBeGreaterThan(0);
 
     // Change resolution scale (triggers re-render)
     setResolutionScale(0.5);
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await new Promise((r) =>
+      requestAnimationFrame(() => requestAnimationFrame(r)),
+    );
     await refresh();
 
     imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -2674,7 +3004,9 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     for (let i = 3; i < imageData.data.length; i += 4) {
       if (imageData.data[i]! > 0) nonZeroPixels++;
     }
-    console.log(`[DIAG dedup] After resolution change: ${nonZeroPixels} non-zero pixels out of ${canvas.width * canvas.height}`);
+    console.log(
+      `[DIAG dedup] After resolution change: ${nonZeroPixels} non-zero pixels out of ${canvas.width * canvas.height}`,
+    );
     expect(nonZeroPixels).toBeGreaterThan(0);
 
     dispose();

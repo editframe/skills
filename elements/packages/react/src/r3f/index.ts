@@ -1,6 +1,6 @@
 /**
  * R3F (React Three Fiber) integration for Editframe compositions.
- * 
+ *
  * This module provides components and utilities for rendering 3D scenes
  * with React Three Fiber in Editframe timelines, with support for:
  * - Offscreen canvas rendering in web workers (OffscreenCompositionCanvas)
@@ -9,12 +9,16 @@
  * - Deterministic frame-by-frame rendering for video export
  */
 
-export { OffscreenCompositionCanvas } from './OffscreenCompositionCanvas';
-export type { OffscreenCompositionCanvasProps } from './OffscreenCompositionCanvas';
+export { OffscreenCompositionCanvas } from "./OffscreenCompositionCanvas";
+export type { OffscreenCompositionCanvasProps } from "./OffscreenCompositionCanvas";
 
-export { CompositionCanvas, useCompositionTime } from './CompositionCanvas';
-export type { CompositionCanvasProps } from './CompositionCanvas';
+export { CompositionCanvas, useCompositionTime } from "./CompositionCanvas";
+export type { CompositionCanvasProps } from "./CompositionCanvas";
 
-export { renderOffscreen } from './renderOffscreen';
+export { renderOffscreen } from "./renderOffscreen";
 
-export type { MainToWorkerMessage, WorkerToMainMessage, RenderFramePayload } from './worker-protocol';
+export type {
+  MainToWorkerMessage,
+  WorkerToMainMessage,
+  RenderFramePayload,
+} from "./worker-protocol";

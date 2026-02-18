@@ -3,16 +3,22 @@ import type { ReactiveController, ReactiveControllerHost } from "lit";
 import { currentTimeContext } from "./currentTimeContext.js";
 import { durationContext } from "./durationContext.js";
 import { loopContext, playingContext } from "./playingContext.js";
-import { updateAnimations, type AnimatableElement } from "../elements/updateAnimations.js";
-import type { RenderFrameOptions, FrameRenderable } from "../preview/FrameController.js";
+import {
+  updateAnimations,
+  type AnimatableElement,
+} from "../elements/updateAnimations.js";
+import type {
+  RenderFrameOptions,
+  FrameRenderable,
+} from "../preview/FrameController.js";
 
 interface PlaybackHost extends HTMLElement, ReactiveControllerHost {
   currentTimeMs: number;
   durationMs: number;
   endTimeMs: number;
   /** Centralized frame controller (present on EFTimegroup) */
-  frameController?: { 
-    renderFrame(timeMs: number, options?: RenderFrameOptions): Promise<void>; 
+  frameController?: {
+    renderFrame(timeMs: number, options?: RenderFrameOptions): Promise<void>;
     abort(): void;
   };
   renderAudio?(fromMs: number, toMs: number): Promise<AudioBuffer>;
@@ -132,9 +138,10 @@ export class PlaybackController implements ReactiveController {
     this.#runSeek(time).finally(async () => {
       // CRITICAL: Coordinate animations after seek completes
       // This ensures animations are positioned correctly, not playing naturally
-      const { updateAnimations } = await import("../elements/updateAnimations.js");
+      const { updateAnimations } =
+        await import("../elements/updateAnimations.js");
       updateAnimations(this.#host as any);
-      
+
       if (
         this.#pendingSeekTime !== undefined &&
         this.#pendingSeekTime !== time
@@ -161,10 +168,10 @@ export class PlaybackController implements ReactiveController {
 
     try {
       signal.throwIfAborted();
-      
+
       await this.#host.waitForMediaDurations?.(signal);
       signal.throwIfAborted();
-      
+
       const newTime = Math.max(
         0,
         Math.min(targetTime, this.#host.durationMs / 1000),
@@ -176,14 +183,15 @@ export class PlaybackController implements ReactiveController {
         property: "currentTimeMs",
         value: this.currentTimeMs,
       });
-      
+
       signal.throwIfAborted();
-      
+
       await this.runThrottledFrameTask();
       signal.throwIfAborted();
-      
+
       // Save to localStorage for persistence (only if not restoring to avoid loops)
-      const isRestoring = (this.#host as any).isRestoringFromLocalStorage?.() ?? false;
+      const isRestoring =
+        (this.#host as any).isRestoringFromLocalStorage?.() ?? false;
       if (!isRestoring) {
         this.#host.saveTimeToLocalStorage?.(newTime);
       } else {
@@ -268,7 +276,7 @@ export class PlaybackController implements ReactiveController {
   }
 
   #removed = false;
-  
+
   hostConnected(): void {
     // Defer all operations to avoid blocking during initialization
     // This prevents deadlocks when many timegroups are initializing simultaneously
@@ -279,7 +287,7 @@ export class PlaybackController implements ReactiveController {
         if (this.#removed || this.#host.playbackController !== this) {
           return;
         }
-        
+
         if (this.#playing) {
           this.startPlayback();
         } else {
@@ -297,12 +305,11 @@ export class PlaybackController implements ReactiveController {
       }
     } catch (err) {
       const isAbortError =
-        err instanceof DOMException && err.name === "AbortError" ||
-        err instanceof Error && (
-          err.name === "AbortError" ||
-          err.message.includes("signal is aborted") ||
-          err.message.includes("The user aborted a request")
-        );
+        (err instanceof DOMException && err.name === "AbortError") ||
+        (err instanceof Error &&
+          (err.name === "AbortError" ||
+            err.message.includes("signal is aborted") ||
+            err.message.includes("The user aborted a request")));
       if (!isAbortError) {
         console.error("Error in PlaybackController hostConnected:", err);
       }
@@ -350,7 +357,8 @@ export class PlaybackController implements ReactiveController {
           },
         });
       } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
+        if (error instanceof DOMException && error.name === "AbortError")
+          return;
         console.error("FrameController error:", error);
       }
       return;
@@ -370,7 +378,10 @@ export class PlaybackController implements ReactiveController {
     return this.#startSelfRender(host, timeMs);
   }
 
-  #startSelfRender(host: Partial<FrameRenderable>, timeMs: number): Promise<void> {
+  #startSelfRender(
+    host: Partial<FrameRenderable>,
+    timeMs: number,
+  ): Promise<void> {
     this.#selfRenderAbortController?.abort();
     this.#selfRenderAbortController = new AbortController();
     const signal = this.#selfRenderAbortController.signal;
@@ -383,7 +394,8 @@ export class PlaybackController implements ReactiveController {
         host.renderFrame!(timeMs);
         updateAnimations(this.#host as unknown as AnimatableElement);
       } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
+        if (error instanceof DOMException && error.name === "AbortError")
+          return;
         if ((error as any)?.name === "AbortError") return;
         console.error("Standalone frame render error:", error);
       } finally {
@@ -415,7 +427,7 @@ export class PlaybackController implements ReactiveController {
   }
 
   remove(): void {
-    this.#removed = true;  // Mark as removed to abort any pending RAF callbacks
+    this.#removed = true; // Mark as removed to abort any pending RAF callbacks
     this.stopPlayback();
     this.#listeners.clear();
     this.#host.removeController(this);

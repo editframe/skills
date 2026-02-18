@@ -170,7 +170,7 @@ export class EFTimelineRuler extends LitElement {
    */
   private calculateCanvasViewport(): { left: number; width: number } {
     const totalWidth = this.contentWidth || this.viewportWidth;
-    
+
     // If content is small enough, no virtualization needed
     if (totalWidth <= MAX_RULER_CANVAS_WIDTH) {
       return { left: 0, width: totalWidth };
@@ -178,13 +178,14 @@ export class EFTimelineRuler extends LitElement {
 
     // Get visible region from scroll position
     const viewportScrollLeft = this.scrollLeft;
-    const viewportWidth = this.timelineState?.viewportWidth ?? this.viewportWidth;
+    const viewportWidth =
+      this.timelineState?.viewportWidth ?? this.viewportWidth;
 
     // Calculate canvas viewport with buffer for smooth scrolling
     const canvasLeft = Math.max(0, viewportScrollLeft - RULER_CANVAS_BUFFER);
     const canvasRight = Math.min(
       totalWidth,
-      viewportScrollLeft + viewportWidth + RULER_CANVAS_BUFFER
+      viewportScrollLeft + viewportWidth + RULER_CANVAS_BUFFER,
     );
 
     // Cap canvas width at maximum
@@ -224,24 +225,35 @@ export class EFTimelineRuler extends LitElement {
     }
   }
 
-  protected updated(changedProperties: Map<string | number | symbol, unknown>): void {
+  protected updated(
+    changedProperties: Map<string | number | symbol, unknown>,
+  ): void {
     // Check if scroll position or viewport changed from context
     const currentScrollLeft = this.scrollLeft;
-    const currentViewportWidth = this.timelineState?.viewportWidth ?? this.viewportWidth;
-    
+    const currentViewportWidth =
+      this.timelineState?.viewportWidth ?? this.viewportWidth;
+
     // Check if scroll changed, viewport changed, or other relevant properties changed
     const scrollChanged = currentScrollLeft !== this._lastRenderedScrollLeft;
-    const viewportChanged = currentViewportWidth !== this._lastRenderedViewportWidth;
-    const pixelsPerMsChanged = changedProperties.has("timelineState") || 
-                               changedProperties.has("pixelsPerMs");
+    const viewportChanged =
+      currentViewportWidth !== this._lastRenderedViewportWidth;
+    const pixelsPerMsChanged =
+      changedProperties.has("timelineState") ||
+      changedProperties.has("pixelsPerMs");
     const contentWidthChanged = changedProperties.has("contentWidth");
-    const durationChanged = changedProperties.has("durationMs") || 
-                          changedProperties.has("contextDurationMs");
-    
+    const durationChanged =
+      changedProperties.has("durationMs") ||
+      changedProperties.has("contextDurationMs");
+
     // Only render if something actually changed
-    if (scrollChanged || viewportChanged || pixelsPerMsChanged || 
-        contentWidthChanged || durationChanged || 
-        this._lastRenderedScrollLeft < 0) {
+    if (
+      scrollChanged ||
+      viewportChanged ||
+      pixelsPerMsChanged ||
+      contentWidthChanged ||
+      durationChanged ||
+      this._lastRenderedScrollLeft < 0
+    ) {
       this.renderCanvas();
       this._lastRenderedScrollLeft = currentScrollLeft;
       this._lastRenderedViewportWidth = currentViewportWidth;
@@ -339,7 +351,9 @@ export class EFTimelineRuler extends LitElement {
     const canvasLeft = viewport.left;
 
     // Time label ticks - more prominent
-    ctx.strokeStyle = getComputedStyle(this).getPropertyValue("--ef-color-text-muted").trim() || "rgb(156, 163, 175)";
+    ctx.strokeStyle =
+      getComputedStyle(this).getPropertyValue("--ef-color-text-muted").trim() ||
+      "rgb(156, 163, 175)";
     ctx.lineWidth = 1;
 
     const labelIntervalMs = this.calculateLabelInterval();
@@ -375,7 +389,10 @@ export class EFTimelineRuler extends LitElement {
 
     if (pixelsPerFrame >= MIN_FRAME_SPACING_PX) {
       // Frame markers should be lighter than background to be visible
-      ctx.strokeStyle = getComputedStyle(this).getPropertyValue("--ef-color-border-subtle").trim() || "rgb(107, 114, 128)";
+      ctx.strokeStyle =
+        getComputedStyle(this)
+          .getPropertyValue("--ef-color-border-subtle")
+          .trim() || "rgb(107, 114, 128)";
       ctx.lineWidth = 1;
 
       const firstFrameIndex = Math.floor(visibleStartTimeMs / frameIntervalMs);
@@ -403,7 +420,7 @@ export class EFTimelineRuler extends LitElement {
 
   render() {
     const visibleLabels = this.getVisibleLabels();
-    
+
     const canvasViewportStyles = styleMap({
       left: `${this._canvasViewportLeft}px`,
       width: `${this._canvasViewportWidth}px`,

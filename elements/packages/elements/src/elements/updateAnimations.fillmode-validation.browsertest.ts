@@ -34,7 +34,7 @@ describe("Animation Fill-Mode Validation", () => {
 
       const div = document.createElement("div");
       div.textContent = "Test";
-      
+
       // Add CSS animation with delay but no fill-mode
       const style = document.createElement("style");
       style.textContent = `
@@ -47,27 +47,27 @@ describe("Animation Fill-Mode Validation", () => {
         }
       `;
       document.head.appendChild(style);
-      
+
       div.classList.add("test-animation");
       timegroup.appendChild(div);
 
       await timegroup.updateComplete;
-      
+
       // Seek to trigger animation synchronization
       timegroup.currentTimeMs = 100;
       await timegroup.updateComplete;
 
       // Wait a bit for animation discovery
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Check if warning was logged
-      const hasWarning = warnings.some(w => 
-        typeof w === 'string' && w.includes('backwards')
+      const hasWarning = warnings.some(
+        (w) => typeof w === "string" && w.includes("backwards"),
       );
-      
+
       assert.isTrue(
         hasWarning,
-        "Should warn about missing backwards fill-mode on delayed animation"
+        "Should warn about missing backwards fill-mode on delayed animation",
       );
 
       // Cleanup
@@ -103,7 +103,7 @@ describe("Animation Fill-Mode Validation", () => {
 
       const div = document.createElement("div");
       div.textContent = "Test";
-      
+
       // Add CSS animation with fade-in but no fill-mode
       const style = document.createElement("style");
       style.textContent = `
@@ -116,24 +116,26 @@ describe("Animation Fill-Mode Validation", () => {
         }
       `;
       document.head.appendChild(style);
-      
+
       div.classList.add("fade-animation");
       timegroup.appendChild(div);
 
       await timegroup.updateComplete;
-      
+
       timegroup.currentTimeMs = 100;
       await timegroup.updateComplete;
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const hasWarning = warnings.some(w => 
-        typeof w === 'string' && (w.includes('fade-in') || w.includes('backwards'))
+      const hasWarning = warnings.some(
+        (w) =>
+          typeof w === "string" &&
+          (w.includes("fade-in") || w.includes("backwards")),
       );
-      
+
       assert.isTrue(
         hasWarning,
-        "Should warn about fade-in animation without backwards fill-mode"
+        "Should warn about fade-in animation without backwards fill-mode",
       );
 
       document.head.removeChild(style);
@@ -166,7 +168,7 @@ describe("Animation Fill-Mode Validation", () => {
 
       const div = document.createElement("div");
       div.textContent = "Test";
-      
+
       // Add CSS animation WITH backwards fill-mode
       const style = document.createElement("style");
       style.textContent = `
@@ -179,24 +181,24 @@ describe("Animation Fill-Mode Validation", () => {
         }
       `;
       document.head.appendChild(style);
-      
+
       div.classList.add("correct-animation");
       timegroup.appendChild(div);
 
       await timegroup.updateComplete;
-      
+
       timegroup.currentTimeMs = 100;
       await timegroup.updateComplete;
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const hasWarning = warnings.some(w => 
-        typeof w === 'string' && w.includes('Fill-Mode Warning')
+      const hasWarning = warnings.some(
+        (w) => typeof w === "string" && w.includes("Fill-Mode Warning"),
       );
-      
+
       assert.isFalse(
         hasWarning,
-        "Should not warn when backwards fill-mode is correctly specified"
+        "Should not warn when backwards fill-mode is correctly specified",
       );
 
       document.head.removeChild(style);

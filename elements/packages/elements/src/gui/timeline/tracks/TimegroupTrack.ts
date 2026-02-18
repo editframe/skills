@@ -16,19 +16,19 @@ function isRootTimegroup(element: Element | null | undefined): boolean {
   if (!element) {
     return false;
   }
-  
+
   // Check if element has the isRootTimegroup property (most reliable)
   // EFTimegroup instances have this property that checks parentTimegroup
   const elem = element as any;
-  if (typeof elem.isRootTimegroup === 'boolean') {
+  if (typeof elem.isRootTimegroup === "boolean") {
     return elem.isRootTimegroup;
   }
-  
+
   // Alternative: check parentTimegroup property directly (EFTimegroup has this)
   if (elem.parentTimegroup !== undefined) {
     return !elem.parentTimegroup; // Root if no parent timegroup
   }
-  
+
   // Fallback: check DOM parent tree (less reliable after DOM moves)
   let parent = element.parentElement;
   while (parent) {
@@ -88,7 +88,7 @@ export class EFTimegroupTrack extends TrackItem {
     const showFilmstrip = this.showFilmstrip;
     const hasId = !!this.element?.id;
     const isRoot = isRootTimegroup(this.element);
-    
+
     return skipChildren && showFilmstrip && hasId && isRoot;
   }
 
@@ -185,7 +185,9 @@ export class EFTimegroupTrack extends TrackItem {
             backgroundColor: this.isFocused
               ? "var(--filmstrip-item-focused)"
               : "var(--filmstrip-item-bg)",
-            borderColor: this.shouldShowFilmstrip ? "transparent" : "var(--filmstrip-border)",
+            borderColor: this.shouldShowFilmstrip
+              ? "transparent"
+              : "var(--filmstrip-border)",
           })}
         >
           ${this.animations()}
@@ -202,4 +204,3 @@ declare global {
     "ef-timegroup-track": EFTimegroupTrack;
   }
 }
-

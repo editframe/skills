@@ -1,6 +1,6 @@
 /**
  * Unit tests for renderTimegroupToCanvas.ts utility functions.
- * 
+ *
  * These tests focus on exported utility functions in isolation,
  * verifying observable outputs (return values, side effects) not implementation details.
  */
@@ -23,7 +23,7 @@ import type { EFTimegroup } from "../elements/EFTimegroup.js";
 describe("getRenderState", () => {
   it("returns current render state object", () => {
     const state = getRenderState();
-    
+
     expect(state).toBeDefined();
     expect(state).toHaveProperty("inlineImageCache");
     expect(state).toHaveProperty("layoutInitializedCanvases");
@@ -35,13 +35,13 @@ describe("getRenderState", () => {
   it("returns same instance on multiple calls", () => {
     const state1 = getRenderState();
     const state2 = getRenderState();
-    
+
     expect(state1).toBe(state2);
   });
 
   it("has valid metrics structure", () => {
     const state = getRenderState();
-    
+
     expect(state.metrics).toHaveProperty("inlineImageCacheHits");
     expect(state.metrics).toHaveProperty("inlineImageCacheMisses");
     expect(state.metrics).toHaveProperty("inlineImageCacheEvictions");
@@ -55,21 +55,21 @@ describe("resetRenderState", () => {
   it("clears profiling counters and caches", () => {
     // Perform some operations to populate state
     resetRenderState();
-    
+
     // After reset, cache should be empty
     expect(getInlineImageCacheSize()).toBe(0);
   });
 
   it("resets all state including metrics", () => {
     const state = getRenderState();
-    
+
     // Set some values
     state.metrics.inlineImageCacheHits = 10;
     state.metrics.inlineImageCacheMisses = 5;
     state.metrics.inlineImageCacheEvictions = 2;
-    
+
     resetRenderState();
-    
+
     // All metrics should be reset to 0
     expect(state.metrics.inlineImageCacheHits).toBe(0);
     expect(state.metrics.inlineImageCacheMisses).toBe(0);
@@ -80,7 +80,7 @@ describe("resetRenderState", () => {
     resetRenderState();
     resetRenderState();
     resetRenderState();
-    
+
     expect(getInlineImageCacheSize()).toBe(0);
   });
 });
@@ -105,21 +105,21 @@ describe("inline image cache", () => {
 describe("ContentNotReadyError", () => {
   it("extends Error with correct name", () => {
     const error = new ContentNotReadyError(1000, 5000, ["video1.mp4"]);
-    
+
     expect(error).toBeInstanceOf(Error);
     expect(error.name).toBe("ContentNotReadyError");
   });
 
   it("includes timeMs in message and property", () => {
     const error = new ContentNotReadyError(1500, 5000, ["video1.mp4"]);
-    
+
     expect(error.timeMs).toBe(1500);
     expect(error.message).toContain("1500");
   });
 
   it("includes timeoutMs in message and property", () => {
     const error = new ContentNotReadyError(1000, 3000, ["video1.mp4"]);
-    
+
     expect(error.timeoutMs).toBe(3000);
     expect(error.message).toContain("3000");
   });
@@ -127,7 +127,7 @@ describe("ContentNotReadyError", () => {
   it("includes blank video names in message and property", () => {
     const blankVideos = ["video1.mp4", "video2.mp4"];
     const error = new ContentNotReadyError(1000, 5000, blankVideos);
-    
+
     expect(error.blankVideos).toEqual(blankVideos);
     expect(error.message).toContain("video1.mp4");
     expect(error.message).toContain("video2.mp4");
@@ -135,7 +135,7 @@ describe("ContentNotReadyError", () => {
 
   it("handles empty blankVideos array", () => {
     const error = new ContentNotReadyError(1000, 5000, []);
-    
+
     expect(error.blankVideos).toEqual([]);
     expect(error.message).toBeDefined();
   });
@@ -151,9 +151,9 @@ describe("loadImageFromDataUri", () => {
     ctx.fillStyle = "red";
     ctx.fillRect(0, 0, 1, 1);
     const dataUri = canvas.toDataURL("image/png");
-    
+
     const img = await loadImageFromDataUri(dataUri);
-    
+
     expect(img).toBeInstanceOf(HTMLImageElement);
     expect(img.width).toBe(1);
     expect(img.height).toBe(1);
@@ -168,20 +168,18 @@ describe("loadImageFromDataUri", () => {
     ctx.fillStyle = "blue";
     ctx.fillRect(0, 0, 10, 10);
     const dataUri = canvas.toDataURL("image/jpeg", 0.9);
-    
+
     const img = await loadImageFromDataUri(dataUri);
-    
+
     expect(img).toBeInstanceOf(HTMLImageElement);
     expect(img.width).toBe(10);
     expect(img.height).toBe(10);
   });
 
   it("rejects on invalid data URI", async () => {
-    await expect(loadImageFromDataUri("invalid-data-uri"))
-      .rejects.toThrow();
+    await expect(loadImageFromDataUri("invalid-data-uri")).rejects.toThrow();
   });
 });
-
 
 describe("captureTimegroupAtTime", () => {
   beforeEach(async () => {
@@ -199,14 +197,17 @@ describe("captureTimegroupAtTime", () => {
       </ef-timegroup>
     `;
     document.body.appendChild(container);
-    
+
     try {
       const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
       await timegroup.updateComplete;
-      
+
       const result = await captureTimegroupAtTime(timegroup, { timeMs: 0 });
 
-      expect(result instanceof HTMLCanvasElement || result instanceof HTMLImageElement).toBe(true);
+      expect(
+        result instanceof HTMLCanvasElement ||
+          result instanceof HTMLImageElement,
+      ).toBe(true);
       expect((result as any).width).toBeGreaterThan(0);
       expect((result as any).height).toBeGreaterThan(0);
     } finally {
@@ -222,19 +223,24 @@ describe("captureTimegroupAtTime", () => {
       </ef-timegroup>
     `;
     document.body.appendChild(container);
-    
+
     try {
       const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
       await timegroup.updateComplete;
-      
+
       const result = await captureTimegroupAtTime(timegroup, {
         timeMs: 0,
-        scale: 0.5
+        scale: 0.5,
       });
 
-      expect(result instanceof HTMLCanvasElement || result instanceof HTMLImageElement).toBe(true);
+      expect(
+        result instanceof HTMLCanvasElement ||
+          result instanceof HTMLImageElement,
+      ).toBe(true);
       expect((result as any).width).toBeGreaterThan(0);
-      expect((result as any).width).toBeLessThanOrEqual(400 * window.devicePixelRatio);
+      expect((result as any).width).toBeLessThanOrEqual(
+        400 * window.devicePixelRatio,
+      );
     } finally {
       document.body.removeChild(container);
     }
@@ -250,19 +256,26 @@ describe("captureTimegroupAtTime", () => {
       </ef-timegroup>
     `;
     document.body.appendChild(container);
-    
+
     try {
       const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
       await timegroup.updateComplete;
-      
+
       // Capture at different times
       const canvas0 = await captureTimegroupAtTime(timegroup, { timeMs: 0 });
-      const canvas1000 = await captureTimegroupAtTime(timegroup, { timeMs: 1000 });
-      const canvas2500 = await captureTimegroupAtTime(timegroup, { timeMs: 2500 });
-      
+      const canvas1000 = await captureTimegroupAtTime(timegroup, {
+        timeMs: 1000,
+      });
+      const canvas2500 = await captureTimegroupAtTime(timegroup, {
+        timeMs: 2500,
+      });
+
       // All should produce valid image sources
       for (const result of [canvas0, canvas1000, canvas2500]) {
-        expect(result instanceof HTMLCanvasElement || result instanceof HTMLImageElement).toBe(true);
+        expect(
+          result instanceof HTMLCanvasElement ||
+            result instanceof HTMLImageElement,
+        ).toBe(true);
       }
     } finally {
       document.body.removeChild(container);
@@ -275,16 +288,17 @@ describe("edge cases", () => {
     resetRenderState();
   });
 
-
   it("loadImageFromDataUri handles SVG data URI", async () => {
-    const svgDataUri = "data:image/svg+xml;base64," + btoa(`
+    const svgDataUri =
+      "data:image/svg+xml;base64," +
+      btoa(`
       <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
         <rect width="100" height="100" fill="purple"/>
       </svg>
     `);
-    
+
     const img = await loadImageFromDataUri(svgDataUri);
-    
+
     expect(img).toBeInstanceOf(HTMLImageElement);
     expect(img.complete).toBe(true);
   });
@@ -307,7 +321,7 @@ describe("cache behavior", () => {
     // The cache only stores fetched external image URLs
     const initialSize = getInlineImageCacheSize();
     expect(initialSize).toBe(0);
-    
+
     // After clear, should still be 0
     clearInlineImageCache();
     expect(getInlineImageCacheSize()).toBe(0);
@@ -322,7 +336,7 @@ describe("cache metrics", () => {
 
   it("getCacheMetrics returns metrics object", () => {
     const metrics = getCacheMetrics();
-    
+
     expect(metrics).toBeDefined();
     expect(metrics).toHaveProperty("inlineImageCacheHits");
     expect(metrics).toHaveProperty("inlineImageCacheMisses");
@@ -332,24 +346,24 @@ describe("cache metrics", () => {
   it("returns copy of metrics (not reference)", () => {
     const metrics1 = getCacheMetrics();
     const metrics2 = getCacheMetrics();
-    
+
     // Should be different objects (copies)
     expect(metrics1).not.toBe(metrics2);
-    
+
     // But with same values
     expect(metrics1).toEqual(metrics2);
   });
 
   it("resetCacheMetrics clears all metrics to zero", () => {
     const state = getRenderState();
-    
+
     // Manually set some values
     state.metrics.inlineImageCacheHits = 42;
     state.metrics.inlineImageCacheMisses = 10;
     state.metrics.inlineImageCacheEvictions = 5;
-    
+
     resetCacheMetrics();
-    
+
     const metrics = getCacheMetrics();
     expect(metrics.inlineImageCacheHits).toBe(0);
     expect(metrics.inlineImageCacheMisses).toBe(0);
@@ -358,7 +372,7 @@ describe("cache metrics", () => {
 
   it("metrics start at zero after reset", () => {
     resetCacheMetrics();
-    
+
     const metrics = getCacheMetrics();
     expect(metrics.inlineImageCacheHits).toBe(0);
     expect(metrics.inlineImageCacheMisses).toBe(0);
@@ -368,10 +382,10 @@ describe("cache metrics", () => {
   it("metrics persist between getCacheMetrics calls", () => {
     const state = getRenderState();
     state.metrics.inlineImageCacheHits = 7;
-    
+
     const metrics1 = getCacheMetrics();
     expect(metrics1.inlineImageCacheHits).toBe(7);
-    
+
     const metrics2 = getCacheMetrics();
     expect(metrics2.inlineImageCacheHits).toBe(7);
   });

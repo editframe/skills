@@ -7,7 +7,10 @@ import type { BufferedSeekingInput } from "../BufferedSeekingInput";
  */
 export class MainVideoInputCache {
   #cache = new Map<string, BufferedSeekingInput>();
-  #pendingPromises = new Map<string, Promise<BufferedSeekingInput | undefined>>();
+  #pendingPromises = new Map<
+    string,
+    Promise<BufferedSeekingInput | undefined>
+  >();
   #maxCacheSize = 10; // Keep last 10 main inputs (covers 20 seconds at 2s/segment)
 
   /**
@@ -23,7 +26,7 @@ export class MainVideoInputCache {
 
   /**
    * Get or create BufferedSeekingInput for a main video segment.
-   * 
+   *
    * Uses promise deduplication to prevent race conditions when multiple
    * concurrent requests arrive for the same segment. Without this,
    * the first segment often fails when DevTools is closed because:
@@ -54,29 +57,31 @@ export class MainVideoInputCache {
     }
 
     // Create the promise and cache it IMMEDIATELY to prevent race conditions
-    const promise = createInputFn().then((input) => {
-      // Clean up pending promise
-      this.#pendingPromises.delete(cacheKey);
-      
-      if (input) {
-        // Add to completed cache
-        this.#cache.set(cacheKey, input);
+    const promise = createInputFn()
+      .then((input) => {
+        // Clean up pending promise
+        this.#pendingPromises.delete(cacheKey);
 
-        // Evict oldest entries if cache is too large (LRU-like behavior)
-        if (this.#cache.size > this.#maxCacheSize) {
-          const oldestKey = this.#cache.keys().next().value;
-          if (oldestKey !== undefined) {
-            this.#cache.delete(oldestKey);
+        if (input) {
+          // Add to completed cache
+          this.#cache.set(cacheKey, input);
+
+          // Evict oldest entries if cache is too large (LRU-like behavior)
+          if (this.#cache.size > this.#maxCacheSize) {
+            const oldestKey = this.#cache.keys().next().value;
+            if (oldestKey !== undefined) {
+              this.#cache.delete(oldestKey);
+            }
           }
         }
-      }
-      
-      return input;
-    }).catch((error) => {
-      // Clean up pending promise on failure so retry is possible
-      this.#pendingPromises.delete(cacheKey);
-      throw error;
-    });
+
+        return input;
+      })
+      .catch((error) => {
+        // Clean up pending promise on failure so retry is possible
+        this.#pendingPromises.delete(cacheKey);
+        throw error;
+      });
 
     this.#pendingPromises.set(cacheKey, promise);
     return promise;

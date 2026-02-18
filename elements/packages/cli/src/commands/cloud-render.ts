@@ -5,7 +5,7 @@ import { PassThrough } from "node:stream";
 import { inspect } from "node:util";
 import { createRender, uploadRender } from "@editframe/api";
 import { md5Directory, md5FilePath } from "@editframe/assets";
-import { getRenderInfo, RenderInfo } from "@editframe/elements/node";
+import { getRenderInfo, RenderInfoSchema } from "@editframe/elements/node";
 import { Option, program } from "commander";
 import debug from "debug";
 import { parse as parseHTML } from "node-html-parser";
@@ -101,7 +101,9 @@ program
         headless: true,
       },
       async (page) => {
-        const renderInfo = RenderInfo.parse(await page.evaluate(getRenderInfo));
+        const renderInfo = RenderInfoSchema.parse(
+          await page.evaluate(getRenderInfo),
+        );
 
         validateVideoResolution({
           width: renderInfo.width,
@@ -119,7 +121,10 @@ program
           "ef-image, ef-audio, ef-video",
         )) {
           log(`Processing ${element.tagName}`);
-          if (element.hasAttribute("file-id") || element.hasAttribute("asset-id")) {
+          if (
+            element.hasAttribute("file-id") ||
+            element.hasAttribute("asset-id")
+          ) {
             log(
               `File ID for ${element.tagName} ${element.getAttribute("src")} is ${element.getAttribute("file-id") || element.getAttribute("asset-id")}`,
             );

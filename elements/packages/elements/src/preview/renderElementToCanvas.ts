@@ -1,9 +1,9 @@
 /**
  * Render any DOM element to canvas.
- * 
+ *
  * Low-level rendering function that renders elements as-is.
  * Supports both native (drawElementImage) and foreignObject render modes.
- * 
+ *
  * Caller is responsible for clone management and seeking.
  */
 
@@ -35,25 +35,25 @@ export interface RenderElementOptions {
 
 /**
  * Render any element to canvas or image.
- * 
+ *
  * This is a low-level rendering function that renders the element as-is.
  * The caller is responsible for:
  * - Creating clones if needed
  * - Seeking to the correct time
  * - Finding the correct element to render
- * 
+ *
  * Use cases:
  * - Preview: Pass prime timeline element (already at correct time)
  * - Video/thumbnails: Pass element from reused clone (already seeked)
  * - One-off capture: Create clone, seek, pass element, clean up
- * 
+ *
  * @param element - Element to render (timegroup, temporal element, or plain DOM)
  * @param options - Render options
  * @returns Canvas or Image (both are CanvasImageSource)
  */
 export async function renderElementToCanvas(
   element: Element,
-  options: RenderElementOptions
+  options: RenderElementOptions,
 ): Promise<CanvasImageSource> {
   return await renderElementToImage(element, options);
 }
@@ -64,26 +64,28 @@ export async function renderElementToCanvas(
  */
 async function renderElementToImage(
   element: Element,
-  options: RenderElementOptions
+  options: RenderElementOptions,
 ): Promise<CanvasImageSource> {
   const { timeMs, scale = 1.0 } = options;
-  
+
   // Get element dimensions
   const computedStyle = getComputedStyle(element);
-  const width = options.width ?? (parseFloat(computedStyle.width) || DEFAULT_WIDTH);
-  const height = options.height ?? (parseFloat(computedStyle.height) || DEFAULT_HEIGHT);
-  
+  const width =
+    options.width ?? (parseFloat(computedStyle.width) || DEFAULT_WIDTH);
+  const height =
+    options.height ?? (parseFloat(computedStyle.height) || DEFAULT_HEIGHT);
+
   // Create render context for caching
   const renderContext = options.renderContext ?? new RenderContext();
   const shouldDisposeContext = !options.renderContext;
-  
+
   try {
     // Determine render mode
     const renderMode = options.renderMode ?? getEffectiveRenderMode();
-    
-    if (renderMode === 'native') {
+
+    if (renderMode === "native") {
       // NATIVE PATH: Render element using drawElementImage
-      const elementContainer = document.createElement('div');
+      const elementContainer = document.createElement("div");
       elementContainer.style.cssText = `
         position: fixed;
         left: 0;
@@ -93,15 +95,15 @@ async function renderElementToImage(
         pointer-events: none;
         overflow: hidden;
       `;
-      
+
       // Clone element into container
       elementContainer.appendChild(element.cloneNode(true));
       document.body.appendChild(elementContainer);
-      
+
       try {
         // Return canvas directly - no copy needed!
         return await renderToImageNative(elementContainer, width, height, {
-          skipDprScaling: true
+          skipDprScaling: true,
         });
       } finally {
         elementContainer.remove();
@@ -113,7 +115,7 @@ async function renderElementToImage(
         canvasScale: scale,
         timeMs,
       });
-      
+
       // Return image directly - no copy needed!
       return await loadImageFromDataUri(dataUri);
     }

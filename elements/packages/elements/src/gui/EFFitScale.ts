@@ -77,8 +77,6 @@ export class EFFitScale extends LitElement {
 
   uniqueId = Math.random().toString(36).substring(2, 15);
 
-
-
   @property({ type: Boolean })
   paused = false;
 

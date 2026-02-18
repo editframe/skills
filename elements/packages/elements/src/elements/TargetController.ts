@@ -165,16 +165,21 @@ export class TargetController implements ReactiveController {
     let newTarget = this.registry.get(this.host.target);
 
     if (!newTarget) {
-      const container = (this.host as Element).closest('ef-timegroup, ef-configuration') 
-        || (this.host as Element).getRootNode();
-      
-      if (container && 'querySelector' in container) {
-        newTarget = (container as Element).querySelector(`#${CSS.escape(this.host.target)}`) as LitElement | undefined;
+      const container =
+        (this.host as Element).closest("ef-timegroup, ef-configuration") ||
+        (this.host as Element).getRootNode();
+
+      if (container && "querySelector" in container) {
+        newTarget = (container as Element).querySelector(
+          `#${CSS.escape(this.host.target)}`,
+        ) as LitElement | undefined;
       }
     }
-    
+
     if (!newTarget) {
-      newTarget = document.getElementById(this.host.target) as LitElement | undefined;
+      newTarget = document.getElementById(this.host.target) as
+        | LitElement
+        | undefined;
     }
 
     if (this.host.targetElement !== newTarget) {

@@ -52,7 +52,7 @@ describe("Text React component", () => {
             HELLO WORLD
           </Text>
         </Timegroup>
-      </Preview>
+      </Preview>,
     );
 
     const textEl = await vi.waitUntil(
@@ -116,7 +116,7 @@ describe("Text React component", () => {
             ABC
           </Text>
         </Timegroup>
-      </Preview>
+      </Preview>,
     );
 
     const textEl = await vi.waitUntil(
@@ -172,7 +172,7 @@ describe("Text React component", () => {
             A B
           </Text>
         </Timegroup>
-      </Preview>
+      </Preview>,
     );
 
     const textEl = await vi.waitUntil(

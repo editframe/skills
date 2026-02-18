@@ -21,7 +21,7 @@ export class ThumbnailExtractor {
     timestamps: number[],
     rendition: VideoRendition,
     durationMs: number,
-    signal: AbortSignal,
+    signal?: AbortSignal,
   ): Promise<(ThumbnailResult | null)[]> {
     if (timestamps.length === 0) {
       return [];
@@ -50,8 +50,8 @@ export class ThumbnailExtractor {
 
     for (const [segmentId, segmentTimestamps] of segmentGroups) {
       // Check abort before processing each segment
-      signal.throwIfAborted();
-      
+      signal?.throwIfAborted();
+
       try {
         const segmentResults = await this.extractSegmentThumbnails(
           segmentId,
@@ -129,21 +129,21 @@ export class ThumbnailExtractor {
     segmentId: number,
     timestamps: number[],
     rendition: VideoRendition,
-    signal: AbortSignal,
+    signal?: AbortSignal,
   ): Promise<Map<number, ThumbnailResult | null>> {
     const results = new Map<number, ThumbnailResult | null>();
 
     try {
       // Check abort before starting segment fetch
-      signal.throwIfAborted();
-      
+      signal?.throwIfAborted();
+
       const [initSegment, mediaSegment] = await Promise.all([
-        this.mediaEngine.fetchInitSegment(rendition, signal),
-        this.mediaEngine.fetchMediaSegment(segmentId, rendition, signal),
+        this.mediaEngine.fetchInitSegment(rendition, signal!),
+        this.mediaEngine.fetchMediaSegment(segmentId, rendition, signal!),
       ]);
-      
+
       // Check abort after potentially slow network operations
-      signal.throwIfAborted();
+      signal?.throwIfAborted();
 
       // Create Input for this segment using global shared cache
       const segmentBlob = new Blob([initSegment, mediaSegment]);
@@ -161,7 +161,7 @@ export class ThumbnailExtractor {
       const videoTrack = await withTimeout(
         input.getPrimaryVideoTrack(),
         5000,
-        'ThumbnailExtractor.getPrimaryVideoTrack',
+        "ThumbnailExtractor.getPrimaryVideoTrack",
         signal,
       );
       if (!videoTrack) {
@@ -193,7 +193,7 @@ export class ThumbnailExtractor {
         const canvasResult = await withTimeout(
           Promise.resolve(result),
           DEFAULT_MEDIABUNNY_TIMEOUT_MS,
-          'ThumbnailExtractor canvasesAtTimestamps iteration',
+          "ThumbnailExtractor canvasesAtTimestamps iteration",
           signal,
         );
         timestampResults.push(canvasResult);
@@ -230,7 +230,7 @@ export class ThumbnailExtractor {
       if (error instanceof DOMException && error.name === "AbortError") {
         throw error;
       }
-      // Thumbnail extraction can fail for various non-fatal reasons (network issues, 
+      // Thumbnail extraction can fail for various non-fatal reasons (network issues,
       // missing segments, transcoding not ready). Log as warning and return nulls.
       console.warn(
         `ThumbnailExtractor: Failed to extract thumbnails for segment ${segmentId}:`,

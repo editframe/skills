@@ -5,7 +5,10 @@
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { html, render as litRender } from "lit";
-import { serializeElementToXHTML, captureTimelineToDataUri } from "./serializeTimelineDirect.js";
+import {
+  serializeElementToXHTML,
+  captureTimelineToDataUri,
+} from "./serializeTimelineDirect.js";
 import { EFTimegroup } from "../../elements/EFTimegroup.js";
 import "../../elements/EFText.js";
 import "../../elements/EFTextSegment.js";
@@ -39,7 +42,7 @@ describe("serializeTimelineDirect", () => {
 
       // Verify middle segment is whitespace
       const middleSegment = segments[1];
-      expect(middleSegment?.segmentText).toBe(' ');
+      expect(middleSegment?.segmentText).toBe(" ");
 
       // Serialize to XHTML
       const xhtml = await serializeElementToXHTML(text, 800, 600, {
@@ -48,8 +51,8 @@ describe("serializeTimelineDirect", () => {
       });
 
       // Should contain both words in the serialized output
-      expect(xhtml).toContain('Hello');
-      expect(xhtml).toContain('World');
+      expect(xhtml).toContain("Hello");
+      expect(xhtml).toContain("World");
     });
 
     it("should preserve text content in rendered SVG foreignObject", async () => {
@@ -69,16 +72,18 @@ describe("serializeTimelineDirect", () => {
       });
 
       // Decode SVG
-      const svgContent = atob(dataUri.substring('data:image/svg+xml;base64,'.length));
+      const svgContent = atob(
+        dataUri.substring("data:image/svg+xml;base64,".length),
+      );
 
       // Parse and check text content is preserved
       const parser = new DOMParser();
-      const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml');
-      const textContent = svgDoc.documentElement.textContent || '';
+      const svgDoc = parser.parseFromString(svgContent, "image/svg+xml");
+      const textContent = svgDoc.documentElement.textContent || "";
 
       // Should have both words present
-      expect(textContent).toContain('Free');
-      expect(textContent).toContain('Admission');
+      expect(textContent).toContain("Free");
+      expect(textContent).toContain("Admission");
     });
 
     it("should handle multiple whitespace segments correctly", async () => {
@@ -100,9 +105,9 @@ describe("serializeTimelineDirect", () => {
       });
 
       // All word segments should be present in serialized output
-      expect(xhtml).toContain('A');
-      expect(xhtml).toContain('B');
-      expect(xhtml).toContain('C');
+      expect(xhtml).toContain("A");
+      expect(xhtml).toContain("B");
+      expect(xhtml).toContain("C");
     });
 
     it("should serialize text segments as span containers with computed styles", async () => {
@@ -146,8 +151,8 @@ describe("serializeTimelineDirect", () => {
       expect(spanCount).toBeGreaterThan(0);
 
       // Character segments should contain the individual characters
-      expect(xhtml).toContain('H');
-      expect(xhtml).toContain('i');
+      expect(xhtml).toContain("H");
+      expect(xhtml).toContain("i");
     });
   });
 
@@ -156,26 +161,29 @@ describe("serializeTimelineDirect", () => {
       const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
       timegroup.style.width = "1920px";
       timegroup.style.height = "1080px";
-      
+
       container.appendChild(timegroup);
       await timegroup.updateComplete;
-      
+
       const xhtml = await serializeElementToXHTML(timegroup, 1920, 1080, {
         canvasScale: 1,
         timeMs: 0,
       });
-      
+
       // Should have XHTML namespace
       expect(xhtml).toContain('xmlns="http://www.w3.org/1999/xhtml"');
-      
+
       // Should have wrapper with correct dimensions
-      expect(xhtml).toContain('width:1920px');
-      expect(xhtml).toContain('height:1080px');
+      expect(xhtml).toContain("width:1920px");
+      expect(xhtml).toContain("height:1080px");
     });
   });
 
   describe("object-fit preservation", () => {
-    function createCanvasWithPixels(width: number, height: number): HTMLCanvasElement {
+    function createCanvasWithPixels(
+      width: number,
+      height: number,
+    ): HTMLCanvasElement {
       const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
@@ -282,15 +290,21 @@ describe("serializeTimelineDirect", () => {
 
       // Parse the output to check display values on segment containers
       const parser = new DOMParser();
-      const doc = parser.parseFromString(`<div xmlns="http://www.w3.org/1999/xhtml">${xhtml}</div>`, 'text/xml');
+      const doc = parser.parseFromString(
+        `<div xmlns="http://www.w3.org/1999/xhtml">${xhtml}</div>`,
+        "text/xml",
+      );
 
       // Find all span/div elements that contain the segment text
-      const allElements = doc.querySelectorAll('*');
+      const allElements = doc.querySelectorAll("*");
       const segmentContainers: Element[] = [];
       for (const el of allElements) {
-        const style = el.getAttribute('style') || '';
+        const style = el.getAttribute("style") || "";
         // Segment containers are the innermost styled elements containing word text
-        if (el.textContent?.trim() === 'SARAH' || el.textContent?.trim() === 'CHEN!') {
+        if (
+          el.textContent?.trim() === "SARAH" ||
+          el.textContent?.trim() === "CHEN!"
+        ) {
           if (style && el.children.length === 0) {
             segmentContainers.push(el);
           }
@@ -300,14 +314,14 @@ describe("serializeTimelineDirect", () => {
       // Word segments should NOT be serialized as display:block
       // They should be display:inline (the natural :host display value)
       for (const container of segmentContainers) {
-        const style = container.getAttribute('style') || '';
-        expect(style).not.toContain('display:block');
-        expect(style).toContain('display:inline');
+        const style = container.getAttribute("style") || "";
+        expect(style).not.toContain("display:block");
+        expect(style).toContain("display:inline");
       }
 
       // Additionally, word segments should be <span> tags, not <div> tags
       for (const container of segmentContainers) {
-        expect(container.tagName.toLowerCase()).toBe('span');
+        expect(container.tagName.toLowerCase()).toBe("span");
       }
     });
   });
@@ -347,9 +361,11 @@ describe("serializeTimelineDirect", () => {
 
       // After animation propagation, verify segments got inline-block
       const segments = text.segments;
-      const nonWhitespaceSegments = segments.filter(s => !/^\s+$/.test(s.segmentText));
+      const nonWhitespaceSegments = segments.filter(
+        (s) => !/^\s+$/.test(s.segmentText),
+      );
       for (const seg of nonWhitespaceSegments) {
-        expect(getComputedStyle(seg).display).toBe('inline-block');
+        expect(getComputedStyle(seg).display).toBe("inline-block");
       }
 
       // Serialize
@@ -363,14 +379,17 @@ describe("serializeTimelineDirect", () => {
       const parser = new DOMParser();
       const doc = parser.parseFromString(
         `<div xmlns="http://www.w3.org/1999/xhtml">${xhtml}</div>`,
-        'text/xml'
+        "text/xml",
       );
 
-      const allEls = doc.querySelectorAll('*');
+      const allEls = doc.querySelectorAll("*");
       for (const el of allEls) {
         const content = el.textContent?.trim();
-        if ((content === 'Sarah' || content === 'Chen!') && el.children.length === 0) {
-          const style = el.getAttribute('style') || '';
+        if (
+          (content === "Sarah" || content === "Chen!") &&
+          el.children.length === 0
+        ) {
+          const style = el.getAttribute("style") || "";
           // Check: inline-block text segments should have width:auto, not a pixel value
           // A pixel width on the segment container forces text to fit that exact width,
           // which breaks when foreignObject renders with different font metrics.
@@ -378,7 +397,7 @@ describe("serializeTimelineDirect", () => {
           if (widthMatch) {
             const widthVal = widthMatch[1]!.trim();
             // Width should be 'auto', not a specific pixel value
-            expect(widthVal).toBe('auto');
+            expect(widthVal).toBe("auto");
           }
         }
       }
@@ -402,7 +421,7 @@ describe("serializeTimelineDirect", () => {
 
       // Should include flex properties
       expect(xhtml).toMatch(/display:[^;]*inline-flex/);
-      expect(xhtml).toContain('gap:');
+      expect(xhtml).toContain("gap:");
     });
 
     it("should serialize font properties individually", async () => {
@@ -411,31 +430,37 @@ describe("serializeTimelineDirect", () => {
       text.style.fontFamily = "Arial";
       text.style.fontSize = "24px";
       text.style.fontWeight = "bold";
-      
+
       container.appendChild(text);
       await text.updateComplete;
-      
+
       const xhtml = await serializeElementToXHTML(text, 800, 600, {
         canvasScale: 1,
         timeMs: 0,
       });
-      
+
       // Should have individual font properties
-      expect(xhtml).toContain('font-family:');
-      expect(xhtml).toContain('font-size:');
-      expect(xhtml).toContain('font-weight:');
+      expect(xhtml).toContain("font-family:");
+      expect(xhtml).toContain("font-size:");
+      expect(xhtml).toContain("font-weight:");
     });
   });
 
   describe("sequence visibility at end boundary", () => {
-    async function renderSequenceTimegroup(child1Text: string, child2Text: string) {
+    async function renderSequenceTimegroup(
+      child1Text: string,
+      child2Text: string,
+    ) {
       const wrapper = document.createElement("div");
-      litRender(html`
+      litRender(
+        html`
         <ef-timegroup mode="sequence" style="width:800px;height:600px">
           <ef-text duration="1s">${child1Text}</ef-text>
           <ef-text duration="1s">${child2Text}</ef-text>
         </ef-timegroup>
-      `, wrapper);
+      `,
+        wrapper,
+      );
       container.appendChild(wrapper);
       await customElements.whenDefined("ef-timegroup");
       const timegroup = wrapper.querySelector("ef-timegroup");
@@ -446,7 +471,10 @@ describe("serializeTimelineDirect", () => {
     }
 
     it("should not serialize the first sequence child at its end boundary when a second child begins", async () => {
-      const timegroup = await renderSequenceTimegroup("FIRST_SCENE", "SECOND_SCENE");
+      const timegroup = await renderSequenceTimegroup(
+        "FIRST_SCENE",
+        "SECOND_SCENE",
+      );
 
       await timegroup.updateComplete;
       await timegroup.waitForMediaDurations();
@@ -468,7 +496,10 @@ describe("serializeTimelineDirect", () => {
     });
 
     it("should not serialize an ended sequence child when rendering past its end time", async () => {
-      const timegroup = await renderSequenceTimegroup("SCENE_ALPHA", "SCENE_BETA");
+      const timegroup = await renderSequenceTimegroup(
+        "SCENE_ALPHA",
+        "SCENE_BETA",
+      );
 
       await timegroup.updateComplete;
       await timegroup.waitForMediaDurations();
@@ -490,7 +521,8 @@ describe("serializeTimelineDirect", () => {
   describe("nested timegroup sequence (HeroDemo pattern)", () => {
     async function renderNestedSequence() {
       const wrapper = document.createElement("div");
-      litRender(html`
+      litRender(
+        html`
         <ef-timegroup mode="sequence" style="width:960px;height:540px">
           <ef-timegroup mode="fixed" duration="2s" style="width:960px;height:540px">
             <div class="scene1-content">SCENE_ONE_CONTENT</div>
@@ -502,7 +534,9 @@ describe("serializeTimelineDirect", () => {
             <div class="scene3-content">SCENE_THREE_CONTENT</div>
           </ef-timegroup>
         </ef-timegroup>
-      `, wrapper);
+      `,
+        wrapper,
+      );
       container.appendChild(wrapper);
       await customElements.whenDefined("ef-timegroup");
       const timegroup = wrapper.querySelector("ef-timegroup");
@@ -518,7 +552,11 @@ describe("serializeTimelineDirect", () => {
       root.mode = "sequence";
       root.style.cssText = "width:960px;height:540px";
 
-      const scenes = [["SCENE_ONE_CONTENT", "scene1-content"], ["SCENE_TWO_CONTENT", "scene2-content"], ["SCENE_THREE_CONTENT", "scene3-content"]];
+      const scenes = [
+        ["SCENE_ONE_CONTENT", "scene1-content"],
+        ["SCENE_TWO_CONTENT", "scene2-content"],
+        ["SCENE_THREE_CONTENT", "scene3-content"],
+      ];
       for (const [label, cls] of scenes) {
         const child = document.createElement("ef-timegroup") as EFTimegroup;
         child.mode = "fixed";
@@ -629,7 +667,9 @@ describe("serializeTimelineDirect", () => {
         // Verify clone setup: no playbackController, correct structure
         expect(clone.playbackController).toBeUndefined();
 
-        const childTGs = Array.from(clone.querySelectorAll("ef-timegroup")) as any[];
+        const childTGs = Array.from(
+          clone.querySelectorAll("ef-timegroup"),
+        ) as any[];
         expect(childTGs.length).toBe(3);
 
         const frameTimes = [0, 1000, 2000, 3000, 4000, 5000];
@@ -682,7 +722,9 @@ describe("serializeTimelineDirect", () => {
       try {
         expect(clone.mode).toBe("sequence");
 
-        const childTGs = Array.from(clone.querySelectorAll("ef-timegroup")) as EFTimegroup[];
+        const childTGs = Array.from(
+          clone.querySelectorAll("ef-timegroup"),
+        ) as EFTimegroup[];
         expect(childTGs.length).toBe(3);
 
         // Children should have sequential startTimeMs, not all 0
@@ -731,7 +773,8 @@ describe("serializeTimelineDirect", () => {
       try {
         // Re-parent clone into a new container (simulates renderTimegroupToVideo)
         const newContainer = document.createElement("div");
-        newContainer.style.cssText = "position:fixed;left:-99999px;top:-99999px;pointer-events:none;";
+        newContainer.style.cssText =
+          "position:fixed;left:-99999px;top:-99999px;pointer-events:none;";
         newContainer.appendChild(clone); // RE-PARENT: moves clone from its original container
         document.body.appendChild(newContainer);
 
@@ -769,7 +812,8 @@ describe("serializeTimelineDirect", () => {
     it("should transition correctly with overlap using seekForRender", async () => {
       const overlapMs = 500;
       const wrapper = document.createElement("div");
-      litRender(html`
+      litRender(
+        html`
         <ef-timegroup mode="sequence" overlap="${overlapMs}ms" style="width:960px;height:540px">
           <ef-timegroup mode="fixed" duration="2s" style="width:960px;height:540px">
             <div class="scene1-content">SCENE_ONE_CONTENT</div>
@@ -781,7 +825,9 @@ describe("serializeTimelineDirect", () => {
             <div class="scene3-content">SCENE_THREE_CONTENT</div>
           </ef-timegroup>
         </ef-timegroup>
-      `, wrapper);
+      `,
+        wrapper,
+      );
       container.appendChild(wrapper);
       await customElements.whenDefined("ef-timegroup");
       const root = wrapper.querySelector("ef-timegroup") as EFTimegroup;
@@ -790,7 +836,9 @@ describe("serializeTimelineDirect", () => {
 
       // With 500ms overlap: Scene1 0-2000, Scene2 1500-3500, Scene3 3000-5000
       // Both scenes visible during overlap windows
-      const frameTimes = [0, 750, 1500, 1750, 2000, 2500, 3000, 3250, 3500, 4000];
+      const frameTimes = [
+        0, 750, 1500, 1750, 2000, 2500, 3000, 3250, 3500, 4000,
+      ];
       const results: string[] = [];
 
       for (const timeMs of frameTimes) {

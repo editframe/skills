@@ -74,13 +74,13 @@ describe("EFFitScale", () => {
     // Observable outcome 2: Video's visual bounding box should fit within container
     const rect = video.getBoundingClientRect();
     const containerRect = fitScale.getBoundingClientRect();
-    
+
     // Video should fit within container width (with some tolerance for borders)
     expect(rect.width).toBeLessThanOrEqual(containerRect.width + 2);
-    
+
     // Observable outcome 3: Video maintains aspect ratio (wider than tall)
     expect(rect.width).toBeGreaterThan(rect.height);
-    
+
     // Observable outcome 4: Video is scaled up to fill container width
     expect(rect.width).toBeCloseTo(containerRect.width, 1);
   }, 5000);
@@ -126,10 +126,10 @@ describe("EFFitScale", () => {
     // In a tall container (300x800), video should be constrained by width
     // Observable: video width should match or be close to container width
     expect(rect.width).toBeCloseTo(containerRect.width, 1);
-    
+
     // Observable: video should maintain aspect ratio (wider than tall)
     expect(rect.width).toBeGreaterThan(rect.height);
-    
+
     // Observable: video height should be less than container height (letterboxed)
     expect(rect.height).toBeLessThan(containerRect.height);
   }, 5000);
@@ -175,10 +175,10 @@ describe("EFFitScale", () => {
     // In a wide container (1000x300), video should be constrained by height
     // Observable: video height should match or be close to container height
     expect(rect.height).toBeCloseTo(containerRect.height, 1);
-    
+
     // Observable: video should maintain aspect ratio (wider than tall)
     expect(rect.width).toBeGreaterThan(rect.height);
-    
+
     // Observable: video width should be less than container width (pillarboxed)
     expect(rect.width).toBeLessThan(containerRect.width);
   }, 5000);
@@ -281,10 +281,10 @@ describe("EFFitScale", () => {
 
     // Observable outcome: video dimensions should have changed
     const newRect = video.getBoundingClientRect();
-    
+
     // Video should now be larger (container is bigger)
     expect(newRect.width).toBeGreaterThan(initialWidth);
-    
+
     // Video should still be centered
     const containerRect = fitScale.getBoundingClientRect();
     const containerCenterX = containerRect.left + containerRect.width / 2;
@@ -396,7 +396,8 @@ describe("EFFitScale — container patterns", () => {
 
   test("scales content in grid row parent", async () => {
     const wrapper = document.createElement("div");
-    wrapper.style.cssText = "display: grid; grid-template-rows: 1fr; width: 500px; height: 400px;";
+    wrapper.style.cssText =
+      "display: grid; grid-template-rows: 1fr; width: 500px; height: 400px;";
     wrapper.innerHTML = `
       <ef-fit-scale>
         <div style="width: 1920px; height: 1080px; background: green;"></div>
@@ -423,7 +424,8 @@ describe("EFFitScale — container patterns", () => {
 
   test("scales content in flexbox parent with flex-1", async () => {
     const wrapper = document.createElement("div");
-    wrapper.style.cssText = "display: flex; flex-direction: column; width: 500px; height: 400px;";
+    wrapper.style.cssText =
+      "display: flex; flex-direction: column; width: 500px; height: 400px;";
     wrapper.innerHTML = `
       <div style="flex: 1; min-height: 0;">
         <ef-fit-scale>
@@ -778,7 +780,8 @@ describe("EFFitScale — ResizeObserver behavior", () => {
     originalContent.remove();
     const newContent = document.createElement("div");
     newContent.id = "replacement";
-    newContent.style.cssText = "width: 1920px; height: 1080px; background: blue;";
+    newContent.style.cssText =
+      "width: 1920px; height: 1080px; background: blue;";
     fitScale.appendChild(newContent);
 
     await waitFrames(10);
@@ -843,7 +846,8 @@ describe("EFFitScale — console warning", () => {
 
     // Should have warned about zero dimensions
     const fitScaleWarns = warnSpy.mock.calls.filter(
-      (call) => typeof call[0] === "string" && call[0].includes("[ef-fit-scale]"),
+      (call) =>
+        typeof call[0] === "string" && call[0].includes("[ef-fit-scale]"),
     );
     expect(fitScaleWarns.length).toBeGreaterThan(0);
     expect(fitScaleWarns[0]![0]).toContain("zero dimensions");
@@ -865,7 +869,8 @@ describe("EFFitScale — console warning", () => {
 
     // No FitScale warnings should appear
     const fitScaleWarns = warnSpy.mock.calls.filter(
-      (call) => typeof call[0] === "string" && call[0].includes("[ef-fit-scale]"),
+      (call) =>
+        typeof call[0] === "string" && call[0].includes("[ef-fit-scale]"),
     );
     expect(fitScaleWarns.length).toBe(0);
   });
@@ -891,7 +896,8 @@ describe("EFFitScale — console warning", () => {
 
     // Should only have warned once despite multiple triggers
     const fitScaleWarns = warnSpy.mock.calls.filter(
-      (call) => typeof call[0] === "string" && call[0].includes("[ef-fit-scale]"),
+      (call) =>
+        typeof call[0] === "string" && call[0].includes("[ef-fit-scale]"),
     );
     expect(fitScaleWarns.length).toBe(1);
   });

@@ -59,14 +59,14 @@ beforeEach(() => {
 
 // Signal profiler to stop before tests finish
 afterAll(() => {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     // Always set the flag, creating it if it doesn't exist
     // This handles both profiled and non-profiled test runs
-    console.log('[Profiler] Signaling stop...');
+    console.log("[Profiler] Signaling stop...");
     (window as any).__PROFILER_STOP_REQUESTED__ = true;
-    
+
     // Give profiler time to detect the signal and retrieve profile data
     // Poll interval is 50ms, so wait longer to ensure detection + retrieval
-    return new Promise(resolve => setTimeout(resolve, 500));
+    return new Promise((resolve) => setTimeout(resolve, 500));
   }
 });

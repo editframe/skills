@@ -290,7 +290,10 @@ describe.skip("EFCanvas", () => {
   });
 
   describe("active root temporal", () => {
-    test("returns null when no element is selected", async ({ canvas, expect }) => {
+    test("returns null when no element is selected", async ({
+      canvas,
+      expect,
+    }) => {
       const canvasEl = canvas as any;
       expect(canvasEl.activeRootTemporal).toBe(null);
     });
@@ -343,10 +346,13 @@ describe.skip("EFCanvas", () => {
 
       let eventFired = false;
       let eventDetail: any = null;
-      canvasEl.addEventListener("activeroottemporalchange", (e: CustomEvent) => {
-        eventFired = true;
-        eventDetail = e.detail;
-      });
+      canvasEl.addEventListener(
+        "activeroottemporalchange",
+        (e: CustomEvent) => {
+          eventFired = true;
+          eventDetail = e.detail;
+        },
+      );
 
       canvasEl.selectionContext.select("element-1");
       await canvasEl.updateComplete;
@@ -381,10 +387,13 @@ describe.skip("EFCanvas", () => {
 
       let eventFired = false;
       let eventDetail: any = null;
-      canvasEl.addEventListener("activeroottemporalchange", (e: CustomEvent) => {
-        eventFired = true;
-        eventDetail = e.detail;
-      });
+      canvasEl.addEventListener(
+        "activeroottemporalchange",
+        (e: CustomEvent) => {
+          eventFired = true;
+          eventDetail = e.detail;
+        },
+      );
 
       canvasEl.selectionContext.clear();
       await canvasEl.updateComplete;

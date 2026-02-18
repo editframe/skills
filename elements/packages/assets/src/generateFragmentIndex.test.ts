@@ -59,8 +59,20 @@ const BARS_N_TONE_EXPECTED: Record<number, TrackFragmentIndex> = {
     startTimeOffsetMs: undefined,
     initSegment: { offset: 0, size: 3540 },
     segments: [
-      { cts: 88956, dts: 88956, duration: 176128, offset: 105148, size: 199191 },
-      { cts: 265084, dts: 265084, duration: 179200, offset: 304339, size: 190990 },
+      {
+        cts: 88956,
+        dts: 88956,
+        duration: 176128,
+        offset: 105148,
+        size: 199191,
+      },
+      {
+        cts: 265084,
+        dts: 265084,
+        duration: 179200,
+        offset: 304339,
+        size: 190990,
+      },
     ],
   },
 };
@@ -98,7 +110,9 @@ function createErrorStream(errorMessage: string): Readable {
 // =============================================================================
 
 /** Type guard: determines if track is a video track */
-function isVideoTrack(track: TrackFragmentIndex): track is VideoTrackFragmentIndex {
+function isVideoTrack(
+  track: TrackFragmentIndex,
+): track is VideoTrackFragmentIndex {
   return track.type === "video";
 }
 
@@ -115,11 +129,15 @@ function assertVideoTrackMetadata(
 
   if (expected.track !== undefined) assert.equal(actual.track, expected.track);
   if (expected.width !== undefined) assert.equal(actual.width, expected.width);
-  if (expected.height !== undefined) assert.equal(actual.height, expected.height);
-  if (expected.timescale !== undefined) assert.equal(actual.timescale, expected.timescale);
+  if (expected.height !== undefined)
+    assert.equal(actual.height, expected.height);
+  if (expected.timescale !== undefined)
+    assert.equal(actual.timescale, expected.timescale);
   if (expected.codec !== undefined) assert.equal(actual.codec, expected.codec);
-  if (expected.duration !== undefined) assert.equal(actual.duration, expected.duration);
-  if (expected.sample_count !== undefined) assert.equal(actual.sample_count, expected.sample_count);
+  if (expected.duration !== undefined)
+    assert.equal(actual.duration, expected.duration);
+  if (expected.sample_count !== undefined)
+    assert.equal(actual.sample_count, expected.sample_count);
   if (expected.startTimeOffsetMs !== undefined) {
     assert.equal(actual.startTimeOffsetMs, expected.startTimeOffsetMs);
   }
@@ -158,7 +176,9 @@ function assertSegmentsValid(segments: TrackFragmentIndex["segments"]): void {
 describe("generateFragmentIndex", () => {
   describe("single video track files", () => {
     test("frame-count.mp4 generates correct track metadata and segments", async () => {
-      const testStream = await createTestStreamFromFile("test-assets/frame-count.mp4");
+      const testStream = await createTestStreamFromFile(
+        "test-assets/frame-count.mp4",
+      );
       const result = await generateFragmentIndex(testStream);
 
       // Validate structure
@@ -172,14 +192,20 @@ describe("generateFragmentIndex", () => {
       assertInitSegment(track, FRAME_COUNT_VIDEO_TRACK.initSegment!);
 
       // Validate segmentation
-      assert.equal(track.segments.length, 5, "Should have 5 consolidated segments");
+      assert.equal(
+        track.segments.length,
+        5,
+        "Should have 5 consolidated segments",
+      );
       assertSegmentsValid(track.segments);
     }, 15000);
   });
 
   describe("multi-track files", () => {
     test.skip("10s-bars.mp4 generates expected multi-track structure", async () => {
-      const testStream = await createTestStreamFromFile("test-assets/10s-bars.mp4");
+      const testStream = await createTestStreamFromFile(
+        "test-assets/10s-bars.mp4",
+      );
       const result = await generateFragmentIndex(testStream);
 
       const expected: Record<number, TrackFragmentIndex> = {
@@ -195,11 +221,41 @@ describe("generateFragmentIndex", () => {
           startTimeOffsetMs: undefined,
           initSegment: { offset: 0, size: 2951 },
           segments: [
-            { cts: 26624, dts: 26624, duration: 20480, offset: 2951, size: 18140 },
-            { cts: 46592, dts: 46592, duration: 20480, offset: 21091, size: 19705 },
-            { cts: 67584, dts: 67584, duration: 20480, offset: 40796, size: 19723 },
-            { cts: 87552, dts: 87552, duration: 20480, offset: 60519, size: 19781 },
-            { cts: 108544, dts: 108544, duration: 20480, offset: 80300, size: 20290 },
+            {
+              cts: 26624,
+              dts: 26624,
+              duration: 20480,
+              offset: 2951,
+              size: 18140,
+            },
+            {
+              cts: 46592,
+              dts: 46592,
+              duration: 20480,
+              offset: 21091,
+              size: 19705,
+            },
+            {
+              cts: 67584,
+              dts: 67584,
+              duration: 20480,
+              offset: 40796,
+              size: 19723,
+            },
+            {
+              cts: 87552,
+              dts: 87552,
+              duration: 20480,
+              offset: 60519,
+              size: 19781,
+            },
+            {
+              cts: 108544,
+              dts: 108544,
+              duration: 20480,
+              offset: 80300,
+              size: 20290,
+            },
           ],
         },
         2: {
@@ -214,11 +270,41 @@ describe("generateFragmentIndex", () => {
           duration: 388096,
           initSegment: { offset: 0, size: 2951 },
           segments: [
-            { cts: 96000, dts: 96000, duration: 77824, offset: 2951, size: 18140 },
-            { cts: 173824, dts: 173824, duration: 77824, offset: 21091, size: 19705 },
-            { cts: 251648, dts: 251648, duration: 77824, offset: 40796, size: 19723 },
-            { cts: 329472, dts: 329472, duration: 77824, offset: 60519, size: 19781 },
-            { cts: 407296, dts: 407296, duration: 76800, offset: 80300, size: 20290 },
+            {
+              cts: 96000,
+              dts: 96000,
+              duration: 77824,
+              offset: 2951,
+              size: 18140,
+            },
+            {
+              cts: 173824,
+              dts: 173824,
+              duration: 77824,
+              offset: 21091,
+              size: 19705,
+            },
+            {
+              cts: 251648,
+              dts: 251648,
+              duration: 77824,
+              offset: 40796,
+              size: 19723,
+            },
+            {
+              cts: 329472,
+              dts: 329472,
+              duration: 77824,
+              offset: 60519,
+              size: 19781,
+            },
+            {
+              cts: 407296,
+              dts: 407296,
+              duration: 76800,
+              offset: 80300,
+              size: 20290,
+            },
           ],
         },
       };
@@ -227,7 +313,9 @@ describe("generateFragmentIndex", () => {
     }, 20000);
 
     test.skip("10s-bars.frag.mp4 generates expected fragmented structure", async () => {
-      const testStream = await createTestStreamFromFile("test-assets/10s-bars.frag.mp4");
+      const testStream = await createTestStreamFromFile(
+        "test-assets/10s-bars.frag.mp4",
+      );
       const result = await generateFragmentIndex(testStream);
 
       const expected: Record<number, TrackFragmentIndex> = {
@@ -243,11 +331,41 @@ describe("generateFragmentIndex", () => {
           startTimeOffsetMs: undefined,
           initSegment: { offset: 0, size: 2939 },
           segments: [
-            { cts: 26624, dts: 26624, duration: 20480, offset: 2939, size: 18685 },
-            { cts: 46592, dts: 46592, duration: 20480, offset: 21624, size: 19718 },
-            { cts: 67584, dts: 67584, duration: 20480, offset: 41342, size: 19714 },
-            { cts: 87552, dts: 87552, duration: 20480, offset: 61056, size: 19620 },
-            { cts: 108544, dts: 108544, duration: 20480, offset: 80676, size: 19890 },
+            {
+              cts: 26624,
+              dts: 26624,
+              duration: 20480,
+              offset: 2939,
+              size: 18685,
+            },
+            {
+              cts: 46592,
+              dts: 46592,
+              duration: 20480,
+              offset: 21624,
+              size: 19718,
+            },
+            {
+              cts: 67584,
+              dts: 67584,
+              duration: 20480,
+              offset: 41342,
+              size: 19714,
+            },
+            {
+              cts: 87552,
+              dts: 87552,
+              duration: 20480,
+              offset: 61056,
+              size: 19620,
+            },
+            {
+              cts: 108544,
+              dts: 108544,
+              duration: 20480,
+              offset: 80676,
+              size: 19890,
+            },
           ],
         },
         2: {
@@ -262,11 +380,41 @@ describe("generateFragmentIndex", () => {
           duration: 385024,
           initSegment: { offset: 0, size: 2939 },
           segments: [
-            { cts: 96256, dts: 96256, duration: 77824, offset: 2939, size: 18685 },
-            { cts: 174080, dts: 174080, duration: 77824, offset: 21624, size: 19718 },
-            { cts: 251904, dts: 251904, duration: 77824, offset: 41342, size: 19714 },
-            { cts: 329728, dts: 329728, duration: 77824, offset: 61056, size: 19620 },
-            { cts: 407552, dts: 407552, duration: 73728, offset: 80676, size: 19890 },
+            {
+              cts: 96256,
+              dts: 96256,
+              duration: 77824,
+              offset: 2939,
+              size: 18685,
+            },
+            {
+              cts: 174080,
+              dts: 174080,
+              duration: 77824,
+              offset: 21624,
+              size: 19718,
+            },
+            {
+              cts: 251904,
+              dts: 251904,
+              duration: 77824,
+              offset: 41342,
+              size: 19714,
+            },
+            {
+              cts: 329728,
+              dts: 329728,
+              duration: 77824,
+              offset: 61056,
+              size: 19620,
+            },
+            {
+              cts: 407552,
+              dts: 407552,
+              duration: 73728,
+              offset: 80676,
+              size: 19890,
+            },
           ],
         },
       };
@@ -275,7 +423,9 @@ describe("generateFragmentIndex", () => {
     }, 20000);
 
     test("bars-n-tone.mp4 generates expected multi-track structure", async () => {
-      const testStream = await createTestStreamFromFile("test-assets/bars-n-tone.mp4");
+      const testStream = await createTestStreamFromFile(
+        "test-assets/bars-n-tone.mp4",
+      );
       const result = await generateFragmentIndex(testStream);
 
       assert.deepEqual(result, BARS_N_TONE_EXPECTED);

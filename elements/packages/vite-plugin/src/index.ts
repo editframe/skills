@@ -51,45 +51,51 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
       server.middlewares.use(async (req, res, next) => {
         const log = debug("ef:vite-plugin");
         const reqUrl = req.url || "";
-        
+
         if (!reqUrl.startsWith("/api/v1/assets/local/")) {
           return next();
         }
-        
+
         const url = new URL(reqUrl, `http://${req.headers.host}`);
         const urlPath = url.pathname;
         const src = url.searchParams.get("src");
-        
+
         if (!src) {
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "src parameter is required" }));
           return;
         }
-        
+
         // Resolve src to absolute file path
         const absolutePath = src.startsWith("http")
           ? src
           : path.join(options.root, src).replace("dist/", "src/");
-        
+
         log(`Handling local assets API: ${urlPath} for ${absolutePath}`);
-        
+
         try {
           // Handle /api/v1/assets/local/captions - captions/transcriptions
           if (urlPath === "/api/v1/assets/local/captions") {
             log(`Serving captions for ${absolutePath}`);
-            const taskResult = await findOrCreateCaptions(options.cacheRoot, absolutePath);
+            const taskResult = await findOrCreateCaptions(
+              options.cacheRoot,
+              absolutePath,
+            );
             sendTaskResult(req, res, taskResult);
             return;
           }
-          
+
           // Handle /api/v1/assets/local/image - cached images
           if (urlPath === "/api/v1/assets/local/image") {
             log(`Serving image for ${absolutePath}`);
-            const taskResult = await cacheImage(options.cacheRoot, absolutePath);
+            const taskResult = await cacheImage(
+              options.cacheRoot,
+              absolutePath,
+            );
             sendTaskResult(req, res, taskResult);
             return;
           }
-          
+
           // Unknown endpoint
           res.writeHead(404, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Unknown assets endpoint" }));
@@ -109,39 +115,51 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
       server.middlewares.use(async (req, res, next) => {
         const log = debug("ef:vite-plugin");
         const reqUrl = req.url || "";
-        
-        if (!reqUrl.startsWith("/api/v1/files/local/") && !reqUrl.startsWith("/api/v1/isobmff_files/local/")) {
+
+        if (
+          !reqUrl.startsWith("/api/v1/files/local/") &&
+          !reqUrl.startsWith("/api/v1/isobmff_files/local/")
+        ) {
           return next();
         }
-        
+
         const url = new URL(reqUrl, `http://${req.headers.host}`);
         const urlPath = url.pathname;
         const src = url.searchParams.get("src");
-        
+
         if (!src) {
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "src parameter is required" }));
           return;
         }
-        
+
         // Resolve src to absolute file path
         const absolutePath = src.startsWith("http")
           ? src
           : path.join(options.root, src).replace("dist/", "src/");
-        
+
         log(`Handling local isobmff API: ${urlPath} for ${absolutePath}`);
-        
+
         try {
           // Handle /api/v1/files/local/index or /api/v1/isobmff_files/local/index - fragment index
-          if (urlPath === "/api/v1/files/local/index" || urlPath === "/api/v1/isobmff_files/local/index") {
+          if (
+            urlPath === "/api/v1/files/local/index" ||
+            urlPath === "/api/v1/isobmff_files/local/index"
+          ) {
             log(`Serving track fragment index for ${absolutePath}`);
-            const taskResult = await generateTrackFragmentIndex(options.cacheRoot, absolutePath);
+            const taskResult = await generateTrackFragmentIndex(
+              options.cacheRoot,
+              absolutePath,
+            );
             sendTaskResult(req, res, taskResult);
             return;
           }
-          
+
           // Handle /api/v1/files/local/md5 or /api/v1/isobmff_files/local/md5 - get MD5 hash for a file
-          if (urlPath === "/api/v1/files/local/md5" || urlPath === "/api/v1/isobmff_files/local/md5") {
+          if (
+            urlPath === "/api/v1/files/local/md5" ||
+            urlPath === "/api/v1/isobmff_files/local/md5"
+          ) {
             log(`Getting MD5 for ${absolutePath}`);
             try {
               const md5 = await md5FilePath(absolutePath);
@@ -158,36 +176,50 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
             }
             return;
           }
-          
+
           // Handle /api/v1/files/local/track or /api/v1/isobmff_files/local/track - track segments
-          if (urlPath === "/api/v1/files/local/track" || urlPath === "/api/v1/isobmff_files/local/track") {
+          if (
+            urlPath === "/api/v1/files/local/track" ||
+            urlPath === "/api/v1/isobmff_files/local/track"
+          ) {
             const trackIdStr = url.searchParams.get("trackId");
             const segmentIdStr = url.searchParams.get("segmentId");
-            
+
             if (!trackIdStr) {
               res.writeHead(400, { "Content-Type": "application/json" });
-              res.end(JSON.stringify({ error: "trackId parameter is required" }));
+              res.end(
+                JSON.stringify({ error: "trackId parameter is required" }),
+              );
               return;
             }
-            
+
             const trackId = parseInt(trackIdStr, 10);
-            
+
             // For scrub track (trackId -1), use generateScrubTrack
             if (trackId === -1) {
               log(`Serving scrub track for ${absolutePath}`);
-              const taskResult = await generateScrubTrack(options.cacheRoot, absolutePath);
+              const taskResult = await generateScrubTrack(
+                options.cacheRoot,
+                absolutePath,
+              );
               sendTaskResult(req, res, taskResult);
               return;
             }
-            
+
             // For regular tracks, use generateTrack
-            log(`Serving track ${trackId} segment ${segmentIdStr || "all"} for ${absolutePath}`);
+            log(
+              `Serving track ${trackId} segment ${segmentIdStr || "all"} for ${absolutePath}`,
+            );
             const trackUrl = `/@ef-track/${src}?trackId=${trackId}${segmentIdStr ? `&segmentId=${segmentIdStr}` : ""}`;
-            const taskResult = await generateTrack(options.cacheRoot, absolutePath, trackUrl);
+            const taskResult = await generateTrack(
+              options.cacheRoot,
+              absolutePath,
+              trackUrl,
+            );
             sendTaskResult(req, res, taskResult);
             return;
           }
-          
+
           // Unknown endpoint
           res.writeHead(404, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Unknown isobmff endpoint" }));
@@ -202,7 +234,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
           }
         }
       });
-      
+
       // Handle @ef-* format (legacy)
       server.middlewares.use(async (req, res, next) => {
         const log = debug("ef:vite-plugin");
@@ -252,13 +284,19 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                 }
                 if (error.code === "ENOTEMPTY" && attempt < maxRetries - 1) {
                   // Wait a bit and retry
-                  await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1)));
+                  await new Promise((resolve) =>
+                    setTimeout(resolve, 100 * (attempt + 1)),
+                  );
                   continue;
                 }
                 // Log but don't fail - cache clearing is best-effort
-                log(`Warning: Cache clear attempt ${attempt + 1} failed: ${error.message}`);
+                log(
+                  `Warning: Cache clear attempt ${attempt + 1} failed: ${error.message}`,
+                );
                 if (attempt === maxRetries - 1) {
-                  log(`Cache clear failed after ${maxRetries} attempts, continuing anyway`);
+                  log(
+                    `Cache clear failed after ${maxRetries} attempts, continuing anyway`,
+                  );
                 }
               }
             }
@@ -290,19 +328,26 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
             generateTrackFragmentIndex(options.cacheRoot, absolutePath)
               .then((taskResult) => {
                 const elapsed = Date.now() - indexStartTime;
-                log(`Fragment index generated in ${elapsed}ms: ${taskResult.cachePath}`);
+                log(
+                  `Fragment index generated in ${elapsed}ms: ${taskResult.cachePath}`,
+                );
                 sendTaskResult(req, res, taskResult);
               })
               .catch((error) => {
                 const elapsed = Date.now() - indexStartTime;
-                log(`Error generating fragment index after ${elapsed}ms:`, error);
+                log(
+                  `Error generating fragment index after ${elapsed}ms:`,
+                  error,
+                );
                 next(error);
               });
             break;
           }
           case "@ef-track": {
             const trackStartTime = Date.now();
-            log(`Serving track for ${absolutePath} (cacheRoot: ${options.cacheRoot})`);
+            log(
+              `Serving track for ${absolutePath} (cacheRoot: ${options.cacheRoot})`,
+            );
             generateTrack(options.cacheRoot, absolutePath, req.url)
               .then((taskResult) => {
                 const elapsed = Date.now() - trackStartTime;

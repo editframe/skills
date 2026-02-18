@@ -3,7 +3,11 @@
  * Provides a unified interface for native (drawElementImage) and foreignObject paths.
  */
 
-import { isNativeCanvasApiAvailable, getRenderMode, type RenderMode } from "./previewSettings.js";
+import {
+  isNativeCanvasApiAvailable,
+  getRenderMode,
+  type RenderMode,
+} from "./previewSettings.js";
 
 /**
  * Options for rendering HTML to an image or canvas.
@@ -29,7 +33,7 @@ export type RenderResult = HTMLCanvasElement | HTMLImageElement;
 export interface Renderer {
   /** The render mode this renderer implements */
   readonly mode: RenderMode;
-  
+
   /**
    * Render an HTML container to an image or canvas.
    * @param container - The HTML element to render
@@ -44,7 +48,7 @@ export interface Renderer {
     height: number,
     options?: RenderOptions,
   ): Promise<RenderResult>;
-  
+
   /**
    * Check if this renderer is available in the current environment.
    */
@@ -57,11 +61,11 @@ export interface Renderer {
  */
 export function getEffectiveRenderMode(): RenderMode {
   const mode = getRenderMode();
-  
+
   if (mode === "native" && !isNativeCanvasApiAvailable()) {
     return "foreignObject";
   }
-  
+
   return mode;
 }
 

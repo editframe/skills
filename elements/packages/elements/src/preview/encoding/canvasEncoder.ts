@@ -12,7 +12,6 @@ import { encodeCanvasOnMainThread } from "./mainThreadEncoder.js";
 import { encodeCanvasInWorker } from "./workerEncoder.js";
 import type { CanvasEncodeResult, CanvasEncodeOptions } from "./types.js";
 
-
 // Module-level worker pool state
 let _workerPool: WorkerPool | null = null;
 let _workerPoolWarningLogged = false;
@@ -45,14 +44,15 @@ function getWorkerPool(): WorkerPool | null {
     // Use inline worker URL - this works in any bundler environment
     // because the worker code is embedded in the bundle as a blob URL
     const workerUrl = getEncoderWorkerUrl();
-    
+
     _workerPool = new WorkerPool(workerUrl);
-    
+
     // Check if workers were actually created
     if (!_workerPool.isAvailable()) {
-      const reason = _workerPool.workerCount === 0 
-        ? "no workers created (check console for errors)" 
-        : "workers not available";
+      const reason =
+        _workerPool.workerCount === 0
+          ? "no workers created (check console for errors)"
+          : "workers not available";
       _workerPool = null;
       if (!_workerPoolWarningLogged) {
         _workerPoolWarningLogged = true;
@@ -65,7 +65,8 @@ function getWorkerPool(): WorkerPool | null {
     _workerPool = null;
     if (!_workerPoolWarningLogged) {
       _workerPoolWarningLogged = true;
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logger.warn(
         `[canvasEncoder] Failed to create worker pool: ${errorMessage} - using main thread fallback`,
       );
@@ -75,11 +76,10 @@ function getWorkerPool(): WorkerPool | null {
   return _workerPool;
 }
 
-
 /**
  * Encode canvases to data URLs in parallel using worker pool.
  * Falls back to main thread encoding if workers are unavailable.
- * 
+ *
  * When RenderContext and sourceMap are provided:
  * - Checks cache for static elements (ef-image, ef-waveform)
  *
@@ -95,7 +95,9 @@ export async function encodeCanvasesInParallel(
   const workerPool = getWorkerPool();
 
   // Helper to encode a single canvas (with caching)
-  const encodeCanvas = async (canvas: HTMLCanvasElement): Promise<CanvasEncodeResult | null> => {
+  const encodeCanvas = async (
+    canvas: HTMLCanvasElement,
+  ): Promise<CanvasEncodeResult | null> => {
     try {
       if (canvas.width === 0 || canvas.height === 0) {
         return null;
@@ -103,10 +105,11 @@ export async function encodeCanvasesInParallel(
 
       const preserveAlpha = canvas.dataset.preserveAlpha === "true";
       const sourceElement = sourceMap?.get(canvas);
-      
+
       // Check RenderContext cache for static elements (ef-image, ef-waveform)
       if (renderContext && sourceElement) {
-        const cachedDataUrl = renderContext.getCachedCanvasDataUrl(sourceElement);
+        const cachedDataUrl =
+          renderContext.getCachedCanvasDataUrl(sourceElement);
         if (cachedDataUrl) {
           return { canvas, dataUrl: cachedDataUrl, preserveAlpha };
         }
@@ -130,7 +133,7 @@ export async function encodeCanvasesInParallel(
       }
 
       let dataUrl: string;
-      
+
       if (workerPool) {
         // Encode in worker
         dataUrl = await workerPool.execute((worker) =>
@@ -151,15 +154,21 @@ export async function encodeCanvasesInParallel(
       return { canvas, dataUrl, preserveAlpha };
     } catch (error) {
       // Fallback to main thread if worker encoding fails
-      logger.warn("[canvasEncoder] Worker encoding failed, using main thread fallback:", error);
+      logger.warn(
+        "[canvasEncoder] Worker encoding failed, using main thread fallback:",
+        error,
+      );
       const encoded = encodeCanvasOnMainThread(canvas, canvasScale);
       if (encoded) {
         logger.warn("[canvasEncoder] Main thread fallback succeeded");
         return { canvas, ...encoded };
       }
-      
+
       // Cross-origin canvas or other error - skip
-      logger.warn("[canvasEncoder] Main thread encoding also failed, skipping canvas:", error);
+      logger.warn(
+        "[canvasEncoder] Main thread encoding also failed, skipping canvas:",
+        error,
+      );
       return null;
     }
   };

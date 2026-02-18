@@ -1,5 +1,9 @@
 import { createContext } from "@lit/context";
-import type { PreviewPresentationMode, PreviewResolutionScale, RenderMode } from "../preview/previewSettings.js";
+import type {
+  PreviewPresentationMode,
+  PreviewResolutionScale,
+  RenderMode,
+} from "../preview/previewSettings.js";
 
 /**
  * Settings for the preview workbench.
@@ -18,5 +22,5 @@ export interface PreviewSettings {
  * Provided by EFWorkbench, consumable by any descendant.
  */
 export const previewSettingsContext = createContext<PreviewSettings>(
-  Symbol("preview-settings")
+  Symbol("preview-settings"),
 );

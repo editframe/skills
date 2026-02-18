@@ -735,7 +735,6 @@ describe.skip("EFFilmstrip", () => {
       expect(audioTrack).toBeFalsy();
     }, 1000);
   });
-
 });
 
 declare global {

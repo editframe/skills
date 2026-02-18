@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { QualityUpgradeScheduler, type UpgradeTask } from "./QualityUpgradeScheduler";
+import {
+  QualityUpgradeScheduler,
+  type UpgradeTask,
+} from "./QualityUpgradeScheduler";
 
 describe("QualityUpgradeScheduler", () => {
   let scheduler: QualityUpgradeScheduler;
@@ -8,7 +11,7 @@ describe("QualityUpgradeScheduler", () => {
   beforeEach(() => {
     requestFrameRenderMock = vi.fn();
     scheduler = new QualityUpgradeScheduler({
-      requestFrameRender: requestFrameRenderMock,
+      requestFrameRender: requestFrameRenderMock as unknown as () => void,
       maxConcurrent: 2,
     });
   });
@@ -17,7 +20,11 @@ describe("QualityUpgradeScheduler", () => {
     it("should add tasks to queue", async () => {
       const task: UpgradeTask = {
         key: "test:1:main",
-        fetch: vi.fn().mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100))),
+        fetch: vi
+          .fn()
+          .mockImplementation(
+            () => new Promise((resolve) => setTimeout(resolve, 100)),
+          ),
         deadlineMs: 1000,
         owner: "test",
       };
@@ -29,26 +36,44 @@ describe("QualityUpgradeScheduler", () => {
 
       const snapshot = scheduler.getQueueSnapshot();
       // Task should be either queued or active (not completed yet)
-      expect(snapshot.some((t) => t.key === task.key && (t.status === "queued" || t.status === "active"))).toBe(true);
+      expect(
+        snapshot.some(
+          (t) =>
+            t.key === task.key &&
+            (t.status === "queued" || t.status === "active"),
+        ),
+      ).toBe(true);
     });
 
     it("should sort tasks by deadline", async () => {
       // Create 3 tasks so at least one stays queued (maxConcurrent = 2)
       const task1: UpgradeTask = {
         key: "test:1:main",
-        fetch: vi.fn().mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100))),
+        fetch: vi
+          .fn()
+          .mockImplementation(
+            () => new Promise((resolve) => setTimeout(resolve, 100)),
+          ),
         deadlineMs: 3000,
         owner: "test",
       };
       const task2: UpgradeTask = {
         key: "test:2:main",
-        fetch: vi.fn().mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100))),
+        fetch: vi
+          .fn()
+          .mockImplementation(
+            () => new Promise((resolve) => setTimeout(resolve, 100)),
+          ),
         deadlineMs: 1000,
         owner: "test",
       };
       const task3: UpgradeTask = {
         key: "test:3:main",
-        fetch: vi.fn().mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100))),
+        fetch: vi
+          .fn()
+          .mockImplementation(
+            () => new Promise((resolve) => setTimeout(resolve, 100)),
+          ),
         deadlineMs: 2000,
         owner: "test",
       };
@@ -86,19 +111,31 @@ describe("QualityUpgradeScheduler", () => {
       // Use tasks that take time to complete
       const task1: UpgradeTask = {
         key: "test:1:main",
-        fetch: vi.fn().mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100))),
+        fetch: vi
+          .fn()
+          .mockImplementation(
+            () => new Promise((resolve) => setTimeout(resolve, 100)),
+          ),
         deadlineMs: 1000,
         owner: "test",
       };
       const task2: UpgradeTask = {
         key: "test:2:main",
-        fetch: vi.fn().mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100))),
+        fetch: vi
+          .fn()
+          .mockImplementation(
+            () => new Promise((resolve) => setTimeout(resolve, 100)),
+          ),
         deadlineMs: 2000,
         owner: "test",
       };
       const task3: UpgradeTask = {
         key: "test:3:main",
-        fetch: vi.fn().mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100))),
+        fetch: vi
+          .fn()
+          .mockImplementation(
+            () => new Promise((resolve) => setTimeout(resolve, 100)),
+          ),
         deadlineMs: 3000,
         owner: "test",
       };
@@ -122,22 +159,30 @@ describe("QualityUpgradeScheduler", () => {
       // Use slow tasks so they stay in queue/active
       const task1: UpgradeTask = {
         key: "owner1:1:main",
-        fetch: vi.fn().mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100))),
+        fetch: vi
+          .fn()
+          .mockImplementation(
+            () => new Promise((resolve) => setTimeout(resolve, 100)),
+          ),
         deadlineMs: 1000,
         owner: "owner1",
       };
       const task2: UpgradeTask = {
         key: "owner2:1:main",
-        fetch: vi.fn().mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100))),
+        fetch: vi
+          .fn()
+          .mockImplementation(
+            () => new Promise((resolve) => setTimeout(resolve, 100)),
+          ),
         deadlineMs: 2000,
         owner: "owner2",
       };
 
       scheduler.enqueue([task1, task2]);
-      
+
       // Wait for tasks to start
       await new Promise((resolve) => setTimeout(resolve, 10));
-      
+
       scheduler.replaceForOwner("owner1", []);
 
       const snapshot = scheduler.getQueueSnapshot();
@@ -164,7 +209,9 @@ describe("QualityUpgradeScheduler", () => {
       scheduler.replaceForOwner("owner1", [newTask]);
 
       const snapshot = scheduler.getQueueSnapshot();
-      expect(snapshot.some((t) => t.key === oldTask.key && t.status === "queued")).toBe(false);
+      expect(
+        snapshot.some((t) => t.key === oldTask.key && t.status === "queued"),
+      ).toBe(false);
       expect(snapshot.some((t) => t.key === newTask.key)).toBe(true);
     });
   });
@@ -174,22 +221,30 @@ describe("QualityUpgradeScheduler", () => {
       // Use slow tasks so they stay in queue/active
       const task1: UpgradeTask = {
         key: "owner1:1:main",
-        fetch: vi.fn().mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100))),
+        fetch: vi
+          .fn()
+          .mockImplementation(
+            () => new Promise((resolve) => setTimeout(resolve, 100)),
+          ),
         deadlineMs: 1000,
         owner: "owner1",
       };
       const task2: UpgradeTask = {
         key: "owner2:1:main",
-        fetch: vi.fn().mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100))),
+        fetch: vi
+          .fn()
+          .mockImplementation(
+            () => new Promise((resolve) => setTimeout(resolve, 100)),
+          ),
         deadlineMs: 2000,
         owner: "owner2",
       };
 
       scheduler.enqueue([task1, task2]);
-      
+
       // Wait for tasks to start
       await new Promise((resolve) => setTimeout(resolve, 10));
-      
+
       scheduler.cancelForOwner("owner1");
 
       const snapshot = scheduler.getQueueSnapshot();
@@ -227,13 +282,21 @@ describe("QualityUpgradeScheduler", () => {
       // Use slow tasks so they stay in active state
       const task1: UpgradeTask = {
         key: "owner1:1:main",
-        fetch: vi.fn().mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100))),
+        fetch: vi
+          .fn()
+          .mockImplementation(
+            () => new Promise((resolve) => setTimeout(resolve, 100)),
+          ),
         deadlineMs: 1000,
         owner: "owner1",
       };
       const task2: UpgradeTask = {
         key: "owner1:2:main",
-        fetch: vi.fn().mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100))),
+        fetch: vi
+          .fn()
+          .mockImplementation(
+            () => new Promise((resolve) => setTimeout(resolve, 100)),
+          ),
         deadlineMs: 2000,
         owner: "owner1",
       };
@@ -252,7 +315,7 @@ describe("QualityUpgradeScheduler", () => {
     it("should skip tasks already in cache", () => {
       const isCached = vi.fn().mockReturnValue(true);
       const scheduler = new QualityUpgradeScheduler({
-        requestFrameRender: requestFrameRenderMock,
+        requestFrameRender: requestFrameRenderMock as unknown as () => void,
         isCached,
       });
 
@@ -271,7 +334,11 @@ describe("QualityUpgradeScheduler", () => {
           expect(isCached).toHaveBeenCalledWith(task.key);
           expect(task.fetch).not.toHaveBeenCalled();
           const snapshot = scheduler.getQueueSnapshot();
-          expect(snapshot.some((t) => t.key === task.key && t.status === "completed")).toBe(true);
+          expect(
+            snapshot.some(
+              (t) => t.key === task.key && t.status === "completed",
+            ),
+          ).toBe(true);
           resolve();
         }, 10);
       });

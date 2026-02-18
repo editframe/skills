@@ -31,7 +31,7 @@ postcss([tailwindcss({ config: configPath }), autoprefixer()])
       writeFileSync(join(distDir, "style.css.map"), result.map.toString());
     }
     console.log("✅ CSS processed and written to dist/style.css");
-    
+
     // Copy theme CSS file
     const themeCssPath = join(srcDir, "gui", "ef-theme.css");
     const themeDistPath = join(distDir, "gui", "ef-theme.css");

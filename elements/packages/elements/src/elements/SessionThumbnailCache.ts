@@ -1,6 +1,6 @@
 /**
  * Session-only thumbnail cache - simple Map-based storage.
- * 
+ *
  * DESIGN: Memory-only storage for thumbnails during the session.
  * - Fast synchronous access
  * - Automatic invalidation on time-range changes
@@ -8,7 +8,11 @@
  * - No workers, no IndexedDB complexity
  */
 
-import type { ThumbnailCacheStats } from "./thumbnailCache.js";
+interface ThumbnailCacheStats {
+  itemCount: number;
+  totalSizeBytes: number;
+  maxSize: number;
+}
 
 /** Cache key format: "rootId:elementId:quantizedTimeMs" */
 type CacheKey = string;
@@ -45,17 +49,19 @@ export function getCacheKey(
 /**
  * Parse a cache key back into its components.
  */
-function parseCacheKey(key: CacheKey): { rootId: string; elementId: string; timeMs: number } | null {
+function parseCacheKey(
+  key: CacheKey,
+): { rootId: string; elementId: string; timeMs: number } | null {
   const parts = key.split(":");
   if (parts.length < 3) return null; // Requires at least 3 parts: rootId:elementId:timeMs
-  
+
   // Last part is always timeMs
   const timeMs = Number.parseFloat(parts.pop()!);
   // Everything before timeMs is rootId:elementId (elementId may contain colons in URLs)
   const rootId = parts[0]!;
   parts.shift(); // Remove rootId
   const elementId = parts.join(":"); // Rejoin middle parts as elementId
-  
+
   if (Number.isNaN(timeMs)) return null;
   return { rootId, elementId, timeMs };
 }
@@ -98,11 +104,17 @@ export class SessionThumbnailCache {
    * along with the actual time it was captured at and the distance.
    * Useful for showing approximate thumbnails while exact ones load.
    */
-  getNearest(rootId: string, elementId: string, timeMs: number): { 
-    image: CanvasImageSource; 
-    capturedAt: number; 
-    distance: number; 
-  } | undefined {
+  getNearest(
+    rootId: string,
+    elementId: string,
+    timeMs: number,
+  ):
+    | {
+        image: CanvasImageSource;
+        capturedAt: number;
+        distance: number;
+      }
+    | undefined {
     const prefix = `${rootId}:${elementId}:`;
     let nearestEntry: CacheEntry | undefined;
     let nearestDistance = Number.POSITIVE_INFINITY;
@@ -118,7 +130,7 @@ export class SessionThumbnailCache {
     }
 
     if (!nearestEntry) return undefined;
-    
+
     return {
       image: nearestEntry.image,
       capturedAt: nearestEntry.timeMs,
@@ -129,7 +141,12 @@ export class SessionThumbnailCache {
   /**
    * Store a thumbnail in cache (LRU eviction).
    */
-  set(key: CacheKey, image: CanvasImageSource, timeMs: number, elementId: string): void {
+  set(
+    key: CacheKey,
+    image: CanvasImageSource,
+    timeMs: number,
+    elementId: string,
+  ): void {
     // If key already exists, delete it first to update position
     if (this.cache.has(key)) {
       this.cache.delete(key);
@@ -154,14 +171,14 @@ export class SessionThumbnailCache {
     // Match pattern: rootId:elementId:timeMs
     const prefix = `${rootId}:${elementId}:`;
     let count = 0;
-    
+
     for (const key of this.cache.keys()) {
       if (key.startsWith(prefix)) {
         this.cache.delete(key);
         count++;
       }
     }
-    
+
     return count;
   }
 
@@ -169,11 +186,16 @@ export class SessionThumbnailCache {
    * Invalidate thumbnails within a time range for a specific element.
    * Used when content changes at specific times.
    */
-  invalidateTimeRange(rootId: string, elementId: string, startTimeMs: number, endTimeMs: number): number {
+  invalidateTimeRange(
+    rootId: string,
+    elementId: string,
+    startTimeMs: number,
+    endTimeMs: number,
+  ): number {
     // Match pattern: rootId:elementId:timeMs
     const prefix = `${rootId}:${elementId}:`;
     let count = 0;
-    
+
     for (const [key, entry] of this.cache.entries()) {
       if (key.startsWith(prefix)) {
         // Check if this thumbnail's time falls within the invalidated range
@@ -183,7 +205,7 @@ export class SessionThumbnailCache {
         }
       }
     }
-    
+
     return count;
   }
 
@@ -191,20 +213,24 @@ export class SessionThumbnailCache {
    * Invalidate all thumbnails that overlap with a given time range.
    * This is more aggressive - invalidates any thumbnail that might show content from the range.
    */
-  invalidateOverlappingRange(rootId: string, startTimeMs: number, endTimeMs: number): number {
+  invalidateOverlappingRange(
+    rootId: string,
+    startTimeMs: number,
+    endTimeMs: number,
+  ): number {
     let count = 0;
-    
+
     for (const [key, entry] of this.cache.entries()) {
       const parsed = parseCacheKey(key);
       if (!parsed || parsed.rootId !== rootId) continue;
-      
+
       // Invalidate if the thumbnail's time overlaps with the changed range
       if (entry.timeMs >= startTimeMs && entry.timeMs <= endTimeMs) {
         this.cache.delete(key);
         count++;
       }
     }
-    
+
     return count;
   }
 
@@ -227,7 +253,7 @@ export class SessionThumbnailCache {
    */
   setMaxSize(maxSize: number): void {
     this.maxSize = maxSize;
-    
+
     // Evict entries if over new limit
     while (this.cache.size > this.maxSize) {
       const firstKey = this.cache.keys().next().value;

@@ -23,10 +23,7 @@ function createTestCanvas(
 /**
  * Test helper: Verify data URL format
  */
-function verifyDataUrl(
-  dataUrl: string,
-  expectedFormat: "jpeg" | "png",
-): void {
+function verifyDataUrl(dataUrl: string, expectedFormat: "jpeg" | "png"): void {
   expect(dataUrl).toMatch(new RegExp(`^data:image/${expectedFormat};base64,`));
   expect(dataUrl.length).toBeGreaterThan(100); // Has actual data
 }
@@ -34,7 +31,9 @@ function verifyDataUrl(
 /**
  * Test helper: Load image from data URL
  */
-async function loadImageFromDataUrl(dataUrl: string): Promise<HTMLImageElement> {
+async function loadImageFromDataUrl(
+  dataUrl: string,
+): Promise<HTMLImageElement> {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
@@ -111,7 +110,9 @@ describe("WorkerPool Integration Tests", () => {
         verifyDataUrl(dataUrl, "jpeg");
       });
 
-      console.log(`Encoded 8 canvases with 4 workers: ${duration.toFixed(2)}ms`);
+      console.log(
+        `Encoded 8 canvases with 4 workers: ${duration.toFixed(2)}ms`,
+      );
     });
 
     test("encodes varying canvas sizes", async () => {
@@ -134,12 +135,12 @@ describe("WorkerPool Integration Tests", () => {
       );
 
       expect(results).toHaveLength(4);
-      
+
       // Verify all results are valid
       for (let i = 0; i < results.length; i++) {
         const dataUrl = results[i]!;
         verifyDataUrl(dataUrl, "jpeg");
-        
+
         const img = await loadImageFromDataUrl(dataUrl);
         expect(img.width).toBe(canvases[i]!.width);
         expect(img.height).toBe(canvases[i]!.height);
@@ -151,7 +152,7 @@ describe("WorkerPool Integration Tests", () => {
     test("handles more tasks than workers", async () => {
       // Create pool with only 2 workers
       const smallPool = new WorkerPool(workerUrl, 2);
-      
+
       if (!smallPool.isAvailable()) {
         console.warn("Workers not available, skipping test");
         smallPool.terminate();
@@ -164,7 +165,9 @@ describe("WorkerPool Integration Tests", () => {
 
       const results = await Promise.all(
         canvases.map((canvas) =>
-          smallPool.execute((worker) => encodeCanvasInWorker(worker, canvas, false)),
+          smallPool.execute((worker) =>
+            encodeCanvasInWorker(worker, canvas, false),
+          ),
         ),
       );
 
@@ -178,7 +181,7 @@ describe("WorkerPool Integration Tests", () => {
 
     test("single worker handles sequential tasks", async () => {
       const singlePool = new WorkerPool(workerUrl, 1);
-      
+
       if (!singlePool.isAvailable()) {
         console.warn("Workers not available, skipping test");
         singlePool.terminate();
@@ -214,20 +217,28 @@ describe("WorkerPool Integration Tests", () => {
       }
 
       const validCanvas = createTestCanvas(100, 100, "red");
-      
+
       // Create a tainted canvas (cross-origin) - may fail
       const taintedCanvas = document.createElement("canvas");
       taintedCanvas.width = 100;
       taintedCanvas.height = 100;
 
       const results = await Promise.allSettled([
-        pool.execute((worker) => encodeCanvasInWorker(worker, validCanvas, false)),
-        pool.execute((worker) => encodeCanvasInWorker(worker, taintedCanvas, false)),
-        pool.execute((worker) => encodeCanvasInWorker(worker, validCanvas, true)),
+        pool.execute((worker) =>
+          encodeCanvasInWorker(worker, validCanvas, false),
+        ),
+        pool.execute((worker) =>
+          encodeCanvasInWorker(worker, taintedCanvas, false),
+        ),
+        pool.execute((worker) =>
+          encodeCanvasInWorker(worker, validCanvas, true),
+        ),
       ]);
 
       // At least the valid canvas encodings should succeed
-      const successCount = results.filter((r) => r.status === "fulfilled").length;
+      const successCount = results.filter(
+        (r) => r.status === "fulfilled",
+      ).length;
       expect(successCount).toBeGreaterThanOrEqual(2);
 
       // Check fulfilled results
@@ -303,7 +314,9 @@ describe("WorkerPool Integration Tests", () => {
 
       console.log(`Sequential: ${sequentialDuration.toFixed(2)}ms`);
       console.log(`Parallel: ${parallelDuration.toFixed(2)}ms`);
-      console.log(`Speedup: ${(sequentialDuration / parallelDuration).toFixed(2)}x`);
+      console.log(
+        `Speedup: ${(sequentialDuration / parallelDuration).toFixed(2)}x`,
+      );
 
       // Parallel should be faster (or at least not dramatically slower)
       expect(parallelDuration).toBeLessThanOrEqual(sequentialDuration * 1.5);
@@ -479,7 +492,7 @@ describe("WorkerPool Integration Tests", () => {
       }
 
       const results: string[] = [];
-      
+
       for (let i = 0; i < 10; i++) {
         const canvas = createTestCanvas(50, 50, `rgb(${i * 25}, 0, 0)`);
         const dataUrl = await pool.execute((worker) =>

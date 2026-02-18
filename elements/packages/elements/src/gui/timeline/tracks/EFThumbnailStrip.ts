@@ -8,10 +8,10 @@ import { EFVideo } from "../../../elements/EFVideo.js";
 import { TargetController } from "../../../elements/TargetController.js";
 import { ThumbnailExtractor } from "../../../elements/EFMedia/shared/ThumbnailExtractor.js";
 import type { BaseMediaEngine } from "../../../elements/EFMedia/BaseMediaEngine.js";
-import { 
+import {
   generateThumbnailsFromClone,
   type GeneratedThumbnail,
-  type ThumbnailQueue 
+  type ThumbnailQueue,
 } from "../../../preview/renderTimegroupToCanvas.js";
 
 import { quantizeToFrameTimeMs } from "../../../utils/frameTime.js";
@@ -43,7 +43,7 @@ class MutableTimestampQueue implements ThumbnailQueue {
   /** Keep only these specific timestamps (maintains order) */
   retainOnly(timestamps: number[]): void {
     const keep = new Set(timestamps);
-    this.#timestamps = this.#timestamps.filter(t => keep.has(t));
+    this.#timestamps = this.#timestamps.filter((t) => keep.has(t));
   }
 
   /** Append timestamps to end (sorted) */
@@ -87,7 +87,7 @@ interface ThumbnailResult {
 
 /**
  * Thumbnail strip component that renders thumbnails for video or timegroup elements.
- * 
+ *
  * Features:
  * - Targets ef-video or root ef-timegroup via target attribute
  * - Batch video thumbnail extraction via ThumbnailExtractor
@@ -156,7 +156,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   @consume({ context: timelineStateContext, subscribe: true })
   @state()
   timelineState?: TimelineState;
-  
+
   @consume({ context: previewSettingsContext, subscribe: true })
   @state()
   previewSettings?: PreviewSettings;
@@ -170,10 +170,14 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   #canvasContainer: Ref<HTMLDivElement> = createRef();
   #lastRequiredTimestamps = "";
   #thumbnailCache = new Map<number, CanvasImageSource>();
-  
+
   // Timegroup thumbnail generation state
   #timegroupQueue = new MutableTimestampQueue();
-  #timegroupClone: { clone: EFTimegroup; container: HTMLElement; cleanup: () => void } | null = null;
+  #timegroupClone: {
+    clone: EFTimegroup;
+    container: HTMLElement;
+    cleanup: () => void;
+  } | null = null;
   #timegroupGenerator: AsyncGenerator<GeneratedThumbnail> | null = null;
   #timegroupGeneratorAbort: AbortController | null = null;
   #previewContainer: HTMLDivElement | null = null;
@@ -217,7 +221,9 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     const element = this.targetElement;
     if (!element) return 0;
     if (this.useIntrinsicDuration) {
-      return (element as any).intrinsicDurationMs ?? (element as any).durationMs ?? 0;
+      return (
+        (element as any).intrinsicDurationMs ?? (element as any).durationMs ?? 0
+      );
     }
     return (element as any).durationMs ?? 0;
   }
@@ -277,13 +283,18 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     }
 
     // Recalculate thumbnail dimensions if target changed
-    if (changedProperties.has("targetElement") || changedProperties.has("thumbnailHeight")) {
+    if (
+      changedProperties.has("targetElement") ||
+      changedProperties.has("thumbnailHeight")
+    ) {
       this.thumbnailDimensions = this.#calculateThumbnailDimensions();
     }
 
     // Manage event listeners when target changes
     if (changedProperties.has("targetElement")) {
-      const oldTarget = changedProperties.get("targetElement") as Element | null;
+      const oldTarget = changedProperties.get(
+        "targetElement",
+      ) as Element | null;
       this.#detachTargetListeners(oldTarget);
       this.#attachTargetListeners(this.targetElement);
     }
@@ -315,11 +326,17 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   #detachTargetListeners(target: Element | null): void {
     if (!target) return;
     if (this.#targetReadyStateHandler) {
-      target.removeEventListener("readystatechange", this.#targetReadyStateHandler);
+      target.removeEventListener(
+        "readystatechange",
+        this.#targetReadyStateHandler,
+      );
       this.#targetReadyStateHandler = null;
     }
     if (this.#targetContentChangeHandler) {
-      target.removeEventListener("contentchange", this.#targetContentChangeHandler);
+      target.removeEventListener(
+        "contentchange",
+        this.#targetContentChangeHandler,
+      );
       this.#targetContentChangeHandler = null;
     }
   }
@@ -349,7 +366,10 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     const bounds = el.getBoundingClientRect();
     if (bounds.width === 0 || bounds.height === 0) {
       // Element not yet rendered or no size, use default aspect ratio
-      return { width: this.thumbnailHeight * (16 / 9), height: this.thumbnailHeight };
+      return {
+        width: this.thumbnailHeight * (16 / 9),
+        height: this.thumbnailHeight,
+      };
     }
 
     const aspectRatio = bounds.width / bounds.height;
@@ -368,7 +388,8 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     if (!element) return [];
 
     const scrollLeft = this.#timelineState?.viewportScrollLeft ?? 0;
-    const viewportWidth = this.#timelineState?.viewportWidth ?? (this.#hostWidth || 800);
+    const viewportWidth =
+      this.#timelineState?.viewportWidth ?? (this.#hostWidth || 800);
     const pixelsPerMs = this.#effectivePixelsPerMs;
 
     const durationMs = this.#effectiveDurationMs;
@@ -384,15 +405,20 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
 
     const thumbnails: ThumbnailDescriptor[] = [];
     const { width, height } = this.#thumbnailDimensions;
-    
+
     // Read minimum gap from CSS variable (--ef-thumbnail-gap, default 2px)
-    const gapPx = parseFloat(getComputedStyle(this).getPropertyValue('--ef-thumbnail-gap')) || 2;
+    const gapPx =
+      parseFloat(
+        getComputedStyle(this).getPropertyValue("--ef-thumbnail-gap"),
+      ) || 2;
     // Stride must be at least thumbnail width + gap to prevent overlap
     const thumbnailStride = Math.max(this.thumbnailSpacingPx, width + gapPx);
-    
+
     // Detect zoom by checking if pixelsPerMs changed
-    const isZoom = this.#previousPixelsPerMs !== null && this.#previousPixelsPerMs !== pixelsPerMs;
-    
+    const isZoom =
+      this.#previousPixelsPerMs !== null &&
+      this.#previousPixelsPerMs !== pixelsPerMs;
+
     if (this.#previousPixelsPerMs === null) {
       // First render: align grid to track start (t=0)
       this.#thumbnailPhase = 0;
@@ -405,24 +431,29 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       this.#thumbnailPhase = 0;
     }
     // During normal scroll: phase unchanged, grid scrolls naturally with track
-    
+
     this.#previousPixelsPerMs = pixelsPerMs;
-    
+
     // Generate thumbnail grid anchored at phase offset
     // Each thumbnail is at absolute track position: phase + (i * stride)
     // This means grid is stable in track space (scrolls naturally)
-    const startIndex = Math.max(0, Math.floor((visibleStartPx - this.#thumbnailPhase) / thumbnailStride));
-    const endIndex = Math.ceil((visibleEndPx - this.#thumbnailPhase) / thumbnailStride);
-    
+    const startIndex = Math.max(
+      0,
+      Math.floor((visibleStartPx - this.#thumbnailPhase) / thumbnailStride),
+    );
+    const endIndex = Math.ceil(
+      (visibleEndPx - this.#thumbnailPhase) / thumbnailStride,
+    );
+
     for (let i = startIndex; i <= endIndex; i++) {
-      const thumbX = this.#thumbnailPhase + (i * thumbnailStride);
-      
+      const thumbX = this.#thumbnailPhase + i * thumbnailStride;
+
       // Only include if within track bounds
       if (thumbX >= 0 && thumbX < trackWidthPx) {
         // Convert position to time (leading edge)
         const rawTimeMs = thumbX / pixelsPerMs;
         const timeMs = quantizeToFrameTimeMs(rawTimeMs, fps);
-        
+
         if (timeMs >= 0 && timeMs < durationMs) {
           thumbnails.push({ timeMs, x: thumbX, width, height });
         }
@@ -461,11 +492,11 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     }
 
     // Check if required timestamps changed
-    const requiredTimestamps = visibleThumbnails.map(t => t.timeMs);
+    const requiredTimestamps = visibleThumbnails.map((t) => t.timeMs);
     const timestampsString = requiredTimestamps.join(", ");
     if (timestampsString !== this.#lastRequiredTimestamps) {
       this.#lastRequiredTimestamps = timestampsString;
-      
+
       // Update capture queue
       if (this.targetElement instanceof EFVideo) {
         this.#updateVideoCapture(requiredTimestamps, signal).catch((error) => {
@@ -484,14 +515,14 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
 
     // Draw thumbnails - use nearest neighbor if exact timestamp not cached
     const maxNeighborDistanceMs = 3000; // Don't use thumbnails more than 3s away
-    const results: ThumbnailResult[] = visibleThumbnails.map(t => {
+    const results: ThumbnailResult[] = visibleThumbnails.map((t) => {
       let canvas = this.#thumbnailCache.get(t.timeMs);
-      
+
       // If exact match not found, find nearest cached thumbnail
       if (!canvas) {
         let nearestTimeMs: number | null = null;
         let minDistance = Infinity;
-        
+
         for (const cachedTimeMs of this.#thumbnailCache.keys()) {
           const distance = Math.abs(cachedTimeMs - t.timeMs);
           if (distance < minDistance && distance <= maxNeighborDistanceMs) {
@@ -499,12 +530,12 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
             nearestTimeMs = cachedTimeMs;
           }
         }
-        
+
         if (nearestTimeMs !== null) {
           canvas = this.#thumbnailCache.get(nearestTimeMs);
         }
       }
-      
+
       return { canvas: canvas ?? null };
     });
     this.#drawThumbnails(visibleThumbnails, results);
@@ -513,12 +544,15 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   /**
    * Update video thumbnail capture
    */
-  async #updateVideoCapture(timestamps: number[], signal: AbortSignal): Promise<void> {
+  async #updateVideoCapture(
+    timestamps: number[],
+    signal: AbortSignal,
+  ): Promise<void> {
     const video = this.targetElement as EFVideo;
     if (!video) return;
 
     // Filter out cached timestamps
-    const uncached = timestamps.filter(t => !this.#thumbnailCache.has(t));
+    const uncached = timestamps.filter((t) => !this.#thumbnailCache.has(t));
     if (uncached.length === 0) return;
 
     const mediaEngineTask = video.mediaEngineTask;
@@ -527,9 +561,11 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     const mediaEngine = await mediaEngineTask.taskComplete;
     if (!mediaEngine) return;
 
-    const sourceTimestamps = uncached.map(t => this.#getSourceTimeMs(t));
+    const sourceTimestamps = uncached.map((t) => this.#getSourceTimeMs(t));
 
-    const extractor = new ThumbnailExtractor(mediaEngine as unknown as BaseMediaEngine);
+    const extractor = new ThumbnailExtractor(
+      mediaEngine as unknown as BaseMediaEngine,
+    );
     const scrubRendition = mediaEngine.videoRendition;
     if (!scrubRendition) return;
 
@@ -548,7 +584,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
         this.#thumbnailCache.set(timestamp, thumbnail);
       }
     }
-    
+
     this.#scheduleRender();
   }
 
@@ -560,18 +596,20 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     if (!timegroup) return;
 
     // Filter out cached timestamps
-    const uncached = timestamps.filter(t => !this.#thumbnailCache.has(t)).sort((a, b) => a - b);
+    const uncached = timestamps
+      .filter((t) => !this.#thumbnailCache.has(t))
+      .sort((a, b) => a - b);
     if (uncached.length === 0) {
       return;
     }
-    
+
     // CRITICAL: If update already in progress, REPLACE pending (not add)
     // We only want the LATEST required timestamps, not a union of all previous ones
     if (this.#updateInProgress) {
       // Clear old pending and replace with latest
       this.#pendingTimestamps.clear();
-      uncached.forEach(t => this.#pendingTimestamps.add(t));
-      
+      uncached.forEach((t) => this.#pendingTimestamps.add(t));
+
       // Schedule a retry (debounced via RAF)
       if (!this.#retryScheduled) {
         this.#retryScheduled = true;
@@ -593,19 +631,19 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
         // Generator is running - abort and reset queue to exactly what we need now
         // Abort in-flight capture
         this.#timegroupGeneratorAbort?.abort();
-        
+
         // Create new abort controller for the updated queue
         this.#timegroupGeneratorAbort = new AbortController();
-        
+
         // Reset queue to exactly what we need now
         this.#timegroupQueue.reset(uncached);
       } else if (this.#timegroupClone) {
         // Generator finished, restart with existing clone
         this.#timegroupQueue.reset(uncached);
-        
+
         // Create new abort controller
         this.#timegroupGeneratorAbort = new AbortController();
-        
+
         this.#timegroupGenerator = generateThumbnailsFromClone(
           this.#timegroupClone.clone,
           this.#previewContainer!,
@@ -624,7 +662,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       }
     } finally {
       this.#updateInProgress = false;
-      
+
       // Check if there are pending timestamps that need processing
       // This happens when updates were skipped while this update was in progress
       if (this.#pendingTimestamps.size > 0 && !this.#retryScheduled) {
@@ -644,73 +682,77 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   /**
    * Start timegroup thumbnail generator
    */
-  async #startTimegroupGenerator(timegroup: EFTimegroup, timestamps: number[]): Promise<void> {
+  async #startTimegroupGenerator(
+    timegroup: EFTimegroup,
+    timestamps: number[],
+  ): Promise<void> {
     // Create render clone
     this.#timegroupClone = await timegroup.createRenderClone();
-    
-    
+
     // Use the original container from createRenderClone (already configured)
     this.#previewContainer = this.#timegroupClone.container as HTMLDivElement;
-    
-    
+
     // CRITICAL: Wait for Lit to process shadow DOM updates after moving to new container
     await this.#timegroupClone.clone.updateComplete;
-    
+
     // Also wait for all nested Lit elements to update
-    const litElements = this.#previewContainer.querySelectorAll('*');
+    const litElements = this.#previewContainer.querySelectorAll("*");
     const updatePromises: Promise<any>[] = [];
     for (const el of litElements) {
-      if ('updateComplete' in el) {
+      if ("updateComplete" in el) {
         updatePromises.push((el as any).updateComplete);
       }
     }
     await Promise.all(updatePromises);
-    
+
     // Wait AGAIN specifically for text segments (they may need to re-render after move)
-    const textSegments = this.#previewContainer.querySelectorAll('ef-text-segment');
+    const textSegments =
+      this.#previewContainer.querySelectorAll("ef-text-segment");
     const textUpdatePromises: Promise<any>[] = [];
     for (const seg of textSegments) {
-      if ('updateComplete' in seg) {
+      if ("updateComplete" in seg) {
         textUpdatePromises.push((seg as any).updateComplete);
       }
     }
     await Promise.all(textUpdatePromises);
-    
+
     // CRITICAL: Wait for ef-text to split text into segments
     // EFText.connectedCallback schedules splitText in requestAnimationFrame
     // We must wait for that RAF to fire before capturing
-    await new Promise(resolve => requestAnimationFrame(resolve));
-    
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
     // WARMUP: Do a seek to the first timestamp to "prime" the clone
     if (timestamps.length > 0) {
       await this.#timegroupClone.clone.seekForRender(timestamps[0]!);
     }
-    
+
     // CRITICAL: Wait for fonts to load
     // Text won't render correctly if fonts aren't ready
     await document.fonts.ready;
-    
+
     // CRITICAL: Wait for all images to load
-    const images = this.#previewContainer.querySelectorAll('img');
+    const images = this.#previewContainer.querySelectorAll("img");
     const imagePromises: Promise<void>[] = [];
     for (const img of images) {
       if (!img.complete) {
-        imagePromises.push(new Promise((resolve, _reject) => {
-          img.onload = () => resolve();
-          img.onerror = () => resolve(); // Don't block on errors
-          // Timeout after 5s
-          setTimeout(() => resolve(), 5000);
-        }));
+        imagePromises.push(
+          new Promise((resolve, _reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => resolve(); // Don't block on errors
+            // Timeout after 5s
+            setTimeout(() => resolve(), 5000);
+          }),
+        );
       }
     }
     await Promise.all(imagePromises);
-    
+
     // Initialize queue
     this.#timegroupQueue.reset(timestamps);
-    
+
     // Create abort controller for this generator
     this.#timegroupGeneratorAbort = new AbortController();
-    
+
     // Start generator using the fresh container
     this.#timegroupGenerator = generateThumbnailsFromClone(
       this.#timegroupClone.clone,
@@ -723,7 +765,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
         signal: this.#timegroupGeneratorAbort.signal,
       },
     );
-    
+
     // Consume generator (CRITICAL: Must await to prevent concurrent consumers)
     await this.#consumeTimegroupGenerator();
   }
@@ -737,7 +779,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       return;
     }
     this.#consumerRunning = true;
-    
+
     if (!this.#timegroupGenerator) {
       this.#consumerRunning = false;
       return;
@@ -764,15 +806,15 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     // Abort any in-flight work
     this.#timegroupGeneratorAbort?.abort();
     this.#timegroupGeneratorAbort = null;
-    
+
     this.#timegroupGenerator = null;
-    
+
     // Remove preview container from DOM
     if (this.#previewContainer) {
       this.#previewContainer.remove();
       this.#previewContainer = null;
     }
-    
+
     // Cleanup render clone
     if (this.#timegroupClone) {
       this.#timegroupClone.cleanup();
@@ -837,7 +879,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       if (result?.canvas) {
         // Draw actual thumbnail
         ctx.drawImage(result.canvas, 0, 0, thumbnail.width, thumbnail.height);
-        
+
         // Draw timestamp overlay if enabled
         if (this.previewSettings?.showThumbnailTimestamps) {
           ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
@@ -850,26 +892,35 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
         }
       } else {
         // Draw placeholder with timestamp text
-        const bgColor = getComputedStyle(this).getPropertyValue("--ef-color-bg-inset").trim() || "rgba(100, 100, 100, 0.3)";
+        const bgColor =
+          getComputedStyle(this)
+            .getPropertyValue("--ef-color-bg-inset")
+            .trim() || "rgba(100, 100, 100, 0.3)";
         ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, thumbnail.width, thumbnail.height);
-        
-        const borderColor = getComputedStyle(this).getPropertyValue("--ef-color-border-subtle").trim() || "rgba(150, 150, 150, 0.5)";
+
+        const borderColor =
+          getComputedStyle(this)
+            .getPropertyValue("--ef-color-border-subtle")
+            .trim() || "rgba(150, 150, 150, 0.5)";
         ctx.strokeStyle = borderColor;
         ctx.lineWidth = 1;
         ctx.strokeRect(0, 0, thumbnail.width, thumbnail.height);
-        
+
         ctx.fillStyle = "white";
         ctx.font = "10px monospace";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(`${Math.round(thumbnail.timeMs)}ms`, thumbnail.width / 2, thumbnail.height / 2);
+        ctx.fillText(
+          `${Math.round(thumbnail.timeMs)}ms`,
+          thumbnail.width / 2,
+          thumbnail.height / 2,
+        );
       }
 
       container.appendChild(canvas);
     }
   }
-
 
   render() {
     // Error: No target specified (neither target string nor targetElement)
@@ -886,7 +937,8 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
 
     // Error: Invalid target type
     if (!this.isValidTarget) {
-      const elementType = (this.targetElement as any).tagName?.toLowerCase() || "unknown";
+      const elementType =
+        (this.targetElement as any).tagName?.toLowerCase() || "unknown";
       return html`<div class="error-message">
         Invalid target: "${elementType}" must be ef-video or root ef-timegroup
       </div>`;

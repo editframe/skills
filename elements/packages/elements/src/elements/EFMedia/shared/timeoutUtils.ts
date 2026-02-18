@@ -5,7 +5,7 @@ export const DEFAULT_MEDIABUNNY_TIMEOUT_MS = 10000; // 10s for decode operations
 /**
  * Wraps a promise with a timeout and optional AbortSignal support.
  * Records errors in OpenTelemetry spans for observability.
- * 
+ *
  * @param promise - The promise to wrap with timeout protection
  * @param timeoutMs - Timeout duration in milliseconds
  * @param operationName - Name of the operation for error messages and telemetry
@@ -27,16 +27,20 @@ export async function withTimeout<T>(
     const timeoutId = setTimeout(() => {
       const error = new Error(
         `${operationName} timeout after ${timeoutMs}ms. ` +
-        `This may indicate a mediabunny decoding issue or missing codec configuration. ` +
-        `Check video codec configuration, try different quality, or contact support.`
+          `This may indicate a mediabunny decoding issue or missing codec configuration. ` +
+          `Check video codec configuration, try different quality, or contact support.`,
       );
       reject(error);
     }, timeoutMs);
-    
-    signal?.addEventListener('abort', () => {
-      clearTimeout(timeoutId);
-      reject(new DOMException("Aborted", "AbortError"));
-    }, { once: true });
+
+    signal?.addEventListener(
+      "abort",
+      () => {
+        clearTimeout(timeoutId);
+        reject(new DOMException("Aborted", "AbortError"));
+      },
+      { once: true },
+    );
   });
 
   try {
@@ -46,9 +50,9 @@ export async function withTimeout<T>(
     const span = opentelemetry.trace.getActiveSpan();
     if (span && error instanceof Error) {
       span.recordException(error);
-      span.setStatus({ 
-        code: SpanStatusCode.ERROR, 
-        message: error.message 
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error.message,
       });
     }
     throw error;

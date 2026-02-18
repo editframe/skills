@@ -34,31 +34,31 @@ export function FetchMixin<T extends Constructor<LitElement>>(superClass: T) {
         // Return the promise chain so errors are logged but still propagate
         return fetchPromise.catch((error) => {
           // Don't log AbortError - these are intentional request cancellations
-          const isAbortError = 
-            error instanceof Error && (
-              error.name === "AbortError" ||
+          const isAbortError =
+            error instanceof Error &&
+            (error.name === "AbortError" ||
               error.message.includes("signal is aborted") ||
-              error.message.includes("The user aborted a request")
-            );
-          
+              error.message.includes("The user aborted a request"));
+
           // Don't log errors if element is disconnected from DOM
           // This happens during scenario transitions when elements are removed mid-fetch
           // The browser throws TypeError: "Failed to fetch" when the page navigates
           const isDisconnected = !this.isConnected;
-          
+
           // Also suppress "Failed to fetch" TypeError when disconnected
           // These occur when the browser aborts a request due to page navigation,
           // but doesn't throw a proper AbortError
-          const isNavigationAbort = isDisconnected && 
-            error instanceof TypeError && 
+          const isNavigationAbort =
+            isDisconnected &&
+            error instanceof TypeError &&
             error.message === "Failed to fetch";
-          
+
           // For AbortErrors, navigation aborts, and disconnected elements,
           // re-throw the original error without enhancement to preserve error type
           if (isAbortError || isNavigationAbort || isDisconnected) {
             throw error;
           }
-          
+
           // Log unexpected errors
           console.error(
             "FetchMixin fetch error",
@@ -66,7 +66,7 @@ export function FetchMixin<T extends Constructor<LitElement>>(superClass: T) {
             error,
             window.location.href,
           );
-          
+
           // Create a new error with the URL in the message, preserving the original error type
           const ErrorConstructor =
             error instanceof Error ? error.constructor : Error;

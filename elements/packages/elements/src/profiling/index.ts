@@ -1,6 +1,6 @@
 /**
  * Unified CPU profiling library
- * 
+ *
  * Provides analysis, formatting, comparison, and assertions for CPU profiles.
  * Optimized for LLM consumption with structured text and JSON output.
  */
@@ -63,10 +63,7 @@ export {
 } from "./assertions.js";
 
 // Source map resolution
-export {
-  resolveSourceLocation,
-  SourceMapResolver,
-} from "./source-maps.js";
+export { resolveSourceLocation, SourceMapResolver } from "./source-maps.js";
 
 // Pattern detection
 export type { Pattern } from "./patterns.js";

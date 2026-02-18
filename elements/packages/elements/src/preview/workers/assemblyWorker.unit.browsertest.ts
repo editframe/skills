@@ -7,7 +7,9 @@ function waitForWorkerMessage(
 ): Promise<MessageEvent> {
   return new Promise<MessageEvent>((resolve, reject) => {
     const timer = setTimeout(() => {
-      reject(new Error(`Timeout waiting for worker message after ${timeout}ms`));
+      reject(
+        new Error(`Timeout waiting for worker message after ${timeout}ms`),
+      );
     }, timeout);
 
     const handler = (event: MessageEvent) => {

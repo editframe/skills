@@ -120,13 +120,16 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
     #subscribedController: any = null;
 
     set targetTemporal(value: TemporalMixinInterface | null) {
-      if (this.#targetTemporal === value && value?.playbackController === this.#subscribedController && this.#controllerSubscribed) return;
+      if (
+        this.#targetTemporal === value &&
+        value?.playbackController === this.#subscribedController &&
+        this.#controllerSubscribed
+      )
+        return;
 
       // Unsubscribe from old controller updates
       if (this.#subscribedController) {
-        this.#subscribedController.removeListener(
-          this.#onControllerUpdate,
-        );
+        this.#subscribedController.removeListener(this.#onControllerUpdate);
         this.#controllerSubscribed = false;
         this.#subscribedController = null;
       }
@@ -252,7 +255,7 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
           if (error instanceof DOMException && error.name === "AbortError") {
             throw error;
           }
-          
+
           console.error(
             "ContextMixin fetch error",
             url,
@@ -309,8 +312,12 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
     #isEditframeDomain(url: string): boolean {
       try {
         const hostname = new URL(url).hostname;
-        return hostname === "editframe.dev" || hostname === "editframe.com" ||
-          hostname.endsWith(".editframe.dev") || hostname.endsWith(".editframe.com");
+        return (
+          hostname === "editframe.dev" ||
+          hostname === "editframe.com" ||
+          hostname.endsWith(".editframe.dev") ||
+          hostname.endsWith(".editframe.com")
+        );
       } catch {
         return false;
       }
@@ -531,9 +538,7 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
      */
     async #retryTemporalDiscovery(tags: Set<string>): Promise<void> {
       await Promise.all(
-        [...tags].map((tag) =>
-          customElements.whenDefined(tag).catch(() => {}),
-        ),
+        [...tags].map((tag) => customElements.whenDefined(tag).catch(() => {})),
       );
 
       if (this.targetTemporal) return; // already found by another path
@@ -602,9 +607,7 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
 
       // Unsubscribe from controller
       if (this.#subscribedController) {
-        this.#subscribedController.removeListener(
-          this.#onControllerUpdate,
-        );
+        this.#subscribedController.removeListener(this.#onControllerUpdate);
         this.#controllerSubscribed = false;
         this.#subscribedController = null;
       }
@@ -619,10 +622,14 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
       const currentController = this.#targetTemporal?.playbackController;
       if (
         currentController &&
-        (!this.#controllerSubscribed || this.#subscribedController !== currentController)
+        (!this.#controllerSubscribed ||
+          this.#subscribedController !== currentController)
       ) {
         // Unsubscribe from old controller if it changed
-        if (this.#subscribedController && this.#subscribedController !== currentController) {
+        if (
+          this.#subscribedController &&
+          this.#subscribedController !== currentController
+        ) {
           this.#subscribedController.removeListener(this.#onControllerUpdate);
         }
         currentController.addListener(this.#onControllerUpdate);

@@ -12,10 +12,7 @@ import { CrossUpdateController } from "./CrossUpdateController.js";
 import { EFAudio } from "./EFAudio.js";
 import { EFSourceMixin } from "./EFSourceMixin.js";
 import { EFTemporal, flushStartTimeMsCache } from "./EFTemporal.js";
-import {
-  flushSequenceDurationCache,
-  EFTimegroup,
-} from "./EFTimegroup.js";
+import { flushSequenceDurationCache, EFTimegroup } from "./EFTimegroup.js";
 import { EFVideo } from "./EFVideo.js";
 import { FetchMixin } from "./FetchMixin.js";
 
@@ -46,7 +43,7 @@ const stopWords = new Set(["", ".", "!", "?", ","]);
 export class EFCaptionsActiveWord extends LitElement {
   #wordText = "";
   #wordIndex = 0;
-  
+
   set wordText(text: string) {
     this.#wordText = text;
     // Hide element if no content or only stop words
@@ -59,11 +56,11 @@ export class EFCaptionsActiveWord extends LitElement {
       this.textContent = text + " ";
     }
   }
-  
+
   get wordText(): string {
     return this.#wordText;
   }
-  
+
   set wordIndex(index: number) {
     this.#wordIndex = index;
     // Set deterministic --ef-word-seed value based on word index
@@ -71,7 +68,7 @@ export class EFCaptionsActiveWord extends LitElement {
     const seedValue = seed / 233; // Normalize to 0-1 range
     this.style.setProperty("--ef-word-seed", seedValue.toString());
   }
-  
+
   get wordIndex(): number {
     return this.#wordIndex;
   }
@@ -84,7 +81,7 @@ export class EFCaptionsActiveWord extends LitElement {
 @customElement("ef-captions-segment")
 export class EFCaptionsSegment extends LitElement {
   #segmentText = "";
-  
+
   set segmentText(text: string) {
     this.#segmentText = text;
     // Hide element if no content or only stop words
@@ -96,7 +93,7 @@ export class EFCaptionsSegment extends LitElement {
       this.textContent = text;
     }
   }
-  
+
   get segmentText(): string {
     return this.#segmentText;
   }
@@ -114,10 +111,10 @@ export class EFCaptionsBeforeActiveWord extends EFCaptionsSegment {
       "ef-captions-active-word",
     ) as EFCaptionsActiveWord;
     const hasActiveWord = activeWord?.wordText;
-    
+
     // Add trailing space if there's an active word coming after us
     const finalText = text && hasActiveWord ? text + " " : text;
-    
+
     // Hide element if no content or only stop words
     if (!finalText || stopWords.has(finalText)) {
       this.hidden = true;
@@ -138,7 +135,7 @@ export class EFCaptionsAfterActiveWord extends EFCaptionsSegment {
   set segmentText(text: string) {
     // No leading space - active word will add trailing space
     const finalText = text;
-    
+
     // Hide element if no content or only stop words
     if (!finalText || stopWords.has(finalText)) {
       this.hidden = true;
@@ -151,10 +148,12 @@ export class EFCaptionsAfterActiveWord extends EFCaptionsSegment {
 }
 
 @customElement("ef-captions")
-export class EFCaptions extends EFSourceMixin(
-  EFTemporal(FetchMixin(LitElement)),
-  { assetType: "caption_files" },
-) implements FrameRenderable {
+export class EFCaptions
+  extends EFSourceMixin(EFTemporal(FetchMixin(LitElement)), {
+    assetType: "caption_files",
+  })
+  implements FrameRenderable
+{
   static styles = [
     css`
       :host {
@@ -317,7 +316,10 @@ export class EFCaptions extends EFSourceMixin(
         try {
           return JSON.parse(scriptElement.textContent) as Caption;
         } catch (error) {
-          console.error(`Failed to parse captions from script #${this.captionsScript}:`, error);
+          console.error(
+            `Failed to parse captions from script #${this.captionsScript}:`,
+            error,
+          );
         }
       }
     }
@@ -326,12 +328,15 @@ export class EFCaptions extends EFSourceMixin(
     if (this.captionsSrc) {
       try {
         const response = await this.fetch(this.captionsSrc, { signal });
-        return await response.json() as Caption;
+        return (await response.json()) as Caption;
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") {
           throw error;
         }
-        console.error(`Failed to load captions from ${this.captionsSrc}:`, error);
+        console.error(
+          `Failed to load captions from ${this.captionsSrc}:`,
+          error,
+        );
       }
     }
 
@@ -341,7 +346,8 @@ export class EFCaptions extends EFSourceMixin(
       if (transcriptionPath) {
         try {
           const response = await this.fetch(transcriptionPath, { signal });
-          this.#transcriptionData = await response.json() as GetISOBMFFFileTranscriptionResult;
+          this.#transcriptionData =
+            (await response.json()) as GetISOBMFFFileTranscriptionResult;
           signal?.throwIfAborted();
 
           // Load fragment for current time
@@ -360,15 +366,19 @@ export class EFCaptions extends EFSourceMixin(
     return null;
   }
 
-  async #loadTranscriptionFragment(signal?: AbortSignal): Promise<Caption | null> {
+  async #loadTranscriptionFragment(
+    signal?: AbortSignal,
+  ): Promise<Caption | null> {
     if (!this.#transcriptionData) return null;
 
-    const fragmentIndex = Math.floor(this.ownCurrentTimeMs / this.#transcriptionData.work_slice_ms);
+    const fragmentIndex = Math.floor(
+      this.ownCurrentTimeMs / this.#transcriptionData.work_slice_ms,
+    );
     const fragmentPath = `${this.apiHost}/api/v1/transcriptions/${this.#transcriptionData.id}/fragments/${fragmentIndex}`;
 
     try {
       const response = await this.fetch(fragmentPath, { signal });
-      return await response.json() as Caption;
+      return (await response.json()) as Caption;
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         throw error;
@@ -388,7 +398,8 @@ export class EFCaptions extends EFSourceMixin(
    */
   getFrameState(_timeMs: number): FrameState {
     // Check if captions data is loaded
-    const hasData = this.#captionsDataLoaded && this.#captionsDataValue !== null;
+    const hasData =
+      this.#captionsDataLoaded && this.#captionsDataValue !== null;
 
     return {
       needsPreparation: !hasData,
@@ -676,7 +687,9 @@ export class EFCaptions extends EFSourceMixin(
   }
 
   get targetElement() {
-    const target = this.targetSelector ? this.#findElementById(this.targetSelector) : null;
+    const target = this.targetSelector
+      ? this.#findElementById(this.targetSelector)
+      : null;
     if (target instanceof EFAudio || target instanceof EFVideo) {
       return target;
     }
@@ -696,12 +709,12 @@ export class EFCaptions extends EFSourceMixin(
    */
   #findElementById(id: string): Element | null {
     // Search within nearest timegroup or configuration container first
-    const container = this.closest('ef-timegroup, ef-configuration');
+    const container = this.closest("ef-timegroup, ef-configuration");
     if (container) {
       const result = container.querySelector(`#${CSS.escape(id)}`);
       if (result) return result;
     }
-    
+
     // Fall back to document-wide search
     return document.getElementById(id);
   }

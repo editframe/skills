@@ -37,24 +37,22 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
   }
 
   static async fetch(
-    host: EFMedia, 
-    urlGenerator: UrlGenerator, 
+    host: EFMedia,
+    urlGenerator: UrlGenerator,
     src: string,
     requiredTracks: "audio" | "video" | "both" = "both",
     signal?: AbortSignal,
   ) {
     const engine = new AssetMediaEngine(host, src, urlGenerator);
-    
+
     // Normalize the path: remove leading slash and any double slashes
-    let normalizedSrc = src.startsWith("/")
-      ? src.slice(1)
-      : src;
+    let normalizedSrc = src.startsWith("/") ? src.slice(1) : src;
     normalizedSrc = normalizedSrc.replace(/^\/+/, "");
-    
+
     // Use production API format: /api/v1/files/local/index?src={src}
     // This route is handled by the vite plugin for local development
     const apiBaseUrl = urlGenerator.getBaseUrl();
-    const url = apiBaseUrl 
+    const url = apiBaseUrl
       ? `${apiBaseUrl}/api/v1/files/local/index?src=${encodeURIComponent(normalizedSrc)}`
       : `/api/v1/files/local/index?src=${encodeURIComponent(normalizedSrc)}`;
     const data = await engine.fetchManifest(url, signal);
@@ -90,9 +88,11 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     if (signal) {
       const videoTrack = engine.getVideoTrackIndex();
       const audioTrack = engine.getAudioTrackIndex();
-      const needsVideo = requiredTracks === "video" || requiredTracks === "both";
-      const needsAudio = requiredTracks === "audio" || requiredTracks === "both";
-      
+      const needsVideo =
+        requiredTracks === "video" || requiredTracks === "both";
+      const needsAudio =
+        requiredTracks === "audio" || requiredTracks === "both";
+
       // Validate video track if required and available
       if (needsVideo && videoTrack && videoTrack.track !== undefined) {
         try {
@@ -111,18 +111,21 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
             error instanceof Error &&
             (error.message.includes("401") ||
               error.message.includes("UNAUTHORIZED") ||
-              (error.message.includes("Failed to fetch") && error.message.includes("401")))
+              (error.message.includes("Failed to fetch") &&
+                error.message.includes("401")))
           ) {
-            throw new Error(`Video segments require authentication: ${error.message}`);
+            throw new Error(
+              `Video segments require authentication: ${error.message}`,
+            );
           }
           // For other errors (404, network errors, etc.), allow media engine creation
           // These might be transient or expected in some test scenarios
         }
       }
-      
+
       // Check for abort between validations
       signal?.throwIfAborted();
-      
+
       // Validate audio track if required and available
       if (needsAudio && audioTrack && audioTrack.track !== undefined) {
         try {
@@ -141,9 +144,12 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
             error instanceof Error &&
             (error.message.includes("401") ||
               error.message.includes("UNAUTHORIZED") ||
-              (error.message.includes("Failed to fetch") && error.message.includes("401")))
+              (error.message.includes("Failed to fetch") &&
+                error.message.includes("401")))
           ) {
-            throw new Error(`Audio segments require authentication: ${error.message}`);
+            throw new Error(
+              `Audio segments require authentication: ${error.message}`,
+            );
           }
           // For other errors (404, network errors, etc.), allow media engine creation
           // These might be transient or expected in some test scenarios
@@ -160,7 +166,8 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
 
   getVideoTrackIndex() {
     return Object.values(this.data).find(
-      (track) => track.type === "video" && track.track !== undefined && track.track > 0,
+      (track) =>
+        track.type === "video" && track.track !== undefined && track.track > 0,
     );
   }
 
@@ -229,7 +236,7 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     if (this.src.startsWith("http://") || this.src.startsWith("https://")) {
       return this.src;
     }
-    
+
     // Otherwise, construct absolute URL from baseUrl or current origin
     let baseUrl = this.urlGenerator.getBaseUrl();
     // If baseUrl is empty (no apiHost set), use current origin
@@ -241,7 +248,7 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     const normalizedSrc = this.src.startsWith("/") ? this.src : `/${this.src}`;
     return `${baseUrl}${normalizedSrc}`;
   }
-  
+
   /**
    * Get the base URL for constructing JIT endpoints
    */
@@ -253,7 +260,6 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     }
     return baseUrl;
   }
-
 
   /**
    * Map trackId to JIT rendition ID for URL generation
@@ -278,10 +284,14 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     if (!rendition.id) {
       return false;
     }
-    
+
     // JIT uses 1-based segment IDs, but AssetMediaEngine uses 0-based internally
     const jitSegmentId = segmentId + 1;
-    const segmentUrl = this.urlGenerator.generateSegmentUrl(jitSegmentId, rendition.id, this);
+    const segmentUrl = this.urlGenerator.generateSegmentUrl(
+      jitSegmentId,
+      rendition.id,
+      this,
+    );
     return mediaCache.has(segmentUrl);
   }
 
@@ -302,11 +312,16 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
             "[fetchInitSegment] Track ID is required for asset metadata",
           );
         }
-        
+
         // Use rendition ID if provided, otherwise map from trackId
-        const renditionId = rendition.id || this.getRenditionId(rendition.trackId);
-        const url = this.urlGenerator.generateSegmentUrl("init", renditionId, this);
-        
+        const renditionId =
+          rendition.id || this.getRenditionId(rendition.trackId);
+        const url = this.urlGenerator.generateSegmentUrl(
+          "init",
+          renditionId,
+          this,
+        );
+
         // Segments are now served directly (not via byte ranges), so use simple fetch
         return this.fetchMedia(url, signal);
       },
@@ -335,14 +350,19 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
         if (segmentId === undefined) {
           throw new Error("Segment ID is not available");
         }
-        
+
         // Use rendition ID if provided, otherwise map from trackId
-        const renditionId = rendition.id || this.getRenditionId(rendition.trackId);
-        
+        const renditionId =
+          rendition.id || this.getRenditionId(rendition.trackId);
+
         // JIT uses 1-based segment IDs, but AssetMediaEngine uses 0-based internally
         // So we need to add 1 to segmentId for the URL
         const jitSegmentId = segmentId + 1;
-        const url = this.urlGenerator.generateSegmentUrl(jitSegmentId, renditionId, this);
+        const url = this.urlGenerator.generateSegmentUrl(
+          jitSegmentId,
+          renditionId,
+          this,
+        );
 
         // Segments are now served directly (not via byte ranges), so use simple fetch
         return this.fetchMedia(url, signal);
@@ -569,7 +589,7 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     //
     // So we just need to convert user time to container time by adding startTimeOffsetMs,
     // then pass that to mediabunny (in seconds).
-    
+
     const startTimeOffsetMs = rendition.startTimeOffsetMs || 0;
 
     return globalTimestamps.map((globalMs) => {

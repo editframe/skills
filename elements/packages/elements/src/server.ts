@@ -1,10 +1,10 @@
 /**
  * SSR-safe entry point for @editframe/elements
- * 
+ *
  * This module exports ONLY types and SSR-safe utilities.
  * NO browser-specific code is imported at the module level.
  * NO Web Components or DOM APIs are loaded.
- * 
+ *
  * Use this for:
  * - Server-side rendering (React Server Components, Remix loaders, etc.)
  * - Node.js tools that need type information

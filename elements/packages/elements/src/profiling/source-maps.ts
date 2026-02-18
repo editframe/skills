@@ -13,7 +13,7 @@ import type { ResolvedLocation } from "./types.js";
 export function resolveSourceLocation(
   url: string,
   line: number,
-  column: number
+  column: number,
 ): ResolvedLocation | null {
   // Check if this is a Vite chunk file with source map
   if (url.includes("chunk-") && url.includes("?v=")) {
@@ -53,7 +53,7 @@ async function fetchText(url: string): Promise<string | null> {
   if (fetchCache.has(url)) {
     return fetchCache.get(url)!;
   }
-  
+
   const promise = (async () => {
     try {
       const response = await fetch(url);
@@ -63,7 +63,7 @@ async function fetchText(url: string): Promise<string | null> {
       return null;
     }
   })();
-  
+
   fetchCache.set(url, promise);
   return promise;
 }
@@ -71,11 +71,11 @@ async function fetchText(url: string): Promise<string | null> {
 /**
  * Advanced source map resolver using @jridgewell/trace-mapping
  * This is exported for use in CLI tools that need full source map support
- * 
+ *
  * Example usage:
  * ```ts
  * import { TraceMap, originalPositionFor } from "@jridgewell/trace-mapping";
- * 
+ *
  * const resolver = new SourceMapResolver(baseUrl);
  * const resolved = await resolver.resolve(scriptUrl, line, column);
  * ```
@@ -83,8 +83,7 @@ async function fetchText(url: string): Promise<string | null> {
 export class SourceMapResolver {
   #traceMaps = new Map<string, any>();
 
-  constructor(_baseUrl: string) {
-  }
+  constructor(_baseUrl: string) {}
 
   async getTraceMap(scriptUrl: string): Promise<any | null> {
     if (this.#traceMaps.has(scriptUrl)) {
@@ -138,13 +137,20 @@ export class SourceMapResolver {
     }
   }
 
-  async resolve(scriptUrl: string, line0Based: number, column: number): Promise<ResolvedLocation | null> {
+  async resolve(
+    scriptUrl: string,
+    line0Based: number,
+    column: number,
+  ): Promise<ResolvedLocation | null> {
     const traceMap = await this.getTraceMap(scriptUrl);
     if (!traceMap || line0Based < 0) return null;
 
     try {
       const { originalPositionFor } = await import("@jridgewell/trace-mapping");
-      const result = originalPositionFor(traceMap, { line: line0Based, column });
+      const result = originalPositionFor(traceMap, {
+        line: line0Based,
+        column,
+      });
 
       if (!result.source) return null;
 
@@ -154,7 +160,7 @@ export class SourceMapResolver {
       return {
         source: sourceFile,
         file: sourceFile,
-        line: result.line ?? (line0Based + 1),
+        line: result.line ?? line0Based + 1,
         column: result.column ?? column,
         name: result.name,
       };

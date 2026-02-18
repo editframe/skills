@@ -29,14 +29,14 @@ export class IgnorableError extends Error {}
  */
 const getChildrenIncludingSlotted = (element: Element): Element[] => {
   if (element.shadowRoot) {
-    const slots = element.shadowRoot.querySelectorAll('slot');
+    const slots = element.shadowRoot.querySelectorAll("slot");
     if (slots.length > 0) {
       const assignedElements: Element[] = [];
       for (const slot of slots) {
         assignedElements.push(...slot.assignedElements());
       }
       for (const child of element.shadowRoot.children) {
-        if (child.tagName !== 'SLOT') {
+        if (child.tagName !== "SLOT") {
           assignedElements.push(child);
         }
       }
@@ -88,10 +88,14 @@ export class AsyncValue<T> {
   get status(): number {
     // Match TaskStatus enum: INITIAL=0, PENDING=1, COMPLETE=2, ERROR=3
     switch (this.#status) {
-      case "initial": return 0;
-      case "pending": return 1;
-      case "complete": return 2;
-      case "error": return 3;
+      case "initial":
+        return 0;
+      case "pending":
+        return 1;
+      case "complete":
+        return 2;
+      case "error":
+        return 3;
     }
   }
 
@@ -239,7 +243,7 @@ export class EFMedia extends EFTargetable(
    * - "audio" - Only needs audio track (e.g., EFAudio)
    * - "video" - Only needs video track
    * - "both" - Needs both tracks (default for backwards compatibility)
-   * 
+   *
    * This is used during media engine creation to skip validation
    * of tracks that won't be used, avoiding unnecessary network requests.
    */
@@ -277,7 +281,11 @@ export class EFMedia extends EFTargetable(
     `,
   ];
 
-  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
+  attributeChangedCallback(
+    name: string,
+    oldValue: string | null,
+    newValue: string | null,
+  ): void {
     if (name === "asset-id") {
       this.fileId = newValue;
       return;
@@ -401,7 +409,7 @@ export class EFMedia extends EFTargetable(
    */
   async getMediaEngine(signal?: AbortSignal): Promise<MediaEngine | undefined> {
     const srcKey = `${this.src}|${this.fileId}`;
-    
+
     // Return cached if src hasn't changed
     if (this.#mediaEngineSrcKey === srcKey && this.#mediaEngine) {
       this.setContentReadyState("ready");
@@ -425,7 +433,9 @@ export class EFMedia extends EFTargetable(
     return loadPromise;
   }
 
-  async #loadMediaEngine(signal?: AbortSignal): Promise<MediaEngine | undefined> {
+  async #loadMediaEngine(
+    signal?: AbortSignal,
+  ): Promise<MediaEngine | undefined> {
     try {
       this.#mediaEngine = await this.#createMediaEngine(signal);
       this.#mediaEngineError = undefined;
@@ -439,18 +449,19 @@ export class EFMedia extends EFTargetable(
       }
       return this.#mediaEngine;
     } catch (error) {
-      this.#mediaEngineError = error instanceof Error ? error : new Error(String(error));
+      this.#mediaEngineError =
+        error instanceof Error ? error : new Error(String(error));
       this.mediaEngineTask.setError(this.#mediaEngineError);
       this.setContentReadyState("error");
 
       // Don't throw for expected errors
-      const isExpectedError = error instanceof DOMException && error.name === "AbortError" ||
-        error instanceof Error && (
-          error.message === "No valid media source" ||
-          error.message.includes("File not found") ||
-          error.message.includes("404") ||
-          error.message.includes("Failed to fetch")
-        );
+      const isExpectedError =
+        (error instanceof DOMException && error.name === "AbortError") ||
+        (error instanceof Error &&
+          (error.message === "No valid media source" ||
+            error.message.includes("File not found") ||
+            error.message.includes("404") ||
+            error.message.includes("Failed to fetch")));
 
       if (!isExpectedError) {
         console.error("Media engine error:", error);
@@ -460,7 +471,9 @@ export class EFMedia extends EFTargetable(
     }
   }
 
-  async #createMediaEngine(signal?: AbortSignal): Promise<MediaEngine | undefined> {
+  async #createMediaEngine(
+    signal?: AbortSignal,
+  ): Promise<MediaEngine | undefined> {
     const { src, fileId, apiHost, requiredTracks } = this;
     const urlGenerator = this.getUrlGenerator();
 
@@ -487,11 +500,12 @@ export class EFMedia extends EFTargetable(
     }
 
     const lowerSrc = src.toLowerCase();
-    const isRemoteUrl = lowerSrc.startsWith("http://") || lowerSrc.startsWith("https://");
-    
+    const isRemoteUrl =
+      lowerSrc.startsWith("http://") || lowerSrc.startsWith("https://");
+
     // Check configuration for explicit engine preference
     const configuration = this.closest("ef-configuration");
-    
+
     // "jit" mode: Force JitMediaEngine for all sources (including local files)
     if (configuration?.mediaEngine === "jit") {
       let manifestSrc = src;
@@ -504,17 +518,31 @@ export class EFMedia extends EFTargetable(
       const { JitMediaEngine } = await import("./EFMedia/JitMediaEngine.js");
       return JitMediaEngine.fetch(this, urlGenerator, url, signal);
     }
-    
+
     // "local" mode: Force AssetMediaEngine for all sources
     if (configuration?.mediaEngine === "local") {
-      const { AssetMediaEngine } = await import("./EFMedia/AssetMediaEngine.js");
-      return AssetMediaEngine.fetch(this, urlGenerator, src, requiredTracks, signal);
+      const { AssetMediaEngine } =
+        await import("./EFMedia/AssetMediaEngine.js");
+      return AssetMediaEngine.fetch(
+        this,
+        urlGenerator,
+        src,
+        requiredTracks,
+        signal,
+      );
     }
-    
+
     // "cloud" mode (default): AssetMediaEngine for local paths, JitMediaEngine for remote URLs
     if (!isRemoteUrl) {
-      const { AssetMediaEngine } = await import("./EFMedia/AssetMediaEngine.js");
-      return AssetMediaEngine.fetch(this, urlGenerator, src, requiredTracks, signal);
+      const { AssetMediaEngine } =
+        await import("./EFMedia/AssetMediaEngine.js");
+      return AssetMediaEngine.fetch(
+        this,
+        urlGenerator,
+        src,
+        requiredTracks,
+        signal,
+      );
     }
 
     // Default: Use JitMediaEngine for remote URLs (transcoding service)
@@ -527,7 +555,7 @@ export class EFMedia extends EFTargetable(
     // Update self synchronously
     this.requestUpdate("intrinsicDurationMs");
     this.requestUpdate("ownCurrentTimeMs");
-    
+
     // Defer updates to parent/root timegroup
     if (this.rootTimegroup) {
       queueMicrotask(() => {
@@ -557,7 +585,10 @@ export class EFMedia extends EFTargetable(
   /**
    * Get frequency data for audio visualization at a given time.
    */
-  async getFrequencyData(timeMs: number, signal?: AbortSignal): Promise<Uint8Array | null> {
+  async getFrequencyData(
+    timeMs: number,
+    signal?: AbortSignal,
+  ): Promise<Uint8Array | null> {
     if (timeMs < 0) return null;
 
     const cacheKey = `${this.getShouldInterpolateFrequencies()}:${this.fftSize}:${this.fftDecay}:${this.fftGain}:${timeMs}`;
@@ -582,7 +613,10 @@ export class EFMedia extends EFTargetable(
   /**
    * Get time domain data for audio visualization at a given time.
    */
-  async getTimeDomainData(timeMs: number, signal?: AbortSignal): Promise<Uint8Array | null> {
+  async getTimeDomainData(
+    timeMs: number,
+    signal?: AbortSignal,
+  ): Promise<Uint8Array | null> {
     if (timeMs < 0) return null;
 
     const cacheKey = `${this.fftSize}:${timeMs}`;
@@ -604,31 +638,37 @@ export class EFMedia extends EFTargetable(
     }
   }
 
-  async #analyzeFrequencies(currentTimeMs: number, signal?: AbortSignal): Promise<Uint8Array | null> {
+  async #analyzeFrequencies(
+    currentTimeMs: number,
+    signal?: AbortSignal,
+  ): Promise<Uint8Array | null> {
     const mediaEngine = await this.getMediaEngine(signal);
     signal?.throwIfAborted();
-    
+
     if (!mediaEngine?.audioRendition) {
       return null;
     }
 
     // Calculate exact audio window needed based on fftDecay and frame timing
     const frameIntervalMs = 1000 / 30;
-    const earliestFrameMs = currentTimeMs - (this.fftDecay - 1) * frameIntervalMs;
+    const earliestFrameMs =
+      currentTimeMs - (this.fftDecay - 1) * frameIntervalMs;
     const fromMs = Math.max(0, earliestFrameMs);
     const maxToMs = currentTimeMs + frameIntervalMs;
     const videoDurationMs = this.intrinsicDurationMs || 0;
-    const toMs = videoDurationMs > 0 ? Math.min(maxToMs, videoDurationMs) : maxToMs;
+    const toMs =
+      videoDurationMs > 0 ? Math.min(maxToMs, videoDurationMs) : maxToMs;
 
     if (fromMs >= toMs) {
       return null;
     }
 
-    const { fetchAudioSpanningTime: fetchAudioSpan } = await import("./EFMedia/shared/AudioSpanUtils.js");
-    
+    const { fetchAudioSpanningTime: fetchAudioSpan } =
+      await import("./EFMedia/shared/AudioSpanUtils.js");
+
     let audioSpan;
     try {
-      audioSpan = await fetchAudioSpan(this, fromMs, toMs, signal);
+      audioSpan = await fetchAudioSpan(this, fromMs, toMs, signal!);
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         throw error;
@@ -658,7 +698,10 @@ export class EFMedia extends EFTargetable(
     const framesData = await Promise.all(
       Array.from({ length: this.fftDecay }, async (_, i) => {
         const frameOffset = i * (1000 / 30);
-        const startTime = Math.max(0, (currentTimeMs - frameOffset - startOffsetMs) / 1000);
+        const startTime = Math.max(
+          0,
+          (currentTimeMs - frameOffset - startOffsetMs) / 1000,
+        );
 
         const SIZE = 48000 / 30;
         const audioContext = new OfflineAudioContext(2, SIZE, 48000);
@@ -688,7 +731,7 @@ export class EFMedia extends EFTargetable(
         try {
           await audioContext.startRendering();
           signal?.throwIfAborted();
-          
+
           const frameData = new Uint8Array(this.fftSize / 2);
           analyser.getByteFrequencyData(frameData);
           return frameData;
@@ -723,34 +766,45 @@ export class EFMedia extends EFTargetable(
     });
 
     // Only return the lower half of the frequency data
-    const slicedData = smoothedData.slice(0, Math.floor(smoothedData.length / 2));
-    return this.getShouldInterpolateFrequencies() ? processFFTData(slicedData) : slicedData;
+    const slicedData = smoothedData.slice(
+      0,
+      Math.floor(smoothedData.length / 2),
+    );
+    return this.getShouldInterpolateFrequencies()
+      ? processFFTData(slicedData)
+      : slicedData;
   }
 
-  async #analyzeTimeDomain(currentTimeMs: number, signal?: AbortSignal): Promise<Uint8Array | null> {
+  async #analyzeTimeDomain(
+    currentTimeMs: number,
+    signal?: AbortSignal,
+  ): Promise<Uint8Array | null> {
     const mediaEngine = await this.getMediaEngine(signal);
     signal?.throwIfAborted();
-    
+
     if (!mediaEngine?.audioRendition) {
       return null;
     }
 
     const frameIntervalMs = 1000 / 30;
-    const earliestFrameMs = currentTimeMs - (this.fftDecay - 1) * frameIntervalMs;
+    const earliestFrameMs =
+      currentTimeMs - (this.fftDecay - 1) * frameIntervalMs;
     const fromMs = Math.max(0, earliestFrameMs);
     const maxToMs = currentTimeMs + frameIntervalMs;
     const videoDurationMs = this.intrinsicDurationMs || 0;
-    const toMs = videoDurationMs > 0 ? Math.min(maxToMs, videoDurationMs) : maxToMs;
+    const toMs =
+      videoDurationMs > 0 ? Math.min(maxToMs, videoDurationMs) : maxToMs;
 
     if (fromMs >= toMs) {
       return null;
     }
 
-    const { fetchAudioSpanningTime: fetchAudioSpan } = await import("./EFMedia/shared/AudioSpanUtils.js");
-    
+    const { fetchAudioSpanningTime: fetchAudioSpan } =
+      await import("./EFMedia/shared/AudioSpanUtils.js");
+
     let audioSpan;
     try {
-      audioSpan = await fetchAudioSpan(this, fromMs, toMs, signal);
+      audioSpan = await fetchAudioSpan(this, fromMs, toMs, signal!);
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         throw error;
@@ -779,7 +833,10 @@ export class EFMedia extends EFTargetable(
     const framesData = await Promise.all(
       Array.from({ length: this.fftDecay }, async (_, i) => {
         const frameOffset = i * (1000 / 30);
-        const startTime = Math.max(0, (currentTimeMs - frameOffset - startOffsetMs) / 1000);
+        const startTime = Math.max(
+          0,
+          (currentTimeMs - frameOffset - startOffsetMs) / 1000,
+        );
 
         const SIZE = 48000 / 30;
         const audioContext = new OfflineAudioContext(2, SIZE, 48000);
@@ -809,7 +866,7 @@ export class EFMedia extends EFTargetable(
         try {
           await audioContext.startRendering();
           signal?.throwIfAborted();
-          
+
           const frameData = new Uint8Array(this.fftSize);
           analyser.getByteTimeDomainData(frameData);
           return frameData;
@@ -879,7 +936,10 @@ export class EFMedia extends EFTargetable(
     if (changedProperties.has("src") || changedProperties.has("fileId")) {
       this.getMediaEngine().catch(() => {});
       // Source identity changed — cached renderable output is stale
-      if (changedProperties.get("src") !== undefined || changedProperties.get("fileId") !== undefined) {
+      if (
+        changedProperties.get("src") !== undefined ||
+        changedProperties.get("fileId") !== undefined
+      ) {
         this.emitContentChange("source");
       }
     }
@@ -976,7 +1036,8 @@ export class EFMedia extends EFTargetable(
       async () => {
         // Create a default signal if not provided (public API convenience)
         const effectiveSignal = signal ?? new AbortController().signal;
-        const { fetchAudioSpanningTime } = await import("./EFMedia/shared/AudioSpanUtils.js");
+        const { fetchAudioSpanningTime } =
+          await import("./EFMedia/shared/AudioSpanUtils.js");
         return fetchAudioSpanningTime(this, fromMs, toMs, effectiveSignal);
       },
     );
@@ -990,29 +1051,28 @@ export class EFMedia extends EFTargetable(
     if (this.#mediaEngine) {
       return;
     }
-    
+
     try {
       await this.getMediaEngine(signal);
     } catch (error) {
       // Don't throw AbortError - these are intentional cancellations when element is disconnected
-      const isAbortError = 
-        error instanceof DOMException && error.name === "AbortError" ||
-        error instanceof Error && (
-          error.name === "AbortError" ||
-          error.message.includes("signal is aborted") ||
-          error.message.includes("The user aborted a request")
-        );
-      
+      const isAbortError =
+        (error instanceof DOMException && error.name === "AbortError") ||
+        (error instanceof Error &&
+          (error.name === "AbortError" ||
+            error.message.includes("signal is aborted") ||
+            error.message.includes("The user aborted a request")));
+
       // If explicitly aborted via signal, throw to propagate cancellation
       if (signal?.aborted) {
         throw error;
       }
-      
+
       // For task abort (element disconnected), silently return
       if (isAbortError) {
         return;
       }
-      
+
       // Re-throw other errors
       throw error;
     }

@@ -7,7 +7,3 @@ export const Timeline = createComponent({
   elementClass: EFTimelineElement,
   react: React,
 });
-
-
-
-

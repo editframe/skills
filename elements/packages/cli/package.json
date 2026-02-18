@@ -40,8 +40,6 @@
     "tar": "^7.1.0",
     "zod": "^3.23.8"
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -62,5 +60,7 @@
       },
       "./package.json": "./package.json"
     }
-  }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js"
 }

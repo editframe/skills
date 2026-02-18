@@ -1,7 +1,7 @@
 #!/usr/bin/env npx tsx
 /**
  * Simple CPU Profiler for Workbench Tests
- * 
+ *
  * Connects to browser, starts profiling on ALL targets, runs tests, stops profiling.
  */
 
@@ -18,7 +18,10 @@ const __dirname = dirname(__filename);
 function findMonorepoRoot(): string | null {
   let currentDir = __dirname;
   while (currentDir !== path.dirname(currentDir)) {
-    if (fs.existsSync(path.join(currentDir, "elements")) && fs.existsSync(path.join(currentDir, "telecine"))) {
+    if (
+      fs.existsSync(path.join(currentDir, "elements")) &&
+      fs.existsSync(path.join(currentDir, "telecine"))
+    ) {
       return currentDir;
     }
     currentDir = path.dirname(currentDir);
@@ -27,8 +30,9 @@ function findMonorepoRoot(): string | null {
 }
 
 async function main() {
-  const testFile = "packages/elements/src/preview/renderTimegroupToVideo.workbench.browsertest.ts";
-  
+  const testFile =
+    "packages/elements/src/preview/renderTimegroupToVideo.workbench.browsertest.ts";
+
   console.log(`\n🔬 Simple Workbench Test CPU Profiler\n`);
 
   const monorepoRoot = findMonorepoRoot();
@@ -39,7 +43,9 @@ async function main() {
 
   const wsEndpointPath = path.join(monorepoRoot, ".wsEndpoint.json");
   if (!fs.existsSync(wsEndpointPath)) {
-    console.error("Browser server not running. Start with: ./scripts/start-host-chrome");
+    console.error(
+      "Browser server not running. Start with: ./scripts/start-host-chrome",
+    );
     process.exit(1);
   }
 
@@ -47,17 +53,17 @@ async function main() {
   console.log(`📡 Connecting to browser: ${wsEndpoint}\n`);
 
   const browser = await chromium.connect(wsEndpoint);
-  
+
   // Get CDP session for the browser (not a specific page)
   const browserCDP = await browser.newBrowserCDPSession();
-  
+
   console.log(`🎬 Starting profiler on browser...\n`);
-  
+
   // Start profiling on the browser level
   await browserCDP.send("Profiler.enable");
   await browserCDP.send("Profiler.setSamplingInterval", { interval: 100 });
   await browserCDP.send("Profiler.start");
-  
+
   const startTime = Date.now();
 
   // Run the browsertest
@@ -78,13 +84,18 @@ async function main() {
 
   // Stop profiling
   console.log(`\n⏱️  Stopping profiler...\n`);
-  const { profile } = await browserCDP.send("Profiler.stop") as any;
+  const { profile } = (await browserCDP.send("Profiler.stop")) as any;
   await browserCDP.send("Profiler.disable");
 
   console.log(`⏱️  Tests completed in ${(wallClockMs / 1000).toFixed(2)}s`);
 
   // Save profile
-  const outputPath = path.join(monorepoRoot, "elements", ".profiles", "workbench-integration-profile.json");
+  const outputPath = path.join(
+    monorepoRoot,
+    "elements",
+    ".profiles",
+    "workbench-integration-profile.json",
+  );
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, JSON.stringify(profile, null, 2));
   console.log(`\n💾 Profile saved to: ${outputPath}`);
@@ -95,31 +106,45 @@ async function main() {
     hitCounts.set(sample, (hitCounts.get(sample) || 0) + 1);
   }
 
-  const nonIdleNodes = profile.nodes.filter((n: any) => 
-    n.callFrame.functionName !== "(idle)" && n.callFrame.functionName !== "(program)"
+  const nonIdleNodes = profile.nodes.filter(
+    (n: any) =>
+      n.callFrame.functionName !== "(idle)" &&
+      n.callFrame.functionName !== "(program)",
   );
-  
+
   const nonIdleSamples = profile.samples.filter((sampleId: number) => {
     const node = profile.nodes.find((n: any) => n.id === sampleId);
-    return node && node.callFrame.functionName !== "(idle)" && node.callFrame.functionName !== "(program)";
+    return (
+      node &&
+      node.callFrame.functionName !== "(idle)" &&
+      node.callFrame.functionName !== "(program)"
+    );
   });
 
-  console.log(`📊 Profile captured ${nonIdleSamples.length} non-idle samples from ${profile.samples.length} total samples`);
+  console.log(
+    `📊 Profile captured ${nonIdleSamples.length} non-idle samples from ${profile.samples.length} total samples`,
+  );
   console.log(`   ${nonIdleNodes.length} non-idle function nodes\n`);
 
   if (nonIdleSamples.length < 10) {
     console.log(`⚠️  Warning: Very few non-idle samples captured`);
-    console.log(`   The profiler may not have captured meaningful test execution\n`);
+    console.log(
+      `   The profiler may not have captured meaningful test execution\n`,
+    );
   } else {
     // Print top functions
-    const hotspots: Array<{name: string, hits: number, pct: number}> = [];
+    const hotspots: Array<{ name: string; hits: number; pct: number }> = [];
     for (const node of profile.nodes) {
       const hits = hitCounts.get(node.id) || 0;
-      if (hits > 0 && node.callFrame.functionName !== "(idle)" && node.callFrame.functionName !== "(program)") {
+      if (
+        hits > 0 &&
+        node.callFrame.functionName !== "(idle)" &&
+        node.callFrame.functionName !== "(program)"
+      ) {
         hotspots.push({
           name: node.callFrame.functionName || "(anonymous)",
           hits,
-          pct: (hits / profile.samples.length) * 100
+          pct: (hits / profile.samples.length) * 100,
         });
       }
     }
@@ -127,7 +152,9 @@ async function main() {
 
     console.log(`📊 Top 10 hotspots:`);
     for (const h of hotspots.slice(0, 10)) {
-      console.log(`   ${h.hits.toString().padStart(6)} samples (${h.pct.toFixed(1).padStart(5)}%)  ${h.name.slice(0, 60)}`);
+      console.log(
+        `   ${h.hits.toString().padStart(6)} samples (${h.pct.toFixed(1).padStart(5)}%)  ${h.name.slice(0, 60)}`,
+      );
     }
   }
 

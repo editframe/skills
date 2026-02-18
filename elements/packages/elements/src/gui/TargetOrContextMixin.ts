@@ -1,7 +1,10 @@
 import { type Context, consume } from "@lit/context";
 import type { LitElement } from "lit";
 import { property, state } from "lit/decorators.js";
-import { isEFTemporal, type TemporalMixinInterface } from "../elements/EFTemporal.js";
+import {
+  isEFTemporal,
+  type TemporalMixinInterface,
+} from "../elements/EFTemporal.js";
 import { TargetController } from "../elements/TargetController.js";
 import {
   type ControllableInterface,
@@ -108,10 +111,18 @@ export function TargetOrContextMixin<T extends Constructor<LitElement>>(
       this.#directTemporalSubscription = createDirectTemporalSubscription(
         this.targetElement as unknown as TemporalMixinInterface & HTMLElement,
         {
-          onPlayingChange: (value) => { (this as any).playing = value; },
-          onLoopChange: (value) => { if ("loop" in this) (this as any).loop = value; },
-          onCurrentTimeMsChange: (value) => { if ("currentTimeMs" in this) (this as any).currentTimeMs = value; },
-          onDurationMsChange: (value) => { if ("durationMs" in this) (this as any).durationMs = value; },
+          onPlayingChange: (value) => {
+            (this as any).playing = value;
+          },
+          onLoopChange: (value) => {
+            if ("loop" in this) (this as any).loop = value;
+          },
+          onCurrentTimeMsChange: (value) => {
+            if ("currentTimeMs" in this) (this as any).currentTimeMs = value;
+          },
+          onDurationMsChange: (value) => {
+            if ("durationMs" in this) (this as any).durationMs = value;
+          },
           onTargetTemporalChange: () => {},
         },
       );
@@ -127,7 +138,8 @@ export function TargetOrContextMixin<T extends Constructor<LitElement>>(
 
       // Temporal target without PlaybackController yet — wait for initialization
       if (isEFTemporal(this.targetElement)) {
-        const target = this.targetElement as unknown as TemporalMixinInterface & HTMLElement;
+        const target = this.targetElement as unknown as TemporalMixinInterface &
+          HTMLElement;
         target.updateComplete.then(() => {
           if ((this.targetElement as unknown) !== target) return;
           if (!this.#tryDirectTemporalSubscription()) {

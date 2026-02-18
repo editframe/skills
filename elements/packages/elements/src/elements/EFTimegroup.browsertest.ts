@@ -38,17 +38,18 @@ class TestContext extends ContextMixin(LitElement) {}
 @customElement("timegroup-test-media")
 class TimegroupTestMedia extends EFMedia {
   #mediaEngineValue: MediaEngine | null = null;
-  
-  override async getMediaEngine(_signal?: AbortSignal): Promise<MediaEngine | undefined> {
+
+  override async getMediaEngine(
+    _signal?: AbortSignal,
+  ): Promise<MediaEngine | undefined> {
     this.setAttribute("data-media-loaded", "true");
     this.#mediaEngineValue = {} as unknown as MediaEngine;
     this.mediaEngineTask.setValue(this.#mediaEngineValue);
     return this.#mediaEngineValue;
   }
-  
+
   override mediaEngineTask = new AsyncValue<MediaEngine>();
 }
-
 
 @customElement("test-temporal")
 class TestTemporal extends EFTemporal(LitElement) {
@@ -1068,11 +1069,15 @@ describe.skip("Dynamic content updates", () => {
       timegroup.setAttribute("duration", "10s");
 
       // Add nested timegroups to trigger frame task execution
-      const innerTimegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const innerTimegroup = document.createElement(
+        "ef-timegroup",
+      ) as EFTimegroup;
       innerTimegroup.setAttribute("mode", "sequence");
       timegroup.appendChild(innerTimegroup);
 
-      const childTimegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      const childTimegroup = document.createElement(
+        "ef-timegroup",
+      ) as EFTimegroup;
       childTimegroup.setAttribute("mode", "fixed");
       childTimegroup.setAttribute("duration", "5s");
       innerTimegroup.appendChild(childTimegroup);
@@ -1080,34 +1085,41 @@ describe.skip("Dynamic content updates", () => {
       // Use a timeout to detect if the browser locks up
       // If the test doesn't complete within 5 seconds, it's likely locked up
       container.appendChild(timegroup);
-      
+
       // Wait for initial update
       await timegroup.updateComplete;
-      
+
       // Wait a bit for any async operations (including localStorage restoration) to complete
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
       // The bug manifested as the browser becoming unresponsive
       // If we get here, the browser is still responsive
       // Wait for media durations (this was where it could lock up if seekTask ran twice)
       await Promise.race([
         timegroup.waitForMediaDurations(),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("waitForMediaDurations timeout - possible lockup")), 3000)
-        )
+        new Promise((_, reject) =>
+          setTimeout(
+            () =>
+              reject(
+                new Error("waitForMediaDurations timeout - possible lockup"),
+              ),
+            3000,
+          ),
+        ),
       ]);
-      
+
       // Verify that the time was restored correctly
       // The time should be restored from localStorage (5.0, clamped to duration if needed)
       assert.isTrue(
         timegroup.currentTime > 0,
-        `Time should be restored from localStorage. Got: ${timegroup.currentTime}`
+        `Time should be restored from localStorage. Got: ${timegroup.currentTime}`,
       );
-      
+
       // Verify the time is close to what we stored (allowing for clamping/quantization)
       assert.isTrue(
-        Math.abs(timegroup.currentTime - 5.0) < 0.1 || timegroup.currentTime === 10.0,
-        `Time should be restored to approximately 5.0 or clamped to duration. Got: ${timegroup.currentTime}`
+        Math.abs(timegroup.currentTime - 5.0) < 0.1 ||
+          timegroup.currentTime === 10.0,
+        `Time should be restored to approximately 5.0 or clamped to duration. Got: ${timegroup.currentTime}`,
       );
 
       container.remove();
@@ -1165,7 +1177,11 @@ describe.skip("Dynamic content updates", () => {
 
       timegroup.onFrame = null;
       await timegroup.seek(2000);
-      assert.equal(callbackCount, 1, "callback should not run after set to null");
+      assert.equal(
+        callbackCount,
+        1,
+        "callback should not run after set to null",
+      );
     }, 1000);
 
     test("setting new onFrame replaces previous callback", async () => {
@@ -1466,7 +1482,7 @@ describe("contentReadyState aggregation", () => {
 
     child.emitContentChange("bounds");
     // Allow debounced re-emit
-    await new Promise(r => requestAnimationFrame(r));
+    await new Promise((r) => requestAnimationFrame(r));
     await tg.updateComplete;
 
     assert.include(reasons, "bounds");

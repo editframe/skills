@@ -149,7 +149,7 @@ export class EFTextSegment extends EFTemporal(LitElement) {
     if (parentText) {
       return parentText.startTimeMs + parentText.durationMs;
     }
-    return (this.segmentEndMs || 0);
+    return this.segmentEndMs || 0;
   }
 
   get durationMs(): number {

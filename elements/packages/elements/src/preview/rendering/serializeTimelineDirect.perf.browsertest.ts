@@ -4,7 +4,10 @@
  */
 
 import { describe, it, expect, beforeAll } from "vitest";
-import { serializeElementToXHTML, captureTimelineToDataUri } from "./serializeTimelineDirect.js";
+import {
+  serializeElementToXHTML,
+  captureTimelineToDataUri,
+} from "./serializeTimelineDirect.js";
 import { loadImageFromDataUri } from "./loadImage.js";
 import type { EFTimegroup } from "../../elements/EFTimegroup.js";
 import "../../elements/EFTimegroup.js";
@@ -41,7 +44,13 @@ async function measureFrame(
   };
 }
 
-function stats(values: number[]): { min: number; max: number; avg: number; p50: number; p95: number } {
+function stats(values: number[]): {
+  min: number;
+  max: number;
+  avg: number;
+  p50: number;
+  p95: number;
+} {
   const sorted = [...values].sort((a, b) => a - b);
   return {
     min: sorted[0]!,
@@ -64,10 +73,12 @@ describe("serialization pipeline performance", () => {
 
   it("baseline: simple HTML content (no canvases)", async () => {
     const tg = document.createElement("ef-timegroup") as EFTimegroup;
-    tg.style.cssText = "width: 1920px; height: 1080px; background: linear-gradient(45deg, #667eea, #764ba2);";
+    tg.style.cssText =
+      "width: 1920px; height: 1080px; background: linear-gradient(45deg, #667eea, #764ba2);";
 
     const content = document.createElement("div");
-    content.style.cssText = "width: 100%; height: 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: center;";
+    content.style.cssText =
+      "width: 100%; height: 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: center;";
     for (let i = 0; i < 20; i++) {
       const el = document.createElement("div");
       el.style.cssText = `width:80px;height:80px;margin:8px;background:hsl(${i * 18},70%,60%);border-radius:${i % 2 ? "50%" : "8px"};`;
@@ -95,11 +106,30 @@ describe("serialization pipeline performance", () => {
       }
 
       console.log("\n=== SIMPLE HTML (1920x1080, 20 elements) ===");
-      console.log(formatStats("serialize    ", results.map(r => r.serializeMs)));
-      console.log(formatStats("imageLoad    ", results.map(r => r.imageLoadMs)));
-      console.log(formatStats("total        ", results.map(r => r.totalMs)));
-      console.log(`dataUri size:  ${(results[0]!.dataUriLength / 1024).toFixed(1)} KB`);
-      console.log(`effective fps: ${(1000 / stats(results.map(r => r.totalMs)).avg).toFixed(1)} fps`);
+      console.log(
+        formatStats(
+          "serialize    ",
+          results.map((r) => r.serializeMs),
+        ),
+      );
+      console.log(
+        formatStats(
+          "imageLoad    ",
+          results.map((r) => r.imageLoadMs),
+        ),
+      );
+      console.log(
+        formatStats(
+          "total        ",
+          results.map((r) => r.totalMs),
+        ),
+      );
+      console.log(
+        `dataUri size:  ${(results[0]!.dataUriLength / 1024).toFixed(1)} KB`,
+      );
+      console.log(
+        `effective fps: ${(1000 / stats(results.map((r) => r.totalMs)).avg).toFixed(1)} fps`,
+      );
 
       // Sanity: should complete, no assertion on speed
       expect(results.length).toBe(ITERATIONS);
@@ -110,10 +140,12 @@ describe("serialization pipeline performance", () => {
 
   it("baseline: HTML content at reduced resolution (0.5x)", async () => {
     const tg = document.createElement("ef-timegroup") as EFTimegroup;
-    tg.style.cssText = "width: 1920px; height: 1080px; background: linear-gradient(45deg, #667eea, #764ba2);";
+    tg.style.cssText =
+      "width: 1920px; height: 1080px; background: linear-gradient(45deg, #667eea, #764ba2);";
 
     const content = document.createElement("div");
-    content.style.cssText = "width: 100%; height: 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: center;";
+    content.style.cssText =
+      "width: 100%; height: 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: center;";
     for (let i = 0; i < 20; i++) {
       const el = document.createElement("div");
       el.style.cssText = `width:80px;height:80px;margin:8px;background:hsl(${i * 18},70%,60%);border-radius:${i % 2 ? "50%" : "8px"};`;
@@ -131,25 +163,55 @@ describe("serialization pipeline performance", () => {
       const results: TimingResult[] = [];
 
       for (let i = 0; i < WARMUP; i++) {
-        await captureTimelineToDataUri(tg, 1920, 1080, { canvasScale: 0.5, timeMs: 0 });
+        await captureTimelineToDataUri(tg, 1920, 1080, {
+          canvasScale: 0.5,
+          timeMs: 0,
+        });
       }
 
       for (let i = 0; i < ITERATIONS; i++) {
         const t0 = performance.now();
-        const dataUri = await captureTimelineToDataUri(tg, 1920, 1080, { canvasScale: 0.5, timeMs: 0 });
+        const dataUri = await captureTimelineToDataUri(tg, 1920, 1080, {
+          canvasScale: 0.5,
+          timeMs: 0,
+        });
         const serializeMs = performance.now() - t0;
         const t1 = performance.now();
         await loadImageFromDataUri(dataUri);
         const imageLoadMs = performance.now() - t1;
-        results.push({ serializeMs, imageLoadMs, totalMs: serializeMs + imageLoadMs, dataUriLength: dataUri.length });
+        results.push({
+          serializeMs,
+          imageLoadMs,
+          totalMs: serializeMs + imageLoadMs,
+          dataUriLength: dataUri.length,
+        });
       }
 
       console.log("\n=== SIMPLE HTML (1920x1080 @ 0.5x scale) ===");
-      console.log(formatStats("serialize    ", results.map(r => r.serializeMs)));
-      console.log(formatStats("imageLoad    ", results.map(r => r.imageLoadMs)));
-      console.log(formatStats("total        ", results.map(r => r.totalMs)));
-      console.log(`dataUri size:  ${(results[0]!.dataUriLength / 1024).toFixed(1)} KB`);
-      console.log(`effective fps: ${(1000 / stats(results.map(r => r.totalMs)).avg).toFixed(1)} fps`);
+      console.log(
+        formatStats(
+          "serialize    ",
+          results.map((r) => r.serializeMs),
+        ),
+      );
+      console.log(
+        formatStats(
+          "imageLoad    ",
+          results.map((r) => r.imageLoadMs),
+        ),
+      );
+      console.log(
+        formatStats(
+          "total        ",
+          results.map((r) => r.totalMs),
+        ),
+      );
+      console.log(
+        `dataUri size:  ${(results[0]!.dataUriLength / 1024).toFixed(1)} KB`,
+      );
+      console.log(
+        `effective fps: ${(1000 / stats(results.map((r) => r.totalMs)).avg).toFixed(1)} fps`,
+      );
 
       expect(results.length).toBe(ITERATIONS);
     } finally {
@@ -163,7 +225,8 @@ describe("serialization pipeline performance", () => {
 
     // Build deeper DOM tree
     const grid = document.createElement("div");
-    grid.style.cssText = "display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:20px;width:100%;height:100%;box-sizing:border-box;";
+    grid.style.cssText =
+      "display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:20px;width:100%;height:100%;box-sizing:border-box;";
     for (let i = 0; i < 25; i++) {
       const card = document.createElement("div");
       card.style.cssText = `background:hsl(${i * 14},60%,40%);border-radius:12px;padding:12px;display:flex;flex-direction:column;justify-content:space-between;`;
@@ -171,8 +234,10 @@ describe("serialization pipeline performance", () => {
       title.style.cssText = "color:white;margin:0;font-size:14px;";
       title.textContent = `Card ${i + 1}`;
       const body = document.createElement("p");
-      body.style.cssText = "color:rgba(255,255,255,0.7);margin:4px 0;font-size:11px;";
-      body.textContent = "Sample card content with text that wraps to multiple lines for testing serialization performance.";
+      body.style.cssText =
+        "color:rgba(255,255,255,0.7);margin:4px 0;font-size:11px;";
+      body.textContent =
+        "Sample card content with text that wraps to multiple lines for testing serialization performance.";
       const footer = document.createElement("div");
       footer.style.cssText = "display:flex;gap:4px;";
       for (let j = 0; j < 3; j++) {
@@ -203,12 +268,33 @@ describe("serialization pipeline performance", () => {
         results.push(await measureFrame(tg, 1920, 1080, 0));
       }
 
-      console.log("\n=== COMPLEX HTML (1920x1080, 25 cards with nested elements) ===");
-      console.log(formatStats("serialize    ", results.map(r => r.serializeMs)));
-      console.log(formatStats("imageLoad    ", results.map(r => r.imageLoadMs)));
-      console.log(formatStats("total        ", results.map(r => r.totalMs)));
-      console.log(`dataUri size:  ${(results[0]!.dataUriLength / 1024).toFixed(1)} KB`);
-      console.log(`effective fps: ${(1000 / stats(results.map(r => r.totalMs)).avg).toFixed(1)} fps`);
+      console.log(
+        "\n=== COMPLEX HTML (1920x1080, 25 cards with nested elements) ===",
+      );
+      console.log(
+        formatStats(
+          "serialize    ",
+          results.map((r) => r.serializeMs),
+        ),
+      );
+      console.log(
+        formatStats(
+          "imageLoad    ",
+          results.map((r) => r.imageLoadMs),
+        ),
+      );
+      console.log(
+        formatStats(
+          "total        ",
+          results.map((r) => r.totalMs),
+        ),
+      );
+      console.log(
+        `dataUri size:  ${(results[0]!.dataUriLength / 1024).toFixed(1)} KB`,
+      );
+      console.log(
+        `effective fps: ${(1000 / stats(results.map((r) => r.totalMs)).avg).toFixed(1)} fps`,
+      );
       console.log(`DOM nodes:     ~${grid.querySelectorAll("*").length + 1}`);
 
       expect(results.length).toBe(ITERATIONS);
@@ -229,7 +315,8 @@ describe("serialization pipeline performance", () => {
     const videoCanvas = document.createElement("canvas");
     videoCanvas.width = 1920;
     videoCanvas.height = 1080;
-    videoCanvas.style.cssText = "width:100%;height:100%;position:absolute;top:0;left:0;object-fit:cover;";
+    videoCanvas.style.cssText =
+      "width:100%;height:100%;position:absolute;top:0;left:0;object-fit:cover;";
     const vctx = videoCanvas.getContext("2d")!;
     // Paint gradient to simulate video frame
     const gradient = vctx.createLinearGradient(0, 0, 1920, 1080);
@@ -254,7 +341,8 @@ describe("serialization pipeline performance", () => {
 
     // Text overlay
     const text = document.createElement("div");
-    text.style.cssText = "position:absolute;top:20px;left:20px;color:white;font-size:48px;text-shadow:2px 2px 4px rgba(0,0,0,0.5);";
+    text.style.cssText =
+      "position:absolute;top:20px;left:20px;color:white;font-size:48px;text-shadow:2px 2px 4px rgba(0,0,0,0.5);";
     text.textContent = "Sample Overlay Text";
     wrapper.appendChild(text);
 
@@ -275,12 +363,33 @@ describe("serialization pipeline performance", () => {
         results.push(await measureFrame(tg, 1920, 1080, 0));
       }
 
-      console.log("\n=== HTML + 4 CANVASES (1920x1080 main + 3x 400x200 overlay) ===");
-      console.log(formatStats("serialize    ", results.map(r => r.serializeMs)));
-      console.log(formatStats("imageLoad    ", results.map(r => r.imageLoadMs)));
-      console.log(formatStats("total        ", results.map(r => r.totalMs)));
-      console.log(`dataUri size:  ${(results[0]!.dataUriLength / 1024).toFixed(1)} KB`);
-      console.log(`effective fps: ${(1000 / stats(results.map(r => r.totalMs)).avg).toFixed(1)} fps`);
+      console.log(
+        "\n=== HTML + 4 CANVASES (1920x1080 main + 3x 400x200 overlay) ===",
+      );
+      console.log(
+        formatStats(
+          "serialize    ",
+          results.map((r) => r.serializeMs),
+        ),
+      );
+      console.log(
+        formatStats(
+          "imageLoad    ",
+          results.map((r) => r.imageLoadMs),
+        ),
+      );
+      console.log(
+        formatStats(
+          "total        ",
+          results.map((r) => r.totalMs),
+        ),
+      );
+      console.log(
+        `dataUri size:  ${(results[0]!.dataUriLength / 1024).toFixed(1)} KB`,
+      );
+      console.log(
+        `effective fps: ${(1000 / stats(results.map((r) => r.totalMs)).avg).toFixed(1)} fps`,
+      );
 
       expect(results.length).toBe(ITERATIONS);
     } finally {
@@ -292,9 +401,11 @@ describe("serialization pipeline performance", () => {
     // Direct worker encoding benchmark. Shows the cost difference between
     // JPEG and PNG at different resolutions — this is the bottleneck for
     // canvas-heavy compositions.
-    const { encodeCanvasInWorker } = await import("../encoding/workerEncoder.js");
+    const { encodeCanvasInWorker } =
+      await import("../encoding/workerEncoder.js");
     const { WorkerPool } = await import("../workers/WorkerPool.js");
-    const { getEncoderWorkerUrl } = await import("../workers/encoderWorkerInline.js");
+    const { getEncoderWorkerUrl } =
+      await import("../workers/encoderWorkerInline.js");
 
     const workerUrl = getEncoderWorkerUrl();
     const pool = new WorkerPool(workerUrl);
@@ -310,7 +421,9 @@ describe("serialization pipeline performance", () => {
       { w: 630, h: 354, label: "630x354 (display)" },
     ];
 
-    console.log("\n=== WORKER ENCODING: JPEG vs PNG at various resolutions ===");
+    console.log(
+      "\n=== WORKER ENCODING: JPEG vs PNG at various resolutions ===",
+    );
 
     for (const { w, h, label } of resolutions) {
       const canvas = document.createElement("canvas");
@@ -326,8 +439,12 @@ describe("serialization pipeline performance", () => {
 
       // Warmup
       for (let i = 0; i < 2; i++) {
-        await pool.execute((worker) => encodeCanvasInWorker(worker, canvas, false));
-        await pool.execute((worker) => encodeCanvasInWorker(worker, canvas, true));
+        await pool.execute((worker) =>
+          encodeCanvasInWorker(worker, canvas, false),
+        );
+        await pool.execute((worker) =>
+          encodeCanvasInWorker(worker, canvas, true),
+        );
       }
 
       const jpegTimes: number[] = [];
@@ -337,12 +454,16 @@ describe("serialization pipeline performance", () => {
 
       for (let i = 0; i < 10; i++) {
         let t = performance.now();
-        const jpg = await pool.execute((worker) => encodeCanvasInWorker(worker, canvas, false));
+        const jpg = await pool.execute((worker) =>
+          encodeCanvasInWorker(worker, canvas, false),
+        );
         jpegTimes.push(performance.now() - t);
         if (i === 0) jpegSize = jpg.length;
 
         t = performance.now();
-        const png = await pool.execute((worker) => encodeCanvasInWorker(worker, canvas, true));
+        const png = await pool.execute((worker) =>
+          encodeCanvasInWorker(worker, canvas, true),
+        );
         pngTimes.push(performance.now() - t);
         if (i === 0) pngSize = png.length;
       }
@@ -350,8 +471,12 @@ describe("serialization pipeline performance", () => {
       console.log(`\n--- ${label} ---`);
       console.log(formatStats("JPEG worker  ", jpegTimes));
       console.log(formatStats("PNG worker   ", pngTimes));
-      console.log(`JPEG size: ${(jpegSize / 1024).toFixed(1)}KB, PNG size: ${(pngSize / 1024).toFixed(1)}KB`);
-      console.log(`JPEG speedup: ${(stats(pngTimes).avg / stats(jpegTimes).avg).toFixed(1)}x`);
+      console.log(
+        `JPEG size: ${(jpegSize / 1024).toFixed(1)}KB, PNG size: ${(pngSize / 1024).toFixed(1)}KB`,
+      );
+      console.log(
+        `JPEG speedup: ${(stats(pngTimes).avg / stats(jpegTimes).avg).toFixed(1)}x`,
+      );
     }
 
     // Test resize-before-encode: 1920x1080 canvas → 630x354 via worker
@@ -368,14 +493,18 @@ describe("serialization pipeline performance", () => {
 
     // Warmup
     for (let i = 0; i < 2; i++) {
-      await pool.execute((worker) => encodeCanvasInWorker(worker, bigCanvas, false));
+      await pool.execute((worker) =>
+        encodeCanvasInWorker(worker, bigCanvas, false),
+      );
     }
 
     const resizeTimes: number[] = [];
     let resizeSize = 0;
     for (let i = 0; i < 10; i++) {
       const t = performance.now();
-      const result = await pool.execute((worker) => encodeCanvasInWorker(worker, bigCanvas, false));
+      const result = await pool.execute((worker) =>
+        encodeCanvasInWorker(worker, bigCanvas, false),
+      );
       resizeTimes.push(performance.now() - t);
       if (i === 0) resizeSize = result.length;
     }
@@ -391,7 +520,9 @@ describe("serialization pipeline performance", () => {
     const hasOffscreen = typeof OffscreenCanvas !== "undefined";
     const hasBitmap = typeof createImageBitmap !== "undefined";
     console.log(`\n=== WORKER DIAGNOSTICS ===`);
-    console.log(`Worker: ${hasWorker}, OffscreenCanvas: ${hasOffscreen}, createImageBitmap: ${hasBitmap}`);
+    console.log(
+      `Worker: ${hasWorker}, OffscreenCanvas: ${hasOffscreen}, createImageBitmap: ${hasBitmap}`,
+    );
     console.log(`hardwareConcurrency: ${navigator.hardwareConcurrency}`);
 
     const canvas = document.createElement("canvas");
@@ -426,7 +557,9 @@ describe("serialization pipeline performance", () => {
 
     console.log(formatStats("PNG encode   ", pngTimes));
     console.log(formatStats("JPEG encode  ", jpgTimes));
-    console.log(`JPEG speedup: ${(stats(pngTimes).avg / stats(jpgTimes).avg).toFixed(1)}x`);
+    console.log(
+      `JPEG speedup: ${(stats(pngTimes).avg / stats(jpgTimes).avg).toFixed(1)}x`,
+    );
 
     expect(true).toBe(true);
   });
@@ -436,7 +569,8 @@ describe("serialization pipeline performance", () => {
     tg.style.cssText = "width: 1920px; height: 1080px; background: #333;";
 
     const content = document.createElement("div");
-    content.style.cssText = "width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-size:72px;";
+    content.style.cssText =
+      "width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-size:72px;";
     content.textContent = "Performance Test";
     tg.appendChild(content);
     document.body.appendChild(tg);
@@ -451,18 +585,27 @@ describe("serialization pipeline performance", () => {
 
       // Warmup
       for (let i = 0; i < 3; i++) {
-        await serializeElementToXHTML(tg, 1920, 1080, { canvasScale: 1, timeMs: 0 });
+        await serializeElementToXHTML(tg, 1920, 1080, {
+          canvasScale: 1,
+          timeMs: 0,
+        });
       }
 
       for (let i = 0; i < 20; i++) {
         // Phase 1: DOM walk + XHTML generation
         const t0 = performance.now();
-        await serializeElementToXHTML(tg, 1920, 1080, { canvasScale: 1, timeMs: 0 });
+        await serializeElementToXHTML(tg, 1920, 1080, {
+          canvasScale: 1,
+          timeMs: 0,
+        });
         xhtmlTimes.push(performance.now() - t0);
 
         // Phase 2: Full pipeline (DOM walk + XHTML + SVG wrap + base64 encode)
         const t1 = performance.now();
-        const dataUri = await captureTimelineToDataUri(tg, 1920, 1080, { canvasScale: 1, timeMs: 0 });
+        const dataUri = await captureTimelineToDataUri(tg, 1920, 1080, {
+          canvasScale: 1,
+          timeMs: 0,
+        });
         dataUriTimes.push(performance.now() - t1);
 
         // Phase 3: Image loading (browser SVG parsing + rendering)
@@ -482,10 +625,18 @@ describe("serialization pipeline performance", () => {
       const avgImgLoad = stats(imageLoadTimes).avg;
 
       console.log("\n--- Approximate breakdown ---");
-      console.log(`DOM walk + XHTML: ${avgXhtml.toFixed(1)}ms (${((avgXhtml / avgTotal) * 100).toFixed(0)}%)`);
-      console.log(`SVG wrap + base64: ${avgBase64.toFixed(1)}ms (${((avgBase64 / avgTotal) * 100).toFixed(0)}%)`);
-      console.log(`Image load:        ${avgImgLoad.toFixed(1)}ms (${((avgImgLoad / avgTotal) * 100).toFixed(0)}%)`);
-      console.log(`Total:             ${avgTotal.toFixed(1)}ms → ${(1000 / avgTotal).toFixed(1)} fps`);
+      console.log(
+        `DOM walk + XHTML: ${avgXhtml.toFixed(1)}ms (${((avgXhtml / avgTotal) * 100).toFixed(0)}%)`,
+      );
+      console.log(
+        `SVG wrap + base64: ${avgBase64.toFixed(1)}ms (${((avgBase64 / avgTotal) * 100).toFixed(0)}%)`,
+      );
+      console.log(
+        `Image load:        ${avgImgLoad.toFixed(1)}ms (${((avgImgLoad / avgTotal) * 100).toFixed(0)}%)`,
+      );
+      console.log(
+        `Total:             ${avgTotal.toFixed(1)}ms → ${(1000 / avgTotal).toFixed(1)} fps`,
+      );
 
       expect(xhtmlTimes.length).toBe(20);
     } finally {

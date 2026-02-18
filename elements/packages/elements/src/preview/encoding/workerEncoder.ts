@@ -30,7 +30,11 @@ export async function encodeCanvasInWorker(
     };
 
     const messageHandler = (event: MessageEvent) => {
-      const result = event.data as { taskId: string; dataUrl: string; error?: string };
+      const result = event.data as {
+        taskId: string;
+        dataUrl: string;
+        error?: string;
+      };
       if (result.taskId === taskId) {
         cleanup();
         if (result.error) {

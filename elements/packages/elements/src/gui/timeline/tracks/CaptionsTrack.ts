@@ -26,45 +26,53 @@ const MAX_CACHE_SIZE = 500;
  * Matches the actual font used in word elements (font-weight: 500).
  * Results are cached to avoid repeated measurements of the same text.
  */
-function measureTextWidth(text: string, fontSize: number, fontWeight: number = 500): number {
+function measureTextWidth(
+  text: string,
+  fontSize: number,
+  fontWeight: number = 500,
+): number {
   // Check cache first
   const cacheKey = `${text}:${fontSize}:${fontWeight}`;
   const cached = textMeasurementCache.get(cacheKey);
   if (cached !== undefined) {
     return cached;
   }
-  
+
   // Initialize shared canvas context if needed
   if (!measurementCanvas || !measurementContext) {
     measurementCanvas = document.createElement("canvas");
     measurementContext = measurementCanvas.getContext("2d");
   }
-  
+
   if (!measurementContext) {
     return text.length * fontSize * 0.6; // Fallback estimate
   }
-  
+
   // Match the actual font used in word elements
-  const fontFamily = getComputedStyle(document.body).fontFamily || "system-ui, sans-serif";
+  const fontFamily =
+    getComputedStyle(document.body).fontFamily || "system-ui, sans-serif";
   measurementContext.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
   const width = measurementContext.measureText(text).width;
-  
+
   // Cache the result (with size limit to prevent memory leaks)
   if (textMeasurementCache.size >= MAX_CACHE_SIZE) {
     // Clear oldest entries (simple strategy: clear half the cache)
-    const keysToDelete = Array.from(textMeasurementCache.keys()).slice(0, MAX_CACHE_SIZE / 2);
+    const keysToDelete = Array.from(textMeasurementCache.keys()).slice(
+      0,
+      MAX_CACHE_SIZE / 2,
+    );
     for (const key of keysToDelete) {
       textMeasurementCache.delete(key);
     }
   }
   textMeasurementCache.set(cacheKey, width);
-  
+
   return width;
 }
 
 /**
  * Check if words can fit individually within a segment when positioned by time
- * 
+ *
  * Strategy: Allow overlaps as long as all words can be rendered within the container.
  * Only use compact mode when words are so cramped they can't be displayed at all.
  */
@@ -77,26 +85,31 @@ function canWordsFitIndividually(
   if (words.length === 0) {
     return { fits: false, reason: "no words" };
   }
-  
+
   // Measure total text width of all words (as if rendered sequentially)
   let totalTextWidth = 0;
-  const wordWidths: Array<{ textWidth: number; timeWidth: number; startPx: number; endPx: number }> = [];
-  
+  const wordWidths: Array<{
+    textWidth: number;
+    timeWidth: number;
+    startPx: number;
+    endPx: number;
+  }> = [];
+
   for (const word of words) {
     if (!word) continue;
-    
+
     // Measure actual text width (with padding: 2px left + 2px right = 4px total)
     const textWidth = measureTextWidth(word.text.trim(), 9, 500) + 4;
-    
+
     // Calculate time-based position and width
     const startPx = pixelsPerMs * (word.start - segmentStart) * 1000;
     const endPx = pixelsPerMs * (word.end - segmentStart) * 1000;
     const timeWidth = endPx - startPx;
-    
+
     wordWidths.push({ textWidth, timeWidth, startPx, endPx });
     totalTextWidth += textWidth;
   }
-  
+
   // Key insight: If total text width fits in segment, we can render words individually
   // even if they overlap based on their time positions
   // Use 90% threshold to account for some spacing/overlap
@@ -104,29 +117,34 @@ function canWordsFitIndividually(
     // All words can fit - use positioned mode (overlaps are okay)
     return { fits: true };
   }
-  
+
   // If total text doesn't fit, check if individual words are too narrow to be readable
   // If any word's time-based width is less than 30% of its text width, it's unreadable
   for (const { textWidth, timeWidth } of wordWidths) {
     if (timeWidth < textWidth * 0.3) {
-      return { fits: false, reason: `word too narrow (${timeWidth.toFixed(1)}px < ${(textWidth * 0.3).toFixed(1)}px)` };
+      return {
+        fits: false,
+        reason: `word too narrow (${timeWidth.toFixed(1)}px < ${(textWidth * 0.3).toFixed(1)}px)`,
+      };
     }
   }
-  
+
   // If words are readable individually but total text is too wide,
   // check if they can still fit with overlaps
   // Find the maximum right edge of all words
-  const maxEndPx = Math.max(...wordWidths.map(w => w.endPx));
-  
+  const maxEndPx = Math.max(...wordWidths.map((w) => w.endPx));
+
   // If the rightmost word fits within the segment, allow overlaps
   if (maxEndPx <= segmentWidthPx * 1.1) {
     return { fits: true };
   }
-  
-  // Words don't fit - use compact mode
-  return { fits: false, reason: `words exceed segment (total text: ${totalTextWidth.toFixed(1)}px, segment: ${segmentWidthPx.toFixed(1)}px)` };
-}
 
+  // Words don't fit - use compact mode
+  return {
+    fits: false,
+    reason: `words exceed segment (total text: ${totalTextWidth.toFixed(1)}px, segment: ${segmentWidthPx.toFixed(1)}px)`,
+  };
+}
 
 @customElement("ef-captions-track")
 export class EFCaptionsTrack extends TrackItem {
@@ -258,12 +276,14 @@ export class EFCaptionsTrack extends TrackItem {
 
   @consume({ context: currentTimeContext, subscribe: true })
   contextCurrentTimeMs = 0;
-  
+
   private lastPixelsPerMs = 0;
-  
-  protected updated(changedProperties: Map<string | number | symbol, unknown>): void {
+
+  protected updated(
+    changedProperties: Map<string | number | symbol, unknown>,
+  ): void {
     super.updated(changedProperties);
-    
+
     // Re-render when pixelsPerMs changes (zoom level changes)
     if (changedProperties.has("pixelsPerMs")) {
       const currentPixelsPerMs = this.pixelsPerMs;
@@ -328,7 +348,6 @@ export class EFCaptionsTrack extends TrackItem {
       ${this.renderChildren()}
     </div>`;
   }
-  
 
   renderCaptionsData(captionsData: Caption | null | undefined) {
     if (!captionsData) {
@@ -338,29 +357,29 @@ export class EFCaptionsTrack extends TrackItem {
     const captions = this.element as EFCaptions;
     const rootTimegroup = captions.rootTimegroup;
     // Use context current time for reactivity, fallback to rootTimegroup
-    const currentTimeMs = this.contextCurrentTimeMs || rootTimegroup?.currentTimeMs || 0;
+    const currentTimeMs =
+      this.contextCurrentTimeMs || rootTimegroup?.currentTimeMs || 0;
     const captionsLocalTimeMs = currentTimeMs - captions.startTimeMs;
     const captionsLocalTimeSec = captionsLocalTimeMs / 1000;
 
     // Get element type color for captions using shared theme utility
     const captionColor = getElementTypeColor("captions", this);
-    
+
     // Find active word for highlighting
     const activeWord = captionsData.word_segments.find(
       (word) =>
-        captionsLocalTimeSec >= word.start &&
-        captionsLocalTimeSec < word.end
+        captionsLocalTimeSec >= word.start && captionsLocalTimeSec < word.end,
     );
-    
+
     // Render word markers for visual density indication (subtle)
     const wordMarkers = captionsData.word_segments.map((word) => {
       const wordStartPx = this.pixelsPerMs * word.start * 1000;
       const wordWidth = this.pixelsPerMs * (word.end - word.start) * 1000;
       const isActive = word === activeWord;
-      
+
       // Only show markers if they're wide enough to be visible
       if (wordWidth < 1.5) return nothing;
-      
+
       return html`<div
         class="word-marker ${isActive ? "active" : ""}"
         style=${styleMap({
@@ -374,22 +393,22 @@ export class EFCaptionsTrack extends TrackItem {
       const isActiveSegment =
         captionsLocalTimeSec >= segment.start &&
         captionsLocalTimeSec < segment.end;
-      
+
       const segmentStartPx = this.pixelsPerMs * segment.start * 1000;
-      const segmentWidth = this.pixelsPerMs * (segment.end - segment.start) * 1000;
+      const segmentWidth =
+        this.pixelsPerMs * (segment.end - segment.start) * 1000;
       const segmentDuration = (segment.end - segment.start) * 1000;
-      
+
       // Get words in this segment, sorted by start time
       const wordsInSegment = captionsData.word_segments
         .filter(
-          (word) =>
-            word.start >= segment.start && word.end <= segment.end
+          (word) => word.start >= segment.start && word.end <= segment.end,
         )
         .sort((a, b) => a.start - b.start);
-      
+
       // Calculate visual density based on word count
       const density = Math.min(wordsInSegment.length / 10, 1);
-      
+
       // Use actual measurement to determine if words can fit individually
       // Allow overlaps - only use compact mode when words can't be rendered at all
       const measurementResult = canWordsFitIndividually(
@@ -398,47 +417,58 @@ export class EFCaptionsTrack extends TrackItem {
         segmentWidth,
         this.pixelsPerMs,
       );
-      
+
       const useCompactText = !measurementResult.fits;
       let avgSpacing = 0;
-      
+
       // Calculate average spacing for font scaling (only if using positioned mode)
       if (!useCompactText && wordsInSegment.length > 1) {
         let totalSpacing = 0;
         let spacingCount = 0;
-        
+
         for (let i = 0; i < wordsInSegment.length - 1; i++) {
           const word1 = wordsInSegment[i];
           const word2 = wordsInSegment[i + 1];
           if (!word1 || !word2) continue;
-          
-          const word1EndPx = this.pixelsPerMs * (word1.end - segment.start) * 1000;
-          const word2StartPx = this.pixelsPerMs * (word2.start - segment.start) * 1000;
+
+          const word1EndPx =
+            this.pixelsPerMs * (word1.end - segment.start) * 1000;
+          const word2StartPx =
+            this.pixelsPerMs * (word2.start - segment.start) * 1000;
           const spacing = word2StartPx - word1EndPx;
-          
+
           if (spacing > 0) {
             totalSpacing += spacing;
             spacingCount++;
           }
         }
-        
+
         avgSpacing = spacingCount > 0 ? totalSpacing / spacingCount : 0;
       }
-      
+
       // Calculate optimal font size for positioned words (if not using compact mode)
       const MIN_READABLE_FONT_SIZE = 6; // Minimum readable font size in pixels
       const baseFontSize = 9;
       const activeFontSize = 10;
       let scaledFontSize = baseFontSize;
       let scaledActiveFontSize = activeFontSize;
-      
+
       if (!useCompactText && wordsInSegment.length > 1 && avgSpacing < 8) {
         // Scale down font size proportionally, but don't go below minimum
-        const scaleFactor = Math.max(MIN_READABLE_FONT_SIZE / baseFontSize, avgSpacing / 8);
-        scaledFontSize = Math.max(MIN_READABLE_FONT_SIZE, baseFontSize * scaleFactor);
-        scaledActiveFontSize = Math.max(MIN_READABLE_FONT_SIZE, activeFontSize * scaleFactor);
+        const scaleFactor = Math.max(
+          MIN_READABLE_FONT_SIZE / baseFontSize,
+          avgSpacing / 8,
+        );
+        scaledFontSize = Math.max(
+          MIN_READABLE_FONT_SIZE,
+          baseFontSize * scaleFactor,
+        );
+        scaledActiveFontSize = Math.max(
+          MIN_READABLE_FONT_SIZE,
+          activeFontSize * scaleFactor,
+        );
       }
-      
+
       // Render words positioned by their actual timing within the segment
       const renderWords = () => {
         if (useCompactText) {
@@ -447,25 +477,28 @@ export class EFCaptionsTrack extends TrackItem {
             <span class="segment-text-compact">${segment.text}</span>
           `;
         }
-        
+
         // Positioned mode: render words at their time positions
         return wordsInSegment.map((word) => {
           // Position relative to segment start
-          const wordOffsetFromSegmentStart = (word.start - segment.start) * 1000;
+          const wordOffsetFromSegmentStart =
+            (word.start - segment.start) * 1000;
           const wordLeftPx = this.pixelsPerMs * wordOffsetFromSegmentStart;
           const wordWidthPx = this.pixelsPerMs * (word.end - word.start) * 1000;
           const isActive = word === activeWord;
-          
+
           // Determine if word is in the future (after active word)
           const isFuture = activeWord && word.start > activeWord.end;
-          
+
           return html`
             <span
               class="word-element ${isActive ? "active" : ""} ${isFuture ? "future" : ""}"
               style=${styleMap({
                 left: `${wordLeftPx}px`,
                 minWidth: `${Math.max(wordWidthPx, 8)}px`,
-                fontSize: isActive ? `${scaledActiveFontSize}px` : `${scaledFontSize}px`,
+                fontSize: isActive
+                  ? `${scaledActiveFontSize}px`
+                  : `${scaledFontSize}px`,
                 top: "50%",
               })}
               title="Word: '${word.text}' (${word.start.toFixed(2)}s - ${word.end.toFixed(2)}s)"
@@ -475,7 +508,7 @@ export class EFCaptionsTrack extends TrackItem {
           `;
         });
       };
-      
+
       return html`<div
         class="segment-block ${isActiveSegment ? "active" : ""} ${useCompactText ? "compact-text" : ""}"
         style=${styleMap({
@@ -491,14 +524,17 @@ export class EFCaptionsTrack extends TrackItem {
             : `color-mix(in srgb, var(--ef-color-type-captions) 40%, transparent)`,
           minWidth: segmentWidth < 20 ? "20px" : "auto",
         })}
-        title=${useCompactText 
-          ? `Caption: '${segment.text}'\nDuration: ${this.formatDuration(segmentDuration)}\nTime: ${segment.start.toFixed(2)}s - ${segment.end.toFixed(2)}s`
-          : `Caption: '${segment.text}'\nDuration: ${this.formatDuration(segmentDuration)}\nTime: ${segment.start.toFixed(2)}s - ${segment.end.toFixed(2)}s\nWords: ${wordsInSegment.length}`}
+        title=${
+          useCompactText
+            ? `Caption: '${segment.text}'\nDuration: ${this.formatDuration(segmentDuration)}\nTime: ${segment.start.toFixed(2)}s - ${segment.end.toFixed(2)}s`
+            : `Caption: '${segment.text}'\nDuration: ${this.formatDuration(segmentDuration)}\nTime: ${segment.start.toFixed(2)}s - ${segment.end.toFixed(2)}s\nWords: ${wordsInSegment.length}`
+        }
         @click=${(e: MouseEvent) => {
           e.stopPropagation();
           // Affordance: Click to seek to segment start
           if (rootTimegroup) {
-            const absoluteStartTime = captions.startTimeMs + segment.start * 1000;
+            const absoluteStartTime =
+              captions.startTimeMs + segment.start * 1000;
             rootTimegroup.currentTimeMs = absoluteStartTime;
           }
         }}
@@ -765,4 +801,3 @@ declare global {
     "ef-captions-after-word-track": EFCaptionsAfterWordTrack;
   }
 }
-

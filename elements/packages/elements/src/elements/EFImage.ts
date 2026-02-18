@@ -11,11 +11,14 @@ import { EFTemporal } from "./EFTemporal.js";
 import { FetchMixin } from "./FetchMixin.js";
 
 @customElement("ef-image")
-export class EFImage extends EFTemporal(
-  EFSourceMixin(FetchMixin(LitElement), {
-    assetType: "image_files",
-  }),
-) implements FrameRenderable {
+export class EFImage
+  extends EFTemporal(
+    EFSourceMixin(FetchMixin(LitElement), {
+      assetType: "image_files",
+    }),
+  )
+  implements FrameRenderable
+{
   static styles = [
     css`
       :host {
@@ -39,7 +42,11 @@ export class EFImage extends EFTemporal(
     return [...parentAttributes, "asset-id"];
   }
 
-  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
+  attributeChangedCallback(
+    name: string,
+    oldValue: string | null,
+    newValue: string | null,
+  ): void {
     if (name === "asset-id") {
       this.fileId = newValue;
       return;
@@ -88,7 +95,11 @@ export class EFImage extends EFTemporal(
   }
 
   get fileId() {
-    return this.#fileId ?? this.getAttribute("file-id") ?? this.getAttribute("asset-id");
+    return (
+      this.#fileId ??
+      this.getAttribute("file-id") ??
+      this.getAttribute("asset-id")
+    );
   }
 
   /** @deprecated Use fileId instead */
@@ -113,7 +124,11 @@ export class EFImage extends EFTemporal(
     if (this.fileId) {
       return false;
     }
-    return src.startsWith("http://") || src.startsWith("https://") || src.startsWith("data:");
+    return (
+      src.startsWith("http://") ||
+      src.startsWith("https://") ||
+      src.startsWith("data:")
+    );
   }
 
   assetPath() {
@@ -125,9 +140,7 @@ export class EFImage extends EFTemporal(
       return this.src;
     }
     // Normalize the path: remove leading slash and any double slashes
-    let normalizedSrc = this.src.startsWith("/")
-      ? this.src.slice(1)
-      : this.src;
+    let normalizedSrc = this.src.startsWith("/") ? this.src.slice(1) : this.src;
     normalizedSrc = normalizedSrc.replace(/^\/+/, "");
     // Use production API format for local files
     return `/api/v1/assets/local/image?src=${encodeURIComponent(normalizedSrc)}`;
@@ -178,7 +191,7 @@ export class EFImage extends EFTemporal(
     if (this.isDirectUrl(assetPath)) {
       this.#lastLoadedPath = assetPath;
       this.#imageLoadPromise = this.#waitForImageElement(signal);
-      
+
       try {
         await this.#imageLoadPromise;
         this.#imageLoaded = true;
@@ -222,25 +235,25 @@ export class EFImage extends EFTemporal(
     if (!this.imageRef.value) {
       throw new Error("Image element not ready");
     }
-    
+
     const img = this.imageRef.value;
-    
+
     // If already loaded (cached), return immediately
     if (img.complete && img.naturalHeight !== 0) {
       return;
     }
-    
+
     return new Promise<void>((resolve, reject) => {
       if (signal?.aborted) {
         reject(new DOMException("Aborted", "AbortError"));
         return;
       }
-      
+
       const abortHandler = () => {
         reject(new DOMException("Aborted", "AbortError"));
       };
       signal?.addEventListener("abort", abortHandler, { once: true });
-      
+
       img.onload = () => {
         signal?.removeEventListener("abort", abortHandler);
         resolve();
@@ -255,16 +268,16 @@ export class EFImage extends EFTemporal(
   async #doLoadImage(assetPath: string, signal?: AbortSignal): Promise<void> {
     const response = await this.fetch(assetPath, { signal });
     signal?.throwIfAborted();
-    
+
     const image = new Image();
     const blob = await response.blob();
     signal?.throwIfAborted();
-    
+
     // Detect if image has alpha channel based on MIME type
     // JPEG images don't have alpha, PNG/WebP may have alpha
     const mimeType = blob.type.toLowerCase();
     this.#hasAlpha = !mimeType.includes("jpeg") && !mimeType.includes("jpg");
-    
+
     image.src = URL.createObjectURL(blob);
 
     await new Promise<void>((resolve, reject) => {
@@ -273,13 +286,13 @@ export class EFImage extends EFTemporal(
         reject(new DOMException("Aborted", "AbortError"));
         return;
       }
-      
+
       const abortHandler = () => {
         URL.revokeObjectURL(image.src);
         reject(new DOMException("Aborted", "AbortError"));
       };
       signal?.addEventListener("abort", abortHandler, { once: true });
-      
+
       image.onload = () => {
         signal?.removeEventListener("abort", abortHandler);
         resolve();
@@ -294,21 +307,23 @@ export class EFImage extends EFTemporal(
     signal?.throwIfAborted();
 
     if (!this.canvasRef.value) throw new Error("Canvas not ready");
-    const ctx = this.canvasRef.value.getContext("2d", { willReadFrequently: true });
+    const ctx = this.canvasRef.value.getContext("2d", {
+      willReadFrequently: true,
+    });
     if (!ctx) throw new Error("Canvas 2d context not ready");
-    
+
     // Determine canvas dimensions
     // For SVG images without explicit dimensions, image.width/height may be 0
     // In that case, fall back to naturalWidth/naturalHeight or element's computed size
     let canvasWidth = image.width || image.naturalWidth;
     let canvasHeight = image.height || image.naturalHeight;
-    
+
     // If still zero (common with SVGs that only have viewBox), use element's computed size
     if (canvasWidth === 0 || canvasHeight === 0) {
       const computedStyle = getComputedStyle(this);
       const elementWidth = parseFloat(computedStyle.width);
       const elementHeight = parseFloat(computedStyle.height);
-      
+
       // Use element dimensions if available, otherwise use a reasonable default
       if (elementWidth > 0 && elementHeight > 0) {
         canvasWidth = elementWidth;
@@ -319,10 +334,10 @@ export class EFImage extends EFTemporal(
         canvasHeight = 150;
       }
     }
-    
+
     this.canvasRef.value.width = canvasWidth;
     this.canvasRef.value.height = canvasHeight;
-    
+
     // Ensure the image is fully decoded before drawing
     // This is especially important for SVGs
     try {
@@ -330,20 +345,20 @@ export class EFImage extends EFTemporal(
     } catch (decodeError) {
       // Image decode failed, attempting to draw anyway
     }
-    
+
     // Clear canvas first to ensure we're starting fresh
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-    
+
     try {
       ctx.drawImage(image, 0, 0, canvasWidth, canvasHeight);
     } catch (drawError) {
       console.error(`[EFImage] drawImage failed:`, drawError);
       throw drawError;
     }
-    
+
     // DON'T revoke the URL yet - keep it alive in case we need to redraw
     // URL.revokeObjectURL(image.src);
-    
+
     // Store the object URL for cleanup later
     if (this.#currentObjectUrl && this.#currentObjectUrl !== image.src) {
       URL.revokeObjectURL(this.#currentObjectUrl);
@@ -388,19 +403,24 @@ export class EFImage extends EFTemporal(
   // End FrameRenderable Implementation
   // ============================================================================
 
-  protected updated(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
+  protected updated(
+    changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>,
+  ): void {
     super.updated(changedProperties);
-    
+
     if (changedProperties.has("src") || changedProperties.has("fileId")) {
       this.#imageLoaded = false;
-      if (changedProperties.get("src") !== undefined || changedProperties.get("fileId") !== undefined) {
+      if (
+        changedProperties.get("src") !== undefined ||
+        changedProperties.get("fileId") !== undefined
+      ) {
         this.emitContentChange("source");
       }
       this.loadImage().catch(() => {});
       this.#renderVersion++;
     }
   }
-  
+
   disconnectedCallback(): void {
     super.disconnectedCallback();
     // Clean up object URL when element is removed

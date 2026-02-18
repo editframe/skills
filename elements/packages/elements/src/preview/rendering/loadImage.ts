@@ -3,7 +3,9 @@ import { defaultProfiler } from "../RenderProfiler.js";
 /**
  * Load an image from a data URI. Returns a Promise that resolves when loaded.
  */
-export function loadImageFromDataUri(dataUri: string): Promise<HTMLImageElement> {
+export function loadImageFromDataUri(
+  dataUri: string,
+): Promise<HTMLImageElement> {
   const img = new Image();
   const imageLoadStart = performance.now();
 

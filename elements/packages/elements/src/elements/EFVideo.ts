@@ -186,17 +186,17 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   /**
    * Query readiness state for a given time.
    * @implements FrameRenderable
-   * 
+   *
    * Note: The timeMs parameter is the root timegroup's time. We check against
    * this.currentSourceTimeMs since that's what we cache in prepareFrame.
    */
   getFrameState(_timeMs: number): FrameState {
     // Use element's source time to match what prepareFrame caches
     const sourceTimeMs = this.currentSourceTimeMs;
-    
+
     // Check if we have a cached sample for this exact source time
-    const hasCache = 
-      this.#cachedVideoSample !== undefined && 
+    const hasCache =
+      this.#cachedVideoSample !== undefined &&
       this.#cachedVideoSampleTimeMs === sourceTimeMs;
 
     return {
@@ -209,7 +209,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   /**
    * Async preparation - seeks video and caches the sample.
    * @implements FrameRenderable
-   * 
+   *
    * Note: The timeMs parameter is the root timegroup's time. We ignore it and
    * use this.currentSourceTimeMs instead, which accounts for:
    * - Our position within the parent timegroup (ownCurrentTimeMs)
@@ -218,12 +218,12 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   async prepareFrame(_timeMs: number, signal: AbortSignal): Promise<void> {
     signal.throwIfAborted();
     this.unifiedVideoSeekTask.begin();
-    
+
     // Use element's source time, not the passed root timegroup time.
     // currentSourceTimeMs = ownCurrentTimeMs + (sourceIn || trimStart || 0)
     // This correctly maps timeline position to actual media time.
     const sourceTimeMs = this.currentSourceTimeMs;
-    
+
     const mediaEngine = await this.getMediaEngine(signal);
     if (!mediaEngine) {
       this.#cachedVideoSample = undefined;
@@ -231,16 +231,20 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       this.unifiedVideoSeekTask.complete(undefined);
       return;
     }
-    
+
     signal.throwIfAborted();
-    
+
     // Fetch video sample at the correct source time
     // Handle errors gracefully so one failed seek doesn't break subsequent frames
     try {
-      const videoSample = await this.#fetchVideoSampleForFrame(mediaEngine, sourceTimeMs, signal);
-      
+      const videoSample = await this.#fetchVideoSampleForFrame(
+        mediaEngine,
+        sourceTimeMs,
+        signal,
+      );
+
       signal.throwIfAborted();
-      
+
       // Cache the result
       this.#cachedVideoSample = videoSample;
       this.#cachedVideoSampleTimeMs = sourceTimeMs;
@@ -251,7 +255,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         this.unifiedVideoSeekTask.abort();
         throw error;
       }
-      
+
       // For seek errors (NoSample, out of bounds, etc.), just clear cache
       // This allows subsequent frames to retry instead of being stuck
       console.warn(`Video seek error at ${sourceTimeMs}ms:`, error);
@@ -264,16 +268,19 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   /**
    * Synchronous render - paints cached video sample to canvas.
    * @implements FrameRenderable
-   * 
-   * Note: The timeMs parameter is the root timegroup's time. We use 
+   *
+   * Note: The timeMs parameter is the root timegroup's time. We use
    * this.currentSourceTimeMs to match what prepareFrame cached.
    */
   renderFrame(_timeMs: number): void {
     // Use element's source time to match what was cached in prepareFrame
     const sourceTimeMs = this.currentSourceTimeMs;
-    
+
     // Use cached sample if available for this source time
-    if (this.#cachedVideoSampleTimeMs === sourceTimeMs && this.#cachedVideoSample) {
+    if (
+      this.#cachedVideoSampleTimeMs === sourceTimeMs &&
+      this.#cachedVideoSample
+    ) {
       const videoFrame = this.#cachedVideoSample.toVideoFrame();
       try {
         this.displayFrame(videoFrame, sourceTimeMs);
@@ -281,7 +288,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         videoFrame.close();
       }
     }
-    
+
     // Update animations if not in parent timegroup
     if (!this.parentTimegroup) {
       updateAnimations(this);
@@ -290,7 +297,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
 
   /**
    * Fetch video sample for a given time.
-   * 
+   *
    * Uses a quality routing strategy:
    * - In production rendering: always use main (full quality) track
    * - In preview mode: try scrub track first for faster scrubbing, fall back to main
@@ -299,9 +306,8 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   async #fetchVideoSampleForFrame(
     mediaEngine: any,
     desiredSeekTimeMs: number,
-    signal: AbortSignal
+    signal: AbortSignal,
   ): Promise<VideoSample | undefined> {
-    
     // FIRST: Check if main quality content is already cached - use it if so
     // This avoids redundant lower-quality fetches when main is already loaded
     const mainRendition = mediaEngine.videoRendition;
@@ -315,14 +321,22 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         mediaEngine.isSegmentCached(mainSegmentId, mainRendition)
       ) {
         this.#currentRenditionId = "main";
-        return this.#getMainVideoSampleForFrame(mediaEngine, desiredSeekTimeMs, signal);
+        return this.#getMainVideoSampleForFrame(
+          mediaEngine,
+          desiredSeekTimeMs,
+          signal,
+        );
       }
     }
 
     // SECOND: In production rendering mode, always use main (full quality) track
     if (this.isInProductionRenderingMode()) {
       this.#currentRenditionId = "main";
-      return this.#getMainVideoSampleForFrame(mediaEngine, desiredSeekTimeMs, signal);
+      return this.#getMainVideoSampleForFrame(
+        mediaEngine,
+        desiredSeekTimeMs,
+        signal,
+      );
     }
 
     // THIRD: In preview mode, try scrub track first for faster scrubbing
@@ -331,7 +345,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       const scrubSample = await this.#getScrubVideoSampleForFrame(
         mediaEngine,
         desiredSeekTimeMs,
-        signal
+        signal,
       );
       if (scrubSample) {
         this.#currentRenditionId = "scrub";
@@ -344,7 +358,11 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
 
     // FOURTH: Fall back to main video path
     this.#currentRenditionId = "main";
-    return this.#getMainVideoSampleForFrame(mediaEngine, desiredSeekTimeMs, signal);
+    return this.#getMainVideoSampleForFrame(
+      mediaEngine,
+      desiredSeekTimeMs,
+      signal,
+    );
   }
 
   /**
@@ -354,7 +372,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   async #getScrubVideoSampleForFrame(
     mediaEngine: any,
     desiredSeekTimeMs: number,
-    signal: AbortSignal
+    signal: AbortSignal,
   ): Promise<VideoSample | undefined> {
     const scrubRendition = mediaEngine.getScrubVideoRendition?.();
     if (!scrubRendition) {
@@ -362,7 +380,10 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     }
 
     const scrubRenditionWithSrc = { ...scrubRendition, src: mediaEngine.src };
-    const segmentId = mediaEngine.computeSegmentId(desiredSeekTimeMs, scrubRenditionWithSrc);
+    const segmentId = mediaEngine.computeSegmentId(
+      desiredSeekTimeMs,
+      scrubRenditionWithSrc,
+    );
     if (segmentId === undefined) {
       return undefined;
     }
@@ -375,11 +396,15 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         // Fetch scrub video segment
         let initSegment: ArrayBuffer | undefined;
         let mediaSegment: ArrayBuffer | undefined;
-        
+
         try {
           [initSegment, mediaSegment] = await Promise.all([
             mediaEngine.fetchInitSegment(scrubRenditionWithSrc, signal),
-            mediaEngine.fetchMediaSegment(segmentId, scrubRenditionWithSrc, signal),
+            mediaEngine.fetchMediaSegment(
+              segmentId,
+              scrubRenditionWithSrc,
+              signal,
+            ),
           ]);
         } catch (error) {
           // If aborted, re-throw to propagate cancellation
@@ -398,21 +423,19 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         // Create combined blob and BufferedSeekingInput
         const combinedBlob = new Blob([initSegment, mediaSegment]);
         signal.throwIfAborted();
-        
+
         const arrayBuffer = await combinedBlob.arrayBuffer();
         signal.throwIfAborted();
 
-        const { BufferedSeekingInput } = await import("./EFMedia/BufferedSeekingInput.js");
-        
-        return new BufferedSeekingInput(
-          arrayBuffer,
-          {
-            videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
-            audioBufferSize: EFMedia.AUDIO_SAMPLE_BUFFER_SIZE,
-            startTimeOffsetMs: scrubRendition.startTimeOffsetMs,
-          },
-        );
-      }
+        const { BufferedSeekingInput } =
+          await import("./EFMedia/BufferedSeekingInput.js");
+
+        return new BufferedSeekingInput(arrayBuffer, {
+          videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
+          audioBufferSize: EFMedia.AUDIO_SAMPLE_BUFFER_SIZE,
+          startTimeOffsetMs: scrubRendition.startTimeOffsetMs,
+        });
+      },
     );
 
     if (!scrubInput) {
@@ -429,7 +452,9 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     signal.throwIfAborted();
 
     // Cast MediaSample to VideoSample (it's a video track, so it's a VideoSample)
-    return scrubInput.seek(videoTrack.id, desiredSeekTimeMs) as Promise<VideoSample | undefined>;
+    return scrubInput.seek(videoTrack.id, desiredSeekTimeMs) as Promise<
+      VideoSample | undefined
+    >;
   }
 
   /**
@@ -438,14 +463,18 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   async #getMainVideoSampleForFrame(
     mediaEngine: any,
     desiredSeekTimeMs: number,
-    signal: AbortSignal
+    signal: AbortSignal,
   ): Promise<VideoSample | undefined> {
-    const videoRendition = mediaEngine.getVideoRendition?.() ?? mediaEngine.videoRendition;
+    const videoRendition =
+      mediaEngine.getVideoRendition?.() ?? mediaEngine.videoRendition;
     if (!videoRendition) {
       return undefined;
     }
 
-    const segmentId = mediaEngine.computeSegmentId(desiredSeekTimeMs, videoRendition);
+    const segmentId = mediaEngine.computeSegmentId(
+      desiredSeekTimeMs,
+      videoRendition,
+    );
     if (segmentId === undefined) {
       return undefined;
     }
@@ -459,7 +488,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         // Fetch main video segment
         let initSegment: ArrayBuffer | undefined;
         let mediaSegment: ArrayBuffer | undefined;
-        
+
         try {
           [initSegment, mediaSegment] = await Promise.all([
             mediaEngine.fetchInitSegment(videoRendition, signal),
@@ -494,22 +523,20 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         // Create combined blob and BufferedSeekingInput
         const combinedBlob = new Blob([initSegment, mediaSegment]);
         signal.throwIfAborted();
-        
+
         const arrayBuffer = await combinedBlob.arrayBuffer();
         signal.throwIfAborted();
 
-        const { BufferedSeekingInput } = await import("./EFMedia/BufferedSeekingInput.js");
-        
-        const input = new BufferedSeekingInput(
-          arrayBuffer,
-          {
-            videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
-            audioBufferSize: EFMedia.AUDIO_SAMPLE_BUFFER_SIZE,
-            startTimeOffsetMs: videoRendition.startTimeOffsetMs,
-          },
-        );
+        const { BufferedSeekingInput } =
+          await import("./EFMedia/BufferedSeekingInput.js");
+
+        const input = new BufferedSeekingInput(arrayBuffer, {
+          videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
+          audioBufferSize: EFMedia.AUDIO_SAMPLE_BUFFER_SIZE,
+          startTimeOffsetMs: videoRendition.startTimeOffsetMs,
+        });
         return input;
-      }
+      },
     );
 
     if (!mainInput) {
@@ -526,7 +553,9 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     signal.throwIfAborted();
 
     // Cast MediaSample to VideoSample (it's a video track, so it's a VideoSample)
-    const sample = (await mainInput.seek(videoTrack.id, desiredSeekTimeMs)) as VideoSample | undefined;
+    const sample = (await mainInput.seek(videoTrack.id, desiredSeekTimeMs)) as
+      | VideoSample
+      | undefined;
     return sample;
   }
 
@@ -621,7 +650,6 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     }
     return undefined;
   }
-
 
   /**
    * Start a delayed loading operation for testing
@@ -741,7 +769,9 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   clearCanvas(): void {
     if (!this.canvasElement) return;
 
-    const ctx = this.canvasElement.getContext("2d", { willReadFrequently: true });
+    const ctx = this.canvasElement.getContext("2d", {
+      willReadFrequently: true,
+    });
     if (ctx) {
       ctx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
     }
@@ -782,7 +812,9 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         const t1 = performance.now();
         span.setAttribute("getCanvasMs", Math.round((t1 - t0) * 100) / 100);
 
-        const ctx = this.canvasElement.getContext("2d", { willReadFrequently: true });
+        const ctx = this.canvasElement.getContext("2d", {
+          willReadFrequently: true,
+        });
         const t2 = performance.now();
         span.setAttribute("getCtxMs", Math.round((t2 - t1) * 100) / 100);
 
@@ -895,12 +927,12 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   /**
    * Get a decoded VideoFrame at a specific source media timestamp.
    * Returns a standard WebCodecs VideoFrame — caller MUST call .close() when done.
-   * 
+   *
    * Uses the same routing logic as the unified video system:
    * - "auto": main track for production rendering, follows normal routing otherwise
    * - "scrub": force low-res scrub track (for thumbnails)
    * - "main": force full-quality main track
-   * 
+   *
    * @param sourceTimeMs - Timestamp in source media coordinates (not timeline)
    * @param options - Quality and abort signal
    * @returns VideoFrame that the caller must close()
@@ -911,35 +943,41 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     options: {
       quality?: "auto" | "scrub" | "main";
       signal?: AbortSignal;
-    } = {}
+    } = {},
   ): Promise<VideoFrame> {
     const { quality = "auto", signal: providedSignal } = options;
-    
+
     const signal = providedSignal ?? new AbortController().signal;
     signal.throwIfAborted();
 
     const mediaEngine = await this.getMediaEngine(signal);
     signal.throwIfAborted();
-    
+
     if (!mediaEngine) {
       throw new Error("No media engine available for frame capture");
     }
 
-    const useMainTrack = quality === "main" || 
+    const useMainTrack =
+      quality === "main" ||
       (quality === "auto" && this.isInProductionRenderingMode());
 
     let videoSample: any;
-    
-    const { BufferedSeekingInput } = await import("./EFMedia/BufferedSeekingInput.js");
+
+    const { BufferedSeekingInput } =
+      await import("./EFMedia/BufferedSeekingInput.js");
     signal.throwIfAborted();
-    
+
     if (useMainTrack) {
-      const videoRendition = mediaEngine.getVideoRendition?.() || mediaEngine.videoRendition;
+      const videoRendition =
+        mediaEngine.getVideoRendition?.() || mediaEngine.videoRendition;
       if (!videoRendition) {
         throw new Error("No video rendition available");
       }
 
-      const segmentId = mediaEngine.computeSegmentId(sourceTimeMs, videoRendition);
+      const segmentId = mediaEngine.computeSegmentId(
+        sourceTimeMs,
+        videoRendition,
+      );
       if (segmentId === undefined) {
         throw new Error(`Cannot compute segment ID for time ${sourceTimeMs}ms`);
       }
@@ -966,17 +1004,19 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
             audioBufferSize: EFMedia.AUDIO_SAMPLE_BUFFER_SIZE,
             startTimeOffsetMs: videoRendition.startTimeOffsetMs,
           });
-        }
+        },
       );
       signal.throwIfAborted();
 
       if (!seekingInput) {
-        throw new Error(`Failed to fetch video segments for time ${sourceTimeMs}ms`);
+        throw new Error(
+          `Failed to fetch video segments for time ${sourceTimeMs}ms`,
+        );
       }
 
       const videoTrack = await seekingInput.getFirstVideoTrack();
       signal.throwIfAborted();
-      
+
       if (!videoTrack) {
         throw new Error("No video track found in segment");
       }
@@ -986,14 +1026,22 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     } else {
       const scrubRendition = mediaEngine.getScrubVideoRendition?.();
       if (!scrubRendition) {
-        return this.getVideoFrameAtSourceTime(sourceTimeMs, { quality: "main", signal });
+        return this.getVideoFrameAtSourceTime(sourceTimeMs, {
+          quality: "main",
+          signal,
+        });
       }
 
       const scrubRenditionWithSrc = { ...scrubRendition, src: mediaEngine.src };
-      const segmentId = mediaEngine.computeSegmentId(sourceTimeMs, scrubRenditionWithSrc);
-      
+      const segmentId = mediaEngine.computeSegmentId(
+        sourceTimeMs,
+        scrubRenditionWithSrc,
+      );
+
       if (segmentId === undefined) {
-        throw new Error(`Cannot compute scrub segment ID for time ${sourceTimeMs}ms`);
+        throw new Error(
+          `Cannot compute scrub segment ID for time ${sourceTimeMs}ms`,
+        );
       }
 
       const seekingInput = await scrubInputCache.getOrCreateInput(
@@ -1002,7 +1050,11 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         async () => {
           const [initSegment, mediaSegment] = await Promise.all([
             mediaEngine.fetchInitSegment(scrubRenditionWithSrc, signal),
-            mediaEngine.fetchMediaSegment(segmentId, scrubRenditionWithSrc, signal),
+            mediaEngine.fetchMediaSegment(
+              segmentId,
+              scrubRenditionWithSrc,
+              signal,
+            ),
           ]);
 
           if (!initSegment || !mediaSegment) {
@@ -1017,19 +1069,25 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
             audioBufferSize: EFMedia.AUDIO_SAMPLE_BUFFER_SIZE,
             startTimeOffsetMs: scrubRendition.startTimeOffsetMs,
           });
-        }
+        },
       );
       signal.throwIfAborted();
 
       if (!seekingInput) {
-        return this.getVideoFrameAtSourceTime(sourceTimeMs, { quality: "main", signal });
+        return this.getVideoFrameAtSourceTime(sourceTimeMs, {
+          quality: "main",
+          signal,
+        });
       }
 
       const videoTrack = await seekingInput.getFirstVideoTrack();
       signal.throwIfAborted();
-      
+
       if (!videoTrack) {
-        return this.getVideoFrameAtSourceTime(sourceTimeMs, { quality: "main", signal });
+        return this.getVideoFrameAtSourceTime(sourceTimeMs, {
+          quality: "main",
+          signal,
+        });
       }
 
       videoSample = await seekingInput.seek(videoTrack.id, sourceTimeMs);
@@ -1047,12 +1105,12 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
    * Capture a video frame directly at a source media timestamp.
    * Designed for export/rendering.
    * Does NOT paint to the element's internal canvas.
-   * 
+   *
    * Uses the same routing logic as unified video system:
    * - "auto": main track for production rendering, follows normal routing otherwise
    * - "scrub": force low-res scrub track (for thumbnails)
    * - "main": force full-quality main track
-   * 
+   *
    * @param sourceTimeMs - Timestamp in source media coordinates (not timeline)
    * @param options - Capture options including quality and abort signal
    * @returns Frame data for serialization
@@ -1063,18 +1121,24 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     options: {
       quality?: "auto" | "scrub" | "main";
       signal?: AbortSignal;
-    } = {}
+    } = {},
   ): Promise<{
     dataUrl: string;
     width: number;
     height: number;
   }> {
-    const videoFrame = await this.getVideoFrameAtSourceTime(sourceTimeMs, options);
+    const videoFrame = await this.getVideoFrameAtSourceTime(
+      sourceTimeMs,
+      options,
+    );
 
     try {
       options.signal?.throwIfAborted();
-      
-      const canvas = new OffscreenCanvas(videoFrame.codedWidth, videoFrame.codedHeight);
+
+      const canvas = new OffscreenCanvas(
+        videoFrame.codedWidth,
+        videoFrame.codedHeight,
+      );
       const ctx = canvas.getContext("2d");
       if (!ctx) {
         throw new Error("Failed to get 2d context from OffscreenCanvas");
@@ -1083,9 +1147,12 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
 
       options.signal?.throwIfAborted();
 
-      const blob = await canvas.convertToBlob({ type: "image/jpeg", quality: 0.92 });
+      const blob = await canvas.convertToBlob({
+        type: "image/jpeg",
+        quality: 0.92,
+      });
       options.signal?.throwIfAborted();
-      
+
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
@@ -1117,7 +1184,11 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
    */
   async prefetchScrubSegments(
     timestamps: number[],
-    onProgress?: (loaded: number, total: number, segmentTimeRange: [number, number]) => void,
+    onProgress?: (
+      loaded: number,
+      total: number,
+      segmentTimeRange: [number, number],
+    ) => void,
     signal?: AbortSignal,
   ): Promise<void> {
     // Wait for media engine to be ready
@@ -1162,7 +1233,9 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       return;
     }
 
-    log(`prefetchScrubSegments: fetching scrub track for ${segmentIds.size} segments...`);
+    log(
+      `prefetchScrubSegments: fetching scrub track for ${segmentIds.size} segments...`,
+    );
 
     // Emit loading event for the entire duration
     const durationMs = mediaEngine.durationMs || 0;
@@ -1184,7 +1257,11 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     // Create a signal if not provided (prefetch is often called without one)
     const fetchSignal = signal ?? new AbortController().signal;
     try {
-      await mediaEngine.fetchMediaSegment(firstSegmentId, scrubRenditionWithSrc, fetchSignal);
+      await mediaEngine.fetchMediaSegment(
+        firstSegmentId,
+        scrubRenditionWithSrc,
+        fetchSignal,
+      );
       log(`prefetchScrubSegments: scrub track loaded`);
     } catch (error) {
       log(`prefetchScrubSegments: failed to load scrub track`, error);
@@ -1231,14 +1308,22 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
 
     if (!stateChanged) return; // Nothing changed - O(1) early exit
 
-    const segments = this.#computeLookaheadSegments(mediaEngine, sourceTimeMs, mainRendition);
+    const segments = this.#computeLookaheadSegments(
+      mediaEngine,
+      sourceTimeMs,
+      mainRendition,
+    );
     if (segments.length === 0) return; // All segments already cached
 
     const tasks = segments.map((seg) => ({
       key: `${this.id}:${seg.segmentId}:${mainRendition.id}`,
       fetch: async (signal: AbortSignal) => {
         await mediaEngine.fetchInitSegment(mainRendition, signal);
-        await mediaEngine.fetchMediaSegment(seg.segmentId, mainRendition, signal);
+        await mediaEngine.fetchMediaSegment(
+          seg.segmentId,
+          mainRendition,
+          signal,
+        );
       },
       deadlineMs: seg.deadlineMs,
       owner: this.id,
@@ -1270,10 +1355,14 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     rendition: any,
     maxLookahead: number = 5,
   ): { segmentId: number; deadlineMs: number }[] {
-    const segmentCount = rendition.segmentDurationsMs?.length
-      ?? Math.ceil(mediaEngine.durationMs / (rendition.segmentDurationMs || 1000));
+    const segmentCount =
+      rendition.segmentDurationsMs?.length ??
+      Math.ceil(mediaEngine.durationMs / (rendition.segmentDurationMs || 1000));
 
-    const currentSegmentId = mediaEngine.computeSegmentId(currentSourceTimeMs, rendition);
+    const currentSegmentId = mediaEngine.computeSegmentId(
+      currentSourceTimeMs,
+      rendition,
+    );
     if (currentSegmentId === undefined) return [];
 
     const results: { segmentId: number; deadlineMs: number }[] = [];
@@ -1281,7 +1370,11 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
 
     // Walk segment IDs directly (1-based), bounded by actual segment count
     let cumulativeSourceMs = currentSourceTimeMs;
-    for (let id = currentSegmentId; id <= Math.min(currentSegmentId + maxLookahead, segmentCount); id++) {
+    for (
+      let id = currentSegmentId;
+      id <= Math.min(currentSegmentId + maxLookahead, segmentCount);
+      id++
+    ) {
       if (mediaEngine.isSegmentCached(id, rendition)) continue;
 
       // Deadline = current playhead + offset from current source time
@@ -1291,8 +1384,10 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       results.push({ segmentId: id, deadlineMs });
 
       // Advance cumulative time by this segment's duration
-      const segDuration = rendition.segmentDurationsMs?.[id - 1]
-        ?? rendition.segmentDurationMs ?? 2000;
+      const segDuration =
+        rendition.segmentDurationsMs?.[id - 1] ??
+        rendition.segmentDurationMs ??
+        2000;
       cumulativeSourceMs += segDuration;
     }
 
@@ -1328,7 +1423,9 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   /**
    * Invalidate upgrade state and optionally cancel queued tasks.
    */
-  #invalidateUpgradeState(reason: "src-change" | "bounds-change" | "disconnect"): void {
+  #invalidateUpgradeState(
+    reason: "src-change" | "bounds-change" | "disconnect",
+  ): void {
     if (reason === "src-change" || reason === "disconnect") {
       // Full cancel - old tasks reference a stale media engine
       this.rootTimegroup?.qualityUpgradeScheduler?.cancelForOwner(this.id);
@@ -1381,13 +1478,16 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
    * Render this video element to an MP4 using the direct video-to-video fast path.
    * Bypasses DOM serialization — decodes frames directly and re-encodes to MP4.
    * Respects trim, CSS filter, and opacity.
-   * 
+   *
    * @param options - Rendering options (fps, codec, bitrate, etc.)
    * @returns Promise resolving to video buffer (if returnBuffer), or undefined
    * @public
    */
-  async renderToVideo(options?: import("../preview/renderTimegroupToVideo.types.js").RenderToVideoOptions): Promise<Uint8Array | undefined> {
-    const { renderVideoToVideo } = await import("../preview/renderVideoToVideo.js");
+  async renderToVideo(
+    options?: import("../preview/renderTimegroupToVideo.types.js").RenderToVideoOptions,
+  ): Promise<Uint8Array | undefined> {
+    const { renderVideoToVideo } =
+      await import("../preview/renderVideoToVideo.js");
     return renderVideoToVideo(this, options);
   }
 }

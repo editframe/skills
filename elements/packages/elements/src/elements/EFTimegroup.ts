@@ -50,7 +50,6 @@ import "../gui/EFWorkbench.js";
 import "../gui/EFFitScale.js";
 import "./EFPanZoom.js";
 
-
 const log = debug("ef:elements:EFTimegroup");
 
 // Custom frame task callback type
@@ -77,7 +76,7 @@ export interface RenderCloneResult {
 /**
  * Initializer function type for setting up JavaScript behavior on timegroup instances.
  * This function is called on both the prime timeline and each render clone.
- * 
+ *
  * CONSTRAINTS:
  * - MUST be synchronous (no async/await, no Promise return)
  * - MUST complete in <2000ms (error) or <100ms (warning)
@@ -445,7 +444,10 @@ function evaluateSeekTarget(
 }
 
 @customElement("ef-timegroup")
-export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) implements FrameRenderable {
+export class EFTimegroup
+  extends EFTargetable(EFTemporal(TWMixin(LitElement)))
+  implements FrameRenderable
+{
   static get observedAttributes(): string[] {
     const parentAttributes = super.observedAttributes || [];
     return [
@@ -533,22 +535,36 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
 
   #syncChildListeners(): void {
     const currentChildren = new Set(
-      shallowGetTemporalElements(this) as Array<TemporalMixinInterface & HTMLElement>,
+      shallowGetTemporalElements(this) as Array<
+        TemporalMixinInterface & HTMLElement
+      >,
     );
 
     // Remove listeners from children that left
     for (const child of this.#trackedChildren) {
       if (!currentChildren.has(child)) {
-        child.removeEventListener("readystatechange", this.#childReadyStateHandler);
-        child.removeEventListener("contentchange", this.#childContentChangeHandler);
+        child.removeEventListener(
+          "readystatechange",
+          this.#childReadyStateHandler,
+        );
+        child.removeEventListener(
+          "contentchange",
+          this.#childContentChangeHandler,
+        );
       }
     }
 
     // Add listeners to new children
     for (const child of currentChildren) {
       if (!this.#trackedChildren.has(child)) {
-        child.addEventListener("readystatechange", this.#childReadyStateHandler);
-        child.addEventListener("contentchange", this.#childContentChangeHandler);
+        child.addEventListener(
+          "readystatechange",
+          this.#childReadyStateHandler,
+        );
+        child.addEventListener(
+          "contentchange",
+          this.#childContentChangeHandler,
+        );
       }
     }
 
@@ -560,7 +576,9 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
 
   /** @public */
   #mode: TimeMode = "contain";
-  get mode(): TimeMode { return this.#mode; }
+  get mode(): TimeMode {
+    return this.#mode;
+  }
   set mode(value: TimeMode) {
     if (this.#mode === value) return;
     const old = this.#mode;
@@ -573,7 +591,9 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
 
   /** @public */
   #overlapMs = 0;
-  get overlapMs(): number { return this.#overlapMs; }
+  get overlapMs(): number {
+    return this.#overlapMs;
+  }
   set overlapMs(value: number) {
     if (this.#overlapMs === value) return;
     const old = this.#overlapMs;
@@ -588,25 +608,25 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   }
 
   #initializer?: TimegroupInitializer;
-  
+
   /**
    * Initializer function for setting up JavaScript behavior on this timegroup.
    * This function is called ONCE per instance - on the prime timeline when first connected,
    * and on each render clone when created.
-   * 
+   *
    * Use this to register frame callbacks, set up event listeners, or initialize state.
    * The same initializer code runs on both prime and clones, eliminating duplication.
-   * 
+   *
    * CONSTRAINTS:
    * - MUST be synchronous (no async/await, no Promise return)
    * - MUST complete in <100ms (error thrown) or <10ms (warning logged)
    * - Should only register callbacks and set up behavior, not do expensive work
-   * 
+   *
    * TIMING:
    * - If set before element connects to DOM: runs automatically after connectedCallback
    * - If set after element is connected: runs immediately
    * - Clones automatically copy and run the initializer when created
-   * 
+   *
    * @example
    * ```javascript
    * const tg = document.querySelector('ef-timegroup');
@@ -622,14 +642,14 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   get initializer(): TimegroupInitializer | undefined {
     return this.#initializer;
   }
-  
+
   set initializer(fn: TimegroupInitializer | undefined) {
     this.#initializer = fn;
     // Just store the function. Execution is handled by:
     // - connectedCallback (for elements that have initializer before connection)
     // - #copyInitializersToClone (explicitly triggers for render clones)
   }
-  
+
   /**
    * Track if initializer has run on this instance to prevent double execution.
    * @internal
@@ -690,17 +710,17 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   #contentEpoch = 0;
 
   #currentTime: number | undefined = undefined;
-  #userTimeMs: number = 0;  // What the user last requested (for preview display)
+  #userTimeMs: number = 0; // What the user last requested (for preview display)
   #seekInProgress = false;
   #pendingSeekTime: number | undefined;
   #processingPendingSeek = false;
-  #restoringFromLocalStorage = false;  // Guard to prevent recursive seeks during localStorage restoration
-  
+  #restoringFromLocalStorage = false; // Guard to prevent recursive seeks during localStorage restoration
+
   /** @internal */
   isRestoringFromLocalStorage(): boolean {
     return this.#restoringFromLocalStorage;
   }
-  
+
   /** @internal - Used by PlaybackController to set restoration state */
   setRestoringFromLocalStorage(value: boolean): void {
     this.#restoringFromLocalStorage = value;
@@ -708,14 +728,15 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   #customFrameTasks: Set<FrameTaskCallback> = new Set();
   #onFrameCallback: FrameTaskCallback | null = null;
   #onFrameCleanup: (() => void) | null = null;
-  #playbackListener: ((event: PlaybackControllerUpdateEvent) => void) | null = null;
-  
+  #playbackListener: ((event: PlaybackControllerUpdateEvent) => void) | null =
+    null;
+
   /**
    * Centralized frame controller for coordinating element rendering.
    * Replaces the distributed Lit Task hierarchy with a single control point.
    */
   #frameController: FrameController = new FrameController(this);
-  
+
   /**
    * Get the frame controller for centralized rendering coordination.
    * @public
@@ -728,9 +749,10 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    * Centralized quality upgrade scheduler for coordinating main-quality segment fetching.
    * Lives alongside FrameController to manage background quality upgrades.
    */
-  #qualityUpgradeScheduler: QualityUpgradeScheduler = new QualityUpgradeScheduler({
-    requestFrameRender: () => this.requestFrameRender(),
-  });
+  #qualityUpgradeScheduler: QualityUpgradeScheduler =
+    new QualityUpgradeScheduler({
+      requestFrameRender: () => this.requestFrameRender(),
+    });
 
   /**
    * Get the quality upgrade scheduler for background segment fetching.
@@ -820,7 +842,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
 
   /**
    * Request a frame re-render at the current time.
-   * 
+   *
    * Use this when the source-to-timeline mapping has changed (e.g., sourcein/sourceout)
    * but currentTimeMs hasn't. The FrameController only re-renders when currentTimeMs
    * or durationMs change, so this provides a way for child elements to request a
@@ -867,7 +889,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // Delegate to playbackController if available
     if (this.playbackController) {
       this.playbackController.currentTime = seekTarget;
-      this.#userTimeMs = seekTarget * 1000;  // User-initiated time change
+      this.#userTimeMs = seekTarget * 1000; // User-initiated time change
       return;
     }
 
@@ -882,7 +904,11 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     }
 
     // Skip if already at target time (unless processing pending seek or restoring from localStorage)
-    if (seekTarget === this.#currentTime && !this.#processingPendingSeek && !this.#restoringFromLocalStorage) {
+    if (
+      seekTarget === this.#currentTime &&
+      !this.#processingPendingSeek &&
+      !this.#restoringFromLocalStorage
+    ) {
       return;
     }
 
@@ -890,7 +916,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     if (this.#pendingSeekTime === seekTarget) {
       return;
     }
-    
+
     // Prevent recursive seeks during localStorage restoration
     if (this.#restoringFromLocalStorage && seekTarget !== this.#currentTime) {
       // Allow the restoration seek to proceed, but prevent subsequent seeks
@@ -904,42 +930,44 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     if (this.#seekInProgress) {
       this.#pendingSeekTime = seekTarget;
       this.#currentTime = seekTarget;
-      this.#userTimeMs = seekTarget * 1000;  // User-initiated time change
+      this.#userTimeMs = seekTarget * 1000; // User-initiated time change
       return;
     }
 
     // Execute seek - update both source time and user time
     this.#currentTime = seekTarget;
-    this.#userTimeMs = seekTarget * 1000;  // User-initiated time change
+    this.#userTimeMs = seekTarget * 1000; // User-initiated time change
     this.#seekInProgress = true;
 
     // Attach .catch() to prevent unhandled rejection warning - errors are handled by seekTask.onError
-    Promise.resolve(this.seekTask.run()).catch(() => {}).finally(async () => {
-      this.#seekInProgress = false;
+    Promise.resolve(this.seekTask.run())
+      .catch(() => {})
+      .finally(async () => {
+        this.#seekInProgress = false;
 
-      // CRITICAL: Coordinate animations after seekTask completes
-      // This handles seeks from currentTime setter (like localStorage restore)
-      const { updateAnimations } = await import("./updateAnimations.js");
-      updateAnimations(this);
-      
-      // Process pending seek if it differs from completed seek
-      // This jumps directly to wherever the user ended up, skipping intermediates
-      if (
-        this.#pendingSeekTime !== undefined &&
-        this.#pendingSeekTime !== seekTarget
-      ) {
-        const pendingTime = this.#pendingSeekTime;
-        this.#pendingSeekTime = undefined;
-        this.#processingPendingSeek = true;
-        try {
-          this.currentTime = pendingTime;
-        } finally {
-          this.#processingPendingSeek = false;
+        // CRITICAL: Coordinate animations after seekTask completes
+        // This handles seeks from currentTime setter (like localStorage restore)
+        const { updateAnimations } = await import("./updateAnimations.js");
+        updateAnimations(this);
+
+        // Process pending seek if it differs from completed seek
+        // This jumps directly to wherever the user ended up, skipping intermediates
+        if (
+          this.#pendingSeekTime !== undefined &&
+          this.#pendingSeekTime !== seekTarget
+        ) {
+          const pendingTime = this.#pendingSeekTime;
+          this.#pendingSeekTime = undefined;
+          this.#processingPendingSeek = true;
+          try {
+            this.currentTime = pendingTime;
+          } finally {
+            this.#processingPendingSeek = false;
+          }
+        } else {
+          this.#pendingSeekTime = undefined;
         }
-      } else {
-        this.#pendingSeekTime = undefined;
-      }
-    });
+      });
   }
 
   /** @public */
@@ -976,7 +1004,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    *
    * Combines seeking (Purpose 3) with frame rendering (Purpose 4) to ensure
    * all visible elements are ready after the seek completes.
-   * 
+   *
    * Updates both the source time AND userTimeMs (what the preview displays).
    *
    * @param timeMs - Time in milliseconds to seek to
@@ -986,7 +1014,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   async seek(timeMs: number): Promise<void> {
     // Update user time - this is what the preview should display
     this.#userTimeMs = timeMs;
-    
+
     // Execute seek (Purpose 3)
     this.currentTimeMs = timeMs;
     await this.seekTask.taskComplete;
@@ -1010,9 +1038,9 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    * - Skips waitForMediaDurations (already loaded at render setup)
    * - Skips localStorage persistence
    * - Uses FrameController for centralized element coordination
-   * 
+   *
    * Still waits for all content to be ready (Lit updates, element preparation, rendering).
-   * 
+   *
    * @param timeMs - Time in milliseconds to seek to
    * @internal
    */
@@ -1030,46 +1058,51 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // correct value in render clones (which have no playback controller).
     this._setLocalTimeMs(timeMs);
     this.requestUpdate("currentTime");
-    
+
     // First await: let Lit propagate time to children
     await this.updateComplete;
-    
+
     // Collect all LitElement descendants (not just those with frameTask)
     // This ensures ef-text, ef-captions, and other reactive elements update
     const allLitElements = this.#getAllLitElementDescendants();
-    
+
     // Wait for ALL LitElement descendants to complete their reactive updates
     // This is critical for elements like ef-text and ef-captions that don't have frameTask
     await Promise.all(allLitElements.map((el) => el.updateComplete));
-    
+
     // OwnCurrentTimeController defers child updates via queueMicrotask.
     // Those microtasks have fired by this point (between await boundaries).
     // Await a second pass of updateComplete to catch those deferred updates.
     await Promise.all(allLitElements.map((el) => el.updateComplete));
-    
+
     // Wait for ef-text elements to have their segments ready
     // ef-text creates segments asynchronously via requestAnimationFrame
-    const textElements = allLitElements.filter((el) => el.tagName === "EF-TEXT");
+    const textElements = allLitElements.filter(
+      (el) => el.tagName === "EF-TEXT",
+    );
     if (textElements.length > 0) {
       await Promise.all(
         textElements.map((el) => {
-          if ("whenSegmentsReady" in el && typeof el.whenSegmentsReady === "function") {
+          if (
+            "whenSegmentsReady" in el &&
+            typeof el.whenSegmentsReady === "function"
+          ) {
             return (el as any).whenSegmentsReady();
           }
           return Promise.resolve();
         }),
       );
-      
+
       // Force synchronous layout reflow after text segments are created/updated.
       // offsetHeight triggers layout computation — no need to yield a full rAF
       // (which costs 16-40ms and is throttled in hidden tabs).
       void this.offsetHeight;
     }
-    
+
     // Use FrameController for centralized element coordination
     // This replaces the old distributed frameTask system
     // Animation updates are handled via the onAnimationsUpdate callback
-    await this.#frameController.renderFrame(timeMs, { 
+    await this.#frameController.renderFrame(timeMs, {
       waitForLitUpdate: false,
       onAnimationsUpdate: (root) => {
         updateAnimations(root as typeof this);
@@ -1079,11 +1112,11 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
         void (root as HTMLElement).offsetWidth;
       },
     });
-    
+
     // Execute custom frame tasks registered via addFrameTask()
     await this.#executeCustomFrameTasks();
   }
-  
+
   /**
    * Collects all LitElement descendants recursively.
    * Used by seekForRender to ensure all reactive elements have updated.
@@ -1094,14 +1127,17 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   #getAllLitElementDescendants(): LitElement[] {
     const result: LitElement[] = [];
     const currentTimeMs = this.currentTimeMs;
-    
+
     const walk = (el: Element) => {
       for (const child of el.children) {
         // Temporal pruning: skip invisible temporal elements and their subtrees
         if ("startTimeMs" in child && "endTimeMs" in child) {
           const startMs = (child as any).startTimeMs ?? -Infinity;
           const endMs = (child as any).endTimeMs ?? Infinity;
-          if (endMs > startMs && (currentTimeMs < startMs || currentTimeMs >= endMs)) {
+          if (
+            endMs > startMs &&
+            (currentTimeMs < startMs || currentTimeMs >= endMs)
+          ) {
             continue; // skip entire subtree
           }
         }
@@ -1113,7 +1149,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       }
     };
     walk(this);
-    
+
     return result;
   }
 
@@ -1233,7 +1269,6 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   }
 
   connectedCallback() {
-
     // CRITICAL: super.connectedCallback() MUST be synchronous for Lit lifecycle to work correctly.
     // Deferring it breaks render clones because updateComplete resolves before Lit initializes.
     //
@@ -1279,7 +1314,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       });
     });
   }
-  
+
   /**
    * Called when this timegroup becomes a root (no parent timegroup).
    * Sets up the playback listener after PlaybackController is created.
@@ -1296,19 +1331,22 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   #setupPlaybackListener(): void {
     // Already setup or no controller
     if (this.#playbackListener || !this.playbackController) return;
-    
+
     this.#playbackListener = (event: PlaybackControllerUpdateEvent) => {
       // Update userTimeMs during playback time changes
       // Clone-timeline: captures use separate clones, so Prime-timeline updates freely
       // Canvas preview reads userTimeMs to know what to render
-      if (event.property === "currentTimeMs" && typeof event.value === "number") {
+      if (
+        event.property === "currentTimeMs" &&
+        typeof event.value === "number"
+      ) {
         this.#userTimeMs = event.value;
       }
     };
-    
+
     this.playbackController.addListener(this.#playbackListener);
   }
-  
+
   /**
    * Remove playback listener on disconnect.
    */
@@ -1344,28 +1382,36 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     this.#resizeObserver?.disconnect();
     this.#removePlaybackListener();
     for (const child of this.#trackedChildren) {
-      child.removeEventListener("readystatechange", this.#childReadyStateHandler);
-      child.removeEventListener("contentchange", this.#childContentChangeHandler);
+      child.removeEventListener(
+        "readystatechange",
+        this.#childReadyStateHandler,
+      );
+      child.removeEventListener(
+        "contentchange",
+        this.#childContentChangeHandler,
+      );
     }
     this.#trackedChildren.clear();
     this.#qualityUpgradeScheduler.dispose();
   }
 
-
   /**
    * Render the timegroup to an MP4 video file and trigger download.
    * Captures each frame at the specified fps, encodes using WebCodecs via
    * MediaBunny, and downloads the resulting video.
-   * 
+   *
    * Uses dynamic import to only load render utilities in browser context.
-   * 
+   *
    * @param options - Rendering options (fps, codec, bitrate, filename, etc.)
    * @returns Promise that resolves when video is downloaded
    * @public
    */
-  async renderToVideo(options?: RenderToVideoOptions): Promise<Uint8Array | undefined> {
+  async renderToVideo(
+    options?: RenderToVideoOptions,
+  ): Promise<Uint8Array | undefined> {
     // Dynamic import - only loads in browser context when actually called
-    const { renderTimegroupToVideo } = await import("../preview/renderTimegroupToVideo.js");
+    const { renderTimegroupToVideo } =
+      await import("../preview/renderTimegroupToVideo.js");
     return renderTimegroupToVideo(this, options);
   }
 
@@ -1381,34 +1427,38 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     if (!this.initializer || this.#initializerHasRun) {
       return;
     }
-    
+
     // Mark as run before executing to prevent recursion
     this.#initializerHasRun = true;
-    
+
     const startTime = performance.now();
     const result: unknown = this.initializer(this);
     const elapsed = performance.now() - startTime;
-    
+
     // Check for async (Promise return) - initializers MUST be synchronous
-    if (result !== undefined && result !== null && typeof (result as any).then === 'function') {
+    if (
+      result !== undefined &&
+      result !== null &&
+      typeof (result as any).then === "function"
+    ) {
       throw new Error(
-        'Timeline initializer must be synchronous. ' +
-        'Do not return a Promise from the initializer function.'
+        "Timeline initializer must be synchronous. " +
+          "Do not return a Promise from the initializer function.",
       );
     }
-    
+
     // Time budget enforcement - initializers run for EVERY instance
     if (elapsed > INITIALIZER_ERROR_THRESHOLD_MS) {
       throw new Error(
         `Timeline initializer took ${elapsed.toFixed(1)}ms, exceeding the ${INITIALIZER_ERROR_THRESHOLD_MS}ms limit. ` +
-        'Initializers must be fast - move expensive work outside the initializer.'
+          "Initializers must be fast - move expensive work outside the initializer.",
       );
     }
-    
+
     if (elapsed > INITIALIZER_WARN_THRESHOLD_MS) {
       console.warn(
         `[ef-timegroup] Initializer took ${elapsed.toFixed(1)}ms, exceeding ${INITIALIZER_WARN_THRESHOLD_MS}ms. ` +
-        'Consider optimizing for better render performance.'
+          "Consider optimizing for better render performance.",
       );
     }
   }
@@ -1422,23 +1472,28 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    */
   #copyCaptionsData(original: Element, clone: Element): void {
     // Find matching caption elements by position (querySelectorAll returns in document order)
-    const originalCaptions = original.querySelectorAll('ef-captions');
-    const cloneCaptions = clone.querySelectorAll('ef-captions');
+    const originalCaptions = original.querySelectorAll("ef-captions");
+    const cloneCaptions = clone.querySelectorAll("ef-captions");
 
-    for (let i = 0; i < originalCaptions.length && i < cloneCaptions.length; i++) {
+    for (
+      let i = 0;
+      i < originalCaptions.length && i < cloneCaptions.length;
+      i++
+    ) {
       const origCap = originalCaptions[i] as any;
       const cloneCap = cloneCaptions[i] as any;
 
       // Copy loaded captions data from any source (JS property, captions-src, script element).
       // The loaded data is stored in unifiedCaptionsDataTask.value after async loading.
       // Setting captionsData on the clone gives it Priority 1, bypassing async loading.
-      const loadedData = origCap.captionsData ?? origCap.unifiedCaptionsDataTask?.value;
+      const loadedData =
+        origCap.captionsData ?? origCap.unifiedCaptionsDataTask?.value;
       if (loadedData) {
         cloneCap.captionsData = loadedData;
       }
     }
   }
-  
+
   /**
    * Copy ef-text _textContent property from original to cloned elements.
    * This MUST be called BEFORE elements upgrade (before updateComplete)
@@ -1447,13 +1502,13 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    * @internal
    */
   #copyTextContent(original: Element, clone: Element): void {
-    const originalTexts = original.querySelectorAll('ef-text');
-    const cloneTexts = clone.querySelectorAll('ef-text');
-    
+    const originalTexts = original.querySelectorAll("ef-text");
+    const cloneTexts = clone.querySelectorAll("ef-text");
+
     for (let i = 0; i < originalTexts.length && i < cloneTexts.length; i++) {
       const origText = originalTexts[i] as any;
       const cloneText = cloneTexts[i] as any;
-      
+
       // Copy _textContent if it exists
       // This is a private property, so we access it via any
       if (origText._textContent !== undefined) {
@@ -1465,7 +1520,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       }
     }
   }
-  
+
   /**
    * Copy ef-text-segment properties from original to cloned elements.
    * segmentText and other properties are set via JS, not attributes,
@@ -1474,15 +1529,19 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    */
   async #copyTextSegmentData(original: Element, clone: Element): Promise<void> {
     // Find matching text segment elements by position
-    const originalSegments = original.querySelectorAll('ef-text-segment');
-    const cloneSegments = clone.querySelectorAll('ef-text-segment');
-    
+    const originalSegments = original.querySelectorAll("ef-text-segment");
+    const cloneSegments = clone.querySelectorAll("ef-text-segment");
+
     const updatePromises: Promise<any>[] = [];
-    
-    for (let i = 0; i < originalSegments.length && i < cloneSegments.length; i++) {
+
+    for (
+      let i = 0;
+      i < originalSegments.length && i < cloneSegments.length;
+      i++
+    ) {
       const origSeg = originalSegments[i] as any;
       const cloneSeg = cloneSegments[i] as any;
-      
+
       // Copy all segment properties
       if (origSeg.segmentText !== undefined) {
         cloneSeg.segmentText = origSeg.segmentText;
@@ -1499,13 +1558,13 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       if (origSeg.segmentEndMs !== undefined) {
         cloneSeg.segmentEndMs = origSeg.segmentEndMs;
       }
-      
+
       // Wait for Lit to render the updated segmentText to shadow DOM
       if (cloneSeg.updateComplete) {
         updatePromises.push(cloneSeg.updateComplete);
       }
     }
-    
+
     // Wait for all segment updates to complete
     await Promise.all(updatePromises);
   }
@@ -1518,24 +1577,26 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    */
   async #waitForCaptionsData(root: Element): Promise<void> {
     // Find all ef-captions elements (including nested in timegroups)
-    const captionsElements = root.querySelectorAll('ef-captions');
+    const captionsElements = root.querySelectorAll("ef-captions");
     if (captionsElements.length === 0) return;
-    
+
     // Wait for each caption element's data to load
     // Use duck-typing to check for loadCaptionsData method
     const waitPromises: Promise<unknown>[] = [];
     for (const el of captionsElements) {
       const captions = el as any;
       // Try new async method first
-      if (typeof captions.loadCaptionsData === 'function') {
+      if (typeof captions.loadCaptionsData === "function") {
         waitPromises.push(captions.loadCaptionsData().catch(() => {}));
       }
       // Fallback to task if present
       else if (captions.unifiedCaptionsDataTask?.taskComplete) {
-        waitPromises.push(captions.unifiedCaptionsDataTask.taskComplete.catch(() => {}));
+        waitPromises.push(
+          captions.unifiedCaptionsDataTask.taskComplete.catch(() => {}),
+        );
       }
     }
-    
+
     if (waitPromises.length > 0) {
       await Promise.all(waitPromises);
     }
@@ -1546,7 +1607,10 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    * Handles both the root timegroup and all nested timegroups recursively.
    * @internal
    */
-  async #copyInitializersToClone(original: EFTimegroup, clone: EFTimegroup): Promise<void> {
+  async #copyInitializersToClone(
+    original: EFTimegroup,
+    clone: EFTimegroup,
+  ): Promise<void> {
     // Copy and execute initializer at this level
     if (original.initializer) {
       clone.initializer = original.initializer;
@@ -1555,20 +1619,24 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       await clone.updateComplete;
       clone.#runInitializer();
     }
-    
+
     // Find all nested timegroups in both original and clone
-    const originalNested = Array.from(original.querySelectorAll('ef-timegroup')) as EFTimegroup[];
-    const cloneNested = Array.from(clone.querySelectorAll('ef-timegroup')) as EFTimegroup[];
-    
+    const originalNested = Array.from(
+      original.querySelectorAll("ef-timegroup"),
+    ) as EFTimegroup[];
+    const cloneNested = Array.from(
+      clone.querySelectorAll("ef-timegroup"),
+    ) as EFTimegroup[];
+
     // Match up nested timegroups by index (they should correspond 1:1)
     for (let i = 0; i < originalNested.length && i < cloneNested.length; i++) {
       const origNested = originalNested[i];
       const cloneNestedItem = cloneNested[i];
-      
-      if (origNested.initializer) {
-        cloneNestedItem.initializer = origNested.initializer;
-        await cloneNestedItem.updateComplete;
-        cloneNestedItem.#runInitializer();
+
+      if (origNested!.initializer) {
+        cloneNestedItem!.initializer = origNested!.initializer;
+        await cloneNestedItem!.updateComplete;
+        cloneNestedItem!.#runInitializer();
       }
     }
   }
@@ -1577,28 +1645,28 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    * Create an independent clone of this timegroup for rendering.
    * The clone is a fully functional ef-timegroup with its own animations
    * and time state, isolated from the original (Prime-timeline).
-   * 
+   *
    * OPTIONAL: An initializer can be set via `timegroup.initializer = (tg) => { ... }`
    * to re-run JavaScript setup (frame callbacks, React components) on each clone.
-   * 
+   *
    * This enables:
    * - Rendering without affecting user's preview position
    * - Concurrent renders with different clones
    * - Re-running JavaScript setup on each clone (if initializer is provided)
-   * 
+   *
    * @returns Promise resolving to clone, container, and cleanup function
    * @throws Error if initializer is async or takes too long
    * @public
    */
   async createRenderClone(): Promise<RenderCloneResult> {
     const factory = getCloneFactory(this);
-    
+
     if (factory) {
       return this.#createRenderCloneFromFactory(factory);
     }
     return this.#createRenderCloneFromDOM();
   }
-  
+
   /**
    * Wait for all LitElement descendants to update and for text segments to be ready.
    * This ensures the clone is fully initialized before rendering.
@@ -1606,24 +1674,29 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    */
   async #waitForDescendants(actualClone: EFTimegroup): Promise<void> {
     // Wait for all LitElement descendants
-    const allLitElements = Array.from(actualClone.querySelectorAll('*')).filter(
-      (el) => el instanceof LitElement
+    const allLitElements = Array.from(actualClone.querySelectorAll("*")).filter(
+      (el) => el instanceof LitElement,
     ) as LitElement[];
     await Promise.all(allLitElements.map((el) => el.updateComplete));
-    
+
     // Wait for text segments
-    const textElements = allLitElements.filter((el) => el.tagName === "EF-TEXT");
+    const textElements = allLitElements.filter(
+      (el) => el.tagName === "EF-TEXT",
+    );
     if (textElements.length > 0) {
       await Promise.all(
         textElements.map((el) => {
-          if ("whenSegmentsReady" in el && typeof el.whenSegmentsReady === "function") {
+          if (
+            "whenSegmentsReady" in el &&
+            typeof el.whenSegmentsReady === "function"
+          ) {
             return (el as any).whenSegmentsReady();
           }
           return Promise.resolve();
         }),
       );
       void actualClone.offsetHeight;
-      await new Promise(resolve => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
     }
   }
 
@@ -1632,10 +1705,12 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    * a fully functional clone. The factory is responsible for rendering
    * the component into the container and returning the root ef-timegroup.
    */
-  async #createRenderCloneFromFactory(factory: NonNullable<ReturnType<typeof getCloneFactory>>): Promise<RenderCloneResult> {
+  async #createRenderCloneFromFactory(
+    factory: NonNullable<ReturnType<typeof getCloneFactory>>,
+  ): Promise<RenderCloneResult> {
     const width = this.offsetWidth || 1920;
     const height = this.offsetHeight || 1080;
-    
+
     const container = document.createElement("div");
     container.className = "ef-render-clone-container";
     container.style.cssText = `
@@ -1647,7 +1722,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       pointer-events: none;
       overflow: hidden;
     `;
-    
+
     // Preserve ef-configuration context
     let renderTarget: HTMLElement = container;
     const originalConfig = this.closest("ef-configuration");
@@ -1656,37 +1731,38 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       container.appendChild(configClone);
       renderTarget = configClone;
     }
-    
+
     document.body.appendChild(container);
-    
+
     // Mount the component tree — this produces a live ef-timegroup
-    const { timegroup: actualClone, cleanup: factoryCleanup } = factory(renderTarget);
-    
+    const { timegroup: actualClone, cleanup: factoryCleanup } =
+      factory(renderTarget);
+
     if (!actualClone) {
       throw new Error(
-        'Clone factory did not produce an ef-timegroup. ' +
-        'Ensure the factory renders a component containing a Timegroup.'
+        "Clone factory did not produce an ef-timegroup. " +
+          "Ensure the factory renders a component containing a Timegroup.",
       );
     }
-    
+
     // Mark as render clone
     actualClone.setAttribute("data-no-workbench", "true");
     actualClone.setAttribute("data-no-playback-controller", "true");
     actualClone.style.width = `${width}px`;
     actualClone.style.height = `${height}px`;
-    actualClone.style.display = 'block';
-    
+    actualClone.style.display = "block";
+
     // Wait for custom elements to upgrade and Lit to update
-    await customElements.whenDefined('ef-timegroup');
+    await customElements.whenDefined("ef-timegroup");
     customElements.upgrade(container);
     await actualClone.updateComplete;
-    
+
     // Wait for all descendants to be ready
     await this.#waitForDescendants(actualClone);
-    
+
     // Finalize clone: parent-child relationships, lock root, remove PlaybackController
     await this.#finalizeRenderClone(actualClone);
-    
+
     return {
       clone: actualClone,
       container,
@@ -1696,7 +1772,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       },
     };
   }
-  
+
   /**
    * DOM path: deep clone the DOM tree and copy JavaScript properties.
    * Used for vanilla HTML/JS timelines that don't have a factory registered.
@@ -1714,7 +1790,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       pointer-events: none;
       overflow: hidden;
     `;
-    
+
     // 2. Deep clone the DOM
     const cloneEl = this.cloneNode(true) as EFTimegroup;
     // Strip all id attributes from clone tree to prevent duplicate IDs in the document
@@ -1724,17 +1800,17 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     }
     cloneEl.setAttribute("data-no-workbench", "true");
     cloneEl.setAttribute("data-no-playback-controller", "true");
-    
+
     const width = this.offsetWidth || 1920;
     const height = this.offsetHeight || 1080;
     cloneEl.style.width = `${width}px`;
     cloneEl.style.height = `${height}px`;
-    cloneEl.style.display = 'block';
-    
+    cloneEl.style.display = "block";
+
     // 2b. Copy JavaScript properties that aren't cloned by cloneNode()
     this.#copyCaptionsData(this, cloneEl);
     this.#copyTextContent(this, cloneEl);
-    
+
     // 3. Preserve ef-configuration context
     const originalConfig = this.closest("ef-configuration");
     if (originalConfig) {
@@ -1744,47 +1820,47 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     } else {
       container.appendChild(cloneEl);
     }
-    
+
     document.body.appendChild(container);
-    
+
     // Wait for custom elements to upgrade
     await cloneEl.updateComplete;
-    
+
     // Copy initializers and run them on clones
     await this.#copyInitializersToClone(this, cloneEl);
-    
+
     // Copy text segment data
     await this.#copyTextSegmentData(this, cloneEl);
-    
+
     // Find the actual timegroup (initializer may have replaced the DOM)
-    let actualClone = container.querySelector('ef-timegroup') as EFTimegroup;
+    let actualClone = container.querySelector("ef-timegroup") as EFTimegroup;
     if (!actualClone) {
       throw new Error(
-        'No ef-timegroup found after initializer. ' +
-        'Ensure your initializer renders a Timegroup (React) or does not remove the cloned element (vanilla JS).'
+        "No ef-timegroup found after initializer. " +
+          "Ensure your initializer renders a Timegroup (React) or does not remove the cloned element (vanilla JS).",
       );
     }
-    
+
     // Wait for custom elements to upgrade
-    await customElements.whenDefined('ef-timegroup');
+    await customElements.whenDefined("ef-timegroup");
     customElements.upgrade(container);
-    actualClone = container.querySelector('ef-timegroup') as EFTimegroup;
+    actualClone = container.querySelector("ef-timegroup") as EFTimegroup;
     if (!actualClone) {
-      throw new Error('ef-timegroup element lost after upgrade');
+      throw new Error("ef-timegroup element lost after upgrade");
     }
-    
+
     // Wait for LitElement updates
     await actualClone.updateComplete;
-    
+
     // Wait for all descendants to be ready
     await this.#waitForDescendants(actualClone);
-    
+
     // Copy text segment data again after initializer may have replaced DOM
     await this.#copyTextSegmentData(this, actualClone);
-    
+
     // Finalize clone
     await this.#finalizeRenderClone(actualClone);
-    
+
     return {
       clone: actualClone,
       container,
@@ -1799,7 +1875,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       },
     };
   }
-  
+
   /**
    * Shared finalization for both factory and DOM clone paths:
    * - Set up parent-child temporal relationships
@@ -1810,19 +1886,25 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    */
   async #finalizeRenderClone(actualClone: EFTimegroup): Promise<void> {
     // Set up parent-child relationships for temporal elements
-    const setupParentChildRelationships = (parent: EFTimegroup, root: EFTimegroup) => {
+    const setupParentChildRelationships = (
+      parent: EFTimegroup,
+      root: EFTimegroup,
+    ) => {
       for (const child of parent.children) {
-        if (child.tagName === 'EF-TIMEGROUP') {
+        if (child.tagName === "EF-TIMEGROUP") {
           const childTG = child as EFTimegroup;
           childTG.parentTimegroup = parent;
           childTG.rootTimegroup = root;
           (childTG as any).lockRootTimegroup();
           setupParentChildRelationships(childTG, root);
-        } else if ('parentTimegroup' in child && 'rootTimegroup' in child) {
+        } else if ("parentTimegroup" in child && "rootTimegroup" in child) {
           const temporal = child as TemporalMixinInterface & HTMLElement;
           temporal.parentTimegroup = parent;
           temporal.rootTimegroup = root;
-          if ('lockRootTimegroup' in temporal && typeof temporal.lockRootTimegroup === 'function') {
+          if (
+            "lockRootTimegroup" in temporal &&
+            typeof temporal.lockRootTimegroup === "function"
+          ) {
             temporal.lockRootTimegroup();
           }
         } else if (child instanceof Element) {
@@ -1830,20 +1912,27 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
         }
       }
     };
-    
-    const setupInContainer = (container: Element, nearestParentTG: EFTimegroup, root: EFTimegroup) => {
+
+    const setupInContainer = (
+      container: Element,
+      nearestParentTG: EFTimegroup,
+      root: EFTimegroup,
+    ) => {
       for (const child of container.children) {
-        if (child.tagName === 'EF-TIMEGROUP') {
+        if (child.tagName === "EF-TIMEGROUP") {
           const childTG = child as EFTimegroup;
           childTG.parentTimegroup = nearestParentTG;
           childTG.rootTimegroup = root;
           (childTG as any).lockRootTimegroup();
           setupParentChildRelationships(childTG, root);
-        } else if ('parentTimegroup' in child && 'rootTimegroup' in child) {
+        } else if ("parentTimegroup" in child && "rootTimegroup" in child) {
           const temporal = child as TemporalMixinInterface & HTMLElement;
           temporal.parentTimegroup = nearestParentTG;
           temporal.rootTimegroup = root;
-          if ('lockRootTimegroup' in temporal && typeof temporal.lockRootTimegroup === 'function') {
+          if (
+            "lockRootTimegroup" in temporal &&
+            typeof temporal.lockRootTimegroup === "function"
+          ) {
             temporal.lockRootTimegroup();
           }
         } else if (child instanceof Element) {
@@ -1851,17 +1940,17 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
         }
       }
     };
-    
+
     actualClone.rootTimegroup = actualClone;
     setupParentChildRelationships(actualClone, actualClone);
-    
+
     await actualClone.updateComplete;
-    
+
     // Lock root references to prevent Lit Context from overwriting
     actualClone.rootTimegroup = actualClone;
     (actualClone as any).lockRootTimegroup();
     const finalizeRootTimegroup = (el: Element) => {
-      if ('rootTimegroup' in el && 'lockRootTimegroup' in el) {
+      if ("rootTimegroup" in el && "lockRootTimegroup" in el) {
         (el as any).rootTimegroup = actualClone;
         (el as any).lockRootTimegroup();
       }
@@ -1870,16 +1959,16 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       }
     };
     finalizeRootTimegroup(actualClone);
-    
+
     await actualClone.waitForMediaDurations();
     await this.#waitForCaptionsData(actualClone);
-    
+
     // Remove PlaybackController — render clones use seekForRender directly
     if (actualClone.playbackController) {
       actualClone.playbackController.remove();
       actualClone.playbackController = undefined;
     }
-    
+
     // Initial seek to frame 0
     await actualClone.seek(0);
   }
@@ -1928,35 +2017,39 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   // Purpose 4: Frame Rendering - What Happens Each Frame
   // ============================================================================
 
-
   #mediaDurationsPromise: Promise<void> | undefined = undefined;
 
   /** @internal */
   async waitForMediaDurations(signal?: AbortSignal) {
     // Check abort before starting
     signal?.throwIfAborted();
-    
+
     // Start loading media durations in background, but don't block if already in progress
     // This prevents multiple concurrent calls from creating redundant work
     if (!this.#mediaDurationsPromise) {
-      this.#mediaDurationsPromise = this.#waitForMediaDurations(signal).catch(err => {
-        // Re-throw AbortError to propagate cancellation
-        if (err instanceof DOMException && err.name === "AbortError") {
+      this.#mediaDurationsPromise = this.#waitForMediaDurations(signal).catch(
+        (err) => {
+          // Re-throw AbortError to propagate cancellation
+          if (err instanceof DOMException && err.name === "AbortError") {
+            this.#mediaDurationsPromise = undefined;
+            throw err;
+          }
+          console.error(
+            `[EFTimegroup] waitForMediaDurations failed for ${this.id || "unnamed"}:`,
+            err,
+          );
+          // Clear promise on error so it can be retried
           this.#mediaDurationsPromise = undefined;
           throw err;
-        }
-        console.error(`[EFTimegroup] waitForMediaDurations failed for ${this.id || 'unnamed'}:`, err);
-        // Clear promise on error so it can be retried
-        this.#mediaDurationsPromise = undefined;
-        throw err;
-      });
+        },
+      );
     }
-    
+
     // If signal is provided and aborted, throw immediately
     if (signal?.aborted) {
       throw new DOMException("Aborted", "AbortError");
     }
-    
+
     return this.#mediaDurationsPromise;
   }
 
@@ -1977,7 +2070,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       async (span) => {
         // Check abort before starting
         signal?.throwIfAborted();
-        
+
         // Don't wait for updateComplete during initialization - it causes deadlocks with nested timegroups
         // Instead, use a short delay to let elements connect, then scan for media elements
         // If elements aren't ready yet, we'll retry or they'll be picked up on the next update cycle
@@ -1986,19 +2079,19 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
             reject(new DOMException("Aborted", "AbortError"));
             return;
           }
-          
+
           const abortHandler = () => {
             clearTimeout(timeoutId);
             cancelAnimationFrame(rafId2);
             cancelAnimationFrame(rafId1);
             reject(new DOMException("Aborted", "AbortError"));
           };
-          signal?.addEventListener('abort', abortHandler, { once: true });
-          
+          signal?.addEventListener("abort", abortHandler, { once: true });
+
           let rafId1: number;
           let rafId2: number;
           let timeoutId: ReturnType<typeof setTimeout>;
-          
+
           // Use multiple animation frames to ensure DOM is ready, but don't wait for all children
           rafId1 = requestAnimationFrame(() => {
             if (signal?.aborted) {
@@ -2012,16 +2105,16 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
               }
               // Small additional delay to let custom elements upgrade
               timeoutId = setTimeout(() => {
-                signal?.removeEventListener('abort', abortHandler);
+                signal?.removeEventListener("abort", abortHandler);
                 resolve();
               }, 10);
             });
           });
         });
-        
+
         // Check abort after delay
         signal?.throwIfAborted();
-        
+
         const mediaElements = deepGetMediaElements(this);
         if (isTracingEnabled()) {
           span.setAttribute("mediaElementsCount", mediaElements.length);
@@ -2035,57 +2128,81 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
         // Use Promise.allSettled with timeout to avoid blocking if asset server is slow
         const mediaLoadStart = Date.now();
         const MEDIA_LOAD_TIMEOUT_MS = 30000; // 30 second timeout per element
-        
+
         const loadPromises = mediaElements.map(async (m, index) => {
           // Check abort before each element
           signal?.throwIfAborted();
-          
+
           const elementStart = Date.now();
           try {
             // Use getMediaEngine async method if available
-            if (typeof m.getMediaEngine === 'function') {
+            if (typeof m.getMediaEngine === "function") {
               // Add timeout to prevent indefinite blocking
               const timeoutPromise = new Promise<undefined>((_, reject) => {
                 if (signal?.aborted) {
                   reject(new DOMException("Aborted", "AbortError"));
                   return;
                 }
-                const timeoutId = setTimeout(() => reject(new Error(`Media element ${index} load timeout after ${MEDIA_LOAD_TIMEOUT_MS}ms`)), MEDIA_LOAD_TIMEOUT_MS);
-                signal?.addEventListener('abort', () => {
-                  clearTimeout(timeoutId);
-                  reject(new DOMException("Aborted", "AbortError"));
-                }, { once: true });
+                const timeoutId = setTimeout(
+                  () =>
+                    reject(
+                      new Error(
+                        `Media element ${index} load timeout after ${MEDIA_LOAD_TIMEOUT_MS}ms`,
+                      ),
+                    ),
+                  MEDIA_LOAD_TIMEOUT_MS,
+                );
+                signal?.addEventListener(
+                  "abort",
+                  () => {
+                    clearTimeout(timeoutId);
+                    reject(new DOMException("Aborted", "AbortError"));
+                  },
+                  { once: true },
+                );
               });
-              
+
               await Promise.race([m.getMediaEngine(signal), timeoutPromise]);
-            } 
+            }
             // Fallback: check status and use taskComplete
             else if (m.mediaEngineTask) {
               // Status: INITIAL=0, PENDING=1, COMPLETE=2, ERROR=3
               const status = m.mediaEngineTask.status;
-              
+
               // Already complete or errored - no need to wait
               if (status === 2 || status === 3) {
                 return;
               }
-              
+
               // Attach .catch() to taskComplete to prevent unhandled rejection
               const taskPromise = m.mediaEngineTask.taskComplete;
               taskPromise?.catch(() => {});
-              
+
               if (taskPromise) {
                 const timeoutPromise = new Promise<undefined>((_, reject) => {
                   if (signal?.aborted) {
                     reject(new DOMException("Aborted", "AbortError"));
                     return;
                   }
-                  const timeoutId = setTimeout(() => reject(new Error(`Media element ${index} load timeout after ${MEDIA_LOAD_TIMEOUT_MS}ms`)), MEDIA_LOAD_TIMEOUT_MS);
-                  signal?.addEventListener('abort', () => {
-                    clearTimeout(timeoutId);
-                    reject(new DOMException("Aborted", "AbortError"));
-                  }, { once: true });
+                  const timeoutId = setTimeout(
+                    () =>
+                      reject(
+                        new Error(
+                          `Media element ${index} load timeout after ${MEDIA_LOAD_TIMEOUT_MS}ms`,
+                        ),
+                      ),
+                    MEDIA_LOAD_TIMEOUT_MS,
+                  );
+                  signal?.addEventListener(
+                    "abort",
+                    () => {
+                      clearTimeout(timeoutId);
+                      reject(new DOMException("Aborted", "AbortError"));
+                    },
+                    { once: true },
+                  );
                 });
-                
+
                 await Promise.race([taskPromise, timeoutPromise]);
               }
             }
@@ -2097,29 +2214,36 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
             // Log only if tracing is enabled to reduce console noise
             if (isTracingEnabled()) {
               const elementElapsed = Date.now() - elementStart;
-              console.error(`[EFTimegroup] Media element ${index} failed after ${elementElapsed}ms:`, error);
+              console.error(
+                `[EFTimegroup] Media element ${index} failed after ${elementElapsed}ms:`,
+                error,
+              );
             }
             // Don't throw - continue with other elements
           }
         });
-        
+
         const results = await Promise.allSettled(loadPromises);
-        
+
         // Check if any were aborted
-        const aborted = results.some(r => 
-          r.status === 'rejected' && 
-          r.reason instanceof DOMException && 
-          r.reason.name === "AbortError"
+        const aborted = results.some(
+          (r) =>
+            r.status === "rejected" &&
+            r.reason instanceof DOMException &&
+            r.reason.name === "AbortError",
         );
         if (aborted) {
           throw new DOMException("Aborted", "AbortError");
         }
-        
+
         // Log any failures but don't throw - we want to continue even if some media fails
-        const failures = results.filter(r => r.status === 'rejected');
+        const failures = results.filter((r) => r.status === "rejected");
         if (failures.length > 0 && isTracingEnabled()) {
           const mediaLoadElapsed = Date.now() - mediaLoadStart;
-          console.warn(`[EFTimegroup] ${failures.length} media elements failed to load in ${mediaLoadElapsed}ms:`, failures.map(r => r.status === 'rejected' ? r.reason : null));
+          console.warn(
+            `[EFTimegroup] ${failures.length} media elements failed to load in ${mediaLoadElapsed}ms:`,
+            failures.map((r) => (r.status === "rejected" ? r.reason : null)),
+          );
         }
 
         // After waiting for durations, we must force some updates to cascade and ensure all temporal elements
@@ -2211,7 +2335,10 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     // Check URL param to disable workbench (only applies in non-rendering mode)
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      if (params.get("noWorkbench") === "true" || params.get("no-workbench") === "true") {
+      if (
+        params.get("noWorkbench") === "true" ||
+        params.get("no-workbench") === "true"
+      ) {
         return false;
       }
     }
@@ -2224,7 +2351,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   wrapWithWorkbench() {
     const workbench = document.createElement("ef-workbench") as any;
     const parent = this.parentElement;
-    
+
     // When in rendering mode, immediately set rendering=true before insertion
     // This prevents the workbench UI from ever being visible in rendered frames
     if (EF_RENDERING()) {
@@ -2232,7 +2359,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       workbench.setAttribute("rendering", "");
       workbench.rendering = true;
     }
-    
+
     // Apply explicit sizing to ensure workbench fills its container
     if (parent === document.body) {
       // Direct child of body: use viewport units with fixed positioning
@@ -2251,7 +2378,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
       workbench.style.width = "100%";
       workbench.style.height = "100%";
     }
-    
+
     parent?.append(workbench);
     if (!this.hasAttribute("id")) {
       this.setAttribute("id", "root-timegroup");
@@ -2310,11 +2437,13 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
    * Delegates to shared renderTemporalAudio utility for consistent behavior
    * @internal
    */
-  async renderAudio(fromMs: number, toMs: number, signal?: AbortSignal): Promise<AudioBuffer> {
+  async renderAudio(
+    fromMs: number,
+    toMs: number,
+    signal?: AbortSignal,
+  ): Promise<AudioBuffer> {
     return renderTemporalAudio(this, fromMs, toMs, signal);
   }
-
-
 
   async #executeCustomFrameTasks() {
     if (this.#customFrameTasks.size > 0) {
@@ -2339,16 +2468,19 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
   /** @internal */
   #seekTaskPromise: Promise<number | undefined> = Promise.resolve(undefined);
   #seekTaskAbortController: AbortController | null = null;
-  
+
   seekTask = (() => {
     const self = this;
-    const taskObj: { run(): void | Promise<number | undefined>; taskComplete: Promise<number | undefined> } = {
+    const taskObj: {
+      run(): void | Promise<number | undefined>;
+      taskComplete: Promise<number | undefined>;
+    } = {
       run: () => {
         // Abort any in-flight task
         self.#seekTaskAbortController?.abort();
         self.#seekTaskAbortController = new AbortController();
         const signal = self.#seekTaskAbortController.signal;
-        
+
         const targetTime = self.#pendingSeekTime ?? self.#currentTime;
         self.#seekTaskPromise = self.#runSeekTask(targetTime, signal);
         taskObj.taskComplete = self.#seekTaskPromise;
@@ -2359,10 +2491,13 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
     return taskObj;
   })();
 
-  async #runSeekTask(targetTime: number | undefined, signal: AbortSignal): Promise<number | undefined> {
+  async #runSeekTask(
+    targetTime: number | undefined,
+    signal: AbortSignal,
+  ): Promise<number | undefined> {
     try {
       signal.throwIfAborted();
-      
+
       // Delegate to playbackController if available
       if (this.playbackController) {
         // Wait for playbackController's seek to complete
@@ -2394,12 +2529,19 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
                   reject(new DOMException("Aborted", "AbortError"));
                   return;
                 }
-                const timeoutId = setTimeout(() => reject(new Error('waitForMediaDurations timeout')), 10000);
-                signal.addEventListener('abort', () => {
-                  clearTimeout(timeoutId);
-                  reject(new DOMException("Aborted", "AbortError"));
-                }, { once: true });
-              })
+                const timeoutId = setTimeout(
+                  () => reject(new Error("waitForMediaDurations timeout")),
+                  10000,
+                );
+                signal.addEventListener(
+                  "abort",
+                  () => {
+                    clearTimeout(timeoutId);
+                    reject(new DOMException("Aborted", "AbortError"));
+                  },
+                  { once: true },
+                );
+              }),
             ]);
           } catch (error) {
             if (error instanceof DOMException && error.name === "AbortError") {
@@ -2422,7 +2564,7 @@ export class EFTimegroup extends EFTargetable(EFTemporal(TWMixin(LitElement))) i
 
           this.#currentTime = newTime;
           this.requestUpdate("currentTime");
-          
+
           await this.updateComplete;
           signal.throwIfAborted();
 

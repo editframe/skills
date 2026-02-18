@@ -1,10 +1,10 @@
 /**
  * QualityUpgradeScheduler: Centralized deadline-ordered work queue
- * 
+ *
  * Coordinates main-quality segment fetching across multiple video elements.
  * Generic scheduler that doesn't understand media concepts (segments, renditions, etc.)
  * - only processes { key, deadlineMs, fetch, owner } tuples.
- * 
+ *
  * Design principles:
  * - Deadline-based ordering: always process nearest deadline first
  * - Ground-truth cache validation: check cache before starting any fetch

@@ -15,7 +15,7 @@ import type {
 export function compareProfiles(
   current: ProfileAnalysis,
   baseline: ProfileAnalysis,
-  threshold?: BaselineThreshold
+  threshold?: BaselineThreshold,
 ): ProfileComparison {
   // Create maps for quick lookup
   const baselineMap = new Map<string, HotspotInfo>();
@@ -50,20 +50,25 @@ export function compareProfiles(
 
         // Check for regressions
         if (threshold && timeDiff > 0) {
-          const exceededTime = threshold.maxHotspotIncreaseMs && timeDiff > threshold.maxHotspotIncreaseMs;
+          const exceededTime =
+            threshold.maxHotspotIncreaseMs &&
+            timeDiff > threshold.maxHotspotIncreaseMs;
           const exceededPct =
             threshold.maxHotspotIncreasePercent &&
             baselineHotspot.selfTime > 0 &&
-            (timeDiff / baselineHotspot.selfTime) * 100 > threshold.maxHotspotIncreasePercent;
+            (timeDiff / baselineHotspot.selfTime) * 100 >
+              threshold.maxHotspotIncreasePercent;
 
           if (exceededTime || exceededPct) {
             const reasons: string[] = [];
             if (exceededTime) {
-              reasons.push(`+${timeDiff.toFixed(2)}ms exceeds threshold of +${threshold.maxHotspotIncreaseMs}ms`);
+              reasons.push(
+                `+${timeDiff.toFixed(2)}ms exceeds threshold of +${threshold.maxHotspotIncreaseMs}ms`,
+              );
             }
             if (exceededPct) {
               reasons.push(
-                `+${((timeDiff / baselineHotspot.selfTime) * 100).toFixed(1)}% exceeds threshold of +${threshold.maxHotspotIncreasePercent}%`
+                `+${((timeDiff / baselineHotspot.selfTime) * 100).toFixed(1)}% exceeds threshold of +${threshold.maxHotspotIncreasePercent}%`,
               );
             }
             regressions.hotspots.push({
@@ -102,13 +107,17 @@ export function compareProfiles(
   }
 
   const durationDiffMs = current.duration - baseline.duration;
-  const durationDiffPercent = baseline.duration > 0 ? (durationDiffMs / baseline.duration) * 100 : 0;
+  const durationDiffPercent =
+    baseline.duration > 0 ? (durationDiffMs / baseline.duration) * 100 : 0;
 
   // Check duration regression
   if (threshold && durationDiffMs > 0) {
-    const exceededTime = threshold.maxDurationIncreaseMs && durationDiffMs > threshold.maxDurationIncreaseMs;
+    const exceededTime =
+      threshold.maxDurationIncreaseMs &&
+      durationDiffMs > threshold.maxDurationIncreaseMs;
     const exceededPct =
-      threshold.maxDurationIncreasePercent && durationDiffPercent > threshold.maxDurationIncreasePercent;
+      threshold.maxDurationIncreasePercent &&
+      durationDiffPercent > threshold.maxDurationIncreasePercent;
 
     if (exceededTime || exceededPct) {
       regressions.duration = true;
@@ -132,7 +141,10 @@ export function compareProfiles(
  * Check if a comparison shows regression
  */
 export function hasRegression(comparison: ProfileComparison): boolean {
-  return comparison.regressions.duration === true || comparison.regressions.hotspots.length > 0;
+  return (
+    comparison.regressions.duration === true ||
+    comparison.regressions.hotspots.length > 0
+  );
 }
 
 /**
@@ -142,11 +154,15 @@ export function getRegressionSummary(comparison: ProfileComparison): string[] {
   const messages: string[] = [];
 
   if (comparison.regressions.duration) {
-    messages.push(`Duration increased by ${comparison.durationDiffMs.toFixed(2)}ms (${comparison.durationDiffPercent.toFixed(1)}%)`);
+    messages.push(
+      `Duration increased by ${comparison.durationDiffMs.toFixed(2)}ms (${comparison.durationDiffPercent.toFixed(1)}%)`,
+    );
   }
 
   for (const { hotspot, reason } of comparison.regressions.hotspots) {
-    messages.push(`${hotspot.functionName} @ ${hotspot.file}:${hotspot.line} - ${reason}`);
+    messages.push(
+      `${hotspot.functionName} @ ${hotspot.file}:${hotspot.line} - ${reason}`,
+    );
   }
 
   return messages;

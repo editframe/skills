@@ -21,4 +21,3 @@ declare global {
     "ef-waveform-track": EFWaveformTrack;
   }
 }
-

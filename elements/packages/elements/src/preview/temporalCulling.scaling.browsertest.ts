@@ -88,7 +88,8 @@ function createScalingTimeline(sceneCount: number): EFTimegroup {
     const bgCanvas = document.createElement("canvas");
     bgCanvas.width = W;
     bgCanvas.height = H;
-    bgCanvas.style.cssText = "width:100%;height:100%;position:absolute;top:0;left:0;";
+    bgCanvas.style.cssText =
+      "width:100%;height:100%;position:absolute;top:0;left:0;";
     const ctx = bgCanvas.getContext("2d")!;
     ctx.fillStyle = `hsl(${scene * 45},60%,40%)`;
     ctx.fillRect(0, 0, W, H);
@@ -99,13 +100,16 @@ function createScalingTimeline(sceneCount: number): EFTimegroup {
     titleText.setAttribute("split", "word");
     titleText.setAttribute("stagger", "100ms");
     titleText.setAttribute("duration", "3s");
-    titleText.style.cssText = "position:absolute;top:30px;left:0;right:0;text-align:center;color:white;font-size:32px;font-weight:bold;";
+    titleText.style.cssText =
+      "position:absolute;top:30px;left:0;right:0;text-align:center;color:white;font-size:32px;font-weight:bold;";
     const tmpl = document.createElement("template");
     const seg = document.createElement("ef-text-segment");
     seg.style.cssText = "opacity:0;animation:fadeIn 0.4s ease-out forwards;";
     tmpl.content.appendChild(seg);
     titleText.appendChild(tmpl);
-    titleText.appendChild(document.createTextNode(`Scene ${scene + 1} Title Text`));
+    titleText.appendChild(
+      document.createTextNode(`Scene ${scene + 1} Title Text`),
+    );
     sc.appendChild(titleText);
 
     // Subtitle text with char split
@@ -113,20 +117,27 @@ function createScalingTimeline(sceneCount: number): EFTimegroup {
     subText.setAttribute("split", "char");
     subText.setAttribute("stagger", "30ms");
     subText.setAttribute("duration", "2s");
-    subText.style.cssText = "position:absolute;top:80px;left:0;right:0;text-align:center;color:rgba(255,255,255,0.7);font-size:18px;";
+    subText.style.cssText =
+      "position:absolute;top:80px;left:0;right:0;text-align:center;color:rgba(255,255,255,0.7);font-size:18px;";
     const tmpl2 = document.createElement("template");
     const seg2 = document.createElement("ef-text-segment");
     seg2.style.cssText = "opacity:0;animation:slideIn 0.3s ease-out forwards;";
     tmpl2.content.appendChild(seg2);
     subText.appendChild(tmpl2);
-    subText.appendChild(document.createTextNode(`Subtitle for scene ${scene + 1}`));
+    subText.appendChild(
+      document.createTextNode(`Subtitle for scene ${scene + 1}`),
+    );
     sc.appendChild(subText);
 
     // Image overlay
     const img = document.createElement("ef-image");
-    img.setAttribute("src", `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect fill='hsl(${scene * 45},60%25,50%25)' width='80' height='80' rx='8'/%3E%3C/svg%3E`);
+    img.setAttribute(
+      "src",
+      `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect fill='hsl(${scene * 45},60%25,50%25)' width='80' height='80' rx='8'/%3E%3C/svg%3E`,
+    );
     img.setAttribute("duration", "5s");
-    img.style.cssText = "position:absolute;top:12px;right:12px;width:48px;height:48px;";
+    img.style.cssText =
+      "position:absolute;top:12px;right:12px;width:48px;height:48px;";
     sc.appendChild(img);
 
     // Labels
@@ -173,7 +184,9 @@ describe("temporal culling scaling", () => {
    */
   it("scaling: deepGetTemporalElements", async () => {
     console.log("\n=== SCALING: deepGetTemporalElements ===");
-    console.log("Collects all temporal elements from root. Should ideally be O(visible), is likely O(total).\n");
+    console.log(
+      "Collects all temporal elements from root. Should ideally be O(visible), is likely O(total).\n",
+    );
 
     for (const sceneCount of SCENE_COUNTS) {
       const tg = createScalingTimeline(sceneCount);
@@ -196,10 +209,14 @@ describe("temporal culling scaling", () => {
         const result = deepGetTemporalElements(tg, timeMs);
         times.push(performance.now() - t0);
         if (i === 0) {
-          console.log(`  scenes=${sceneCount}: collected ${result.elements.length} temporal elements (${result.pruned.size} pruned)`);
+          console.log(
+            `  scenes=${sceneCount}: collected ${result.elements.length} temporal elements (${result.pruned.size} pruned)`,
+          );
         }
       }
-      console.log(`  ${fmt(`scenes=${String(sceneCount).padStart(3)}`, times)}`);
+      console.log(
+        `  ${fmt(`scenes=${String(sceneCount).padStart(3)}`, times)}`,
+      );
 
       tg.remove();
     }
@@ -213,7 +230,9 @@ describe("temporal culling scaling", () => {
    */
   it("scaling: getAnimations({ subtree: true })", async () => {
     console.log("\n=== SCALING: getAnimations({ subtree: true }) ===");
-    console.log("Browser API to collect all CSS animations. Walks entire subtree.\n");
+    console.log(
+      "Browser API to collect all CSS animations. Walks entire subtree.\n",
+    );
 
     for (const sceneCount of SCENE_COUNTS) {
       const tg = createScalingTimeline(sceneCount);
@@ -234,10 +253,14 @@ describe("temporal culling scaling", () => {
         const result = tg.getAnimations({ subtree: true });
         times.push(performance.now() - t0);
         if (i === 0) {
-          console.log(`  scenes=${sceneCount}: found ${result.length} animations`);
+          console.log(
+            `  scenes=${sceneCount}: found ${result.length} animations`,
+          );
         }
       }
-      console.log(`  ${fmt(`scenes=${String(sceneCount).padStart(3)}`, times)}`);
+      console.log(
+        `  ${fmt(`scenes=${String(sceneCount).padStart(3)}`, times)}`,
+      );
 
       tg.remove();
     }
@@ -252,7 +275,9 @@ describe("temporal culling scaling", () => {
    */
   it("scaling: updateAnimations()", async () => {
     console.log("\n=== SCALING: updateAnimations() ===");
-    console.log("Full animation update pass. Includes element collection, phase eval, animation coordination.\n");
+    console.log(
+      "Full animation update pass. Includes element collection, phase eval, animation coordination.\n",
+    );
 
     for (const sceneCount of SCENE_COUNTS) {
       const tg = createScalingTimeline(sceneCount);
@@ -273,7 +298,9 @@ describe("temporal culling scaling", () => {
         updateAnimations(tg);
         times.push(performance.now() - t0);
       }
-      console.log(`  ${fmt(`scenes=${String(sceneCount).padStart(3)}`, times)}`);
+      console.log(
+        `  ${fmt(`scenes=${String(sceneCount).padStart(3)}`, times)}`,
+      );
 
       tg.remove();
     }
@@ -286,7 +313,9 @@ describe("temporal culling scaling", () => {
    */
   it("scaling: FrameController.renderFrame()", async () => {
     console.log("\n=== SCALING: FrameController.renderFrame() ===");
-    console.log("Full frame render: query visible elements + prepare + render + updateAnimations.\n");
+    console.log(
+      "Full frame render: query visible elements + prepare + render + updateAnimations.\n",
+    );
 
     for (const sceneCount of SCENE_COUNTS) {
       const tg = createScalingTimeline(sceneCount);
@@ -316,7 +345,9 @@ describe("temporal culling scaling", () => {
         });
         times.push(performance.now() - t0);
       }
-      console.log(`  ${fmt(`scenes=${String(sceneCount).padStart(3)}`, times)}`);
+      console.log(
+        `  ${fmt(`scenes=${String(sceneCount).padStart(3)}`, times)}`,
+      );
 
       fc.abort();
       tg.remove();
@@ -331,7 +362,9 @@ describe("temporal culling scaling", () => {
    */
   it("scaling: captureTimelineToDataUri()", async () => {
     console.log("\n=== SCALING: captureTimelineToDataUri() ===");
-    console.log("DOM serialization. Has subtree pruning — should scale better than others.\n");
+    console.log(
+      "DOM serialization. Has subtree pruning — should scale better than others.\n",
+    );
 
     for (const sceneCount of SCENE_COUNTS) {
       const tg = createScalingTimeline(sceneCount);
@@ -353,7 +386,9 @@ describe("temporal culling scaling", () => {
         await captureTimelineToDataUri(tg, W, H, { canvasScale: 1, timeMs });
         times.push(performance.now() - t0);
       }
-      console.log(`  ${fmt(`scenes=${String(sceneCount).padStart(3)}`, times)}`);
+      console.log(
+        `  ${fmt(`scenes=${String(sceneCount).padStart(3)}`, times)}`,
+      );
 
       tg.remove();
     }
@@ -367,7 +402,9 @@ describe("temporal culling scaling", () => {
    */
   it("scaling: seekForRender() (full video export frame)", async () => {
     console.log("\n=== SCALING: seekForRender() ===");
-    console.log("Full video export frame pipeline: time set + Lit updates + FrameController + updateAnimations.\n");
+    console.log(
+      "Full video export frame pipeline: time set + Lit updates + FrameController + updateAnimations.\n",
+    );
 
     for (const sceneCount of SCENE_COUNTS) {
       const tg = createScalingTimeline(sceneCount);
@@ -386,7 +423,9 @@ describe("temporal culling scaling", () => {
         await tg.seekForRender(timeMs + WARMUP + i * 0.01);
         times.push(performance.now() - t0);
       }
-      console.log(`  ${fmt(`scenes=${String(sceneCount).padStart(3)}`, times)}`);
+      console.log(
+        `  ${fmt(`scenes=${String(sceneCount).padStart(3)}`, times)}`,
+      );
 
       tg.remove();
     }
@@ -421,13 +460,18 @@ describe("temporal culling scaling", () => {
         const frameTime = timeMs + WARMUP + i * 0.01;
         const t0 = performance.now();
         await tg.seekForRender(frameTime);
-        await captureTimelineToDataUri(tg, W, H, { canvasScale: 1, timeMs: frameTime });
+        await captureTimelineToDataUri(tg, W, H, {
+          canvasScale: 1,
+          timeMs: frameTime,
+        });
         times.push(performance.now() - t0);
       }
 
       const s = stats(times);
       results.push({ scenes: sceneCount, avg: s.avg, p95: s.p95 });
-      console.log(`  ${fmt(`scenes=${String(sceneCount).padStart(3)}`, times)}`);
+      console.log(
+        `  ${fmt(`scenes=${String(sceneCount).padStart(3)}`, times)}`,
+      );
 
       tg.remove();
     }
@@ -439,7 +483,7 @@ describe("temporal culling scaling", () => {
       const ratio = r.avg / baseline.avg;
       console.log(
         `  scenes=${String(r.scenes).padStart(3)}: avg=${r.avg.toFixed(2)}ms  ` +
-        `${ratio.toFixed(1)}x vs baseline (${r.scenes}x more scenes)`
+          `${ratio.toFixed(1)}x vs baseline (${r.scenes}x more scenes)`,
       );
     }
 

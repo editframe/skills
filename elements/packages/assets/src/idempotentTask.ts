@@ -124,32 +124,47 @@ export const idempotentTask = <T extends unknown[]>({
     const expectedFilename = filename(absolutePath, ...args);
     let cachePath: string | null = null;
     let md5: string | null = null;
-    
+
     // Scan cache directories to find existing cache file
     const scanStartTime = Date.now();
     try {
       const cacheDirs = await readdir(cacheDirRoot, { withFileTypes: true });
-      log(`Scanning ${cacheDirs.length} cache directories for ${expectedFilename}`);
+      log(
+        `Scanning ${cacheDirs.length} cache directories for ${expectedFilename}`,
+      );
       for (const dir of cacheDirs) {
         if (dir.isDirectory()) {
-          const candidatePath = path.join(cacheDirRoot, dir.name, expectedFilename);
-          if (existsSync(candidatePath) && (await isValidCacheFile(candidatePath))) {
+          const candidatePath = path.join(
+            cacheDirRoot,
+            dir.name,
+            expectedFilename,
+          );
+          if (
+            existsSync(candidatePath) &&
+            (await isValidCacheFile(candidatePath))
+          ) {
             cachePath = candidatePath;
             md5 = dir.name; // Directory name is the MD5
             const scanElapsed = Date.now() - scanStartTime;
-            log(`Found existing cache in ${scanElapsed}ms: ${candidatePath} (skipped MD5)`);
+            log(
+              `Found existing cache in ${scanElapsed}ms: ${candidatePath} (skipped MD5)`,
+            );
             break;
           }
         }
       }
       if (!cachePath) {
         const scanElapsed = Date.now() - scanStartTime;
-        log(`Cache scan completed in ${scanElapsed}ms, no cache found - will compute MD5`);
+        log(
+          `Cache scan completed in ${scanElapsed}ms, no cache found - will compute MD5`,
+        );
       }
     } catch (error) {
       // If cache directory doesn't exist or can't be read, continue to MD5 computation
       const scanElapsed = Date.now() - scanStartTime;
-      log(`Cache scan failed after ${scanElapsed}ms, will compute MD5: ${error}`);
+      log(
+        `Cache scan failed after ${scanElapsed}ms, will compute MD5: ${error}`,
+      );
     }
 
     // Only compute MD5 if we didn't find an existing cache
@@ -160,7 +175,7 @@ export const idempotentTask = <T extends unknown[]>({
       const md5Elapsed = Date.now() - md5StartTime;
       log(`MD5 computed in ${md5Elapsed}ms: ${md5}`);
     }
-    
+
     const cacheDir = path.join(cacheDirRoot, md5);
     log(`Cache dir: ${cacheDir}`);
     await mkdir(cacheDir, { recursive: true });

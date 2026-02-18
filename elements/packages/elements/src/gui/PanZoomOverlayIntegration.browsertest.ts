@@ -507,15 +507,26 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       // Wait for Lit elements to finish initial render and RAF loop to establish position
       await panZoom.updateComplete;
       await overlayLayer.updateComplete;
-      await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+      await new Promise<void>((r) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => r())),
+      );
 
       // Set up event listener before triggering the change
-      const positionChangedPromise = new Promise<CustomEvent<OverlayItemPosition>>((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error("position-changed event not fired within 5s")), 5000);
-        overlayItem.addEventListener("position-changed", (e) => {
-          clearTimeout(timeout);
-          resolve(e as CustomEvent<OverlayItemPosition>);
-        }, { once: true });
+      const positionChangedPromise = new Promise<
+        CustomEvent<OverlayItemPosition>
+      >((resolve, reject) => {
+        const timeout = setTimeout(
+          () => reject(new Error("position-changed event not fired within 5s")),
+          5000,
+        );
+        overlayItem.addEventListener(
+          "position-changed",
+          (e) => {
+            clearTimeout(timeout);
+            resolve(e as CustomEvent<OverlayItemPosition>);
+          },
+          { once: true },
+        );
       });
 
       // Zoom changes the target's screen size, which should trigger position-changed

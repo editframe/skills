@@ -53,91 +53,103 @@ export class SelectionController implements ReactiveController {
    */
   private createContextProxy(): SelectionContext {
     const controller = this;
-    return new Proxy({
-      select: (id: string) => {
-        controller.selectionModel.select(id);
-        // Event will trigger requestUpdate via event listener
+    return new Proxy(
+      {
+        select: (id: string) => {
+          controller.selectionModel.select(id);
+          // Event will trigger requestUpdate via event listener
+        },
+        selectMultiple: (ids: string[]) => {
+          controller.selectionModel.selectMultiple(ids);
+          // Event will trigger requestUpdate via event listener
+        },
+        addToSelection: (id: string) => {
+          controller.selectionModel.addToSelection(id);
+          // Event will trigger requestUpdate via event listener
+        },
+        deselect: (id: string) => {
+          controller.selectionModel.deselect(id);
+          // Event will trigger requestUpdate via event listener
+        },
+        toggle: (id: string) => {
+          controller.selectionModel.toggle(id);
+          // Event will trigger requestUpdate via event listener
+        },
+        clear: () => {
+          controller.selectionModel.clear();
+          // Event will trigger requestUpdate via event listener
+        },
+        startBoxSelect: (x: number, y: number) => {
+          controller.selectionModel.startBoxSelect(x, y);
+          queueMicrotask(() => controller.host.requestUpdate());
+        },
+        updateBoxSelect: (x: number, y: number) => {
+          controller.selectionModel.updateBoxSelect(x, y);
+          queueMicrotask(() => controller.host.requestUpdate());
+        },
+        endBoxSelect: (
+          hitTest: (bounds: DOMRect) => string[],
+          addToSelection?: boolean,
+        ) => {
+          const fn = hitTest || controller.hitTestFn;
+          if (fn) {
+            controller.selectionModel.endBoxSelect(fn, addToSelection ?? false);
+          }
+          // Event will trigger requestUpdate via event listener
+        },
+        createGroup: (ids: string[]) => {
+          const groupId = controller.selectionModel.createGroup(ids);
+          return groupId;
+        },
+        ungroup: (groupId: string) => {
+          controller.selectionModel.ungroup(groupId);
+        },
+        selectGroup: (groupId: string) => {
+          controller.selectionModel.selectGroup(groupId);
+          // Event will trigger requestUpdate via event listener
+        },
+        getGroupId: (elementId: string) => {
+          return controller.selectionModel.getGroupId(elementId);
+        },
+        getGroupElements: (groupId: string) => {
+          return controller.selectionModel.getGroupElements(groupId);
+        },
+        addEventListener: (
+          type: "selectionchange",
+          listener: (event: CustomEvent) => void,
+        ) => {
+          controller.selectionModel.addEventListener(
+            type,
+            listener as EventListener,
+          );
+        },
+        removeEventListener: (
+          type: "selectionchange",
+          listener: (event: CustomEvent) => void,
+        ) => {
+          controller.selectionModel.removeEventListener(
+            type,
+            listener as EventListener,
+          );
+        },
+      } as Omit<
+        SelectionContext,
+        "selectedIds" | "selectionMode" | "boxSelectBounds"
+      >,
+      {
+        get(target, prop) {
+          if (prop === "selectedIds") {
+            return controller.selectionModel.selectedIds;
+          }
+          if (prop === "selectionMode") {
+            return controller.selectionModel.selectionMode;
+          }
+          if (prop === "boxSelectBounds") {
+            return controller.selectionModel.boxSelectBounds;
+          }
+          return (target as any)[prop];
+        },
       },
-      selectMultiple: (ids: string[]) => {
-        controller.selectionModel.selectMultiple(ids);
-        // Event will trigger requestUpdate via event listener
-      },
-      addToSelection: (id: string) => {
-        controller.selectionModel.addToSelection(id);
-        // Event will trigger requestUpdate via event listener
-      },
-      deselect: (id: string) => {
-        controller.selectionModel.deselect(id);
-        // Event will trigger requestUpdate via event listener
-      },
-      toggle: (id: string) => {
-        controller.selectionModel.toggle(id);
-        // Event will trigger requestUpdate via event listener
-      },
-      clear: () => {
-        controller.selectionModel.clear();
-        // Event will trigger requestUpdate via event listener
-      },
-      startBoxSelect: (x: number, y: number) => {
-        controller.selectionModel.startBoxSelect(x, y);
-        queueMicrotask(() => controller.host.requestUpdate());
-      },
-      updateBoxSelect: (x: number, y: number) => {
-        controller.selectionModel.updateBoxSelect(x, y);
-        queueMicrotask(() => controller.host.requestUpdate());
-      },
-      endBoxSelect: (
-        hitTest: (bounds: DOMRect) => string[],
-        addToSelection?: boolean,
-      ) => {
-        const fn = hitTest || controller.hitTestFn;
-        if (fn) {
-          controller.selectionModel.endBoxSelect(fn, addToSelection ?? false);
-        }
-        // Event will trigger requestUpdate via event listener
-      },
-      createGroup: (ids: string[]) => {
-        const groupId = controller.selectionModel.createGroup(ids);
-        return groupId;
-      },
-      ungroup: (groupId: string) => {
-        controller.selectionModel.ungroup(groupId);
-      },
-      selectGroup: (groupId: string) => {
-        controller.selectionModel.selectGroup(groupId);
-        // Event will trigger requestUpdate via event listener
-      },
-      getGroupId: (elementId: string) => {
-        return controller.selectionModel.getGroupId(elementId);
-      },
-      getGroupElements: (groupId: string) => {
-        return controller.selectionModel.getGroupElements(groupId);
-      },
-      addEventListener: (
-        type: "selectionchange",
-        listener: (event: CustomEvent) => void,
-      ) => {
-        controller.selectionModel.addEventListener(type, listener as EventListener);
-      },
-      removeEventListener: (
-        type: "selectionchange",
-        listener: (event: CustomEvent) => void,
-      ) => {
-        controller.selectionModel.removeEventListener(type, listener as EventListener);
-      },
-    } as Omit<SelectionContext, 'selectedIds' | 'selectionMode' | 'boxSelectBounds'>, {
-      get(target, prop) {
-        if (prop === 'selectedIds') {
-          return controller.selectionModel.selectedIds;
-        }
-        if (prop === 'selectionMode') {
-          return controller.selectionModel.selectionMode;
-        }
-        if (prop === 'boxSelectBounds') {
-          return controller.selectionModel.boxSelectBounds;
-        }
-        return (target as any)[prop];
-      },
-    }) as SelectionContext;
+    ) as SelectionContext;
   }
 }

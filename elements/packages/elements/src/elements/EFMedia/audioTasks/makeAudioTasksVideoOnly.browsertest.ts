@@ -8,7 +8,11 @@ const test = baseTest.extend<{
 }>({
   videoOnlyAssetEngine: async ({}, use) => {
     const host = document.createElement("ef-video") as EFMedia;
-    const engine = new AssetMediaEngine(host, "test-video-only.mp4");
+    const engine = new AssetMediaEngine(
+      host,
+      "test-video-only.mp4",
+      null as any,
+    );
 
     // Simulate video-only asset data (no audio track) - this is the exact scenario
     // that caused "computeSegmentId: trackId not found for rendition {\"src\":\"uuid\"}"

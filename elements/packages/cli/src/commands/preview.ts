@@ -10,9 +10,9 @@ program
     // Resolve projectDirectory relative to where the user actually ran the command
     const baseCwd = process.env.ORIGINAL_CWD || process.cwd();
     const resolvedProjectDir = path.resolve(baseCwd, projectDirectory);
-    
-    spawn("npx", ["vite", "dev"], { 
-      cwd: resolvedProjectDir, 
-      stdio: "inherit" 
+
+    spawn("npx", ["vite", "dev"], {
+      cwd: resolvedProjectDir,
+      stdio: "inherit",
     });
   });

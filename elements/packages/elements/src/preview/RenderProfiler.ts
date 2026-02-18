@@ -32,7 +32,7 @@ export class RenderProfiler {
   private _renderCount = 0;
   private _lastLogTime = 0;
   private _timingLoggedAt = 0;
-  
+
   private _timings: RenderTimings = {
     setup: 0,
     draw: 0,
@@ -52,7 +52,7 @@ export class RenderProfiler {
     this._renderCount = 0;
     this._lastLogTime = 0;
     this._timingLoggedAt = 0;
-    
+
     for (const key of Object.keys(this._timings) as (keyof RenderTimings)[]) {
       this._timings[key] = 0;
     }
@@ -92,7 +92,10 @@ export class RenderProfiler {
   /**
    * Time an async operation and add to the specified phase.
    */
-  async timeAsync<T>(phase: keyof RenderTimings, fn: () => Promise<T>): Promise<T> {
+  async timeAsync<T>(
+    phase: keyof RenderTimings,
+    fn: () => Promise<T>,
+  ): Promise<T> {
     const start = performance.now();
     const result = await fn();
     this._timings[phase] += performance.now() - start;
@@ -114,7 +117,9 @@ export class RenderProfiler {
   /**
    * Check if enough frames have passed since last log (for frame-based logging).
    */
-  shouldLogByFrameCount(interval: number = DEFAULT_FRAME_LOG_INTERVAL): boolean {
+  shouldLogByFrameCount(
+    interval: number = DEFAULT_FRAME_LOG_INTERVAL,
+  ): boolean {
     if (this._renderCount - this._timingLoggedAt >= interval) {
       this._timingLoggedAt = this._renderCount;
       return true;
@@ -135,18 +140,19 @@ export class RenderProfiler {
   summary(): string {
     const t = this._timings;
     const parts: string[] = [];
-    
+
     if (t.setup > 0) parts.push(`setup=${t.setup.toFixed(0)}ms`);
     if (t.draw > 0) parts.push(`draw=${t.draw.toFixed(0)}ms`);
     if (t.downsample > 0) parts.push(`downsample=${t.downsample.toFixed(0)}ms`);
-    if (t.canvasEncode > 0) parts.push(`canvasEncode=${t.canvasEncode.toFixed(0)}ms`);
+    if (t.canvasEncode > 0)
+      parts.push(`canvasEncode=${t.canvasEncode.toFixed(0)}ms`);
     if (t.inline > 0) parts.push(`inline=${t.inline.toFixed(0)}ms`);
     if (t.serialize > 0) parts.push(`serialize=${t.serialize.toFixed(0)}ms`);
     if (t.base64 > 0) parts.push(`base64=${t.base64.toFixed(0)}ms`);
     if (t.imageLoad > 0) parts.push(`imageLoad=${t.imageLoad.toFixed(0)}ms`);
     if (t.restore > 0) parts.push(`restore=${t.restore.toFixed(0)}ms`);
-    
-    return parts.join(', ');
+
+    return parts.join(", ");
   }
 
   /**

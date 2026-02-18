@@ -15,7 +15,10 @@ describe("useMediaInfo - MediaInfoController", () => {
     document.body.appendChild(video);
     await video.updateComplete;
 
-    let receivedInfo: { intrinsicDurationMs: number | undefined; loading: boolean } | null = null;
+    let receivedInfo: {
+      intrinsicDurationMs: number | undefined;
+      loading: boolean;
+    } | null = null;
     const setMediaInfo = (info: any) => {
       if (typeof info === "function") {
         receivedInfo = info(receivedInfo);
@@ -24,7 +27,10 @@ describe("useMediaInfo - MediaInfoController", () => {
       }
     };
 
-    const controller = new MediaInfoController(video as any, setMediaInfo as any);
+    const controller = new MediaInfoController(
+      video as any,
+      setMediaInfo as any,
+    );
     controller.hostConnected();
     controller.syncNow();
 
@@ -43,16 +49,24 @@ describe("useMediaInfo - MediaInfoController", () => {
     document.body.appendChild(video);
     await video.updateComplete;
 
-    const receivedInfos: Array<{ intrinsicDurationMs: number | undefined; loading: boolean }> = [];
+    const receivedInfos: Array<{
+      intrinsicDurationMs: number | undefined;
+      loading: boolean;
+    }> = [];
     const setMediaInfo = (info: any) => {
       if (typeof info === "function") {
-        receivedInfos.push(info(receivedInfos[receivedInfos.length - 1] ?? null));
+        receivedInfos.push(
+          info(receivedInfos[receivedInfos.length - 1] ?? null),
+        );
       } else {
         receivedInfos.push(info);
       }
     };
 
-    const controller = new MediaInfoController(video as any, setMediaInfo as any);
+    const controller = new MediaInfoController(
+      video as any,
+      setMediaInfo as any,
+    );
     controller.hostConnected();
     controller.syncNow();
 

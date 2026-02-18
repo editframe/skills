@@ -24,7 +24,7 @@ export class TimegroupController implements ReactiveController {
       // Skip setting currentTimeMs for timegroup children - they compute ownCurrentTimeMs
       // from the root timegroup via EFTemporal. Setting it directly causes an infinite loop
       // because the @property decorator on currentTime triggers reactive updates.
-      if ('mode' in this.child && 'isRootTimegroup' in this.child) {
+      if ("mode" in this.child && "isRootTimegroup" in this.child) {
         // Child is a timegroup - just request update, don't set currentTimeMs
         this.child.requestUpdate();
         return;

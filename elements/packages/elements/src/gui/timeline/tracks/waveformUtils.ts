@@ -1,6 +1,6 @@
 /**
  * Waveform extraction utilities for DAW-style audio visualization.
- * 
+ *
  * Extracts min/max peak pairs from audio data at a given resolution.
  * Designed for timeline visualization where we need to see amplitude
  * overview across the entire audio duration.
@@ -51,7 +51,7 @@ export async function extractWaveformData(
     // Decode audio data
     const audioContext = new OfflineAudioContext(1, 1, 44100);
     let audioBuffer: AudioBuffer;
-    
+
     try {
       audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
     } catch (decodeError) {
@@ -62,7 +62,10 @@ export async function extractWaveformData(
     signal?.throwIfAborted();
 
     // Extract peaks from the decoded audio
-    const peaks = extractPeaksFromBuffer(audioBuffer, WAVEFORM_SAMPLES_PER_SECOND);
+    const peaks = extractPeaksFromBuffer(
+      audioBuffer,
+      WAVEFORM_SAMPLES_PER_SECOND,
+    );
     const durationMs = audioBuffer.duration * 1000;
 
     const waveformData: WaveformData = {
@@ -95,34 +98,37 @@ function extractPeaksFromBuffer(
   const channelData = buffer.getChannelData(0); // Use first channel
   const sampleRate = buffer.sampleRate;
   const duration = buffer.duration;
-  
+
   // Calculate how many samples to output
   const outputSamples = Math.ceil(duration * samplesPerSecond);
-  
+
   // Each output sample has min and max
   const peaks = new Float32Array(outputSamples * 2);
-  
+
   // Samples per output window
   const samplesPerWindow = Math.floor(sampleRate / samplesPerSecond);
-  
+
   for (let i = 0; i < outputSamples; i++) {
     const startSample = i * samplesPerWindow;
-    const endSample = Math.min(startSample + samplesPerWindow, channelData.length);
-    
+    const endSample = Math.min(
+      startSample + samplesPerWindow,
+      channelData.length,
+    );
+
     let min = 0;
     let max = 0;
-    
+
     for (let j = startSample; j < endSample; j++) {
       const sample = channelData[j] ?? 0;
       if (sample < min) min = sample;
       if (sample > max) max = sample;
     }
-    
+
     // Store as alternating min/max pairs
     peaks[i * 2] = min;
     peaks[i * 2 + 1] = max;
   }
-  
+
   return peaks;
 }
 
@@ -143,49 +149,49 @@ export function renderWaveformToCanvas(
 ): void {
   const { peaks, durationMs, samplesPerSecond } = waveformData;
   const actualEndMs = endMs ?? durationMs;
-  
+
   // Calculate which samples to render
   const startSample = Math.floor((startMs / 1000) * samplesPerSecond);
   const endSample = Math.ceil((actualEndMs / 1000) * samplesPerSecond);
   const sampleCount = endSample - startSample;
-  
+
   if (sampleCount <= 0) return;
-  
+
   const centerY = y + height / 2;
   const halfHeight = height / 2;
   const pixelsPerSample = width / sampleCount;
-  
+
   ctx.fillStyle = color;
   ctx.beginPath();
-  
+
   // Draw top half (max values) left to right
   for (let i = 0; i < sampleCount; i++) {
     const sampleIndex = startSample + i;
     const peakIndex = sampleIndex * 2;
     const maxValue = peaks[peakIndex + 1] ?? 0;
-    
+
     const px = x + i * pixelsPerSample;
     const py = centerY - maxValue * halfHeight;
-    
+
     if (i === 0) {
       ctx.moveTo(px, py);
     } else {
       ctx.lineTo(px, py);
     }
   }
-  
+
   // Draw bottom half (min values) right to left
   for (let i = sampleCount - 1; i >= 0; i--) {
     const sampleIndex = startSample + i;
     const peakIndex = sampleIndex * 2;
     const minValue = peaks[peakIndex] ?? 0;
-    
+
     const px = x + i * pixelsPerSample;
     const py = centerY - minValue * halfHeight;
-    
+
     ctx.lineTo(px, py);
   }
-  
+
   ctx.closePath();
   ctx.fill();
 }

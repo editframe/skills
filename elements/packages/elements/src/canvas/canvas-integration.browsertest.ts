@@ -188,12 +188,9 @@ describe.skip("Canvas-Hierarchy-Timeline Sync", () => {
       await hierarchy.updateComplete;
 
       let selectEventDetail: { elementId: string | null } | null = null;
-      document.addEventListener(
-        "hierarchy-select",
-        ((e: CustomEvent) => {
-          selectEventDetail = e.detail;
-        }) as EventListener,
-      );
+      document.addEventListener("hierarchy-select", ((e: CustomEvent) => {
+        selectEventDetail = e.detail;
+      }) as EventListener);
 
       const hierarchyItem = hierarchy.shadowRoot?.querySelector(
         "ef-timegroup-hierarchy-item",
@@ -206,7 +203,9 @@ describe.skip("Canvas-Hierarchy-Timeline Sync", () => {
       await hierarchy.updateComplete;
 
       expect(selectEventDetail).toBeTruthy();
-      expect((selectEventDetail as { elementId: string | null } | null)?.elementId).toBe(timegroup1Id);
+      expect(
+        (selectEventDetail as { elementId: string | null } | null)?.elementId,
+      ).toBe(timegroup1Id);
     }, 1000);
   });
 
@@ -234,16 +233,12 @@ describe.skip("Canvas-Hierarchy-Timeline Sync", () => {
 
       expect(canvas.highlightedElement).toBe(null);
 
-      timegroup1.dispatchEvent(
-        new MouseEvent("mouseenter", { bubbles: true }),
-      );
+      timegroup1.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
       await canvas.updateComplete;
 
       expect(canvas.highlightedElement).toBe(timegroup1);
 
-      timegroup1.dispatchEvent(
-        new MouseEvent("mouseleave", { bubbles: true }),
-      );
+      timegroup1.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
       await canvas.updateComplete;
 
       expect(canvas.highlightedElement).toBe(null);
@@ -272,17 +267,13 @@ describe.skip("Canvas-Hierarchy-Timeline Sync", () => {
 
       expect(timegroup1.hasAttribute("data-highlighted")).toBe(false);
 
-      timegroup1.dispatchEvent(
-        new MouseEvent("mouseenter", { bubbles: true }),
-      );
+      timegroup1.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
       await canvas.updateComplete;
 
       expect(timegroup1.hasAttribute("data-highlighted")).toBe(true);
       expect(timegroup1.getAttribute("data-highlighted")).toBe("true");
 
-      timegroup1.dispatchEvent(
-        new MouseEvent("mouseleave", { bubbles: true }),
-      );
+      timegroup1.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
       await canvas.updateComplete;
 
       expect(timegroup1.hasAttribute("data-highlighted")).toBe(false);

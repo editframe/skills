@@ -1,6 +1,6 @@
 /**
  * Browser test for EFRenderAPI (window.EF_RENDER).
- * 
+ *
  * Tests programmatic rendering via Playwright-style API with:
  * - Streaming render with custom data injection
  * - Buffer render
@@ -132,7 +132,11 @@ describe("EFRenderAPI", () => {
 
     // Chunks are StreamTargetChunk objects: { type: 'write', data: Uint8Array, position: number }
     for (const chunk of chunks) {
-      const c = chunk as { type: string; data: { byteLength: number }; position: number };
+      const c = chunk as {
+        type: string;
+        data: { byteLength: number };
+        position: number;
+      };
       expect(c.type).toBe("write");
       expect(c.data.byteLength).toBeGreaterThan(0);
       expect(typeof c.position).toBe("number");

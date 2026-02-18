@@ -27,4 +27,3 @@ declare global {
     "ef-html-track": EFHTMLTrack;
   }
 }
-

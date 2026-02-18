@@ -5,9 +5,19 @@ import { program } from "commander";
 import debug from "debug";
 import ora from "ora";
 import { launchBrowserAndWaitForSDK } from "../utils/launchBrowserAndWaitForSDK.js";
-import { spawnViteServer, type SpawnedViteServer } from "../utils/spawnViteServer.js";
+import {
+  spawnViteServer,
+  type SpawnedViteServer,
+} from "../utils/spawnViteServer.js";
 import { StreamTargetChunk } from "mediabunny";
 import { withProfiling } from "../utils/profileRender.js";
+
+declare global {
+  interface Window {
+    EF_RENDER_DATA: any;
+    EF_RENDER: any;
+  }
+}
 
 const log = debug("ef:cli:render");
 
@@ -39,9 +49,16 @@ program
   .option("--no-include-audio", "Exclude audio track")
   .option("--from-ms <number>", "Start time in milliseconds")
   .option("--to-ms <number>", "End time in milliseconds")
-  .option("--experimental-native-render", "Use experimental canvas capture API (faster)")
+  .option(
+    "--experimental-native-render",
+    "Use experimental canvas capture API (faster)",
+  )
   .option("--profile", "Enable CPU profiling")
-  .option("--profile-output <path>", "Profile output path", "./render-profile.cpuprofile")
+  .option(
+    "--profile-output <path>",
+    "Profile output path",
+    "./render-profile.cpuprofile",
+  )
   .action(async (directory = ".", options) => {
     // If running from the dev script (via tsx), ORIGINAL_CWD contains the user's actual directory
     const baseCwd = process.env.ORIGINAL_CWD || process.cwd();
@@ -66,7 +83,7 @@ program
 
     // Single initialization spinner for all setup steps
     const initSpinner = ora("Initializing...").start();
-    
+
     let renderUrl: string;
     let viteServer: SpawnedViteServer | null = null;
 
@@ -100,140 +117,164 @@ program
         },
         async (page) => {
           initSpinner.succeed("Ready");
-          
+
           // Now handle the render
-        await withProfiling(
-          page,
-          {
-            enabled: options.profile === true,
-            outputPath: options.profileOutput,
-          },
-          async () => {
-            // Open output file for streaming writes
-            const outputStream = createWriteStream(outputPath);
-            let chunkCount = 0;
-            let totalBytes = 0;
+          await withProfiling(
+            page,
+            {
+              enabled: options.profile === true,
+              outputPath: options.profileOutput,
+            },
+            async () => {
+              // Open output file for streaming writes
+              const outputStream = createWriteStream(outputPath);
+              let chunkCount = 0;
+              let totalBytes = 0;
 
-            // Expose chunk handler - writes directly to file
-            await page.exposeFunction("onRenderChunk", (chunk: StreamTargetChunk) => {
-              writeFile(outputPath, chunk.data, { flag: "a" });
-              chunkCount++;
-              totalBytes += chunk.data.length;
-              log(`Received chunk ${chunkCount}: ${chunk.data.length} bytes (total: ${totalBytes} bytes)`);
-            });
+              // Expose chunk handler - writes directly to file
+              await page.exposeFunction(
+                "onRenderChunk",
+                (chunk: StreamTargetChunk) => {
+                  writeFile(outputPath, chunk.data, { flag: "a" });
+                  chunkCount++;
+                  totalBytes += chunk.data.length;
+                  log(
+                    `Received chunk ${chunkCount}: ${chunk.data.length} bytes (total: ${totalBytes} bytes)`,
+                  );
+                },
+              );
 
-            // Set custom render data if provided
-            if (renderData) {
-              await page.evaluate((data) => {
-                window.EF_RENDER_DATA = data;
-              }, renderData);
-              log("Set EF_RENDER_DATA:", renderData);
-            }
-
-            // Wait for EF_RENDER API to be available
-            await page.waitForFunction(
-              () => typeof window.EF_RENDER !== "undefined",
-              { timeout: 10_000 },
-            );
-
-            // Check if ready
-            const isReady = await page.evaluate(() => window.EF_RENDER?.isReady());
-            if (!isReady) {
-              throw new Error("Render API is not ready. No ef-timegroup found.");
-            }
-
-            // Create progress spinner
-            const progressSpinner = ora("Rendering video...").start();
-
-            // Track last progress for completion message
-            let lastProgress: {
-              currentFrame: number;
-              totalFrames: number;
-              renderedMs: number;
-              totalDurationMs: number;
-              elapsedMs: number;
-              speedMultiplier: number;
-            } | null = null;
-
-            // Expose progress callback
-            await page.exposeFunction("onRenderProgress", (progress: {
-              progress: number;
-              currentFrame: number;
-              totalFrames: number;
-              renderedMs: number;
-              totalDurationMs: number;
-              elapsedMs: number;
-              estimatedRemainingMs: number;
-              speedMultiplier: number;
-            }) => {
-              const percent = (progress.progress * 100).toFixed(1);
-              const renderedTime = formatTime(progress.renderedMs);
-              const totalTime = formatTime(progress.totalDurationMs);
-              const remainingTime = formatTime(progress.estimatedRemainingMs);
-              const speed = progress.speedMultiplier.toFixed(2);
-              
-              progressSpinner.text = `Rendering: ${progress.currentFrame}/${progress.totalFrames} frames (${percent}%) | ${renderedTime}/${totalTime} | ${remainingTime} remaining | ${speed}x speed`;
-              
-              // Store last progress for completion message
-              lastProgress = {
-                currentFrame: progress.currentFrame,
-                totalFrames: progress.totalFrames,
-                renderedMs: progress.renderedMs,
-                totalDurationMs: progress.totalDurationMs,
-                elapsedMs: progress.elapsedMs,
-                speedMultiplier: progress.speedMultiplier,
-              };
-            });
-
-            // Render with streaming
-            try {
-              const renderOptions: any = {
-                fps,
-                scale,
-                includeAudio: options.includeAudio !== false,
-              };
-
-              if (fromMs !== undefined) {
-                renderOptions.fromMs = fromMs;
-              }
-              if (toMs !== undefined) {
-                renderOptions.toMs = toMs;
+              // Set custom render data if provided
+              if (renderData) {
+                await page.evaluate((data) => {
+                  window.EF_RENDER_DATA = data;
+                }, renderData);
+                log("Set EF_RENDER_DATA:", renderData);
               }
 
-              await page.evaluate(async (opts) => {
-                await window.EF_RENDER!.renderStreaming(opts);
-              }, renderOptions);
+              // Wait for EF_RENDER API to be available
+              await page.waitForFunction(
+                () => typeof window.EF_RENDER !== "undefined",
+                { timeout: 10_000 },
+              );
 
-              // Build completion message with performance stats
-              if (lastProgress) {
-                const renderedTime = formatTime(lastProgress.renderedMs);
-                const totalTime = formatTime(lastProgress.totalDurationMs);
-                const elapsedTime = formatTime(lastProgress.elapsedMs);
-                const speed = lastProgress.speedMultiplier.toFixed(2);
-                progressSpinner.succeed(
-                  `Render complete: ${lastProgress.currentFrame}/${lastProgress.totalFrames} frames | ${renderedTime}/${totalTime} | ${elapsedTime} elapsed | ${speed}x speed`
+              // Check if ready
+              const isReady = await page.evaluate(() =>
+                window.EF_RENDER?.isReady(),
+              );
+              if (!isReady) {
+                throw new Error(
+                  "Render API is not ready. No ef-timegroup found.",
                 );
-              } else {
-                progressSpinner.succeed("Render complete");
               }
-            } catch (error) {
-              progressSpinner.fail("Render failed");
-              throw error;
-            }
 
-            // Close the output stream
-            outputStream.end();
+              // Create progress spinner
+              const progressSpinner = ora("Rendering video...").start();
 
-            // Wait for stream to finish
-            await new Promise<void>((resolve, reject) => {
-              outputStream.on("finish", () => {
-                log(`Render complete: ${chunkCount} chunks, ${totalBytes} bytes written to ${outputPath}`);
-                resolve();
+              // Track last progress for completion message
+              let lastProgress: {
+                currentFrame: number;
+                totalFrames: number;
+                renderedMs: number;
+                totalDurationMs: number;
+                elapsedMs: number;
+                speedMultiplier: number;
+              } | null = null;
+
+              // Expose progress callback
+              await page.exposeFunction(
+                "onRenderProgress",
+                (progress: {
+                  progress: number;
+                  currentFrame: number;
+                  totalFrames: number;
+                  renderedMs: number;
+                  totalDurationMs: number;
+                  elapsedMs: number;
+                  estimatedRemainingMs: number;
+                  speedMultiplier: number;
+                }) => {
+                  const percent = (progress.progress * 100).toFixed(1);
+                  const renderedTime = formatTime(progress.renderedMs);
+                  const totalTime = formatTime(progress.totalDurationMs);
+                  const remainingTime = formatTime(
+                    progress.estimatedRemainingMs,
+                  );
+                  const speed = progress.speedMultiplier.toFixed(2);
+
+                  progressSpinner.text = `Rendering: ${progress.currentFrame}/${progress.totalFrames} frames (${percent}%) | ${renderedTime}/${totalTime} | ${remainingTime} remaining | ${speed}x speed`;
+
+                  // Store last progress for completion message
+                  lastProgress = {
+                    currentFrame: progress.currentFrame,
+                    totalFrames: progress.totalFrames,
+                    renderedMs: progress.renderedMs,
+                    totalDurationMs: progress.totalDurationMs,
+                    elapsedMs: progress.elapsedMs,
+                    speedMultiplier: progress.speedMultiplier,
+                  };
+                },
+              );
+
+              // Render with streaming
+              try {
+                const renderOptions: any = {
+                  fps,
+                  scale,
+                  includeAudio: options.includeAudio !== false,
+                };
+
+                if (fromMs !== undefined) {
+                  renderOptions.fromMs = fromMs;
+                }
+                if (toMs !== undefined) {
+                  renderOptions.toMs = toMs;
+                }
+
+                await page.evaluate(async (opts) => {
+                  await window.EF_RENDER!.renderStreaming(opts);
+                }, renderOptions);
+
+                // Build completion message with performance stats
+                if (lastProgress) {
+                  const p = lastProgress as {
+                    currentFrame: number;
+                    totalFrames: number;
+                    renderedMs: number;
+                    totalDurationMs: number;
+                    elapsedMs: number;
+                    speedMultiplier: number;
+                  };
+                  const renderedTime = formatTime(p.renderedMs);
+                  const totalTime = formatTime(p.totalDurationMs);
+                  const elapsedTime = formatTime(p.elapsedMs);
+                  const speed = p.speedMultiplier.toFixed(2);
+                  progressSpinner.succeed(
+                    `Render complete: ${p.currentFrame}/${p.totalFrames} frames | ${renderedTime}/${totalTime} | ${elapsedTime} elapsed | ${speed}x speed`,
+                  );
+                } else {
+                  progressSpinner.succeed("Render complete");
+                }
+              } catch (error) {
+                progressSpinner.fail("Render failed");
+                throw error;
+              }
+
+              // Close the output stream
+              outputStream.end();
+
+              // Wait for stream to finish
+              await new Promise<void>((resolve, reject) => {
+                outputStream.on("finish", () => {
+                  log(
+                    `Render complete: ${chunkCount} chunks, ${totalBytes} bytes written to ${outputPath}`,
+                  );
+                  resolve();
+                });
+                outputStream.on("error", reject);
               });
-              outputStream.on("error", reject);
-            });
-          },
-        );
+            },
+          );
         },
       );
     } catch (error) {

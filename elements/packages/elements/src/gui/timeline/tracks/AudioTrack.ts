@@ -4,10 +4,7 @@ import { customElement, state } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
 import { EFAudio } from "../../../elements/EFAudio.js";
 import { TrackItem } from "./TrackItem.js";
-import {
-  extractWaveformData,
-  type WaveformData,
-} from "./waveformUtils.js";
+import { extractWaveformData, type WaveformData } from "./waveformUtils.js";
 import {
   timelineStateContext,
   type TimelineState,
@@ -146,7 +143,7 @@ export class EFAudioTrack extends TrackItem {
 
   /**
    * Render the waveform to canvas with virtual rendering.
-   * 
+   *
    * The approach:
    * 1. Calculate the visible portion of the track (intersection of track and viewport)
    * 2. Position the canvas at that visible portion within the track
@@ -162,12 +159,18 @@ export class EFAudioTrack extends TrackItem {
     const positionInfo = this.#getTrackPositionInfo();
     if (!positionInfo) return;
 
-    const { trackStartPx, trackWidthPx, viewportScrollLeft, viewportWidth, pixelsPerMs } =
-      positionInfo;
+    const {
+      trackStartPx,
+      trackWidthPx,
+      viewportScrollLeft,
+      viewportWidth,
+      pixelsPerMs,
+    } = positionInfo;
 
     // Calculate visible region in absolute pixels (with padding for smooth scrolling)
     const visibleLeftPx = viewportScrollLeft - VIRTUAL_RENDER_PADDING_PX;
-    const visibleRightPx = viewportScrollLeft + viewportWidth + VIRTUAL_RENDER_PADDING_PX;
+    const visibleRightPx =
+      viewportScrollLeft + viewportWidth + VIRTUAL_RENDER_PADDING_PX;
 
     // Track boundaries in absolute pixels
     const trackEndPx = trackStartPx + trackWidthPx;
@@ -183,7 +186,10 @@ export class EFAudioTrack extends TrackItem {
     // Calculate the intersection: what part of the track is visible
     // All coordinates are now relative to the track's left edge (0 = track start)
     const visibleStartInTrack = Math.max(0, visibleLeftPx - trackStartPx);
-    const visibleEndInTrack = Math.min(trackWidthPx, visibleRightPx - trackStartPx);
+    const visibleEndInTrack = Math.min(
+      trackWidthPx,
+      visibleRightPx - trackStartPx,
+    );
     const visibleWidthPx = visibleEndInTrack - visibleStartInTrack;
 
     if (visibleWidthPx <= 0) return;
@@ -199,7 +205,7 @@ export class EFAudioTrack extends TrackItem {
       canvas.width = targetWidth;
       canvas.height = targetHeight;
     }
-    
+
     // Position canvas at the visible portion within the track
     canvas.style.left = `${visibleStartInTrack}px`;
     canvas.style.width = `${visibleWidthPx}px`;
@@ -214,7 +220,7 @@ export class EFAudioTrack extends TrackItem {
     // Calculate what time range to render
     const audio = this.element as EFAudio;
     const sourceInMs = audio.sourceStartMs ?? 0;
-    
+
     // Convert visible pixel range to time range
     const timeStartMs = sourceInMs + visibleStartInTrack / pixelsPerMs;
     const timeEndMs = sourceInMs + visibleEndInTrack / pixelsPerMs;
@@ -223,7 +229,7 @@ export class EFAudioTrack extends TrackItem {
     this.#drawWaveformRegion(
       ctx,
       waveformData,
-      0,  // Start drawing at x=0 of canvas (canvas is already positioned)
+      0, // Start drawing at x=0 of canvas (canvas is already positioned)
       visibleWidthPx,
       height,
       timeStartMs,
@@ -253,7 +259,7 @@ export class EFAudioTrack extends TrackItem {
     if (sampleCount <= 0 || width <= 0) return;
 
     const centerY = height / 2;
-    const halfHeight = (height / 2) - 2; // Leave 2px padding top/bottom
+    const halfHeight = height / 2 - 2; // Leave 2px padding top/bottom
     const color = this.getElementTypeColor();
 
     ctx.fillStyle = color;

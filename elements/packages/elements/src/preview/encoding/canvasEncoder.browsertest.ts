@@ -16,7 +16,7 @@ describe("canvasEncoder", () => {
       const canvas = document.createElement("canvas");
       canvas.width = 0;
       canvas.height = 0;
-      
+
       const result = encodeCanvasOnMainThread(canvas, 1);
       expect(result).toBeNull();
     });
@@ -26,7 +26,7 @@ describe("canvasEncoder", () => {
       canvas.width = 100;
       canvas.height = 100;
       canvas.dataset.preserveAlpha = "true";
-      
+
       const result = encodeCanvasOnMainThread(canvas, 1);
       expect(result).not.toBeNull();
       expect(result?.preserveAlpha).toBe(true);
@@ -37,7 +37,7 @@ describe("canvasEncoder", () => {
       const canvas = document.createElement("canvas");
       canvas.width = 100;
       canvas.height = 100;
-      
+
       const result = encodeCanvasOnMainThread(canvas, 1);
       expect(result).not.toBeNull();
       expect(result?.preserveAlpha).toBe(false);
@@ -48,10 +48,10 @@ describe("canvasEncoder", () => {
       const canvas = document.createElement("canvas");
       canvas.width = 100;
       canvas.height = 100;
-      
+
       const ctx = canvas.getContext("2d");
       ctx?.fillRect(0, 0, 100, 100);
-      
+
       const result = encodeCanvasOnMainThread(canvas, 0.5);
       expect(result).not.toBeNull();
       expect(result?.dataUrl).toBeTruthy();
@@ -65,15 +65,15 @@ describe("canvasEncoder", () => {
         createTestCanvas(200, 200),
         createTestCanvas(300, 300),
       ];
-      
+
       const results = await encodeCanvasesInParallel(canvases);
-      
+
       expect(results).toHaveLength(3);
       expect(results[0]?.canvas).toBe(canvases[0]);
       expect(results[1]?.canvas).toBe(canvases[1]);
       expect(results[2]?.canvas).toBe(canvases[2]);
-      
-      results.forEach(result => {
+
+      results.forEach((result) => {
         expect(result.dataUrl).toBeTruthy();
         expect(result.dataUrl).toMatch(/^data:image\/(jpeg|png)/);
       });
@@ -85,9 +85,9 @@ describe("canvasEncoder", () => {
         createTestCanvas(0, 0), // empty
         createTestCanvas(200, 200),
       ];
-      
+
       const results = await encodeCanvasesInParallel(canvases);
-      
+
       expect(results).toHaveLength(2);
       expect(results[0]?.canvas).toBe(canvases[0]);
       expect(results[1]?.canvas).toBe(canvases[2]);
@@ -95,9 +95,9 @@ describe("canvasEncoder", () => {
 
     it("should apply scale factor", async () => {
       const canvases = [createTestCanvas(100, 100)];
-      
+
       const results = await encodeCanvasesInParallel(canvases, { scale: 0.5 });
-      
+
       expect(results).toHaveLength(1);
       expect(results[0]?.dataUrl).toBeTruthy();
     });
@@ -114,13 +114,13 @@ function createTestCanvas(width: number, height: number): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
-  
+
   // Draw something on the canvas so it has content
   const ctx = canvas.getContext("2d");
   if (ctx) {
     ctx.fillStyle = "#ff0000";
     ctx.fillRect(0, 0, width, height);
   }
-  
+
   return canvas;
 }

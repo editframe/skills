@@ -197,8 +197,7 @@ describe("Canvas Scrub Performance Profile", () => {
     }
 
     const painted = timings.filter((t) => t.painted);
-    const avgMs =
-      timings.reduce((a, t) => a + t.totalMs, 0) / timings.length;
+    const avgMs = timings.reduce((a, t) => a + t.totalMs, 0) / timings.length;
 
     console.log(`\n=== BURST MODE (no RAF gaps) ===`);
     console.log(
@@ -284,8 +283,15 @@ describe("Canvas Scrub Performance Profile", () => {
     tg.currentTimeMs = 0;
     await tg.updateComplete;
     updateAnimations(tg);
-    await frameController.renderFrame(0, { waitForLitUpdate: false, onAnimationsUpdate: (el) => updateAnimations(el as EFTimegroup) });
-    await captureTimelineToDataUri(tg, width, height, { renderContext, canvasScale: 1, timeMs: 0 });
+    await frameController.renderFrame(0, {
+      waitForLitUpdate: false,
+      onAnimationsUpdate: (el) => updateAnimations(el as EFTimegroup),
+    });
+    await captureTimelineToDataUri(tg, width, height, {
+      renderContext,
+      canvasScale: 1,
+      timeMs: 0,
+    });
 
     const STEPS = 30;
     const timings: FrameTiming[] = [];
@@ -362,7 +368,10 @@ describe("Canvas Scrub Performance Profile", () => {
     tg.currentTimeMs = 0;
     await tg.updateComplete;
     updateAnimations(tg);
-    await frameController.renderFrame(0, { waitForLitUpdate: false, onAnimationsUpdate: (el) => updateAnimations(el as EFTimegroup) });
+    await frameController.renderFrame(0, {
+      waitForLitUpdate: false,
+      onAnimationsUpdate: (el) => updateAnimations(el as EFTimegroup),
+    });
 
     // Measure foreignObject path
     const foTimes: number[] = [];
@@ -384,11 +393,16 @@ describe("Canvas Scrub Performance Profile", () => {
     }
 
     const foAvg = foTimes.reduce((a, b) => a + b, 0) / foTimes.length;
-    console.log(`foreignObject: avg=${foAvg.toFixed(2)}ms (${(1000 / foAvg).toFixed(0)} fps)`);
+    console.log(
+      `foreignObject: avg=${foAvg.toFixed(2)}ms (${(1000 / foAvg).toFixed(0)} fps)`,
+    );
 
     // Measure native path (if available)
     if (hasNative) {
-      const result = renderTimegroupToCanvas(tg, { scale: 1, resolutionScale: 1 });
+      const result = renderTimegroupToCanvas(tg, {
+        scale: 1,
+        resolutionScale: 1,
+      });
       const { refresh, dispose } = result;
       container.appendChild(result.container);
       await refresh();
@@ -403,8 +417,11 @@ describe("Canvas Scrub Performance Profile", () => {
         nativeTimes.push(performance.now() - t0);
       }
 
-      const nativeAvg = nativeTimes.reduce((a, b) => a + b, 0) / nativeTimes.length;
-      console.log(`native:        avg=${nativeAvg.toFixed(2)}ms (${(1000 / nativeAvg).toFixed(0)} fps)`);
+      const nativeAvg =
+        nativeTimes.reduce((a, b) => a + b, 0) / nativeTimes.length;
+      console.log(
+        `native:        avg=${nativeAvg.toFixed(2)}ms (${(1000 / nativeAvg).toFixed(0)} fps)`,
+      );
       console.log(`speedup:       ${(foAvg / nativeAvg).toFixed(1)}x`);
 
       dispose();

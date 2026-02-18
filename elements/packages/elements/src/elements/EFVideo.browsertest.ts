@@ -64,7 +64,7 @@ const test = baseTest.extend<{
     host.src = "http://web:3000/head-moov-480p.mp4";
     timegroup.append(host);
     configuration.append(timegroup);
-    await host.mediaEngineTask.run();
+    await host.getMediaEngine();
     await use(host);
   },
   barsNtone: async ({ barsNtoneTimegroup }, use) => {
@@ -1214,7 +1214,6 @@ describe.skip("EFVideo", () => {
       await timegroup.seek(1000);
       expect(headMoov480p.unifiedVideoSeekTask.value?.timestamp).toBe(1);
 
-
       // // Rapid succession of seeks - intermediate ones should be skipped
       // timegroup.currentTimeMs = 1000;
       // timegroup.currentTimeMs = 2000;
@@ -1284,7 +1283,7 @@ describe.skip("EFVideo", () => {
         // Test seeking to exact duration - this should NOT fail with "Segment ID is not available"
         const exactDuration = headMoov480p.intrinsicDurationMs;
 
-        timegroup.currentTimeMs = exactDuration;
+        timegroup.currentTimeMs = exactDuration!;
         await headMoov480p.updateComplete;
 
         // This should now work without throwing "Segment ID is not available"
@@ -1314,7 +1313,7 @@ describe.skip("EFVideo", () => {
 
       // Seek to exactly the end of the video to trigger the audio analysis tasks
       const exactDuration = headMoov480p.intrinsicDurationMs; // Should be 10000ms
-      timegroup.currentTimeMs = exactDuration;
+      timegroup.currentTimeMs = exactDuration!;
       await headMoov480p.updateComplete;
 
       // The fix: audio analysis tasks should now clamp their time ranges to video duration
@@ -1383,11 +1382,13 @@ describe.skip("EFVideo", () => {
         );
 
         try {
-          const result = await originalTask(...args);
+          const result = await originalTask!(...args);
           // Only record if this seek wasn't aborted and returned a result
           if (!signal.aborted && result !== undefined) {
             completedSeeks.push(desiredSeekTimeMs);
-            console.log(`✅ Seek #${seekId} completed for ${desiredSeekTimeMs}ms`);
+            console.log(
+              `✅ Seek #${seekId} completed for ${desiredSeekTimeMs}ms`,
+            );
           } else {
             console.log(
               `❌ Seek #${seekId} aborted or returned undefined for ${desiredSeekTimeMs}ms`,
@@ -1396,7 +1397,9 @@ describe.skip("EFVideo", () => {
           return result;
         } catch (error) {
           if (error instanceof Error && error.name === "AbortError") {
-            console.log(`❌ Seek #${seekId} aborted (AbortError) for ${desiredSeekTimeMs}ms`);
+            console.log(
+              `❌ Seek #${seekId} aborted (AbortError) for ${desiredSeekTimeMs}ms`,
+            );
             return undefined;
           }
           throw error;
@@ -1421,7 +1424,9 @@ describe.skip("EFVideo", () => {
       const finalSeekTime = rapidSeekSequence[rapidSeekSequence.length - 1];
       expect(headMoov480p.desiredSeekTimeMs).toBe(finalSeekTime);
 
-      console.log(`📊 Started ${seekStartCount} seeks, completed ${completedSeeks.length}`);
+      console.log(
+        `📊 Started ${seekStartCount} seeks, completed ${completedSeeks.length}`,
+      );
 
       // Verify that we're not processing all seeks - only the latest should complete
       // In an ideal world, only 1 seek should complete (the final one)
@@ -1563,78 +1568,86 @@ describe.skip("EFVideo", () => {
 });
 
 describe("standalone ef-video (no Timegroup)", () => {
-  test("renders initial frame to canvas when used as bare root temporal", { timeout: 15000 }, async ({ expect }) => {
-    const container = document.createElement("div");
-    const apiHost = getApiHost();
-    container.style.width = "640px";
-    container.style.height = "360px";
-    render(
-      html`
+  test(
+    "renders initial frame to canvas when used as bare root temporal",
+    { timeout: 15000 },
+    async ({ expect }) => {
+      const container = document.createElement("div");
+      const apiHost = getApiHost();
+      container.style.width = "640px";
+      container.style.height = "360px";
+      render(
+        html`
       <ef-configuration api-host="${apiHost}" signing-url="">
         <ef-video src="bars-n-tone.mp4" mode="asset" id="standalone-bare-video" style="width:640px;height:360px;"></ef-video>
       </ef-configuration>
     `,
-      container,
-    );
-    document.body.appendChild(container);
+        container,
+      );
+      document.body.appendChild(container);
 
-    const video = container.querySelector("ef-video") as EFVideo;
-    await video.updateComplete;
+      const video = container.querySelector("ef-video") as EFVideo;
+      await video.updateComplete;
 
-    // Wait for media engine to finish loading
-    await video.mediaEngineTask.taskComplete;
+      // Wait for media engine to finish loading
+      await video.mediaEngineTask.taskComplete;
 
-    // Video should be a root temporal with its own PlaybackController
-    expect(video.playbackController).toBeDefined();
+      // Video should be a root temporal with its own PlaybackController
+      expect(video.playbackController).toBeDefined();
 
-    // Wait for Lit rendering to stabilize, then trigger frame render.
-    await video.updateComplete;
-    await video.playbackController!.runThrottledFrameTask();
+      // Wait for Lit rendering to stabilize, then trigger frame render.
+      await video.updateComplete;
+      await video.playbackController!.runThrottledFrameTask();
 
-    const canvas = video.canvasElement!;
-    expect(canvas).toBeDefined();
+      const canvas = video.canvasElement!;
+      expect(canvas).toBeDefined();
 
-    // Canvas should have been resized from default 300x150 to match the video dimensions
-    expect(canvas.width).toBeGreaterThan(300);
-    expect(canvas.height).toBeGreaterThan(150);
+      // Canvas should have been resized from default 300x150 to match the video dimensions
+      expect(canvas.width).toBeGreaterThan(300);
+      expect(canvas.height).toBeGreaterThan(150);
 
-    container.remove();
-  });
+      container.remove();
+    },
+  );
 
-  test("trim change triggers re-render via updated() lifecycle", { timeout: 15000 }, async ({ expect }) => {
-    const container = document.createElement("div");
-    const apiHost = getApiHost();
-    render(
-      html`
+  test(
+    "trim change triggers re-render via updated() lifecycle",
+    { timeout: 15000 },
+    async ({ expect }) => {
+      const container = document.createElement("div");
+      const apiHost = getApiHost();
+      render(
+        html`
       <ef-configuration api-host="${apiHost}" signing-url="">
         <ef-video src="bars-n-tone.mp4" mode="asset" id="trim-rerender-video" style="width:640px;height:360px;"></ef-video>
       </ef-configuration>
     `,
-      container,
-    );
-    document.body.appendChild(container);
+        container,
+      );
+      document.body.appendChild(container);
 
-    const video = container.querySelector("ef-video") as EFVideo;
-    await video.updateComplete;
-    await video.mediaEngineTask.taskComplete;
-    await video.updateComplete;
-    await video.playbackController!.runThrottledFrameTask();
+      const video = container.querySelector("ef-video") as EFVideo;
+      await video.updateComplete;
+      await video.mediaEngineTask.taskComplete;
+      await video.updateComplete;
+      await video.playbackController!.runThrottledFrameTask();
 
-    // Verify initial source time mapping
-    expect((video as any).currentSourceTimeMs).toBe(0);
+      // Verify initial source time mapping
+      expect((video as any).currentSourceTimeMs).toBe(0);
 
-    // Change trimStartMs — shifts the source frame at timeline time 0
-    video.trimStartMs = 3000;
-    await video.updateComplete;
-    await video.playbackController!.runThrottledFrameTask();
+      // Change trimStartMs — shifts the source frame at timeline time 0
+      video.trimStartMs = 3000;
+      await video.updateComplete;
+      await video.playbackController!.runThrottledFrameTask();
 
-    // currentSourceTimeMs should now reflect the trim offset
-    expect((video as any).currentSourceTimeMs).toBe(3000);
+      // currentSourceTimeMs should now reflect the trim offset
+      expect((video as any).currentSourceTimeMs).toBe(3000);
 
-    // Canvas should still have video dimensions (not reset)
-    const canvas = video.canvasElement!;
-    expect(canvas.width).toBeGreaterThan(300);
+      // Canvas should still have video dimensions (not reset)
+      const canvas = video.canvasElement!;
+      expect(canvas.width).toBeGreaterThan(300);
 
-    container.remove();
-  });
+      container.remove();
+    },
+  );
 });

@@ -11,9 +11,7 @@ import {
 import { customElement, property } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 
-import {
-  type TemporalMixinInterface,
-} from "../../../elements/EFTemporal.js";
+import { type TemporalMixinInterface } from "../../../elements/EFTemporal.js";
 import { EFTimegroup } from "../../../elements/EFTimegroup.js";
 import { EFVideo } from "../../../elements/EFVideo.js";
 import { EFAudio } from "../../../elements/EFAudio.js";
@@ -114,10 +112,19 @@ export class TrackItem extends TWMixin(LitElement) {
   /**
    * Get element type for styling and icons
    */
-  protected getElementType(): "video" | "audio" | "image" | "text" | "timegroup" | "captions" | "unknown" {
+  protected getElementType():
+    | "video"
+    | "audio"
+    | "image"
+    | "text"
+    | "timegroup"
+    | "captions"
+    | "unknown" {
     // Check for captions element
-    if ((this.element as any).tagName === "EF-CAPTIONS" || 
-        (this.element as any).tagName?.toLowerCase() === "ef-captions") {
+    if (
+      (this.element as any).tagName === "EF-CAPTIONS" ||
+      (this.element as any).tagName?.toLowerCase() === "ef-captions"
+    ) {
       return "captions";
     }
     if (this.element instanceof EFVideo) return "video";
@@ -201,21 +208,23 @@ export class TrackItem extends TWMixin(LitElement) {
     const type = this.getElementType();
     const duration = this.formatDuration(this.element.durationMs ?? 0);
     const startTime = this.formatDuration(this.element.startTimeMs ?? 0);
-    const endTime = this.formatDuration((this.element.startTimeMs ?? 0) + (this.element.durationMs ?? 0));
-    
+    const endTime = this.formatDuration(
+      (this.element.startTimeMs ?? 0) + (this.element.durationMs ?? 0),
+    );
+
     const parts = [];
     if (elementId) parts.push(elementId);
     parts.push(`${type} • ${duration}`);
     if (this.element.startTimeMs > 0) {
       parts.push(`${startTime} → ${endTime}`);
     }
-    
+
     // Add composition mode for timegroups
     if (type === "timegroup") {
       const mode = (this.element as any).mode || "fixed";
       parts.push(`mode: ${mode}`);
     }
-    
+
     return parts.join(" • ");
   }
 
@@ -239,7 +248,7 @@ export class TrackItem extends TWMixin(LitElement) {
     // startTimeMs already includes the cumulative position from all parent timegroups.
     const startMs = this.element.startTimeMs;
     const leftOffset = startMs;
-    
+
     return {
       position: "relative",
       left: `${this.pixelsPerMs * leftOffset}px`,
@@ -252,7 +261,7 @@ export class TrackItem extends TWMixin(LitElement) {
     // which is already positioned at the element's absolute startTimeMs.
     return {
       width: `${this.pixelsPerMs * this.element.durationMs}px`,
-      left: '0px',
+      left: "0px",
     };
   }
 
@@ -283,7 +292,7 @@ export class TrackItem extends TWMixin(LitElement) {
     // TEMPORARILY DISABLED: getAnimations() is expensive and called on every render
     // TODO: Cache animations or only compute when element structure changes
     return [];
-    
+
     // const animations = this.element.getAnimations();
     // return animations.map((animation) => {
     //   const effect = animation.effect;
@@ -341,7 +350,7 @@ export class TrackItem extends TWMixin(LitElement) {
       this.element.intrinsicDurationMs ?? this.element.durationMs;
 
     const typeColor = this.getElementTypeColor();
-    
+
     return html`<div style=${styleMap(this.gutterStyles)}>
       <div
         ?data-focused=${this.isFocused}
@@ -398,10 +407,7 @@ export class TrackItem extends TWMixin(LitElement) {
       this.element instanceof LitElement
     ) {
       this.trackController?.remove();
-      this.trackController = new ElementTrackController(
-        this.element,
-        this,
-      );
+      this.trackController = new ElementTrackController(this.element, this);
     }
     super.update(changedProperties);
   }
@@ -412,4 +418,3 @@ declare global {
     "ef-track-item": TrackItem;
   }
 }
-

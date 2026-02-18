@@ -9,10 +9,7 @@ import type { UrlGenerator } from "../../transcoding/utils/UrlGenerator";
 import type { EFMedia } from "../EFMedia";
 import { AssetMediaEngine } from "./AssetMediaEngine";
 
-export class FileMediaEngine
-  extends AssetMediaEngine
-  implements MediaEngine
-{
+export class FileMediaEngine extends AssetMediaEngine implements MediaEngine {
   static async fetchByFileId(
     host: EFMedia,
     _urlGenerator: UrlGenerator,
@@ -23,19 +20,26 @@ export class FileMediaEngine
   ) {
     const url = `${apiHost}/api/v1/files/${fileId}/index`;
     const response = await host.fetch(url, { signal });
-    
+
     signal?.throwIfAborted();
-    
+
     const contentType = response.headers.get("content-type");
-    
-    if (!response.ok || (contentType && !contentType.includes("application/json"))) {
+
+    if (
+      !response.ok ||
+      (contentType && !contentType.includes("application/json"))
+    ) {
       const text = await response.clone().text();
       if (!response.ok) {
-        throw new Error(`Failed to fetch asset index: ${response.status} ${text}`);
+        throw new Error(
+          `Failed to fetch asset index: ${response.status} ${text}`,
+        );
       }
-      throw new Error(`Expected JSON but got ${contentType}: ${text.substring(0, 100)}`);
+      throw new Error(
+        `Expected JSON but got ${contentType}: ${text.substring(0, 100)}`,
+      );
     }
-    
+
     let data: Record<number, TrackFragmentIndex>;
     try {
       data = (await response.json()) as Record<number, TrackFragmentIndex>;
@@ -44,19 +48,29 @@ export class FileMediaEngine
       if (error instanceof DOMException && error.name === "AbortError") {
         throw error;
       }
-      throw new Error(`Failed to parse JSON response: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to parse JSON response: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
-    
-    const engine = new FileMediaEngine(host, fileId, data, apiHost, _urlGenerator);
-    
+
+    const engine = new FileMediaEngine(
+      host,
+      fileId,
+      data,
+      apiHost,
+      _urlGenerator,
+    );
+
     signal?.throwIfAborted();
-    
+
     if (signal) {
       const videoTrack = engine.getVideoTrackIndex();
       const audioTrack = engine.getAudioTrackIndex();
-      const needsVideo = requiredTracks === "video" || requiredTracks === "both";
-      const needsAudio = requiredTracks === "audio" || requiredTracks === "both";
-      
+      const needsVideo =
+        requiredTracks === "video" || requiredTracks === "both";
+      const needsAudio =
+        requiredTracks === "audio" || requiredTracks === "both";
+
       if (needsVideo && videoTrack && videoTrack.track !== undefined) {
         try {
           await engine.fetchInitSegment(
@@ -71,15 +85,18 @@ export class FileMediaEngine
             error instanceof Error &&
             (error.message.includes("401") ||
               error.message.includes("UNAUTHORIZED") ||
-              (error.message.includes("Failed to fetch") && error.message.includes("401")))
+              (error.message.includes("Failed to fetch") &&
+                error.message.includes("401")))
           ) {
-            throw new Error(`Video segments require authentication: ${error.message}`);
+            throw new Error(
+              `Video segments require authentication: ${error.message}`,
+            );
           }
         }
       }
-      
+
       signal?.throwIfAborted();
-      
+
       if (needsAudio && audioTrack && audioTrack.track !== undefined) {
         try {
           await engine.fetchInitSegment(
@@ -94,14 +111,17 @@ export class FileMediaEngine
             error instanceof Error &&
             (error.message.includes("401") ||
               error.message.includes("UNAUTHORIZED") ||
-              (error.message.includes("Failed to fetch") && error.message.includes("401")))
+              (error.message.includes("Failed to fetch") &&
+                error.message.includes("401")))
           ) {
-            throw new Error(`Audio segments require authentication: ${error.message}`);
+            throw new Error(
+              `Audio segments require authentication: ${error.message}`,
+            );
           }
         }
       }
     }
-    
+
     return engine;
   }
 
@@ -126,7 +146,7 @@ export class FileMediaEngine
       0,
     );
     this.durationMs = longestFragment * 1000;
-    
+
     this.templates = {
       initSegment: `${apiHost}/api/v1/files/${fileId}/tracks/{trackId}`,
       mediaSegment: `${apiHost}/api/v1/files/${fileId}/tracks/{trackId}`,

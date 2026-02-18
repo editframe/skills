@@ -9,8 +9,14 @@ export const Video = () => {
       mode="sequence"
     >
       {/* Add your composition here */}
-      <Timegroup mode="fixed" duration="5s" className="absolute w-full h-full flex items-center justify-center">
-        <Text duration="5s" className="text-white text-4xl">Your video starts here</Text>
+      <Timegroup
+        mode="fixed"
+        duration="5s"
+        className="absolute w-full h-full flex items-center justify-center"
+      >
+        <Text duration="5s" className="text-white text-4xl">
+          Your video starts here
+        </Text>
       </Timegroup>
     </Timegroup>
   );

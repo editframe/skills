@@ -47,7 +47,7 @@ describe("ContextMixin.fetch CORS behavior", () => {
   beforeEach(() => {
     originalFetch = window.fetch;
     mockFetch = vi.fn();
-    window.fetch = mockFetch;
+    window.fetch = mockFetch as unknown as typeof fetch;
 
     element = document.createElement("test-context") as TestContext & {
       fetch: typeof fetch;
@@ -118,7 +118,9 @@ describe("ContextMixin.fetch CORS behavior", () => {
       text: () => Promise.resolve("ok"),
     });
 
-    await element.fetch("https://editframe.dev/api/v1/transcode/manifest.json?url=test");
+    await element.fetch(
+      "https://editframe.dev/api/v1/transcode/manifest.json?url=test",
+    );
 
     const call = mockFetch.mock.calls[0]!;
     expect(call[1]?.credentials).toBeUndefined();
@@ -148,14 +150,14 @@ describe("ContextMixin.fetch CORS behavior", () => {
       text: () => Promise.resolve("ok"),
     });
 
-    await element.fetch("https://editframe.dev/api/v1/transcode/manifest.json?url=test");
+    await element.fetch(
+      "https://editframe.dev/api/v1/transcode/manifest.json?url=test",
+    );
 
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("editframe.dev"),
     );
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("signing"),
-    );
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("signing"));
 
     warnSpy.mockRestore();
   });

@@ -1,12 +1,12 @@
 #!/usr/bin/env npx ts-node
 /**
  * CPU Profiling Harness for Playback Performance
- * 
+ *
  * Captures Chrome DevTools CPU profiles during playback to identify hotspots.
- * 
+ *
  * Usage:
  *   npx tsx scripts/profile-playback.ts [options]
- * 
+ *
  * Options:
  *   --project <name>   Dev project to profile (default: improv-edit)
  *   --duration <ms>    Playback duration in ms (default: 5000)
@@ -16,7 +16,7 @@
  *   --scrub            Profile scrubbing instead of playback (default: false)
  *   --scrub-speed <ms> Time between scrub updates in ms (default: 50)
  *   --json             Output analysis as JSON
- * 
+ *
  * Examples:
  *   npx tsx scripts/profile-playback.ts
  *   npx tsx scripts/profile-playback.ts --duration 10000 --focus EFTimegroup
@@ -77,11 +77,11 @@ class SourceMapResolver {
   private traceMaps = new Map<string, TraceMap | null>();
   private fetchCache = new Map<string, Promise<string | null>>();
   private baseUrl: string;
-  
+
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
   }
-  
+
   private async fetchText(url: string): Promise<string | null> {
     if (this.fetchCache.has(url)) {
       return this.fetchCache.get(url)!;
@@ -98,30 +98,30 @@ class SourceMapResolver {
     this.fetchCache.set(url, promise);
     return promise;
   }
-  
+
   async getTraceMap(scriptUrl: string): Promise<TraceMap | null> {
     if (this.traceMaps.has(scriptUrl)) {
       return this.traceMaps.get(scriptUrl)!;
     }
-    
+
     const scriptContent = await this.fetchText(scriptUrl);
     if (!scriptContent) {
       this.traceMaps.set(scriptUrl, null);
       return null;
     }
-    
+
     const match = scriptContent.match(/\/\/[#@]\s*sourceMappingURL=([^\s]+)/);
     if (!match) {
       this.traceMaps.set(scriptUrl, null);
       return null;
     }
-    
+
     let sourceMapUrl = match[1];
     if (!sourceMapUrl.startsWith("http") && !sourceMapUrl.startsWith("data:")) {
       const scriptBase = scriptUrl.substring(0, scriptUrl.lastIndexOf("/") + 1);
       sourceMapUrl = scriptBase + sourceMapUrl;
     }
-    
+
     let sourceMapJson: string | null;
     if (sourceMapUrl.startsWith("data:")) {
       const dataMatch = sourceMapUrl.match(/^data:[^,]*base64,(.*)$/);
@@ -133,12 +133,12 @@ class SourceMapResolver {
     } else {
       sourceMapJson = await this.fetchText(sourceMapUrl);
     }
-    
+
     if (!sourceMapJson) {
       this.traceMaps.set(scriptUrl, null);
       return null;
     }
-    
+
     try {
       const traceMap = new TraceMap(sourceMapJson);
       this.traceMaps.set(scriptUrl, traceMap);
@@ -148,24 +148,31 @@ class SourceMapResolver {
       return null;
     }
   }
-  
-  async resolve(scriptUrl: string, line0Based: number, column: number): Promise<ResolvedLocation | null> {
+
+  async resolve(
+    scriptUrl: string,
+    line0Based: number,
+    column: number,
+  ): Promise<ResolvedLocation | null> {
     const traceMap = await this.getTraceMap(scriptUrl);
     if (!traceMap) return null;
-    
+
     if (line0Based < 0) return null;
-    
+
     try {
-      const result = originalPositionFor(traceMap, { line: line0Based, column });
-      
+      const result = originalPositionFor(traceMap, {
+        line: line0Based,
+        column,
+      });
+
       if (!result.source) return null;
-      
+
       const sourcePath = result.source;
       const sourceFile = sourcePath.split("/").pop() || sourcePath;
-      
+
       return {
         source: sourceFile,
-        line: result.line ?? (line0Based + 1),
+        line: result.line ?? line0Based + 1,
         column: result.column ?? column,
         name: result.name,
       };
@@ -227,16 +234,14 @@ async function main() {
     browser = await chromium.launch({
       headless,
       channel: "chrome",
-      args: [
-        "--autoplay-policy=no-user-gesture-required",
-      ],
+      args: ["--autoplay-policy=no-user-gesture-required"],
     });
     shouldCloseBrowser = true;
   }
 
   const context = await browser.newContext();
   const page = await context.newPage();
-  
+
   page.on("pageerror", (error) => {
     console.log(`[browser:ERROR] ${error.message}`);
   });
@@ -244,7 +249,15 @@ async function main() {
     const text = msg.text();
     if (msg.type() === "error" || msg.type() === "warning") {
       console.log(`[browser:${msg.type()}] ${text}`);
-    } else if (text.includes("[EFTimegroup]") || text.includes("[PlaybackController]") || text.includes("DEBUG") || text.includes("[perf]") || text.includes("[renderTimegroupToCanvas]") || text.includes("Canvas") || text.includes("[DIAG]")) {
+    } else if (
+      text.includes("[EFTimegroup]") ||
+      text.includes("[PlaybackController]") ||
+      text.includes("DEBUG") ||
+      text.includes("[perf]") ||
+      text.includes("[renderTimegroupToCanvas]") ||
+      text.includes("Canvas") ||
+      text.includes("[DIAG]")
+    ) {
       console.log(`[browser:${msg.type()}] ${text}`);
     }
   });
@@ -257,11 +270,17 @@ async function main() {
     await page.goto(devUrl, { waitUntil: "networkidle", timeout: 60000 });
 
     console.log(`⏳ Waiting for timegroup...`);
-    await page.waitForSelector("ef-timegroup", { state: "attached", timeout: 30000 });
-    await page.waitForFunction(() => {
-      const tg = document.querySelector("ef-timegroup") as any;
-      return tg && tg.durationMs > 0 && tg.playbackController;
-    }, { timeout: 30000 });
+    await page.waitForSelector("ef-timegroup", {
+      state: "attached",
+      timeout: 30000,
+    });
+    await page.waitForFunction(
+      () => {
+        const tg = document.querySelector("ef-timegroup") as any;
+        return tg && tg.durationMs > 0 && tg.playbackController;
+      },
+      { timeout: 30000 },
+    );
 
     const timegroupInfo = await page.evaluate(() => {
       const tg = document.querySelector("ef-timegroup") as any;
@@ -272,7 +291,9 @@ async function main() {
         currentTimeMs: tg.currentTimeMs,
       };
     });
-    console.log(`✅ Timegroup ready: ${timegroupInfo.width}x${timegroupInfo.height}, ${timegroupInfo.durationMs}ms`);
+    console.log(
+      `✅ Timegroup ready: ${timegroupInfo.width}x${timegroupInfo.height}, ${timegroupInfo.durationMs}ms`,
+    );
     console.log(`   Current time: ${timegroupInfo.currentTimeMs}ms`);
 
     // Switch to canvas presentation mode if requested
@@ -302,10 +323,14 @@ async function main() {
         const workbench = document.querySelector("ef-workbench") as any;
         return {
           presentationMode: workbench?.presentationMode,
-          hasCanvas: !!workbench?.shadowRoot?.querySelector(".canvas-overlay canvas"),
+          hasCanvas: !!workbench?.shadowRoot?.querySelector(
+            ".canvas-overlay canvas",
+          ),
         };
       });
-      console.log(`   Canvas mode: presentationMode=${canvasActive.presentationMode}, hasCanvas=${canvasActive.hasCanvas}`);
+      console.log(
+        `   Canvas mode: presentationMode=${canvasActive.presentationMode}, hasCanvas=${canvasActive.hasCanvas}`,
+      );
     }
 
     // Enable profiler
@@ -323,84 +348,100 @@ async function main() {
     // Start playback or scrubbing
     const playbackStartTime = Date.now();
     if (scrubMode) {
-      await page.evaluate(async ({ duration, scrubSpeed }) => {
-        const timegroup = document.querySelector("ef-timegroup") as any;
-        if (!timegroup) {
-          throw new Error("Timegroup not found");
-        }
-        
-        const totalDuration = timegroup.durationMs;
-        const startTime = Date.now();
-        const endTime = startTime + duration;
-        
-        // Simulate rapid scrubbing by updating currentTimeMs frequently
-        while (Date.now() < endTime) {
-          // Scrub to a random position (simulates user scrubbing)
-          const progress = Math.random();
-          const targetTime = progress * totalDuration;
-          timegroup.currentTimeMs = targetTime;
-          
-          // Wait a bit for the seek to process
-          await new Promise(resolve => setTimeout(resolve, scrubSpeed));
-        }
-      }, { duration, scrubSpeed });
+      await page.evaluate(
+        async ({ duration, scrubSpeed }) => {
+          const timegroup = document.querySelector("ef-timegroup") as any;
+          if (!timegroup) {
+            throw new Error("Timegroup not found");
+          }
+
+          const totalDuration = timegroup.durationMs;
+          const startTime = Date.now();
+          const endTime = startTime + duration;
+
+          // Simulate rapid scrubbing by updating currentTimeMs frequently
+          while (Date.now() < endTime) {
+            // Scrub to a random position (simulates user scrubbing)
+            const progress = Math.random();
+            const targetTime = progress * totalDuration;
+            timegroup.currentTimeMs = targetTime;
+
+            // Wait a bit for the seek to process
+            await new Promise((resolve) => setTimeout(resolve, scrubSpeed));
+          }
+        },
+        { duration, scrubSpeed },
+      );
     } else {
-      await page.evaluate(async ({ duration }) => {
-        const timegroup = document.querySelector("ef-timegroup") as any;
-        if (!timegroup) {
-          throw new Error("Timegroup not found");
-        }
+      await page.evaluate(
+        async ({ duration }) => {
+          const timegroup = document.querySelector("ef-timegroup") as any;
+          if (!timegroup) {
+            throw new Error("Timegroup not found");
+          }
 
-        // Start playback
-        timegroup.play();
+          // Start playback
+          timegroup.play();
 
-        // Wait for the specified duration
-        await new Promise(resolve => setTimeout(resolve, duration));
+          // Wait for the specified duration
+          await new Promise((resolve) => setTimeout(resolve, duration));
 
-        // Pause playback
-        timegroup.pause();
-      }, { duration });
+          // Pause playback
+          timegroup.pause();
+        },
+        { duration },
+      );
 
       // Measure effective FPS after profiling
       const fpsInfo = await page.evaluate(() => {
         const wb = document.querySelector("ef-workbench") as any;
         const stats = wb?.renderStats?.getStats?.(800, 500, 1);
-        return stats ? {
-          fps: stats.fps,
-          avgRenderTime: stats.avgRenderTime,
-          headroom: stats.headroom,
-          pressureState: stats.pressureState,
-        } : null;
+        return stats
+          ? {
+              fps: stats.fps,
+              avgRenderTime: stats.avgRenderTime,
+              headroom: stats.headroom,
+              pressureState: stats.pressureState,
+            }
+          : null;
       });
       if (fpsInfo) {
-        console.log(`   RenderStats: fps=${fpsInfo.fps?.toFixed(1)}, avgRenderTime=${fpsInfo.avgRenderTime?.toFixed(1)}ms, headroom=${fpsInfo.headroom?.toFixed(1)}ms, pressure=${fpsInfo.pressureState}`);
+        console.log(
+          `   RenderStats: fps=${fpsInfo.fps?.toFixed(1)}, avgRenderTime=${fpsInfo.avgRenderTime?.toFixed(1)}ms, headroom=${fpsInfo.headroom?.toFixed(1)}ms, pressure=${fpsInfo.pressureState}`,
+        );
       }
     }
 
     const playbackDuration = Date.now() - playbackStartTime;
-    console.log(`⏱️  Playback completed in ${(playbackDuration / 1000).toFixed(2)}s`);
+    console.log(
+      `⏱️  Playback completed in ${(playbackDuration / 1000).toFixed(2)}s`,
+    );
 
     // Stop profiler and get results
-    const { profile } = await cdp.send("Profiler.stop") as { profile: CPUProfile };
+    const { profile } = (await cdp.send("Profiler.stop")) as {
+      profile: CPUProfile;
+    };
     await cdp.send("Profiler.disable");
 
     // Save raw profile
     const profileJson = JSON.stringify(profile, null, 2);
     fs.writeFileSync(outputPath, profileJson);
     console.log(`\n💾 Profile saved to: ${outputPath}`);
-    console.log(`   Load in Chrome DevTools: chrome://inspect → Open dedicated DevTools → Performance → Load profile`);
+    console.log(
+      `   Load in Chrome DevTools: chrome://inspect → Open dedicated DevTools → Performance → Load profile`,
+    );
 
     // Initialize source map resolver
     sourceMapResolver = new SourceMapResolver(devUrl);
     console.log(`\n🗺️  Resolving source maps...`);
-    
+
     const scriptUrls = new Set<string>();
     for (const node of profile.nodes) {
       if (node.callFrame.url && node.callFrame.url.startsWith("http")) {
         scriptUrls.add(node.callFrame.url.split("?")[0]);
       }
     }
-    
+
     let resolvedCount = 0;
     for (const url of scriptUrls) {
       const traceMap = await sourceMapResolver.getTraceMap(url);
@@ -409,8 +450,12 @@ async function main() {
     console.log(`   Loaded ${resolvedCount}/${scriptUrls.size} source maps`);
 
     // Use unified profiling library for analysis
-    const { analyzeProfile: analyzeProfileNew, formatProfileAnalysis, formatProfileAnalysisJSON } = await import("../packages/elements/src/profiling/index.js");
-    
+    const {
+      analyzeProfile: analyzeProfileNew,
+      formatProfileAnalysis,
+      formatProfileAnalysisJSON,
+    } = await import("../packages/elements/src/profiling/index.js");
+
     const analysis = analyzeProfileNew(profile, {
       filterNodeModules: true,
       filterInternals: true,
@@ -418,17 +463,28 @@ async function main() {
     });
 
     if (jsonOutput) {
-      console.log(formatProfileAnalysisJSON(analysis, { sandbox: project, scenario: scrubMode ? "scrub" : "playback" }, { topN: 20 }));
+      console.log(
+        formatProfileAnalysisJSON(
+          analysis,
+          { sandbox: project, scenario: scrubMode ? "scrub" : "playback" },
+          { topN: 20 },
+        ),
+      );
     } else {
       console.log(`\n📊 Profile Analysis:`);
-      console.log(formatProfileAnalysis(analysis, { sandbox: project, scenario: scrubMode ? "scrub" : "playback" }, { topN: 20, showRecommendations: true }));
-      
+      console.log(
+        formatProfileAnalysis(
+          analysis,
+          { sandbox: project, scenario: scrubMode ? "scrub" : "playback" },
+          { topN: 20, showRecommendations: true },
+        ),
+      );
+
       // Print detailed analysis if focus file is specified
       if (focusFile) {
         await printDetailedAnalysis(profile, focusFile);
       }
     }
-
   } finally {
     page.close().catch(() => {});
     context.close().catch(() => {});
@@ -478,7 +534,7 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
 }> {
   const nodeMap = new Map<number, ProfileNode>();
   const nodeChildren = new Map<number, number[]>();
-  
+
   for (const node of profile.nodes) {
     nodeMap.set(node.id, node);
     if (node.children) {
@@ -498,12 +554,14 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
     hitCounts.set(sample, (hitCounts.get(sample) || 0) + 1);
   }
 
-  const sampleIntervalUs = profile.timeDeltas.length > 0
-    ? profile.timeDeltas.reduce((a, b) => a + b, 0) / profile.timeDeltas.length
-    : 1000;
+  const sampleIntervalUs =
+    profile.timeDeltas.length > 0
+      ? profile.timeDeltas.reduce((a, b) => a + b, 0) /
+        profile.timeDeltas.length
+      : 1000;
 
   const totalSamples = profile.samples.length;
-  const totalTimeMs = totalSamples * sampleIntervalUs / 1000;
+  const totalTimeMs = (totalSamples * sampleIntervalUs) / 1000;
 
   const resolvedLocations = new Map<number, ResolvedLocation | null>();
   if (sourceMapResolver) {
@@ -513,7 +571,7 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
         const resolved = await sourceMapResolver.resolve(
           scriptUrl,
           node.callFrame.lineNumber,
-          node.callFrame.columnNumber
+          node.callFrame.columnNumber,
         );
         resolvedLocations.set(node.id, resolved);
       }
@@ -521,13 +579,14 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
   }
 
   const callGraph = new Map<string, Map<string, number>>();
-  
+
   const getNodeKey = (node: ProfileNode) => {
     const resolved = resolvedLocations.get(node.id);
     if (resolved) {
       return `${node.callFrame.functionName || "(anonymous)"} @ ${resolved.source}:${resolved.line}`;
     }
-    const file = node.callFrame.url?.split("/").slice(-1)[0]?.split("?")[0] || "(native)";
+    const file =
+      node.callFrame.url?.split("/").slice(-1)[0]?.split("?")[0] || "(native)";
     return `${node.callFrame.functionName || "(anonymous)"} @ ${file}:${node.callFrame.lineNumber + 1}`;
   };
 
@@ -536,24 +595,24 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
   for (const sample of profile.samples) {
     let nodeId: number | undefined = sample;
     let childKey: string | undefined;
-    
+
     while (nodeId !== undefined) {
       const node = nodeMap.get(nodeId);
       if (!node) break;
-      
+
       const key = getNodeKey(node);
-      
+
       if (childKey) {
         if (!callGraph.has(key)) callGraph.set(key, new Map());
         const edges = callGraph.get(key)!;
         edges.set(childKey, (edges.get(childKey) || 0) + 1);
       }
-      
+
       if (!callerMap.has(sample)) callerMap.set(sample, new Set());
       if (nodeId !== sample) {
         callerMap.get(sample)!.add(key);
       }
-      
+
       childKey = key;
       nodeId = parentMap.get(nodeId);
     }
@@ -565,25 +624,36 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
     const hitCount = hitCounts.get(node.id) || 0;
     if (hitCount === 0) continue;
 
-    const selfTimeMs = hitCount * sampleIntervalUs / 1000;
+    const selfTimeMs = (hitCount * sampleIntervalUs) / 1000;
     const selfTimePct = (hitCount / totalSamples) * 100;
-    
+
     const resolved = resolvedLocations.get(node.id);
-    const file = resolved?.source || node.callFrame.url?.split("/").slice(-1)[0]?.split("?")[0] || "(native)";
-    const line = resolved?.line ?? (node.callFrame.lineNumber + 1);
-    const column = resolved?.column ?? (node.callFrame.columnNumber + 1);
-    
+    const file =
+      resolved?.source ||
+      node.callFrame.url?.split("/").slice(-1)[0]?.split("?")[0] ||
+      "(native)";
+    const line = resolved?.line ?? node.callFrame.lineNumber + 1;
+    const column = resolved?.column ?? node.callFrame.columnNumber + 1;
+
     const callers: string[] = [];
     const callerSet = callerMap.get(node.id);
     if (callerSet) {
       callers.push(...Array.from(callerSet).slice(0, 3));
     }
 
-    const resolvedPositionTicks: { line: number; ticks: number; resolvedLine?: number }[] = [];
+    const resolvedPositionTicks: {
+      line: number;
+      ticks: number;
+      resolvedLine?: number;
+    }[] = [];
     if (node.positionTicks && sourceMapResolver && node.callFrame.url) {
       const scriptUrl = node.callFrame.url.split("?")[0];
       for (const pt of node.positionTicks) {
-        const resolvedPt = await sourceMapResolver.resolve(scriptUrl, pt.line - 1, 0);
+        const resolvedPt = await sourceMapResolver.resolve(
+          scriptUrl,
+          pt.line - 1,
+          0,
+        );
         resolvedPositionTicks.push({
           line: resolvedPt?.line ?? pt.line,
           ticks: pt.ticks,
@@ -619,7 +689,7 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
 
 async function analyzeProfile(profile: CPUProfile): Promise<HotspotInfo[]> {
   const { hotspots } = await analyzeProfileDetailed(profile);
-  return hotspots.map(h => ({
+  return hotspots.map((h) => ({
     functionName: h.functionName,
     url: h.file,
     line: h.line,
@@ -633,127 +703,170 @@ function printHotspots(hotspots: HotspotInfo[]) {
   for (const h of hotspots) {
     const shortUrl = h.url.split("/").slice(-2).join("/");
     const location = h.url ? `${shortUrl}:${h.line}` : "(native)";
-    console.log(`   ${h.selfTime.toFixed(1).padStart(7)}ms  ${h.functionName.slice(0, 40).padEnd(40)} ${location}`);
+    console.log(
+      `   ${h.selfTime.toFixed(1).padStart(7)}ms  ${h.functionName.slice(0, 40).padEnd(40)} ${location}`,
+    );
   }
 }
 
-async function printDetailedAnalysis(profile: CPUProfile, focusFile: string = "") {
-  const { hotspots, totalTimeMs, sampleIntervalUs } = await analyzeProfileDetailed(profile);
-  
+async function printDetailedAnalysis(
+  profile: CPUProfile,
+  focusFile: string = "",
+) {
+  const { hotspots, totalTimeMs, sampleIntervalUs } =
+    await analyzeProfileDetailed(profile);
+
   console.log(`\n${"=".repeat(80)}`);
   console.log(`DETAILED PROFILE ANALYSIS`);
   console.log(`${"=".repeat(80)}`);
   console.log(`Total profile time: ${totalTimeMs.toFixed(1)}ms`);
   console.log(`Sample interval: ${sampleIntervalUs.toFixed(0)}µs`);
   console.log(`Total samples: ${profile.samples.length}`);
-  
-  const ourCode = hotspots.filter(h => 
-    h.file.includes(".ts") && 
-    !h.file.includes("node_modules") &&
-    (h.file.includes("EFTimegroup") || h.file.includes("PlaybackController") || h.file.includes("element") || h.file.includes("update") || h.file.includes("frame"))
+
+  const ourCode = hotspots.filter(
+    (h) =>
+      h.file.includes(".ts") &&
+      !h.file.includes("node_modules") &&
+      (h.file.includes("EFTimegroup") ||
+        h.file.includes("PlaybackController") ||
+        h.file.includes("element") ||
+        h.file.includes("update") ||
+        h.file.includes("frame")),
   );
-  
-  const nativeCode = hotspots.filter(h => h.file === "(native)" || !h.file.includes(".ts"));
-  
+
+  const nativeCode = hotspots.filter(
+    (h) => h.file === "(native)" || !h.file.includes(".ts"),
+  );
+
   const byFile = new Map<string, number>();
   for (const h of hotspots) {
     byFile.set(h.file, (byFile.get(h.file) || 0) + h.selfTimeMs);
   }
   const sortedFiles = Array.from(byFile.entries()).sort((a, b) => b[1] - a[1]);
-  
+
   console.log(`\n--- TIME BY FILE ---`);
   for (const [file, time] of sortedFiles.slice(0, 15)) {
-    const pct = (time / totalTimeMs * 100).toFixed(1);
-    console.log(`  ${time.toFixed(1).padStart(8)}ms (${pct.padStart(5)}%)  ${file}`);
+    const pct = ((time / totalTimeMs) * 100).toFixed(1);
+    console.log(
+      `  ${time.toFixed(1).padStart(8)}ms (${pct.padStart(5)}%)  ${file}`,
+    );
   }
-  
-  const focusedFiles = focusFile 
-    ? hotspots.filter(h => h.file.includes(focusFile) || h.url.includes(focusFile))
-    : ourCode.filter(h => h.selfTimeMs > 10);
-  
+
+  const focusedFiles = focusFile
+    ? hotspots.filter(
+        (h) => h.file.includes(focusFile) || h.url.includes(focusFile),
+      )
+    : ourCode.filter((h) => h.selfTimeMs > 10);
+
   if (focusedFiles.length > 0) {
     console.log(`\n--- LINE-LEVEL PROFILING ---`);
-    
+
     const byFileDetailed = new Map<string, DetailedHotspot[]>();
     for (const h of focusedFiles) {
       const key = h.file;
       if (!byFileDetailed.has(key)) byFileDetailed.set(key, []);
       byFileDetailed.get(key)!.push(h);
     }
-    
+
     for (const [file, fileHotspots] of byFileDetailed) {
-      const lineData = new Map<number, { ticks: number; functions: string[] }>();
+      const lineData = new Map<
+        number,
+        { ticks: number; functions: string[] }
+      >();
       let fileTotalTicks = 0;
-      
+
       for (const h of fileHotspots) {
         if (h.hitCount > 0) {
-          if (!lineData.has(h.line)) lineData.set(h.line, { ticks: 0, functions: [] });
+          if (!lineData.has(h.line))
+            lineData.set(h.line, { ticks: 0, functions: [] });
           const ld = lineData.get(h.line)!;
           ld.ticks += h.hitCount;
-          if (!ld.functions.includes(h.functionName)) ld.functions.push(h.functionName);
+          if (!ld.functions.includes(h.functionName))
+            ld.functions.push(h.functionName);
           fileTotalTicks += h.hitCount;
         }
-        
+
         for (const pt of h.positionTicks) {
-          if (!lineData.has(pt.line)) lineData.set(pt.line, { ticks: 0, functions: [] });
+          if (!lineData.has(pt.line))
+            lineData.set(pt.line, { ticks: 0, functions: [] });
           const ld = lineData.get(pt.line)!;
           ld.ticks += pt.ticks;
-          if (!ld.functions.includes(h.functionName)) ld.functions.push(h.functionName);
+          if (!ld.functions.includes(h.functionName))
+            ld.functions.push(h.functionName);
           fileTotalTicks += pt.ticks;
         }
       }
-      
+
       if (lineData.size === 0) continue;
-      
-      const fileTimeMs = fileTotalTicks * sampleIntervalUs / 1000;
-      const filePct = (fileTimeMs / totalTimeMs * 100).toFixed(1);
+
+      const fileTimeMs = (fileTotalTicks * sampleIntervalUs) / 1000;
+      const filePct = ((fileTimeMs / totalTimeMs) * 100).toFixed(1);
       console.log(`\n  📄 ${file} (${fileTimeMs.toFixed(1)}ms, ${filePct}%)`);
-      
+
       const sortedLines = Array.from(lineData.entries())
         .sort((a, b) => b[1].ticks - a[1].ticks)
         .slice(0, 25);
-      
-      console.log(`  ${"Line".padStart(6)}  ${"Time".padStart(8)}  ${"Pct".padStart(6)}  Function/Context`);
-      console.log(`  ${"-".repeat(6)}  ${"-".repeat(8)}  ${"-".repeat(6)}  ${"-".repeat(40)}`);
-      
+
+      console.log(
+        `  ${"Line".padStart(6)}  ${"Time".padStart(8)}  ${"Pct".padStart(6)}  Function/Context`,
+      );
+      console.log(
+        `  ${"-".repeat(6)}  ${"-".repeat(8)}  ${"-".repeat(6)}  ${"-".repeat(40)}`,
+      );
+
       for (const [line, data] of sortedLines) {
-        const lineTimeMs = data.ticks * sampleIntervalUs / 1000;
-        const linePct = (lineTimeMs / totalTimeMs * 100).toFixed(1);
+        const lineTimeMs = (data.ticks * sampleIntervalUs) / 1000;
+        const linePct = ((lineTimeMs / totalTimeMs) * 100).toFixed(1);
         const funcNames = data.functions.slice(0, 2).join(", ");
-        console.log(`  ${String(line).padStart(6)}  ${lineTimeMs.toFixed(1).padStart(7)}ms  ${linePct.padStart(5)}%  ${funcNames}`);
+        console.log(
+          `  ${String(line).padStart(6)}  ${lineTimeMs.toFixed(1).padStart(7)}ms  ${linePct.padStart(5)}%  ${funcNames}`,
+        );
       }
     }
   }
-  
+
   console.log(`\n--- TOP HOTSPOTS IN OUR CODE (with callers) ---`);
   for (const h of ourCode.slice(0, 20)) {
     const pct = h.selfTimePct.toFixed(1);
-    console.log(`\n  ${h.selfTimeMs.toFixed(1)}ms (${pct}%) - ${h.functionName}`);
+    console.log(
+      `\n  ${h.selfTimeMs.toFixed(1)}ms (${pct}%) - ${h.functionName}`,
+    );
     console.log(`    Location: ${h.file}:${h.line}:${h.column}`);
     if (h.callers.length > 0) {
       console.log(`    Called by: ${h.callers.slice(0, 2).join(", ")}`);
     }
     if (h.positionTicks.length > 0) {
-      const sortedTicks = [...h.positionTicks].sort((a, b) => b.ticks - a.ticks).slice(0, 5);
+      const sortedTicks = [...h.positionTicks]
+        .sort((a, b) => b.ticks - a.ticks)
+        .slice(0, 5);
       console.log(`    Hot lines:`);
       for (const pt of sortedTicks) {
-        const lineTimeMs = pt.ticks * sampleIntervalUs / 1000;
-        console.log(`      L${pt.line}: ${lineTimeMs.toFixed(1)}ms (${pt.ticks} samples)`);
+        const lineTimeMs = (pt.ticks * sampleIntervalUs) / 1000;
+        console.log(
+          `      L${pt.line}: ${lineTimeMs.toFixed(1)}ms (${pt.ticks} samples)`,
+        );
       }
     }
   }
-  
+
   console.log(`\n--- NATIVE API TIME ---`);
   const nativeByName = new Map<string, number>();
   for (const h of nativeCode) {
-    nativeByName.set(h.functionName, (nativeByName.get(h.functionName) || 0) + h.selfTimeMs);
+    nativeByName.set(
+      h.functionName,
+      (nativeByName.get(h.functionName) || 0) + h.selfTimeMs,
+    );
   }
-  const sortedNative = Array.from(nativeByName.entries()).sort((a, b) => b[1] - a[1]);
+  const sortedNative = Array.from(nativeByName.entries()).sort(
+    (a, b) => b[1] - a[1],
+  );
   for (const [name, time] of sortedNative.slice(0, 15)) {
-    const pct = (time / totalTimeMs * 100).toFixed(1);
-    console.log(`  ${time.toFixed(1).padStart(8)}ms (${pct.padStart(5)}%)  ${name}`);
+    const pct = ((time / totalTimeMs) * 100).toFixed(1);
+    console.log(
+      `  ${time.toFixed(1).padStart(8)}ms (${pct.padStart(5)}%)  ${name}`,
+    );
   }
-  
+
   console.log(`\n${"=".repeat(80)}\n`);
 }
 

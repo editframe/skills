@@ -42,7 +42,9 @@ describe("SelectionOverlay", () => {
     overlay.remove();
   });
 
-  test("selection is handled by EFTransformHandles (not SelectionOverlay)", async ({ expect }) => {
+  test("selection is handled by EFTransformHandles (not SelectionOverlay)", async ({
+    expect,
+  }) => {
     // Create container with pan-zoom wrapper (required for selection overlay)
     const container = document.createElement("div");
     container.style.width = "800px";
@@ -71,11 +73,15 @@ describe("SelectionOverlay", () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Selection overlay is created as sibling of panzoom (not inside canvas)
-    const overlay = container.querySelector("ef-canvas-selection-overlay") as any;
+    const overlay = container.querySelector(
+      "ef-canvas-selection-overlay",
+    ) as any;
     expect(overlay).toBeTruthy();
 
     // Select element by clicking
-    const element1 = canvas.querySelector('[data-element-id="element-1"]') as HTMLElement;
+    const element1 = canvas.querySelector(
+      '[data-element-id="element-1"]',
+    ) as HTMLElement;
     const rect1 = element1.getBoundingClientRect();
     canvas.dispatchEvent(
       new PointerEvent("pointerdown", {
@@ -511,7 +517,9 @@ describe("SelectionOverlay", () => {
       await canvas.updateComplete;
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const highlightBox = overlay.querySelector(".highlight-box") as HTMLElement;
+      const highlightBox = overlay.querySelector(
+        ".highlight-box",
+      ) as HTMLElement;
       expect(highlightBox).toBeTruthy();
 
       // Get element's screen position
@@ -537,10 +545,10 @@ describe("SelectionOverlay", () => {
 
 /**
  * Behavioral Contract Tests
- * 
+ *
  * These tests verify the observable behavior that must be maintained through refactoring.
  * They test WHAT the system produces, not HOW it produces it.
- * 
+ *
  * Invariants:
  * 1. Overlay is visible iff it has non-null bounds with positive dimensions
  * 2. Overlay bounds match the element's screen position
@@ -554,7 +562,13 @@ describe.skip("Overlay Behavioral Contracts", () => {
    * Helper to create a standard test setup with canvas, pan-zoom, and elements.
    */
   async function createTestSetup(options: {
-    elements: Array<{ id: string; left: number; top: number; width: number; height: number }>;
+    elements: Array<{
+      id: string;
+      left: number;
+      top: number;
+      width: number;
+      height: number;
+    }>;
     panZoom?: { x: number; y: number; scale: number };
   }) {
     const container = document.createElement("div");
@@ -563,7 +577,7 @@ describe.skip("Overlay Behavioral Contracts", () => {
     container.style.position = "relative";
 
     const pz = options.panZoom ?? { x: 0, y: 0, scale: 1 };
-    
+
     render(
       html`
         <ef-pan-zoom style="width: 100%; height: 100%;" x="${pz.x}" y="${pz.y}" scale="${pz.scale}">
@@ -591,7 +605,9 @@ describe.skip("Overlay Behavioral Contracts", () => {
     await canvas?.updateComplete;
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const overlay = container.querySelector("ef-canvas-selection-overlay") as any;
+    const overlay = container.querySelector(
+      "ef-canvas-selection-overlay",
+    ) as any;
 
     return {
       container,
@@ -608,11 +624,15 @@ describe.skip("Overlay Behavioral Contracts", () => {
       { timeout: 1000 },
       async ({ expect }) => {
         const { canvas, overlay, container, cleanup } = await createTestSetup({
-          elements: [{ id: "el-1", left: 100, top: 100, width: 50, height: 50 }],
+          elements: [
+            { id: "el-1", left: 100, top: 100, width: 50, height: 50 },
+          ],
         });
 
         // Select element
-        const element = canvas.querySelector('[data-element-id="el-1"]') as HTMLElement;
+        const element = canvas.querySelector(
+          '[data-element-id="el-1"]',
+        ) as HTMLElement;
         const rect = element.getBoundingClientRect();
         canvas.dispatchEvent(
           new PointerEvent("pointerdown", {
@@ -630,7 +650,9 @@ describe.skip("Overlay Behavioral Contracts", () => {
         expect(selectionBox).toBeFalsy();
 
         // EFTransformHandles should be rendered instead
-        const transformHandles = container.querySelector("ef-transform-handles");
+        const transformHandles = container.querySelector(
+          "ef-transform-handles",
+        );
         expect(transformHandles).toBeTruthy();
 
         cleanup();
@@ -642,11 +664,15 @@ describe.skip("Overlay Behavioral Contracts", () => {
       { timeout: 1000 },
       async ({ expect }) => {
         const { canvas, container, cleanup } = await createTestSetup({
-          elements: [{ id: "el-1", left: 100, top: 100, width: 50, height: 50 }],
+          elements: [
+            { id: "el-1", left: 100, top: 100, width: 50, height: 50 },
+          ],
         });
 
         // Select element
-        const element = canvas.querySelector('[data-element-id="el-1"]') as HTMLElement;
+        const element = canvas.querySelector(
+          '[data-element-id="el-1"]',
+        ) as HTMLElement;
         const rect = element.getBoundingClientRect();
         canvas.dispatchEvent(
           new PointerEvent("pointerdown", {
@@ -660,7 +686,9 @@ describe.skip("Overlay Behavioral Contracts", () => {
         await new Promise((resolve) => setTimeout(resolve, 200));
 
         // Transform handles should have handles
-        const transformHandles = container.querySelector("ef-transform-handles");
+        const transformHandles = container.querySelector(
+          "ef-transform-handles",
+        );
         expect(transformHandles).toBeTruthy();
 
         // Should have resize handles (in shadow DOM)
@@ -681,7 +709,9 @@ describe.skip("Overlay Behavioral Contracts", () => {
       { timeout: 1000 },
       async ({ expect }) => {
         const { overlay, cleanup } = await createTestSetup({
-          elements: [{ id: "el-1", left: 100, top: 100, width: 50, height: 50 }],
+          elements: [
+            { id: "el-1", left: 100, top: 100, width: 50, height: 50 },
+          ],
         });
 
         const highlightBox = overlay?.querySelector(".highlight-box");
@@ -696,10 +726,14 @@ describe.skip("Overlay Behavioral Contracts", () => {
       { timeout: 1000 },
       async ({ expect }) => {
         const { canvas, overlay, cleanup } = await createTestSetup({
-          elements: [{ id: "el-1", left: 100, top: 100, width: 50, height: 50 }],
+          elements: [
+            { id: "el-1", left: 100, top: 100, width: 50, height: 50 },
+          ],
         });
 
-        const element = canvas.querySelector('[data-element-id="el-1"]') as HTMLElement;
+        const element = canvas.querySelector(
+          '[data-element-id="el-1"]',
+        ) as HTMLElement;
 
         // Initially no highlight
         expect(overlay?.querySelector(".highlight-box")).toBeFalsy();
@@ -731,8 +765,12 @@ describe.skip("Overlay Behavioral Contracts", () => {
           ],
         });
 
-        const el1 = canvas.querySelector('[data-element-id="el-1"]') as HTMLElement;
-        const el2 = canvas.querySelector('[data-element-id="el-2"]') as HTMLElement;
+        const el1 = canvas.querySelector(
+          '[data-element-id="el-1"]',
+        ) as HTMLElement;
+        const el2 = canvas.querySelector(
+          '[data-element-id="el-2"]',
+        ) as HTMLElement;
 
         // Hover el-1
         el1.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
@@ -755,7 +793,9 @@ describe.skip("Overlay Behavioral Contracts", () => {
         const highlightBox = highlightBoxes?.[0] as HTMLElement;
         const boxStyle = window.getComputedStyle(highlightBox);
         const el2Rect = el2.getBoundingClientRect();
-        expect(Math.abs(parseFloat(boxStyle.left) - el2Rect.left)).toBeLessThan(5);
+        expect(Math.abs(parseFloat(boxStyle.left) - el2Rect.left)).toBeLessThan(
+          5,
+        );
 
         cleanup();
       },
@@ -766,24 +806,38 @@ describe.skip("Overlay Behavioral Contracts", () => {
       { timeout: 1000 },
       async ({ expect }) => {
         const { canvas, overlay, cleanup } = await createTestSetup({
-          elements: [{ id: "el-1", left: 150, top: 120, width: 80, height: 60 }],
+          elements: [
+            { id: "el-1", left: 150, top: 120, width: 80, height: 60 },
+          ],
         });
 
-        const element = canvas.querySelector('[data-element-id="el-1"]') as HTMLElement;
+        const element = canvas.querySelector(
+          '[data-element-id="el-1"]',
+        ) as HTMLElement;
         element.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
         await canvas.updateComplete;
         await new Promise((resolve) => setTimeout(resolve, 100));
 
-        const highlightBox = overlay?.querySelector(".highlight-box") as HTMLElement;
+        const highlightBox = overlay?.querySelector(
+          ".highlight-box",
+        ) as HTMLElement;
         expect(highlightBox).toBeTruthy();
 
         const boxStyle = window.getComputedStyle(highlightBox);
         const elementRect = element.getBoundingClientRect();
 
-        expect(Math.abs(parseFloat(boxStyle.left) - elementRect.left)).toBeLessThan(2);
-        expect(Math.abs(parseFloat(boxStyle.top) - elementRect.top)).toBeLessThan(2);
-        expect(Math.abs(parseFloat(boxStyle.width) - elementRect.width)).toBeLessThan(2);
-        expect(Math.abs(parseFloat(boxStyle.height) - elementRect.height)).toBeLessThan(2);
+        expect(
+          Math.abs(parseFloat(boxStyle.left) - elementRect.left),
+        ).toBeLessThan(2);
+        expect(
+          Math.abs(parseFloat(boxStyle.top) - elementRect.top),
+        ).toBeLessThan(2);
+        expect(
+          Math.abs(parseFloat(boxStyle.width) - elementRect.width),
+        ).toBeLessThan(2);
+        expect(
+          Math.abs(parseFloat(boxStyle.height) - elementRect.height),
+        ).toBeLessThan(2);
 
         cleanup();
       },
@@ -796,12 +850,16 @@ describe.skip("Overlay Behavioral Contracts", () => {
       { timeout: 1000 },
       async ({ expect }) => {
         const { canvas, panZoom, container, cleanup } = await createTestSetup({
-          elements: [{ id: "el-1", left: 100, top: 100, width: 50, height: 50 }],
+          elements: [
+            { id: "el-1", left: 100, top: 100, width: 50, height: 50 },
+          ],
           panZoom: { x: 0, y: 0, scale: 1 },
         });
 
         // Select element
-        const element = canvas.querySelector('[data-element-id="el-1"]') as HTMLElement;
+        const element = canvas.querySelector(
+          '[data-element-id="el-1"]',
+        ) as HTMLElement;
         const rect = element.getBoundingClientRect();
         canvas.dispatchEvent(
           new PointerEvent("pointerdown", {
@@ -814,7 +872,9 @@ describe.skip("Overlay Behavioral Contracts", () => {
         await canvas.updateComplete;
         await new Promise((resolve) => setTimeout(resolve, 200));
 
-        const transformHandles = container.querySelector("ef-transform-handles") as any;
+        const transformHandles = container.querySelector(
+          "ef-transform-handles",
+        ) as any;
         expect(transformHandles).toBeTruthy();
 
         // Get initial screen position
@@ -828,7 +888,9 @@ describe.skip("Overlay Behavioral Contracts", () => {
         // Transform handles visual position should have moved
         // (overlay layer moves with pan, so screen position changes)
         const newScreenRect = transformHandles.getBoundingClientRect();
-        expect(Math.abs(newScreenRect.left - (initialScreenRect.left + 50))).toBeLessThan(5);
+        expect(
+          Math.abs(newScreenRect.left - (initialScreenRect.left + 50)),
+        ).toBeLessThan(5);
 
         cleanup();
       },
@@ -839,20 +901,28 @@ describe.skip("Overlay Behavioral Contracts", () => {
       { timeout: 1000 },
       async ({ expect }) => {
         const { canvas, panZoom, overlay, cleanup } = await createTestSetup({
-          elements: [{ id: "el-1", left: 100, top: 100, width: 50, height: 50 }],
+          elements: [
+            { id: "el-1", left: 100, top: 100, width: 50, height: 50 },
+          ],
           panZoom: { x: 0, y: 0, scale: 1 },
         });
 
         // Hover element
-        const element = canvas.querySelector('[data-element-id="el-1"]') as HTMLElement;
+        const element = canvas.querySelector(
+          '[data-element-id="el-1"]',
+        ) as HTMLElement;
         element.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
         await canvas.updateComplete;
         await new Promise((resolve) => setTimeout(resolve, 100));
 
-        const highlightBox = overlay?.querySelector(".highlight-box") as HTMLElement;
+        const highlightBox = overlay?.querySelector(
+          ".highlight-box",
+        ) as HTMLElement;
         expect(highlightBox).toBeTruthy();
 
-        const initialLeft = parseFloat(window.getComputedStyle(highlightBox).left);
+        const initialLeft = parseFloat(
+          window.getComputedStyle(highlightBox).left,
+        );
 
         // Pan the canvas
         panZoom.x = 75;
@@ -872,20 +942,28 @@ describe.skip("Overlay Behavioral Contracts", () => {
       { timeout: 1000 },
       async ({ expect }) => {
         const { canvas, panZoom, overlay, cleanup } = await createTestSetup({
-          elements: [{ id: "el-1", left: 100, top: 100, width: 50, height: 50 }],
+          elements: [
+            { id: "el-1", left: 100, top: 100, width: 50, height: 50 },
+          ],
           panZoom: { x: 0, y: 0, scale: 1 },
         });
 
         // Hover element
-        const element = canvas.querySelector('[data-element-id="el-1"]') as HTMLElement;
+        const element = canvas.querySelector(
+          '[data-element-id="el-1"]',
+        ) as HTMLElement;
         element.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
         await canvas.updateComplete;
         await new Promise((resolve) => setTimeout(resolve, 100));
 
-        const highlightBox = overlay?.querySelector(".highlight-box") as HTMLElement;
+        const highlightBox = overlay?.querySelector(
+          ".highlight-box",
+        ) as HTMLElement;
         expect(highlightBox).toBeTruthy();
 
-        const initialWidth = parseFloat(window.getComputedStyle(highlightBox).width);
+        const initialWidth = parseFloat(
+          window.getComputedStyle(highlightBox).width,
+        );
 
         // Zoom to 2x
         panZoom.scale = 2;
@@ -893,7 +971,9 @@ describe.skip("Overlay Behavioral Contracts", () => {
         await new Promise((resolve) => setTimeout(resolve, 200));
 
         // Highlight box should be twice as wide
-        const newWidth = parseFloat(window.getComputedStyle(highlightBox).width);
+        const newWidth = parseFloat(
+          window.getComputedStyle(highlightBox).width,
+        );
         expect(Math.abs(newWidth - initialWidth * 2)).toBeLessThan(5);
 
         cleanup();
@@ -907,10 +987,14 @@ describe.skip("Overlay Behavioral Contracts", () => {
       { timeout: 1000 },
       async ({ expect }) => {
         const { canvas, overlay, container, cleanup } = await createTestSetup({
-          elements: [{ id: "el-1", left: 100, top: 100, width: 50, height: 50 }],
+          elements: [
+            { id: "el-1", left: 100, top: 100, width: 50, height: 50 },
+          ],
         });
 
-        const element = canvas.querySelector('[data-element-id="el-1"]') as HTMLElement;
+        const element = canvas.querySelector(
+          '[data-element-id="el-1"]',
+        ) as HTMLElement;
 
         // First hover the element - should show highlight
         element.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
@@ -926,7 +1010,7 @@ describe.skip("Overlay Behavioral Contracts", () => {
 
         // Transform handles should appear (selection is handled by EFTransformHandles)
         expect(container.querySelector("ef-transform-handles")).toBeTruthy();
-        
+
         // Highlight box should NOT appear (element is selected)
         expect(overlay?.querySelector(".highlight-box")).toBeFalsy();
 
@@ -939,10 +1023,14 @@ describe.skip("Overlay Behavioral Contracts", () => {
       { timeout: 1000 },
       async ({ expect }) => {
         const { canvas, overlay, cleanup } = await createTestSetup({
-          elements: [{ id: "el-1", left: 100, top: 100, width: 50, height: 50 }],
+          elements: [
+            { id: "el-1", left: 100, top: 100, width: 50, height: 50 },
+          ],
         });
 
-        const element = canvas.querySelector('[data-element-id="el-1"]') as HTMLElement;
+        const element = canvas.querySelector(
+          '[data-element-id="el-1"]',
+        ) as HTMLElement;
 
         // Hover and select
         element.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
@@ -1004,18 +1092,24 @@ describe.skip("Overlay Behavioral Contracts", () => {
         canvas.appendChild(element);
 
         await (canvas as any).updateComplete;
-        
+
         // Wait for metadata to have rotation
         await vi.waitUntil(
           () => {
             const metadata = (canvas as any).getElementData?.("el-1");
-            return metadata && metadata.rotation !== undefined && metadata.rotation !== 0;
+            return (
+              metadata &&
+              metadata.rotation !== undefined &&
+              metadata.rotation !== 0
+            );
           },
           { timeout: 1000, interval: 16 },
         );
 
         // Find the overlay
-        const overlay = container.querySelector("ef-canvas-selection-overlay") as HTMLElement;
+        const overlay = container.querySelector(
+          "ef-canvas-selection-overlay",
+        ) as HTMLElement;
         expect(overlay).toBeTruthy();
 
         // Hover the element
@@ -1023,7 +1117,9 @@ describe.skip("Overlay Behavioral Contracts", () => {
         await (canvas as any).updateComplete;
         await new Promise((resolve) => setTimeout(resolve, 200));
 
-        const highlightBox = overlay?.querySelector(".highlight-box") as HTMLElement;
+        const highlightBox = overlay?.querySelector(
+          ".highlight-box",
+        ) as HTMLElement;
         expect(highlightBox).toBeTruthy();
 
         // Check that the highlight box has rotation applied
@@ -1042,16 +1138,22 @@ describe.skip("Overlay Behavioral Contracts", () => {
       { timeout: 1000 },
       async ({ expect }) => {
         const { canvas, overlay, cleanup } = await createTestSetup({
-          elements: [{ id: "el-1", left: 100, top: 100, width: 50, height: 50 }],
+          elements: [
+            { id: "el-1", left: 100, top: 100, width: 50, height: 50 },
+          ],
         });
 
         // Hover element to show highlight
-        const element = canvas.querySelector('[data-element-id="el-1"]') as HTMLElement;
+        const element = canvas.querySelector(
+          '[data-element-id="el-1"]',
+        ) as HTMLElement;
         element.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
         await canvas.updateComplete;
         await new Promise((resolve) => setTimeout(resolve, 100));
 
-        const highlightBox = overlay?.querySelector(".highlight-box") as HTMLElement;
+        const highlightBox = overlay?.querySelector(
+          ".highlight-box",
+        ) as HTMLElement;
         expect(highlightBox).toBeTruthy();
 
         // Verify pointer-events is none
@@ -1066,7 +1168,9 @@ describe.skip("Overlay Behavioral Contracts", () => {
       { timeout: 1000 },
       async ({ expect }) => {
         const { overlay, cleanup } = await createTestSetup({
-          elements: [{ id: "el-1", left: 100, top: 100, width: 50, height: 50 }],
+          elements: [
+            { id: "el-1", left: 100, top: 100, width: 50, height: 50 },
+          ],
         });
 
         // Verify overlay host has pointer-events: none

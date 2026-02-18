@@ -7,7 +7,3 @@ export const Hierarchy = createComponent({
   elementClass: EFHierarchyElement,
   react: React,
 });
-
-
-
-

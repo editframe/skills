@@ -115,7 +115,9 @@ describe("FileMediaEngine", () => {
     });
 
     it("should have fetchByAssetId as alias for fetchByFileId", () => {
-      expect(FileMediaEngine.fetchByAssetId).toBe(FileMediaEngine.fetchByFileId);
+      expect(FileMediaEngine.fetchByAssetId).toBe(
+        FileMediaEngine.fetchByFileId,
+      );
     });
   });
 
@@ -220,11 +222,11 @@ describe("FileMediaEngine", () => {
       mockTrackBuffer = new ArrayBuffer(totalTrackSize);
       const view = new Uint8Array(mockTrackBuffer);
       // Fill init region (0-1023) with 0xAA
-      view.fill(0xAA, 0, 1024);
+      view.fill(0xaa, 0, 1024);
       // Fill segment 0 region (1024-3071) with 0xBB
-      view.fill(0xBB, 1024, 3072);
+      view.fill(0xbb, 1024, 3072);
       // Fill segment 1 region (3072-5119) with 0xCC
-      view.fill(0xCC, 3072, 5120);
+      view.fill(0xcc, 3072, 5120);
 
       // Mock fetchMedia to return the full track buffer
       vi.spyOn(engine, "fetchMedia").mockResolvedValue(mockTrackBuffer);
@@ -239,8 +241,8 @@ describe("FileMediaEngine", () => {
 
       expect(result.byteLength).toBe(1024);
       const view = new Uint8Array(result);
-      expect(view[0]).toBe(0xAA);
-      expect(view[1023]).toBe(0xAA);
+      expect(view[0]).toBe(0xaa);
+      expect(view[1023]).toBe(0xaa);
     });
 
     it("should extract only segment 0 bytes from the full track", async () => {
@@ -253,8 +255,8 @@ describe("FileMediaEngine", () => {
 
       expect(result.byteLength).toBe(2048);
       const view = new Uint8Array(result);
-      expect(view[0]).toBe(0xBB);
-      expect(view[2047]).toBe(0xBB);
+      expect(view[0]).toBe(0xbb);
+      expect(view[2047]).toBe(0xbb);
     });
 
     it("should extract only segment 1 bytes from the full track", async () => {
@@ -267,18 +269,14 @@ describe("FileMediaEngine", () => {
 
       expect(result.byteLength).toBe(2048);
       const view = new Uint8Array(result);
-      expect(view[0]).toBe(0xCC);
-      expect(view[2047]).toBe(0xCC);
+      expect(view[0]).toBe(0xcc);
+      expect(view[2047]).toBe(0xcc);
     });
 
     it("should throw for invalid segment ID", async () => {
       const signal = new AbortController().signal;
       await expect(
-        engine.fetchMediaSegment(
-          99,
-          { trackId: 1, src: mockFileId },
-          signal,
-        ),
+        engine.fetchMediaSegment(99, { trackId: 1, src: mockFileId }, signal),
       ).rejects.toThrow("Segment 99 not found");
     });
 

@@ -527,7 +527,9 @@ abstract class ProbeBase {
 
     // Filter out SEI NAL units (type 6) for video tracks
     // These can cause WebCodecs VideoDecoder to hang or crash in some browsers/Electron
-    const bitstreamFilter = isVideoTrack ? ["-bsf:v", "filter_units=remove_types=6"] : [];
+    const bitstreamFilter = isVideoTrack
+      ? ["-bsf:v", "filter_units=remove_types=6"]
+      : [];
 
     const ffmpegArgs = [
       ...this.ffmpegAudioInputOptions,
@@ -577,12 +579,11 @@ abstract class ProbeBase {
     const aspectRatio = videoStream.height / videoStream.width;
     const targetHeight = Math.round(targetWidth * aspectRatio);
     // Ensure height is even (required for H.264)
-    const scrubHeight = targetHeight % 2 === 0 ? targetHeight : targetHeight + 1;
+    const scrubHeight =
+      targetHeight % 2 === 0 ? targetHeight : targetHeight + 1;
 
     // Parse frame rate from r_frame_rate (e.g., "30/1" or "30000/1001")
-    const [fpsNum, fpsDen] = videoStream.r_frame_rate
-      .split("/")
-      .map(Number);
+    const [fpsNum, fpsDen] = videoStream.r_frame_rate.split("/").map(Number);
     const frameRate = fpsNum && fpsDen ? `${fpsNum}/${fpsDen}` : "30/1";
 
     // Scrub track uses 30-second fragments with keyframes every 10 frames for fast seeking.

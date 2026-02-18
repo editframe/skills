@@ -25,7 +25,7 @@ export function getUserPkgManager(): PackageManager {
  */
 async function runInstallCommand(
   pkgManager: PackageManager,
-  projectDir: string
+  projectDir: string,
 ): Promise<void> {
   // Show all output directly to user - no hiding behind spinners
   await execa(pkgManager, ["install"], {
@@ -38,15 +38,21 @@ async function runInstallCommand(
 /**
  * Install dependencies in the project directory.
  */
-export async function installDependencies(projectDir: string): Promise<boolean> {
+export async function installDependencies(
+  projectDir: string,
+): Promise<boolean> {
   const pkgManager = getUserPkgManager();
 
   try {
-    process.stderr.write(chalk.bold(`\nInstalling dependencies with ${pkgManager}...\n\n`));
-    
+    process.stderr.write(
+      chalk.bold(`\nInstalling dependencies with ${pkgManager}...\n\n`),
+    );
+
     await runInstallCommand(pkgManager, projectDir);
 
-    process.stderr.write(chalk.green("\n✓ Dependencies installed successfully!\n"));
+    process.stderr.write(
+      chalk.green("\n✓ Dependencies installed successfully!\n"),
+    );
 
     return true;
   } catch (error) {
@@ -63,32 +69,36 @@ export async function installDependencies(projectDir: string): Promise<boolean> 
  */
 export async function installAgentSkills(
   projectDir: string,
-  agent: string
+  agent: string,
 ): Promise<boolean> {
   try {
-    process.stderr.write(chalk.bold(`\nInstalling AI agent skills for ${agent}...\n\n`));
-    
+    process.stderr.write(
+      chalk.bold(`\nInstalling AI agent skills for ${agent}...\n\n`),
+    );
+
     const agentFlag = agent === "all" ? [] : ["--agent", agent];
 
     await execa(
       "npx",
       ["ai-agent-skills", "install", "editframe/skills", ...agentFlag],
-      { 
+      {
         cwd: projectDir,
         stdout: "inherit",
         stderr: "inherit",
-      }
+      },
     );
 
-    process.stderr.write(chalk.green(`\n✓ Agent skills installed for ${agent}!\n`));
+    process.stderr.write(
+      chalk.green(`\n✓ Agent skills installed for ${agent}!\n`),
+    );
     return true;
   } catch (error) {
     process.stderr.write(chalk.yellow("\n⚠ Failed to install agent skills\n"));
     process.stderr.write(chalk.dim("You can install manually:\n"));
     process.stderr.write(
       chalk.cyan(
-        `  npx ai-agent-skills install editframe/skills --agent ${agent}\n\n`
-      )
+        `  npx ai-agent-skills install editframe/skills --agent ${agent}\n\n`,
+      ),
     );
     return false;
   }

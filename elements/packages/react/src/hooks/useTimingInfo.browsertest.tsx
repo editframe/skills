@@ -36,10 +36,7 @@ const TimingDisplay: FC<TimingDisplayProps> = ({ onUpdate }) => {
     // biome-ignore lint/correctness/useUniqueElementIds: OK for test fixture with single instance
     <Preview id="test-preview">
       <Timegroup mode="fixed" duration="3s" ref={ref}>
-        <Video
-          src="test_audio.mp4"
-          trim="0s-1s"
-        />
+        <Video src="test_audio.mp4" trim="0s-1s" />
       </Timegroup>
     </Preview>
   );

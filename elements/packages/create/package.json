@@ -6,7 +6,6 @@
     "create-editframe": "dist/index.js"
   },
   "type": "module",
-  "main": "./dist/index.js",
   "devDependencies": {
     "@types/dom-webcodecs": "^0.1.11",
     "@types/node": "^22.0.0",
@@ -25,7 +24,6 @@
     "prompts": "^2.4.2",
     "execa": "^9.5.2"
   },
-  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -46,5 +44,7 @@
       },
       "./package.json": "./package.json"
     }
-  }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js"
 }

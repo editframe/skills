@@ -1,5 +1,12 @@
 import { consume } from "@lit/context";
-import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from "lit";
+import {
+  css,
+  html,
+  LitElement,
+  nothing,
+  type PropertyValues,
+  type TemplateResult,
+} from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 
@@ -471,9 +478,15 @@ export class EFHierarchyItem<
 
   protected willUpdate(changedProperties: PropertyValues): void {
     // Set up listener if context becomes available or context changed
-    if (!this.selectionChangeHandler || changedProperties.has("hierarchyContext")) {
+    if (
+      !this.selectionChangeHandler ||
+      changedProperties.has("hierarchyContext")
+    ) {
       // Remove old listener if context changed
-      if (changedProperties.has("hierarchyContext") && this.selectionChangeHandler) {
+      if (
+        changedProperties.has("hierarchyContext") &&
+        this.selectionChangeHandler
+      ) {
         this.removeSelectionListener();
         this.selectionChangeHandler = undefined;
       }
@@ -592,23 +605,23 @@ function getFriendlyLabel(element: HTMLElement, typeLabel: string): string {
   if (id && !id.includes("-") && !id.match(/^\d+$/)) {
     return id;
   }
-  
+
   // Count siblings of same type to generate "Video 1", "Video 2", etc.
   const parent = element.parentElement;
   if (parent) {
     const tagName = element.tagName;
     const siblings = Array.from(parent.children).filter(
-      (child) => child.tagName === tagName
+      (child) => child.tagName === tagName,
     );
     const index = siblings.indexOf(element) + 1;
-    
+
     // If there's only one of this type, don't add number
     if (siblings.length === 1) {
       return typeLabel;
     }
     return `${typeLabel} ${index}`;
   }
-  
+
   return typeLabel;
 }
 

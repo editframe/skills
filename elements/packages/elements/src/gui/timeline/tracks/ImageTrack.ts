@@ -16,7 +16,7 @@ export class EFImageTrack extends TrackItem {
 
     // Try to get image src for thumbnail preview
     const src = image.getAttribute("src") || (image as any).src;
-    
+
     // Calculate track dimensions - show repeating thumbnails to fill the track
     const durationMs = image.durationMs ?? 0;
     const trackWidth = durationMs * this.pixelsPerMs;
@@ -28,7 +28,10 @@ export class EFImageTrack extends TrackItem {
     }
 
     // Calculate how many thumbnails can fit
-    const thumbnailCount = Math.max(1, Math.floor((trackWidth - 8) / (thumbnailWidth + 2)));
+    const thumbnailCount = Math.max(
+      1,
+      Math.floor((trackWidth - 8) / (thumbnailWidth + 2)),
+    );
 
     return html`
       <div style=${styleMap({
@@ -42,7 +45,9 @@ export class EFImageTrack extends TrackItem {
         gap: "2px",
         overflow: "hidden",
       })}>
-        ${Array.from({ length: thumbnailCount }, () => html`
+        ${Array.from(
+          { length: thumbnailCount },
+          () => html`
           <img
             src="${src}"
             alt=""
@@ -56,7 +61,8 @@ export class EFImageTrack extends TrackItem {
               flexShrink: "0",
             })}
           />
-        `)}
+        `,
+        )}
       </div>
     `;
   }
@@ -67,4 +73,3 @@ declare global {
     "ef-image-track": EFImageTrack;
   }
 }
-

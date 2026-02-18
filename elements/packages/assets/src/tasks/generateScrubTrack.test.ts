@@ -60,11 +60,6 @@ describe("generateScrubTrack", () => {
       result2.cachePath,
       "Should return same cache path",
     );
-    assert.equal(
-      result1.md5Sum,
-      result2.md5Sum,
-      "Should return same MD5 sum",
-    );
+    assert.equal(result1.md5Sum, result2.md5Sum, "Should return same MD5 sum");
   }, 30000);
 });
-

@@ -313,7 +313,7 @@ export class SelectionOverlay extends LitElement {
 
   /**
    * Update overlay data state using the abstraction layer.
-   * 
+   *
    * This method now uses the clean separation of:
    * - SEMANTICS: getOverlayTargets() determines WHAT should be shown
    * - MECHANISM: calculateOverlayState() determines HOW to show it
@@ -343,20 +343,26 @@ export class SelectionOverlay extends LitElement {
     }
 
     // Get pan-zoom element for box-select coordinate conversion
-    const panZoomElement = effectiveCanvas.closest("ef-pan-zoom") as HTMLElement | null;
+    const panZoomElement = effectiveCanvas.closest(
+      "ef-pan-zoom",
+    ) as HTMLElement | null;
 
     // Get highlighted element from canvas
     const canvas = effectiveCanvas as any;
     const highlightedElement = canvas?.highlightedElement as HTMLElement | null;
 
     // SEMANTICS: What should be shown?
-    const targets = getOverlayTargets(this.effectiveSelection, highlightedElement);
+    const targets = getOverlayTargets(
+      this.effectiveSelection,
+      highlightedElement,
+    );
 
     // Adapt canvas to CanvasWithMetadata interface
     const canvasWithMetadata: CanvasWithMetadata = {
       getElementData: (id: string) => canvas?.getElementData?.(id),
       getElement: (id: string) => canvas?.elementRegistry?.get(id),
-      querySelector: (selector: string) => effectiveCanvas.querySelector(selector),
+      querySelector: (selector: string) =>
+        effectiveCanvas.querySelector(selector),
       shadowRoot: effectiveCanvas.shadowRoot,
     };
 
@@ -378,11 +384,17 @@ export class SelectionOverlay extends LitElement {
    * Read current transform directly from panzoom element.
    * This ensures we always have fresh values instead of stale property/context.
    */
-  private readCurrentTransform(panZoomElement: HTMLElement | null): PanZoomTransform | undefined {
+  private readCurrentTransform(
+    panZoomElement: HTMLElement | null,
+  ): PanZoomTransform | undefined {
     // Try reading from panzoom element directly (most accurate)
     if (panZoomElement) {
       const pz = panZoomElement as any;
-      if (typeof pz.x === "number" && typeof pz.y === "number" && typeof pz.scale === "number") {
+      if (
+        typeof pz.x === "number" &&
+        typeof pz.y === "number" &&
+        typeof pz.scale === "number"
+      ) {
         return { x: pz.x, y: pz.y, scale: pz.scale };
       }
     }

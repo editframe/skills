@@ -28,7 +28,7 @@ describe("WorkerPool", () => {
   test("checks worker availability", () => {
     const workerUrl = getWorkerUrl();
     const pool = new WorkerPool(workerUrl);
-    
+
     // Workers should be available in modern browsers
     const isAvailable = pool.isAvailable();
     expect(typeof isAvailable).toBe("boolean");
@@ -37,7 +37,7 @@ describe("WorkerPool", () => {
   test("encodes single canvas in worker", async () => {
     const workerUrl = getWorkerUrl();
     const pool = new WorkerPool(workerUrl);
-    
+
     if (!pool.isAvailable()) {
       console.warn("Workers not available, skipping test");
       return;
@@ -57,7 +57,7 @@ describe("WorkerPool", () => {
     );
 
     expect(dataUrl).toMatch(/^data:image\/jpeg;base64,/);
-    
+
     // Verify the data URL is valid by loading it as an image
     const img = new Image();
     await new Promise<void>((resolve, reject) => {
@@ -73,7 +73,7 @@ describe("WorkerPool", () => {
   test("encodes canvas with PNG format when preserveAlpha is true", async () => {
     const workerUrl = getWorkerUrl();
     const pool = new WorkerPool(workerUrl);
-    
+
     if (!pool.isAvailable()) {
       console.warn("Workers not available, skipping test");
       return;
@@ -98,7 +98,7 @@ describe("WorkerPool", () => {
   test("encodes multiple canvases in parallel", async () => {
     const workerUrl = getWorkerUrl();
     const pool = new WorkerPool(workerUrl, 4); // Use 4 workers
-    
+
     if (!pool.isAvailable()) {
       console.warn("Workers not available, skipping test");
       return;
@@ -130,13 +130,15 @@ describe("WorkerPool", () => {
       expect(dataUrl).toMatch(/^data:image\/jpeg;base64,/);
     });
 
-    console.log(`Encoded ${canvases.length} canvases in ${(endTime - startTime).toFixed(2)}ms`);
+    console.log(
+      `Encoded ${canvases.length} canvases in ${(endTime - startTime).toFixed(2)}ms`,
+    );
   });
 
   test("compares worker pool performance vs main thread", async () => {
     const workerUrl = getWorkerUrl();
     const pool = new WorkerPool(workerUrl, 4);
-    
+
     if (!pool.isAvailable()) {
       console.warn("Workers not available, skipping test");
       return;
@@ -163,7 +165,7 @@ describe("WorkerPool", () => {
     const workerTime = performance.now() - workerStart;
 
     expect(workerDataUrl).toMatch(/^data:image\/jpeg;base64,/);
-    
+
     console.log(`Main thread: ${mainThreadTime.toFixed(2)}ms`);
     console.log(`Worker pool: ${workerTime.toFixed(2)}ms`);
     console.log(`Speedup: ${(mainThreadTime / workerTime).toFixed(2)}x`);
@@ -172,7 +174,7 @@ describe("WorkerPool", () => {
   test("handles errors gracefully", async () => {
     const workerUrl = getWorkerUrl();
     const pool = new WorkerPool(workerUrl);
-    
+
     if (!pool.isAvailable()) {
       console.warn("Workers not available, skipping test");
       return;
@@ -182,10 +184,12 @@ describe("WorkerPool", () => {
     const canvas = document.createElement("canvas");
     canvas.width = 100;
     canvas.height = 100;
-    
+
     // Try to encode - should handle error gracefully
     try {
-      await pool.execute((worker) => encodeCanvasInWorker(worker, canvas, false));
+      await pool.execute((worker) =>
+        encodeCanvasInWorker(worker, canvas, false),
+      );
       // If it succeeds, that's fine too
     } catch (error) {
       // Expected for cross-origin canvases
@@ -196,14 +200,14 @@ describe("WorkerPool", () => {
   test("terminates workers correctly", () => {
     const workerUrl = getWorkerUrl();
     const pool = new WorkerPool(workerUrl);
-    
+
     if (!pool.isAvailable()) {
       console.warn("Workers not available, skipping test");
       return;
     }
 
     pool.terminate();
-    
+
     // After termination, pool should not be available
     expect(pool.isAvailable()).toBe(false);
   });

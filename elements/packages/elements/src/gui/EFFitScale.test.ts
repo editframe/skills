@@ -120,9 +120,7 @@ describe("computeFitScale", () => {
       expect(result!.scale).toBeCloseTo(300 / 1920, 10);
       // Scaled width = 1080 * 0.15625 = 168.75
       // translateX = (1000 - 168.75) / 2 = 415.625
-      expect(result!.translateX).toBeCloseTo(
-        (1000 - 1080 * result!.scale) / 2,
-      );
+      expect(result!.translateX).toBeCloseTo((1000 - 1080 * result!.scale) / 2);
       // translateY should be 0 (height exactly matches)
       expect(result!.translateY).toBeCloseTo(0);
     });
@@ -465,14 +463,54 @@ describe("computeFitScale", () => {
 
   describe("invariant: scaled content always fits within container", () => {
     const testCases: ScaleInput[] = [
-      { containerWidth: 1920, containerHeight: 1080, contentWidth: 3840, contentHeight: 2160 },
-      { containerWidth: 300, containerHeight: 800, contentWidth: 1920, contentHeight: 1080 },
-      { containerWidth: 1000, containerHeight: 300, contentWidth: 1080, contentHeight: 1920 },
-      { containerWidth: 500, containerHeight: 500, contentWidth: 1920, contentHeight: 1080 },
-      { containerWidth: 100, containerHeight: 100, contentWidth: 1, contentHeight: 1 },
-      { containerWidth: 1, containerHeight: 1000, contentWidth: 1000, contentHeight: 1 },
-      { containerWidth: 1000, containerHeight: 1, contentWidth: 1, contentHeight: 1000 },
-      { containerWidth: 333, containerHeight: 777, contentWidth: 123, contentHeight: 456 },
+      {
+        containerWidth: 1920,
+        containerHeight: 1080,
+        contentWidth: 3840,
+        contentHeight: 2160,
+      },
+      {
+        containerWidth: 300,
+        containerHeight: 800,
+        contentWidth: 1920,
+        contentHeight: 1080,
+      },
+      {
+        containerWidth: 1000,
+        containerHeight: 300,
+        contentWidth: 1080,
+        contentHeight: 1920,
+      },
+      {
+        containerWidth: 500,
+        containerHeight: 500,
+        contentWidth: 1920,
+        contentHeight: 1080,
+      },
+      {
+        containerWidth: 100,
+        containerHeight: 100,
+        contentWidth: 1,
+        contentHeight: 1,
+      },
+      {
+        containerWidth: 1,
+        containerHeight: 1000,
+        contentWidth: 1000,
+        contentHeight: 1,
+      },
+      {
+        containerWidth: 1000,
+        containerHeight: 1,
+        contentWidth: 1,
+        contentHeight: 1000,
+      },
+      {
+        containerWidth: 333,
+        containerHeight: 777,
+        contentWidth: 123,
+        contentHeight: 456,
+      },
     ];
 
     for (const input of testCases) {
@@ -485,9 +523,7 @@ describe("computeFitScale", () => {
 
         // Scaled content should fit within container (with floating point tolerance)
         expect(scaledWidth).toBeLessThanOrEqual(input.containerWidth + 0.001);
-        expect(scaledHeight).toBeLessThanOrEqual(
-          input.containerHeight + 0.001,
-        );
+        expect(scaledHeight).toBeLessThanOrEqual(input.containerHeight + 0.001);
 
         // At least one dimension should match container (content fills one axis)
         const widthFills = Math.abs(scaledWidth - input.containerWidth) < 0.001;

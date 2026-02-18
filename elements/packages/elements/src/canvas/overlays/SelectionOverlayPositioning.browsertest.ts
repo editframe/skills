@@ -10,7 +10,7 @@ import { CanvasAPI } from "../api/CanvasAPI.js";
 
 /**
  * Tests for selection/transform handle positioning.
- * 
+ *
  * NOTE: Selection visualization is handled by EFTransformHandles, not SelectionOverlay.
  * SelectionOverlay only renders box-select (marquee) and highlight (hover) overlays.
  */
@@ -69,7 +69,9 @@ describe("Selection Handle Positioning (via EFTransformHandles)", () => {
     expect(metadata?.height).toBe(100);
 
     // Transform handles should be rendered for selection (not SelectionOverlay's .selection-box)
-    const transformHandles = container.querySelector("ef-transform-handles") as any;
+    const transformHandles = container.querySelector(
+      "ef-transform-handles",
+    ) as any;
     expect(transformHandles).toBeTruthy();
 
     // Verify transform handles bounds match element dimensions
@@ -123,7 +125,9 @@ describe("Selection Handle Positioning (via EFTransformHandles)", () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Transform handles should be rendered
-    const transformHandles = container.querySelector("ef-transform-handles") as any;
+    const transformHandles = container.querySelector(
+      "ef-transform-handles",
+    ) as any;
     expect(transformHandles).toBeTruthy();
 
     if (transformHandles && metadata) {
@@ -188,7 +192,9 @@ describe("Selection Handle Positioning (via EFTransformHandles)", () => {
     await new Promise((resolve) => setTimeout(resolve, 300));
 
     // Transform handles should be rendered
-    const transformHandles = container.querySelector("ef-transform-handles") as any;
+    const transformHandles = container.querySelector(
+      "ef-transform-handles",
+    ) as any;
     expect(transformHandles).toBeTruthy();
 
     if (transformHandles) {

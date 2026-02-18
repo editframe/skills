@@ -16,13 +16,18 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
   private data: ManifestResponse = {} as ManifestResponse;
   private thumbnailExtractor: ThumbnailExtractor;
 
-  static async fetch(host: EFMedia, urlGenerator: UrlGenerator, url: string, signal?: AbortSignal) {
+  static async fetch(
+    host: EFMedia,
+    urlGenerator: UrlGenerator,
+    url: string,
+    signal?: AbortSignal,
+  ) {
     const engine = new JitMediaEngine(host, urlGenerator);
     const data = await engine.fetchManifest(url, signal);
-    
+
     // Check for abort after potentially slow network operation
     signal?.throwIfAborted();
-    
+
     engine.data = data;
     // Set MediaEngine interface properties
     engine.durationMs = data.durationMs;
@@ -106,8 +111,6 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
     };
     return this.#cachedVideoRendition;
   }
-
-
 
   async fetchInitSegment(
     rendition: { id?: RenditionId; trackId: number | undefined; src: string },
@@ -212,6 +215,16 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
     return segmentIndex + 1; // Convert 0-based to 1-based
   }
 
+  getBufferConfig() {
+    return {
+      videoBufferDurationMs: 4000,
+      audioBufferDurationMs: 4000,
+      maxVideoBufferFetches: 2,
+      maxAudioBufferFetches: 2,
+      bufferThresholdMs: 30000,
+    };
+  }
+
   getScrubVideoRendition(): VideoRendition | undefined {
     if (!this.data.videoRenditions) return undefined;
 
@@ -245,7 +258,6 @@ export class JitMediaEngine extends BaseMediaEngine implements MediaEngine {
     );
     return mediaCache.has(segmentUrl);
   }
-
 
   /**
    * Extract thumbnail canvases using same rendition priority as video playback for frame alignment

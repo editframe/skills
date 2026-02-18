@@ -12,7 +12,10 @@ import type {
 /**
  * Format hotspots as a table for console output
  */
-export function formatHotspotsTable(hotspots: HotspotInfo[], options: FormatOptions = {}): string {
+export function formatHotspotsTable(
+  hotspots: HotspotInfo[],
+  options: FormatOptions = {},
+): string {
   const { topN = 20, verbose = false } = options;
   const lines: string[] = [];
   const displayHotspots = hotspots.slice(0, topN);
@@ -24,7 +27,9 @@ export function formatHotspotsTable(hotspots: HotspotInfo[], options: FormatOpti
     const pct = h.selfTimePct.toFixed(1).padStart(5);
     const location = `${h.file}:${h.line}`;
     const callInfo = verbose && h.callCount ? ` [${h.callCount} calls]` : "";
-    lines.push(`  ${rank}.  ${time}ms (${pct}%) - ${h.functionName} @ ${location}${callInfo}`);
+    lines.push(
+      `  ${rank}.  ${time}ms (${pct}%) - ${h.functionName} @ ${location}${callInfo}`,
+    );
   }
 
   return lines.join("\n");
@@ -33,10 +38,14 @@ export function formatHotspotsTable(hotspots: HotspotInfo[], options: FormatOpti
 /**
  * Format by-file aggregation
  */
-export function formatByFile(byFile: Map<string, number>, totalTimeMs: number, options: FormatOptions = {}): string {
+export function formatByFile(
+  byFile: Map<string, number>,
+  totalTimeMs: number,
+  options: FormatOptions = {},
+): string {
   const { topN = 15 } = options;
   const lines: string[] = [];
-  
+
   const sorted = Array.from(byFile.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, topN);
@@ -55,31 +64,36 @@ export function formatByFile(byFile: Map<string, number>, totalTimeMs: number, o
  */
 export function generateRecommendations(hotspots: HotspotInfo[]): string[] {
   const recommendations: string[] = [];
-  
+
   // Top hotspot recommendations
   for (let i = 0; i < Math.min(3, hotspots.length); i++) {
     const h = hotspots[i]!;
     if (h.selfTimePct > 15) {
-      const callInfo = h.callCount && h.callCount > 1 ? ` (called ${h.callCount} times)` : "";
+      const callInfo =
+        h.callCount && h.callCount > 1 ? ` (called ${h.callCount} times)` : "";
       recommendations.push(
-        `• ${h.functionName} @ ${h.file}:${h.line} takes ${h.selfTimePct.toFixed(1)}%${callInfo} - consider optimization`
+        `• ${h.functionName} @ ${h.file}:${h.line} takes ${h.selfTimePct.toFixed(1)}%${callInfo} - consider optimization`,
       );
     }
   }
 
   // Look for potential caching opportunities based on call count
-  const highCallCount = hotspots.filter(h => h.callCount && h.callCount > 50 && h.selfTimePct > 5);
+  const highCallCount = hotspots.filter(
+    (h) => h.callCount && h.callCount > 50 && h.selfTimePct > 5,
+  );
   for (const h of highCallCount.slice(0, 2)) {
     recommendations.push(
-      `• ${h.functionName} called ${h.callCount} times - consider caching or memoization`
+      `• ${h.functionName} called ${h.callCount} times - consider caching or memoization`,
     );
   }
 
   // Look for functions with high hit count (tight loops)
-  const tightLoops = hotspots.filter(h => h.hitCount > 100 && h.selfTimePct > 10);
+  const tightLoops = hotspots.filter(
+    (h) => h.hitCount > 100 && h.selfTimePct > 10,
+  );
   for (const h of tightLoops.slice(0, 2)) {
     recommendations.push(
-      `• ${h.functionName} appears in ${h.hitCount} samples - may be in hot loop`
+      `• ${h.functionName} appears in ${h.hitCount} samples - may be in hot loop`,
     );
   }
 
@@ -96,7 +110,7 @@ export function generateRecommendations(hotspots: HotspotInfo[]): string[] {
     const fileTotal = fileHotspots.reduce((sum, h) => sum + h.selfTimePct, 0);
     if (fileTotal > 30 && fileHotspots.length > 1) {
       recommendations.push(
-        `• ${file} has ${fileHotspots.length} hotspots totaling ${fileTotal.toFixed(1)}% - review overall file performance`
+        `• ${file} has ${fileHotspots.length} hotspots totaling ${fileTotal.toFixed(1)}% - review overall file performance`,
       );
     }
   }
@@ -110,13 +124,13 @@ export function generateRecommendations(hotspots: HotspotInfo[]): string[] {
 export function formatProfileAnalysis(
   analysis: ProfileAnalysis,
   context?: { sandbox?: string; scenario?: string },
-  options: FormatOptions = {}
+  options: FormatOptions = {},
 ): string {
   const { showRecommendations = true, topN = 20, verbose = false } = options;
   const lines: string[] = [];
 
   lines.push("=== PROFILE ANALYSIS ===");
-  
+
   if (context?.sandbox || context?.scenario) {
     const parts: string[] = [];
     if (context.sandbox) parts.push(`Sandbox: ${context.sandbox}`);
@@ -125,7 +139,9 @@ export function formatProfileAnalysis(
   }
 
   lines.push(`Duration: ${analysis.duration.toFixed(2)}ms`);
-  lines.push(`Samples: ${analysis.samples.toLocaleString()} (${analysis.sampleIntervalUs.toFixed(0)}μs interval)`);
+  lines.push(
+    `Samples: ${analysis.samples.toLocaleString()} (${analysis.sampleIntervalUs.toFixed(0)}μs interval)`,
+  );
   lines.push("");
 
   lines.push("TOP HOTSPOTS (by self time):");
@@ -163,7 +179,7 @@ export function formatProfileAnalysis(
 export function formatProfileAnalysisJSON(
   analysis: ProfileAnalysis,
   context?: { sandbox?: string; scenario?: string },
-  options: FormatOptions = {}
+  options: FormatOptions = {},
 ): string {
   const { showRecommendations = true, topN = 20, verbose = false } = options;
 
@@ -212,7 +228,10 @@ export function formatProfileAnalysisJSON(
 /**
  * Format profile comparison for text output
  */
-export function formatProfileComparison(comparison: ProfileComparison, _options: FormatOptions = {}): string {
+export function formatProfileComparison(
+  comparison: ProfileComparison,
+  _options: FormatOptions = {},
+): string {
   const lines: string[] = [];
 
   lines.push("=== PROFILE COMPARISON ===");
@@ -226,7 +245,9 @@ export function formatProfileComparison(comparison: ProfileComparison, _options:
   if (comparison.regressions.hotspots.length > 0) {
     lines.push("⚠️  HOTSPOT REGRESSIONS:");
     for (const { hotspot, reason } of comparison.regressions.hotspots) {
-      lines.push(`  • ${hotspot.functionName} @ ${hotspot.file}:${hotspot.line}`);
+      lines.push(
+        `  • ${hotspot.functionName} @ ${hotspot.file}:${hotspot.line}`,
+      );
       lines.push(`    ${reason}`);
     }
     lines.push("");
@@ -234,7 +255,7 @@ export function formatProfileComparison(comparison: ProfileComparison, _options:
 
   // Show top changed hotspots
   const significantChanges = comparison.diff
-    .filter(h => Math.abs(h.selfTime) > 1)
+    .filter((h) => Math.abs(h.selfTime) > 1)
     .sort((a, b) => Math.abs(b.selfTime) - Math.abs(a.selfTime))
     .slice(0, 10);
 
@@ -242,7 +263,9 @@ export function formatProfileComparison(comparison: ProfileComparison, _options:
     lines.push("SIGNIFICANT CHANGES:");
     for (const h of significantChanges) {
       const change = h.selfTime > 0 ? "+" : "";
-      lines.push(`  ${change}${h.selfTime.toFixed(1)}ms (${change}${h.selfTimePct.toFixed(1)}%) - ${h.functionName} @ ${h.file}:${h.line}`);
+      lines.push(
+        `  ${change}${h.selfTime.toFixed(1)}ms (${change}${h.selfTimePct.toFixed(1)}%) - ${h.functionName} @ ${h.file}:${h.line}`,
+      );
     }
   }
 
@@ -252,12 +275,16 @@ export function formatProfileComparison(comparison: ProfileComparison, _options:
 /**
  * Format profile comparison as JSON
  */
-export function formatProfileComparisonJSON(comparison: ProfileComparison): string {
+export function formatProfileComparisonJSON(
+  comparison: ProfileComparison,
+): string {
   const output = {
     summary: comparison.summary,
     durationDiffMs: comparison.durationDiffMs,
     durationDiffPercent: comparison.durationDiffPercent,
-    hasRegression: comparison.regressions.duration === true || comparison.regressions.hotspots.length > 0,
+    hasRegression:
+      comparison.regressions.duration === true ||
+      comparison.regressions.hotspots.length > 0,
     regressions: {
       duration: comparison.regressions.duration || false,
       hotspots: comparison.regressions.hotspots.map(({ hotspot, reason }) => ({
@@ -268,10 +295,10 @@ export function formatProfileComparisonJSON(comparison: ProfileComparison): stri
       })),
     },
     changes: comparison.diff
-      .filter(h => Math.abs(h.selfTime) > 1)
+      .filter((h) => Math.abs(h.selfTime) > 1)
       .sort((a, b) => Math.abs(b.selfTime) - Math.abs(a.selfTime))
       .slice(0, 20)
-      .map(h => ({
+      .map((h) => ({
         functionName: h.functionName,
         file: h.file,
         line: h.line,
@@ -286,7 +313,10 @@ export function formatProfileComparisonJSON(comparison: ProfileComparison): stri
 /**
  * Print hotspots to console (legacy compatibility)
  */
-export function printHotspots(hotspots: HotspotInfo[], topN: number = 10): void {
+export function printHotspots(
+  hotspots: HotspotInfo[],
+  topN: number = 10,
+): void {
   if (hotspots.length === 0) {
     console.log("    No user code hotspots found");
     return;
@@ -299,7 +329,7 @@ export function printHotspots(hotspots: HotspotInfo[], topN: number = 10): void 
     const location = `${hotspot.file}:${hotspot.line}`;
     const rank = (i + 1).toString().padStart(2);
     console.log(
-      `      ${rank}. ${hotspot.selfTime.toFixed(2)}ms (${hotspot.selfTimePct.toFixed(1)}%) - ${hotspot.functionName} @ ${location}`
+      `      ${rank}. ${hotspot.selfTime.toFixed(2)}ms (${hotspot.selfTimePct.toFixed(1)}%) - ${hotspot.functionName} @ ${location}`,
     );
   }
 

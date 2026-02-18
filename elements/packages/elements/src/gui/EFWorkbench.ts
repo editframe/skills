@@ -1,5 +1,10 @@
 import { css, html, LitElement, type PropertyValueMap } from "lit";
-import { customElement, eventOptions, property, state } from "lit/decorators.js";
+import {
+  customElement,
+  eventOptions,
+  property,
+  state,
+} from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
 
 import { ContextMixin } from "./ContextMixin.js";
@@ -8,10 +13,13 @@ import { EFTimegroup } from "../elements/EFTimegroup.js";
 import { findRootTemporal } from "../elements/findRootTemporal.js";
 // Import only types - actual functions loaded dynamically to avoid SSR issues
 import type { CanvasPreviewResult } from "../preview/renderTimegroupToCanvas.types.js";
-import type { RenderToVideoOptions, RenderProgress } from "../preview/renderTimegroupToVideo.types.js";
+import type {
+  RenderToVideoOptions,
+  RenderProgress,
+} from "../preview/renderTimegroupToVideo.types.js";
 import { updateAnimations } from "../elements/updateAnimations.js";
-import { 
-  isNativeCanvasApiAvailable, 
+import {
+  isNativeCanvasApiAvailable,
   getPreviewPresentationMode,
   setPreviewPresentationMode,
   type PreviewPresentationMode,
@@ -29,7 +37,10 @@ import { AdaptiveResolutionTracker } from "../preview/AdaptiveResolutionTracker.
 import { RenderStats, type PlaybackStats } from "../preview/RenderStats.js";
 import { DomStatsStrategy } from "../preview/statsTrackingStrategy.js";
 import { provide } from "@lit/context";
-import { previewSettingsContext, type PreviewSettings } from "./previewSettingsContext.js";
+import {
+  previewSettingsContext,
+  type PreviewSettings,
+} from "./previewSettingsContext.js";
 import { phosphorIcon, ICONS } from "./icons.js";
 
 // Side-effect import for template usage (pan-zoom is created in light DOM by wrapWithWorkbench)
@@ -485,20 +496,24 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
 
   @property({ type: Boolean })
   rendering = false;
-  
+
   @state()
   private panZoomTransform = { x: 0, y: 0, scale: 1 };
-  
+
   @state()
   private isExporting = false;
-  
+
   @state()
   private exportProgress: RenderProgress | null = null;
-  
+
   @state()
-  private exportStatus: "idle" | "rendering" | "complete" | "error" | "cancelled" = "idle";
-  
-  
+  private exportStatus:
+    | "idle"
+    | "rendering"
+    | "complete"
+    | "error"
+    | "cancelled" = "idle";
+
   @provide({ context: previewSettingsContext })
   @state()
   private previewSettings: PreviewSettings = {
@@ -508,17 +523,19 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     showStats: getShowStats(),
     showThumbnailTimestamps: getShowThumbnailTimestamps(),
   };
-  
+
   // Local state mirrors for direct access (context is primary source of truth)
   @state()
   private renderMode: RenderMode = this.previewSettings.renderMode;
-  
+
   @state()
-  private presentationMode: PreviewPresentationMode = this.previewSettings.presentationMode;
-  
+  private presentationMode: PreviewPresentationMode =
+    this.previewSettings.presentationMode;
+
   @state()
-  private previewResolutionScale: PreviewResolutionScale = this.previewSettings.resolutionScale;
-  
+  private previewResolutionScale: PreviewResolutionScale =
+    this.previewSettings.resolutionScale;
+
   @state()
   private exportOptions = {
     includeAudio: true,
@@ -527,74 +544,72 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     inMs: 0,
     outMs: 0,
   };
-  
+
   private exportAbortController: AbortController | null = null;
-  
+
   // Motion state tracking for adaptive resolution
   @state()
   private isPlaying = false;
-  
+
   @state()
   private isScrubbing = false;
-  
+
   @state()
   private isAtRest = true;
-  
+
   /**
    * Current adaptive resolution scale (only used when previewResolutionScale === "auto")
    */
   @state()
   private currentAdaptiveScale: number = 1;
-  
+
   /**
    * Playback stats for display (FPS, dropped frames, etc.)
    * Mirrors previewSettings.showStats for direct access
    */
   @state()
   private showStats: boolean = this.previewSettings.showStats;
-  
+
   /**
    * Theme mode: 'light', 'dark', or 'system'
    */
   @state()
-  private themeMode: 'light' | 'dark' | 'system' = this.getInitialTheme();
-  
+  private themeMode: "light" | "dark" | "system" = this.getInitialTheme();
+
   /**
    * Always-on render statistics collection for canvas mode.
    * Collects data regardless of whether stats are visible.
    */
   private renderStats: RenderStats | null = null;
-  
+
   /**
    * Media query for system theme preference
    */
   private systemThemeMediaQuery: MediaQueryList | null = null;
   private systemThemeListener: (() => void) | null = null;
-  
+
   /**
    * DOM mode stats strategy (has its own animation loop).
    * Only active in DOM mode.
    */
   private domStatsStrategy: DomStatsStrategy | null = null;
-  
+
   /**
    * Reference for tracking scrubbing state from EFScrubber.
    * Pass this to <ef-scrubber isScrubbingRef={...}> to enable motion detection.
    */
   readonly isScrubbingRef = { current: false };
-  
+
   private restDebounceTimer: number | null = null;
   private playingCheckInterval: number | null = null;
   private adaptiveTracker: AdaptiveResolutionTracker | null = null;
   private savePanZoomDebounceTimer: number | null = null;
-  
-  
-  
+
   // Canvas preview mode state
   private canvasPreviewRef = createRef<HTMLDivElement>();
   private canvasPreviewResult: CanvasPreviewResult | null = null;
   private canvasAnimationFrame: number | null = null;
-  
+
   private boundHandleTransformChanged = this.handleTransformChanged.bind(this);
 
   focusOverlay = createRef<HTMLDivElement>();
@@ -606,92 +621,116 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
 
   connectedCallback(): void {
     super.connectedCallback();
-    
+
     // Apply initial theme
     this.applyTheme();
-    
+
     // Check if we're in rendering mode and set rendering=true before first render
-    if (!this.hasAttribute("rendering") && typeof window !== "undefined" && "FRAMEGEN_BRIDGE" in window) {
+    if (
+      !this.hasAttribute("rendering") &&
+      typeof window !== "undefined" &&
+      "FRAMEGEN_BRIDGE" in window
+    ) {
       this.rendering = true;
     }
-    
+
     // Listen for pan-zoom transform changes
-    this.addEventListener("transform-changed", this.boundHandleTransformChanged as EventListener);
-    
+    this.addEventListener(
+      "transform-changed",
+      this.boundHandleTransformChanged as EventListener,
+    );
+
     // Start motion state polling (checks playing state and scrubbing ref)
     this.startMotionStateTracking();
-    
+
     // Initialize adaptive tracker
     // Scale changes directly update the canvas resolution - no expensive reinit needed
     this.adaptiveTracker = new AdaptiveResolutionTracker({
       onScaleChange: (scale) => {
         const oldScale = this.currentAdaptiveScale;
         this.currentAdaptiveScale = scale;
-        
+
         // Directly update resolution if in auto mode, canvas mode, and in motion
-        if (this.previewResolutionScale === "auto" && this.presentationMode === "canvas" && !this.isAtRest) {
+        if (
+          this.previewResolutionScale === "auto" &&
+          this.presentationMode === "canvas" &&
+          !this.isAtRest
+        ) {
           // Use the new dynamic setResolutionScale - instant, no DOM rebuild
           if (this.canvasPreviewResult) {
             this.canvasPreviewResult.setResolutionScale(scale);
-            console.log(`[EFWorkbench] Resolution changed ${(oldScale * 100).toFixed(0)}% → ${(scale * 100).toFixed(0)}% (instant)`);
+            console.log(
+              `[EFWorkbench] Resolution changed ${(oldScale * 100).toFixed(0)}% → ${(scale * 100).toFixed(0)}% (instant)`,
+            );
           }
         }
       },
     });
-    
+
     // Initialize render stats (always-on collection)
     this.renderStats = new RenderStats(this.adaptiveTracker);
-    
+
     // Listen for system theme changes when in system mode
-    if (typeof window !== 'undefined') {
-      this.systemThemeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    if (typeof window !== "undefined") {
+      this.systemThemeMediaQuery = window.matchMedia(
+        "(prefers-color-scheme: dark)",
+      );
       this.systemThemeListener = () => {
-        if (this.themeMode === 'system') {
+        if (this.themeMode === "system") {
           this.applyTheme();
         }
       };
-      this.systemThemeMediaQuery.addEventListener('change', this.systemThemeListener);
+      this.systemThemeMediaQuery.addEventListener(
+        "change",
+        this.systemThemeListener,
+      );
     }
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
-    
+
     // Clean up current mode
     if (this.presentationMode === "dom") {
       this.stopDomMode();
     } else if (this.presentationMode === "canvas") {
       this.stopCanvasMode();
     }
-    
+
     // Restore timegroup visibility
     const timegroup = this.getTimegroup();
     if (timegroup) {
       timegroup.style.clipPath = "";
       timegroup.style.pointerEvents = "";
     }
-    
-    this.removeEventListener("transform-changed", this.boundHandleTransformChanged as EventListener);
-    
+
+    this.removeEventListener(
+      "transform-changed",
+      this.boundHandleTransformChanged as EventListener,
+    );
+
     // Clean up theme listener
     if (this.systemThemeMediaQuery && this.systemThemeListener) {
-      this.systemThemeMediaQuery.removeEventListener('change', this.systemThemeListener);
+      this.systemThemeMediaQuery.removeEventListener(
+        "change",
+        this.systemThemeListener,
+      );
     }
-    
+
     // Clean up motion state tracking
     this.stopMotionStateTracking();
-    
+
     // Clean up cache stats updates
-    if (typeof (this as any).stopCacheStatsUpdates === 'function') {
+    if (typeof (this as any).stopCacheStatsUpdates === "function") {
       (this as any).stopCacheStatsUpdates();
     }
-    
+
     // Clean up adaptive tracker
     if (this.adaptiveTracker) {
       this.adaptiveTracker.dispose();
       this.adaptiveTracker = null;
     }
-    
+
     // Save pan/zoom state before disconnecting
     if (this.savePanZoomDebounceTimer !== null) {
       clearTimeout(this.savePanZoomDebounceTimer);
@@ -699,18 +738,17 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     }
     this.savePreviewPanZoom();
   }
-  
+
   protected firstUpdated(): void {
     // Restore preview pan/zoom from localStorage
     // Wait for timegroup to be available
     requestAnimationFrame(() => {
       this.restorePreviewPanZoom();
     });
-    
+
     // Wait for Lit to complete initial render and layout before initializing preview
     // This ensures workbench dimensions are available for resolution calculation
     this.updateComplete.then(() => {
-      
       // Initialize based on current presentation mode
       if (this.presentationMode === "dom") {
         this.initDomMode();
@@ -719,21 +757,23 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       }
     });
   }
-  
+
   // Track zoom for detecting changes that need canvas reinit
   private lastCanvasZoom = 1;
   private zoomReinitTimeout: number | null = null;
-  
-  private handleTransformChanged(e: CustomEvent<{ x: number; y: number; scale: number }>) {
+
+  private handleTransformChanged(
+    e: CustomEvent<{ x: number; y: number; scale: number }>,
+  ) {
     this.panZoomTransform = e.detail;
-    
+
     // Save pan/zoom state to localStorage
     this.debouncedSavePreviewPanZoom();
-    
+
     // Update overlay transform based on current mode
     if (this.presentationMode === "canvas") {
       this.updateCanvasTransform();
-      
+
       // Check if zoom changed enough to warrant re-rendering at new resolution
       // Only update if zoom changed by >25% from last init
       const zoomRatio = e.detail.scale / this.lastCanvasZoom;
@@ -746,15 +786,16 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
           this.zoomReinitTimeout = null;
           if (this.presentationMode === "canvas" && this.canvasPreviewResult) {
             this.lastCanvasZoom = this.panZoomTransform.scale;
-            
+
             // Dynamically update resolution scale without recreating canvas
             const timegroup = this.getTimegroup();
             const canvasContainer = this.canvasPreviewRef.value;
             if (timegroup && canvasContainer) {
-              const newScale = this.previewResolutionScale === "auto"
-                ? this.getEffectiveResolutionScale(timegroup, canvasContainer)
-                : this.getResolutionScale(timegroup, canvasContainer);
-              
+              const newScale =
+                this.previewResolutionScale === "auto"
+                  ? this.getEffectiveResolutionScale(timegroup, canvasContainer)
+                  : this.getResolutionScale(timegroup, canvasContainer);
+
               this.canvasPreviewResult.setResolutionScale(newScale);
             }
           }
@@ -762,7 +803,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       }
     }
   }
-  
+
   private getTimegroup(): EFTimegroup | null {
     // Find the timegroup in our canvas slot
     const canvas = this.querySelector("[slot='canvas']");
@@ -777,12 +818,12 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   private getRootTimegroupId(): string | null {
     const timegroup = this.getTimegroup();
     if (!timegroup) return null;
-    
+
     const rootTemporal = findRootTemporal(timegroup);
     if (rootTemporal instanceof EFTimegroup && rootTemporal.id) {
       return rootTemporal.id;
     }
-    
+
     return null;
   }
 
@@ -838,7 +879,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
           y: state.y,
           scale: clampedScale,
         };
-        
+
         // Apply transform to pan-zoom element if it exists
         requestAnimationFrame(() => {
           const panZoomElement = this.querySelector("ef-pan-zoom");
@@ -847,7 +888,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
             (panZoomElement as any).y = this.panZoomTransform.y;
             (panZoomElement as any).scale = this.panZoomTransform.scale;
           }
-          
+
           // Update transforms based on current mode
           if (this.presentationMode === "canvas") {
             this.updateCanvasTransform();
@@ -855,7 +896,10 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         });
       }
     } catch (error) {
-      console.warn("Failed to restore preview pan/zoom from localStorage", error);
+      console.warn(
+        "Failed to restore preview pan/zoom from localStorage",
+        error,
+      );
     }
   }
 
@@ -871,9 +915,9 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       this.savePreviewPanZoom();
     }, 200);
   }
-  
+
   // ==================== Motion State Detection ====================
-  
+
   /**
    * Start polling for motion state (playing/scrubbing).
    * We use polling because:
@@ -882,12 +926,12 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
    */
   private startMotionStateTracking(): void {
     if (this.playingCheckInterval !== null) return;
-    
+
     this.playingCheckInterval = window.setInterval(() => {
       this.updateMotionState();
     }, 50); // Check every 50ms for responsive motion detection
   }
-  
+
   private stopMotionStateTracking(): void {
     if (this.playingCheckInterval !== null) {
       clearInterval(this.playingCheckInterval);
@@ -898,7 +942,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       this.restDebounceTimer = null;
     }
   }
-  
+
   /**
    * Update motion state by checking timegroup and scrubbing ref.
    */
@@ -906,16 +950,16 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     const timegroup = this.getTimegroup();
     const wasPlaying = this.isPlaying;
     const wasScrubbing = this.isScrubbing;
-    
+
     // Check playing state from timegroup
     this.isPlaying = timegroup?.playing ?? false;
-    
+
     // Check scrubbing state from ref
     this.isScrubbing = this.isScrubbingRef.current;
-    
+
     const wasInMotion = wasPlaying || wasScrubbing;
     const isInMotion = this.isPlaying || this.isScrubbing;
-    
+
     // Handle motion state transitions
     if (isInMotion && !wasInMotion) {
       // Started moving - immediately mark as not at rest
@@ -925,7 +969,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       this.handleMotionStop();
     }
   }
-  
+
   /**
    * Pause or unpause the canvas overlay components (EFCanvas, SelectionOverlay)
    * to avoid layout-thrashing during playback.
@@ -933,14 +977,19 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   private setOverlaysPaused(paused: boolean): void {
     const canvasSlot = this.querySelector("[slot='canvas']");
     if (!canvasSlot) return;
-    const efCanvas = canvasSlot.querySelector("ef-canvas") as HTMLElement | null;
+    const efCanvas = canvasSlot.querySelector(
+      "ef-canvas",
+    ) as HTMLElement | null;
     if (efCanvas && "paused" in efCanvas) {
       (efCanvas as any).paused = paused;
     }
     // SelectionOverlay is a sibling of ef-pan-zoom inside the workbench shadow DOM,
     // or a child of the canvas slot container. Search both locations.
-    const overlay = canvasSlot.querySelector("ef-canvas-selection-overlay") as HTMLElement | null
-      ?? this.querySelector("ef-canvas-selection-overlay") as HTMLElement | null;
+    const overlay =
+      (canvasSlot.querySelector(
+        "ef-canvas-selection-overlay",
+      ) as HTMLElement | null) ??
+      (this.querySelector("ef-canvas-selection-overlay") as HTMLElement | null);
     if (overlay && "paused" in overlay) {
       (overlay as any).paused = paused;
     }
@@ -972,7 +1021,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         const rect = timegroup.getBoundingClientRect();
         const displayScale = Math.min(
           rect.width / compositionWidth,
-          rect.height / compositionHeight
+          rect.height / compositionHeight,
         );
 
         // Initialize tracker at display scale so it can immediately start
@@ -982,12 +1031,14 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
 
         // Set canvas to the initial adaptive scale (instant - no rebuild)
         if (this.canvasPreviewResult) {
-          this.canvasPreviewResult.setResolutionScale(this.currentAdaptiveScale);
+          this.canvasPreviewResult.setResolutionScale(
+            this.currentAdaptiveScale,
+          );
         }
       }
     }
   }
-  
+
   /**
    * Called when motion stops (not playing and not scrubbing).
    * Starts a debounce timer before transitioning to rest state.
@@ -997,13 +1048,13 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     if (this.restDebounceTimer !== null) {
       clearTimeout(this.restDebounceTimer);
     }
-    
+
     this.restDebounceTimer = window.setTimeout(() => {
       this.restDebounceTimer = null;
       this.transitionToRest();
     }, REST_DEBOUNCE_MS);
   }
-  
+
   /**
    * Called after debounce period when we're confirmed to be at rest.
    */
@@ -1014,7 +1065,10 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     this.setOverlaysPaused(false);
 
     // If in auto mode, set full resolution (instant - no rebuild needed)
-    if (this.previewResolutionScale === "auto" && this.presentationMode === "canvas") {
+    if (
+      this.previewResolutionScale === "auto" &&
+      this.presentationMode === "canvas"
+    ) {
       // Reset tracker and set full resolution
       this.adaptiveTracker?.reset();
       this.currentAdaptiveScale = 1;
@@ -1025,17 +1079,20 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       }
     }
   }
-  
+
   /**
    * Get the effective resolution scale based on current mode and motion state.
    * For "auto" mode, returns full resolution at rest, adaptive scale in motion.
    */
-  private getEffectiveResolutionScale(timegroup: EFTimegroup, canvasContainer: HTMLElement): number {
+  private getEffectiveResolutionScale(
+    timegroup: EFTimegroup,
+    canvasContainer: HTMLElement,
+  ): number {
     // For non-auto modes, use the existing logic
     if (this.previewResolutionScale !== "auto") {
       return this.getResolutionScale(timegroup, canvasContainer);
     }
-    
+
     // Auto mode: full resolution at rest, adaptive in motion
     const compositionWidth = timegroup.offsetWidth || 1920;
     const compositionHeight = timegroup.offsetHeight || 1080;
@@ -1044,25 +1101,28 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     const displayedHeight = rect.height;
     const displayScale = Math.min(
       displayedWidth / compositionWidth,
-      displayedHeight / compositionHeight
+      displayedHeight / compositionHeight,
     );
-    
+
     if (this.isAtRest) {
       // At rest: use display scale (full resolution for current display size)
       const scale = Math.max(0.1, Math.min(1, displayScale));
-      console.log(`[EFWorkbench] Auto mode (at rest): using display scale ${(scale * 100).toFixed(1)}%`);
+      console.log(
+        `[EFWorkbench] Auto mode (at rest): using display scale ${(scale * 100).toFixed(1)}%`,
+      );
       return scale;
     } else {
       // In motion: use adaptive scale (may be reduced to prevent dropped frames)
       const adaptiveScale = this.currentAdaptiveScale;
       const targetScale = Math.min(displayScale, adaptiveScale);
       const scale = Math.max(0.1, Math.min(1, targetScale));
-      console.log(`[EFWorkbench] Auto mode (in motion): adaptive=${adaptiveScale}, display=${displayScale.toFixed(2)}, final=${(scale * 100).toFixed(1)}%`);
+      console.log(
+        `[EFWorkbench] Auto mode (in motion): adaptive=${adaptiveScale}, display=${displayScale.toFixed(2)}, final=${(scale * 100).toFixed(1)}%`,
+      );
       return scale;
     }
   }
-  
-  
+
   /**
    * Apply settings when dependencies are ready.
    * Called from updated() hook when settings change or dependencies become available.
@@ -1074,29 +1134,28 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     this.previewResolutionScale = this.previewSettings.resolutionScale;
     this.showStats = this.previewSettings.showStats;
   }
-  
+
   // ==================== End Motion State Detection ====================
-  
-  
+
   private async handlePresentationModeChange(mode: PreviewPresentationMode) {
     if (mode === this.presentationMode) return;
-    
+
     const previousMode = this.presentationMode;
-    
+
     // Stop previous mode (this will stop stats strategy)
     if (previousMode === "dom") {
       this.stopDomMode();
     } else if (previousMode === "canvas") {
       this.stopCanvasMode();
     }
-    
+
     // Update context and persist
     setPreviewPresentationMode(mode);
     this.previewSettings = { ...this.previewSettings, presentationMode: mode };
-    
+
     // Wait for Lit to re-render (removes old overlay, adds new one if needed)
     await this.updateComplete;
-    
+
     // Start new mode after DOM is updated
     if (mode === "dom") {
       this.initDomMode();
@@ -1104,7 +1163,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       this.initCanvasMode();
     }
   }
-  
+
   private initDomMode() {
     // Don't initialize if we're no longer in dom mode
     if (this.presentationMode !== "dom") {
@@ -1119,7 +1178,9 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
 
     // Pause the ef-fit-scale to prevent it from applying transforms
     const fitScale = this.querySelector("[slot='canvas']") as any;
-    const hasFitScaleMethods = !!(fitScale?.removeScale && fitScale?.paused !== undefined);
+    const hasFitScaleMethods = !!(
+      fitScale?.removeScale && fitScale?.paused !== undefined
+    );
     if (hasFitScaleMethods) {
       fitScale.paused = true;
       fitScale.removeScale();
@@ -1141,89 +1202,90 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       this.domStatsStrategy.start();
     }
   }
-  
+
   private stopDomMode() {
     // Stop DOM stats strategy
     if (this.domStatsStrategy) {
       this.domStatsStrategy.stop();
       this.domStatsStrategy = null;
     }
-    
+
     const timegroup = this.getTimegroup();
     if (timegroup) {
       // Hide the original again
       timegroup.style.clipPath = "inset(100%)";
       timegroup.style.pointerEvents = "none";
     }
-    
+
     // Resume the ef-fit-scale
     const fitScale = this.querySelector("[slot='canvas']") as any;
     if (fitScale?.paused !== undefined) {
       fitScale.paused = false;
     }
   }
-  
+
   /**
    * Get the resolution scale for canvas rendering (for fixed scale modes).
-   * 
+   *
    * Logic:
    * - Get actual displayed size from getBoundingClientRect()
    * - For "Full": render at displayed size (1:1 pixel mapping)
    * - For other settings: render at that % of displayed size
    * - Never exceed composition size (100%)
-   * 
+   *
    * Note: For "auto" mode, use getEffectiveResolutionScale() instead.
    */
   private getResolutionScale(
     timegroup: EFTimegroup,
-    _canvasContainer: HTMLElement
+    _canvasContainer: HTMLElement,
   ): number {
     // For "auto" mode, delegate to getEffectiveResolutionScale
     if (this.previewResolutionScale === "auto") {
       return this.getEffectiveResolutionScale(timegroup, _canvasContainer);
     }
-    
+
     // Composition size = the native resolution (offsetWidth/Height gives CSS layout size)
     const compositionWidth = timegroup.offsetWidth || 1920;
     const compositionHeight = timegroup.offsetHeight || 1080;
-    
+
     // Displayed size = actual screen pixels after all transforms
     const rect = timegroup.getBoundingClientRect();
     const displayedWidth = rect.width;
     const displayedHeight = rect.height;
-    
+
     // Display scale = displayed / composition (how much the composition is scaled down for display)
     const displayScale = Math.min(
       displayedWidth / compositionWidth,
-      displayedHeight / compositionHeight
+      displayedHeight / compositionHeight,
     );
-    
+
     // For "Full", we want to render at displayed size (displayScale of composition)
     // For other settings, we want min(displayScale, setting) of composition
     // But we should never exceed 100% of composition
-    const targetScale = this.previewResolutionScale === 1 
-      ? displayScale  // Full = match display
-      : Math.min(displayScale, this.previewResolutionScale);  // Others = min of display and setting
-    
+    const targetScale =
+      this.previewResolutionScale === 1
+        ? displayScale // Full = match display
+        : Math.min(displayScale, this.previewResolutionScale); // Others = min of display and setting
+
     // Clamp to reasonable bounds [10%, 100%]
     const finalScale = Math.max(0.1, Math.min(1, targetScale));
-    
+
     return finalScale;
   }
-  
+
   private async initCanvasMode() {
     // Don't initialize if we're no longer in canvas mode
     if (this.presentationMode !== "canvas") return;
-    
+
     const timegroup = this.getTimegroup();
     const canvasContainer = this.canvasPreviewRef.value;
-    
+
     // Wait for both timegroup and container to be available
     if (!timegroup || !canvasContainer) {
       setTimeout(() => this.initCanvasMode(), 100);
       return;
     }
-    
+
     // Don't wait for timegroup initialization here - it can cause deadlocks when
     // localStorage restoration triggers seeks that wait for waitForMediaDurations().
     // The canvas refresh loop already handles this by checking if timegroup is ready:
@@ -1231,7 +1293,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     // - If they're not synchronized (seek in progress), refresh() returns early
     // - Once the seek completes and times are synchronized, refresh() will render
     // This avoids blocking the main thread while still ensuring correct rendering.
-    
+
     // Disable the timegroup's own proxy mode - workbench handles canvas rendering
     (timegroup as any).proxyMode = false;
 
@@ -1239,66 +1301,67 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     // PlaybackController will skip runThrottledFrameTask during playback
     // to avoid DOM mutations (Layerize steps) between captures.
     (timegroup as any).canvasPreviewActive = true;
-    
+
     // Ensure the timegroup is visible for native drawElementImage capture.
     // The canvas overlay (position:absolute, inset:0) covers it visually.
     // Clear any clipPath that stopDomMode() may have set.
     timegroup.style.clipPath = "";
     timegroup.style.pointerEvents = "none";
-    
+
     // Show the canvas container
     canvasContainer.style.display = "block";
-    
+
     // Get initial resolution scale based on display size, user setting, and motion state
-    const initialResolutionScale = this.previewResolutionScale === "auto"
-      ? this.getEffectiveResolutionScale(timegroup, canvasContainer)
-      : this.getResolutionScale(timegroup, canvasContainer);
-    
+    const initialResolutionScale =
+      this.previewResolutionScale === "auto"
+        ? this.getEffectiveResolutionScale(timegroup, canvasContainer)
+        : this.getResolutionScale(timegroup, canvasContainer);
+
     // Track zoom level for detecting significant changes
     this.lastCanvasZoom = this.panZoomTransform.scale;
-    
+
     try {
       // CRITICAL: Wait for any in-progress seek to complete AND let playback controller initialize
       // The playback controller may be restoring time from localStorage
       await timegroup.seekTask.taskComplete;
-      
+
       // If there's a playback controller, wait for it to complete initial seek
       // This prevents rendering at 0ms before restoring to saved time
       if (timegroup.playbackController) {
         // The playback controller's seek is async, give it time to start and coordinate animations
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 0));
       }
-      
+
       // CRITICAL: Ensure timegroup has correct display states before first render
       // Text elements have default display:flex until updateAnimations runs
       updateAnimations(timegroup);
-      
+
       // Create canvas preview - this builds the clone structure ONCE
       // Dynamic import to avoid loading render utilities during SSR
-      const { renderTimegroupToCanvas } = await import("../preview/renderTimegroupToCanvas.js");
+      const { renderTimegroupToCanvas } =
+        await import("../preview/renderTimegroupToCanvas.js");
       const result = renderTimegroupToCanvas(timegroup, {
         scale: 1,
         resolutionScale: initialResolutionScale,
       });
-      
+
       // Store the full result for dynamic resolution changes
       this.canvasPreviewResult = result;
-      
+
       const { container, canvas, refresh } = result;
-      
+
       canvas.classList.add("clone-content");
-      
+
       canvasContainer.innerHTML = "";
       canvasContainer.appendChild(container);
-      
+
       // Apply current transform
       this.updateCanvasTransform();
-      
-      
+
       // Start the canvas render loop
       const loop = async () => {
         if (this.presentationMode !== "canvas") return;
-        
+
         // Skip refresh during export to avoid wasting CPU
         if (!this.isExporting) {
           try {
@@ -1306,18 +1369,22 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
             const renderStart = performance.now();
             await refresh();
             const renderTime = performance.now() - renderStart;
-            
+
             // Always record render stats (regardless of display visibility)
             if (this.renderStats) {
-              this.renderStats.recordFrame(renderTime, performance.now(), this.isAtRest);
+              this.renderStats.recordFrame(
+                renderTime,
+                performance.now(),
+                this.isAtRest,
+              );
             }
-            
+
             this.updateCanvasTransform();
           } catch (e) {
             console.error("Canvas refresh failed:", e);
           }
         }
-        
+
         this.canvasAnimationFrame = requestAnimationFrame(loop);
       };
       this.canvasAnimationFrame = requestAnimationFrame(loop);
@@ -1325,7 +1392,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       console.error("Failed to init canvas mode:", e);
     }
   }
-  
+
   private stopCanvasMode() {
     if (this.canvasAnimationFrame !== null) {
       cancelAnimationFrame(this.canvasAnimationFrame);
@@ -1353,28 +1420,32 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       container.style.display = "none";
     }
   }
-  
+
   private updateCanvasTransform() {
     if (this.presentationMode !== "canvas") return;
-    
+
     const container = this.canvasPreviewRef.value;
     if (!container) return;
-    
+
     const canvas = container.querySelector("canvas") as HTMLElement;
     if (!canvas) return;
-    
+
     const { x, y, scale } = this.panZoomTransform;
     canvas.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
   }
-  
+
   // Canvas renderer - kept for thumbnail generation
-  async initCanvasRenderer(): Promise<{ canvas: HTMLCanvasElement; refresh: () => Promise<void> } | null> {
+  async initCanvasRenderer(): Promise<{
+    canvas: HTMLCanvasElement;
+    refresh: () => Promise<void>;
+  } | null> {
     const timegroup = this.getTimegroup();
     if (!timegroup) return null;
-    
+
     try {
       // Dynamic import to avoid loading render utilities during SSR
-      const { renderTimegroupToCanvas } = await import("../preview/renderTimegroupToCanvas.js");
+      const { renderTimegroupToCanvas } =
+        await import("../preview/renderTimegroupToCanvas.js");
       const { canvas, refresh } = renderTimegroupToCanvas(timegroup, 1);
       return { canvas, refresh };
     } catch (e) {
@@ -1382,7 +1453,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       return null;
     }
   }
-  
+
   /** Start video export with progress tracking */
   async startExport(options: RenderToVideoOptions = {}): Promise<void> {
     const timegroup = this.getTimegroup();
@@ -1390,20 +1461,21 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       console.error("No timegroup found for export");
       return;
     }
-    
+
     if (this.isExporting) {
       console.warn("Export already in progress");
       return;
     }
-    
+
     this.exportAbortController = new AbortController();
     this.isExporting = true;
     this.exportProgress = null;
     this.exportStatus = "rendering";
-    
+
     try {
       // Dynamic import to avoid loading render utilities during SSR
-      const { renderTimegroupToVideo } = await import("../preview/renderTimegroupToVideo.js");
+      const { renderTimegroupToVideo } =
+        await import("../preview/renderTimegroupToVideo.js");
       await renderTimegroupToVideo(timegroup, {
         ...options,
         signal: this.exportAbortController.signal,
@@ -1411,7 +1483,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
           this.exportProgress = progress;
         },
       });
-      
+
       this.exportStatus = "complete";
       setTimeout(() => {
         this.isExporting = false;
@@ -1421,7 +1493,8 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       }, 2000);
     } catch (e) {
       // Need to re-import to check error type
-      const { RenderCancelledError } = await import("../preview/renderTimegroupToVideo.js");
+      const { RenderCancelledError } =
+        await import("../preview/renderTimegroupToVideo.js");
       if (e instanceof RenderCancelledError) {
         console.log("Export cancelled by user");
         this.exportStatus = "cancelled";
@@ -1443,27 +1516,27 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       }
     }
   }
-  
+
   /** Cancel the current export */
   cancelExport(): void {
     if (this.exportAbortController) {
       this.exportAbortController.abort();
     }
   }
-  
+
   private positionPopover(popover: HTMLElement, anchorId: string) {
     const anchor = this.shadowRoot?.getElementById(anchorId);
     if (!anchor) return;
-    
+
     const anchorRect = anchor.getBoundingClientRect();
     const popoverRect = popover.getBoundingClientRect();
     const padding = 8;
-    
+
     // Position below the anchor
     let top = anchorRect.bottom + padding;
     // Align right edge of popover with right edge of anchor
     let left = anchorRect.right - popoverRect.width;
-    
+
     // Keep within viewport bounds
     if (left < padding) {
       left = padding;
@@ -1475,24 +1548,24 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       // Flip to above if doesn't fit below
       top = anchorRect.top - popoverRect.height - padding;
     }
-    
+
     popover.style.top = `${top}px`;
     popover.style.left = `${left}px`;
   }
-  
+
   private handleSettingsPopoverToggle(e: Event) {
     const popover = e.target as HTMLElement;
-    if ((e as ToggleEvent).newState === 'open') {
+    if ((e as ToggleEvent).newState === "open") {
       // Position after the popover is shown so we can measure it
       requestAnimationFrame(() => {
-        this.positionPopover(popover, 'settings-btn');
+        this.positionPopover(popover, "settings-btn");
       });
     }
   }
-  
+
   private handleExportPopoverToggle(e: Event) {
     const popover = e.target as HTMLElement;
-    if ((e as ToggleEvent).newState === 'open') {
+    if ((e as ToggleEvent).newState === "open") {
       // Initialize export options when popover opens
       if (this.exportOptions.outMs === 0) {
         const timegroup = this.getTimegroup();
@@ -1505,11 +1578,11 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       }
       // Position after the popover is shown
       requestAnimationFrame(() => {
-        this.positionPopover(popover, 'export-btn');
+        this.positionPopover(popover, "export-btn");
       });
     }
   }
-  
+
   private handleStartExport() {
     this.startExport({
       includeAudio: this.exportOptions.includeAudio,
@@ -1518,14 +1591,14 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       toMs: this.exportOptions.useInOut ? this.exportOptions.outMs : undefined,
     });
   }
-  
+
   private updateExportOption<K extends keyof typeof this.exportOptions>(
     key: K,
-    value: typeof this.exportOptions[K]
+    value: (typeof this.exportOptions)[K],
   ) {
     this.exportOptions = { ...this.exportOptions, [key]: value };
   }
-  
+
   private formatTime(ms: number): string {
     const totalSeconds = Math.floor(ms / 1000);
     const minutes = Math.floor(totalSeconds / 60);
@@ -1535,84 +1608,92 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     }
     return `${seconds}s`;
   }
-  
+
   private handleCancelClick() {
     this.cancelExport();
   }
-  
+
   private handleRenderModeChange(mode: RenderMode) {
     setRenderMode(mode);
     this.previewSettings = { ...this.previewSettings, renderMode: mode };
   }
-  
+
   private handleShowStatsToggle(enabled: boolean) {
     setShowStats(enabled);
     this.previewSettings = { ...this.previewSettings, showStats: enabled };
     // applySettings() will be called automatically via updated() hook when context changes
   }
-  
+
   private handleShowThumbnailTimestampsToggle(enabled: boolean) {
     setShowThumbnailTimestamps(enabled);
-    this.previewSettings = { ...this.previewSettings, showThumbnailTimestamps: enabled };
+    this.previewSettings = {
+      ...this.previewSettings,
+      showThumbnailTimestamps: enabled,
+    };
   }
-  
+
   /**
    * Get initial theme from localStorage or default to 'dark'
    */
-  private getInitialTheme(): 'light' | 'dark' | 'system' {
-    if (typeof window === 'undefined') return 'dark';
-    const stored = localStorage.getItem('ef-theme');
-    if (stored === 'light' || stored === 'dark' || stored === 'system') {
+  private getInitialTheme(): "light" | "dark" | "system" {
+    if (typeof window === "undefined") return "dark";
+    const stored = localStorage.getItem("ef-theme");
+    if (stored === "light" || stored === "dark" || stored === "system") {
       return stored;
     }
-    return 'dark';
+    return "dark";
   }
-  
+
   /**
    * Cycle through theme modes: light → dark → system → light
    */
   private handleThemeToggle(): void {
-    const nextTheme = this.themeMode === 'light' ? 'dark' : this.themeMode === 'dark' ? 'system' : 'light';
+    const nextTheme =
+      this.themeMode === "light"
+        ? "dark"
+        : this.themeMode === "dark"
+          ? "system"
+          : "light";
     this.themeMode = nextTheme;
-    localStorage.setItem('ef-theme', nextTheme);
+    localStorage.setItem("ef-theme", nextTheme);
     this.applyTheme();
   }
-  
+
   /**
    * Apply the current theme to the document and host element
    */
   private applyTheme(): void {
     const root = document.documentElement;
     let shouldBeDark = false;
-    
-    if (this.themeMode === 'light') {
+
+    if (this.themeMode === "light") {
       shouldBeDark = false;
-    } else if (this.themeMode === 'dark') {
+    } else if (this.themeMode === "dark") {
       shouldBeDark = true;
     } else {
       // System mode - check system preference
-      shouldBeDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      shouldBeDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     }
-    
+
     // Apply to document root (for light DOM elements)
     if (shouldBeDark) {
-      root.classList.add('dark');
-      root.classList.remove('light');
+      root.classList.add("dark");
+      root.classList.remove("light");
     } else {
-      root.classList.add('light');
-      root.classList.remove('dark');
+      root.classList.add("light");
+      root.classList.remove("dark");
     }
-    
+
     // Apply to host element (for shadow DOM and :host-context)
     if (shouldBeDark) {
-      this.classList.add('dark');
-      this.classList.remove('light');
+      this.classList.add("dark");
+      this.classList.remove("light");
     } else {
-      this.classList.add('light');
-      this.classList.remove('dark');
+      this.classList.add("light");
+      this.classList.remove("dark");
     }
   }
-  
+
   /**
    * Reset and fit the preview to show all content centered.
    * Finds the pan-zoom element and calls fitToContent() on it.
@@ -1623,10 +1704,10 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       panZoomElement.fitToContent();
     }
   }
-  
+
   private renderSettingsPopover() {
     const isAvailable = isNativeCanvasApiAvailable();
-    
+
     return html`
       <div 
         id="settings-popover" 
@@ -1660,9 +1741,11 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
           </div>
           
           <div class="dropdown-description">
-            ${this.presentationMode === "dom" 
-              ? "Default. Shows the real timegroup DOM directly." 
-              : "Renders to canvas each frame."}
+            ${
+              this.presentationMode === "dom"
+                ? "Default. Shows the real timegroup DOM directly."
+                : "Renders to canvas each frame."
+            }
           </div>
         </div>
         
@@ -1670,7 +1753,9 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         <div class="dropdown-section">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
             <span class="dropdown-label">Render Mode</span>
-            ${isAvailable ? html`
+            ${
+              isAvailable
+                ? html`
               <div style="display: flex; align-items: center; gap: 5px;">
                 <span style="
                   display: inline-block;
@@ -1683,7 +1768,9 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
                   Native Available
                 </span>
               </div>
-            ` : ''}
+            `
+                : ""
+            }
           </div>
           
           <div class="button-group">
@@ -1696,16 +1783,18 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
               ?disabled=${!isAvailable}
               class="button-group-btn ${this.renderMode === "native" ? "active" : ""}"
               style="
-                cursor: ${isAvailable ? 'pointer' : 'not-allowed'};
-                opacity: ${isAvailable ? '1' : '0.5'};
+                cursor: ${isAvailable ? "pointer" : "not-allowed"};
+                opacity: ${isAvailable ? "1" : "0.5"};
               "
             >native</button>
           </div>
           
           <div class="dropdown-description">
-            ${this.renderMode === "foreignObject" 
-              ? "SVG foreignObject serialization. Works everywhere but slower." 
-              : "Chrome's drawElementImage API. Fastest, requires chrome://flags/#canvas-draw-element."}
+            ${
+              this.renderMode === "foreignObject"
+                ? "SVG foreignObject serialization. Works everywhere but slower."
+                : "Chrome's drawElementImage API. Fastest, requires chrome://flags/#canvas-draw-element."
+            }
           </div>
         </div>
         
@@ -1745,11 +1834,11 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       </div>
     `;
   }
-  
+
   private renderExportPopover() {
     const timegroup = this.getTimegroup();
     const durationMs = timegroup?.durationMs ?? 0;
-    
+
     return html`
       <div 
         id="export-popover" 
@@ -1800,7 +1889,9 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
             <span>Custom Range</span>
           </label>
           
-          ${this.exportOptions.useInOut ? html`
+          ${
+            this.exportOptions.useInOut
+              ? html`
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
               <div>
                 <label class="dropdown-label" style="display: block; margin-bottom: 2px; font-size: 10px;">In (ms)</label>
@@ -1830,11 +1921,13 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
             <div class="dropdown-description" style="margin-top: 4px;">
               Duration: ${this.formatTime(this.exportOptions.outMs - this.exportOptions.inMs)} / ${this.formatTime(durationMs)}
             </div>
-          ` : html`
+          `
+              : html`
             <div class="dropdown-description">
               Full duration: ${this.formatTime(durationMs)}
             </div>
-          `}
+          `
+          }
         </div>
         
         <!-- Start Export button -->
@@ -1854,7 +1947,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       </div>
     `;
   }
-  
+
   private renderExportProgressPopover() {
     const p = this.exportProgress;
     const progressPercent = p ? Math.round(p.progress * 100) : 0;
@@ -1862,10 +1955,10 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     const isError = this.exportStatus === "error";
     const isCancelled = this.exportStatus === "cancelled";
     const isRendering = this.exportStatus === "rendering";
-    
+
     let statusColor: string;
     let statusText: string;
-    
+
     if (isComplete) {
       statusColor = "var(--ef-color-success)";
       statusText = "Complete!";
@@ -1879,7 +1972,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       statusColor = "var(--ef-color-primary)";
       statusText = `${progressPercent}%`;
     }
-    
+
     return html`
       <div 
         id="export-progress-popover" 
@@ -1889,17 +1982,25 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       >
         <div class="dropdown-header">
           <span class="dropdown-title">Exporting</span>
-          ${isRendering ? html`
+          ${
+            isRendering
+              ? html`
             <button 
               class="dropdown-close" 
               style="color: var(--ef-color-danger);"
               @click=${this.handleCancelClick}
             >Cancel</button>
-          ` : null}
+          `
+              : null
+          }
         </div>
         
-        ${isRendering && p !== null ? html`
-          ${p.framePreviewCanvas ? html`
+        ${
+          isRendering && p !== null
+            ? html`
+          ${
+            p.framePreviewCanvas
+              ? html`
             <div style="margin-bottom: 10px; display: flex; justify-content: center;">
               ${p.framePreviewCanvas}
             </div>
@@ -1911,7 +2012,9 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
                 height: auto;
               }
             </style>
-          ` : null}
+          `
+              : null
+          }
           
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin-bottom: 10px; font-family: ui-monospace, monospace; font-size: 10px;">
             <div>
@@ -1931,7 +2034,9 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
               <div style="color: var(--ef-color-text);">${this.formatTime(p.estimatedRemainingMs)}</div>
             </div>
           </div>
-        ` : null}
+        `
+            : null
+        }
         
         <div style="height: 4px; background: var(--ef-color-bg-inset); border-radius: 2px; overflow: hidden;">
           <div style="
@@ -1955,7 +2060,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       </style>
     `;
   }
-  
+
   private renderToolbar() {
     return html`
       <div class="toolbar" part="toolbar">
@@ -1976,20 +2081,28 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         <div class="toolbar-right">
           <!-- Mode indicator -->
           <span class="mode-indicator ${this.presentationMode}">
-            ${this.presentationMode === "dom" ? "DOM" : html`
-              Canvas ${getRenderMode() === "native" 
-                ? phosphorIcon(ICONS.lightning, 12) 
-                : phosphorIcon(ICONS.code, 12)}
-            `}
+            ${
+              this.presentationMode === "dom"
+                ? "DOM"
+                : html`
+              Canvas ${
+                getRenderMode() === "native"
+                  ? phosphorIcon(ICONS.lightning, 12)
+                  : phosphorIcon(ICONS.code, 12)
+              }
+            `
+            }
           </span>
           
           <!-- Theme toggle button -->
           <button 
             class="toolbar-icon-btn"
             @click=${this.handleThemeToggle}
-            title="${this.themeMode === 'light' ? 'Light mode' : this.themeMode === 'dark' ? 'Dark mode' : 'System preference'}"
+            title="${this.themeMode === "light" ? "Light mode" : this.themeMode === "dark" ? "Dark mode" : "System preference"}"
           >
-            ${this.themeMode === 'light' ? html`
+            ${
+              this.themeMode === "light"
+                ? html`
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="5"></circle>
                 <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -2001,17 +2114,21 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
                 <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
                 <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
               </svg>
-            ` : this.themeMode === 'dark' ? html`
+            `
+                : this.themeMode === "dark"
+                  ? html`
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
               </svg>
-            ` : html`
+            `
+                  : html`
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
                 <line x1="8" y1="21" x2="16" y2="21"></line>
                 <line x1="12" y1="17" x2="12" y2="21"></line>
               </svg>
-            `}
+            `
+            }
           </button>
           
           <!-- Settings button -->
@@ -2025,7 +2142,9 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
           </button>
           
           <!-- Export button -->
-          ${this.isExporting ? html`
+          ${
+            this.isExporting
+              ? html`
             <button 
               id="export-btn"
               class="toolbar-btn active"
@@ -2035,7 +2154,8 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
               <div style="width: 12px; height: 12px; border: 2px solid var(--ef-color-primary-subtle); border-top-color: var(--ef-color-primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
               Exporting...
             </button>
-          ` : html`
+          `
+              : html`
             <button 
               id="export-btn"
               class="toolbar-btn primary"
@@ -2047,7 +2167,8 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
               </svg>
               Export
             </button>
-          `}
+          `
+          }
         </div>
       </div>
       
@@ -2067,10 +2188,12 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       this.drawOverlays();
     }
   }
-  
-  updated(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
+
+  updated(
+    changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>,
+  ): void {
     super.updated(changedProperties);
-    
+
     // Restore preview pan/zoom when timegroup becomes available
     // Check if timegroup is now available (slot content changed)
     const timegroup = this.getTimegroup();
@@ -2087,23 +2210,27 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         });
       }
     }
-    
+
     // Apply settings when dependencies become available or settings change
-    if (changedProperties.has("previewSettings") || 
-        changedProperties.has("presentationMode") ||
-        changedProperties.has("showStats")) {
+    if (
+      changedProperties.has("previewSettings") ||
+      changedProperties.has("presentationMode") ||
+      changedProperties.has("showStats")
+    ) {
       this.applySettings();
     }
-    
+
     // Show/hide export progress popover based on isExporting state
     if (changedProperties.has("isExporting")) {
-      const popover = this.shadowRoot?.getElementById("export-progress-popover") as HTMLElement | null;
+      const popover = this.shadowRoot?.getElementById(
+        "export-progress-popover",
+      ) as HTMLElement | null;
       if (popover) {
         if (this.isExporting) {
           popover.showPopover();
           // Position after showing
           requestAnimationFrame(() => {
-            this.positionPopover(popover, 'export-btn');
+            this.positionPopover(popover, "export-btn");
           });
         } else {
           popover.hidePopover();
@@ -2131,86 +2258,119 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       }
     }
   };
-  
+
   private renderPlaybackStats() {
     // Only show stats if enabled
     if (!this.showStats) {
       return null;
     }
-    
+
     // Get stats based on current mode
     let stats: PlaybackStats | null = null;
-    
+
     if (this.presentationMode === "canvas" && this.renderStats) {
       // Canvas mode: use RenderStats (always-on collection)
       const timegroup = this.getTimegroup();
       if (!timegroup) return null;
-      
+
       const compositionWidth = timegroup.offsetWidth || 1920;
       const compositionHeight = timegroup.offsetHeight || 1080;
-      
+
       const resolutionScale = this.canvasPreviewResult
         ? this.canvasPreviewResult.getResolutionScale()
         : 1;
-      
+
       const renderWidth = Math.floor(compositionWidth * resolutionScale);
       const renderHeight = Math.floor(compositionHeight * resolutionScale);
-      
-      stats = this.renderStats.getStats(renderWidth, renderHeight, resolutionScale);
+
+      stats = this.renderStats.getStats(
+        renderWidth,
+        renderHeight,
+        resolutionScale,
+      );
     } else if (this.presentationMode === "dom" && this.domStatsStrategy) {
       // DOM mode: use DomStatsStrategy (has its own loop)
       stats = this.domStatsStrategy.getStats();
     }
-    
+
     if (!stats) {
       return null;
     }
-    
+
     // Determine FPS color (based on frame interval, not render time)
-    const fpsClass = stats.fps >= 55 ? "good" : stats.fps >= 25 ? "warning" : "bad";
-    
+    const fpsClass =
+      stats.fps >= 55 ? "good" : stats.fps >= 25 ? "warning" : "bad";
+
     // Determine render time color (target is 33ms for 30fps)
-    const renderClass = stats.avgRenderTime !== null
-      ? (stats.avgRenderTime <= 20 ? "good" : stats.avgRenderTime <= 30 ? "warning" : "bad")
-      : "";
-    
+    const renderClass =
+      stats.avgRenderTime !== null
+        ? stats.avgRenderTime <= 20
+          ? "good"
+          : stats.avgRenderTime <= 30
+            ? "warning"
+            : "bad"
+        : "";
+
     // Determine headroom color (positive = good, negative = bad)
-    const headroomClass = stats.headroom !== null
-      ? (stats.headroom >= 10 ? "good" : stats.headroom >= 0 ? "warning" : "bad")
-      : "";
-    
+    const headroomClass =
+      stats.headroom !== null
+        ? stats.headroom >= 10
+          ? "good"
+          : stats.headroom >= 0
+            ? "warning"
+            : "bad"
+        : "";
+
     // Determine pressure color
-    const pressureClass = stats.pressureState === "nominal" ? "good" 
-      : stats.pressureState === "fair" ? "good"
-      : stats.pressureState === "serious" ? "warning" 
-      : "bad";
-    
+    const pressureClass =
+      stats.pressureState === "nominal"
+        ? "good"
+        : stats.pressureState === "fair"
+          ? "good"
+          : stats.pressureState === "serious"
+            ? "warning"
+            : "bad";
+
     // Resolution scale color (only for canvas mode)
-    const scaleClass = stats.resolutionScale !== null
-      ? (stats.resolutionScale >= 0.75 ? "good" : stats.resolutionScale >= 0.5 ? "warning" : "bad")
-      : "";
-    
+    const scaleClass =
+      stats.resolutionScale !== null
+        ? stats.resolutionScale >= 0.75
+          ? "good"
+          : stats.resolutionScale >= 0.5
+            ? "warning"
+            : "bad"
+        : "";
+
     // Determine which stats to show based on mode
     const isCanvasMode = this.presentationMode === "canvas";
     const showRenderTime = isCanvasMode;
     const showHeadroom = isCanvasMode;
     const showResolutionScale = isCanvasMode;
-    const showAdaptiveResolution = isCanvasMode && this.previewResolutionScale === "auto";
-    
+    const showAdaptiveResolution =
+      isCanvasMode && this.previewResolutionScale === "auto";
+
     // Motion state
-    const motionState = this.isAtRest ? "At Rest" : this.isPlaying ? "Playing" : this.isScrubbing ? "Scrubbing" : "Idle";
-    
+    const motionState = this.isAtRest
+      ? "At Rest"
+      : this.isPlaying
+        ? "Playing"
+        : this.isScrubbing
+          ? "Scrubbing"
+          : "Idle";
+
     // Render pressure histogram bars
     const renderPressureHistogram = () => {
       if (stats.pressureHistory.length === 0) {
         return html`<div style="color: var(--ef-color-text-subtle); font-size: 9px;">No pressure data (API not available)</div>`;
       }
-      
+
       return html`
         <div class="pressure-histogram">
-          ${stats.pressureHistory.map((state) => html`
+          ${stats.pressureHistory.map(
+            (state) => html`
             <div class="bar ${state}"></div>
-          `)}
+          `,
+          )}
         </div>
         <div class="pressure-histogram-label">
           <span>30s ago</span>
@@ -2218,41 +2378,53 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         </div>
       `;
     };
-    
+
     // Helper to pad numbers for consistent width
     const padNum = (n: number, decimals: number, width: number) => {
       const str = n.toFixed(decimals);
-      return str.padStart(width, '\u2007'); // Use figure space for padding
+      return str.padStart(width, "\u2007"); // Use figure space for padding
     };
-    
+
     return html`
       <div class="playback-stats">
         <div class="stat-row">
           <span class="stat-label">FPS</span>
           <span class="stat-value ${fpsClass}">${padNum(stats.fps, 1, 5)}</span>
         </div>
-        ${showRenderTime && stats.avgRenderTime !== null ? html`
+        ${
+          showRenderTime && stats.avgRenderTime !== null
+            ? html`
           <div class="stat-row">
             <span class="stat-label">Render</span>
             <span class="stat-value ${renderClass}">${padNum(stats.avgRenderTime, 1, 5)}ms</span>
           </div>
-        ` : null}
-        ${showHeadroom && stats.headroom !== null ? html`
+        `
+            : null
+        }
+        ${
+          showHeadroom && stats.headroom !== null
+            ? html`
           <div class="stat-row">
             <span class="stat-label">Headroom</span>
-            <span class="stat-value ${headroomClass}">${stats.headroom >= 0 ? '+' : ''}${padNum(stats.headroom, 1, 4)}ms</span>
+            <span class="stat-value ${headroomClass}">${stats.headroom >= 0 ? "+" : ""}${padNum(stats.headroom, 1, 4)}ms</span>
           </div>
-        ` : null}
+        `
+            : null
+        }
         <div class="stat-row">
           <span class="stat-label">Resolution</span>
           <span class="stat-value">${stats.renderWidth}×${stats.renderHeight}</span>
         </div>
-        ${showResolutionScale && stats.resolutionScale !== null ? html`
+        ${
+          showResolutionScale && stats.resolutionScale !== null
+            ? html`
           <div class="stat-row">
             <span class="stat-label">Scale</span>
-            <span class="stat-value ${scaleClass}">${String(Math.round(stats.resolutionScale * 100)).padStart(3, '\u2007')}%</span>
+            <span class="stat-value ${scaleClass}">${String(Math.round(stats.resolutionScale * 100)).padStart(3, "\u2007")}%</span>
           </div>
-        ` : null}
+        `
+            : null
+        }
         <div class="stat-row">
           <span class="stat-label">CPU</span>
           <span class="stat-value ${pressureClass}">${stats.pressureState}</span>
@@ -2261,7 +2433,9 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
           <span class="stat-label">State</span>
           <span class="stat-value">${motionState}</span>
         </div>
-        ${showAdaptiveResolution && stats.samplesAtCurrentScale !== undefined ? html`
+        ${
+          showAdaptiveResolution && stats.samplesAtCurrentScale !== undefined
+            ? html`
           <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--ef-color-border-subtle);">
             <div class="stat-row">
               <span class="stat-label">Mode</span>
@@ -2269,18 +2443,20 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
             </div>
             <div class="stat-row">
               <span class="stat-label">Samples</span>
-              <span class="stat-value">${String(stats.samplesAtCurrentScale).padStart(3, '\u2007')}/60</span>
+              <span class="stat-value">${String(stats.samplesAtCurrentScale).padStart(3, "\u2007")}/60</span>
             </div>
             <div class="stat-row">
               <span class="stat-label">Scale Up</span>
-              <span class="stat-value ${stats.canScaleUp ? 'good' : ''}">${stats.canScaleUp ? 'Ready' : 'Waiting'}</span>
+              <span class="stat-value ${stats.canScaleUp ? "good" : ""}">${stats.canScaleUp ? "Ready" : "Waiting"}</span>
             </div>
             <div class="stat-row">
               <span class="stat-label">Scale Down</span>
-              <span class="stat-value ${stats.canScaleDown ? '' : 'warning'}">${stats.canScaleDown ? 'Ready' : 'Min'}</span>
+              <span class="stat-value ${stats.canScaleDown ? "" : "warning"}">${stats.canScaleDown ? "Ready" : "Min"}</span>
             </div>
           </div>
-        ` : null}
+        `
+            : null
+        }
         
         <!-- CPU Pressure Histogram -->
         <div style="margin-top: 8px;">

@@ -14,4 +14,3 @@ export { EFTextTrack, EFTextSegmentTrack } from "./TextTrack.js";
 export { EFTimegroupTrack } from "./TimegroupTrack.js";
 export { EFHTMLTrack } from "./HTMLTrack.js";
 export { renderTrackChildren } from "./renderTrackChildren.js";
-

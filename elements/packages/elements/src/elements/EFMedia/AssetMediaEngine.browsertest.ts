@@ -74,7 +74,11 @@ describe("AssetMediaEngine", () => {
     expect(videoRendition!.startTimeOffsetMs).toBeCloseTo(66.6, 0);
   });
 
-  test("provides templates for asset endpoints", ({ mediaEngine, host, expect }) => {
+  test("provides templates for asset endpoints", ({
+    mediaEngine,
+    host,
+    expect,
+  }) => {
     const apiHost = `${window.location.protocol}//${window.location.host}`;
     const sourceUrl = `${apiHost}/${host.src}`;
     expect(mediaEngine.templates).toEqual({
@@ -91,14 +95,22 @@ describe("AssetMediaEngine", () => {
   }) => {
     const audioRendition = mediaEngine.audioRendition;
     expect(audioRendition).toBeDefined();
-    
+
     // Test init segment URL generation
-    const initUrl = urlGenerator.generateSegmentUrl("init", audioRendition!.id!, mediaEngine);
+    const initUrl = urlGenerator.generateSegmentUrl(
+      "init",
+      audioRendition!.id!,
+      mediaEngine,
+    );
     expect(initUrl).toContain("/api/v1/transcode/audio/init.m4s");
     expect(initUrl).toContain(encodeURIComponent(host.src));
-    
+
     // Test media segment URL generation (segment 5, which is 0-based internally, becomes 6 in JIT 1-based)
-    const mediaUrl = urlGenerator.generateSegmentUrl(6, audioRendition!.id!, mediaEngine);
+    const mediaUrl = urlGenerator.generateSegmentUrl(
+      6,
+      audioRendition!.id!,
+      mediaEngine,
+    );
     expect(mediaUrl).toContain("/api/v1/transcode/audio/6.m4s");
     expect(mediaUrl).toContain(encodeURIComponent(host.src));
   });
@@ -110,27 +122,30 @@ describe("AssetMediaEngine", () => {
   });
 
   describe("bars n tone segment id computation", () => {
-    test("computes segment IDs correctly accounting for startTimeOffsetMs", ({ expect, mediaEngine }) => {
+    test("computes segment IDs correctly accounting for startTimeOffsetMs", ({
+      expect,
+      mediaEngine,
+    }) => {
       const videoRendition = mediaEngine.getVideoRendition();
       expect(videoRendition).toBeDefined();
-      
+
       // Note: computeSegmentId applies startTimeOffsetMs (~66.6ms) to map user timeline to media timeline
       // The actual segment boundaries depend on the track fragment index data
       const segment0 = mediaEngine.computeSegmentId(0, videoRendition!);
       expect(segment0).toBeGreaterThanOrEqual(0);
-      
+
       const segment2000 = mediaEngine.computeSegmentId(2000, videoRendition!);
       expect(segment2000).toBeGreaterThanOrEqual(0);
-      
+
       const segment4000 = mediaEngine.computeSegmentId(4000, videoRendition!);
       expect(segment4000).toBeGreaterThanOrEqual(0);
-      
+
       const segment6000 = mediaEngine.computeSegmentId(6000, videoRendition!);
       expect(segment6000).toBeGreaterThanOrEqual(0);
-      
+
       const segment8000 = mediaEngine.computeSegmentId(8000, videoRendition!);
       expect(segment8000).toBeGreaterThanOrEqual(0);
-      
+
       // Verify segments are computed (non-negative integers)
       expect(Number.isInteger(segment0)).toBe(true);
       expect(Number.isInteger(segment2000)).toBe(true);

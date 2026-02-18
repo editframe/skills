@@ -243,7 +243,11 @@ import "./EF_FRAMEGEN.js";
 // Initialize render API
 import "./render/EFRenderAPI.js";
 
-export { getRenderInfo, RenderInfo } from "./getRenderInfo.js";
+export {
+  getRenderInfo,
+  RenderInfoSchema,
+  type RenderInfo,
+} from "./getRenderInfo.js";
 export { getRenderData } from "./render/getRenderData.js";
 // Export types only - actual render functions are loaded dynamically by EFTimegroup
 export type {

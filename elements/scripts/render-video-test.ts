@@ -1,20 +1,20 @@
 #!/usr/bin/env npx ts-node
 /**
  * Video Render Test - Renders video.html and writes output to monorepo root.
- * 
+ *
  * This script tests renderTimegroupToVideo and renderTimegroupToCanvas by
  * rendering the full video.html project and saving the result to disk.
- * 
+ *
  * Usage:
  *   elements/scripts/tsx render-video-test.ts [options]
- * 
+ *
  * Options:
  *   --duration <ms>    Duration to render in ms (default: full duration)
  *   --fps <number>     Frames per second (default: 30)
  *   --scale <number>   Scale factor (default: 0.5)
  *   --headless         Run in headless mode (default: false)
  *   --output <path>    Output path for video file (default: monorepo root)
- * 
+ *
  * Examples:
  *   elements/scripts/tsx render-video-test.ts
  *   elements/scripts/tsx render-video-test.ts --duration 5000 --fps 15
@@ -46,7 +46,7 @@ function findMonorepoRoot(): string | null {
 
 async function main() {
   const args = process.argv.slice(2);
-  
+
   const getArg = (name: string, defaultValue: string) => {
     const idx = args.indexOf(`--${name}`);
     return idx !== -1 && args[idx + 1] ? args[idx + 1] : defaultValue;
@@ -67,7 +67,8 @@ async function main() {
   }
 
   // Determine output path
-  const outputPath = outputArg || path.join(monorepoRoot, "video-render-test.mp4");
+  const outputPath =
+    outputArg || path.join(monorepoRoot, "video-render-test.mp4");
 
   console.log(`\n🎬 Video Render Test`);
   console.log(`   FPS: ${fps}`);
@@ -107,14 +108,14 @@ async function main() {
 
   const context = await browser.newContext();
   const page = await context.newPage();
-  
+
   // Capture console messages
   page.on("console", (msg) => {
     const text = msg.text();
     // Show render-related logs
     if (
-      text.includes("[renderToVideo]") || 
-      text.includes("[renderToImage]") || 
+      text.includes("[renderToVideo]") ||
+      text.includes("[renderToImage]") ||
       text.includes("[renderTimegroupToVideo]") ||
       text.includes("DEBUG")
     ) {
@@ -130,52 +131,64 @@ async function main() {
 
     // Wait for EF_RENDER API to be ready
     console.log(`⏳ Waiting for EF_RENDER API...`);
-    await page.waitForFunction(() => {
-      return (window as any).EF_RENDER?.isReady?.();
-    }, { timeout: 30000 });
+    await page.waitForFunction(
+      () => {
+        return (window as any).EF_RENDER?.isReady?.();
+      },
+      { timeout: 30000 },
+    );
 
     // Get render info
     const renderInfo = await page.evaluate(async () => {
       const info = await (window as any).EF_RENDER.getRenderInfo();
       return info;
     });
-    console.log(`✅ EF_RENDER ready: ${renderInfo.width}x${renderInfo.height}, ${renderInfo.durationMs}ms`);
+    console.log(
+      `✅ EF_RENDER ready: ${renderInfo.width}x${renderInfo.height}, ${renderInfo.durationMs}ms`,
+    );
 
     // Determine render duration
-    const renderDuration = durationArg ? parseInt(durationArg, 10) : renderInfo.durationMs;
-    console.log(`\n🎬 Starting render (${renderDuration}ms at ${fps}fps, scale=${scale})...`);
+    const renderDuration = durationArg
+      ? parseInt(durationArg, 10)
+      : renderInfo.durationMs;
+    console.log(
+      `\n🎬 Starting render (${renderDuration}ms at ${fps}fps, scale=${scale})...`,
+    );
     const startTime = Date.now();
 
     // Render using EF_RENDER API (designed for programmatic/non-interactive rendering)
-    const result = await page.evaluate(async ({ duration, fps, scale }) => {
-      try {
-        const buffer = await (window as any).EF_RENDER.render({
-          fps,
-          scale,
-          fromMs: 0,
-          toMs: duration,
-          streaming: false,
-          contentReadyMode: "blocking",
-          blockingTimeoutMs: 10000,
-          includeAudio: true,
-        });
+    const result = await page.evaluate(
+      async ({ duration, fps, scale }) => {
+        try {
+          const buffer = await (window as any).EF_RENDER.render({
+            fps,
+            scale,
+            fromMs: 0,
+            toMs: duration,
+            streaming: false,
+            contentReadyMode: "blocking",
+            blockingTimeoutMs: 10000,
+            includeAudio: true,
+          });
 
-        if (buffer) {
-          // Return buffer as array for transfer to Node.js
-          return { 
-            success: true, 
-            videoBuffer: Array.from(new Uint8Array(buffer)),
-            size: buffer.length,
-          };
+          if (buffer) {
+            // Return buffer as array for transfer to Node.js
+            return {
+              success: true,
+              videoBuffer: Array.from(new Uint8Array(buffer)),
+              size: buffer.length,
+            };
+          }
+          return { success: false, error: "No buffer returned" };
+        } catch (e: any) {
+          return { success: false, error: e.message || String(e) };
         }
-        return { success: false, error: "No buffer returned" };
-      } catch (e: any) {
-        return { success: false, error: e.message || String(e) };
-      }
-    }, { duration: renderDuration, fps, scale });
+      },
+      { duration: renderDuration, fps, scale },
+    );
 
     const elapsed = Date.now() - startTime;
-    
+
     if (!result.success) {
       console.error(`❌ Render failed: ${result.error}`);
       process.exit(1);
@@ -214,7 +227,6 @@ async function main() {
       console.error(`\n⚠️  Video file not found at ${outputPath}`);
       process.exit(1);
     }
-
   } finally {
     // Clean up
     await page.close().catch(() => {});

@@ -173,7 +173,7 @@ export class EFText extends EFTemporal(LitElement) {
         if (index > -1) {
           this._segmentsReadyResolvers.splice(index, 1);
         }
-        reject(new Error('Timeout waiting for text segments to be created'));
+        reject(new Error("Timeout waiting for text segments to be created"));
       }, 5000); // 5 second timeout
 
       const resolveWithSegments = () => {
@@ -187,7 +187,7 @@ export class EFText extends EFTemporal(LitElement) {
       };
 
       this._segmentsReadyResolvers.push(resolveWithSegments);
-      
+
       // Trigger splitText if it hasn't run yet
       // This handles the case where segments haven't been created at all
       if (segments.length === 0 && this.isConnected) {
@@ -348,13 +348,17 @@ export class EFText extends EFTemporal(LitElement) {
       this._textContent !== null ? this._textContent : this.getTextContent();
     const trimmedText = text.trim();
     const textStartOffset = text.indexOf(trimmedText);
-    
+
     // GUARD: Check if segments are already correct before clearing/recreating
     // This prevents redundant splits from RAF callbacks, updated(), etc.
-    if (this.#segmentsInitialized && this.segments.length > 0 && this.lastTextContent === text) {
+    if (
+      this.#segmentsInitialized &&
+      this.segments.length > 0 &&
+      this.lastTextContent === text
+    ) {
       return;
     }
-    
+
     if (!text || trimmedText.length === 0) {
       // Clear segments if no text
       const existingSegments = Array.from(
@@ -636,7 +640,7 @@ export class EFText extends EFTemporal(LitElement) {
 
     this.lastTextContent = text;
     this._textContent = text;
-    
+
     // Mark segments as initialized to prevent redundant splits
     this.#segmentsInitialized = true;
 

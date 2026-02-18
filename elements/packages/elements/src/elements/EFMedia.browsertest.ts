@@ -1,6 +1,6 @@
 import { css } from "lit";
 import { customElement } from "lit/decorators.js";
-import { afterEach, beforeEach, describe, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, vi } from "vitest";
 import { test as baseTest } from "../../test/useMSW.js";
 
 import type { EFConfiguration } from "../gui/EFConfiguration.js";
@@ -84,7 +84,7 @@ const test = baseTest.extend<{
     timegroup.append(host);
     configuration.append(preview);
     preview.append(timegroup);
-    await host.mediaEngineTask.run();
+    await host.getMediaEngine();
     await use(host);
   },
 });
@@ -401,8 +401,8 @@ describe("EFMedia", () => {
           configuration.append(timegroup);
 
           // Wait for media engines to initialize
-          await mutedElement.mediaEngineTask.run();
-          await unmutedElement.mediaEngineTask.run();
+          await mutedElement.getMediaEngine();
+          await unmutedElement.getMediaEngine();
 
           // Spy on fetchAudioSpanningTime to verify muted element is skipped
           const mutedFetchSpy = vi.spyOn(
@@ -452,7 +452,7 @@ describe("EFMedia", () => {
 
           configuration.append(timegroup);
 
-          await element.mediaEngineTask.run();
+          await element.getMediaEngine();
 
           const fetchSpy = vi.spyOn(element, "fetchAudioSpanningTime");
 
@@ -481,7 +481,7 @@ describe("EFMedia", () => {
 
           configuration.append(timegroup);
 
-          await element.mediaEngineTask.run();
+          await element.getMediaEngine();
 
           const fetchSpy = vi.spyOn(element, "fetchAudioSpanningTime");
 
@@ -547,7 +547,7 @@ describe("EFMedia", () => {
         timegroup.append(element);
         configuration.append(timegroup);
 
-        await element.mediaEngineTask.run();
+        await element.getMediaEngine();
 
         expect(element.byteTimeDomainTask).toBeDefined();
         expect(typeof element.byteTimeDomainTask.taskComplete).toBe("object");
@@ -562,7 +562,7 @@ describe("EFMedia", () => {
         timegroup.append(element);
         configuration.append(timegroup);
 
-        await element.mediaEngineTask.run();
+        await element.getMediaEngine();
 
         expect(element.frequencyDataTask).toBeDefined();
         expect(typeof element.frequencyDataTask.taskComplete).toBe("object");
@@ -778,7 +778,7 @@ describe("EFMedia", () => {
 
   //     test("throws if assetId is set", async ({ element, expect }) => {
   //       element.assetId = "test-asset-123";
-  //       await element.mediaEngineTask.run();
+  //       await element.getMediaEngine();
   //       expect(element.mediaEngineTask.error).toBeInstanceOf(Error);
   //     });
 
@@ -787,7 +787,7 @@ describe("EFMedia", () => {
   //       expect,
   //       worker,
   //     }) => {
-  //       await elementWithJitManifest.mediaEngineTask.run();
+  //       await elementWithJitManifest.getMediaEngine();
   //       expect(elementWithJitManifest.mediaEngineTask.value).toBeInstanceOf(
   //         JitMediaEngine,
   //       );
@@ -797,7 +797,7 @@ describe("EFMedia", () => {
   //       elementWithAsset,
   //       expect,
   //     }) => {
-  //       await elementWithAsset.mediaEngineTask.run();
+  //       await elementWithAsset.getMediaEngine();
   //       expect(elementWithAsset.mediaEngineTask.value).toBeInstanceOf(
   //         AssetMediaEngine,
   //       );
@@ -880,7 +880,10 @@ describe("contentReadyState lifecycle", () => {
     expect(video.contentReadyState).toBe("idle");
   });
 
-  test("ef-video transitions idle → loading → ready", async ({ configuration, expect }) => {
+  test("ef-video transitions idle → loading → ready", async ({
+    configuration,
+    expect,
+  }) => {
     const video = document.createElement("ef-video");
     const states: string[] = [];
     video.addEventListener("readystatechange", ((e: CustomEvent) => {
@@ -910,7 +913,10 @@ describe("contentReadyState lifecycle", () => {
     video.remove();
   });
 
-  test("source swap: ready → loading → ready", async ({ configuration, expect }) => {
+  test("source swap: ready → loading → ready", async ({
+    configuration,
+    expect,
+  }) => {
     const video = document.createElement("ef-video");
     video.src = "http://web:3000/head-moov-480p.mp4";
     configuration.append(video);
@@ -938,7 +944,10 @@ describe("contentReadyState lifecycle", () => {
     video.remove();
   });
 
-  test("contentchange fires with reason 'source' on src change", async ({ configuration, expect }) => {
+  test("contentchange fires with reason 'source' on src change", async ({
+    configuration,
+    expect,
+  }) => {
     const video = document.createElement("ef-video");
     video.src = "http://web:3000/head-moov-480p.mp4";
     configuration.append(video);
@@ -957,7 +966,10 @@ describe("contentReadyState lifecycle", () => {
     video.remove();
   });
 
-  test("contentchange fires with reason 'bounds' on sourcein change", async ({ configuration, expect }) => {
+  test("contentchange fires with reason 'bounds' on sourcein change", async ({
+    configuration,
+    expect,
+  }) => {
     const video = document.createElement("ef-video");
     video.src = "http://web:3000/head-moov-480p.mp4";
     configuration.append(video);
@@ -976,7 +988,10 @@ describe("contentReadyState lifecycle", () => {
     video.remove();
   });
 
-  test("contentchange fires with reason 'bounds' on sourceout change", async ({ configuration, expect }) => {
+  test("contentchange fires with reason 'bounds' on sourceout change", async ({
+    configuration,
+    expect,
+  }) => {
     const video = document.createElement("ef-video");
     video.src = "http://web:3000/head-moov-480p.mp4";
     configuration.append(video);
@@ -995,7 +1010,10 @@ describe("contentReadyState lifecycle", () => {
     video.remove();
   });
 
-  test("no contentchange on playback tick", async ({ configuration, expect }) => {
+  test("no contentchange on playback tick", async ({
+    configuration,
+    expect,
+  }) => {
     const video = document.createElement("ef-video");
     video.src = "http://web:3000/head-moov-480p.mp4";
     configuration.append(video);
@@ -1015,7 +1033,10 @@ describe("contentReadyState lifecycle", () => {
     video.remove();
   });
 
-  test("readystatechange event does not bubble from ef-video", async ({ configuration, expect }) => {
+  test("readystatechange event does not bubble from ef-video", async ({
+    configuration,
+    expect,
+  }) => {
     const container = document.createElement("div");
     const video = document.createElement("ef-video");
     container.append(video);

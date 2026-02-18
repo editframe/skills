@@ -7,13 +7,13 @@ import { treeContext } from "./treeContext.js";
 
 /**
  * Generic tree item component.
- * 
+ *
  * Renders a single item in a tree with:
  * - Expand/collapse toggle for items with children
  * - Optional icon
  * - Label
  * - Recursive children rendering
- * 
+ *
  * @fires tree-item-click - When item is clicked (for selection)
  */
 @customElement("ef-tree-item")
@@ -136,8 +136,9 @@ export class EFTreeItem extends LitElement {
         ?data-selected=${this.isSelected}
         @click=${this.handleClick}
       >
-        ${this.hasChildren
-          ? html`
+        ${
+          this.hasChildren
+            ? html`
               <span
                 class="expand-icon"
                 ?data-expanded=${expanded}
@@ -148,21 +149,26 @@ export class EFTreeItem extends LitElement {
                 </svg>
               </span>
             `
-          : html`<span class="expand-icon"></span>`}
-        ${this.item.icon
-          ? html`<span class="icon">${this.item.icon}</span>`
-          : nothing}
+            : html`<span class="expand-icon"></span>`
+        }
+        ${
+          this.item.icon
+            ? html`<span class="icon">${this.item.icon}</span>`
+            : nothing
+        }
         <span class="label">${this.item.label}</span>
       </div>
-      ${this.hasChildren
-        ? html`
+      ${
+        this.hasChildren
+          ? html`
             <div class="children" ?data-collapsed=${!expanded}>
               ${this.item.children!.map(
-                (child) => html`<ef-tree-item .item=${child}></ef-tree-item>`
+                (child) => html`<ef-tree-item .item=${child}></ef-tree-item>`,
               )}
             </div>
           `
-        : nothing}
+          : nothing
+      }
     `;
   }
 }

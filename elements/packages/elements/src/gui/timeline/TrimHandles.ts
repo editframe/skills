@@ -145,11 +145,19 @@ export class EFTrimHandles extends TWMixin(LitElement) {
   @property({ type: Number, attribute: "intrinsic-duration-ms" })
   intrinsicDurationMs = 0;
 
-  get trimStartMs(): number { return this.value.startMs; }
-  set trimStartMs(v: number) { this.value = { ...this.value, startMs: v }; }
+  get trimStartMs(): number {
+    return this.value.startMs;
+  }
+  set trimStartMs(v: number) {
+    this.value = { ...this.value, startMs: v };
+  }
 
-  get trimEndMs(): number { return this.value.endMs; }
-  set trimEndMs(v: number) { this.value = { ...this.value, endMs: v }; }
+  get trimEndMs(): number {
+    return this.value.endMs;
+  }
+  set trimEndMs(v: number) {
+    this.value = { ...this.value, endMs: v };
+  }
 
   @property({ type: Boolean, attribute: "show-overlays" })
   showOverlays = true;
@@ -187,11 +195,14 @@ export class EFTrimHandles extends TWMixin(LitElement) {
 
   #seekToTarget(type: "start" | "end" | "region", value: TrimValue): void {
     if (!this.seekTarget) return;
-    const target = (this.getRootNode() as Document | ShadowRoot).getElementById(this.seekTarget) as any;
+    const target = (this.getRootNode() as Document | ShadowRoot).getElementById(
+      this.seekTarget,
+    ) as any;
     if (!target || !("currentTimeMs" in target)) return;
 
     if (type === "end") {
-      target.currentTimeMs = this.intrinsicDurationMs - value.startMs - value.endMs;
+      target.currentTimeMs =
+        this.intrinsicDurationMs - value.startMs - value.endMs;
     } else {
       target.currentTimeMs = 0;
     }
@@ -351,7 +362,10 @@ export class EFTrimHandles extends TWMixin(LitElement) {
     const trimStartPx = this.trimStartMs * pxPerMs;
     const trimEndPx = (this.trimEndMs || 0) * pxPerMs;
     const isStandalone = this.mode === "standalone";
-    const handleWidthPx = parseFloat(getComputedStyle(this).getPropertyValue('--trim-handle-width')) || 8;
+    const handleWidthPx =
+      parseFloat(
+        getComputedStyle(this).getPropertyValue("--trim-handle-width"),
+      ) || 8;
 
     return html`
       ${

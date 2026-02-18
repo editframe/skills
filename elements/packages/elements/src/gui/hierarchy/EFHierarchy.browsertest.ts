@@ -79,7 +79,9 @@ describe.skip("EFHierarchy", () => {
     await hierarchy.updateComplete;
 
     expect(eventDetail).toBeTruthy();
-    expect((eventDetail as { elementId: string | null } | null)?.elementId).toBe(timegroupId);
+    expect(
+      (eventDetail as { elementId: string | null } | null)?.elementId,
+    ).toBe(timegroupId);
   }, 1000);
 
   test("should toggle expand/collapse on expand icon click", async () => {
@@ -275,7 +277,11 @@ describe.skip("EFHierarchy", () => {
     await hierarchy.updateComplete;
 
     expect(reorderDetail).toBeTruthy();
-    const rd = reorderDetail as { sourceId: string; targetId: string; position: "before" | "after" | "inside" } | null;
+    const rd = reorderDetail as {
+      sourceId: string;
+      targetId: string;
+      position: "before" | "after" | "inside";
+    } | null;
     expect(rd?.sourceId).toBe(timegroupId1);
     expect(rd?.targetId).toBe(timegroupId2);
     expect(["before", "after", "inside"]).toContain(rd?.position);

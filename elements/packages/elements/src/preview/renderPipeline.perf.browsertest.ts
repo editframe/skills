@@ -54,19 +54,22 @@ function createTestTimegroup(): EFTimegroup {
 
   // Title text with styling
   const title = document.createElement("div");
-  title.style.cssText = "position:absolute;top:80px;left:80px;right:80px;color:white;font-size:72px;font-weight:bold;text-shadow:2px 2px 8px rgba(0,0,0,0.6);";
+  title.style.cssText =
+    "position:absolute;top:80px;left:80px;right:80px;color:white;font-size:72px;font-weight:bold;text-shadow:2px 2px 8px rgba(0,0,0,0.6);";
   title.textContent = "Performance Test Composition";
   tg.appendChild(title);
 
   // Subtitle
   const subtitle = document.createElement("div");
-  subtitle.style.cssText = "position:absolute;top:180px;left:80px;color:rgba(255,255,255,0.8);font-size:36px;";
+  subtitle.style.cssText =
+    "position:absolute;top:180px;left:80px;color:rgba(255,255,255,0.8);font-size:36px;";
   subtitle.textContent = "Measuring render pipeline phase-by-phase";
   tg.appendChild(subtitle);
 
   // Grid of styled elements (simulates typical composition content)
   const grid = document.createElement("div");
-  grid.style.cssText = "position:absolute;top:300px;left:80px;right:80px;bottom:80px;display:grid;grid-template-columns:repeat(4,1fr);gap:20px;";
+  grid.style.cssText =
+    "position:absolute;top:300px;left:80px;right:80px;bottom:80px;display:grid;grid-template-columns:repeat(4,1fr);gap:20px;";
   for (let i = 0; i < 12; i++) {
     const card = document.createElement("div");
     card.style.cssText = `background:hsl(${i * 30},60%,40%);border-radius:12px;padding:20px;color:white;display:flex;flex-direction:column;justify-content:center;align-items:center;font-size:18px;box-shadow:0 4px 16px rgba(0,0,0,0.3);`;
@@ -95,7 +98,8 @@ function createCanvasTimegroup(): EFTimegroup {
   const videoCanvas = document.createElement("canvas");
   videoCanvas.width = W;
   videoCanvas.height = H;
-  videoCanvas.style.cssText = "width:100%;height:100%;position:absolute;top:0;left:0;";
+  videoCanvas.style.cssText =
+    "width:100%;height:100%;position:absolute;top:0;left:0;";
   const vctx = videoCanvas.getContext("2d")!;
   const gradient = vctx.createLinearGradient(0, 0, W, H);
   gradient.addColorStop(0, "#ff6b6b");
@@ -119,7 +123,8 @@ function createCanvasTimegroup(): EFTimegroup {
 
   // Text overlay
   const text = document.createElement("div");
-  text.style.cssText = "position:absolute;top:40px;left:40px;color:white;font-size:48px;font-weight:bold;text-shadow:2px 2px 4px rgba(0,0,0,0.7);";
+  text.style.cssText =
+    "position:absolute;top:40px;left:40px;color:white;font-size:48px;font-weight:bold;text-shadow:2px 2px 4px rgba(0,0,0,0.7);";
   text.textContent = "Video Frame Overlay";
   tg.appendChild(text);
 
@@ -236,7 +241,10 @@ describe("render pipeline performance", () => {
 
     for (let i = 0; i < ITERATIONS; i++) {
       const t0 = performance.now();
-      const uri = await captureTimelineToDataUri(tg, W, H, { canvasScale: 1, timeMs: 0 });
+      const uri = await captureTimelineToDataUri(tg, W, H, {
+        canvasScale: 1,
+        timeMs: 0,
+      });
       times.push(performance.now() - t0);
       if (i === 0) dataUriLen = uri.length;
     }
@@ -256,7 +264,10 @@ describe("render pipeline performance", () => {
     await tg.updateComplete;
 
     // Generate a dataUri to load repeatedly
-    const dataUri = await captureTimelineToDataUri(tg, W, H, { canvasScale: 1, timeMs: 0 });
+    const dataUri = await captureTimelineToDataUri(tg, W, H, {
+      canvasScale: 1,
+      timeMs: 0,
+    });
     tg.remove();
 
     const times: number[] = [];
@@ -299,7 +310,10 @@ describe("render pipeline performance", () => {
         waitForLitUpdate: false,
         onAnimationsUpdate: (root) => updateAnimations(root as typeof tg),
       });
-      await captureTimelineToDataUri(tg, W, H, { canvasScale: 1, timeMs: i * 100 });
+      await captureTimelineToDataUri(tg, W, H, {
+        canvasScale: 1,
+        timeMs: i * 100,
+      });
     }
 
     for (let i = 0; i < ITERATIONS; i++) {
@@ -315,7 +329,10 @@ describe("render pipeline performance", () => {
       void (tg as HTMLElement).offsetWidth;
 
       const t1 = performance.now();
-      const dataUri = await captureTimelineToDataUri(tg, W, H, { canvasScale: 1, timeMs });
+      const dataUri = await captureTimelineToDataUri(tg, W, H, {
+        canvasScale: 1,
+        timeMs,
+      });
       const t2 = performance.now();
       await loadImageFromDataUri(dataUri);
       const t3 = performance.now();
@@ -352,7 +369,10 @@ describe("render pipeline performance", () => {
         waitForLitUpdate: false,
         onAnimationsUpdate: (root) => updateAnimations(root as typeof tg),
       });
-      const uri = await captureTimelineToDataUri(tg, W, H, { canvasScale: 1, timeMs: i * 100 });
+      const uri = await captureTimelineToDataUri(tg, W, H, {
+        canvasScale: 1,
+        timeMs: i * 100,
+      });
       await loadImageFromDataUri(uri);
     }
 
@@ -369,7 +389,10 @@ describe("render pipeline performance", () => {
       void (tg as HTMLElement).offsetWidth;
 
       const t1 = performance.now();
-      const dataUri = await captureTimelineToDataUri(tg, W, H, { canvasScale: 1, timeMs });
+      const dataUri = await captureTimelineToDataUri(tg, W, H, {
+        canvasScale: 1,
+        timeMs,
+      });
       const t2 = performance.now();
       await loadImageFromDataUri(dataUri);
       const t3 = performance.now();
@@ -502,11 +525,16 @@ describe("render pipeline performance", () => {
     document.body.appendChild(tg);
     await tg.updateComplete;
 
-    const preview = renderTimegroupToCanvas(tg, { scale: 1, resolutionScale: 1 });
+    const preview = renderTimegroupToCanvas(tg, {
+      scale: 1,
+      resolutionScale: 1,
+    });
     const refreshTimes: number[] = [];
 
     // Wait for initial render
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await new Promise((r) =>
+      requestAnimationFrame(() => requestAnimationFrame(r)),
+    );
 
     for (let i = 0; i < WARMUP; i++) {
       tg.currentTimeMs = i * 100;
@@ -534,10 +562,15 @@ describe("render pipeline performance", () => {
     document.body.appendChild(tg);
     await tg.updateComplete;
 
-    const preview = renderTimegroupToCanvas(tg, { scale: 1, resolutionScale: 1 });
+    const preview = renderTimegroupToCanvas(tg, {
+      scale: 1,
+      resolutionScale: 1,
+    });
     const refreshTimes: number[] = [];
 
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await new Promise((r) =>
+      requestAnimationFrame(() => requestAnimationFrame(r)),
+    );
 
     for (let i = 0; i < WARMUP; i++) {
       tg.currentTimeMs = i * 100;
@@ -551,7 +584,9 @@ describe("render pipeline performance", () => {
       refreshTimes.push(performance.now() - t0);
     }
 
-    console.log("\n=== E2E: renderTimegroupToCanvas.refresh() (HTML + 4 canvases) ===");
+    console.log(
+      "\n=== E2E: renderTimegroupToCanvas.refresh() (HTML + 4 canvases) ===",
+    );
     console.log(fmt("refresh      ", refreshTimes));
     console.log(fmtFps(refreshTimes));
 
@@ -576,17 +611,25 @@ describe("render pipeline performance", () => {
       let uriLen = 0;
 
       for (let i = 0; i < WARMUP; i++) {
-        await captureTimelineToDataUri(tg, W, H, { canvasScale: scale, timeMs: 0 });
+        await captureTimelineToDataUri(tg, W, H, {
+          canvasScale: scale,
+          timeMs: 0,
+        });
       }
 
       for (let i = 0; i < ITERATIONS; i++) {
         const t0 = performance.now();
-        const uri = await captureTimelineToDataUri(tg, W, H, { canvasScale: scale, timeMs: 0 });
+        const uri = await captureTimelineToDataUri(tg, W, H, {
+          canvasScale: scale,
+          timeMs: 0,
+        });
         const img = await loadImageFromDataUri(uri);
         times.push(performance.now() - t0);
         if (i === 0) {
           uriLen = uri.length;
-          console.log(`  scale=${scale}: image=${img.width}x${img.height}, dataUri=${(uriLen / 1024).toFixed(1)}KB`);
+          console.log(
+            `  scale=${scale}: image=${img.width}x${img.height}, dataUri=${(uriLen / 1024).toFixed(1)}KB`,
+          );
         }
       }
       console.log(`  ${fmt(`scale=${scale}`, times)}`);
@@ -618,7 +661,10 @@ describe("render pipeline performance", () => {
         waitForLitUpdate: false,
         onAnimationsUpdate: (root) => updateAnimations(root as typeof tg),
       });
-      const uri = await captureTimelineToDataUri(tg, W, H, { canvasScale: 0.5, timeMs: i * 33 });
+      const uri = await captureTimelineToDataUri(tg, W, H, {
+        canvasScale: 0.5,
+        timeMs: i * 33,
+      });
       await loadImageFromDataUri(uri);
     }
 
@@ -635,16 +681,23 @@ describe("render pipeline performance", () => {
         onAnimationsUpdate: (root) => updateAnimations(root as typeof tg),
       });
       void (tg as HTMLElement).offsetWidth;
-      const dataUri = await captureTimelineToDataUri(tg, W, H, { canvasScale: 0.5, timeMs });
+      const dataUri = await captureTimelineToDataUri(tg, W, H, {
+        canvasScale: 0.5,
+        timeMs,
+      });
       await loadImageFromDataUri(dataUri);
       frameTimes.push(performance.now() - t0);
     }
 
     const totalScrubMs = performance.now() - scrubStart;
 
-    console.log("\n=== SCRUB SIMULATION: 60 frames, foreignObject, scale=0.5 ===");
+    console.log(
+      "\n=== SCRUB SIMULATION: 60 frames, foreignObject, scale=0.5 ===",
+    );
     console.log(fmt("per frame    ", frameTimes));
-    console.log(`total time:  ${totalScrubMs.toFixed(0)}ms for ${FRAMES} frames`);
+    console.log(
+      `total time:  ${totalScrubMs.toFixed(0)}ms for ${FRAMES} frames`,
+    );
     console.log(`actual fps:  ${(FRAMES / (totalScrubMs / 1000)).toFixed(1)}`);
     console.log(`budget:      ${(16.67).toFixed(2)}ms/frame @ 60fps`);
 
@@ -668,7 +721,10 @@ describe("render pipeline performance", () => {
         waitForLitUpdate: false,
         onAnimationsUpdate: (root) => updateAnimations(root as typeof tg),
       });
-      const uri = await captureTimelineToDataUri(tg, W, H, { canvasScale: 0.5, timeMs: i * 33 });
+      const uri = await captureTimelineToDataUri(tg, W, H, {
+        canvasScale: 0.5,
+        timeMs: i * 33,
+      });
       await loadImageFromDataUri(uri);
     }
 
@@ -685,16 +741,23 @@ describe("render pipeline performance", () => {
         onAnimationsUpdate: (root) => updateAnimations(root as typeof tg),
       });
       void (tg as HTMLElement).offsetWidth;
-      const dataUri = await captureTimelineToDataUri(tg, W, H, { canvasScale: 0.5, timeMs });
+      const dataUri = await captureTimelineToDataUri(tg, W, H, {
+        canvasScale: 0.5,
+        timeMs,
+      });
       await loadImageFromDataUri(dataUri);
       frameTimes.push(performance.now() - t0);
     }
 
     const totalScrubMs = performance.now() - scrubStart;
 
-    console.log("\n=== SCRUB SIMULATION: 60 frames, HTML+canvases, foreignObject, scale=0.5 ===");
+    console.log(
+      "\n=== SCRUB SIMULATION: 60 frames, HTML+canvases, foreignObject, scale=0.5 ===",
+    );
     console.log(fmt("per frame    ", frameTimes));
-    console.log(`total time:  ${totalScrubMs.toFixed(0)}ms for ${FRAMES} frames`);
+    console.log(
+      `total time:  ${totalScrubMs.toFixed(0)}ms for ${FRAMES} frames`,
+    );
     console.log(`actual fps:  ${(FRAMES / (totalScrubMs / 1000)).toFixed(1)}`);
 
     tg.remove();
@@ -750,7 +813,9 @@ describe("render pipeline performance", () => {
     const totalScrubMs = performance.now() - scrubStart;
 
     console.log(fmt("per frame    ", frameTimes));
-    console.log(`total time:  ${totalScrubMs.toFixed(0)}ms for ${FRAMES} frames`);
+    console.log(
+      `total time:  ${totalScrubMs.toFixed(0)}ms for ${FRAMES} frames`,
+    );
     console.log(`actual fps:  ${(FRAMES / (totalScrubMs / 1000)).toFixed(1)}`);
     console.log(`budget:      ${(16.67).toFixed(2)}ms/frame @ 60fps`);
 

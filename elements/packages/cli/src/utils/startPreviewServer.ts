@@ -22,7 +22,7 @@ const startPreviewServer = async (directory: string) => {
     const baseCwd = process.env.ORIGINAL_CWD || process.cwd();
     const resolvedDirectory = path.resolve(baseCwd, directory);
     const cacheRoot = path.join(resolvedDirectory, "assets");
-    
+
     const devServer = await createServer({
       server: {
         watch: null,
