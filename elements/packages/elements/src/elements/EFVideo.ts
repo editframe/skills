@@ -993,10 +993,11 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         segmentId,
         videoRendition.id,
         async () => {
-          const [initSegment, mediaSegment] = await Promise.all([
-            mediaEngine.fetchInitSegment(videoRendition, signal),
-            mediaEngine.fetchMediaSegment(segmentId, videoRendition, signal),
-          ]);
+          const initP = mediaEngine.fetchInitSegment(videoRendition, signal);
+          const mediaP = mediaEngine.fetchMediaSegment(segmentId, videoRendition, signal);
+          initP.catch(() => {});
+          mediaP.catch(() => {});
+          const [initSegment, mediaSegment] = await Promise.all([initP, mediaP]);
 
           if (!initSegment || !mediaSegment) {
             return undefined;
@@ -1054,14 +1055,11 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         mediaEngine.src,
         segmentId,
         async () => {
-          const [initSegment, mediaSegment] = await Promise.all([
-            mediaEngine.fetchInitSegment(scrubRenditionWithSrc, signal),
-            mediaEngine.fetchMediaSegment(
-              segmentId,
-              scrubRenditionWithSrc,
-              signal,
-            ),
-          ]);
+          const initP = mediaEngine.fetchInitSegment(scrubRenditionWithSrc, signal);
+          const mediaP = mediaEngine.fetchMediaSegment(segmentId, scrubRenditionWithSrc, signal);
+          initP.catch(() => {});
+          mediaP.catch(() => {});
+          const [initSegment, mediaSegment] = await Promise.all([initP, mediaP]);
 
           if (!initSegment || !mediaSegment) {
             return undefined;
@@ -1361,40 +1359,31 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     rendition: any,
     maxLookahead: number = 5,
   ): { segmentId: number; deadlineMs: number }[] {
-    const segmentCount =
-      rendition.segmentDurationsMs?.length ??
-      Math.ceil(mediaEngine.durationMs / (rendition.segmentDurationMs || 1000));
-
-    const currentSegmentId = mediaEngine.computeSegmentId(
-      currentSourceTimeMs,
-      rendition,
-    );
-    if (currentSegmentId === undefined) return [];
-
     const results: { segmentId: number; deadlineMs: number }[] = [];
     const playheadMs = this.rootTimegroup?.currentTimeMs ?? 0;
+    const seen = new Set<number>();
 
-    // Walk segment IDs directly (1-based), bounded by actual segment count
-    let cumulativeSourceMs = currentSourceTimeMs;
-    for (
-      let id = currentSegmentId;
-      id <= Math.min(currentSegmentId + maxLookahead, segmentCount);
-      id++
-    ) {
-      if (mediaEngine.isSegmentCached(id, rendition)) continue;
+    let probeTimeMs = currentSourceTimeMs;
 
-      // Deadline = current playhead + offset from current source time
-      const offsetFromCurrentMs = cumulativeSourceMs - currentSourceTimeMs;
-      const deadlineMs = playheadMs + offsetFromCurrentMs;
+    while (seen.size < maxLookahead) {
+      const segmentId = mediaEngine.computeSegmentId(probeTimeMs, rendition);
+      if (segmentId === undefined) break;
+      if (seen.has(segmentId)) break; // shouldn't happen, but guard against infinite loop
 
-      results.push({ segmentId: id, deadlineMs });
+      seen.add(segmentId);
 
-      // Advance cumulative time by this segment's duration
-      const segDuration =
-        rendition.segmentDurationsMs?.[id - 1] ??
+      if (!mediaEngine.isSegmentCached(segmentId, rendition)) {
+        const offsetFromCurrentMs = probeTimeMs - currentSourceTimeMs;
+        const deadlineMs = playheadMs + offsetFromCurrentMs;
+        results.push({ segmentId, deadlineMs });
+      }
+
+      // Advance to just past the end of this segment
+      const thisDuration =
+        rendition.segmentDurationsMs?.[segmentId - 1] ??
         rendition.segmentDurationMs ??
         2000;
-      cumulativeSourceMs += segDuration;
+      probeTimeMs += thisDuration;
     }
 
     return results;
