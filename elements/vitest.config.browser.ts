@@ -5,9 +5,9 @@ import { defineConfig } from "vitest/config";
 import { playwright } from "@vitest/browser-playwright";
 import { recordReplayProxyPlugin } from "./packages/elements/test/recordReplayProxyPlugin.js";
 import { TEST_SERVER_PORT } from "./packages/elements/test/constants.js";
-import debug from 'debug';
+import debug from "debug";
 
-const log = debug('ef');
+const log = debug("ef");
 
 type ViteTestBrowserMode = "connect" | "launch";
 
@@ -30,7 +30,6 @@ const isCI =
   Boolean(process.env.CI) ||
   process.env.DOCKER_SERVICE === "ci-runner";
 
-  
 function loadWebSocketEndpoint(): string {
   // Strategy 1: Use WS_ENDPOINT environment variable if set by browsertest script
   // This is the most reliable when running in Docker where the monorepo root isn't mounted
@@ -119,9 +118,8 @@ log("resolved test configuration", config);
 
 export default defineConfig(async () => {
   log("VITEST_BROWSER_MODE", process.env.VITEST_BROWSER_MODE);
-  const { vitePluginEditframe } = await import(
-    "./packages/vite-plugin/src/index.vitest.js"
-  );
+  const { vitePluginEditframe } =
+    await import("./packages/vite-plugin/src/index.vitest.js");
 
   // Get worktree domain for Traefik URL rewriting
   // Test server uses its own Traefik entrypoint (port 4322) to avoid conflict with dev-projects
@@ -143,10 +141,7 @@ export default defineConfig(async () => {
         "[Traefik URL Plugin] Configuring server, original port:",
         server.config.server?.port,
       );
-      log(
-        "[Traefik URL Plugin] Overriding server URLs to:",
-        traefikUrl,
-      );
+      log("[Traefik URL Plugin] Overriding server URLs to:", traefikUrl);
 
       // Ensure the server is configured to listen on the correct port
       // Vitest should start the server automatically, but we ensure it's configured correctly
@@ -184,9 +179,7 @@ export default defineConfig(async () => {
         },
         set(_value) {
           // Ignore any attempts to set it back
-          log(
-            "[Traefik URL Plugin] Attempted to set resolvedUrls, ignoring",
-          );
+          log("[Traefik URL Plugin] Attempted to set resolvedUrls, ignoring");
         },
         configurable: true,
         enumerable: true,
@@ -275,9 +268,7 @@ export default defineConfig(async () => {
     },
     // Pre-bundle Three.js and other deps that get discovered late and cause reloads
     optimizeDeps: {
-      include: [
-        "three",
-      ],
+      include: ["three"],
     },
     // Use single test-assets directory for all test media
     publicDir: "test-assets",
@@ -323,14 +314,18 @@ export default defineConfig(async () => {
                 if (frameEl) {
                   savedStyle = await frameEl.evaluate((el: HTMLElement) => {
                     const prev = el.getAttribute("style") || "";
-                    el.style.cssText = "position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;z-index:999999!important;border:none!important;";
+                    el.style.cssText =
+                      "position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;z-index:999999!important;border:none!important;";
                     return prev;
                   });
                   // Let layout settle after resize
                   await page.waitForTimeout(200);
                 }
 
-                const buffer = await element.screenshot({ type: "png", timeout: 10000 });
+                const buffer = await element.screenshot({
+                  type: "png",
+                  timeout: 10000,
+                });
 
                 // Restore the iframe's original style
                 if (frameEl && savedStyle !== null) {
@@ -389,12 +384,16 @@ export default defineConfig(async () => {
                   }
                 };
               `;
-              const blob = new Blob([workerSrc], { type: 'application/javascript' });
-              (window as any)._testWorker = new Worker(URL.createObjectURL(blob));
+              const blob = new Blob([workerSrc], {
+                type: "application/javascript",
+              });
+              (window as any)._testWorker = new Worker(
+                URL.createObjectURL(blob),
+              );
               (window as any)._workerResults = null;
               (window as any)._workerDone = false;
               (window as any)._testWorker.onmessage = (e: any) => {
-                if (e.data.type === 'batchComplete') {
+                if (e.data.type === "batchComplete") {
                   (window as any)._workerResults = e.data.results;
                   (window as any)._workerDone = true;
                 }
@@ -408,14 +407,26 @@ export default defineConfig(async () => {
                 (window as any)._mainDone = false;
                 let i = 0;
                 function renderNext() {
-                  if (i >= frames.length) { (window as any)._mainDone = true; return; }
+                  if (i >= frames.length) {
+                    (window as any)._mainDone = true;
+                    return;
+                  }
                   const frame = frames[i++];
-                  const canvas = document.createElement('canvas');
-                  canvas.width = 64; canvas.height = 64;
-                  const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true })
-                           || canvas.getContext('webgl', { preserveDrawingBuffer: true });
+                  const canvas = document.createElement("canvas");
+                  canvas.width = 64;
+                  canvas.height = 64;
+                  const gl =
+                    canvas.getContext("webgl2", {
+                      preserveDrawingBuffer: true,
+                    }) ||
+                    canvas.getContext("webgl", { preserveDrawingBuffer: true });
                   if (!gl) return;
-                  gl.clearColor(frame.color[0], frame.color[1], frame.color[2], 1.0);
+                  gl.clearColor(
+                    frame.color[0],
+                    frame.color[1],
+                    frame.color[2],
+                    1.0,
+                  );
                   gl.clear(gl.COLOR_BUFFER_BIT);
                   gl.finish();
                   const px = new Uint8Array(4);
@@ -445,7 +456,10 @@ export default defineConfig(async () => {
             // Start both batch renders
             const freezeStartTime = await page.evaluate((f: any) => {
               const ts = Date.now();
-              (window as any)._testWorker.postMessage({ type: 'renderBatch', frames: f });
+              (window as any)._testWorker.postMessage({
+                type: "renderBatch",
+                frames: f,
+              });
               (window as any)._mainRenderBatch(f);
               return ts;
             }, frames);
@@ -454,7 +468,7 @@ export default defineConfig(async () => {
             await cdp.send("Debugger.pause" as any);
 
             // Wait for Worker to finish (5 * 200ms = 1s + margin)
-            await new Promise(r => setTimeout(r, 3000));
+            await new Promise((r) => setTimeout(r, 3000));
 
             // RESUME the main thread
             await cdp.send("Debugger.resume" as any);
@@ -463,10 +477,14 @@ export default defineConfig(async () => {
             const unfreezeTime = await page.evaluate(() => Date.now());
 
             // Wait for main-thread catch-up
-            await new Promise(r => setTimeout(r, 2000));
+            await new Promise((r) => setTimeout(r, 2000));
 
-            const workerResults = await page.evaluate(() => (window as any)._workerResults);
-            const mainResults = await page.evaluate(() => (window as any)._mainResults);
+            const workerResults = await page.evaluate(
+              () => (window as any)._workerResults,
+            );
+            const mainResults = await page.evaluate(
+              () => (window as any)._mainResults,
+            );
 
             // Cleanup
             await page.evaluate(() => {
