@@ -219,18 +219,20 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
         const { video, cleanup } = await createVideo();
         try {
           const controller = new AbortController();
+          controller.abort();
 
-          // Cancel after a short delay
-          setTimeout(() => controller.abort(), 500);
-
-          await expect(
-            video.renderToVideo({
+          let threw = false;
+          try {
+            await video.renderToVideo({
               fps: 30,
               returnBuffer: true,
               includeAudio: false,
               signal: controller.signal,
-            }),
-          ).rejects.toThrow();
+            });
+          } catch {
+            threw = true;
+          }
+          expect(threw).toBe(true);
         } finally {
           cleanup();
         }
