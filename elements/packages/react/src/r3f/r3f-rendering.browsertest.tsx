@@ -292,7 +292,7 @@ describe.runIf(isWebGLAvailable())("OffscreenCanvas + Worker WebGL rendering", (
  * - Worker produces correct WebGL pixels while the main thread is halted
  */
 
-describe("Worker renders while main thread is halted (Debugger.pause)", () => {
+describe.runIf(isWebGLAvailable())("Worker renders while main thread is halted (Debugger.pause)", () => {
   test(
     "Worker renders all frames during main-thread pause, main thread resumes after",
     { timeout: 30000 },
@@ -323,7 +323,13 @@ describe("Worker renders while main thread is halted (Debugger.pause)", () => {
       ];
       for (let i = 0; i < result.workerResults.length; i++) {
         const frame = result.workerResults[i];
-        const [er, eg, eb] = expectedColors[i];
+        assert.isNotNull(frame, `Worker frame ${i} should exist`);
+        assert.isUndefined(
+          (frame as any).error,
+          `Worker frame ${i} should not have error: ${(frame as any).error}`,
+        );
+        assert.exists(frame.pixel, `Worker frame ${frame.frameId} should have pixel data`);
+        const [er, eg, eb] = expectedColors[i]!;
         assert.isAbove(
           frame.pixel.r,
           er - 50,

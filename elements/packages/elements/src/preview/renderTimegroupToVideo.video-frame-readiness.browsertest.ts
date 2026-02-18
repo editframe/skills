@@ -8,16 +8,34 @@ import type { EFVideo } from "../elements/EFVideo.js";
 import "../elements/EFTimegroup.js";
 import "../elements/EFVideo.js";
 
+const TEST_VIDEO_URL = "http://host.docker.internal:3000/sync-test.mp4";
+
+async function isTestServerAvailable(): Promise<boolean> {
+  try {
+    const res = await fetch(TEST_VIDEO_URL, { method: "HEAD", signal: AbortSignal.timeout(2000) });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 describe("Video Frame Readiness", () => {
+  let serverAvailable = false;
+
   beforeAll(async () => {
     await customElements.whenDefined("ef-timegroup");
     await customElements.whenDefined("ef-video");
+    serverAvailable = await isTestServerAvailable();
   });
 
   it(
     "should have video canvas pixels after seekForRender",
     { timeout: 30000 },
-    async () => {
+    async ({ skip }) => {
+      if (!serverAvailable) {
+        skip();
+        return;
+      }
       const tg = document.createElement("ef-timegroup") as EFTimegroup;
       tg.setAttribute("mode", "fixed");
       tg.setAttribute("duration", "5s");
