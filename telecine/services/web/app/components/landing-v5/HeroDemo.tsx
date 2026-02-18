@@ -19,14 +19,14 @@ import { ExportButton } from "./ExportButton";
 const OVERLAP_MS = 495; // 15 frames
 
 const DUR = {
-  title: 3000,
-  author: 10033,
-  layers: 9367,
-  timeline: 11100,
-  editor: 8400,
-  template: 6300,
-  stream: 6000,
-  render: 9100,
+  title: 3333,    // voice 2.35s + buffer
+  author: 6333,   // voice 5.30s + buffer
+  layers: 7067,   // voice 6.06s + buffer
+  timeline: 9767,  // voice 8.74s + buffer
+  editor: 8200,   // voice 7.18s + buffer
+  template: 5500,  // voice 4.45s + buffer
+  stream: 5700,   // voice 4.70s + buffer
+  render: 8833,   // voice 7.81s + buffer
 } as const;
 
 function sceneStyle(durationMs: number): React.CSSProperties {
@@ -49,103 +49,93 @@ interface CaptionGroup {
 }
 
 const CAPTIONS_TITLE: CaptionGroup[] = [
-  { showMs: 0, hideMs: 2500, words: [
-    { w: "Video", s: 0, e: 360 }, { w: "is", s: 360, e: 540 }, { w: "a", s: 540, e: 640 }, { w: "web", s: 640, e: 920 }, { w: "page", s: 920, e: 1260 }, { w: "that", s: 1260, e: 1500 }, { w: "moves.", s: 1500, e: 2100 },
+  { showMs: 400, hideMs: 2700, words: [
+    { w: "Video", s: 560, e: 1000 }, { w: "is", s: 1000, e: 1220 }, { w: "a", s: 1220, e: 1320 }, { w: "web page", s: 1320, e: 1540 }, { w: "that", s: 1540, e: 1920 }, { w: "moves.", s: 1920, e: 2140 },
   ] },
 ];
 
 const CAPTIONS_AUTHOR: CaptionGroup[] = [
-  { showMs: 0, hideMs: 3200, words: [
-    { w: "It", s: 360, e: 560 }, { w: "starts", s: 560, e: 960 }, { w: "with", s: 960, e: 1200 }, { w: "HTML", s: 1200, e: 1700 }, { w: "and", s: 1700, e: 1960 }, { w: "CSS.", s: 1960, e: 2600 },
+  { showMs: 0, hideMs: 2800, words: [
+    { w: "It", s: 0, e: 520 }, { w: "starts", s: 520, e: 760 }, { w: "with", s: 760, e: 1020 }, { w: "HTML", s: 1020, e: 1440 }, { w: "and", s: 1440, e: 1840 }, { w: "CSS.", s: 1840, e: 2280 },
   ] },
-  { showMs: 3400, hideMs: 8700, words: [
-    { w: "When", s: 3600, e: 3900 }, { w: "you", s: 3900, e: 4100 }, { w: "need", s: 4100, e: 4400 }, { w: "more,", s: 4400, e: 4900 }, { w: "it's", s: 5200, e: 5500 }, { w: "just", s: 5500, e: 5900 }, { w: "React.", s: 5900, e: 6600 },
+  { showMs: 2800, hideMs: 5800, words: [
+    { w: "When", s: 3040, e: 3280 }, { w: "you", s: 3280, e: 3400 }, { w: "need", s: 3400, e: 3540 }, { w: "more,", s: 3540, e: 3820 }, { w: "it's", s: 4140, e: 4360 }, { w: "just", s: 4360, e: 4540 }, { w: "React.", s: 4540, e: 5220 },
   ] },
 ];
 
 const CAPTIONS_LAYERS: CaptionGroup[] = [
-  { showMs: 0, hideMs: 3000, words: [
-    { w: "Stack", s: 0, e: 920 }, { w: "layers", s: 920, e: 1280 }, { w: "the", s: 1280, e: 1480 }, { w: "way", s: 1480, e: 1720 }, { w: "you", s: 1720, e: 1880 }, { w: "stack", s: 1880, e: 2140 }, { w: "divs.", s: 2140, e: 2760 },
+  { showMs: 0, hideMs: 3200, words: [
+    { w: "Stack", s: 0, e: 940 }, { w: "layers", s: 940, e: 1380 }, { w: "the", s: 1380, e: 1640 }, { w: "way", s: 1640, e: 1780 }, { w: "you", s: 1780, e: 1900 }, { w: "stack", s: 1900, e: 2220 }, { w: "divs.", s: 2220, e: 2980 },
   ] },
-  { showMs: 3100, hideMs: 6700, words: [
-    { w: "Video,", s: 3320, e: 3980 }, { w: "text,", s: 4300, e: 4640 }, { w: "shapes,", s: 4940, e: 5360 }, { w: "3D\u2009\u2014", s: 5880, e: 6460 },
+  { showMs: 2800, hideMs: 5400, words: [
+    { w: "Video,", s: 2980, e: 3420 }, { w: "text,", s: 3660, e: 3820 }, { w: "shapes,", s: 4160, e: 4400 }, { w: "3D,", s: 4680, e: 5100 },
   ] },
-  { showMs: 6700, hideMs: 8400, words: [
-    { w: "mix", s: 6920, e: 7160 }, { w: "everything.", s: 7160, e: 8100 },
+  { showMs: 5100, hideMs: 6200, words: [
+    { w: "mix", s: 5300, e: 5400 }, { w: "everything.", s: 5400, e: 5800 },
   ] },
 ];
 
 const CAPTIONS_TIMELINE: CaptionGroup[] = [
-  { showMs: 0, hideMs: 1800, words: [
-    { w: "Need", s: 0, e: 1060 }, { w: "an", s: 1060, e: 1280 }, { w: "editor?", s: 1280, e: 1600 },
+  { showMs: 0, hideMs: 1600, words: [
+    { w: "Need", s: 0, e: 940 }, { w: "an", s: 940, e: 1120 }, { w: "editor?", s: 1120, e: 1360 },
   ] },
-  { showMs: 2000, hideMs: 4200, words: [
-    { w: "Snap", s: 2240, e: 2500 }, { w: "together", s: 2500, e: 2940 }, { w: "GUI", s: 2940, e: 3440 }, { w: "primitives.", s: 3440, e: 4019 },
+  { showMs: 1800, hideMs: 3800, words: [
+    { w: "Snap", s: 2060, e: 2300 }, { w: "together", s: 2300, e: 2700 }, { w: "GUI", s: 2700, e: 3040 }, { w: "primitives.", s: 3040, e: 3520 },
   ] },
-  { showMs: 4200, hideMs: 7000, words: [
-    { w: "Timeline,", s: 4420, e: 4900 }, { w: "waveforms,", s: 5460, e: 6200 }, { w: "captions,", s: 6400, e: 6780 },
+  { showMs: 3800, hideMs: 6400, words: [
+    { w: "Timeline,", s: 4040, e: 4560 }, { w: "waveforms,", s: 4900, e: 5640 }, { w: "captions,", s: 5780, e: 6100 },
   ] },
-  { showMs: 7100, hideMs: 10100, words: [
-    { w: "into", s: 7360, e: 7640 }, { w: "any", s: 7640, e: 8200 }, { w: "editing", s: 8200, e: 8640 }, { w: "experience", s: 8640, e: 9140 }, { w: "you", s: 9140, e: 9560 }, { w: "want.", s: 9560, e: 9820 },
+  { showMs: 6300, hideMs: 9000, words: [
+    { w: "into", s: 6560, e: 6660 }, { w: "any", s: 6660, e: 7040 }, { w: "editing", s: 7040, e: 7360 }, { w: "experience", s: 7360, e: 7800 }, { w: "you", s: 7800, e: 8220 }, { w: "want.", s: 8220, e: 8480 },
   ] },
 ];
 
 const CAPTIONS_EDITOR: CaptionGroup[] = [
-  { showMs: 0, hideMs: 1700, words: [
-    { w: "A", s: 0, e: 640 }, { w: "full", s: 640, e: 920 }, { w: "NLE.", s: 920, e: 1460 },
+  { showMs: 0, hideMs: 1800, words: [
+    { w: "A", s: 0, e: 680 }, { w: "full", s: 680, e: 1000 }, { w: "NLE.", s: 1000, e: 1520 },
   ] },
-  { showMs: 1700, hideMs: 3900, words: [
-    { w: "A", s: 1980, e: 2160 }, { w: "simple", s: 2160, e: 2400 }, { w: "trim", s: 2400, e: 2700 }, { w: "tool", s: 2700, e: 3040 }, { w: "in", s: 3040, e: 3260 }, { w: "a", s: 3260, e: 3360 }, { w: "form.", s: 3360, e: 3660 },
+  { showMs: 1800, hideMs: 4000, words: [
+    { w: "A", s: 2140, e: 2280 }, { w: "simple", s: 2280, e: 2560 }, { w: "trim", s: 2560, e: 2800 }, { w: "tool", s: 2800, e: 3120 }, { w: "in", s: 3120, e: 3340 }, { w: "a", s: 3340, e: 3440 }, { w: "form.", s: 3440, e: 3740 },
   ] },
-  { showMs: 3900, hideMs: 5100, words: [
-    { w: "It's", s: 4200, e: 4380 }, { w: "your", s: 4380, e: 4500 }, { w: "UI.", s: 4500, e: 4780 },
+  { showMs: 3800, hideMs: 5200, words: [
+    { w: "It's", s: 4060, e: 4280 }, { w: "your", s: 4280, e: 4480 }, { w: "UI.", s: 4480, e: 4940 },
   ] },
-  { showMs: 5200, hideMs: 7200, words: [
-    { w: "These", s: 5460, e: 5760 }, { w: "are", s: 5760, e: 5940 }, { w: "just", s: 5940, e: 6200 }, { w: "the", s: 6200, e: 6400 }, { w: "building", s: 6400, e: 6680 }, { w: "blocks.", s: 6680, e: 6980 },
+  { showMs: 5500, hideMs: 7200, words: [
+    { w: "These", s: 5760, e: 5980 }, { w: "are", s: 5980, e: 6120 }, { w: "just", s: 6120, e: 6280 }, { w: "the", s: 6280, e: 6440 }, { w: "building", s: 6440, e: 6660 }, { w: "blocks.", s: 6660, e: 6960 },
   ] },
 ];
 
 const CAPTIONS_TEMPLATE: CaptionGroup[] = [
-  { showMs: 0, hideMs: 1700, words: [
-    { w: "Feed", s: 0, e: 880 }, { w: "in", s: 880, e: 1080 }, { w: "data,", s: 1080, e: 1420 },
+  { showMs: 0, hideMs: 1600, words: [
+    { w: "Feed", s: 0, e: 900 }, { w: "in", s: 900, e: 1100 }, { w: "data,", s: 1100, e: 1380 },
   ] },
-  { showMs: 1700, hideMs: 4900, words: [
-    { w: "and", s: 1940, e: 2040 }, { w: "one", s: 2040, e: 2260 }, { w: "template", s: 2260, e: 2640 }, { w: "becomes", s: 2640, e: 3120 }, { w: "10,000", s: 3120, e: 3980 }, { w: "unique", s: 3980, e: 4300 }, { w: "videos.", s: 4300, e: 4680 },
+  { showMs: 1200, hideMs: 4600, words: [
+    { w: "and", s: 1380, e: 1800 }, { w: "one", s: 1800, e: 2020 }, { w: "template", s: 2020, e: 2340 }, { w: "becomes", s: 2340, e: 2740 }, { w: "10,000", s: 2740, e: 3600 }, { w: "unique", s: 3600, e: 3900 }, { w: "videos.", s: 3900, e: 4320 },
   ] },
 ];
 
 const CAPTIONS_STREAM: CaptionGroup[] = [
-  { showMs: 0, hideMs: 2000, words: [
-    { w: "Preview", s: 0, e: 700 }, { w: "is", s: 700, e: 900 }, { w: "instant.", s: 900, e: 1600 },
+  { showMs: 0, hideMs: 2200, words: [
+    { w: "Preview", s: 0, e: 1140 }, { w: "is", s: 1140, e: 1540 }, { w: "instant.", s: 1540, e: 2000 },
   ] },
-  { showMs: 2000, hideMs: 5200, words: [
-    { w: "Change", s: 2200, e: 2600 }, { w: "the", s: 2600, e: 2800 }, { w: "code,", s: 2800, e: 3300 }, { w: "see", s: 3500, e: 3800 }, { w: "the", s: 3800, e: 4000 }, { w: "frame.", s: 4000, e: 4600 },
+  { showMs: 2200, hideMs: 4800, words: [
+    { w: "Change", s: 2420, e: 2840 }, { w: "the", s: 2840, e: 3040 }, { w: "code,", s: 3040, e: 3340 }, { w: "see", s: 3780, e: 4060 }, { w: "the", s: 4060, e: 4200 }, { w: "frame.", s: 4200, e: 4480 },
   ] },
 ];
 
 const CAPTIONS_RENDER: CaptionGroup[] = [
-  { showMs: 0, hideMs: 1600, words: [
-    { w: "When", s: 0, e: 960 }, { w: "it's", s: 960, e: 1180 }, { w: "ready,", s: 1180, e: 1420 },
+  { showMs: 0, hideMs: 1200, words: [
+    { w: "When", s: 0, e: 640 }, { w: "it's", s: 640, e: 800 }, { w: "ready,", s: 800, e: 1020 },
   ] },
-  { showMs: 1600, hideMs: 5300, words: [
-    { w: "render", s: 1900, e: 2240 }, { w: "to", s: 2240, e: 2500 }, { w: "the", s: 2500, e: 2620 }, { w: "cloud,", s: 2620, e: 3000 }, { w: "the", s: 3300, e: 3380 }, { w: "browser,", s: 3380, e: 3820 }, { w: "or", s: 4120, e: 4200 }, { w: "the", s: 4200, e: 4340 }, { w: "command", s: 4340, e: 4560 }, { w: "line.", s: 4560, e: 5100 },
+  { showMs: 1100, hideMs: 4900, words: [
+    { w: "render", s: 1320, e: 1560 }, { w: "to", s: 1560, e: 1780 }, { w: "the", s: 1780, e: 1900 }, { w: "cloud,", s: 1900, e: 2240 }, { w: "the", s: 2600, e: 2680 }, { w: "browser,", s: 2680, e: 3060 }, { w: "or", s: 3540, e: 3800 }, { w: "the", s: 3800, e: 3980 }, { w: "command", s: 3980, e: 4200 }, { w: "line.", s: 4200, e: 4660 },
   ] },
-  { showMs: 5200, hideMs: 7900, words: [
-    { w: "Same", s: 5400, e: 5780 }, { w: "composition,", s: 5780, e: 6380 }, { w: "every", s: 7000, e: 7340 }, { w: "target.", s: 7340, e: 7680 },
+  { showMs: 4900, hideMs: 7800, words: [
+    { w: "Same", s: 5160, e: 5500 }, { w: "composition,", s: 5500, e: 6080 }, { w: "every", s: 6520, e: 6940 }, { w: "target.", s: 6940, e: 7460 },
   ] },
 ];
 
-const AUDIO_CDN = "https://assets.editframe.com/hero";
-const AUDIO_SRC = {
-  title:    `${AUDIO_CDN}/01-title-a290b7f6.mp3`,
-  author:   `${AUDIO_CDN}/02-author-99e9ca24.mp3`,
-  layers:   `${AUDIO_CDN}/03-layers-9b105620.mp3`,
-  timeline: `${AUDIO_CDN}/04-timeline-993b3d16.mp3`,
-  editor:   `${AUDIO_CDN}/05-editor-197fcf4c.mp3`,
-  template: `${AUDIO_CDN}/06-template-95d5c2cd.mp3`,
-  stream:   `${AUDIO_CDN}/07-stream-5b7d2772.mp3`,
-  render:   `${AUDIO_CDN}/08-render-bc145020.mp3`,
-} as const;
+const VOICEOVER_SRC = "https://assets.editframe.com/hero/voiceover-b53ab1ec.mp3";
 
 function SceneCaptions({ groups }: { groups: CaptionGroup[] }) {
   return (
@@ -196,7 +186,7 @@ function SceneTitle() {
   const d = DUR.title;
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
-      <Audio src={AUDIO_SRC.title} />
+
       <div className="absolute inset-0" style={{
         background: "radial-gradient(ellipse 80% 60% at 50% 50%, rgba(21,101,192,0.08) 0%, transparent 70%)",
       }} />
@@ -276,7 +266,7 @@ function SceneAuthor() {
 
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
-      <Audio src={AUDIO_SRC.author} />
+
       <div className="absolute inset-0" style={{
         background: "radial-gradient(ellipse 60% 50% at 75% 50%, rgba(21,101,192,0.06) 0%, transparent 70%)",
       }} />
@@ -626,7 +616,7 @@ function SceneLayers() {
   const d = DUR.layers;
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
-      <Audio src={AUDIO_SRC.layers} />
+
       <div className="absolute inset-0" style={{
         background: "radial-gradient(ellipse 80% 70% at 50% 45%, rgba(21,101,192,0.08) 0%, transparent 70%)",
       }} />
@@ -697,7 +687,7 @@ function SceneTimeline() {
 
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
-      <Audio src={AUDIO_SRC.timeline} />
+
       <div className="absolute inset-0 flex flex-col" style={{ padding: "12px 24px", gap: "6px" }}>
 
         {/* Ruler header */}
@@ -915,7 +905,7 @@ function SceneEditor() {
   const filmstripFrames = Array.from({ length: 20 });
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
-      <Audio src={AUDIO_SRC.editor} />
+
 
       {/* ── Phase 1: Full NLE layout (collapses at 3500ms) ── */}
       <div
@@ -1257,7 +1247,7 @@ function SceneTemplate() {
 
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
-      <Audio src={AUDIO_SRC.template} />
+
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         {/* Year watermark */}
         <div
@@ -1484,7 +1474,7 @@ function SceneStream() {
   const d = DUR.stream;
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
-      <Audio src={AUDIO_SRC.stream} />
+
       <CompositionCanvas
         camera={{ position: [0, 0.1, 6.2], fov: 35 }}
         gl={{ antialias: true, alpha: true }}
@@ -1654,7 +1644,7 @@ function SceneRender() {
 
   return (
     <Timegroup mode="fixed" duration={`${d}ms`} className="relative" style={{ ...sceneStyle(d), width: 960, height: 540, background: "#0a0a0a" }}>
-      <Audio src={AUDIO_SRC.render} />
+
       <div className="absolute inset-0 flex flex-col justify-center px-12 gap-5">
         {/* Heading */}
         <div
@@ -1768,6 +1758,7 @@ function HeroDemoContent() {
         className="relative"
         style={{ width: 960, height: 540 }}
       >
+        <Audio src={VOICEOVER_SRC} />
         <Timegroup
           mode="sequence"
           overlapMs={OVERLAP_MS}

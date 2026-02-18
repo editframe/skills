@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Generate per-scene hero voiceover WAVs + MP3s using local Qwen3-TTS.
+"""Generate per-scene hero voiceover WAVs + MP3s using local Qwen3-TTS Base model.
 
-Generates the entire script as a single TTS pass to maintain a consistent voice,
+Generates the entire script as a single TTS pass for consistent voice,
 then uses whisper word-level timestamps to find segment boundaries and splits
 at zero crossings for click-free cuts.
 """
@@ -21,33 +21,38 @@ from qwen_tts import Qwen3TTSModel
 OUT = os.path.join(os.path.dirname(__file__), "..", "public", "audio", "hero")
 os.makedirs(OUT, exist_ok=True)
 
-SPEAKER = "ryan"
 INSTRUCT = (
-    "Confident and warm narrator voice. Clear, direct delivery. "
-    "Normal conversational pace."
+    "A confident male narrator in his 30s with a warm, clear voice. "
+    "Direct delivery, normal conversational pace."
 )
 
 SEGMENTS = [
     {
+        "key": "00-preamble",
+        "text": "Here is the introduction.",
+        "last_word": "introduction",
+        "discard": True,
+    },
+    {
         "key": "01-title",
-        "text": "Video shouldn't be this hard to automate.",
-        "last_word": "automate",
+        "text": "Video is a web page that moves.",
+        "last_word": "moves",
     },
     {
         "key": "02-author",
         "text": (
-            "Video is just markup. Write HTML, style it with CSS, "
-            "then reach for React or JavaScript when you need to."
+            "It starts with HTML and CSS. "
+            "When you need more, it's just React."
         ),
-        "last_word": "to",
+        "last_word": "React",
     },
     {
         "key": "03-layers",
         "text": (
-            "Stack layers like you'd stack elements. "
-            "Video, text, shapes, 3D, each one composable."
+            "Stack layers the way you stack divs. "
+            "Video, text, shapes, 3D, mix everything."
         ),
-        "last_word": "composable",
+        "last_word": "everything",
     },
     {
         "key": "04-timeline",
@@ -62,7 +67,7 @@ SEGMENTS = [
         "key": "05-editor",
         "text": (
             "A full NLE. A simple trim tool in a form. "
-            "It's your UI, these are just the building blocks."
+            "It's your UI. These are just the building blocks."
         ),
         "last_word": "blocks",
     },
@@ -73,11 +78,8 @@ SEGMENTS = [
     },
     {
         "key": "07-stream",
-        "text": (
-            "Preview is instant. Frames stream just-in-time, "
-            "so you're never waiting on a render to see your work."
-        ),
-        "last_word": "work",
+        "text": "Preview is instant. Change the code, see the frame.",
+        "last_word": "frame",
     },
     {
         "key": "08-render",
@@ -169,8 +171,8 @@ def main():
     dtype = torch.float32
     print(f"Device: {device}, dtype: {dtype}")
 
-    print("Loading Qwen3-TTS model...")
-    model_path = snapshot_download("Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice")
+    print("Loading Qwen3-TTS Base model...")
+    model_path = snapshot_download("Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign")
     model = Qwen3TTSModel.from_pretrained(
         model_path, device_map=device, dtype=dtype,
     )
@@ -182,10 +184,9 @@ def main():
 
     print("Generating full voiceover as single pass...")
     t0 = time.time()
-    wavs, sr = model.generate_custom_voice(
+    wavs, sr = model.generate_voice_design(
         text=full_text,
         language="English",
-        speaker=SPEAKER,
         instruct=INSTRUCT,
         non_streaming_mode=True,
         max_new_tokens=8192,
@@ -228,6 +229,12 @@ def main():
         end = boundaries[i + 1]
         segment_audio = full_audio[start:end]
         duration = len(segment_audio) / sr
+        start_sec = start / sr
+        end_sec = end / sr
+
+        if seg.get("discard"):
+            print(f"  {key}: {duration:.2f}s  ({start_sec:.2f}s - {end_sec:.2f}s)  [DISCARDED]")
+            continue
 
         wav_path = os.path.join(OUT, f"{key}.wav")
         mp3_path = os.path.join(OUT, f"{key}.mp3")
@@ -238,8 +245,6 @@ def main():
         )
 
         durations[key] = round(duration, 3)
-        start_sec = start / sr
-        end_sec = end / sr
         print(f"  {key}: {duration:.2f}s  ({start_sec:.2f}s - {end_sec:.2f}s)")
 
     timing_path = os.path.join(OUT, "timing.json")

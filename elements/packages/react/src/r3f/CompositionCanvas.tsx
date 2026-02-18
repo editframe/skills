@@ -19,8 +19,9 @@
  */
 
 import * as React from "react";
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
+import { flushSync } from "react-dom";
 import type { CanvasProps } from "@react-three/fiber";
 
 /* ━━ Context for composition time ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
@@ -54,7 +55,9 @@ function GLSync() {
 
 function InvalidateOnTimeChange({ timeMs }: { timeMs: number }) {
   const { invalidate } = useThree();
-  useEffect(() => {
+  // useLayoutEffect fires synchronously during flushSync, ensuring
+  // invalidate() runs before the addFrameTask callback returns.
+  useLayoutEffect(() => {
     invalidate();
   }, [timeMs, invalidate]);
   return null;
@@ -103,8 +106,15 @@ export function CompositionCanvas({
     if (tg.durationMs) setDurationMs(tg.durationMs);
 
     const cleanup = tg.addFrameTask?.(({ ownCurrentTimeMs, durationMs: dur }) => {
-      setTimeMs(ownCurrentTimeMs);
-      setDurationMs(dur);
+      // flushSync commits the state update synchronously so the
+      // useLayoutEffect → invalidate() fires before we return.
+      // R3F's demand render then runs useFrame subscribers (which
+      // update instancedMesh matrices, cameras, etc.) and gl.render
+      // in a single pass — no duplicate GPU work.
+      flushSync(() => {
+        setTimeMs(ownCurrentTimeMs);
+        setDurationMs(dur);
+      });
     });
 
     return cleanup;
