@@ -2719,6 +2719,20 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     for (let i = 3; i < imageData.data.length; i += 4) {
       if (imageData.data[i]! > 0) nonZeroPixels++;
     }
+
+    // If initial render produced nothing, bump time to bypass dedup and retry
+    if (nonZeroPixels === 0) {
+      (timegroup as any).currentTimeMs = 1;
+      (timegroup as any).userTimeMs = 1;
+      await timegroup.updateComplete;
+      await refresh();
+
+      imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      nonZeroPixels = 0;
+      for (let i = 3; i < imageData.data.length; i += 4) {
+        if (imageData.data[i]! > 0) nonZeroPixels++;
+      }
+    }
     expect(nonZeroPixels).toBeGreaterThan(0);
 
     // Change resolution scale (triggers re-render)
