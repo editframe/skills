@@ -336,7 +336,7 @@ async function main() {
     const { execSync } = await import("node:child_process");
     try {
       const output = execSync(
-        `docker compose logs worker-render-initializer worker-render-fragment worker-render-finalizer scheduler-go 2>&1 | grep "${renderId}" | tail -100`,
+        `docker compose logs worker-render-initializer worker-render-fragment worker-render-finalizer maintenance 2>&1 | grep "${renderId}" | tail -100`,
         {
           cwd: "/app",
           encoding: "utf-8",

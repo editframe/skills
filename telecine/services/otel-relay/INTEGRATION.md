@@ -37,7 +37,7 @@ All Node.js services use the shared instrumentation from `lib/tracing/instrument
 ```typescript
 // Automatically configured for all services:
 // - services/web
-// - services/scheduler
+// - services/maintenance
 // - services/worker-*
 // - services/jit-transcoding
 ```
