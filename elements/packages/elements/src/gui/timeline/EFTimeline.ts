@@ -701,15 +701,7 @@ export class EFTimeline extends TWMixin(LitElement) {
       if (element && isEFTemporal(element)) {
         return element as TemporalMixinInterface & HTMLElement;
       }
-      // Log when controlTarget is set but element not found
-      if (this.isPlaying) {
-        console.warn(
-          "[EFTimeline] controlTarget set but element not found:",
-          this.controlTarget,
-          "isPlaying:",
-          this.isPlaying,
-        );
-      }
+
     }
 
     // If controlTarget is "selection" or empty, derive from canvas selection
@@ -723,27 +715,6 @@ export class EFTimeline extends TWMixin(LitElement) {
           if (rootTemporal) return rootTemporal;
         }
       }
-      // Log when selection exists but no temporal found
-      if (this.isPlaying && selectedIds.length > 0) {
-        console.warn(
-          "[EFTimeline] Selection found but no temporal element:",
-          selectedIds[0],
-          "isPlaying:",
-          this.isPlaying,
-        );
-      }
-    }
-
-    // Log when targetTemporal becomes null during playback
-    if (this.isPlaying) {
-      console.warn(
-        "[EFTimeline] targetTemporal is null during playback. controlTarget:",
-        this.controlTarget,
-        "target:",
-        this.target,
-        "hasSelectionContext:",
-        !!this.getCanvasSelectionContext(),
-      );
     }
 
     return null;

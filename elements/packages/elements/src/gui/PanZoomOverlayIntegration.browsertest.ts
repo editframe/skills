@@ -947,16 +947,6 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       const childRect = childElement.getBoundingClientRect();
       const overlayLayerRect = overlayLayer.getBoundingClientRect();
 
-      // Debug: log positions
-      console.log("Child element rect:", childRect);
-      console.log("Overlay layer rect:", overlayLayerRect);
-      console.log("Overlay item styles:", {
-        left: overlayItem.style.left,
-        top: overlayItem.style.top,
-        width: overlayItem.style.width,
-        height: overlayItem.style.height,
-      });
-
       const expectedX = childRect.left - overlayLayerRect.left;
       const expectedY = childRect.top - overlayLayerRect.top;
 

@@ -58,14 +58,7 @@ export class SelectionOverlay extends LitElement {
     changedProperties: Map<string | number | symbol, unknown>,
   ): void {
     super.firstUpdated?.(changedProperties);
-    // When createRenderRoot returns this, Lit injects styles as a <style> element
-    // Verify styles are present - only warn if not in a test environment
-    const styleElement = this.querySelector("style");
-    if (!styleElement && !this.closest("[data-test-container]")) {
-      console.warn(
-        "[SelectionOverlay] No style element found - styles may not be applied",
-      );
-    }
+
   }
 
   @consume({ context: selectionContext, subscribe: true })

@@ -117,22 +117,16 @@ describe("WorkerPool", () => {
     }
 
     // Encode all canvases in parallel
-    const startTime = performance.now();
     const dataUrls = await Promise.all(
       canvases.map((canvas) =>
         pool.execute((worker) => encodeCanvasInWorker(worker, canvas, false)),
       ),
     );
-    const endTime = performance.now();
 
     expect(dataUrls).toHaveLength(8);
     dataUrls.forEach((dataUrl) => {
       expect(dataUrl).toMatch(/^data:image\/jpeg;base64,/);
     });
-
-    console.log(
-      `Encoded ${canvases.length} canvases in ${(endTime - startTime).toFixed(2)}ms`,
-    );
   });
 
   test("compares worker pool performance vs main thread", async () => {
@@ -153,22 +147,14 @@ describe("WorkerPool", () => {
     ctx.fillRect(0, 0, 1280, 720);
 
     // Test main thread encoding
-    const mainThreadStart = performance.now();
     canvas.toDataURL("image/jpeg", 0.95);
-    const mainThreadTime = performance.now() - mainThreadStart;
 
     // Test worker encoding
-    const workerStart = performance.now();
     const workerDataUrl = await pool.execute((worker) =>
       encodeCanvasInWorker(worker, canvas, false),
     );
-    const workerTime = performance.now() - workerStart;
 
     expect(workerDataUrl).toMatch(/^data:image\/jpeg;base64,/);
-
-    console.log(`Main thread: ${mainThreadTime.toFixed(2)}ms`);
-    console.log(`Worker pool: ${workerTime.toFixed(2)}ms`);
-    console.log(`Speedup: ${(mainThreadTime / workerTime).toFixed(2)}x`);
   });
 
   test("handles errors gracefully", async () => {

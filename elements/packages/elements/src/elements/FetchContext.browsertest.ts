@@ -19,13 +19,11 @@ describe("URL Token Deduplication", () => {
     // Mock fetch to track token requests
     const originalFetch = window.fetch;
     const tokenRequests: string[] = [];
-    const mediaRequests: string[] = [];
 
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = input.toString();
 
       if (url.includes("/api/v1/url-token") || url.includes("/@ef-sign-url")) {
-        console.log("Token request:", url, init?.body);
         tokenRequests.push(url);
         // Mock token response
         return new Response(JSON.stringify({ token: "mock-token" }), {
@@ -35,8 +33,6 @@ describe("URL Token Deduplication", () => {
       }
 
       if (url.includes("/api/v1/transcode/")) {
-        console.log("Media request:", url);
-        mediaRequests.push(url);
         // Mock media response
         return new Response("mock-media-data", { status: 200 });
       }
@@ -74,15 +70,11 @@ describe("URL Token Deduplication", () => {
         Array.from(videos).map(async (video) => {
           try {
             await video.getMediaEngine();
-          } catch (error) {
+          } catch (_error) {
             // Expected to fail since we're mocking, but should trigger token requests
-            console.log("Expected error:", error);
           }
         }),
       );
-
-      console.log("Token requests:", tokenRequests);
-      console.log("Media requests:", mediaRequests);
 
       // Should only have 1 token request since all videos share the same source
       // This test will currently fail, demonstrating the issue
@@ -107,7 +99,6 @@ describe("URL Token Deduplication", () => {
       if (url.includes("/api/v1/url-token") || url.includes("/@ef-sign-url")) {
         const bodyData = init?.body ? JSON.parse(init.body as string) : null;
         const timestamp = Date.now();
-        console.log("Token request:", url, bodyData, `at ${timestamp}`);
         tokenRequests.push({ url, body: bodyData, timestamp });
 
         // Add small delay to make timing issues more apparent
@@ -180,21 +171,6 @@ describe("URL Token Deduplication", () => {
         }),
       );
 
-      console.log(`Total token requests: ${tokenRequests.length}`);
-      tokenRequests.forEach((req, i) => {
-        console.log(`Request ${i + 1}:`, req.body, `timing: ${req.timestamp}`);
-      });
-
-      // Log for debugging - the real issue might be in timing/concurrency
-      console.log(
-        "Token request details:",
-        tokenRequests.map((r) => ({
-          url: r.body?.url,
-          params: r.body?.params,
-          timing: r.timestamp,
-        })),
-      );
-
       // With global token deduplication, should only make 1 token request
       // even across separate context providers
       expect(tokenRequests.length).toBe(1);
@@ -211,7 +187,6 @@ describe("URL Token Deduplication", () => {
     // This test simulates the race condition where multiple elements initialize simultaneously
     const originalFetch = window.fetch;
     const tokenRequests: { url: string; body: any; timestamp: number }[] = [];
-    const concurrentRequestStarts: number[] = [];
 
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = input.toString();
@@ -219,8 +194,6 @@ describe("URL Token Deduplication", () => {
       if (url.includes("/api/v1/url-token") || url.includes("/@ef-sign-url")) {
         const bodyData = init?.body ? JSON.parse(init.body as string) : null;
         const timestamp = Date.now();
-        concurrentRequestStarts.push(timestamp);
-        console.log("Token request started:", url, bodyData, `at ${timestamp}`);
 
         // Simulate network delay
         await new Promise((resolve) => setTimeout(resolve, 50));
@@ -282,7 +255,6 @@ describe("URL Token Deduplication", () => {
       );
 
       // Trigger all manifest requests simultaneously to create race condition
-      const startTime = Date.now();
       await Promise.all(
         elements.map(async ({ video }) => {
           try {
@@ -292,11 +264,6 @@ describe("URL Token Deduplication", () => {
           }
         }),
       );
-      const endTime = Date.now();
-
-      console.log(`All requests completed in ${endTime - startTime}ms`);
-      console.log(`Concurrent starts: ${concurrentRequestStarts.length}`);
-      console.log(`Completed token requests: ${tokenRequests.length}`);
 
       // Verify that despite 5 concurrent elements, only 1 token was actually fetched
       expect(tokenRequests.length).toBe(1);
@@ -322,7 +289,6 @@ describe("URL Token Deduplication", () => {
       const url = input.toString();
 
       if (url.includes("/api/v1/url-token") || url.includes("/@ef-sign-url")) {
-        console.log("Token request for:", JSON.parse(init?.body as string));
         tokenRequests.push(url);
         return new Response(JSON.stringify({ token: "shared-token-for-all" }), {
           status: 200,
@@ -384,10 +350,6 @@ describe("URL Token Deduplication", () => {
             // Expected due to mocking
           }
         }),
-      );
-
-      console.log(
-        `Total token requests for 10 identical videos: ${tokenRequests.length}`,
       );
 
       // This should now be 1 instead of 10, proving the deduplication works

@@ -71,20 +71,16 @@ describe("WorkerPool Integration Tests", () => {
         createTestCanvas(100, 100, "yellow"),
       ];
 
-      const startTime = performance.now();
       const results = await Promise.all(
         canvases.map((canvas) =>
           pool.execute((worker) => encodeCanvasInWorker(worker, canvas, false)),
         ),
       );
-      const duration = performance.now() - startTime;
 
       expect(results).toHaveLength(4);
       results.forEach((dataUrl) => {
         verifyDataUrl(dataUrl, "jpeg");
       });
-
-      console.log(`Encoded 4 canvases in parallel: ${duration.toFixed(2)}ms`);
     });
 
     test("encodes 8 canvases with 4 workers", async () => {
@@ -97,22 +93,16 @@ describe("WorkerPool Integration Tests", () => {
         createTestCanvas(100, 100, `rgb(${i * 32}, 0, 0)`),
       );
 
-      const startTime = performance.now();
       const results = await Promise.all(
         canvases.map((canvas) =>
           pool.execute((worker) => encodeCanvasInWorker(worker, canvas, false)),
         ),
       );
-      const duration = performance.now() - startTime;
 
       expect(results).toHaveLength(8);
       results.forEach((dataUrl) => {
         verifyDataUrl(dataUrl, "jpeg");
       });
-
-      console.log(
-        `Encoded 8 canvases with 4 workers: ${duration.toFixed(2)}ms`,
-      );
     });
 
     test("encodes varying canvas sizes", async () => {
@@ -312,12 +302,6 @@ describe("WorkerPool Integration Tests", () => {
       );
       const parallelDuration = performance.now() - parallelStart;
 
-      console.log(`Sequential: ${sequentialDuration.toFixed(2)}ms`);
-      console.log(`Parallel: ${parallelDuration.toFixed(2)}ms`);
-      console.log(
-        `Speedup: ${(sequentialDuration / parallelDuration).toFixed(2)}x`,
-      );
-
       // Parallel should be faster (or at least not dramatically slower)
       expect(parallelDuration).toBeLessThanOrEqual(sequentialDuration * 1.5);
     });
@@ -331,19 +315,12 @@ describe("WorkerPool Integration Tests", () => {
       const canvas = createTestCanvas(640, 480, "blue");
 
       // Main thread encoding
-      const mainThreadStart = performance.now();
       const mainThreadResult = canvas.toDataURL("image/jpeg", 0.95);
-      const mainThreadDuration = performance.now() - mainThreadStart;
 
       // Worker encoding
-      const workerStart = performance.now();
       const workerResult = await pool.execute((worker) =>
         encodeCanvasInWorker(worker, canvas, false),
       );
-      const workerDuration = performance.now() - workerStart;
-
-      console.log(`Main thread: ${mainThreadDuration.toFixed(2)}ms`);
-      console.log(`Worker: ${workerDuration.toFixed(2)}ms`);
 
       verifyDataUrl(mainThreadResult, "jpeg");
       verifyDataUrl(workerResult, "jpeg");
@@ -427,19 +404,15 @@ describe("WorkerPool Integration Tests", () => {
       // Test with 1080p canvas
       const largeCanvas = createTestCanvas(1920, 1080, "green");
 
-      const startTime = performance.now();
       const dataUrl = await pool.execute((worker) =>
         encodeCanvasInWorker(worker, largeCanvas, false),
       );
-      const duration = performance.now() - startTime;
 
       verifyDataUrl(dataUrl, "jpeg");
 
       const img = await loadImageFromDataUrl(dataUrl);
       expect(img.width).toBe(1920);
       expect(img.height).toBe(1080);
-
-      console.log(`Encoded 1080p canvas: ${duration.toFixed(2)}ms`);
     });
   });
 

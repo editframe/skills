@@ -26,7 +26,6 @@ describe("abort rejection reproduction", () => {
   test("captureTimegroupAtTime cleanup fires no unhandled rejection", async () => {
     const apiHost = getApiHost();
     if (!apiHost) {
-      console.log("Skipping: no api host available");
       return;
     }
 
@@ -44,15 +43,6 @@ describe("abort rejection reproduction", () => {
         stack: event.reason?.stack || "no stack",
       };
       unhandledRejections.push(info);
-      console.error(
-        "[DIAGNOSTIC] unhandledrejection caught:",
-        JSON.stringify({
-          message: event.reason?.message,
-          name: event.reason?.name,
-          constructor: event.reason?.constructor?.name,
-          stack: event.reason?.stack?.split("\n").slice(0, 5),
-        }),
-      );
     };
     window.addEventListener("unhandledrejection", handler);
 
@@ -100,18 +90,6 @@ describe("abort rejection reproduction", () => {
     await new Promise((r) => setTimeout(r, 1000));
 
     window.removeEventListener("unhandledrejection", handler);
-
-    // Log what we captured
-    console.log(
-      "[DIAGNOSTIC] Total unhandled rejections captured:",
-      unhandledRejections.length,
-    );
-    for (const ur of unhandledRejections) {
-      console.log("[DIAGNOSTIC] Rejection:", JSON.stringify({
-        message: ur.reason?.message?.substring(0, 100),
-        name: ur.reason?.name,
-      }));
-    }
 
     expect(unhandledRejections.length).toBe(0);
   });

@@ -491,8 +491,6 @@ describe("encoderWorker Script Tests", () => {
 
       // Should complete in under 1 second for 640x480
       expect(duration).toBeLessThan(1000);
-
-      console.log(`640x480 encoding took: ${duration.toFixed(2)}ms`);
     });
 
     test("handles rapid sequential requests efficiently", async () => {
@@ -525,10 +523,6 @@ describe("encoderWorker Script Tests", () => {
 
       const duration = performance.now() - startTime;
       const avgTime = duration / count;
-
-      console.log(
-        `Average encoding time for ${count} requests: ${avgTime.toFixed(2)}ms`,
-      );
 
       // Average should be reasonable
       expect(avgTime).toBeLessThan(500);
