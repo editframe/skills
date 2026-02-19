@@ -13,28 +13,26 @@ import {
   applicationSecret,
   hasuraJwtSecretToken,
 } from "../secrets";
-import { DEPLOYED_DOMAIN, GCP_LOCATION } from "../constants";
+import { DEPLOYED_DOMAIN, GCP_LOCATION, GCP_PROJECT, GCP_REGION } from "../constants";
 import * as infra from "../_infra";
 import { bucket } from "../storage";
 import { publicBucketName } from "../constants";
 import { getGitSha } from "../../util/getGitSha";
 import { valkeyInternalIp } from "../valkey";
-import { externalQueueEnvVars, workers } from "./workers";
-import { workerResources, toGoMemLimit } from "../../worker-resources.config";
+import { queueEnvVars } from "../queues/workers";
+import { workerResources } from "../../worker-resources.config";
 
 const repo = infra.artifactRepository;
 
-export const schedulerGo = new gcp.cloudrunv2.Service(
-  "telecine-scheduler-go",
+export const cloudrun = new gcp.cloudrunv2.Service(
+  "telecine-maintenance",
   {
     ingress: "INGRESS_TRAFFIC_INTERNAL_ONLY",
     launchStage: "GA",
     location: "us-central1",
-    name: "telecine-scheduler-go",
+    name: "telecine-maintenance",
     project: "editframe",
     template: {
-      executionEnvironment: "EXECUTION_ENVIRONMENT_GEN1",
-      timeout: "3600s",
       scaling: {
         minInstanceCount: 1,
         maxInstanceCount: 1,
@@ -51,7 +49,7 @@ export const schedulerGo = new gcp.cloudrunv2.Service(
       maxInstanceRequestConcurrency: 1,
       containers: [
         {
-          image: pulumi.interpolate`${GCP_LOCATION}-docker.pkg.dev/${repo.project}/${repo.name}/scheduler-go:${getGitSha()}`,
+          image: pulumi.interpolate`${GCP_LOCATION}-docker.pkg.dev/${repo.project}/${repo.name}/maintenance:${getGitSha()}`,
 
           envs: [
             envFromSecretVersion("POSTGRES_PASSWORD", pgPassword),
@@ -83,18 +81,15 @@ export const schedulerGo = new gcp.cloudrunv2.Service(
             envFromValue("GCLOUD_TRACE_EXPORT", "true"),
             envFromValue("WEB_HOST", `https://${DEPLOYED_DOMAIN}`),
             envFromValue("RENDER_HOST", `https://${DEPLOYED_DOMAIN}`),
-            envFromValue(
-              "SCHEDULER_QUEUES",
-              "process-html-initializer,process-html-finalizer,process-isobmff,render-initializer,render-fragment,render-finalizer,ingest-image",
-            ),
-            ...externalQueueEnvVars(),
+            envFromValue("GCP_PROJECT", GCP_PROJECT),
+            envFromValue("GCP_REGION", GCP_REGION),
+            ...queueEnvVars(),
             envFromValue("PINO_LOG_LEVEL", "debug"),
-            envFromValue("GOMEMLIMIT", toGoMemLimit(workerResources.scheduler)),
           ],
           livenessProbe: {
             failureThreshold: 2,
-            periodSeconds: 2,
-            timeoutSeconds: 2,
+            periodSeconds: 5,
+            timeoutSeconds: 5,
             httpGet: {
               path: "/healthz",
               port: 3000,
@@ -106,19 +101,19 @@ export const schedulerGo = new gcp.cloudrunv2.Service(
           },
           resources: {
             limits: {
-              cpu: workerResources.scheduler.cpu,
-              memory: workerResources.scheduler.memory,
+              cpu: workerResources.maintenance.cpu,
+              memory: workerResources.maintenance.memory,
             },
-            cpuIdle: true,
+            cpuIdle: false,
             startupCpuBoost: true,
           },
           startupProbe: {
-            failureThreshold: 15,
-            periodSeconds: 2,
+            failureThreshold: 5,
+            periodSeconds: 5,
             tcpSocket: {
               port: 3000,
             },
-            timeoutSeconds: 2,
+            timeoutSeconds: 5,
           },
           volumeMounts: [
             {
@@ -148,7 +143,6 @@ export const schedulerGo = new gcp.cloudrunv2.Service(
       pgPassword.version,
       actionSecret.version,
       hasuraJwtSecretToken.version,
-      ...Array.from(Object.values(workers)),
     ],
   },
 );

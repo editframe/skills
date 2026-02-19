@@ -83,7 +83,7 @@ export const workerConfigs: Record<Workers, QueueConfig> = {
   },
 };
 
-export const workers: Record<Workers, gcp.cloudrunv2.Service> = {
+export const workers: Record<Workers, gcp.cloudrunv2.WorkerPool> = {
   ingestImage: defineWorker(workerConfigs.ingestImage),
   htmlFinalizer: defineWorker(workerConfigs.htmlFinalizer),
   htmlInitializer: defineWorker(workerConfigs.htmlInitializer),
@@ -94,19 +94,17 @@ export const workers: Record<Workers, gcp.cloudrunv2.Service> = {
 };
 
 /**
- * Returns a list of environment variables to be defined in the worker services.
- * These are used to configure the queues to point to the correct websocket host.
+ * Returns environment variables for queue configuration (maxWorkerCount, workerConcurrency).
+ * Used by workers and the maintenance service.
  */
-export const externalQueueEnvVars = () => {
+export const queueEnvVars = () => {
   const vars: {
     name: string;
     value: pulumi.Output<string>;
   }[] = [];
 
   Object.entries(workerConfigs).forEach(([name, config]) => {
-    const worker = workers[name as Workers];
     vars.push(
-      envFromValue(`${config.screaming}_WEBSOCKET_HOST`, worker.uri),
       envFromValue(
         `${config.screaming}_MAX_WORKER_COUNT`,
         config.maxWorkerCount,

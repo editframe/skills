@@ -32,7 +32,7 @@ export const workerResources = {
     cpu: "1000m",
     memory: "2Gi",
   },
-  scheduler: {
+  maintenance: {
     cpu: "500m",
     memory: "512Mi",
   },

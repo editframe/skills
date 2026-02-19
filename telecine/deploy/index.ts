@@ -9,13 +9,13 @@ import * as transcribeCtl from "./resources/transcribe-ctl";
 import * as jitTranscoding from "./resources/jit-transcoding";
 import * as storage from "./resources/storage";
 import * as queues from "./resources/queues/workers";
+import * as maintenance from "./resources/maintenance";
 import "./resources/network";
 import "./resources/valkey";
 import "./resources/storage-backend";
 import "./resources/loadbalancer";
 import "./resources/cloudflare-dns-com";
 import "./resources/cloudflare-dns-dev";
-import "./resources/queues/scheduler-go";
 
 import { GCP_PROJECT } from "./resources/constants";
 
@@ -29,6 +29,7 @@ const jitTranscodingServiceAccount = pulumi.interpolate`serviceAccount:${jitTran
 const hasuraServiceAccount = pulumi.interpolate`serviceAccount:${hasura.serviceAccount.email}`;
 const deployerWorkloadPool = pulumi.interpolate`principalSet://iam.googleapis.com/${infra.deployerWorkloadPool.name}/attribute.repository/editframe/telecine`;
 const queuesServiceAccount = pulumi.interpolate`serviceAccount:${queues.serviceAccount.email}`;
+const maintenanceServiceAccount = pulumi.interpolate`serviceAccount:${maintenance.serviceAccount.email}`;
 
 new gcp.projects.IAMBinding("cloudsql-clients", {
   members: [
@@ -38,6 +39,7 @@ new gcp.projects.IAMBinding("cloudsql-clients", {
     jitTranscodingServiceAccount,
     hasuraServiceAccount,
     queuesServiceAccount,
+    maintenanceServiceAccount,
   ],
   role: "roles/cloudsql.client",
   project: GCP_PROJECT,
@@ -51,6 +53,7 @@ new gcp.projects.IAMBinding("secret-accessors", {
     jitTranscodingServiceAccount,
     hasuraServiceAccount,
     queuesServiceAccount,
+    maintenanceServiceAccount,
     deployerWorkloadPool,
   ],
   role: "roles/secretmanager.secretAccessor",
@@ -65,6 +68,7 @@ new gcp.projects.IAMBinding("monitoring-admins", {
     transcribeCtlServiceAccount,
     jitTranscodingServiceAccount,
     queuesServiceAccount,
+    maintenanceServiceAccount,
     deployerWorkloadPool,
   ],
   role: "roles/monitoring.admin",
@@ -85,6 +89,7 @@ new gcp.projects.IAMBinding("run-admins", {
     transcribeCtlServiceAccount,
     jitTranscodingServiceAccount,
     queuesServiceAccount,
+    maintenanceServiceAccount,
     deployerWorkloadPool,
   ],
   role: "roles/run.admin",
@@ -99,6 +104,7 @@ new gcp.projects.IAMBinding("monitoring-alert-policy-editor", {
     transcribeCtlServiceAccount,
     jitTranscodingServiceAccount,
     queuesServiceAccount,
+    maintenanceServiceAccount,
     deployerWorkloadPool,
   ],
   role: "roles/monitoring.alertPolicyEditor",
@@ -113,6 +119,7 @@ new gcp.projects.IAMBinding("monitoring-cloud-console-incident-editor", {
     transcribeCtlServiceAccount,
     jitTranscodingServiceAccount,
     queuesServiceAccount,
+    maintenanceServiceAccount,
     deployerWorkloadPool,
   ],
   role: "roles/monitoring.cloudConsoleIncidentEditor",
@@ -127,6 +134,7 @@ new gcp.projects.IAMBinding("token-creators", {
     transcribeCtlServiceAccount,
     jitTranscodingServiceAccount,
     queuesServiceAccount,
+    maintenanceServiceAccount,
   ],
   role: "roles/iam.serviceAccountTokenCreator",
   project: GCP_PROJECT,
@@ -141,6 +149,7 @@ new gcp.projects.IAMBinding("service-account-users", {
     jitTranscodingServiceAccount,
     deployerWorkloadPool,
     queuesServiceAccount,
+    maintenanceServiceAccount,
   ],
   role: "roles/iam.serviceAccountUser",
   project: GCP_PROJECT,
@@ -154,6 +163,7 @@ new gcp.projects.IAMBinding("storage-readers", {
     transcribeCtlServiceAccount,
     jitTranscodingServiceAccount,
     queuesServiceAccount,
+    maintenanceServiceAccount,
   ],
   role: "roles/storage.admin",
   project: GCP_PROJECT,
@@ -166,6 +176,7 @@ new gcp.projects.IAMBinding("trace-agents", {
     transcribeCtlServiceAccount,
     jitTranscodingServiceAccount,
     queuesServiceAccount,
+    maintenanceServiceAccount,
   ],
   role: "roles/cloudtrace.agent",
   project: GCP_PROJECT,
@@ -179,6 +190,7 @@ new gcp.projects.IAMBinding("cloudrun invokers", {
     jitTranscodingServiceAccount,
     hasuraServiceAccount,
     queuesServiceAccount,
+    maintenanceServiceAccount,
   ],
   role: "roles/run.invoker",
   project: GCP_PROJECT,
@@ -233,6 +245,7 @@ new gcp.projects.IAMBinding(
       hasuraServiceAccount,
       deployerWorkloadPool,
       queuesServiceAccount,
+      maintenanceServiceAccount,
     ],
     role: "roles/monitoring.admin",
     project: GCP_PROJECT,
@@ -255,6 +268,7 @@ new gcp.projects.IAMBinding(
       hasuraServiceAccount,
       deployerWorkloadPool,
       queuesServiceAccount,
+      maintenanceServiceAccount,
     ],
     role: "roles/monitoring.editor",
     project: GCP_PROJECT,
@@ -318,10 +332,6 @@ function allowPublicInvocation(name: string, service: gcp.cloudrunv2.Service) {
     role: "roles/run.invoker",
     member: "allUsers",
   });
-}
-
-for (const [name, worker] of Object.entries(queues.workers)) {
-  allowPublicInvocation(name, worker);
 }
 
 allowPublicInvocation("web", web.cloudrun);

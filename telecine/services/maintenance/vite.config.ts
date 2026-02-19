@@ -1,7 +1,7 @@
 import path from "node:path";
-import rollupTsConfigPaths from "rollup-plugin-tsconfig-paths";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
+import rollupTsConfigPaths from "rollup-plugin-tsconfig-paths";
 import { copyLuaScripts } from "../../lib/util/viteCopyLuaScripts.js";
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
@@ -9,7 +9,7 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname);
 export default defineConfig({
   esbuild: {
     target: "es2022",
-    platform: "browser",
+    platform: "node",
     include: /\.(m?[jt]s|[jt]sx)$/,
     exclude: [],
   },
@@ -34,14 +34,17 @@ export default defineConfig({
       output: {
         inlineDynamicImports: true,
         preserveModules: false,
+        entryFileNames: "server.js",
+        chunkFileNames: "server.js",
+        assetFileNames: "assets/[name].[ext]",
       },
       plugins: [rollupTsConfigPaths({})],
     },
     emptyOutDir: true,
     outDir: "./dist",
     lib: {
-      entry: "./src/server.ts",
-      name: "telecine-scheduler",
+      entry: "./server.ts",
+      name: "maintenance",
       fileName: "server",
       formats: ["es"],
     },

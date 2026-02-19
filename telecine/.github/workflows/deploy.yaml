@@ -22,7 +22,7 @@ jobs:
             worker-render-initializer,
             worker-render-fragment,
             worker-render-finalizer,
-            scheduler-go,
+            maintenance,
             jit-transcoding,
             # transcribe
           ]

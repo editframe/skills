@@ -14,89 +14,31 @@ import {
   hasuraJwtSecretToken,
 } from "../secrets";
 import { DEPLOYED_DOMAIN, GCP_LOCATION } from "../constants";
-// import { dockerImage } from "./dockerImage";
 import * as infra from "../_infra";
 import { bucket } from "../storage";
 import { publicBucketName } from "../constants";
 import { getGitSha } from "../../util/getGitSha";
 import { valkeyInternalIp } from "../valkey";
-import { BASE_QUEUE_CONFIGS } from "./BASE_QUEUE_CONFIGS";
-import { type QueueConfig, workerConfigs } from "./workers";
+import { type QueueConfig, queueEnvVars } from "./workers";
 
 const repo = infra.artifactRepository;
 
-/**
- * Returns a list of environment variables to be defined in the worker services.
- * They need a value for the WS host, but they'll never use it. Localhost is good enough.
- * @returns
- */
-const internalQueueEnvVars = () => {
-  const vars: {
-    name: string;
-    value: pulumi.Output<string>;
-  }[] = [];
-
-  Object.entries(workerConfigs).forEach(([name, config]) => {
-    vars.push(
-      envFromValue(`${config.screaming}_WEBSOCKET_HOST`, "http://localhost:80"),
-      envFromValue(
-        `${config.screaming}_MAX_WORKER_COUNT`,
-        config.maxWorkerCount,
-      ),
-      envFromValue(
-        `${config.screaming}_WORKER_CONCURRENCY`,
-        config.workerConcurrency,
-      ),
-    );
-  });
-
-  return vars;
-};
-
 export const defineWorker = (config: QueueConfig) => {
-  const { name, maxWorkerCount, workerConcurrency } = config;
-  const screaming = name.toUpperCase().replace(/-/g, "_");
-  const queueConfig = structuredClone(BASE_QUEUE_CONFIGS);
-
-  // @ts-ignore
-  queueConfig[`${screaming}_MAX_WORKER_COUNT`] = maxWorkerCount.toString();
-
-  // @ts-ignore
-  queueConfig[`${screaming}_WORKER_CONCURRENCY`] = workerConcurrency.toString();
-
-  return new gcp.cloudrunv2.Service(
+  return new gcp.cloudrunv2.WorkerPool(
     `telecine-worker-${config.name}`,
     {
-      ingress: "INGRESS_TRAFFIC_INTERNAL_ONLY",
-      launchStage: "GA",
+      launchStage: "BETA",
       location: "us-central1",
       name: `telecine-worker-${config.name}`,
       project: "editframe",
+      scaling: {
+        scalingMode: "MANUAL",
+        manualInstanceCount: 0,
+      },
       template: {
-        // run workers in GEN1, faster boots, but less performance
-        executionEnvironment: "EXECUTION_ENVIRONMENT_GEN1",
-        // This is the maximum allowed timeout for a Cloud Run service
-        // We set this to be long so our workers can hold a websocket connection
-        // as long as possible before terminating and reconnecting
-        timeout: "3600s",
-        scaling: {
-          minInstanceCount: 0,
-          maxInstanceCount: config.maxWorkerCount,
-        },
-        serviceAccount: serviceAccount.email,
-        volumes: [
-          {
-            name: "cloudsql",
-            cloudSqlInstance: {
-              instances: [database.connectionName],
-            },
-          },
-        ],
-        maxInstanceRequestConcurrency: 1,
         containers: [
           {
-            // image: dockerImage.repoDigest,
-            image: pulumi.interpolate`${GCP_LOCATION}-docker.pkg.dev/${repo.project}/${repo.name}/worker-${name}:${getGitSha()}`,
+            image: pulumi.interpolate`${GCP_LOCATION}-docker.pkg.dev/${repo.project}/${repo.name}/worker-${config.name}:${getGitSha()}`,
 
             envs: [
               envFromValue("POSTGRES_MIN_CONNECTIONS", "1"),
@@ -130,37 +72,14 @@ export const defineWorker = (config: QueueConfig) => {
               envFromValue("GCLOUD_TRACE_EXPORT", "true"),
               envFromValue("WEB_HOST", `https://${DEPLOYED_DOMAIN}`),
               envFromValue("RENDER_HOST", `https://${DEPLOYED_DOMAIN}`),
-              ...internalQueueEnvVars(),
+              ...queueEnvVars(),
               envFromValue("PINO_LOG_LEVEL", "debug"),
             ],
-            livenessProbe: {
-              failureThreshold: 2,
-              periodSeconds: 5,
-              timeoutSeconds: 5,
-              httpGet: {
-                path: "/healthz",
-                port: 3000,
-              },
-            },
-            ports: {
-              containerPort: 3000,
-              name: "http1",
-            },
             resources: {
               limits: {
                 cpu: config.workerCpu,
                 memory: config.workerMemory,
               },
-              cpuIdle: true,
-              startupCpuBoost: true,
-            },
-            startupProbe: {
-              failureThreshold: 5,
-              periodSeconds: 5,
-              tcpSocket: {
-                port: 3000,
-              },
-              timeoutSeconds: 5,
             },
             volumeMounts: [
               {
@@ -168,6 +87,15 @@ export const defineWorker = (config: QueueConfig) => {
                 name: "cloudsql",
               },
             ],
+          },
+        ],
+        serviceAccount: serviceAccount.email,
+        volumes: [
+          {
+            name: "cloudsql",
+            cloudSqlInstance: {
+              instances: [database.connectionName],
+            },
           },
         ],
         vpcAccess: {
@@ -191,6 +119,7 @@ export const defineWorker = (config: QueueConfig) => {
         actionSecret.version,
         hasuraJwtSecretToken.version,
       ],
+      ignoreChanges: ["scaling"],
     },
   );
 };

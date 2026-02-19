@@ -21,7 +21,7 @@ import { bucket } from "../storage";
 import { publicBucketName } from "../constants";
 import { getGitSha } from "../../util/getGitSha";
 import { valkeyInternalIp } from "../valkey";
-import { externalQueueEnvVars } from "../queues/workers";
+import { queueEnvVars } from "../queues/workers";
 const repo = infra.artifactRepository;
 
 export const cloudrun = new gcp.cloudrunv2.Service(
@@ -89,7 +89,7 @@ export const cloudrun = new gcp.cloudrunv2.Service(
             envFromValue("EMAIL_SENDER", "no-reply@editframe.com"),
             envFromValue("SMTP_PORT", "465"),
             envFromValue("SMTP_USER", "smtp@editframe.com"),
-            ...externalQueueEnvVars(),
+            ...queueEnvVars(),
             envFromUnmanagedSecret("SMTP_PASSWORD", "SMTP_PASSWORD"),
             envFromUnmanagedSecret("SLACK_WEBHOOK_URL", "SLACK_WEBHOOK_URL"),
             envFromUnmanagedSecret(
