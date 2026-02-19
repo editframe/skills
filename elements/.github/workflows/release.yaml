@@ -8,11 +8,8 @@ on:
 permissions: {}
 
 jobs:
-  prepare-and-publish:
+  test:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,7 +19,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20.15.0"
-          registry-url: "https://registry.npmjs.org"
 
       - name: Create .env file
         run: touch .env
@@ -62,19 +58,41 @@ jobs:
         if: "!contains(github.ref_name, 'beta')"
         run: ./scripts/docker-compose run --rm ci-runner npx vitest --config vitest.config.browser.ts --run
 
-      - name: Publish to npm
-        run: |
-          # Strip the _authToken line from .npmrc so npm uses OIDC trusted publishing
-          NPMRC="${NPM_CONFIG_USERCONFIG:-$HOME/.npmrc}"
-          sed -i '/_authToken/d' "$NPMRC"
-          echo "--- .npmrc after cleanup ---"
-          cat "$NPMRC"
-          echo "---"
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-          # Get the current tag name from git
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.15.0"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Create .env file
+        run: touch .env
+
+      - name: Build CI Runner
+        run: ./scripts/docker-compose build ci-runner
+
+      - name: Install Dependencies
+        run: ./scripts/docker-compose run --rm ci-runner npm ci
+
+      - name: Build All Packages
+        run: ./scripts/build-all
+
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
           TAG_NAME=$(git describe --tags --exact-match 2>/dev/null || echo "")
 
-          # Determine npm tag based on tag name
           if [[ "$TAG_NAME" == *"beta"* ]]; then
               NPM_TAG="beta"
           else
@@ -82,11 +100,9 @@ jobs:
           fi
 
           echo "Publishing with npm tag: $NPM_TAG"
-          npm publish --tag "$NPM_TAG" --provenance --access public --workspaces
-        working-directory: ${{ github.workspace }}
+          npm publish --tag "$NPM_TAG" --access public --workspaces
 
       - name: Create Release
-        id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
