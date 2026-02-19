@@ -71,6 +71,7 @@ function startStallDetector() {
 
 interface ScalerState {
   smoothedTarget: number;
+  lastPatchedCount: number | null;
 }
 
 const SCALE_UP_INTERVAL_MS = 1_000;
@@ -98,7 +99,7 @@ function startScaler() {
 
         let state = stateByQueue.get(queueName);
         if (!state) {
-          state = { smoothedTarget: 0 };
+          state = { smoothedTarget: 0, lastPatchedCount: null };
           stateByQueue.set(queueName, state);
         }
 
@@ -120,7 +121,7 @@ function startScaler() {
 
         const instanceCount = Math.max(0, Math.round(target));
 
-        if (gcpProject) {
+        if (gcpProject && instanceCount !== state.lastPatchedCount) {
           try {
             const workerPoolName = `telecine-worker-${queueName}`;
             const url = `https://run.googleapis.com/v2/projects/${gcpProject}/locations/${gcpRegion}/workerPools/${workerPoolName}?updateMask=scaling.manualInstanceCount`;
@@ -144,6 +145,7 @@ function startScaler() {
                 "Failed to patch Worker Pool instance count",
               );
             } else {
+              state.lastPatchedCount = instanceCount;
               logger.info(
                 { queue: queueName, instanceCount, rawTarget, smoothed: state.smoothedTarget },
                 "Scaled Worker Pool",
@@ -152,7 +154,7 @@ function startScaler() {
           } catch (error) {
             logger.error({ queue: queueName, error }, "Error scaling Worker Pool");
           }
-        } else {
+        } else if (!gcpProject) {
           logger.debug(
             { queue: queueName, instanceCount, rawTarget, smoothed: state.smoothedTarget, stats },
             "Scaling decision (local, no-op)",
