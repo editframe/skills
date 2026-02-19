@@ -2,6 +2,11 @@
   "name": "@editframe/api",
   "version": "0.38.0",
   "description": "API functions for EditFrame",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/editframe/elements.git",
+    "directory": "packages/api"
+  },
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",

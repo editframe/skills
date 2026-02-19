@@ -66,6 +66,7 @@ jobs:
     environment: npm-publish
     permissions:
       contents: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -74,7 +75,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20.15.0"
+          node-version: "24"
           registry-url: "https://registry.npmjs.org"
 
       - name: Create .env file
@@ -90,8 +91,6 @@ jobs:
         run: ./scripts/build-all
 
       - name: Publish to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           TAG_NAME=$(git describe --tags --exact-match 2>/dev/null || echo "")
 

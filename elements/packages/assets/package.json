@@ -2,6 +2,11 @@
   "name": "@editframe/assets",
   "version": "0.38.0",
   "description": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/editframe/elements.git",
+    "directory": "packages/assets"
+  },
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
