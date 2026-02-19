@@ -169,7 +169,7 @@ const adminNavGroups: NavGroup[] = [
     ],
   },
   {
-    title: "Schedulers",
+    title: "Workers",
     items: [
       { to: "/admin/scheduler", Icon: Cpu, label: "Overview" },
     ],
