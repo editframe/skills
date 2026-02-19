@@ -55,6 +55,18 @@
         "default": "./dist/node.js"
       }
     },
+    "./preview/renderTimegroupToVideo": {
+      "import": {
+        "types": "./dist/preview/renderTimegroupToVideo.d.ts",
+        "default": "./dist/preview/renderTimegroupToVideo.js"
+      }
+    },
+    "./preview/renderTimegroupToCanvas": {
+      "import": {
+        "types": "./dist/preview/renderTimegroupToCanvas.d.ts",
+        "default": "./dist/preview/renderTimegroupToCanvas.js"
+      }
+    },
     "./package.json": "./package.json",
     "./styles.css": "./dist/style.css",
     "./types.json": "./types.json"
@@ -77,6 +89,18 @@
         "import": {
           "types": "./dist/node.d.ts",
           "default": "./dist/node.js"
+        }
+      },
+      "./preview/renderTimegroupToVideo": {
+        "import": {
+          "types": "./dist/preview/renderTimegroupToVideo.d.ts",
+          "default": "./dist/preview/renderTimegroupToVideo.js"
+        }
+      },
+      "./preview/renderTimegroupToCanvas": {
+        "import": {
+          "types": "./dist/preview/renderTimegroupToCanvas.d.ts",
+          "default": "./dist/preview/renderTimegroupToCanvas.js"
         }
       },
       "./package.json": "./package.json",
