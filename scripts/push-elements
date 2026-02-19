@@ -29,11 +29,24 @@ done
 
 git fetch elements "$BRANCH" 2>/dev/null || true
 
-SPLIT=$(git subtree split --prefix=elements --onto="elements/$BRANCH" --ignore-joins HEAD 2>/dev/null)
+MONO_SHORT=$(git rev-parse --short HEAD)
+TREE=$(git rev-parse HEAD:elements)
 
-git push elements "${SPLIT}:${BRANCH}" --force-with-lease 2>&1 | grep -v "^$"
+if git rev-parse "elements/$BRANCH" >/dev/null 2>&1; then
+  PARENT=$(git rev-parse "elements/$BRANCH")
+  REMOTE_TREE=$(git rev-parse "elements/${BRANCH}^{tree}" 2>/dev/null || echo "")
+  if [ "$TREE" = "$REMOTE_TREE" ]; then
+    echo "elements/${BRANCH} already up to date"
+    exit 0
+  fi
+  COMMIT=$(git commit-tree "$TREE" -p "$PARENT" -m "sync $MONO_SHORT")
+else
+  COMMIT=$(git commit-tree "$TREE" -m "sync $MONO_SHORT (initial)")
+fi
 
-echo "pushed elements -> ${BRANCH} (${SPLIT:0:10})"
+git push elements "${COMMIT}:${BRANCH}" --force-with-lease 2>&1 | grep -v "^$"
+
+echo "pushed elements -> ${BRANCH} (${COMMIT:0:10})"
 
 if [ "$WAIT_FOR_ACTION" = "true" ]; then
   "$SCRIPT_DIR/wait-for-elements-action" "release.yaml"
