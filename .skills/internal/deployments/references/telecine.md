@@ -53,7 +53,22 @@ cd deploy && pulumi up
 scripts/build-docker-prod web
 ```
 
-Images are tagged with the current git SHA (or `latest` if no SHA available).
+Images are tagged with the current git SHA (or `latest` if no SHA available). Always use `build-docker-prod` to reproduce CI Docker build failures locally — it's much faster than waiting for CI round-trips.
+
+## Web Build: react-router config resolution
+
+The web service uses React Router v7 with the `--config services/web/vite.config.ts` flag. The `react-router build` CLI derives `rootDirectory` from the config file path (`path.dirname(resolve(configPath))`), NOT from `process.cwd()`. This means `rootDirectory` resolves to `/app/services/web/` in Docker, while `react-router.config.ts` lives at `/app/`.
+
+The fix: `Dockerfile.web.prod` sets `ENV REACT_ROUTER_ROOT=/app` before the build command, which overrides the path-derived root. `react-router.config.ts` sets `buildDirectory: "./services/web/build"` to keep output at the expected location relative to root.
+
+If `react-router.config.ts` is not found during build, `future` flags (including `v8_middleware`) silently default to `false`. The build still succeeds because `appDirectory` defaults to `"app"` which happens to resolve correctly from either root. Symptoms: middleware never runs in production, `context.get()` throws "No value found for context" in route loaders.
+
+To verify the config was picked up, extract the server build JS from the Docker image and check:
+
+```bash
+rg "v8_middleware" /tmp/extracted/server-build-*.js
+# Should show: "v8_middleware": true
+```
 
 ## Pulumi Resource Layout
 

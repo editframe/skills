@@ -1,9 +1,68 @@
 ---
 name: deployment-troubleshooting
-description: Rollback procedures, debugging failed deployments, scaling resources, and managing secrets.
+description: Rollback procedures, debugging failed deployments, production SRE, scaling resources, and managing secrets.
 ---
 
 # Deployment Troubleshooting & Operations
+
+## Production SRE
+
+The user's machine is authenticated to gcloud. Use it directly for log queries, revision inspection, and service management.
+
+### Investigating application errors
+
+```bash
+# Check latest revision
+gcloud run services describe telecine-web --region=us-central1 --project=editframe \
+  --format="value(status.latestReadyRevisionName)"
+
+# Get errors from a specific revision
+gcloud logging read 'resource.type="cloud_run_revision"
+  AND resource.labels.service_name="telecine-web"
+  AND resource.labels.revision_name="<revision>"
+  AND severity>=ERROR' \
+  --project=editframe --limit=20 --freshness=1h \
+  --format="table(timestamp,textPayload)"
+
+# Correlate with request URLs (500s)
+gcloud logging read 'resource.type="cloud_run_revision"
+  AND resource.labels.service_name="telecine-web"
+  AND httpRequest.status>=500' \
+  --project=editframe --limit=10 --freshness=1h \
+  --format="table(timestamp,httpRequest.requestUrl,httpRequest.status)"
+
+# Compare error presence across revisions (new vs old)
+gcloud logging read 'resource.labels.revision_name="<old-revision>"
+  AND "<error-string>"' --project=editframe --limit=5 --freshness=120d
+```
+
+### Booting production containers locally
+
+Run the prod Docker image locally to reproduce issues without deploying. The container needs env vars — provide minimal values for vars that aren't relevant to the issue being debugged:
+
+```bash
+docker run --rm -p 3099:3000 \
+  -e NODE_ENV=production \
+  -e APPLICATION_SECRET=test \
+  -e APPLICATION_JWT_SECRET=test \
+  <image-sha> 2>&1 | head -40
+```
+
+The web container will crash if queue-related env vars are missing (they're required at module load time). For HTTP-layer debugging, provide all required env vars from `scripts/deploy-info telecine`.
+
+### Inspecting server build output from Docker images
+
+Extract files from a Docker image without running it:
+
+```bash
+# Create a stopped container, copy files out
+docker create --name tmp <image-sha>
+docker cp tmp:/app/services/web/build/server/assets/ /tmp/inspect/
+docker rm tmp
+
+# Or use tar for full listing (works with distroless images that have no shell)
+docker export tmp | tar -t | grep "build/server"
+```
 
 ## Rollback Procedures
 
@@ -68,14 +127,41 @@ npm dist-tag add @editframe/elements@<good-version> latest
 
 For a full rollback, revert the commit, bump to a new patch version, and run `elements/scripts/prepare-release <new-version>`.
 
+## CI Monitoring
+
+Use the provided scripts to monitor CI runs. Never use raw `gh` commands -- the scripts handle polling, formatting, and log extraction.
+
+```bash
+# Poll telecine deploy until complete (30s intervals)
+scripts/wait-for-telecine-action
+
+# Poll elements release until complete
+scripts/wait-for-elements-action
+
+# Push and wait in one command
+scripts/push-telecine --wait
+scripts/push-elements --wait
+
+# Get logs for a failed run (most recent)
+scripts/gh-logs editframe/telecine
+
+# Get logs for a specific run
+scripts/gh-logs editframe/telecine 22169288214
+
+# Generic poller for any repo
+scripts/wait-for-github-action editframe/telecine deploy.yaml
+```
+
 ## Debugging Failed Deployments
 
 ### Telecine CI/CD failures
 
+Start with `scripts/gh-logs editframe/telecine` to get the failed job logs.
+
 **Docker build failures:**
-- Check the GitHub Actions log for the specific matrix job that failed
 - Common causes: dependency install failures, Dockerfile syntax errors, out of disk (especially `transcribe`)
 - The `transcribe` image gets special handling: disk space is freed before build, and the whisper builder cache is pulled separately
+- The `web` image requires `skills/skills/` in the build context -- these are embedded in the telecine subtree
 
 **Pulumi failures:**
 - Run `pulumi preview` locally to see what Pulumi wants to change
@@ -90,15 +176,16 @@ For a full rollback, revert the commit, bump to a new patch version, and run `el
 
 ### Elements CI/CD failures
 
+Start with `scripts/gh-logs editframe/elements` to get the failed job logs.
+
 **Common failure points:**
 1. Type check failed -- fix type errors, beta tags skip this check
 2. Tests failed -- fix tests, beta tags skip this check
-3. npm publish auth failure -- check `NPM_TOKEN` secret in GitHub
+3. npm publish auth failure -- uses Trusted Publishing (OIDC), check environment and permissions
 4. Subtree push failure -- check that `elements` git remote is configured and accessible
 
 **Local debugging:**
 ```bash
-# Run the same checks locally
 elements/scripts/docker-compose run --rm runner npm run typecheck --workspaces
 elements/scripts/docker-compose run --rm runner npm run lint
 elements/scripts/docker-compose run --rm runner npm run format

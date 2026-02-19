@@ -1,9 +1,68 @@
 ---
 name: deployment-troubleshooting
-description: Rollback procedures, debugging failed deployments, scaling resources, and managing secrets.
+description: Rollback procedures, debugging failed deployments, production SRE, scaling resources, and managing secrets.
 ---
 
 # Deployment Troubleshooting & Operations
+
+## Production SRE
+
+The user's machine is authenticated to gcloud. Use it directly for log queries, revision inspection, and service management.
+
+### Investigating application errors
+
+```bash
+# Check latest revision
+gcloud run services describe telecine-web --region=us-central1 --project=editframe \
+  --format="value(status.latestReadyRevisionName)"
+
+# Get errors from a specific revision
+gcloud logging read 'resource.type="cloud_run_revision"
+  AND resource.labels.service_name="telecine-web"
+  AND resource.labels.revision_name="<revision>"
+  AND severity>=ERROR' \
+  --project=editframe --limit=20 --freshness=1h \
+  --format="table(timestamp,textPayload)"
+
+# Correlate with request URLs (500s)
+gcloud logging read 'resource.type="cloud_run_revision"
+  AND resource.labels.service_name="telecine-web"
+  AND httpRequest.status>=500' \
+  --project=editframe --limit=10 --freshness=1h \
+  --format="table(timestamp,httpRequest.requestUrl,httpRequest.status)"
+
+# Compare error presence across revisions (new vs old)
+gcloud logging read 'resource.labels.revision_name="<old-revision>"
+  AND "<error-string>"' --project=editframe --limit=5 --freshness=120d
+```
+
+### Booting production containers locally
+
+Run the prod Docker image locally to reproduce issues without deploying. The container needs env vars — provide minimal values for vars that aren't relevant to the issue being debugged:
+
+```bash
+docker run --rm -p 3099:3000 \
+  -e NODE_ENV=production \
+  -e APPLICATION_SECRET=test \
+  -e APPLICATION_JWT_SECRET=test \
+  <image-sha> 2>&1 | head -40
+```
+
+The web container will crash if queue-related env vars are missing (they're required at module load time). For HTTP-layer debugging, provide all required env vars from `scripts/deploy-info telecine`.
+
+### Inspecting server build output from Docker images
+
+Extract files from a Docker image without running it:
+
+```bash
+# Create a stopped container, copy files out
+docker create --name tmp <image-sha>
+docker cp tmp:/app/services/web/build/server/assets/ /tmp/inspect/
+docker rm tmp
+
+# Or use tar for full listing (works with distroless images that have no shell)
+docker export tmp | tar -t | grep "build/server"
+```
 
 ## Rollback Procedures
 
