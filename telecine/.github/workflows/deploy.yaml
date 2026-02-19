@@ -79,7 +79,10 @@ jobs:
       - run: npm ci
       - run: pulumi login gs://deployment-state
       - run: pulumi stack select telecine-dot-dev
-      - name: Remove orphaned scheduler-go from state
-        run: pulumi state delete 'urn:pulumi:telecine-dot-dev::telecine::gcp:cloudrunv2/service:Service::telecine-scheduler-go' -y --force || true
+      - name: Remove orphaned Cloud Run Services from state (replaced by WorkerPools)
+        run: |
+          for svc in telecine-scheduler-go telecine-worker-ingest-image telecine-worker-process-html-initializer telecine-worker-process-html-finalizer telecine-worker-process-isobmff telecine-worker-render-initializer telecine-worker-render-fragment telecine-worker-render-finalizer; do
+            pulumi state delete "urn:pulumi:telecine-dot-dev::telecine::gcp:cloudrunv2/service:Service::${svc}" -y --force 2>/dev/null || true
+          done
       - run: gcloud auth configure-docker us-central1-docker.pkg.dev
       - run: pulumi up -y --verbose=9
