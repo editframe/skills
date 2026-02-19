@@ -85,11 +85,14 @@ See [references/skills.md](references/skills.md) for the build process and sourc
 
 ## Troubleshooting & Operations
 
-Rollback procedures, debugging failed deploys, scaling resources, and managing secrets are covered in [references/troubleshooting.md](references/troubleshooting.md).
+When investigating production errors, start with the **error triage workflow** in [references/troubleshooting.md](references/troubleshooting.md): query Error Reporting API for grouped errors first, then drill into Cloud Run logs, then correlate with revisions to determine whether a deploy introduced the issue.
+
+Rollback procedures, CI failure debugging, scaling resources, and secret management are also covered in [references/troubleshooting.md](references/troubleshooting.md).
 
 ## When to Use This Skill
 
 Use this skill when:
+- Investigating production errors or service health issues
 - Deploying services or packages
 - Investigating a failed deployment
 - Rolling back a bad release

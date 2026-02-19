@@ -1,40 +1,117 @@
 ---
 name: deployment-troubleshooting
-description: Rollback procedures, debugging failed deployments, production SRE, scaling resources, and managing secrets.
+description: Error triage workflow, rollback procedures, debugging failed deployments, production SRE, scaling resources, and managing secrets.
 ---
 
 # Deployment Troubleshooting & Operations
 
-## Production SRE
+## Error Triage Workflow
 
-The user's machine is authenticated to gcloud. Use it directly for log queries, revision inspection, and service management.
+When investigating production issues, start broad and drill down. The workflow is: **grouped errors → service logs → revision correlation**.
 
-### Investigating application errors
+### Step 1: Get grouped errors from Error Reporting
+
+The `gcloud` CLI does not have list/describe commands for error groups. Use the Error Reporting REST API via an access token:
 
 ```bash
-# Check latest revision
-gcloud run services describe telecine-web --region=us-central1 --project=editframe \
+ACCESS_TOKEN=$(gcloud auth print-access-token)
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://clouderrorreporting.googleapis.com/v1beta1/projects/editframe/groupStats?pageSize=20" \
+  | python3 -m json.tool
+```
+
+This returns error groups sorted by frequency, each containing:
+- `count` — total occurrences
+- `group.groupId` — unique error group identifier
+- `affectedServices` — which Cloud Run services/revisions are affected
+- `representative.message` — a sample stack trace
+- `firstSeenTime` / `lastSeenTime` — time range
+
+Filter by service or time window:
+
+```bash
+# Filter to a specific service
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://clouderrorreporting.googleapis.com/v1beta1/projects/editframe/groupStats?serviceFilter.service=telecine-web&pageSize=20" \
+  | python3 -m json.tool
+
+# Filter by time range (RFC 3339)
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "https://clouderrorreporting.googleapis.com/v1beta1/projects/editframe/groupStats?timeRange.period=PERIOD_1_HOUR&pageSize=20" \
+  | python3 -m json.tool
+```
+
+Time period options: `PERIOD_1_HOUR`, `PERIOD_6_HOURS`, `PERIOD_1_DAY`, `PERIOD_1_WEEK`, `PERIOD_30_DAYS`.
+
+### Step 2: Drill into Cloud Run logs
+
+Once you've identified the error group and affected service, query Cloud Run logs for details:
+
+```bash
+# Get the latest revision for a service
+gcloud run services describe <service-name> --region=us-central1 --project=editframe \
   --format="value(status.latestReadyRevisionName)"
+
+# Get errors from a specific service
+gcloud logging read 'resource.type="cloud_run_revision"
+  AND resource.labels.service_name="<service-name>"
+  AND severity>=ERROR' \
+  --project=editframe --limit=20 --freshness=1h \
+  --format="table(timestamp,textPayload)"
 
 # Get errors from a specific revision
 gcloud logging read 'resource.type="cloud_run_revision"
-  AND resource.labels.service_name="telecine-web"
+  AND resource.labels.service_name="<service-name>"
   AND resource.labels.revision_name="<revision>"
   AND severity>=ERROR' \
   --project=editframe --limit=20 --freshness=1h \
   --format="table(timestamp,textPayload)"
 
-# Correlate with request URLs (500s)
+# Correlate with HTTP 500s
 gcloud logging read 'resource.type="cloud_run_revision"
-  AND resource.labels.service_name="telecine-web"
+  AND resource.labels.service_name="<service-name>"
   AND httpRequest.status>=500' \
   --project=editframe --limit=10 --freshness=1h \
   --format="table(timestamp,httpRequest.requestUrl,httpRequest.status)"
-
-# Compare error presence across revisions (new vs old)
-gcloud logging read 'resource.labels.revision_name="<old-revision>"
-  AND "<error-string>"' --project=editframe --limit=5 --freshness=120d
 ```
+
+### Step 3: Correlate with revisions and deployments
+
+Determine whether an error is new (introduced by a recent deploy) or pre-existing:
+
+```bash
+# List recent revisions for a service
+gcloud run revisions list --service <service-name> \
+  --region us-central1 --project editframe --limit=5
+
+# Check if the error exists in an older revision
+gcloud logging read 'resource.labels.revision_name="<old-revision>"
+  AND "<error-substring>"' \
+  --project=editframe --limit=5 --freshness=120d
+
+# Compare error counts between revisions
+gcloud logging read 'resource.labels.revision_name="<new-revision>"
+  AND severity>=ERROR' \
+  --project=editframe --limit=50 --freshness=1d \
+  --format="table(timestamp,textPayload)" | wc -l
+```
+
+If the error only appears in the new revision, the deploy introduced it. If it's present in older revisions too, it's a pre-existing issue.
+
+### Interpreting common error patterns
+
+- **"No route matches URL"** — Requests for paths that don't exist in the router (old asset URLs, bot probes). Usually noise.
+- **"Not allowed by CORS"** — Origin mismatch. Check the CORS config in the express middleware.
+- **"No such object" (GCS)** — A referenced file was deleted or never created. Check the object path and the workflow that produces it.
+- **"No available instance"** — Cloud Run couldn't scale up in time. Check instance limits and cold start time.
+- **"RPC timeout"** — Worker-to-worker communication timed out. Check the target worker's health and resource limits.
+- **"No value found for context"** — React Router middleware context not available. Usually means `react-router.config.ts` was not picked up during build (see telecine.md, "Web Build" section).
+- **Build failures (UNRESOLVED_IMPORT)** — Worker build can't resolve imports. Check that referenced source files exist at the expected paths.
+- **"Memory limit exceeded"** — Container hit its memory ceiling. Increase memory in `worker-resources.config.ts` or the service's `cloudrun.ts`.
+
+## Production SRE
+
+The user's machine is authenticated to gcloud. Use it directly for log queries, revision inspection, and service management.
 
 ### Booting production containers locally
 
