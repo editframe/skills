@@ -2399,11 +2399,12 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
       if (imageData.data[i]! > 0) nonZeroPixels++;
     }
 
-    // If initial render produced nothing, try calling refresh with a different time to bypass dedup
+    // CI headless Chromium may need extra frames for initial paint
     if (nonZeroPixels === 0) {
-      (timegroup as any).currentTimeMs = 1;
-      (timegroup as any).userTimeMs = 1;
-      await timegroup.updateComplete;
+      await timegroup.seek(1);
+      await new Promise((r) =>
+        requestAnimationFrame(() => requestAnimationFrame(r)),
+      );
       await refresh();
 
       imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -2720,11 +2721,12 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
       if (imageData.data[i]! > 0) nonZeroPixels++;
     }
 
-    // If initial render produced nothing, bump time to bypass dedup and retry
+    // CI headless Chromium may need extra frames for initial paint
     if (nonZeroPixels === 0) {
-      (timegroup as any).currentTimeMs = 1;
-      (timegroup as any).userTimeMs = 1;
-      await timegroup.updateComplete;
+      await timegroup.seek(1);
+      await new Promise((r) =>
+        requestAnimationFrame(() => requestAnimationFrame(r)),
+      );
       await refresh();
 
       imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
