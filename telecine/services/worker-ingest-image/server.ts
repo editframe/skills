@@ -1,7 +1,7 @@
 import { initializeInstrumentation } from "@/tracing/instrumentation";
 initializeInstrumentation({ serviceName: "worker-ingest-image" });
 
-import { createDirectWorkerServer } from "@/queues/createDirectWorkerServer";
+import { createWorkerServer } from "@/queues/createWorkerServer";
 import { IngestImageWorker } from "@/queues/units-of-work/IngestImage";
 
-createDirectWorkerServer(IngestImageWorker);
+createWorkerServer(IngestImageWorker);
