@@ -12,6 +12,7 @@ export const RenderInitializerQueue = new Queue<Selectable<Video2Renders>>({
   name: "render-initializer",
   storage: valkey,
   maxWorkerCount: MAX_WORKER_COUNT,
+  minWorkerCount: 1,
   workerConcurrency: WORKER_CONCURRENCY,
 
   processStarts: async (messages, db) => {

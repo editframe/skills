@@ -17,6 +17,7 @@ type ProcessHTMLPayload = Selectable<Video2ProcessHtml>;
 export const ProcessHTMLInitializerQueue = new Queue<ProcessHTMLPayload>({
   name: "process-html-initializer",
   maxWorkerCount: MAX_WORKER_COUNT,
+  minWorkerCount: 1,
   workerConcurrency: WORKER_CONCURRENCY,
   storage: valkey,
   processStarts: async (messages, db) => {

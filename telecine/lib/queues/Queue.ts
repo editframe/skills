@@ -28,6 +28,7 @@ export interface QueueArgs {
   name: string;
   storage: ValKey;
   maxWorkerCount?: number;
+  minWorkerCount?: number;
   workerConcurrency?: number;
   processStarts?: LifecycleMessageProcessor;
   processFailures?: LifecycleMessageProcessor;
@@ -49,6 +50,7 @@ export class Queue<Payload> {
   name: QueueArgs["name"];
   storage: QueueArgs["storage"];
   maxWorkerCount: NonNullable<QueueArgs["maxWorkerCount"]>;
+  minWorkerCount: NonNullable<QueueArgs["minWorkerCount"]>;
   workerConcurrency: NonNullable<QueueArgs["workerConcurrency"]>;
 
   processStarts?: QueueArgs["processStarts"];
@@ -59,6 +61,7 @@ export class Queue<Payload> {
     this.name = args.name;
     this.storage = args.storage;
     this.maxWorkerCount = args.maxWorkerCount ?? 1;
+    this.minWorkerCount = args.minWorkerCount ?? 0;
     this.workerConcurrency = args.workerConcurrency ?? 1;
     Queue.byName.set(this.name, this);
     this.processStarts = args.processStarts;

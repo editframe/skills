@@ -126,9 +126,9 @@ function startScaler() {
         }
         state.smoothedTarget = target;
 
-        const instanceCount = Math.max(0, Math.round(target));
+        const instanceCount = Math.max(queue.minWorkerCount, Math.round(target));
 
-        const scalingUp = state.lastPatchedCount !== null && instanceCount > state.lastPatchedCount;
+        const scalingUp = state.lastPatchedCount === null || instanceCount > state.lastPatchedCount;
         const minInterval = scalingUp ? PATCH_MIN_INTERVAL_SCALE_UP_MS : PATCH_MIN_INTERVAL_SCALE_DOWN_MS;
         const elapsed = Date.now() - state.lastPatchedAt;
 
