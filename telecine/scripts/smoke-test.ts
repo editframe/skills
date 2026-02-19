@@ -165,20 +165,36 @@ const TESTS: Array<{ name: string; payload: Record<string, unknown> }> = [
       </body></html>`,
     },
   },
+  {
+    name: "remote image + audio + waveform (mp4)",
+    payload: {
+      ...COMMON,
+      output: MP4_OUTPUT,
+      html: `<!DOCTYPE html><html><body>
+        <ef-configuration>
+          <ef-timegroup mode="contain" class="w-[1080px] h-[1080px] bg-[rgb(192,192,192)]">
+            <ef-image class="w-full h-full absolute inset-0" src="https://storage.googleapis.com/editframe-assets-7ac794b/1080-cat.jpeg"></ef-image>
+            <ef-audio fft-size="512" interpolate-frequencies src="https://storage.googleapis.com/editframe-assets-7ac794b/card-joker.mp3" id="sample-audio"></ef-audio>
+            <div class="absolute inset-0 grid place-items-center">
+              <ef-waveform target="sample-audio" mode="bars" bar-spacing="2" class="w-full h-[1080px]" style="color: rgb(106, 90, 205)"></ef-waveform>
+            </div>
+          </ef-timegroup>
+        </ef-configuration>
+      </body></html>`,
+    },
+  },
 ];
 
 async function main() {
   console.log(`\nSmoke tests against ${EF_HOST}`);
   console.log(`Timeout: ${TIMEOUT_S}s per render\n`);
 
-  let passed = 0;
-  let failed = 0;
+  const results = await Promise.all(
+    TESTS.map((test) => runTest(test.name, test.payload)),
+  );
 
-  for (const test of TESTS) {
-    const ok = await runTest(test.name, test.payload);
-    if (ok) passed++;
-    else failed++;
-  }
+  const passed = results.filter(Boolean).length;
+  const failed = results.length - passed;
 
   console.log(`\n${passed}/${TESTS.length} passed`);
 

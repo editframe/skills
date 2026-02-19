@@ -84,6 +84,18 @@ const writeIntoDirectory = async (
 
 const WEB_HOST = envString("WEB_HOST", "http://localhost:3000");
 
+/**
+ * Sets api-host on all ef-configuration elements in a parsed document.
+ * Required when user HTML already contains ef-configuration without api-host:
+ * EFMedia uses closest("ef-configuration") which finds the nearest ancestor,
+ * so the inner element must have api-host set.
+ */
+export function injectApiHost(doc: ReturnType<typeof parse>, apiHost: string) {
+  for (const el of doc.querySelectorAll("ef-configuration")) {
+    el.setAttribute("api-host", apiHost);
+  }
+}
+
 export async function createBundledHTMLDirectory(
   directory: string,
   html: string,
@@ -358,6 +370,8 @@ export async function processHTML(options: ProcessHTMLOptions) {
           imageCount: imageElements.length,
           workflowJobCount: workflowJobs.length,
         });
+
+        injectApiHost(doc, WEB_HOST);
 
         return { workflowJobs, doc };
       },
