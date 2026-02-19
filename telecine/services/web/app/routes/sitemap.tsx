@@ -42,6 +42,12 @@ const tools = [
   { href: '/tools/add-subtitles-to-video' },
 ];
 
+// Helper function to format a date string as YYYY-MM-DD for sitemap lastmod
+function formatLastmod(date: string): string {
+  const d = new Date(date);
+  return d.toISOString().slice(0, 10);
+}
+
 // Helper function to generate URL entry
 function generateUrlEntry(
   slug: string,
@@ -49,10 +55,11 @@ function generateUrlEntry(
   changefreq: string = 'weekly',
   priority: string = '0.7'
 ): string {
+  const lastmodValue = lastmod ? formatLastmod(lastmod) : undefined;
   return `
         <url>
           <loc>${siteUrl}${slug}</loc>
-          ${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}
+          ${lastmodValue ? `<lastmod>${lastmodValue}</lastmod>` : ''}
           <changefreq>${changefreq}</changefreq>
           <priority>${priority}</priority>
         </url>`;

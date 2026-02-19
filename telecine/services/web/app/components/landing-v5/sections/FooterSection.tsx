@@ -25,7 +25,6 @@ export function FooterSection() {
             <h3 className="font-bold text-sm uppercase tracking-wider mb-4">Product</h3>
             <ul className="space-y-3">
               <li><Link to="/skills" className="text-sm text-white/60 hover:text-white transition-colors">Docs & Skills</Link></li>
-              <li><Link to="/changelog" className="text-sm text-white/60 hover:text-white transition-colors">Changelog</Link></li>
             </ul>
           </div>
           <div>
@@ -36,13 +35,7 @@ export function FooterSection() {
               <li><Link to="/auth/register" className="text-sm text-white/60 hover:text-white transition-colors">Contact</Link></li>
             </ul>
           </div>
-          <div>
-            <h3 className="font-bold text-sm uppercase tracking-wider mb-4">Legal</h3>
-            <ul className="space-y-3">
-              <li><Link to="/privacy" className="text-sm text-white/60 hover:text-white transition-colors">Privacy</Link></li>
-              <li><Link to="/terms" className="text-sm text-white/60 hover:text-white transition-colors">Terms</Link></li>
-            </ul>
-          </div>
+          <div />
         </div>
         
         {/* Bottom bar */}
