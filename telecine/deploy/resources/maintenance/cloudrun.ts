@@ -13,16 +13,13 @@ import {
   applicationSecret,
   hasuraJwtSecretToken,
 } from "../secrets";
-import { DEPLOYED_DOMAIN, GCP_LOCATION, GCP_PROJECT, GCP_REGION } from "../constants";
-import * as infra from "../_infra";
+import { DEPLOYED_DOMAIN, GCP_PROJECT, GCP_REGION } from "../constants";
 import { bucket } from "../storage";
 import { publicBucketName } from "../constants";
-import { getGitSha } from "../../util/getGitSha";
+import { getImageRef } from "../../util/getImageRef";
 import { valkeyInternalIp } from "../valkey";
 import { queueEnvVars } from "../queues/workers";
 import { workerResources } from "../../worker-resources.config";
-
-const repo = infra.artifactRepository;
 
 export const cloudrun = new gcp.cloudrunv2.Service(
   "telecine-maintenance",
@@ -49,7 +46,7 @@ export const cloudrun = new gcp.cloudrunv2.Service(
       maxInstanceRequestConcurrency: 1,
       containers: [
         {
-          image: pulumi.interpolate`${GCP_LOCATION}-docker.pkg.dev/${repo.project}/${repo.name}/maintenance:${getGitSha()}`,
+          image: getImageRef("maintenance"),
 
           envs: [
             envFromSecretVersion("POSTGRES_PASSWORD", pgPassword),

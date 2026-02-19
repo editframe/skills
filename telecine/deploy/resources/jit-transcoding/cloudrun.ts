@@ -12,15 +12,12 @@ import {
   applicationSecret,
   hasuraJwtSecretToken,
 } from "../secrets";
-import { DEPLOYED_DOMAIN, GCP_LOCATION } from "../constants";
-import * as infra from "../_infra";
+import { DEPLOYED_DOMAIN } from "../constants";
 import { bucket } from "../storage";
 import { publicBucketName } from "../constants";
-import { getGitSha } from "../../util/getGitSha";
+import { getImageRef } from "../../util/getImageRef";
 import { valkeyInternalIp } from "../valkey";
 import { valkeyVpcConnector } from "../network";
-
-const repo = infra.artifactRepository;
 
 export const cloudrun = new gcp.cloudrunv2.Service(
   "telecine-jit-transcoding",
@@ -49,7 +46,7 @@ export const cloudrun = new gcp.cloudrunv2.Service(
       ],
       containers: [
         {
-          image: pulumi.interpolate`${GCP_LOCATION}-docker.pkg.dev/${repo.project}/${repo.name}/jit-transcoding:${getGitSha()}`,
+          image: getImageRef("jit-transcoding"),
 
           envs: [
             envFromSecretVersion("POSTGRES_PASSWORD", pgPassword),
