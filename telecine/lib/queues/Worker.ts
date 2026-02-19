@@ -1,13 +1,9 @@
-import type { Server } from "node:http";
 import { inspect } from "node:util";
 
 import type ValKey from "iovalkey";
-import superJSON from "superjson";
-import { type WebSocket, WebSocketServer } from "ws";
 
 import { type logger, makeLogger } from "@/logging";
 import {
-  type AbortableLoop,
   RequestSleep,
   abortableLoopWithBackoff,
 } from "./AbortableLoop";
@@ -17,7 +13,7 @@ import type { Queue } from "./Queue";
 import { Workflow } from "./Workflow";
 import { publishJobLifecycle } from "./lifecycle/Producer";
 import { errorToErrorInfo } from "./ErrorInfo";
-import { executeSpan, WithSpan } from "@/tracing";
+import { executeSpan } from "@/tracing";
 import { randomUUID } from "node:crypto";
 import { valkey } from "@/valkey/valkey";
 
@@ -332,147 +328,5 @@ export class Worker<Payload = unknown> {
         );
       },
     };
-  }
-}
-
-interface WorkerWebSocketServerArgs<Payload> {
-  server: Server;
-  worker: Worker<Payload>;
-}
-
-export interface WorkerWebSocket extends WebSocket {
-  isAlive?: boolean;
-}
-
-export const TRY_AGAIN_LATER = 1013;
-export const ABNORMAL_TERMINATION = 1006;
-
-export class WorkerWebSocketServer<Payload> {
-  server: Server;
-  wss: WebSocketServer;
-  logger: typeof logger;
-  worker: Worker<Payload>;
-  messageId = 0;
-  connection?: WorkerWebSocket;
-  heartbeatInterval: NodeJS.Timeout | null = null;
-  workLoops: AbortableLoop[] = [];
-  #aborting: Promise<void> | null = null;
-
-  constructor(args: WorkerWebSocketServerArgs<Payload>) {
-    this.logger = makeLogger().child({
-      component: "WorkerWebSocketServer",
-    });
-    this.server = args.server;
-    this.worker = args.worker as Worker<Payload>;
-    this.wss = new WebSocketServer({ server: this.server });
-  }
-
-  initializeWebsocketServer() {
-    this.logger.debug("Initializing websocket server");
-    this.wss.on("connection", (ws: WorkerWebSocket) => {
-      this.logger.info("Worker connected!!");
-      this.bindToConnection(ws);
-    });
-
-    this.heartbeatInterval = setInterval(() => {
-      this.wss.clients.forEach((ws: WorkerWebSocket) => {
-        if (ws.isAlive === false) {
-          return ws.terminate();
-        }
-        ws.isAlive = false;
-        ws.ping();
-      });
-    }, 30000);
-
-    this.wss.on("close", () => {
-      if (this.heartbeatInterval) {
-        clearInterval(this.heartbeatInterval);
-      }
-    });
-  }
-
-  bindToConnection(ws: WorkerWebSocket) {
-    if (this.connection) {
-      this.logger.error("Worker already has an active connection");
-      ws.close(TRY_AGAIN_LATER, "Worker already has an active connection");
-      return;
-    }
-    this.connection = ws;
-
-    ws.on("message", async (message) => {
-      try {
-        const rawMessage = superJSON.parse(message.toString()) as any;
-
-        switch (rawMessage.type) {
-          case "shutdown": {
-            this.abort();
-            break;
-          }
-        }
-      } catch (error) {
-        this.logger.error(
-          { error, message: message.toString() },
-          "Failed to parse WebSocket message",
-        );
-      }
-    });
-
-    ws.on("close", () => {
-      this.unbindConnection().catch((error) => {
-        this.logger.error(
-          { error: inspect(error) },
-          "Error during unbindConnection",
-        );
-      });
-    });
-
-    ws.isAlive = true;
-    ws.on("pong", () => {
-      ws.isAlive = true;
-    });
-
-    for (let i = 0; i < this.worker.concurrency; i++) {
-      this.workLoops.push(this.worker.workLoop());
-    }
-  }
-
-  async unbindConnection() {
-    this.logger.info("Unbinding connection");
-    this.connection = undefined;
-    await this.abortWorkLoops();
-  }
-
-  @WithSpan()
-  async abort() {
-    this.logger.info("Aborting worker");
-    await this.abortWorkLoops();
-    this.logger.info("Workloops aborted");
-    await this.worker.close();
-    if (this.connection) {
-      this.logger.info("Closing WebSocket connection");
-      this.connection.close();
-    }
-  }
-
-  private async abortWorkLoops() {
-    if (this.#aborting) {
-      this.logger.info("Abort already in progress, awaiting existing abort");
-      await this.#aborting;
-      return;
-    }
-    const loops = this.workLoops;
-    this.workLoops = [];
-    this.#aborting = Promise.all(loops.map((loop) => loop.abort())).then(
-      () => {},
-    );
-    try {
-      await this.#aborting;
-      this.logger.info(
-        { loopCount: loops.length },
-        "All work loops aborted",
-      );
-    } finally {
-      this.#aborting = null;
-    }
   }
 }

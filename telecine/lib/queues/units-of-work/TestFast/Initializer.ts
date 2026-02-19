@@ -1,16 +1,11 @@
 import { logger } from "@/logging";
-import { envInt, envString } from "@/util/env";
+import { envInt } from "@/util/env";
 import { valkey } from "@/valkey/valkey";
 import { Queue } from "../../Queue";
 import { Worker } from "../../Worker";
-import { ConnectionURLMap } from "../../WorkerConnection";
 import { TestFastWorkflow } from "./Workflow";
 import { TestFastMainQueue } from "./Main";
 
-const QUEUE_URL = envString(
-  "TEST_FAST_INITIALIZER_WEBSOCKET_HOST",
-  "ws://localhost:3000",
-);
 const MAX_WORKER_COUNT = envInt("TEST_FAST_INITIALIZER_MAX_WORKER_COUNT", 1);
 const WORKER_CONCURRENCY = envInt(
   "TEST_FAST_INITIALIZER_WORKER_CONCURRENCY",
@@ -28,7 +23,6 @@ export const TestFastInitializerQueue = new Queue<TestFastInitializerPayload>({
   maxWorkerCount: MAX_WORKER_COUNT,
   workerConcurrency: WORKER_CONCURRENCY,
 });
-ConnectionURLMap.set(TestFastInitializerQueue, QUEUE_URL);
 
 export const TestFastInitializerWorker = new Worker({
   storage: valkey,

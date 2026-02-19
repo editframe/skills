@@ -3,17 +3,12 @@ import { sql } from "kysely";
 import { logger } from "@/logging";
 import { Queue } from "@/queues/Queue";
 import { Worker } from "@/queues/Worker";
-import { ConnectionURLMap } from "@/queues/WorkerConnection";
 import { valkey } from "@/valkey/valkey";
 import { RenderInitializerQueue } from "../Render/RenderInitializerQueue";
 import { RenderWorkflow } from "../Render/Workflow";
 import type { ProcessHTMLWorkflowData } from "./Workflow";
-import { envInt, envString } from "@/util/env";
+import { envInt } from "@/util/env";
 
-const QUEUE_URL = envString(
-  "PROCESS_HTML_FINALIZER_WEBSOCKET_HOST",
-  "ws://localhost:3000",
-);
 const MAX_WORKER_COUNT = envInt("PROCESS_HTML_FINALIZER_MAX_WORKER_COUNT", 1);
 const WORKER_CONCURRENCY = envInt(
   "PROCESS_HTML_FINALIZER_WORKER_CONCURRENCY",
@@ -40,7 +35,6 @@ export const ProcessHTMLFinalizerQueue = new Queue<ProcessHTMLWorkflowData>({
       .execute();
   },
 });
-ConnectionURLMap.set(ProcessHTMLFinalizerQueue, QUEUE_URL);
 
 export const ProcessHTMLFinalizerWorker = new Worker({
   storage: valkey,

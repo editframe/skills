@@ -1,77 +1,84 @@
 import { describe, expect, test } from "vitest";
+import SuperJSON from "superjson";
 
 import { fixtures } from "../fixtures";
-import { makeQueues } from "../makeQueues";
-import { Consumer } from "./Consumer";
-import { publishJobLifecycle } from "./Producer";
+import { makeDataStore } from "../makeDataStore";
+import { publishJobLifecycle, LIFECYCLE_LIST_KEY, type LifecycleMessage } from "./Producer";
+import { Queue } from "../Queue";
 
-describe("lifecycle", async () => {
-  const queues = await fixtures(makeQueues);
+const makeTestFixtures = async () => {
+  const storage = await makeDataStore();
+  const TestQueue = new Queue({ name: "test", storage });
+  return { storage, TestQueue };
+};
 
-  test("should work", async () => {
-    const consumer = await Consumer.create({
-      storage: queues.storage,
-      consumerId: "1",
-      streamKey: "lifecycle:jobs",
-      batchSize: 1000,
-      blockTimeMs: 1,
-    });
+describe("lifecycle producer", async () => {
+  const ctx = fixtures(makeTestFixtures);
 
-    await publishJobLifecycle(queues.storage, {
-      queue: queues.TestQueue.name,
+  test("publishes job lifecycle message to list", async () => {
+    await publishJobLifecycle(ctx.storage, {
+      queue: "test",
       jobId: "1",
       attemptNumber: 1,
-      workflow: queues.TestWorkflow.name,
+      workflow: "test-workflow",
       workflowId: "1",
       type: "job",
       event: "started",
-      timestamp: Date.now(),
+      timestamp: 1000,
     });
 
-    const messages = await consumer.readNewMessages();
+    const raw = await ctx.storage.rpop(LIFECYCLE_LIST_KEY);
+    expect(raw).toBeTruthy();
+    const msg = SuperJSON.parse(raw!) as LifecycleMessage;
+    expect(msg).toEqual({
+      queue: "test",
+      jobId: "1",
+      attemptNumber: 1,
+      workflow: "test-workflow",
+      workflowId: "1",
+      type: "job",
+      event: "started",
+      timestamp: 1000,
+    });
+  });
 
-    expect(messages).toEqual({
-      [consumer.streamKey]: [
-        {
-          id: expect.any(String),
-          data: {
-            jobId: "1",
-            queue: "test",
-            workflow: "test-workflow",
-            workflowId: "1",
-            event: "started",
-            timestamp: expect.any(String),
-            type: "job",
-            attemptNumber: "1",
-          },
-        },
-      ],
+  test("publishes workflow lifecycle message to list", async () => {
+    await publishJobLifecycle(ctx.storage, {
+      workflowId: "wf1",
+      workflowName: "render",
+      orgId: "org1",
+      type: "workflow",
+      event: "failed",
+      timestamp: 2000,
+      details: { error: { message: "boom" } },
     });
 
-    await consumer.readNewMessages();
+    const raw = await ctx.storage.rpop(LIFECYCLE_LIST_KEY);
+    const msg = SuperJSON.parse(raw!) as LifecycleMessage;
+    expect(msg.type).toBe("workflow");
+    expect(msg).toMatchObject({
+      workflowId: "wf1",
+      workflowName: "render",
+      event: "failed",
+      details: { error: { message: "boom" } },
+    });
+  });
 
-    await expect(consumer.getPendingMessages()).resolves.toHaveLength(1);
+  test("multiple messages accumulate in list", async () => {
+    for (let i = 0; i < 5; i++) {
+      await publishJobLifecycle(ctx.storage, {
+        queue: "test",
+        jobId: `job-${i}`,
+        attemptNumber: 0,
+        workflow: "test-workflow",
+        workflowId: "wf1",
+        type: "job",
+        event: "started",
+        timestamp: Date.now(),
+      });
+    }
 
-    await expect(consumer.claimPendingMessages(0)).resolves.toEqual([
-      {
-        id: expect.any(String),
-        data: {
-          jobId: "1",
-          queue: "test",
-          workflow: "test-workflow",
-          type: "job",
-          attemptNumber: "1",
-          workflowId: "1",
-          event: "started",
-          timestamp: expect.any(String),
-        },
-      },
-    ]);
-
-    await consumer.acknowledgeMessages(messages[consumer.streamKey]!);
-
-    await expect(consumer.getPendingMessages()).resolves.toHaveLength(0);
-
-    await expect(consumer.readNewMessages()).resolves.toEqual({});
+    const len = await ctx.storage.llen(LIFECYCLE_LIST_KEY);
+    expect(len).toBe(5);
   });
 });

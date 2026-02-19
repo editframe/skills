@@ -4,9 +4,8 @@ import type { Selectable } from "kysely";
 import { logger } from "@/logging";
 import { Queue } from "@/queues/Queue";
 import { Worker } from "@/queues/Worker";
-import { ConnectionURLMap } from "@/queues/WorkerConnection";
 import type { Video2Renders } from "@/sql-client.server/kysely-codegen";
-import { envInt, envString } from "@/util/env";
+import { envInt } from "@/util/env";
 import {
   renderFinalFilePath,
   renderFragmentComposePrefixPath,
@@ -16,10 +15,6 @@ import { storageProvider } from "@/util/storageProvider.server";
 import { valkey } from "@/valkey/valkey";
 import { buildFragmentIds } from "./fragments/buildFragmentIds";
 
-const QUEUE_URL = envString(
-  "RENDER_FINALIZER_WEBSOCKET_HOST",
-  "ws://localhost:3000",
-);
 const MAX_WORKER_COUNT = envInt("RENDER_FINALIZER_MAX_WORKER_COUNT", 1);
 const WORKER_CONCURRENCY = envInt("RENDER_FINALIZER_WORKER_CONCURRENCY", 1);
 
@@ -43,7 +38,6 @@ export const RenderFinalizerQueue = new Queue<Selectable<Video2Renders>>({
       .execute();
   },
 });
-ConnectionURLMap.set(RenderFinalizerQueue, QUEUE_URL);
 
 export const RenderFinalizerWorker = new Worker({
   storage: valkey,

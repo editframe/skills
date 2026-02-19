@@ -1,8 +1,7 @@
-import { envInt, envString } from "@/util/env";
+import { envInt } from "@/util/env";
 import { valkey } from "@/valkey/valkey";
 import { Queue } from "../Queue";
 import { Worker } from "../Worker";
-import { ConnectionURLMap } from "../WorkerConnection";
 import { logger } from "@/logging";
 import { db } from "@/sql-client.server";
 
@@ -10,10 +9,6 @@ import { db } from "@/sql-client.server";
 import "@/queues/units-of-work/ProcessHtml/Workflow";
 import { processImageFile } from "@/process-file/processAsset";
 
-const QUEUE_URL = envString(
-  "INGEST_IMAGE_WEBSOCKET_HOST",
-  "ws://localhost:3000",
-);
 const MAX_WORKER_COUNT = envInt("INGEST_IMAGE_MAX_WORKER_COUNT", 1);
 const WORKER_CONCURRENCY = envInt("INGEST_IMAGE_WORKER_CONCURRENCY", 1);
 
@@ -32,7 +27,6 @@ export const IngestImageQueue = new Queue<IngestImagePayload>({
   maxWorkerCount: MAX_WORKER_COUNT,
   workerConcurrency: WORKER_CONCURRENCY,
 });
-ConnectionURLMap.set(IngestImageQueue, QUEUE_URL);
 
 export const IngestImageWorker = new Worker({
   storage: valkey,

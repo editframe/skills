@@ -28,65 +28,11 @@ export interface WorkflowLifecycleMessage {
 
 export type LifecycleMessage = JobLifecycleMessage | WorkflowLifecycleMessage;
 
+export const LIFECYCLE_LIST_KEY = "lifecycle:pending";
+
 export const publishJobLifecycle = async (
   storage: ValKey,
   message: LifecycleMessage,
 ) => {
-  switch (message.type) {
-    case "job":
-    case "attempt":
-      // biome-ignore format: control over line size
-      await storage.xadd(
-        "lifecycle:jobs",
-        "MAXLEN",
-        "~",
-        10_000,
-        "*",
-        "jobId",
-        message.jobId,
-        "attemptNumber",
-        message.attemptNumber,
-        "type",
-        message.type,
-        "queue",
-        message.queue,
-        "workflow",
-        message.workflow,
-        "workflowId",
-        message.workflowId,
-        "event",
-        message.event,
-        "timestamp",
-        message.timestamp,
-        ...(message.details
-          ? ["details", SuperJSON.stringify(message.details)]
-          : []),
-      );
-      break;
-    case "workflow":
-      // biome-ignore format: control over line size
-      await storage.xadd(
-        "lifecycle:jobs",
-        "MAXLEN",
-        "~",
-        10_000,
-        "*",
-        "workflowId",
-        message.workflowId,
-        "workflowName",
-        message.workflowName,
-        "orgId",
-        message.orgId,
-        "event",
-        message.event,
-        "type",
-        message.type,
-        "timestamp",
-        message.timestamp,
-        ...(message.details
-          ? ["details", SuperJSON.stringify(message.details)]
-          : []),
-      );
-      break;
-  }
+  await storage.lpush(LIFECYCLE_LIST_KEY, SuperJSON.stringify(message));
 };

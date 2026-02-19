@@ -4,6 +4,7 @@ services:
       context: .
       dockerfile: services/scheduler-go/Dockerfile.dev
     restart: unless-stopped
+    scale: 0
     env_file:
       - ${PWD}/.env
     environment:

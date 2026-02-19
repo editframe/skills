@@ -6,10 +6,9 @@ import { logger } from "@/logging";
 import { processISOBMFF } from "@/process-file/processISOBMFF";
 import { ProgressTracker } from "@/progress-tracking/ProgressTracker";
 import type { Video2ProcessIsobmff } from "@/sql-client.server/kysely-codegen";
-import { envInt, envString } from "@/util/env";
+import { envInt } from "@/util/env";
 import { valkey } from "@/valkey/valkey";
 import { Queue } from "../Queue";
-import { ConnectionURLMap } from "../WorkerConnection";
 import { Workflow } from "../Workflow";
 import { Worker } from "../Worker";
 
@@ -26,10 +25,6 @@ import { dataFilePath } from "@/util/filePaths";
 import { db } from "@/sql-client.server";
 import { storageProvider } from "@/util/storageProvider.server";
 
-const QUEUE_URL = envString(
-  "PROCESS_ISOBMFF_WEBSOCKET_HOST",
-  "ws://localhost:3000",
-);
 const WORKER_CONCURRENCY = envInt("PROCESS_ISOBMFF_WORKER_CONCURRENCY", 1);
 const MAX_WORKER_COUNT = envInt("PROCESS_ISOBMFF_MAX_WORKER_COUNT", 1);
 
@@ -95,7 +90,6 @@ export const ProcessISOBMFFQueue = new Queue<ProcessISOBMFFPayload>({
       .execute();
   },
 });
-ConnectionURLMap.set(ProcessISOBMFFQueue, QUEUE_URL);
 
 export const ProcessISOBMFFWorker = new Worker<ProcessISOBMFFPayload>({
   storage: valkey,

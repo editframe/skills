@@ -1,15 +1,10 @@
 import type { Selectable } from "kysely";
 
-import { ConnectionURLMap } from "@/queues/WorkerConnection";
-import { envInt, envString } from "@/util/env";
+import { envInt } from "@/util/env";
 import { valkey } from "@/valkey/valkey";
 import { Queue } from "../../Queue";
 import type { Video2Renders } from "@/sql-client.server/kysely-codegen";
 
-const QUEUE_URL = envString(
-  "RENDER_INITIALIZER_WEBSOCKET_HOST",
-  "ws://localhost:3000",
-);
 const MAX_WORKER_COUNT = envInt("RENDER_INITIALIZER_MAX_WORKER_COUNT", 1);
 const WORKER_CONCURRENCY = envInt("RENDER_INITIALIZER_WORKER_CONCURRENCY", 1);
 
@@ -48,5 +43,3 @@ export const RenderInitializerQueue = new Queue<Selectable<Video2Renders>>({
       .execute();
   },
 });
-
-ConnectionURLMap.set(RenderInitializerQueue, QUEUE_URL);
