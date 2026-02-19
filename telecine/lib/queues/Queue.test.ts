@@ -396,6 +396,25 @@ describe("Queue", async () => {
     });
   });
 
+  test("Queue.toJSON excludes storage internals", () => {
+    const json = JSON.parse(JSON.stringify(queues.TestQueue));
+    expect(json).toEqual({
+      name: queues.TestQueue.name,
+      maxWorkerCount: queues.TestQueue.maxWorkerCount,
+      workerConcurrency: queues.TestQueue.workerConcurrency,
+    });
+    expect(json.storage).toBeUndefined();
+  });
+
+  test("Workflow.toJSON excludes storage internals", () => {
+    const json = JSON.parse(JSON.stringify(queues.TestWorkflow));
+    expect(json).toEqual({
+      name: queues.TestWorkflow.name,
+    });
+    expect(json.storage).toBeUndefined();
+    expect(json.finalizerQueue).toBeUndefined();
+  });
+
   describe("job idempotency", () => {
     test("jobs enqueued twice should only be enqueued once", async () => {
       await queues.TestWorkflow.enqueueJob(job1);

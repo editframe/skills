@@ -69,6 +69,14 @@ export class Queue<Payload> {
     this.processCompletions = args.processCompletions;
   }
 
+  toJSON() {
+    return {
+      name: this.name,
+      maxWorkerCount: this.maxWorkerCount,
+      workerConcurrency: this.workerConcurrency,
+    };
+  }
+
   async getStats() {
     const stats = await this.storage.getQueueStats(
       `queues:${this.name}`,

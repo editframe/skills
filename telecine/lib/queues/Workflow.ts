@@ -47,6 +47,12 @@ export class Workflow<WorkflowData> {
     Workflow.byName.set(this.name, this as Workflow<unknown>);
   }
 
+  toJSON() {
+    return {
+      name: this.name,
+    };
+  }
+
   enqueueJob<Payload>(job: EnqueableJobWithQueue<Payload>) {
     return enqueueJob(this.storage, {
       queue: job.queue.name,
