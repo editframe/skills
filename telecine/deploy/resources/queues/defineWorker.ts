@@ -19,7 +19,7 @@ import { bucket } from "../storage";
 import { publicBucketName } from "../constants";
 import { getGitSha } from "../../util/getGitSha";
 import { valkeyInternalIp } from "../valkey";
-import { type QueueConfig, queueEnvVars } from "./workers";
+import { type QueueConfig, queueEnvVars } from "./configs";
 
 const repo = infra.artifactRepository;
 
