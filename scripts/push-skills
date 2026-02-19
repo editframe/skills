@@ -54,3 +54,15 @@ cd "$PROJECT_ROOT"
 rm -rf "$BUILD_DIR"
 
 echo "✅ Successfully pushed generated skills to skills remote ($BRANCH branch)"
+
+# Sync source files into telecine subtree for production deployment
+echo "🔄 Syncing skills into telecine subtree..."
+rsync -a --delete "$PROJECT_ROOT/skills/skills/" "$PROJECT_ROOT/telecine/skills/skills/"
+
+if ! git diff --quiet telecine/skills/; then
+  git add telecine/skills/
+  git commit -m "sync skills into telecine subtree"
+  "$SCRIPT_DIR/push-telecine"
+else
+  echo "telecine/skills already up to date"
+fi
