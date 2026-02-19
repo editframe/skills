@@ -404,6 +404,6 @@ Before deploying to production:
 
 ## Next Steps
 
-- [troubleshooting.md](troubleshooting.md) — Debug webhook issues
-- [security.md](security.md) — Verify signatures correctly
-- [events.md](events.md) — Understand webhook payloads
+- [troubleshooting.md](references/troubleshooting.md) — Debug webhook issues
+- [security.md](references/security.md) — Verify signatures correctly
+- [events.md](references/events.md) — Understand webhook payloads

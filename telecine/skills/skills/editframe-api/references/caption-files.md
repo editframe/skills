@@ -87,4 +87,4 @@ Use `<ef-captions>` with `target` to display captions from a video's transcripti
 </ef-configuration>
 ```
 
-See [files.md](files.md) for the complete files API reference.
+See [files.md](references/files.md) for the complete files API reference.

@@ -54,7 +54,7 @@ Add `overlap` to create shared time between adjacent items — the foundation fo
 
 Total duration with overlap: `sum(children) - (overlap × (count - 1))`. Three 3s scenes with 1s overlap = 7s.
 
-See [transitions.md](transitions.md) for crossfade and slide effects during overlap.
+See [transitions.md](references/transitions.md) for crossfade and slide effects during overlap.
 
 ## Nested Sequences
 
@@ -111,6 +111,6 @@ Wrap a sequence with a `contain` parent and add a `fit` sibling for a background
 
 ## See Also
 
-- [timegroup-modes.md](timegroup-modes.md) — mode explanations
-- [transitions.md](transitions.md) — crossfade and slide transitions
-- [time-model.md](time-model.md) — how time propagates through sequences
+- [timegroup-modes.md](references/timegroup-modes.md) — mode explanations
+- [transitions.md](references/transitions.md) — crossfade and slide transitions
+- [time-model.md](references/time-model.md) — how time propagates through sequences

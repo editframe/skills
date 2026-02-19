@@ -802,9 +802,9 @@ function createVideoProps(): VideoProps {
 
 ## Related
 
-- [server-rendering.md](server-rendering.md) - SSR integration guide
-- [r3f.md](r3f.md) - React Three Fiber integration
+- [server-rendering.md](references/server-rendering.md) - SSR integration guide
+- [r3f.md](references/r3f.md) - React Three Fiber integration
 <!-- react-only -->
-- [configuration.md](configuration.md) - Configuration component
+- [configuration.md](references/configuration.md) - Configuration component
 <!-- /react-only -->
-- [getting-started.md](getting-started.md) - Installation and setup
+- [getting-started.md](references/getting-started.md) - Installation and setup

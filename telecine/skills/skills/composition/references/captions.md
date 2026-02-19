@@ -784,7 +784,7 @@ Then load the generated captions:
 </ef-timegroup>
 ```
 
-See [transcription.md](transcription.md) for complete transcription workflow documentation.
+See [transcription.md](references/transcription.md) for complete transcription workflow documentation.
 <!-- /html-only -->
 <!-- react-only -->
 This uses `whisper_timestamped` to create word-level timestamps. Install it first:
@@ -793,7 +793,7 @@ This uses `whisper_timestamped` to create word-level timestamps. Install it firs
 pip3 install whisper-timestamped
 ```
 
-See the `elements-composition` skill's [transcription.md](../../elements-composition/references/transcription.md) for more details.
+See [references/transcription.md](references/transcription.md) for more details.
 
 ## Multiple Caption Tracks
 

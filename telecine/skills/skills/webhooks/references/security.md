@@ -413,6 +413,6 @@ app.post("/webhooks/editframe", (req, res) => {
 
 ## Next Steps
 
-- [testing.md](testing.md) — Test signature verification locally
-- [troubleshooting.md](troubleshooting.md) — Debug signature verification issues
-- [getting-started.md](getting-started.md) — Complete webhook setup guide
+- [testing.md](references/testing.md) — Test signature verification locally
+- [troubleshooting.md](references/troubleshooting.md) — Debug signature verification issues
+- [getting-started.md](references/getting-started.md) — Complete webhook setup guide

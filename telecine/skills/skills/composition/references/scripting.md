@@ -513,7 +513,7 @@ tg.initializer = (instance) => {
 };
 ```
 
-**Important**: For React components, you must use `TimelineRoot` to ensure React hooks and state work correctly. See [timeline-root.md](timeline-root.md) for details.
+**Important**: For React components, you must use `TimelineRoot` to ensure React hooks and state work correctly. See [timeline-root.md](references/timeline-root.md) for details.
 <!-- /react-only -->
 
 ## Best Practices
@@ -600,7 +600,7 @@ const MyScene = () => {
 
 ## See Also
 
-- [timeline-root.md](timeline-root.md) - TimelineRoot wrapper (required for React)
-- [hooks.md](hooks.md) - useTimingInfo and other React hooks
-- [timegroup.md](timegroup.md) - Timegroup component reference
+- [timeline-root.md](references/timeline-root.md) - TimelineRoot wrapper (required for React)
+- [hooks.md](references/hooks.md) - useTimingInfo and other React hooks
+- [timegroup.md](references/timegroup.md) - Timegroup component reference
 <!-- /react-only -->

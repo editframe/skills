@@ -77,7 +77,7 @@ Total duration: `durationA + durationB - overlap`
 
 During the overlap region, both scenes receive valid `ownCurrentTimeMs` values. Scene A is near its end, Scene B is near its start. This shared time is where transitions happen.
 
-See [transitions.md](transitions.md) for using overlap with CSS animations.
+See [transitions.md](references/transitions.md) for using overlap with CSS animations.
 
 ## Two Coordinate Systems
 
@@ -94,6 +94,6 @@ Media elements add a third:
 
 ## See Also
 
-- [timegroup-modes.md](timegroup-modes.md) — mode examples
-- [timegroup.md](timegroup.md) — attribute reference
-- [sequencing.md](sequencing.md) — sequence patterns
+- [timegroup-modes.md](references/timegroup-modes.md) — mode examples
+- [timegroup.md](references/timegroup.md) — attribute reference
+- [sequencing.md](references/sequencing.md) — sequence patterns

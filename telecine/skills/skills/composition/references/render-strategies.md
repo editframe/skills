@@ -114,6 +114,6 @@ All three paths share the same composition format. The divergence is in how fram
 
 ## See Also
 
-- [render-api.md](render-api.md) — full `renderToVideo()` options reference
-- [render-to-video.md](render-to-video.md) — step-by-step browser export tutorial
-- [server-rendering.md](server-rendering.md) — SSR-safe imports for server environments
+- [render-api.md](references/render-api.md) — full `renderToVideo()` options reference
+- [render-to-video.md](references/render-to-video.md) — step-by-step browser export tutorial
+- [server-rendering.md](references/server-rendering.md) — SSR-safe imports for server environments

@@ -1089,13 +1089,13 @@ const options: RenderToVideoOptions = {
 ## Next Steps
 
 <!-- html-only -->
-- See [render-api.md](render-api.md) for all options
-- See [render-strategies.md](render-strategies.md) for choosing between browser, CLI, and cloud rendering
+- See [render-api.md](references/render-api.md) for all options
+- See [render-strategies.md](references/render-strategies.md) for choosing between browser, CLI, and cloud rendering
 - See the `editframe-cli` skill for server-side rendering
 <!-- /html-only -->
 <!-- react-only -->
-- See [hooks.md](hooks.md) for `useTimingInfo` and other hooks
-- See [timegroup.md](timegroup.md) for composition structure
-- See [timeline-root.md](timeline-root.md) for why it's required
+- See [hooks.md](references/hooks.md) for `useTimingInfo` and other hooks
+- See [timegroup.md](references/timegroup.md) for composition structure
+- See [timeline-root.md](references/timeline-root.md) for why it's required
 - See the `editframe-cli` skill for server-side rendering
 <!-- /react-only -->

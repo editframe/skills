@@ -575,6 +575,6 @@ const worker = new Worker('./worker.ts');
 
 ## Related
 
-- [timegroup.md](timegroup.md) - Timeline container <!-- html-only -->element<!-- /html-only --><!-- react-only -->component<!-- /react-only -->
-- [render-to-video.md](render-to-video.md) - Rendering compositions to video
-- [scripting.md](scripting.md) - Programmatic element control
+- [timegroup.md](references/timegroup.md) - Timeline container <!-- html-only -->element<!-- /html-only --><!-- react-only -->component<!-- /react-only -->
+- [render-to-video.md](references/render-to-video.md) - Rendering compositions to video
+- [scripting.md](references/scripting.md) - Programmatic element control
