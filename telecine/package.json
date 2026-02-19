@@ -84,7 +84,7 @@
     "@commander-js/extra-typings": "^12.0.0",
     "@editframe/api": "^0.38.0",
     "@editframe/assets": "^0.38.0",
-    "@editframe/elements": "^0.38.0",
+    "@editframe/elements": "^0.38.1",
     "@editframe/react": "^0.38.0",
     "@google-cloud/opentelemetry-cloud-trace-exporter": "^2.4.1",
     "@google-cloud/secret-manager": "^5.6.0",
