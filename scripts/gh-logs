@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+# Get logs for failed jobs in a GitHub Actions run.
+# Usage: gh-logs <repo> [run-id]
+# If run-id is omitted, uses the most recent run.
+#
+# Examples:
+#   gh-logs editframe/telecine
+#   gh-logs editframe/telecine 22169288214
+#   gh-logs editframe/elements 22169000000
+
+set -e
+
+REPO="${1:?Usage: gh-logs <repo> [run-id]}"
+RUN_ID="$2"
+
+if [ -z "$RUN_ID" ]; then
+  RUN_ID=$(gh run list --repo="$REPO" --limit=1 --json databaseId --jq '.[0].databaseId')
+  echo "latest run: $RUN_ID"
+fi
+
+STATUS=$(gh run view "$RUN_ID" --repo="$REPO" --json status --jq '.status')
+
+if [ "$STATUS" != "completed" ]; then
+  echo "run $RUN_ID is $STATUS — showing job summary"
+  gh run view "$RUN_ID" --repo="$REPO" --json jobs \
+    --jq '.jobs[] | "\(.conclusion // .status)\t\(.name)"'
+  exit 0
+fi
+
+FAILED_JOBS=$(gh run view "$RUN_ID" --repo="$REPO" --json jobs \
+  --jq '[.jobs[] | select(.conclusion == "failure")] | length')
+
+if [ "$FAILED_JOBS" = "0" ]; then
+  echo "run $RUN_ID completed with no failures"
+  gh run view "$RUN_ID" --repo="$REPO" --json jobs \
+    --jq '.jobs[] | "\(.conclusion)\t\(.name)"'
+  exit 0
+fi
+
+gh run view "$RUN_ID" --repo="$REPO" --json jobs \
+  --jq '.jobs[] | "\(.conclusion // .status)\t\(.name)"'
+
+echo ""
+echo "--- failed job logs ---"
+
+gh run view "$RUN_ID" --repo="$REPO" --log-failed 2>&1 | tail -200

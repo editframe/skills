@@ -10,7 +10,6 @@ cd "$PROJECT_ROOT"
 WAIT_FOR_ACTION=false
 BRANCH="main"
 
-# Parse arguments
 while [[ $# -gt 0 ]]; do
   case $1 in
     --wait)
@@ -28,22 +27,14 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-TEMP_BRANCH="telecine-split-${BRANCH}"
+git fetch telecine "$BRANCH" 2>/dev/null || true
 
-echo "Splitting telecine subtree to temporary branch..."
-git subtree split --prefix=telecine -b "$TEMP_BRANCH"
+SPLIT=$(git subtree split --prefix=telecine --onto="telecine/$BRANCH" --ignore-joins HEAD 2>/dev/null)
 
-echo "Pushing to telecine remote..."
-git push telecine "$TEMP_BRANCH:$BRANCH" --force
+git push telecine "${SPLIT}:${BRANCH}" --force-with-lease 2>&1 | grep -v "^$"
 
-echo "Cleaning up temporary branch..."
-git branch -D "$TEMP_BRANCH"
-
-echo "✅ Successfully pushed telecine/ directory to telecine remote ($BRANCH branch)"
+echo "pushed telecine -> ${BRANCH} (${SPLIT:0:10})"
 
 if [ "$WAIT_FOR_ACTION" = "true" ]; then
-  echo ""
-  echo "Waiting for deployment action to complete..."
   "$SCRIPT_DIR/wait-for-telecine-action" "deploy.yaml"
 fi
-

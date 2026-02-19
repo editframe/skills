@@ -68,14 +68,41 @@ npm dist-tag add @editframe/elements@<good-version> latest
 
 For a full rollback, revert the commit, bump to a new patch version, and run `elements/scripts/prepare-release <new-version>`.
 
+## CI Monitoring
+
+Use the provided scripts to monitor CI runs. Never use raw `gh` commands -- the scripts handle polling, formatting, and log extraction.
+
+```bash
+# Poll telecine deploy until complete (30s intervals)
+scripts/wait-for-telecine-action
+
+# Poll elements release until complete
+scripts/wait-for-elements-action
+
+# Push and wait in one command
+scripts/push-telecine --wait
+scripts/push-elements --wait
+
+# Get logs for a failed run (most recent)
+scripts/gh-logs editframe/telecine
+
+# Get logs for a specific run
+scripts/gh-logs editframe/telecine 22169288214
+
+# Generic poller for any repo
+scripts/wait-for-github-action editframe/telecine deploy.yaml
+```
+
 ## Debugging Failed Deployments
 
 ### Telecine CI/CD failures
 
+Start with `scripts/gh-logs editframe/telecine` to get the failed job logs.
+
 **Docker build failures:**
-- Check the GitHub Actions log for the specific matrix job that failed
 - Common causes: dependency install failures, Dockerfile syntax errors, out of disk (especially `transcribe`)
 - The `transcribe` image gets special handling: disk space is freed before build, and the whisper builder cache is pulled separately
+- The `web` image requires `skills/skills/` in the build context -- these are embedded in the telecine subtree
 
 **Pulumi failures:**
 - Run `pulumi preview` locally to see what Pulumi wants to change
@@ -90,15 +117,16 @@ For a full rollback, revert the commit, bump to a new patch version, and run `el
 
 ### Elements CI/CD failures
 
+Start with `scripts/gh-logs editframe/elements` to get the failed job logs.
+
 **Common failure points:**
 1. Type check failed -- fix type errors, beta tags skip this check
 2. Tests failed -- fix tests, beta tags skip this check
-3. npm publish auth failure -- check `NPM_TOKEN` secret in GitHub
+3. npm publish auth failure -- uses Trusted Publishing (OIDC), check environment and permissions
 4. Subtree push failure -- check that `elements` git remote is configured and accessible
 
 **Local debugging:**
 ```bash
-# Run the same checks locally
 elements/scripts/docker-compose run --rm runner npm run typecheck --workspaces
 elements/scripts/docker-compose run --rm runner npm run lint
 elements/scripts/docker-compose run --rm runner npm run format

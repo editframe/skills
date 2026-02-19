@@ -363,8 +363,7 @@ async function main() {
       }
     }
 
-    // Sleep before next check (check every 5 seconds to reduce output)
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    await new Promise((resolve) => setTimeout(resolve, 30000));
   }
 }
 

@@ -1,36 +1,51 @@
 ---
 name: deployments
-description: Deploy telecine services to GCP Cloud Run via Pulumi, publish elements packages to npm, rollback, scale resources, manage secrets, and debug failed deployments.
+description: Deploy telecine services to GCP Cloud Run via Pulumi, publish elements packages to npm, publish skills docs, rollback, scale resources, manage secrets, and debug failed deployments.
 ---
 
 # Deployments
 
-This monorepo has two deployment paths:
+This monorepo has three deployment paths:
 
 - **telecine** -- GCP Cloud Run services deployed via Pulumi, triggered by push to `main`
 - **elements** -- npm packages published by pushing a git tag
+- **skills** -- public documentation published to the `skills` remote via `scripts/push-skills`
 
-## Getting Current Infrastructure Data
+## Scripts
 
-Run `scripts/deploy-info` to query local config files for current service lists, resource allocations, routes, secrets, packages, and release pipeline steps. This is always more accurate than any prose description.
+All deployment operations use scripts. Never run raw `git subtree split` or manual `gh` commands -- the scripts handle subtree splitting, noise suppression, remote fetching, and CI polling.
 
-```bash
-scripts/deploy-info telecine    # Services, resources, routes, secrets
-scripts/deploy-info elements    # Packages, release pipeline
-```
+| Script | Purpose |
+|---|---|
+| `scripts/push-telecine` | Subtree split + push telecine to remote |
+| `scripts/push-telecine --wait` | Push + poll CI until deploy completes |
+| `scripts/push-elements` | Subtree split + push elements to remote |
+| `scripts/push-elements --wait` | Push + poll CI until release completes |
+| `scripts/push-skills` | Generate + push skills to remote |
+| `scripts/wait-for-telecine-action` | Poll telecine deploy CI (30s interval) |
+| `scripts/wait-for-elements-action` | Poll elements release CI (30s interval) |
+| `scripts/wait-for-github-action <repo>` | Generic CI poller for any repo |
+| `scripts/gh-logs <repo> [run-id]` | Get failed job logs for a CI run |
+| `scripts/deploy-info telecine` | Services, resources, routes, secrets |
+| `scripts/deploy-info elements` | Packages, release pipeline |
 
 ## Quick Reference
 
 | Action | Command |
 |---|---|
-| Deploy telecine to production | Push to `main` (automated) |
-| Deploy specific telecine services manually | `telecine/scripts/build-and-push web scheduler-go` |
-| Deploy all telecine services manually | `telecine/scripts/build-and-push-all` |
+| Deploy telecine | `scripts/push-telecine` (or `--wait`) |
+| Deploy telecine to branch | `scripts/push-telecine --branch feature` |
+| Deploy specific services manually | `telecine/scripts/build-and-push web scheduler-go` |
+| Deploy all services manually | `telecine/scripts/build-and-push-all` |
 | Run Pulumi directly | `cd telecine/deploy && pulumi up` |
 | Prepare elements release | `elements/scripts/prepare-release <version>` |
+| Push elements subtree | `scripts/push-elements` (or `--wait`) |
 | Bump elements to beta | `elements/scripts/prerelease` |
 | Publish elements manually | `elements/scripts/publish` |
-| Query current infrastructure | `scripts/deploy-info telecine` or `scripts/deploy-info elements` |
+| Publish skills docs | `scripts/push-skills` |
+| Tag skills release | `git push skills $(git rev-parse skills/main):refs/tags/v<version>` |
+| Check CI status | `scripts/gh-logs editframe/telecine` |
+| Poll CI until done | `scripts/wait-for-telecine-action` |
 
 ## Telecine (GCP Cloud Run)
 
@@ -38,17 +53,35 @@ Telecine runs on GCP Cloud Run, managed by Pulumi (TypeScript) from `telecine/de
 
 Supporting infrastructure includes Cloud SQL Postgres, Valkey (Redis) on Compute Engine, GCS storage buckets, an HTTPS load balancer with URL-map routing, and Cloudflare DNS.
 
+Skills source files are embedded in the telecine subtree at `telecine/skills/skills/` for the web Docker build (Tailwind class scanning + runtime docs serving).
+
 Run `scripts/deploy-info telecine` for the current list of services, their resource allocations, load balancer routes, and secrets.
 
 See [references/telecine.md](references/telecine.md) for deployment architecture and procedures.
 
 ## Elements (npm)
 
-Elements publishes `@editframe` packages to npm. Pushing any git tag triggers the release workflow. Tags containing "beta" publish with the `beta` npm dist-tag; all others use `latest`.
+Elements publishes `@editframe` packages to npm via Trusted Publishing (OIDC). Pushing any git tag triggers the release workflow. Tags containing "beta" publish with the `beta` npm dist-tag; all others use `latest`.
 
 Run `scripts/deploy-info elements` for the current package list and release pipeline steps.
 
 See [references/elements.md](references/elements.md) for the release workflow and versioning.
+
+## Skills (Public Docs)
+
+Skills are public-facing documentation generated from source files in `skills/skills/` and published to the `editframe/skills` GitHub repo. The generation strips human-only metadata (nav, track, sections, api) and keeps only LLM-essential frontmatter.
+
+```bash
+scripts/push-skills
+
+# Tag with the same version as elements
+git fetch skills main
+git push skills $(git rev-parse skills/main):refs/tags/v<version>
+```
+
+There is no CI -- the push is the deployment. Tag skills with the same version used for elements releases.
+
+See [references/skills.md](references/skills.md) for the build process and source file conventions.
 
 ## Troubleshooting & Operations
 

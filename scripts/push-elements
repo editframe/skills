@@ -10,7 +10,6 @@ cd "$PROJECT_ROOT"
 WAIT_FOR_ACTION=false
 BRANCH="main"
 
-# Parse arguments
 while [[ $# -gt 0 ]]; do
   case $1 in
     --wait)
@@ -28,22 +27,14 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-TEMP_BRANCH="elements-split-${BRANCH}"
+git fetch elements "$BRANCH" 2>/dev/null || true
 
-echo "Splitting elements subtree to temporary branch..."
-git subtree split --prefix=elements -b "$TEMP_BRANCH"
+SPLIT=$(git subtree split --prefix=elements --onto="elements/$BRANCH" --ignore-joins HEAD 2>/dev/null)
 
-echo "Pushing to elements remote..."
-git push elements "$TEMP_BRANCH:$BRANCH" --force
+git push elements "${SPLIT}:${BRANCH}" --force-with-lease 2>&1 | grep -v "^$"
 
-echo "Cleaning up temporary branch..."
-git branch -D "$TEMP_BRANCH"
-
-echo "✅ Successfully pushed elements/ directory to elements remote ($BRANCH branch)"
+echo "pushed elements -> ${BRANCH} (${SPLIT:0:10})"
 
 if [ "$WAIT_FOR_ACTION" = "true" ]; then
-  echo ""
-  echo "Waiting for release action to complete..."
   "$SCRIPT_DIR/wait-for-elements-action" "release.yaml"
 fi
-
