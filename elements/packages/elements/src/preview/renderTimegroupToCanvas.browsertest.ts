@@ -32,6 +32,7 @@ import { logger } from "./logger.js";
 import "../elements/EFTimegroup.js";
 import "../elements/EFVideo.js";
 import "../elements/EFPanZoom.js";
+import "../elements/EFImage.js";
 import "../gui/EFPreview.js";
 import "../gui/EFWorkbench.js";
 import "../gui/EFConfiguration.js";
@@ -54,6 +55,7 @@ const test = baseTest.extend<{
   videoTimegroup: EFTimegroup;
   complexHtmlTimegroup: EFTimegroup;
   nestedAnimatedTimegroup: EFTimegroup;
+  webpImageTimegroup: EFTimegroup;
 }>({
   htmlTimegroup: async ({}, use) => {
     const container = document.createElement("div");
@@ -356,6 +358,36 @@ const test = baseTest.extend<{
     await use(timegroup);
     container.remove();
   },
+  webpImageTimegroup: async ({}, use) => {
+    const container = document.createElement("div");
+    const apiHost = getApiHost();
+    const webpSrc = `${window.location.origin}/test.webp`;
+    render(
+      html`
+      <ef-configuration api-host="${apiHost}" signing-url="">
+        <ef-preview>
+          <ef-timegroup mode="contain" id="webp-image-timegroup"
+            style="width: 400px; height: 225px; background: #1a1a2e;">
+            <ef-image
+              src="${webpSrc}"
+              style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(3);">
+            </ef-image>
+          </ef-timegroup>
+        </ef-preview>
+      </ef-configuration>
+    `,
+      container,
+    );
+    document.body.appendChild(container);
+    const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
+    await timegroup.updateComplete;
+    const image = container.querySelector("ef-image") as any;
+    if (image) {
+      await image.loadImage?.();
+    }
+    await use(timegroup);
+    container.remove();
+  },
 });
 
 function hasCanvasContent(
@@ -570,6 +602,45 @@ describe("renderTimegroupToCanvas", () => {
         "renderTimegroupToCanvas",
         "video-cross-path",
         { threshold: 0.1, acceptableDiffPercentage: 5.0 },
+      );
+    });
+  });
+
+  describe("WebP image rendering", () => {
+    test.runIf(isNativeCanvasApiAvailable())(
+      "native: WebP image renders content to canvas",
+      async ({ webpImageTimegroup }) => {
+        setNativeCanvasApiEnabled(true);
+        const canvas = await captureTimegroupAtTime(webpImageTimegroup, {
+          timeMs: 0,
+          scale: 1,
+        });
+
+        expect(hasCanvasContent(canvas)).toBe(true);
+        await expectCanvasToMatchSnapshot(
+          canvas,
+          "renderTimegroupToCanvas",
+          "webp-image-native",
+          { threshold: 0.1, acceptableDiffPercentage: 2.5 },
+        );
+      },
+    );
+
+    test("foreignObject: WebP image renders content to canvas", async ({
+      webpImageTimegroup,
+    }) => {
+      setNativeCanvasApiEnabled(false);
+      const canvas = await captureTimegroupAtTime(webpImageTimegroup, {
+        timeMs: 0,
+        scale: 1,
+      });
+
+      expect(hasCanvasContent(canvas)).toBe(true);
+      await expectCanvasToMatchSnapshot(
+        canvas,
+        "renderTimegroupToCanvas",
+        "webp-image-foreign",
+        { threshold: 0.1, acceptableDiffPercentage: 2.5 },
       );
     });
   });

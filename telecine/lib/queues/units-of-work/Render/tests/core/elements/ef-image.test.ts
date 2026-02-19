@@ -1,7 +1,12 @@
 // Integration tests - use smoke tests for fast feedback
-import { describe, test, expect } from "vitest";
+import { describe, test, expect, beforeAll } from "vitest";
 import { render } from "../../utils/render";
 import { validateMP4 } from "../../utils/video-validator";
+import { makeTestAgent } from "TEST/util/test";
+import { processTestImageAsset } from "../../../test-utils/processTestAssets";
+import type { Selectable } from "kysely";
+import type { TestAgent } from "TEST/util/test";
+import type { Video2ImageFiles } from "@/sql-client.server/kysely-codegen";
 
 describe("ef-image Element", { timeout: 30000 }, () => {
   describe("Static image display", () => {
@@ -258,5 +263,57 @@ describe("ef-image Element", { timeout: 30000 }, () => {
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
     });
+  });
+});
+
+describe("ef-image with WebP source", { timeout: 60000 }, () => {
+  let testAgent: Selectable<TestAgent>;
+  let webpImage: Selectable<Video2ImageFiles>;
+
+  beforeAll(async () => {
+    testAgent = await makeTestAgent("ef-image-webp@example.org");
+    webpImage = await processTestImageAsset("test.webp", testAgent);
+  });
+
+  test("ingested WebP has correct mime_type", () => {
+    expect(webpImage.mime_type).toBe("image/webp");
+    expect(webpImage.width).toBe(88);
+    expect(webpImage.height).toBe(66);
+  });
+
+  test("renders composition with WebP asset-id", async () => {
+    const result = await render(
+      `
+      <ef-timegroup class="w-[640px] h-[360px]" mode="fixed" duration="1s">
+        <ef-image asset-id="${webpImage.id}" class="w-full h-full object-cover" />
+      </ef-timegroup>
+    `,
+      { testAgent, testName: "ef-image-webp-asset-id" },
+    );
+
+    expect(result.videoBuffer.length).toBeGreaterThan(1000);
+    expect(result.durationMs).toBeCloseTo(1000, 100);
+
+    const validation = validateMP4(result.videoBuffer);
+    expect(validation.isValid).toBe(true);
+  });
+
+  test("renders WebP image via data URL", async () => {
+    const redWebp =
+      "data:image/webp;base64,UklGRlYAAABXRUJQVlA4IEoAAADQAQCdASoBAAEAAkA4JYgCdAEO/gHOAAD++bFHaz/9hHtHGAMirRsHqA3dfaExUTvFkFtLB4BV//f/r4AAAAA=";
+
+    const result = await render(
+      `
+      <ef-timegroup class="w-[640px] h-[360px]" mode="fixed" duration="1s">
+        <ef-image src="${redWebp}" class="w-full h-full object-cover" />
+      </ef-timegroup>
+    `,
+      { testAgent, testName: "ef-image-webp-data-url" },
+    );
+
+    expect(result.videoBuffer.length).toBeGreaterThan(1000);
+
+    const validation = validateMP4(result.videoBuffer);
+    expect(validation.isValid).toBe(true);
   });
 });

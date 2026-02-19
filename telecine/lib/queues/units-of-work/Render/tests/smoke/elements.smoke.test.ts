@@ -17,12 +17,14 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
   let testAgent: Selectable<TestAgent>;
   let barsNTone: Selectable<Video2IsobmffFiles>;
   let testImage: Selectable<Video2ImageFiles>;
+  let webpImage: Selectable<Video2ImageFiles>;
   let electronRpc: ElectronRPC | undefined;
 
   beforeAll(async () => {
     testAgent = await makeTestAgent("elements-smoke@example.org");
     barsNTone = await processTestVideoAsset("bars-n-tone.mp4", testAgent);
     testImage = await processTestImageAsset("test.jpg", testAgent);
+    webpImage = await processTestImageAsset("test.webp", testAgent);
     
     // Create electronRPC once for all browser render strategies
     // Only needed if we're testing browser strategies
@@ -71,6 +73,23 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
         </ef-timegroup>
       `,
         { ...renderOpts, testAgent, electronRpc, testName: `elements-smoke-ef-image-${strategy.name}` },
+      );
+
+      expect(result.durationMs).toBeCloseTo(100, 20);
+      expect(result.videoBuffer.length).toBeGreaterThan(1000);
+
+      const validation = validateMP4(result.videoBuffer);
+      expect(validation.isValid).toBe(true);
+    });
+
+    test("ef-image with WebP source renders", async () => {
+      const result = await render(
+        `
+        <ef-timegroup class="w-[640px] h-[360px]" mode="fixed" duration="100ms">
+          <ef-image asset-id="${webpImage.id}" class="w-full h-full object-cover" />
+        </ef-timegroup>
+      `,
+        { ...renderOpts, testAgent, electronRpc, testName: `elements-smoke-ef-image-webp-${strategy.name}` },
       );
 
       expect(result.durationMs).toBeCloseTo(100, 20);

@@ -156,6 +156,44 @@ describe("EFImage", () => {
     });
   });
 
+  describe("WebP rendering", () => {
+    test("loads WebP via direct URL (img path) and transitions to ready", async () => {
+      const image = document.createElement("ef-image");
+      const src = `${window.location.origin}/test.webp`;
+      image.src = src;
+      image.style.width = "100px";
+      image.style.height = "100px";
+      document.body.append(image);
+      await image.updateComplete;
+      await image.loadImage();
+
+      expect(image.contentReadyState).toBe("ready");
+      const imgEl = image.imageRef.value;
+      expect(imgEl).toBeDefined();
+      expect(imgEl!.naturalWidth).toBeGreaterThan(0);
+
+      image.remove();
+    });
+
+    test("loads WebP via canvas path and sets hasAlpha to true", async () => {
+      const image = document.createElement("ef-image");
+      image.src = "test.webp";
+      image.style.width = "100px";
+      image.style.height = "100px";
+      document.body.append(image);
+      await image.updateComplete;
+      await image.loadImage();
+
+      expect(image.contentReadyState).toBe("ready");
+      expect(image.hasAlpha).toBe(true);
+      const canvasEl = image.canvasRef.value;
+      expect(canvasEl).toBeDefined();
+
+      image.remove();
+    });
+
+  });
+
   describe("contentReadyState", () => {
     test("image with no src auto-readies (trivially ready)", async () => {
       const image = document.createElement("ef-image");

@@ -231,6 +231,36 @@ async function bundleHTMLRender(html: string) {
 
 const ONE_HOUR = 1000 * 60 * 60;
 
+export interface ImageSourceRewrite {
+  imageId: string;
+  url: string;
+}
+
+/**
+ * Finds ef-image elements with HTTP src attributes, rewrites them to use
+ * file-id/asset-id, and returns the list of images to ingest.
+ * Modifies the doc in-place.
+ */
+export function extractAndRewriteImageSources(
+  doc: ReturnType<typeof parse>,
+): ImageSourceRewrite[] {
+  const imageElements = doc.querySelectorAll("ef-image");
+  const rewrites: ImageSourceRewrite[] = [];
+
+  for (const image of imageElements) {
+    const src = image.getAttribute("src");
+    if (src?.startsWith("http")) {
+      const imageId = randomUUID();
+      rewrites.push({ imageId, url: src });
+      image.setAttribute("file-id", imageId);
+      image.setAttribute("asset-id", imageId);
+      image.removeAttribute("src");
+    }
+  }
+
+  return rewrites;
+}
+
 export async function processHTML(options: ProcessHTMLOptions) {
   return executeSpan("processHTML", async (span) => {
     const meta = {
@@ -249,7 +279,6 @@ export async function processHTML(options: ProcessHTMLOptions) {
 
         const doc = parse(options.html);
 
-        const imageElements = doc.querySelectorAll("ef-image");
         const mediaElements = doc.querySelectorAll("ef-audio,ef-video");
 
         const isobmffs: {
@@ -327,38 +356,31 @@ export async function processHTML(options: ProcessHTMLOptions) {
           });
         }
 
-        for (const image of imageElements) {
-          const src = image.getAttribute("src");
-          if (src?.startsWith("http")) {
-            const imageId = randomUUID();
-            workflowJobs.push({
-              payload: {
-                url: src,
-                creatorId: options.creator_id,
-                apiKeyId: options.api_key_id ?? "",
-                imageId,
-              },
-              queue: IngestImageQueue.name,
-              orgId: options.org_id,
-              workflowId: options.process_html_id,
-              jobId: imageId,
-            });
+        const imageRewrites = extractAndRewriteImageSources(doc);
+        for (const { imageId, url } of imageRewrites) {
+          workflowJobs.push({
+            payload: {
+              url,
+              creatorId: options.creator_id,
+              apiKeyId: options.api_key_id ?? "",
+              imageId,
+            },
+            queue: IngestImageQueue.name,
+            orgId: options.org_id,
+            workflowId: options.process_html_id,
+            jobId: imageId,
+          });
 
-            fileRows.push({
-              id: imageId,
-              org_id: options.org_id,
-              creator_id: options.creator_id,
-              api_key_id: options.api_key_id,
-              filename: src,
-              type: "image",
-              status: "processing",
-              expires_at: new Date(Date.now() + ONE_HOUR),
-            });
-
-            image.setAttribute("file-id", imageId);
-            image.setAttribute("asset-id", imageId);
-            image.removeAttribute("src");
-          }
+          fileRows.push({
+            id: imageId,
+            org_id: options.org_id,
+            creator_id: options.creator_id,
+            api_key_id: options.api_key_id,
+            filename: url,
+            type: "image",
+            status: "processing",
+            expires_at: new Date(Date.now() + ONE_HOUR),
+          });
         }
 
         if (fileRows.length > 0) {
@@ -367,7 +389,7 @@ export async function processHTML(options: ProcessHTMLOptions) {
 
         setSpanAttributes({
           mediaCount: mediaElements.length,
-          imageCount: imageElements.length,
+          imageCount: imageRewrites.length,
           workflowJobCount: workflowJobs.length,
         });
 
