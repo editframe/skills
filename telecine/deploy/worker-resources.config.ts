@@ -33,7 +33,7 @@ export const workerResources = {
     memory: "2Gi",
   },
   maintenance: {
-    cpu: "500m",
+    cpu: "1000m",
     memory: "512Mi",
   },
 } as const satisfies Record<string, WorkerResources>;
