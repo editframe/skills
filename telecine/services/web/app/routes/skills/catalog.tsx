@@ -12,7 +12,7 @@ export const meta = () => {
     {
       name: "description",
       content:
-        "Everything you need to build with Editframe.",
+        "API references, tutorials, and guides for building video compositions, editor UIs, and integrations with Editframe.",
     },
   ];
 };

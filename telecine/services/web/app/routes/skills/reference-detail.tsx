@@ -94,16 +94,22 @@ export const meta = ({ data }: Route.MetaArgs) => {
     return [{ title: "Skills - Editframe" }];
   }
 
-  const { skillName, referenceName } = data;
+  const { skillName, referenceName, description } = data;
   const title = referenceName
     ? `${referenceName} - ${skillName} - Skills`
     : `${skillName} - Skills`;
+
+  const metaDescription = description
+    ? description.length > 160
+      ? description.slice(0, 157) + "..."
+      : description
+    : `Documentation for ${skillName}`;
 
   return [
     { title: `${title} - Editframe` },
     {
       name: "description",
-      content: `Documentation for ${skillName}`,
+      content: metaDescription,
     },
   ];
 };
@@ -140,6 +146,7 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
 
   // Extract API metadata from frontmatter
   const apiMetadata = (parsed.frontmatter as any)?.api || null;
+  const description = (parsed.frontmatter as any)?.description || null;
 
   return {
     skillName,
@@ -149,6 +156,7 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
     referencesMeta,
     allSkills,
     apiMetadata,
+    description,
     isReference: true,
   };
 };
