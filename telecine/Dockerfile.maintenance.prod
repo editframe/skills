@@ -1,7 +1,8 @@
-FROM node:22-slim
+FROM node:22-slim AS builder
 
 ENV NODE_ENV=production
 ENV NODE_COMPILE_CACHE=/app/.compile-cache
+
 WORKDIR /app
 
 COPY package.json package-lock.json ./
@@ -10,19 +11,28 @@ RUN npm install
 COPY lib/ lib/
 COPY services/maintenance/ services/maintenance/
 COPY tsconfig.json ./
-COPY ./loader.js /app/loader.js
 
 WORKDIR /app/services/maintenance
 RUN npx vite build
 
 WORKDIR /app
 
-# Install only production dependencies
 RUN rm -rf node_modules && npm install --only=production
 
-# Pre-warm the compile cache using reusable utility
 COPY scripts/docker-compile-cache-prewarm /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-compile-cache-prewarm && \
     docker-compile-cache-prewarm "node /app/services/maintenance/dist/server.js" 3000 /health
+
+FROM node:22-slim
+
+ENV NODE_ENV=production
+ENV NODE_COMPILE_CACHE=/app/.compile-cache
+
+WORKDIR /app
+
+COPY --from=builder /app/package.json /app/package.json
+COPY --from=builder /app/node_modules/ /app/node_modules/
+COPY --from=builder /app/services/maintenance/dist/ /app/services/maintenance/dist/
+COPY --from=builder /app/.compile-cache/ /app/.compile-cache/
 
 CMD ["node", "/app/services/maintenance/dist/server.js"]
