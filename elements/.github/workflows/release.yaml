@@ -22,6 +22,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20.15.0"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Create .env file
         run: touch .env
@@ -63,6 +64,13 @@ jobs:
 
       - name: Publish to npm
         run: |
+          # Strip the _authToken line from .npmrc so npm uses OIDC trusted publishing
+          NPMRC="${NPM_CONFIG_USERCONFIG:-$HOME/.npmrc}"
+          sed -i '/_authToken/d' "$NPMRC"
+          echo "--- .npmrc after cleanup ---"
+          cat "$NPMRC"
+          echo "---"
+
           # Get the current tag name from git
           TAG_NAME=$(git describe --tags --exact-match 2>/dev/null || echo "")
 
