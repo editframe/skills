@@ -20,7 +20,7 @@ const routes = [
   route("/demos/motion-designer", "routes/demos/motion-designer.tsx"),
   route("/with/animejs", "routes/with/animejs.tsx"),
   route("/docs", "routes/docs-redirect.ts"),
-  route("/docs/*", "routes/docs-redirect.ts"),
+  route("/docs/*", "routes/docs-redirect.ts", { id: "routes/docs-redirect-wildcard" }),
   route("/guides/*", "routes/guides-redirect.ts"),
   route("/blog/*", "routes/blog-redirect.ts"),
   route("/react", "routes/react-redirect.ts"),
