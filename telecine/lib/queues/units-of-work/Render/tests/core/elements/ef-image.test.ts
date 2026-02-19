@@ -1,5 +1,8 @@
 // Integration tests - use smoke tests for fast feedback
 import { describe, test, expect, beforeAll } from "vitest";
+import { join, dirname } from "node:path";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { render } from "../../utils/render";
 import { validateMP4 } from "../../utils/video-validator";
 import { makeTestAgent } from "TEST/util/test";
@@ -7,6 +10,9 @@ import { processTestImageAsset } from "../../../test-utils/processTestAssets";
 import type { Selectable } from "kysely";
 import type { TestAgent } from "TEST/util/test";
 import type { Video2ImageFiles } from "@/sql-client.server/kysely-codegen";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const TEST_ASSETS_DIR = join(__dirname, "../../../../../../process-file/test-files");
 
 describe("ef-image Element", { timeout: 30000 }, () => {
   describe("Static image display", () => {
@@ -299,12 +305,12 @@ describe("ef-image with WebP source", { timeout: 60000 }, () => {
   });
 
   test("renders WebP image via data URL", async () => {
-    const redWebp =
-      "data:image/webp;base64,UklGRlYAAABXRUJQVlA4IEoAAADQAQCdASoBAAEAAkA4JYgCdAEO/gHOAAD++bFHaz/9hHtHGAMirRsHqA3dfaExUTvFkFtLB4BV//f/r4AAAAA=";
+    const webpBytes = readFileSync(join(TEST_ASSETS_DIR, "test.webp"));
+    const redWebp = `data:image/webp;base64,${webpBytes.toString("base64")}`;
 
     const result = await render(
       `
-      <ef-timegroup class="w-[640px] h-[360px]" mode="fixed" duration="1s">
+      <ef-timegroup class="w-[640px] h-[360px]" mode="fixed" duration="100ms">
         <ef-image src="${redWebp}" class="w-full h-full object-cover" />
       </ef-timegroup>
     `,
