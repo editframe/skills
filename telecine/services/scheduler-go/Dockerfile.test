@@ -1,4 +1,4 @@
-FROM golang:1.23-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
@@ -8,7 +8,7 @@ COPY services/scheduler-go/go.mod services/scheduler-go/go.sum ./
 # Download dependencies
 RUN go mod download
 
-FROM golang:1.23-alpine AS test
+FROM golang:1.24-alpine AS test
 
 WORKDIR /app
 
