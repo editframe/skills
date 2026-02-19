@@ -122,7 +122,7 @@ function startScaler() {
 
         if (gcpProject) {
           try {
-            const workerPoolName = `worker-${queueName}`;
+            const workerPoolName = `telecine-worker-${queueName}`;
             const url = `https://run.googleapis.com/v2/projects/${gcpProject}/locations/${gcpRegion}/workerPools/${workerPoolName}?updateMask=scaling.manualInstanceCount`;
             const token = await getAccessToken();
             const response = await fetch(url, {
