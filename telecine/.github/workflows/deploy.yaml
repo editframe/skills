@@ -79,5 +79,7 @@ jobs:
       - run: npm ci
       - run: pulumi login gs://deployment-state
       - run: pulumi stack select telecine-dot-dev
+      - name: Remove orphaned scheduler-go from state
+        run: pulumi state delete 'urn:pulumi:telecine-dot-dev::telecine::gcp:cloudrunv2/service:Service::telecine-scheduler-go' -y --force || true
       - run: gcloud auth configure-docker us-central1-docker.pkg.dev
       - run: pulumi up -y --verbose=9

@@ -16,7 +16,6 @@ import "./resources/storage-backend";
 import "./resources/loadbalancer";
 import "./resources/cloudflare-dns-com";
 import "./resources/cloudflare-dns-dev";
-import "./resources/queues/scheduler-go";
 
 import { GCP_PROJECT } from "./resources/constants";
 
