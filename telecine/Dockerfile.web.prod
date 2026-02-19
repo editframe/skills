@@ -19,6 +19,7 @@ COPY ./postcss.config.cjs /app/postcss.config.cjs
 ENV NODE_ENV=production
 ENV VITE_HASURA_CLIENT_URL="https://editframe.com/v1/graphql"
 ENV VITE_WEB_HOST="https://editframe.com"
+ENV REACT_ROUTER_ROOT=/app
 RUN npx react-router build --config services/web/vite.config.ts
 
 FROM  gcr.io/distroless/nodejs22-debian12
