@@ -95,6 +95,21 @@ function parseValue(value: string): any {
   return value;
 }
 
+function yamlQuote(value: unknown): string {
+  const str = String(value);
+  if (typeof value === "boolean" || typeof value === "number") return str;
+  const needsQuoting =
+    str === "" ||
+    str.trim() !== str ||
+    /[@:{}\[\],&*?|<>=!%#`"'\n\\]/.test(str) ||
+    /^(true|false|null|~)$/i.test(str) ||
+    /^-?\d+(\.\d+)?$/.test(str); // strings that parse as numbers
+  if (needsQuoting) {
+    return `"${str.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+  }
+  return str;
+}
+
 function stringifyYaml(obj: any): string {
   const lines: string[] = [];
 
@@ -104,10 +119,10 @@ function stringifyYaml(obj: any): string {
     if (typeof value === "object" && !Array.isArray(value)) {
       lines.push(`${key}:`);
       for (const [k, v] of Object.entries(value)) {
-        lines.push(`  ${k}: ${v}`);
+        lines.push(`  ${k}: ${yamlQuote(v)}`);
       }
     } else {
-      lines.push(`${key}: ${value}`);
+      lines.push(`${key}: ${yamlQuote(value)}`);
     }
   }
 
@@ -213,6 +228,8 @@ function apiToProse(api: ApiMetadata): string {
 
 // --- File generation ---
 
+const validationErrors: { file: string; errors: string[] }[] = [];
+
 function generateSkillFile(sourcePath: string, outputPath: string) {
   const content = readFileSync(sourcePath, "utf8");
   const parsed = parseFrontmatter(content);
@@ -262,8 +279,35 @@ function generateSkillFile(sourcePath: string, outputPath: string) {
   }
 
   // Write generated file
-  const output = `---\n${stringifyYaml(llmFrontmatter).trim()}\n---\n\n${body}`;
+  const yaml = stringifyYaml(llmFrontmatter).trim();
+  const output = `---\n${yaml}\n---\n\n${body}`;
   writeFileSync(outputPath, output, "utf8");
+
+  // Round-trip validation: re-parse the generated frontmatter and check key
+  // fields survived. Catches serialization bugs (unquoted special chars, etc.)
+  const roundTrip = parseFrontmatter(output);
+  const rt = roundTrip.attributes;
+  const errors: string[] = [];
+
+  if (llmFrontmatter.name !== undefined && rt.name !== String(llmFrontmatter.name)) {
+    errors.push(`name: expected "${llmFrontmatter.name}", got "${rt.name}"`);
+  }
+  if (llmFrontmatter.description !== undefined && rt.description !== String(llmFrontmatter.description)) {
+    errors.push(`description: round-trip mismatch`);
+  }
+  if (llmFrontmatter.metadata) {
+    for (const [k, v] of Object.entries(llmFrontmatter.metadata)) {
+      if (String(v) !== String(rt.metadata?.[k])) {
+        errors.push(`metadata.${k}: expected "${v}", got "${rt.metadata?.[k]}"`);
+      }
+    }
+  }
+
+  if (errors.length > 0) {
+    validationErrors.push({ file: outputPath, errors });
+    console.error(`  VALIDATION FAILED: ${outputPath}`);
+    for (const e of errors) console.error(`    ${e}`);
+  }
 }
 
 function generateSkillsRecursive(sourceDir: string, outputDir: string) {
@@ -308,5 +352,10 @@ console.log(`Source: ${sourceDir}`);
 console.log(`Output: ${outputDir}`);
 
 generateSkillsRecursive(sourceDir, outputDir);
+
+if (validationErrors.length > 0) {
+  console.error(`\nFAILED: ${validationErrors.length} file(s) have invalid frontmatter after generation.`);
+  process.exit(1);
+}
 
 console.log("Done!");
