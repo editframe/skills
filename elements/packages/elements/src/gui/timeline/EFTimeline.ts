@@ -701,7 +701,6 @@ export class EFTimeline extends TWMixin(LitElement) {
       if (element && isEFTemporal(element)) {
         return element as TemporalMixinInterface & HTMLElement;
       }
-
     }
 
     // If controlTarget is "selection" or empty, derive from canvas selection

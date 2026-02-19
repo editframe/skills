@@ -171,9 +171,7 @@ function isFileSystemAccessSupported(): boolean {
   return typeof window !== "undefined" && "showSaveFilePicker" in window;
 }
 
-async function getFileWritableStream(
-  filename: string,
-): Promise<{
+async function getFileWritableStream(filename: string): Promise<{
   writable: WritableStream<Uint8Array>;
   close: () => Promise<void>;
 } | null> {

@@ -43,8 +43,7 @@ export class ContextProxyController implements ReactiveController {
     }
   }
 
-  hostConnected(): void {
-  }
+  hostConnected(): void {}
 
   hostDisconnected(): void {
     this.host.removeEventListener("context-request", this.handleContextRequest);

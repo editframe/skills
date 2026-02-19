@@ -138,7 +138,11 @@ export class ThumbnailExtractor {
       signal?.throwIfAborted();
 
       const initP = this.mediaEngine.fetchInitSegment(rendition, signal!);
-      const mediaP = this.mediaEngine.fetchMediaSegment(segmentId, rendition, signal!);
+      const mediaP = this.mediaEngine.fetchMediaSegment(
+        segmentId,
+        rendition,
+        signal!,
+      );
       initP.catch(() => {});
       mediaP.catch(() => {});
       const [initSegment, mediaSegment] = await Promise.all([initP, mediaP]);

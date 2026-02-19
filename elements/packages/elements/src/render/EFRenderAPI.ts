@@ -130,7 +130,6 @@ async function waitForTimegroupDimensions(
         `3. The dev server successfully compiled CSS (check for Tailwind warnings above)`,
     );
   }
-
 }
 
 const api: IEFRenderAPI = {

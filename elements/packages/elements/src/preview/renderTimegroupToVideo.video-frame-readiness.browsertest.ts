@@ -12,7 +12,10 @@ const TEST_VIDEO_URL = "http://host.docker.internal:3000/sync-test.mp4";
 
 async function isTestServerAvailable(): Promise<boolean> {
   try {
-    const res = await fetch(TEST_VIDEO_URL, { method: "HEAD", signal: AbortSignal.timeout(2000) });
+    const res = await fetch(TEST_VIDEO_URL, {
+      method: "HEAD",
+      signal: AbortSignal.timeout(2000),
+    });
     return res.ok;
   } catch {
     return false;

@@ -398,7 +398,10 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         let mediaSegment: ArrayBuffer | undefined;
 
         try {
-          const initP = mediaEngine.fetchInitSegment(scrubRenditionWithSrc, signal);
+          const initP = mediaEngine.fetchInitSegment(
+            scrubRenditionWithSrc,
+            signal,
+          );
           const mediaP = mediaEngine.fetchMediaSegment(
             segmentId,
             scrubRenditionWithSrc,
@@ -494,7 +497,11 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
 
         try {
           const initP = mediaEngine.fetchInitSegment(videoRendition, signal);
-          const mediaP = mediaEngine.fetchMediaSegment(segmentId, videoRendition, signal);
+          const mediaP = mediaEngine.fetchMediaSegment(
+            segmentId,
+            videoRendition,
+            signal,
+          );
           // Suppress the "losing" promise in Promise.all — when one rejects first,
           // the other's rejection would be unhandled without this.
           initP.catch(() => {});
@@ -994,10 +1001,17 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         videoRendition.id,
         async () => {
           const initP = mediaEngine.fetchInitSegment(videoRendition, signal);
-          const mediaP = mediaEngine.fetchMediaSegment(segmentId, videoRendition, signal);
+          const mediaP = mediaEngine.fetchMediaSegment(
+            segmentId,
+            videoRendition,
+            signal,
+          );
           initP.catch(() => {});
           mediaP.catch(() => {});
-          const [initSegment, mediaSegment] = await Promise.all([initP, mediaP]);
+          const [initSegment, mediaSegment] = await Promise.all([
+            initP,
+            mediaP,
+          ]);
 
           if (!initSegment || !mediaSegment) {
             return undefined;
@@ -1055,11 +1069,21 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         mediaEngine.src,
         segmentId,
         async () => {
-          const initP = mediaEngine.fetchInitSegment(scrubRenditionWithSrc, signal);
-          const mediaP = mediaEngine.fetchMediaSegment(segmentId, scrubRenditionWithSrc, signal);
+          const initP = mediaEngine.fetchInitSegment(
+            scrubRenditionWithSrc,
+            signal,
+          );
+          const mediaP = mediaEngine.fetchMediaSegment(
+            segmentId,
+            scrubRenditionWithSrc,
+            signal,
+          );
           initP.catch(() => {});
           mediaP.catch(() => {});
-          const [initSegment, mediaSegment] = await Promise.all([initP, mediaP]);
+          const [initSegment, mediaSegment] = await Promise.all([
+            initP,
+            mediaP,
+          ]);
 
           if (!initSegment || !mediaSegment) {
             return undefined;

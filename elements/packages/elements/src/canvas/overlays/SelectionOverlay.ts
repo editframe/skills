@@ -58,7 +58,6 @@ export class SelectionOverlay extends LitElement {
     changedProperties: Map<string | number | symbol, unknown>,
   ): void {
     super.firstUpdated?.(changedProperties);
-
   }
 
   @consume({ context: selectionContext, subscribe: true })

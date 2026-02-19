@@ -377,8 +377,6 @@ function syncElementStyles(
     if (clone instanceof HTMLCanvasElement) {
       cloneStyle.width = `${clone.width}px`;
       cloneStyle.height = `${clone.height}px`;
-
-
     }
 
     cloneStyle.display = "block";
@@ -663,8 +661,6 @@ export function buildCloneStructure(
         clone.width = shadowCanvas.width || srcEl.clientWidth;
         clone.height = shadowCanvas.height || srcEl.clientHeight;
 
-
-
         // Check if the element actually has alpha channel before preserving it
         // ef-image tracks hasAlpha based on MIME type (JPEG=false, PNG/WebP=true)
         // ef-waveform always needs alpha for proper rendering
@@ -710,8 +706,6 @@ export function buildCloneStructure(
         const clone = document.createElement("canvas");
         clone.width = shadowImg.naturalWidth;
         clone.height = shadowImg.naturalHeight;
-
-
 
         // Check if the element actually has alpha channel before preserving it
         // For direct img elements, check the element's hasAlpha property

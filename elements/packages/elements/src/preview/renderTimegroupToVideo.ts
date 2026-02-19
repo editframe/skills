@@ -237,9 +237,7 @@ function isFileSystemAccessSupported(): boolean {
   return typeof window !== "undefined" && "showSaveFilePicker" in window;
 }
 
-async function getFileWritableStream(
-  filename: string,
-): Promise<{
+async function getFileWritableStream(filename: string): Promise<{
   writable: WritableStream<Uint8Array>;
   close: () => Promise<void>;
 } | null> {
@@ -496,8 +494,6 @@ export async function renderTimegroupToVideo(
     thumbCtx = thumbCanvas.getContext("2d");
   }
 
-
-
   try {
     // ========================================================================
     // OVERLAPPED PIPELINE: image loading runs parallel with seek+serialize
@@ -523,9 +519,6 @@ export async function renderTimegroupToVideo(
     const pendingFrames: PendingFrame[] = [];
     let nextSeekFrame = 0;
     let encodedFrames = 0;
-
-
-
 
     while (encodedFrames < config.totalFrames) {
       checkCancelled();
@@ -601,8 +594,6 @@ export async function renderTimegroupToVideo(
               image.src = dataUri;
             });
           });
-
-
         }
 
         pendingFrames.push(entry);
@@ -620,8 +611,6 @@ export async function renderTimegroupToVideo(
       } else {
         image = await head.promise;
       }
-
-
 
       if (
         audioSource &&

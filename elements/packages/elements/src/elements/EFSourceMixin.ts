@@ -115,7 +115,10 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
         host: this,
       } as unknown as {
         run: () => Promise<string | undefined>;
-        host: { _getMd5Value: () => string | undefined; _getMd5Promise: () => Promise<string | undefined> | null };
+        host: {
+          _getMd5Value: () => string | undefined;
+          _getMd5Promise: () => Promise<string | undefined> | null;
+        };
         value: string | undefined;
         taskComplete: Promise<string | undefined>;
       },

@@ -62,9 +62,7 @@ describe("abort rejection reproduction", () => {
     );
     document.body.appendChild(container);
 
-    const timegroup = container.querySelector(
-      "ef-timegroup",
-    ) as EFTimegroup;
+    const timegroup = container.querySelector("ef-timegroup") as EFTimegroup;
     await timegroup.updateComplete;
 
     try {

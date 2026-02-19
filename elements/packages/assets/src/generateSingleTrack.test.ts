@@ -186,7 +186,6 @@ describe("generateSingleTrack", () => {
         testFile.expectedType,
         `${testFile.path} should be ${testFile.expectedType}`,
       );
-
     }
   }, 30000);
 });

@@ -55,16 +55,16 @@
         "default": "./dist/node.js"
       }
     },
-    "./preview/renderTimegroupToVideo": {
-      "import": {
-        "types": "./dist/preview/renderTimegroupToVideo.d.ts",
-        "default": "./dist/preview/renderTimegroupToVideo.js"
-      }
-    },
     "./preview/renderTimegroupToCanvas": {
       "import": {
         "types": "./dist/preview/renderTimegroupToCanvas.d.ts",
         "default": "./dist/preview/renderTimegroupToCanvas.js"
+      }
+    },
+    "./preview/renderTimegroupToVideo": {
+      "import": {
+        "types": "./dist/preview/renderTimegroupToVideo.d.ts",
+        "default": "./dist/preview/renderTimegroupToVideo.js"
       }
     },
     "./package.json": "./package.json",

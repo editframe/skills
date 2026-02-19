@@ -387,26 +387,32 @@ function hasCanvasContent(
 
 // Re-enabled 2026-01-24: Tests were passing when skipped for beta release
 describe("renderTimegroupToCanvas", () => {
-  test.runIf(isNativeCanvasApiAvailable())("native Canvas API (drawElementImage) is available", () => {
-    expect(isNativeCanvasApiAvailable()).toBe(true);
-  });
+  test.runIf(isNativeCanvasApiAvailable())(
+    "native Canvas API (drawElementImage) is available",
+    () => {
+      expect(isNativeCanvasApiAvailable()).toBe(true);
+    },
+  );
 
   describe("simple HTML content", () => {
-    test.runIf(isNativeCanvasApiAvailable())("native: captures and matches baseline", async ({ htmlTimegroup }) => {
-      setNativeCanvasApiEnabled(true);
-      const canvas = await captureTimegroupAtTime(htmlTimegroup, {
-        timeMs: 0,
-        scale: 1,
-      });
+    test.runIf(isNativeCanvasApiAvailable())(
+      "native: captures and matches baseline",
+      async ({ htmlTimegroup }) => {
+        setNativeCanvasApiEnabled(true);
+        const canvas = await captureTimegroupAtTime(htmlTimegroup, {
+          timeMs: 0,
+          scale: 1,
+        });
 
-      expect(hasCanvasContent(canvas)).toBe(true);
-      await expectCanvasToMatchSnapshot(
-        canvas,
-        "renderTimegroupToCanvas",
-        "simple-html-native",
-        { threshold: 0.1, acceptableDiffPercentage: 2.5 },
-      );
-    });
+        expect(hasCanvasContent(canvas)).toBe(true);
+        await expectCanvasToMatchSnapshot(
+          canvas,
+          "renderTimegroupToCanvas",
+          "simple-html-native",
+          { threshold: 0.1, acceptableDiffPercentage: 2.5 },
+        );
+      },
+    );
 
     test("foreignObject: captures and matches baseline", async ({
       htmlTimegroup,
@@ -1050,93 +1056,97 @@ describe("renderTimegroupToCanvas", () => {
       return outputCanvas;
     }
 
-    test.runIf(isNativeCanvasApiAvailable())("simple HTML: DOM and Clone produce identical visual output", async ({
-      htmlTimegroup,
-    }) => {
-      setNativeCanvasApiEnabled(true);
+    test.runIf(isNativeCanvasApiAvailable())(
+      "simple HTML: DOM and Clone produce identical visual output",
+      async ({ htmlTimegroup }) => {
+        setNativeCanvasApiEnabled(true);
 
-      const domCanvas = await captureDomDirectly(htmlTimegroup, 1);
-      const cloneCanvas = await captureClone(htmlTimegroup, 1);
+        const domCanvas = await captureDomDirectly(htmlTimegroup, 1);
+        const cloneCanvas = await captureClone(htmlTimegroup, 1);
 
-      expect(hasCanvasContent(domCanvas)).toBe(true);
-      expect(hasCanvasContent(cloneCanvas)).toBe(true);
+        expect(hasCanvasContent(domCanvas)).toBe(true);
+        expect(hasCanvasContent(cloneCanvas)).toBe(true);
 
-      // Compare DOM vs Clone - they should be identical
-      await expectCanvasesToMatch(
-        domCanvas,
-        cloneCanvas,
-        "dom-vs-clone",
-        "simple-html",
-        { threshold: 0.1, acceptableDiffPercentage: 1.0 },
-      );
-    });
+        // Compare DOM vs Clone - they should be identical
+        await expectCanvasesToMatch(
+          domCanvas,
+          cloneCanvas,
+          "dom-vs-clone",
+          "simple-html",
+          { threshold: 0.1, acceptableDiffPercentage: 1.0 },
+        );
+      },
+    );
 
-    test.runIf(isNativeCanvasApiAvailable())("complex HTML: DOM and Clone produce identical visual output", async ({
-      complexHtmlTimegroup,
-    }) => {
-      setNativeCanvasApiEnabled(true);
+    test.runIf(isNativeCanvasApiAvailable())(
+      "complex HTML: DOM and Clone produce identical visual output",
+      async ({ complexHtmlTimegroup }) => {
+        setNativeCanvasApiEnabled(true);
 
-      const domCanvas = await captureDomDirectly(complexHtmlTimegroup, 0.5);
-      const cloneCanvas = await captureClone(complexHtmlTimegroup, 0.5);
+        const domCanvas = await captureDomDirectly(complexHtmlTimegroup, 0.5);
+        const cloneCanvas = await captureClone(complexHtmlTimegroup, 0.5);
 
-      expect(hasCanvasContent(domCanvas)).toBe(true);
-      expect(hasCanvasContent(cloneCanvas)).toBe(true);
+        expect(hasCanvasContent(domCanvas)).toBe(true);
+        expect(hasCanvasContent(cloneCanvas)).toBe(true);
 
-      await expectCanvasesToMatch(
-        domCanvas,
-        cloneCanvas,
-        "dom-vs-clone",
-        "complex-html",
-        { threshold: 0.1, acceptableDiffPercentage: 1.0 },
-      );
-    });
+        await expectCanvasesToMatch(
+          domCanvas,
+          cloneCanvas,
+          "dom-vs-clone",
+          "complex-html",
+          { threshold: 0.1, acceptableDiffPercentage: 1.0 },
+        );
+      },
+    );
 
-    test.runIf(isNativeCanvasApiAvailable())("video: DOM and Clone produce identical visual output", async ({
-      videoTimegroup,
-    }) => {
-      setNativeCanvasApiEnabled(true);
+    test.runIf(isNativeCanvasApiAvailable())(
+      "video: DOM and Clone produce identical visual output",
+      async ({ videoTimegroup }) => {
+        setNativeCanvasApiEnabled(true);
 
-      // Seek to a specific time
-      await videoTimegroup.seek(2000);
+        // Seek to a specific time
+        await videoTimegroup.seek(2000);
 
-      const domCanvas = await captureDomDirectly(videoTimegroup, 0.5);
-      const cloneCanvas = await captureClone(videoTimegroup, 0.5);
+        const domCanvas = await captureDomDirectly(videoTimegroup, 0.5);
+        const cloneCanvas = await captureClone(videoTimegroup, 0.5);
 
-      expect(hasCanvasContent(domCanvas)).toBe(true);
-      expect(hasCanvasContent(cloneCanvas)).toBe(true);
+        expect(hasCanvasContent(domCanvas)).toBe(true);
+        expect(hasCanvasContent(cloneCanvas)).toBe(true);
 
-      await expectCanvasesToMatch(
-        domCanvas,
-        cloneCanvas,
-        "dom-vs-clone",
-        "video-frame",
-        { threshold: 0.15, acceptableDiffPercentage: 2.0 },
-      );
-    });
+        await expectCanvasesToMatch(
+          domCanvas,
+          cloneCanvas,
+          "dom-vs-clone",
+          "video-frame",
+          { threshold: 0.15, acceptableDiffPercentage: 2.0 },
+        );
+      },
+    );
 
-    test.runIf(isNativeCanvasApiAvailable())("visual snapshots: DOM vs Clone for debugging", async ({
-      htmlTimegroup,
-    }) => {
-      setNativeCanvasApiEnabled(true);
+    test.runIf(isNativeCanvasApiAvailable())(
+      "visual snapshots: DOM vs Clone for debugging",
+      async ({ htmlTimegroup }) => {
+        setNativeCanvasApiEnabled(true);
 
-      const domCanvas = await captureDomDirectly(htmlTimegroup, 1);
-      const cloneCanvas = await captureClone(htmlTimegroup, 1);
+        const domCanvas = await captureDomDirectly(htmlTimegroup, 1);
+        const cloneCanvas = await captureClone(htmlTimegroup, 1);
 
-      // Save both as snapshots for visual debugging
-      await expectCanvasToMatchSnapshot(
-        domCanvas,
-        "dom-vs-clone",
-        "simple-html-dom-direct",
-        { threshold: 0.1, acceptableDiffPercentage: 0.5 },
-      );
+        // Save both as snapshots for visual debugging
+        await expectCanvasToMatchSnapshot(
+          domCanvas,
+          "dom-vs-clone",
+          "simple-html-dom-direct",
+          { threshold: 0.1, acceptableDiffPercentage: 0.5 },
+        );
 
-      await expectCanvasToMatchSnapshot(
-        cloneCanvas,
-        "dom-vs-clone",
-        "simple-html-clone",
-        { threshold: 0.1, acceptableDiffPercentage: 0.5 },
-      );
-    });
+        await expectCanvasToMatchSnapshot(
+          cloneCanvas,
+          "dom-vs-clone",
+          "simple-html-clone",
+          { threshold: 0.1, acceptableDiffPercentage: 0.5 },
+        );
+      },
+    );
   });
 
   describe("video export (reproduction test for blank frames)", () => {
@@ -1564,8 +1574,7 @@ describe("benchmark: 2026 Chromium optimizations", () => {
       ctx.drawImage(img, 0, 0);
       try {
         ctx.getImageData(0, 0, 1, 1); // Test for tainting
-      } catch (e) {
-      }
+      } catch (e) {}
     }
 
     // Test 3: createImageBitmap
@@ -1575,8 +1584,7 @@ describe("benchmark: 2026 Chromium optimizations", () => {
       bitmap.close(); // Free GPU memory
       try {
         ctx.getImageData(0, 0, 1, 1); // Test for tainting
-      } catch (e) {
-      }
+      } catch (e) {}
     }
 
     // Data URI is the only method that doesn't taint (as of 2025)
@@ -1826,7 +1834,6 @@ describe("benchmark: parallel image loading queue depth", () => {
     for (const img of allImages) {
       drawImage(img);
     }
-
   }, 60000);
 });
 
@@ -2667,13 +2674,10 @@ describe("renderTimegroupToCanvas live preview (workbench path)", () => {
     ];
 
     for (const { name, canvas } of comparisons) {
-      await compareTwoCanvases(
-        cdpCanvas,
-        canvas,
-        "visual-inspection",
-        name,
-        { threshold: 0.1, acceptableDiffPercentage: 5.0 },
-      );
+      await compareTwoCanvases(cdpCanvas, canvas, "visual-inspection", name, {
+        threshold: 0.1,
+        acceptableDiffPercentage: 5.0,
+      });
     }
 
     container.remove();
