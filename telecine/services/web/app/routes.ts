@@ -16,6 +16,7 @@ const routes = [
   route("/landing-page-3", "routes/landing-page-3.tsx"),
   route("/landing-page-4", "routes/landing-page-4.tsx"),
   route("/sitemap.xml", "routes/sitemap.tsx"),
+  route("/robots.txt", "routes/robots.txt.ts"),
   route("/skills", "routes/skills/catalog.tsx"),
   route("/skills/:skill", "routes/skills/skill-detail.tsx"),
   route("/skills/:skill/:reference", "routes/skills/reference-detail.tsx"),
