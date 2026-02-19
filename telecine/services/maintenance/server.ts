@@ -72,10 +72,17 @@ function startStallDetector() {
 interface ScalerState {
   smoothedTarget: number;
   lastPatchedCount: number | null;
+  lastPatchedAt: number;
 }
 
 const SCALE_UP_INTERVAL_MS = 1_000;
 const SMOOTHING_FACTOR = 0.9;
+
+// Cloud Run Admin API quota: 180 writes/min/region.
+// With 7 queues, scale-up at 3s = ~140 writes/min worst case.
+// Scale-down at 10s = ~42 writes/min. Leaves headroom for deploys.
+const PATCH_MIN_INTERVAL_SCALE_UP_MS = 3_000;
+const PATCH_MIN_INTERVAL_SCALE_DOWN_MS = 10_000;
 
 function startScaler() {
   const stateByQueue = new Map<string, ScalerState>();
@@ -99,7 +106,7 @@ function startScaler() {
 
         let state = stateByQueue.get(queueName);
         if (!state) {
-          state = { smoothedTarget: 0, lastPatchedCount: null };
+          state = { smoothedTarget: 0, lastPatchedCount: null, lastPatchedAt: 0 };
           stateByQueue.set(queueName, state);
         }
 
@@ -121,7 +128,11 @@ function startScaler() {
 
         const instanceCount = Math.max(0, Math.round(target));
 
-        if (gcpProject && instanceCount !== state.lastPatchedCount) {
+        const scalingUp = state.lastPatchedCount !== null && instanceCount > state.lastPatchedCount;
+        const minInterval = scalingUp ? PATCH_MIN_INTERVAL_SCALE_UP_MS : PATCH_MIN_INTERVAL_SCALE_DOWN_MS;
+        const elapsed = Date.now() - state.lastPatchedAt;
+
+        if (gcpProject && instanceCount !== state.lastPatchedCount && elapsed >= minInterval) {
           try {
             const workerPoolName = `telecine-worker-${queueName}`;
             const url = `https://run.googleapis.com/v2/projects/${gcpProject}/locations/${gcpRegion}/workerPools/${workerPoolName}?updateMask=scaling.manualInstanceCount`;
@@ -146,6 +157,7 @@ function startScaler() {
               );
             } else {
               state.lastPatchedCount = instanceCount;
+              state.lastPatchedAt = Date.now();
               logger.info(
                 { queue: queueName, instanceCount, rawTarget, smoothed: state.smoothedTarget },
                 "Scaled Worker Pool",
