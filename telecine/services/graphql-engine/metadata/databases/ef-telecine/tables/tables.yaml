@@ -14,7 +14,7 @@
 - "!include identity_roles.yaml"
 - "!include identity_users.yaml"
 - "!include identity_valid_email_confirmations.yaml"
-- "!include identity_valid_magic_links_tokens.yaml"
+- "!include identity_valid_magic_link_tokens.yaml"
 - "!include identity_valid_password_resets.yaml"
 - "!include video_audio_tracks.yaml"
 - "!include video_images.yaml"
