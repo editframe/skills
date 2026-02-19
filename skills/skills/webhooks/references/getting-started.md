@@ -210,7 +210,7 @@ ngrok http 3000
 
 Update your API key's webhook URL to the ngrok URL, then trigger events to test locally.
 
-See [testing.md](testing.md) for more testing strategies.
+See [testing.md](references/testing.md) for more testing strategies.
 
 ## Production Considerations
 
@@ -226,7 +226,7 @@ When deploying to production:
 
 ## Next Steps
 
-- [events.md](events.md) — Learn about all event types and payload structures
-- [security.md](security.md) — Deep dive into signature verification
-- [testing.md](testing.md) — Advanced testing strategies
-- [troubleshooting.md](troubleshooting.md) — Debug common issues
+- [events.md](references/events.md) — Learn about all event types and payload structures
+- [security.md](references/security.md) — Deep dive into signature verification
+- [testing.md](references/testing.md) — Advanced testing strategies
+- [troubleshooting.md](references/troubleshooting.md) — Debug common issues

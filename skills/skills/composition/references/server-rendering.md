@@ -745,9 +745,9 @@ Both packages expose <!-- html-only -->three<!-- /html-only --> entry points:
 
 ## Related
 
-- [entry-points.md](entry-points.md) - Complete guide to package entry points
-- [r3f.md](r3f.md) - React Three Fiber integration
-- [getting-started.md](getting-started.md) - Installation and setup
+- [entry-points.md](references/entry-points.md) - Complete guide to package entry points
+- [r3f.md](references/r3f.md) - React Three Fiber integration
+- [getting-started.md](references/getting-started.md) - Installation and setup
 <!-- react-only -->
-- [configuration.md](configuration.md) - Configuration component
+- [configuration.md](references/configuration.md) - Configuration component
 <!-- /react-only -->

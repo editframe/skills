@@ -392,7 +392,7 @@ This usually means `TimelineRoot` is missing. Always use `TimelineRoot` to ensur
 
 ## See Also
 
-- [scripting.md](scripting.md) - Frame tasks and initializers
-- [hooks.md](hooks.md) - useTimingInfo and other hooks
-- [configuration.md](configuration.md) - Configuration component
-- [getting-started.md](getting-started.md) - Project setup
+- [scripting.md](references/scripting.md) - Frame tasks and initializers
+- [hooks.md](references/hooks.md) - useTimingInfo and other hooks
+- [configuration.md](references/configuration.md) - Configuration component
+- [getting-started.md](references/getting-started.md) - Project setup

@@ -604,5 +604,5 @@ const TransitionScene = ({
 
 ## See Also
 
-- [css-variables.md](css-variables.md) - CSS variables reference
-- [timegroup.md](timegroup.md) - Timegroup <!-- html-only -->modes and sequencing<!-- /html-only --><!-- react-only -->component reference<!-- /react-only -->
+- [css-variables.md](references/css-variables.md) - CSS variables reference
+- [timegroup.md](references/timegroup.md) - Timegroup <!-- html-only -->modes and sequencing<!-- /html-only --><!-- react-only -->component reference<!-- /react-only -->

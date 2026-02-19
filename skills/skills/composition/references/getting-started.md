@@ -126,7 +126,7 @@ ReactDOM.createRoot(root).render(
 );
 ```
 
-**Important**: `TimelineRoot` is required for rendering. It ensures React hooks and state work correctly during video rendering. See [timeline-root.md](timeline-root.md) for details.
+**Important**: `TimelineRoot` is required for rendering. It ensures React hooks and state work correctly during video rendering. See [timeline-root.md](references/timeline-root.md) for details.
 
 ## Add Media
 

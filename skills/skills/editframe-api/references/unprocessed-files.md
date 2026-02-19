@@ -116,4 +116,4 @@ Reference videos by their `file-id`:
 
 The `file-id` is a stable UUID that remains the same from creation through processing and playback.
 
-See [files.md](files.md) for the complete files API reference and [media-pipeline.md](media-pipeline.md) for the end-to-end workflow.
+See [files.md](references/files.md) for the complete files API reference and [media-pipeline.md](references/media-pipeline.md) for the end-to-end workflow.

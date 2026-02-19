@@ -377,6 +377,6 @@ const apiKey = await createApiKey({
 
 ## Next Steps
 
-- [security.md](security.md) — Verify webhook signatures
-- [testing.md](testing.md) — Test webhook payloads locally
-- [troubleshooting.md](troubleshooting.md) — Debug webhook issues
+- [security.md](references/security.md) — Verify webhook signatures
+- [testing.md](references/testing.md) — Test webhook payloads locally
+- [troubleshooting.md](references/troubleshooting.md) — Debug webhook issues

@@ -222,7 +222,7 @@ Use `overlap` to create transitions between items:
 ```
 <!-- /react-only -->
 
-See [transitions.md](transitions.md) for crossfade examples.
+See [transitions.md](references/transitions.md) for crossfade examples.
 
 <!-- react-only -->
 ## With useTimingInfo Hook
@@ -249,7 +249,7 @@ const AnimatedScene = () => {
 
 ### renderToVideo()
 
-Export the timegroup composition to MP4 video using the WebCodecs API. See [render-api.md](render-api.md) for complete documentation.
+Export the timegroup composition to MP4 video using the WebCodecs API. See [render-api.md](references/render-api.md) for complete documentation.
 
 ```typescript
 async renderToVideo(options?: RenderToVideoOptions): Promise<Uint8Array | undefined>
@@ -281,7 +281,7 @@ await tg.renderToVideo({
 - `includeAudio` - Include audio tracks (default: true)
 - `signal` - AbortSignal for cancellation
 - `returnBuffer` - Return Uint8Array instead of downloading
-- And more - see [render-api.md](render-api.md)
+- And more - see [render-api.md](references/render-api.md)
 
 ### createRenderClone()
 
@@ -411,7 +411,7 @@ Add dynamic behavior with JavaScript using the `initializer` property. The initi
 ```
 <!-- /html-only -->
 <!-- react-only -->
-Add dynamic behavior with JavaScript. See [scripting.md](scripting.md) for details.
+Add dynamic behavior with JavaScript. See [scripting.md](references/scripting.md) for details.
 
 ```tsx
 import { useRef, useEffect } from "react";

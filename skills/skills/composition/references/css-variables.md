@@ -633,8 +633,8 @@ const Progress = ({ className = "", color = "bg-blue-500" }: ProgressProps) => {
 
 ## See Also
 
-- [transitions.md](transitions.md) - Transition examples using CSS variables
-- [scripting.md](scripting.md) - JavaScript-based animations
+- [transitions.md](references/transitions.md) - Transition examples using CSS variables
+- [scripting.md](references/scripting.md) - JavaScript-based animations
 <!-- react-only -->
-- [hooks.md](hooks.md) - React hooks for timing information
+- [hooks.md](references/hooks.md) - React hooks for timing information
 <!-- /react-only -->

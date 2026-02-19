@@ -405,7 +405,7 @@ If you're still experiencing issues:
 
 1. **Check delivery logs** in the dashboard for detailed error messages
 2. **Test with webhook.site** to isolate the issue
-3. **Review webhook event payloads** in the [events.md](events.md) reference
+3. **Review webhook event payloads** in the [events.md](references/events.md) reference
 4. **Contact support** with:
    - API key ID
    - Webhook event ID (from delivery logs)
@@ -451,7 +451,7 @@ If you're still experiencing issues:
 
 ## Next Steps
 
-- [security.md](security.md) — Review signature verification
-- [testing.md](testing.md) — Test webhook endpoints
-- [getting-started.md](getting-started.md) — Complete setup guide
-- [events.md](events.md) — Webhook event reference
+- [security.md](references/security.md) — Review signature verification
+- [testing.md](references/testing.md) — Test webhook endpoints
+- [getting-started.md](references/getting-started.md) — Complete setup guide
+- [events.md](references/events.md) — Webhook event reference

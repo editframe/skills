@@ -492,8 +492,8 @@ canvas.addEventListener('selectionchange', (e) => {
 
 ## Related
 
-- [trim-handles.md](trim-handles.md) - Trim handle component
-- [transform-handles.md](transform-handles.md) - Transform handle component
-- [dial.md](dial.md) - Rotary dial input
-- [hierarchy.md](hierarchy.md) - Hierarchy panel component
-- [timeline.md](timeline.md) - Timeline editor component
+- [Trim Handles](/skills/editor-gui/trim-handles) - Trim handle component
+- [Transform Handles](/skills/editor-gui/transform-handles) - Transform handle component
+- [Dial](/skills/editor-gui/dial) - Rotary dial input
+- [Hierarchy](/skills/editor-gui/hierarchy) - Hierarchy panel component
+- [Timeline](/skills/editor-gui/timeline) - Timeline editor component

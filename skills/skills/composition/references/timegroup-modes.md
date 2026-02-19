@@ -47,7 +47,7 @@ Children play one after another. Duration is the sum of all children minus any o
 </ef-timegroup>
 ```
 
-Use `sequence` for cut-based editing, slideshows, multi-scene videos. See [sequencing.md](sequencing.md).
+Use `sequence` for cut-based editing, slideshows, multi-scene videos. See [sequencing.md](references/sequencing.md).
 
 ## Contain
 
@@ -97,6 +97,6 @@ Use `fit` for backgrounds, watermarks, or any element that should span its paren
 
 ## See Also
 
-- [timegroup.md](timegroup.md) — attribute reference
-- [time-model.md](time-model.md) — how time propagates through modes
-- [sequencing.md](sequencing.md) — sequence patterns
+- [timegroup.md](references/timegroup.md) — attribute reference
+- [time-model.md](references/time-model.md) — how time propagates through modes
+- [sequencing.md](references/sequencing.md) — sequence patterns
