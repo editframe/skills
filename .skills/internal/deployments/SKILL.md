@@ -13,7 +13,7 @@ This monorepo has three deployment paths:
 
 ## Scripts
 
-All deployment operations use scripts. Never run raw git push to sub-repo remotes or manual `gh` commands -- the scripts handle tree extraction, no-op detection, remote fetching, and CI polling.
+**Never run `git push <remote>` directly.** Always use the wrapper scripts below. The scripts handle subtree extraction, no-op detection, and remote fetching internally -- running git push directly will fail with "non-fast-forward" errors because the remote history is synthetic.
 
 | Script | Purpose |
 |---|---|
