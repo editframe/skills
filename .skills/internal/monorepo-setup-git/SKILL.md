@@ -17,7 +17,7 @@ These remotes are used for syncing changes to/from the separate repositories.
 
 ### Pushing Changes to Remotes
 
-The recommended way to push changes from the monorepo to the telecine or elements remotes is using the dedicated push scripts. These scripts use `git subtree split` to extract only the relevant project directory and push it to the appropriate remote.
+Always use the dedicated push scripts to push changes from the monorepo to sub-repo remotes. Never run `git push` directly to telecine, elements, or skills remotes.
 
 #### Using Push Scripts (Recommended)
 
@@ -52,27 +52,14 @@ The recommended way to push changes from the monorepo to the telecine or element
 ```
 
 **How the push scripts work:**
-1. Creates a temporary branch using `git subtree split` to extract only the project directory (`telecine/`, `elements/`, or `skills/`)
-2. Pushes the split branch to the appropriate remote with `--force`
-3. Cleans up the temporary branch
-4. Optionally waits for GitHub Actions to complete (with `--wait` flag, telecine/elements only)
+1. Fetches the remote branch to get current state
+2. Extracts the tree object for the subdirectory from HEAD (`git rev-parse HEAD:<prefix>`)
+3. Creates a new commit with that tree, parented on the remote's current HEAD (`git commit-tree`)
+4. Pushes the new commit with `--force-with-lease`
+5. Skips the push entirely if the remote tree already matches (no-op detection)
+6. Optionally waits for GitHub Actions to complete (with `--wait` flag, telecine/elements only)
 
-**Note**: The push scripts use `--force` when pushing, which is safe because they're pushing to isolated subtree branches that don't conflict with the monorepo structure.
-
-#### Direct Git Push (Alternative)
-
-You can also push directly using git, though this pushes the entire monorepo structure:
-
-```bash
-# Push current branch to telecine remote
-git push telecine <branch-name>:<branch-name>
-
-# Push current branch to elements remote  
-git push elements <branch-name>:<branch-name>
-
-# Push current branch to skills remote
-git push skills <branch-name>:<branch-name>
-```
+**Never push directly to sub-repo remotes with `git push`.** The monorepo root tree does not match the sub-repo tree structure. Direct pushes would push the entire monorepo, breaking the sub-repos.
 
 ### Pulling Changes from Remotes
 
@@ -101,4 +88,4 @@ The monorepo acts as the primary working repository. Changes should be:
 2. Pushed to the appropriate remote using the push scripts (`./scripts/push-telecine`, `./scripts/push-elements`, or `./scripts/push-skills`) when ready
 3. Pulled from remotes when syncing upstream changes
 
-**Important**: The monorepo structure means that `telecine/`, `elements/`, and `skills/` directories are part of the root repository, but they should be synced with their respective remote repositories using the push scripts. The push scripts use `git subtree split` to extract only the relevant project directory, ensuring clean separation between the monorepo and the individual project repositories.
+**Important**: The monorepo structure means that `telecine/`, `elements/`, and `skills/` directories are part of the root repository, but they should be synced with their respective remote repositories using the push scripts. The push scripts extract only the relevant subdirectory tree, ensuring clean separation between the monorepo and the individual project repositories.

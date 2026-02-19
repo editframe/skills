@@ -48,7 +48,7 @@ Similar structure:
 
 ### Pushing to Remotes
 
-Use push scripts (recommended) - they use `git subtree split` to extract only the project directory:
+Always use push scripts -- never push directly to sub-repo remotes:
 
 ```bash
 # Push telecine/ to telecine remote (defaults to main)
@@ -62,13 +62,9 @@ Use push scripts (recommended) - they use `git subtree split` to extract only th
 ./scripts/push-elements --wait  # Wait for release
 ```
 
-**How it works**: Creates temporary branch via `git subtree split`, pushes with `--force`, cleans up. Safe because subtree branches don't conflict with monorepo structure.
+**How it works**: Extracts the subdirectory tree from HEAD, creates a new commit parented on the remote's current HEAD via `git commit-tree`, pushes with `--force-with-lease`. Skips if the remote is already up to date.
 
-**Alternative** (direct git push - pushes entire monorepo):
-```bash
-git push telecine <branch-name>:<branch-name>
-git push elements <branch-name>:<branch-name>
-```
+**Never push directly to sub-repo remotes.** Direct `git push` would push the entire monorepo tree, breaking the sub-repos.
 
 ### Pulling from Remotes
 
@@ -93,7 +89,7 @@ Monorepo is primary working repository:
 2. Push to remote using push scripts when ready
 3. Pull from remotes when syncing upstream changes
 
-**Important**: Push scripts use `git subtree split` to extract only the project directory, ensuring clean separation between monorepo and individual project repositories.
+**Important**: Push scripts extract only the relevant subdirectory tree, ensuring clean separation between monorepo and individual project repositories.
 
 ### Dev Examples in Worktrees
 

@@ -13,13 +13,13 @@ This monorepo has three deployment paths:
 
 ## Scripts
 
-All deployment operations use scripts. Never run raw `git subtree split` or manual `gh` commands -- the scripts handle subtree splitting, noise suppression, remote fetching, and CI polling.
+All deployment operations use scripts. Never run raw git push to sub-repo remotes or manual `gh` commands -- the scripts handle tree extraction, no-op detection, remote fetching, and CI polling.
 
 | Script | Purpose |
 |---|---|
-| `scripts/push-telecine` | Subtree split + push telecine to remote |
+| `scripts/push-telecine` | Push telecine to remote |
 | `scripts/push-telecine --wait` | Push + poll CI until deploy completes |
-| `scripts/push-elements` | Subtree split + push elements to remote |
+| `scripts/push-elements` | Push elements to remote |
 | `scripts/push-elements --wait` | Push + poll CI until release completes |
 | `scripts/push-skills` | Generate + push skills to remote |
 | `scripts/wait-for-telecine-action` | Poll telecine deploy CI (30s interval) |
@@ -33,13 +33,13 @@ All deployment operations use scripts. Never run raw `git subtree split` or manu
 
 | Action | Command |
 |---|---|
-| Deploy telecine | `scripts/push-telecine` (or `--wait`) |
-| Deploy telecine to branch | `scripts/push-telecine --branch feature` |
+| Push telecine to remote | `scripts/push-telecine` (or `--wait`) |
+| Push telecine to branch | `scripts/push-telecine --branch feature` |
 | Deploy specific services manually | `telecine/scripts/build-and-push web scheduler-go` |
 | Deploy all services manually | `telecine/scripts/build-and-push-all` |
 | Run Pulumi directly | `cd telecine/deploy && pulumi up` |
 | Prepare elements release | `elements/scripts/prepare-release <version>` |
-| Push elements subtree | `scripts/push-elements` (or `--wait`) |
+| Push elements to remote | `scripts/push-elements` (or `--wait`) |
 | Bump elements to beta | `elements/scripts/prerelease` |
 | Publish elements manually | `elements/scripts/publish` |
 | Publish skills docs | `scripts/push-skills` |

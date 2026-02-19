@@ -63,7 +63,7 @@ Use the push scripts to push subdirectories to their respective remotes:
 ./scripts/push-skills
 ```
 
-These scripts use `git subtree split` to extract only the relevant directory and push it to the appropriate remote.
+These scripts extract the relevant subdirectory tree and push it to the appropriate remote. Never push directly to sub-repo remotes with `git push`.
 
 ### Pulling Changes from Remotes
 
