@@ -18,6 +18,7 @@ import { bucket } from "../storage";
 import { publicBucketName } from "../constants";
 import { getImageRef } from "../../util/getImageRef";
 import { valkeyInternalIp } from "../valkey";
+import { queueEnvVars } from "../queues/configs";
 import { workerResources } from "../../worker-resources.config";
 
 export const cloudrun = new gcp.cloudrunv2.Service(
@@ -77,6 +78,7 @@ export const cloudrun = new gcp.cloudrunv2.Service(
             envFromValue("GCLOUD_TRACE_EXPORT", "true"),
             envFromValue("WEB_HOST", `https://${DEPLOYED_DOMAIN}`),
             envFromValue("RENDER_HOST", `https://${DEPLOYED_DOMAIN}`),
+            ...queueEnvVars(),
             envFromValue("PINO_LOG_LEVEL", "debug"),
           ],
           livenessProbe: {
