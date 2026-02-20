@@ -850,6 +850,7 @@ export class EFTimegroup
    * @public
    */
   requestFrameRender(): void {
+    this.#frameController.abort();
     this.#runThrottledFrameTask();
   }
 
