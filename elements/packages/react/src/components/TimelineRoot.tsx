@@ -97,9 +97,7 @@ export const TimelineRoot: React.FC<TimelineRootProps> = ({
       return {
         timegroup: newTimegroup,
         cleanup: () => {
-          queueMicrotask(() => {
-            root.unmount();
-          });
+          root.unmount();
         },
       };
     });

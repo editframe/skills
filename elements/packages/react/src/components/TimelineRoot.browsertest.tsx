@@ -228,8 +228,8 @@ describe("TimelineRoot", () => {
             `Captures at different timestamps should have different colors. Got color1=${JSON.stringify(color1)}, color2=${JSON.stringify(color2)}`,
           );
         } finally {
-          if (root) root.unmount();
           container.remove();
+          if (root) root.unmount();
         }
       }, 10000);
 
@@ -330,8 +330,8 @@ describe("TimelineRoot", () => {
             `Frames 2 and 3 should have different colors`,
           );
         } finally {
-          if (root) root.unmount();
           container.remove();
+          if (root) root.unmount();
         }
       }, 10000);
 
@@ -398,8 +398,8 @@ describe("TimelineRoot", () => {
 
           cleanup();
         } finally {
-          if (root) root.unmount();
           container.remove();
+          if (root) root.unmount();
         }
       }, 10000);
 
@@ -492,8 +492,8 @@ describe("TimelineRoot", () => {
               `Native: Captures at different timestamps should have different colors. Got color1=${JSON.stringify(color1)}, color2=${JSON.stringify(color2)}`,
             );
           } finally {
-            if (root) root.unmount();
             container.remove();
+            if (root) root.unmount();
           }
         },
         10000,
@@ -589,8 +589,8 @@ describe("TimelineRoot", () => {
           if (wasEnabled) {
             setNativeCanvasApiEnabled(true);
           }
-          if (root) root.unmount();
           container.remove();
+          if (root) root.unmount();
         }
       }, 10000);
     },
@@ -690,8 +690,8 @@ describe("TimelineRoot", () => {
           // Re-throw any other errors
           throw error;
         } finally {
-          if (root) root.unmount();
           container.remove();
+          if (root) root.unmount();
         }
       }, 30000);
     },

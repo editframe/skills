@@ -342,8 +342,11 @@ export async function renderTimegroupToVideo(
   // =========================================================================
   // Create render clone - EXACT same as captureBatch in EFTimegroup
   // =========================================================================
-  const { clone: renderClone, cleanup: cleanupRenderClone } =
-    await timegroup.createRenderClone();
+  const {
+    clone: renderClone,
+    container: cloneContainer,
+    cleanup: cleanupRenderClone,
+  } = await timegroup.createRenderClone();
 
   // Build timestamps array for frame loop
   const timestamps: number[] = [];
@@ -451,8 +454,8 @@ export async function renderTimegroupToVideo(
   // Setup for direct serialization
   logger.debug(`[renderTimegroupToVideo] Using direct timeline serialization`);
 
-  // Attach renderClone to container
-  previewContainer.appendChild(renderClone);
+  // Attach clone container (keeps renderClone in its React-managed DOM position)
+  previewContainer.appendChild(cloneContainer);
 
   // Add ef-render-clone-container class for CSS selectors and debugging
   previewContainer.classList.add("ef-render-clone-container");
@@ -726,11 +729,12 @@ export async function renderTimegroupToVideo(
     }
   } finally {
     renderContext.dispose();
-    cleanupRenderClone();
-    // Remove preview container if it was attached to document
+    // Remove previewContainer first — renderClone was moved into it, so it must be
+    // detached before cleanupRenderClone() unmounts the React root that owns renderClone.
     if (previewContainer.parentNode) {
       previewContainer.parentNode.removeChild(previewContainer);
     }
+    cleanupRenderClone();
   }
 }
 
