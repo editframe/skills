@@ -75,19 +75,6 @@ export class UrlGenerator {
   }
 
   /**
-   * Generate track fragment index URL using production API format
-   * @deprecated Use MD5-based URL generation in AssetMediaEngine.fetch() instead
-   */
-  generateTrackFragmentIndexUrl(mediaUrl: string): string {
-    // Normalize the path: remove leading slash and any double slashes
-    let normalizedSrc = mediaUrl.startsWith("/") ? mediaUrl.slice(1) : mediaUrl;
-    // Remove any remaining leading slashes (handles cases like "//assets/video.mp4")
-    normalizedSrc = normalizedSrc.replace(/^\/+/, "");
-    // Legacy format - kept for backward compatibility but should not be used
-    return `@ef-track-fragment-index/${normalizedSrc}`;
-  }
-
-  /**
    * Generate quality presets URL
    */
   generatePresetsUrl(): string {
