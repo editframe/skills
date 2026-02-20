@@ -249,7 +249,7 @@ function generateSkillFile(sourcePath: string, outputPath: string) {
 
   // Build clean LLM frontmatter
   const llmFrontmatter: any = {
-    name: attributes.title || attributes.name,
+    name: attributes.name,
     description: attributes.description,
   };
 

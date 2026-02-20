@@ -94,6 +94,8 @@ description: One sentence describing what this skill does and who should use it.
 ---
 ```
 
+`name` must always be dash-case with no whitespace. Tools that load skills by name may fail silently or behave incorrectly when names contain spaces. The `name` field is the machine identifier; use the `# Heading` in the body for human-readable display.
+
 **SKILL.md body** (recommended structure):
 ```markdown
 # {Skill Title}
