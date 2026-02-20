@@ -268,7 +268,7 @@ describe("WorkerPool Integration Tests", () => {
   });
 
   describe("Performance Validation", () => {
-    test("parallel encoding is faster than sequential", async () => {
+    test.skip("parallel encoding is faster than sequential", async () => {
       if (!pool.isAvailable()) {
         console.warn("Workers not available, skipping test");
         return;

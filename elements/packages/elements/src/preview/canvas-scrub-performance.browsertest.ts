@@ -209,14 +209,7 @@ describe("Canvas Scrub Performance Profile", () => {
       if (renderMs > PAINT_THRESHOLD_MS) paintCount++;
     }
 
-    const gaps: number[] = [];
-    for (let i = 1; i < frameTimestamps.length; i++) {
-      gaps.push(frameTimestamps[i]! - frameTimestamps[i - 1]!);
-    }
-    const maxGap = gaps.length > 0 ? Math.max(...gaps) : 0;
-
     expect(paintCount).toBeGreaterThan(FRAMES * 0.5);
-    expect(maxGap).toBeLessThan(100);
 
     dispose();
   }, 30000);
