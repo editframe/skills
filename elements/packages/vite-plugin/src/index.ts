@@ -21,9 +21,6 @@ interface VitePluginEditframeOptions {
   cacheRoot: string;
 }
 
-// In-memory mapping of MD5 -> file path for API route handling
-const md5ToFilePathMap = new Map<string, string>();
-
 // Create editframe client instance
 const getEditframeClient = () => {
   const token = process.env.EF_TOKEN;
@@ -228,13 +225,6 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
 
         log(`Handling ${req.url} at ${new Date().toISOString()}`);
 
-        const requestPath = req.url.replace(/^\/@ef-[^/]+\//, "");
-        const assetPath = requestPath.replace(/\?.*$/, "");
-
-        const absolutePath = assetPath.startsWith("http")
-          ? assetPath
-          : path.join(options.root, assetPath).replace("dist/", "src/");
-
         options.cacheRoot = options.cacheRoot.replace("dist/", "src/");
 
         const efPrefix = req.url.split("/")[1];
@@ -285,82 +275,6 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
             res.end("Cache cleared");
             break;
           }
-          case "@ef-asset": {
-            if (req.method !== "HEAD") {
-              res.writeHead(405, { Allow: "HEAD" });
-              res.end();
-            }
-            md5FilePath(absolutePath)
-              .then((md5) => {
-                // Store mapping for API route handling
-                md5ToFilePathMap.set(md5, absolutePath);
-                log(`Stored MD5 mapping: ${md5} -> ${absolutePath}`);
-                res.writeHead(200, {
-                  etag: md5,
-                });
-                res.end();
-              })
-              .catch(next);
-            break;
-          }
-          case "@ef-track-fragment-index": {
-            const indexStartTime = Date.now();
-            log(`Serving track fragment index for ${absolutePath}`);
-            generateTrackFragmentIndex(options.cacheRoot, absolutePath)
-              .then((taskResult) => {
-                const elapsed = Date.now() - indexStartTime;
-                log(
-                  `Fragment index generated in ${elapsed}ms: ${taskResult.cachePath}`,
-                );
-                sendTaskResult(req, res, taskResult);
-              })
-              .catch((error) => {
-                const elapsed = Date.now() - indexStartTime;
-                log(
-                  `Error generating fragment index after ${elapsed}ms:`,
-                  error,
-                );
-                next(error);
-              });
-            break;
-          }
-          case "@ef-track": {
-            const trackStartTime = Date.now();
-            log(
-              `Serving track for ${absolutePath} (cacheRoot: ${options.cacheRoot})`,
-            );
-            generateTrack(options.cacheRoot, absolutePath, req.url)
-              .then((taskResult) => {
-                const elapsed = Date.now() - trackStartTime;
-                log(`Track generated in ${elapsed}ms: ${taskResult.cachePath}`);
-                sendTaskResult(req, res, taskResult);
-              })
-              .catch((error) => {
-                const elapsed = Date.now() - trackStartTime;
-                log(`Error generating track after ${elapsed}ms:`, error);
-                next(error);
-              });
-            break;
-          }
-          case "@ef-scrub-track": {
-            log(`Serving scrub track for ${absolutePath}`);
-            generateScrubTrack(options.cacheRoot, absolutePath)
-              .then((taskResult) => sendTaskResult(req, res, taskResult))
-              .catch(next);
-            break;
-          }
-          case "@ef-captions":
-            log(`Serving captions for ${absolutePath}`);
-            findOrCreateCaptions(options.cacheRoot, absolutePath)
-              .then((taskResult) => sendTaskResult(req, res, taskResult))
-              .catch(next);
-            break;
-          case "@ef-image":
-            log(`Serving image file ${absolutePath}`);
-            cacheImage(options.cacheRoot, absolutePath)
-              .then((taskResult) => sendTaskResult(req, res, taskResult))
-              .catch(next);
-            break;
           case "@ef-sign-url": {
             if (req.method !== "POST") {
               res.writeHead(405, { Allow: "POST" });
