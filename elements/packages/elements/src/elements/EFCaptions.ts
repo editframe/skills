@@ -243,7 +243,7 @@ export class EFCaptions
       : targetSrc;
     normalizedSrc = normalizedSrc.replace(/^\/+/, "");
     // Use production API format for local files
-    return `/api/v1/assets/local/captions?src=${encodeURIComponent(normalizedSrc)}`;
+    return `/api/v1/assets/captions?src=${encodeURIComponent(normalizedSrc)}`;
   }
 
   // ============================================================================

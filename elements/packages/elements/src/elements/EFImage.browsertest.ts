@@ -86,32 +86,32 @@ describe("EFImage", () => {
     });
   });
 
-  describe("remote URL proxying", () => {
-    test("assetPath proxies https URLs through remote image endpoint", () => {
+  describe("assetPath routing", () => {
+    test("routes https src through assets image endpoint", () => {
       const image = document.createElement("ef-image");
       image.src = "https://example.com/image.jpg";
       expect(image.assetPath()).toBe(
-        "/api/v1/assets/remote/image?url=https%3A%2F%2Fexample.com%2Fimage.jpg",
+        "/api/v1/assets/image?src=https%3A%2F%2Fexample.com%2Fimage.jpg",
       );
     });
 
-    test("assetPath proxies http URLs through remote image endpoint", () => {
+    test("routes http src through assets image endpoint", () => {
       const image = document.createElement("ef-image");
       image.src = "http://example.com/image.jpg";
       expect(image.assetPath()).toBe(
-        "/api/v1/assets/remote/image?url=http%3A%2F%2Fexample.com%2Fimage.jpg",
+        "/api/v1/assets/image?src=http%3A%2F%2Fexample.com%2Fimage.jpg",
       );
     });
 
-    test("assetPath preserves local file behavior", () => {
+    test("routes local file src through assets image endpoint", () => {
       const image = document.createElement("ef-image");
       image.src = "local-image.jpg";
       expect(image.assetPath()).toBe(
-        "/api/v1/assets/local/image?src=local-image.jpg",
+        "/api/v1/assets/image?src=local-image.jpg",
       );
     });
 
-    test("assetPath preserves asset-id priority over remote URL", () => {
+    test("file-id takes priority over src", () => {
       const image = document.createElement("ef-image");
       const preview = document.createElement("ef-preview");
       preview.appendChild(image);
@@ -125,12 +125,12 @@ describe("EFImage", () => {
       preview.remove();
     });
 
-    test("assetPath proxies cross-origin image URLs to avoid canvas CORS taint", () => {
+    test("cross-origin src routes through assets endpoint to prevent canvas CORS taint", () => {
       const image = document.createElement("ef-image");
       image.src =
         "https://storage.googleapis.com/editframe-assets-7ac794b/1080-cat.jpeg";
       expect(image.assetPath()).toBe(
-        "/api/v1/assets/remote/image?url=https%3A%2F%2Fstorage.googleapis.com%2Feditframe-assets-7ac794b%2F1080-cat.jpeg",
+        "/api/v1/assets/image?src=https%3A%2F%2Fstorage.googleapis.com%2Feditframe-assets-7ac794b%2F1080-cat.jpeg",
       );
     });
   });

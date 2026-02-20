@@ -119,16 +119,10 @@ export class EFImage
   }
 
   private isDirectUrl(src: string): boolean {
-    // For file-id based URLs (via apiHost), always use fetch+canvas instead of img element
-    // This ensures proper rendering in all contexts (server, browser-full-video, browser-frame-by-frame)
     if (this.fileId) {
       return false;
     }
-    return (
-      src.startsWith("http://") ||
-      src.startsWith("https://") ||
-      src.startsWith("data:")
-    );
+    return src.startsWith("data:");
   }
 
   assetPath() {
@@ -136,17 +130,12 @@ export class EFImage
       const path = `${this.apiHost}/api/v1/files/${this.fileId}`;
       return path;
     }
-    if (this.src.startsWith("http://") || this.src.startsWith("https://")) {
-      return `/api/v1/assets/remote/image?url=${encodeURIComponent(this.src)}`;
-    }
     if (this.isDirectUrl(this.src)) {
       return this.src;
     }
-    // Normalize the path: remove leading slash and any double slashes
-    let normalizedSrc = this.src.startsWith("/") ? this.src.slice(1) : this.src;
-    normalizedSrc = normalizedSrc.replace(/^\/+/, "");
-    // Use production API format for local files
-    return `/api/v1/assets/local/image?src=${encodeURIComponent(normalizedSrc)}`;
+    // Normalize local paths: remove leading slashes (remote URLs are passed as-is)
+    const normalizedSrc = this.src.startsWith("/") ? this.src.replace(/^\/+/, "") : this.src;
+    return `/api/v1/assets/image?src=${encodeURIComponent(normalizedSrc)}`;
   }
 
   get hasOwnDuration() {

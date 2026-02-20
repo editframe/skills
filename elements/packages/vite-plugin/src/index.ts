@@ -47,52 +47,15 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
       });
       server.middlewares.use(jitTranscodeMiddleware);
 
-      // Handle remote assets API format: /api/v1/assets/remote/image?url=<encoded>
-      // Fetches remote images server-side so the browser receives them as same-origin,
+      // Handle assets API: /api/v1/assets/image and /api/v1/assets/captions
+      // src= accepts both local file paths and remote http/https URLs.
+      // Remote URLs are fetched server-side so the browser receives them as same-origin,
       // preventing canvas CORS taint when drawImage() is called during rendering.
       server.middlewares.use(async (req, res, next) => {
         const log = debug("ef:vite-plugin");
         const reqUrl = req.url || "";
 
-        if (!reqUrl.startsWith("/api/v1/assets/remote/image")) {
-          return next();
-        }
-
-        const url = new URL(reqUrl, `http://${req.headers.host}`);
-        const remoteUrl = url.searchParams.get("url");
-
-        if (!remoteUrl || (!remoteUrl.startsWith("http://") && !remoteUrl.startsWith("https://"))) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "url parameter must be an http/https URL" }));
-          return;
-        }
-
-        log(`Proxying remote image: ${remoteUrl}`);
-
-        try {
-          const response = await fetch(remoteUrl);
-          if (!response.ok) {
-            res.writeHead(response.status);
-            res.end();
-            return;
-          }
-          const contentType = response.headers.get("content-type") ?? "application/octet-stream";
-          const buffer = await response.arrayBuffer();
-          res.writeHead(200, { "Content-Type": contentType });
-          res.end(Buffer.from(buffer));
-        } catch (error) {
-          log(`Error proxying remote image: ${error}`);
-          res.writeHead(500, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: (error as Error).message }));
-        }
-      });
-
-      // Handle local assets API format: /api/v1/assets/local/*
-      server.middlewares.use(async (req, res, next) => {
-        const log = debug("ef:vite-plugin");
-        const reqUrl = req.url || "";
-
-        if (!reqUrl.startsWith("/api/v1/assets/local/")) {
+        if (!reqUrl.startsWith("/api/v1/assets/")) {
           return next();
         }
 
@@ -106,37 +69,37 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
           return;
         }
 
-        // Resolve src to absolute file path
-        const absolutePath = src.startsWith("http")
-          ? src
-          : path.join(options.root, src).replace("dist/", "src/");
+        const isRemote = src.startsWith("http://") || src.startsWith("https://");
+        const absolutePath = isRemote ? src : path.join(options.root, src).replace("dist/", "src/");
 
-        log(`Handling local assets API: ${urlPath} for ${absolutePath}`);
+        log(`Handling assets API: ${urlPath} src=${src}`);
 
         try {
-          // Handle /api/v1/assets/local/captions - captions/transcriptions
-          if (urlPath === "/api/v1/assets/local/captions") {
-            log(`Serving captions for ${absolutePath}`);
-            const taskResult = await findOrCreateCaptions(
-              options.cacheRoot,
-              absolutePath,
-            );
+          if (urlPath === "/api/v1/assets/image") {
+            if (isRemote) {
+              const response = await fetch(src);
+              if (!response.ok) {
+                res.writeHead(response.status);
+                res.end();
+                return;
+              }
+              const contentType = response.headers.get("content-type") ?? "application/octet-stream";
+              const buffer = await response.arrayBuffer();
+              res.writeHead(200, { "Content-Type": contentType });
+              res.end(Buffer.from(buffer));
+            } else {
+              const taskResult = await cacheImage(options.cacheRoot, absolutePath);
+              sendTaskResult(req, res, taskResult);
+            }
+            return;
+          }
+
+          if (urlPath === "/api/v1/assets/captions") {
+            const taskResult = await findOrCreateCaptions(options.cacheRoot, absolutePath);
             sendTaskResult(req, res, taskResult);
             return;
           }
 
-          // Handle /api/v1/assets/local/image - cached images
-          if (urlPath === "/api/v1/assets/local/image") {
-            log(`Serving image for ${absolutePath}`);
-            const taskResult = await cacheImage(
-              options.cacheRoot,
-              absolutePath,
-            );
-            sendTaskResult(req, res, taskResult);
-            return;
-          }
-
-          // Unknown endpoint
           res.writeHead(404, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Unknown assets endpoint" }));
         } catch (error) {
