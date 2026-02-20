@@ -237,6 +237,7 @@ function buildEngineComponents(
         templates,
         audioTrackId: typeof index.tracks.audio?.id === "number" ? index.tracks.audio.id : undefined,
         videoTrackId: typeof index.tracks.video?.id === "number" ? index.tracks.video.id : undefined,
+        segmentIdOffset: 1, // Fragment index uses 0-based IDs, JIT URLs expect 1-based
       });
       const timing = createFragmentTiming();
       return { index, transport, timing, src: indexData.src };

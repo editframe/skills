@@ -24,6 +24,8 @@ interface UrlTransportOptions {
   templates: { initSegment: string; mediaSegment: string };
   audioTrackId: number | undefined;
   videoTrackId: number | undefined;
+  /** Added to segment IDs before URL substitution (e.g. 1 to convert 0-based index→1-based JIT IDs) */
+  segmentIdOffset?: number;
 }
 
 function resolveRenditionId(track: TrackRef): RenditionId {
@@ -37,7 +39,7 @@ function resolveRenditionId(track: TrackRef): RenditionId {
 }
 
 export function createUrlTransport(opts: UrlTransportOptions): SegmentTransport {
-  const { fetcher, src, templates, audioTrackId, videoTrackId } = opts;
+  const { fetcher, src, templates, audioTrackId, videoTrackId, segmentIdOffset = 0 } = opts;
 
   function buildSegmentUrl(
     segmentId: "init" | number,
@@ -46,6 +48,7 @@ export function createUrlTransport(opts: UrlTransportOptions): SegmentTransport 
     const renditionId = resolveRenditionId(track);
     const template =
       segmentId === "init" ? templates.initSegment : templates.mediaSegment;
+    const urlSegmentId = segmentId === "init" ? "init" : segmentId + segmentIdOffset;
     const trackId =
       typeof track.id === "number"
         ? track.id
@@ -54,7 +57,7 @@ export function createUrlTransport(opts: UrlTransportOptions): SegmentTransport 
           : videoTrackId;
     return template
       .replace("{rendition}", renditionId)
-      .replace("{segmentId}", segmentId.toString())
+      .replace("{segmentId}", urlSegmentId.toString())
       .replace("{src}", src)
       .replace("{trackId}", trackId?.toString() ?? "");
   }
