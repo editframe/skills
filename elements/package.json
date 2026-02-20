@@ -9,7 +9,7 @@
     "test:watch": "npx vitest --config vitest.config.ts --configLoader bundle --watch",
     "browsertest": "npx vitest --config vitest.config.browser.ts --configLoader bundle --run",
     "browsertest:watch": "npx vitest --config vitest.config.browser.ts --configLoader bundle --watch",
-    "lint": "oxlint .",
+    "lint": "oxlint . --config oxlint.json",
     "format": "oxfmt .",
     "start": "scripts/start",
     "build:all": "node scripts/deps.js sorted 2>/dev/null | xargs -I {} npm run build --workspace {}",
