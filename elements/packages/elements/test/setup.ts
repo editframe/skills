@@ -7,7 +7,7 @@ import { beforeEach, afterAll } from "vitest";
 import {
   globalRequestDeduplicator,
   mediaCache,
-} from "../src/elements/EFMedia/BaseMediaEngine.js";
+} from "../src/elements/EFMedia/CachedFetcher.js";
 import { globalURLTokenDeduplicator } from "../src/transcoding/cache/URLTokenDeduplicator.js";
 import { TEST_SERVER_PORT } from "./constants.js";
 

@@ -105,18 +105,11 @@ async function resolveVideoConfig(
     throw new Error(`Invalid render range: from ${startMs}ms to ${endMs}ms`);
   }
 
-  // Determine video dimensions from the media engine rendition metadata
-  const mediaEngine = await video.getMediaEngine();
   let width: number;
   let height: number;
 
-  const videoRendition =
-    mediaEngine?.getVideoRendition?.() || (mediaEngine as any)?.videoRendition;
-  if (videoRendition?.width && videoRendition?.height) {
-    width = videoRendition.width;
-    height = videoRendition.height;
-  } else {
-    // Fall back: decode first frame to get dimensions
+  // Decode first frame to determine dimensions
+  {
     const firstFrame = await video.getVideoFrameAtSourceTime(trimStartMs, {
       quality: "main",
     });

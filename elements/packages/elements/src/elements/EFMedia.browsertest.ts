@@ -6,14 +6,12 @@ import { test as baseTest } from "../../test/useMSW.js";
 import type { EFConfiguration } from "../gui/EFConfiguration.js";
 import "../gui/EFPreview.js";
 import "../gui/EFWorkbench.js";
-import { JitMediaEngine } from "./EFMedia/JitMediaEngine.js";
 import { EFMedia } from "./EFMedia.js";
 import "./EFTimegroup.js";
 import type { EFTimegroup } from "./EFTimegroup.js";
 import "./EFVideo.js";
 import type { EFPreview } from "../gui/EFPreview.js";
 import { UrlGenerator } from "../transcoding/utils/UrlGenerator.js";
-import { AssetMediaEngine } from "./EFMedia/AssetMediaEngine.js";
 import type { EFVideo } from "./EFVideo.js";
 
 @customElement("test-media")
@@ -92,9 +90,12 @@ const test = baseTest.extend<{
 // Skip JIT Media Engine tests - failing due to timing/assertion issues
 // These tests need investigation but aren't blocking for beta release.
 describe.skip("JIT Media Engine", () => {
-  test("initializes JitMediaEngine", async ({ jitVideo, expect }) => {
+  test("initializes media engine", async ({ jitVideo, expect }) => {
     const mediaEngine = jitVideo.mediaEngineTask.value;
-    expect(mediaEngine).toBeInstanceOf(JitMediaEngine);
+    expect(mediaEngine).toBeTruthy();
+    expect(mediaEngine?.index).toBeTruthy();
+    expect(mediaEngine?.transport).toBeTruthy();
+    expect(mediaEngine?.timing).toBeTruthy();
   });
 
   test("loads media duration", async ({ jitVideo, expect }) => {
@@ -121,12 +122,11 @@ describe.skip("JIT Media Engine", () => {
     }) => {
       // Debug: Check what segment should be loaded for 0ms
       const mediaEngine = await (jitVideo as any).mediaEngineTask.taskComplete;
-      const videoRendition = mediaEngine?.getVideoRendition();
-      const expectedSegmentId = mediaEngine?.computeSegmentId(
-        0,
-        videoRendition,
-      );
-      console.log(`MediaEngine.computeSegmentId(0ms) = ${expectedSegmentId}`);
+      const videoTrack = mediaEngine?.tracks.video;
+      const expectedSegmentId = videoTrack
+        ? mediaEngine?.index.segmentAt(0, videoTrack)
+        : undefined;
+      console.log(`MediaEngine.index.segmentAt(0ms) = ${expectedSegmentId}`);
 
       timegroup.currentTimeMs = 0;
       await timegroup.seekTask.taskComplete;
@@ -237,18 +237,20 @@ describe("Media Engine Selection", () => {
   const remoteSrc = "http://web:3000/head-moov-480p.mp4";
   const localSrc = "10s-bars.mp4";
 
-  test("defaults to JitMediaEngine for remote URLs without a configuration element", async ({
+  test("creates media engine for remote URLs without a configuration element", async ({
     expect,
   }) => {
     const video = document.createElement("ef-video");
     video.src = remoteSrc;
     document.body.appendChild(video);
     const engine = await video.getMediaEngine();
-    expect(engine).toBeInstanceOf(JitMediaEngine);
+    expect(engine).toBeTruthy();
+    expect(engine?.index).toBeTruthy();
+    expect(engine?.transport).toBeTruthy();
     video.remove();
   });
 
-  test("uses JitMediaEngine for remote URLs when wrapped in a default configuration", async ({
+  test("creates media engine for remote URLs when wrapped in a default configuration", async ({
     configuration,
     expect,
   }) => {
@@ -256,11 +258,12 @@ describe("Media Engine Selection", () => {
     video.src = remoteSrc;
     configuration.appendChild(video);
     const engine = await video.getMediaEngine();
-    expect(engine).toBeInstanceOf(JitMediaEngine);
+    expect(engine).toBeTruthy();
+    expect(engine?.index).toBeTruthy();
     video.remove();
   });
 
-  test("uses JitMediaEngine for remote URLs when configured with media-engine='cloud'", async ({
+  test("creates media engine for remote URLs when configured with media-engine='cloud'", async ({
     configuration,
     expect,
   }) => {
@@ -269,14 +272,12 @@ describe("Media Engine Selection", () => {
     video.src = remoteSrc;
     configuration.appendChild(video);
     const engine = await video.getMediaEngine();
-    expect(engine).toBeInstanceOf(JitMediaEngine);
+    expect(engine).toBeTruthy();
+    expect(engine?.index).toBeTruthy();
     video.remove();
   });
 
-  // Note: media-engine='local' with remote URLs is not supported
-  // AssetMediaEngine is designed for local files and track fragment indexes only
-
-  test("always uses AssetMediaEngine for local src paths", async ({
+  test("creates media engine for local src paths", async ({
     configuration,
     expect,
   }) => {
@@ -285,7 +286,8 @@ describe("Media Engine Selection", () => {
     video.src = localSrc;
     configuration.appendChild(video);
     const engine = await video.getMediaEngine();
-    expect(engine).toBeInstanceOf(AssetMediaEngine);
+    expect(engine).toBeTruthy();
+    expect(engine?.index).toBeTruthy();
     video.remove();
   });
 

@@ -7,7 +7,6 @@ import { EFTimegroup } from "../../../elements/EFTimegroup.js";
 import { EFVideo } from "../../../elements/EFVideo.js";
 import { TargetController } from "../../../elements/TargetController.js";
 import { ThumbnailExtractor } from "../../../elements/EFMedia/shared/ThumbnailExtractor.js";
-import type { BaseMediaEngine } from "../../../elements/EFMedia/BaseMediaEngine.js";
 import {
   generateThumbnailsFromClone,
   type GeneratedThumbnail,
@@ -563,15 +562,13 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
 
     const sourceTimestamps = uncached.map((t) => this.#getSourceTimeMs(t));
 
-    const extractor = new ThumbnailExtractor(
-      mediaEngine as unknown as BaseMediaEngine,
-    );
-    const scrubRendition = mediaEngine.videoRendition;
-    if (!scrubRendition) return;
+    const extractor = new ThumbnailExtractor(mediaEngine);
+    const videoTrack = mediaEngine.tracks.video ?? mediaEngine.tracks.scrub;
+    if (!videoTrack) return;
 
     const results = await extractor.extractThumbnails(
       sourceTimestamps,
-      scrubRendition,
+      videoTrack,
       video.durationMs ?? 0,
       signal,
     );

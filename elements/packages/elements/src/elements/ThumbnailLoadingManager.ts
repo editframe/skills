@@ -399,9 +399,9 @@ export class ThumbnailLoadingManager {
       return [...times]; // All failed
     }
 
-    const videoRendition = mediaEngine.getVideoRendition();
-    const scrubRendition = mediaEngine.getScrubVideoRendition();
-    if (!videoRendition && !scrubRendition) {
+    const videoTrack = mediaEngine.tracks.video;
+    const scrubTrack = mediaEngine.tracks.scrub;
+    if (!videoTrack && !scrubTrack) {
       return [...times]; // All failed
     }
 

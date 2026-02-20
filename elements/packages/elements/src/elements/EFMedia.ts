@@ -7,6 +7,7 @@ import { efContext } from "../gui/efContext.js";
 import { withSpan } from "../otel/tracingHelpers.js";
 import type { MediaEngine } from "../transcoding/types/index.ts";
 import type { AudioSpan } from "../transcoding/types/index.ts";
+import { createMediaEngineFromSource } from "./EFMedia/MediaEngine.js";
 import { UrlGenerator } from "../transcoding/utils/UrlGenerator.ts";
 import { LRUCache } from "../utils/LRUCache.js";
 import { EFSourceMixin } from "./EFSourceMixin.js";
@@ -476,79 +477,18 @@ export class EFMedia extends EFTargetable(
   ): Promise<MediaEngine | undefined> {
     const { src, fileId, apiHost, requiredTracks } = this;
     const urlGenerator = this.getUrlGenerator();
-
-    // Check for file-id mode first
-    if (fileId !== null && fileId !== undefined && fileId.trim() !== "") {
-      if (!apiHost) {
-        throw new Error("API host is required for file-id mode");
-      }
-      const { FileMediaEngine } = await import("./EFMedia/FileMediaEngine.js");
-      const engine = await FileMediaEngine.fetchByFileId(
-        this,
-        urlGenerator,
-        fileId,
-        apiHost,
-        requiredTracks,
-        signal,
-      );
-      return engine;
-    }
-
-    // Check for null/undefined/empty/whitespace src
-    if (!src || typeof src !== "string" || src.trim() === "") {
-      return undefined;
-    }
-
-    const lowerSrc = src.toLowerCase();
-    const isRemoteUrl =
-      lowerSrc.startsWith("http://") || lowerSrc.startsWith("https://");
-
-    // Check configuration for explicit engine preference
     const configuration = this.closest("ef-configuration");
 
-    // "jit" mode: Force JitMediaEngine for all sources (including local files)
-    if (configuration?.mediaEngine === "jit") {
-      let manifestSrc = src;
-      if (!isRemoteUrl && configuration.apiHost) {
-        const baseUrl = configuration.apiHost.replace(/\/$/, "");
-        const normalizedPath = src.replace(/^\.\//, "/src/");
-        manifestSrc = `${baseUrl}${normalizedPath}`;
-      }
-      const url = urlGenerator.generateManifestUrl(manifestSrc);
-      const { JitMediaEngine } = await import("./EFMedia/JitMediaEngine.js");
-      return JitMediaEngine.fetch(this, urlGenerator, url, signal);
-    }
-
-    // "local" mode: Force AssetMediaEngine for all sources
-    if (configuration?.mediaEngine === "local") {
-      const { AssetMediaEngine } =
-        await import("./EFMedia/AssetMediaEngine.js");
-      return AssetMediaEngine.fetch(
-        this,
-        urlGenerator,
-        src,
-        requiredTracks,
-        signal,
-      );
-    }
-
-    // "cloud" mode (default): AssetMediaEngine for local paths, JitMediaEngine for remote URLs
-    if (!isRemoteUrl) {
-      const { AssetMediaEngine } =
-        await import("./EFMedia/AssetMediaEngine.js");
-      return AssetMediaEngine.fetch(
-        this,
-        urlGenerator,
-        src,
-        requiredTracks,
-        signal,
-      );
-    }
-
-    // Default: Use JitMediaEngine for remote URLs (transcoding service)
-    const url = urlGenerator.generateManifestUrl(src);
-    const { JitMediaEngine } = await import("./EFMedia/JitMediaEngine.js");
-    return JitMediaEngine.fetch(this, urlGenerator, url, signal);
+    return createMediaEngineFromSource({
+      src,
+      fileId,
+      apiHost,
+      requiredTracks,
+      fetchFn: (url, init) => this.fetch(url, init),
+      urlGenerator,
+      mediaEnginePreference: configuration?.mediaEngine,
+      signal,
+    });
   }
 
   #handleMediaEngineComplete(): void {
@@ -645,7 +585,7 @@ export class EFMedia extends EFTargetable(
     const mediaEngine = await this.getMediaEngine(signal);
     signal?.throwIfAborted();
 
-    if (!mediaEngine?.audioRendition) {
+    if (!mediaEngine?.tracks.audio) {
       return null;
     }
 
@@ -782,7 +722,7 @@ export class EFMedia extends EFTargetable(
     const mediaEngine = await this.getMediaEngine(signal);
     signal?.throwIfAborted();
 
-    if (!mediaEngine?.audioRendition) {
+    if (!mediaEngine?.tracks.audio) {
       return null;
     }
 

@@ -94,7 +94,7 @@ export class EFVideoTrack extends TrackItem {
       // Wait for media engine to determine if video has audio
       if (video.mediaEngineTask) {
         const mediaEngine = await video.mediaEngineTask.taskComplete;
-        if (mediaEngine?.audioRendition) {
+        if (mediaEngine?.tracks.audio) {
           this._hasAudio = true;
 
           // Load waveform data

@@ -1933,8 +1933,8 @@ describe("clone-timeline video rendition (reproduction)", () => {
     const originalMediaEngine = originalVideo.mediaEngineTask?.value;
     expect(originalMediaEngine).toBeTruthy();
 
-    const originalVideoRendition = originalMediaEngine.getVideoRendition();
-    expect(originalVideoRendition).toBeTruthy();
+    const originalVideoTrack = originalMediaEngine.tracks.video;
+    expect(originalVideoTrack).toBeTruthy();
 
     // Create render clone
     const { clone, cleanup } = await timegroup.createRenderClone();
@@ -1948,20 +1948,14 @@ describe("clone-timeline video rendition (reproduction)", () => {
       const clonedMediaEngine = clonedVideo.mediaEngineTask?.value;
       expect(clonedMediaEngine).toBeTruthy();
 
-      // KEY TEST: Does the clone have videoRendition?
-      const clonedVideoRendition = clonedMediaEngine.getVideoRendition();
+      // KEY TEST: Does the clone have video track?
+      const clonedVideoTrack = clonedMediaEngine.tracks.video;
 
-      // This is the assertion that should fail if the hypothesis is correct
-      expect(clonedVideoRendition).toBeTruthy();
-
-      // Verify same media engine type
-      expect(clonedMediaEngine.constructor.name).toBe(
-        originalMediaEngine.constructor.name,
-      );
+      expect(clonedVideoTrack).toBeTruthy();
 
       // Verify same rendition structure
-      expect(clonedVideoRendition.trackId).toBe(originalVideoRendition.trackId);
-      expect(clonedVideoRendition.src).toBe(originalVideoRendition.src);
+      expect(clonedVideoTrack.id).toBe(originalVideoTrack.id);
+      expect(clonedVideoTrack.src).toBe(originalVideoTrack.src);
     } finally {
       cleanup();
       container.remove();
@@ -2118,10 +2112,9 @@ describe("clone-timeline video rendition (reproduction)", () => {
       return;
     }
 
-    const originalVideoRendition = originalMediaEngine.getVideoRendition();
+    const originalVideoTrack = originalMediaEngine.tracks.video;
 
-    expect(originalMediaEngine.constructor.name).toBe("AssetMediaEngine");
-    expect(originalVideoRendition).toBeTruthy();
+    expect(originalVideoTrack).toBeTruthy();
 
     // Now test clone
     const { clone, cleanup } = await timegroup.createRenderClone();
@@ -2130,10 +2123,10 @@ describe("clone-timeline video rendition (reproduction)", () => {
       const clonedVideo = clone.querySelector("ef-video") as any;
       const clonedMediaEngine = clonedVideo.mediaEngineTask?.value;
 
-      const clonedVideoRendition = clonedMediaEngine?.getVideoRendition();
+      const clonedVideoTrack = clonedMediaEngine?.tracks.video;
 
       expect(clonedMediaEngine).toBeTruthy();
-      expect(clonedVideoRendition).toBeTruthy();
+      expect(clonedVideoTrack).toBeTruthy();
 
       // Seek should work
       await clone.seek(1000);

@@ -1,25 +1,16 @@
 import { ALL_FORMATS, BlobSource, CanvasSink, Input } from "mediabunny";
-import type {
-  ThumbnailResult,
-  VideoRendition,
-} from "../../../transcoding/types/index.js";
-import type { BaseMediaEngine } from "../BaseMediaEngine.js";
+import type { ThumbnailResult } from "../../../transcoding/types/index.js";
+import type { MediaEngine } from "../MediaEngine.js";
+import type { TrackRef } from "../SegmentIndex.js";
 import { globalInputCache } from "./GlobalInputCache.js";
 import { withTimeout, DEFAULT_MEDIABUNNY_TIMEOUT_MS } from "./timeoutUtils.js";
 
-/**
- * Shared thumbnail extraction logic for all MediaEngine implementations
- * Eliminates code duplication and provides consistent behavior
- */
 export class ThumbnailExtractor {
-  constructor(private mediaEngine: BaseMediaEngine) {}
+  constructor(private mediaEngine: MediaEngine) {}
 
-  /**
-   * Extract thumbnails at multiple timestamps efficiently using segment batching
-   */
   async extractThumbnails(
     timestamps: number[],
-    rendition: VideoRendition,
+    track: TrackRef,
     durationMs: number,
     signal?: AbortSignal,
   ): Promise<(ThumbnailResult | null)[]> {
@@ -27,7 +18,6 @@ export class ThumbnailExtractor {
       return [];
     }
 
-    // Validate and filter timestamps within bounds
     const validTimestamps = timestamps.filter(
       (timeMs) => timeMs >= 0 && timeMs <= durationMs,
     );
@@ -39,24 +29,17 @@ export class ThumbnailExtractor {
       return timestamps.map(() => null);
     }
 
-    // Group timestamps by segment for batch processing
-    const segmentGroups = this.groupTimestampsBySegment(
-      validTimestamps,
-      rendition,
-    );
-
-    // Extract batched by segment using CanvasSink
+    const segmentGroups = this.groupTimestampsBySegment(validTimestamps, track);
     const results = new Map<number, ThumbnailResult | null>();
 
     for (const [segmentId, segmentTimestamps] of segmentGroups) {
-      // Check abort before processing each segment
       signal?.throwIfAborted();
 
       try {
         const segmentResults = await this.extractSegmentThumbnails(
           segmentId,
           segmentTimestamps,
-          rendition,
+          track,
           signal,
         );
 
@@ -64,7 +47,6 @@ export class ThumbnailExtractor {
           results.set(timestamp, thumbnail);
         }
       } catch (error) {
-        // If aborted, re-throw to propagate cancellation
         if (error instanceof DOMException && error.name === "AbortError") {
           throw error;
         }
@@ -72,16 +54,13 @@ export class ThumbnailExtractor {
           `ThumbnailExtractor: Failed to extract thumbnails for segment ${segmentId}:`,
           error,
         );
-        // Mark all timestamps in this segment as failed
         for (const timestamp of segmentTimestamps) {
           results.set(timestamp, null);
         }
       }
     }
 
-    // Return in original order, null for any that failed or were out of bounds
     return timestamps.map((t) => {
-      // If timestamp was out of bounds, return null
       if (t < 0 || t > durationMs) {
         return null;
       }
@@ -89,26 +68,20 @@ export class ThumbnailExtractor {
     });
   }
 
-  /**
-   * Group timestamps by segment ID for efficient batch processing
-   */
   private groupTimestampsBySegment(
     timestamps: number[],
-    rendition: VideoRendition,
+    track: TrackRef,
   ): Map<number, number[]> {
     const segmentGroups = new Map<number, number[]>();
 
     for (const timeMs of timestamps) {
       try {
-        const segmentId = this.mediaEngine.computeSegmentId(timeMs, rendition);
+        const segmentId = this.mediaEngine.index.segmentAt(timeMs, track);
         if (segmentId !== undefined) {
           if (!segmentGroups.has(segmentId)) {
             segmentGroups.set(segmentId, []);
           }
-          const segmentGroup = segmentGroups.get(segmentId) ?? [];
-          if (!segmentGroup) {
-            segmentGroups.set(segmentId, []);
-          }
+          const segmentGroup = segmentGroups.get(segmentId)!;
           segmentGroup.push(timeMs);
         }
       } catch (error) {
@@ -122,47 +95,41 @@ export class ThumbnailExtractor {
     return segmentGroups;
   }
 
-  /**
-   * Extract thumbnails for a specific segment using CanvasSink
-   */
   private async extractSegmentThumbnails(
     segmentId: number,
     timestamps: number[],
-    rendition: VideoRendition,
+    track: TrackRef,
     signal?: AbortSignal,
   ): Promise<Map<number, ThumbnailResult | null>> {
     const results = new Map<number, ThumbnailResult | null>();
 
     try {
-      // Check abort before starting segment fetch
       signal?.throwIfAborted();
 
-      const initP = this.mediaEngine.fetchInitSegment(rendition, signal!);
-      const mediaP = this.mediaEngine.fetchMediaSegment(
+      const initP = this.mediaEngine.transport.fetchInitSegment(track, signal!);
+      const mediaP = this.mediaEngine.transport.fetchMediaSegment(
         segmentId,
-        rendition,
+        track,
         signal!,
       );
       initP.catch(() => {});
       mediaP.catch(() => {});
       const [initSegment, mediaSegment] = await Promise.all([initP, mediaP]);
 
-      // Check abort after potentially slow network operations
       signal?.throwIfAborted();
 
-      // Create Input for this segment using global shared cache
       const segmentBlob = new Blob([initSegment, mediaSegment]);
+      const renditionId = typeof track.id === "string" ? track.id : undefined;
 
-      let input = globalInputCache.get(rendition.src, segmentId, rendition.id);
+      let input = globalInputCache.get(track.src, segmentId, renditionId);
       if (!input) {
         input = new Input({
           formats: ALL_FORMATS,
           source: new BlobSource(segmentBlob),
         });
-        globalInputCache.set(rendition.src, segmentId, input, rendition.id);
+        globalInputCache.set(track.src, segmentId, input, renditionId);
       }
 
-      // Set up CanvasSink for batched extraction
       const videoTrack = await withTimeout(
         input.getPrimaryVideoTrack(),
         5000,
@@ -170,7 +137,6 @@ export class ThumbnailExtractor {
         signal,
       );
       if (!videoTrack) {
-        // No video track - return nulls for all timestamps
         for (const timestamp of timestamps) {
           results.set(timestamp, null);
         }
@@ -178,23 +144,15 @@ export class ThumbnailExtractor {
       }
 
       const sink = new CanvasSink(videoTrack);
-
-      // IMPORTANT: Sort timestamps for mediabunny - it expects monotonically sorted timestamps
-      // Create array of {original, sorted} to map back after extraction
       const sortedTimestamps = [...timestamps].sort((a, b) => a - b);
 
-      // Convert sorted global timestamps to segment-relative (in seconds for mediabunny)
-      const relativeTimestamps = this.convertToSegmentRelativeTimestamps(
-        sortedTimestamps,
-        segmentId,
-        rendition,
+      const relativeTimestamps = sortedTimestamps.map((ms) =>
+        this.mediaEngine.timing.toContainerSeconds(ms, segmentId, track),
       );
 
-      // Batch extract all thumbnails for this segment (in sorted order)
       const timestampResults = [];
       const canvasIterator = sink.canvasesAtTimestamps(relativeTimestamps);
       for await (const result of canvasIterator) {
-        // Wrap each iteration with timeout to prevent hangs
         const canvasResult = await withTimeout(
           Promise.resolve(result),
           DEFAULT_MEDIABUNNY_TIMEOUT_MS,
@@ -204,7 +162,6 @@ export class ThumbnailExtractor {
         timestampResults.push(canvasResult);
       }
 
-      // Map results back to original (sorted) timestamps
       for (let i = 0; i < sortedTimestamps.length; i++) {
         const globalTimestamp = sortedTimestamps[i];
         if (globalTimestamp === undefined) {
@@ -231,38 +188,18 @@ export class ThumbnailExtractor {
         }
       }
     } catch (error) {
-      // If aborted, re-throw to propagate cancellation
       if (error instanceof DOMException && error.name === "AbortError") {
         throw error;
       }
-      // Thumbnail extraction can fail for various non-fatal reasons (network issues,
-      // missing segments, transcoding not ready). Log as warning and return nulls.
       console.warn(
         `ThumbnailExtractor: Failed to extract thumbnails for segment ${segmentId}:`,
         error,
       );
-      // Return nulls for all timestamps on error
       for (const timestamp of timestamps) {
         results.set(timestamp, null);
       }
     }
 
     return results;
-  }
-
-  /**
-   * Convert global timestamps to segment-relative timestamps for mediabunny
-   * This is where the main difference between JIT and Asset engines lies
-   */
-  private convertToSegmentRelativeTimestamps(
-    globalTimestamps: number[],
-    segmentId: number,
-    rendition: VideoRendition,
-  ): number[] {
-    return this.mediaEngine.convertToSegmentRelativeTimestamps(
-      globalTimestamps,
-      segmentId,
-      rendition,
-    );
   }
 }

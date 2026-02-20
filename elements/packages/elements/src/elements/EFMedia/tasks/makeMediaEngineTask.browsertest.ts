@@ -99,25 +99,25 @@ describe("makeMediaEngineTask", () => {
     );
 
     testWithElement(
-      "should choose AssetMediaEngine for local file paths",
+      "should create media engine for local file paths",
       async ({ element, expect }) => {
-        element.setAttribute("src", "bars-n-tone.mp4"); // Local test asset
+        element.setAttribute("src", "bars-n-tone.mp4");
         element.removeAttribute("asset-id");
 
         const result = await createMediaEngine(element);
 
-        // Should successfully create AssetMediaEngine (doesn't throw)
         expect(result).toBeDefined();
-        expect(result.constructor.name).toBe("AssetMediaEngine");
+        expect(result.index).toBeTruthy();
+        expect(result.transport).toBeTruthy();
+        expect(result.timing).toBeTruthy();
       },
     );
 
     testWithElement(
-      "should choose JitMediaEngine for remote URLs with cloud configuration",
+      "should create media engine for remote URLs with cloud configuration",
       async ({ element, configuration, expect }) => {
-        // Set up configuration for JIT mode
         configuration.setAttribute("media-engine", "cloud");
-        (configuration as any).mediaEngine = "cloud"; // Set property for engine selection
+        (configuration as any).mediaEngine = "cloud";
         document.body.appendChild(configuration);
         configuration.appendChild(element);
 
@@ -126,49 +126,48 @@ describe("makeMediaEngineTask", () => {
 
         const result = await createMediaEngine(element);
 
-        // Should successfully create JitMediaEngine
         expect(result).toBeDefined();
-        expect(result.constructor.name).toBe("JitMediaEngine");
+        expect(result.index).toBeTruthy();
+        expect(result.transport).toBeTruthy();
       },
     );
 
     testWithElement(
-      "should default to JitMediaEngine for remote URLs without configuration",
+      "should create media engine for remote URLs without configuration",
       async ({ element, expect }) => {
-        // No configuration element = defaults to JitMediaEngine
         element.setAttribute("src", "http://web:3000/head-moov-480p.mp4");
         element.removeAttribute("asset-id");
 
         const result = await createMediaEngine(element);
 
         expect(result).toBeDefined();
-        expect(result.constructor.name).toBe("JitMediaEngine");
+        expect(result.index).toBeTruthy();
       },
     );
 
     testWithElement(
       "should ignore empty assetId and use src for engine selection",
       async ({ element, expect }) => {
-        element.setAttribute("asset-id", ""); // Empty assetId should be ignored
+        element.setAttribute("asset-id", "");
         element.setAttribute("src", "bars-n-tone.mp4");
 
         const result = await createMediaEngine(element);
 
         expect(result).toBeDefined();
-        expect(result.constructor.name).toBe("AssetMediaEngine");
+        expect(result.index).toBeTruthy();
       },
     );
 
     testWithElement(
       "should ignore whitespace-only assetId and use src for engine selection",
       async ({ element, expect }) => {
-        element.setAttribute("asset-id", "   "); // Whitespace-only assetId should be ignored
+        element.setAttribute("asset-id", "   ");
         element.setAttribute("src", "bars-n-tone.mp4");
 
         const result = await createMediaEngine(element);
 
         expect(result).toBeDefined();
-        expect(result.constructor.name).toBe("AssetMediaEngine");
+        expect(result.index).toBeTruthy();
       },
     );
   });

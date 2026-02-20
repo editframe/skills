@@ -12,6 +12,7 @@ import {
   type FrameState,
   PRIORITY_VIDEO,
 } from "../preview/FrameController.js";
+import type { MediaEngine } from "../transcoding/types/index.ts";
 import { MainVideoInputCache } from "./EFMedia/videoTasks/MainVideoInputCache.ts";
 import { ScrubInputCache } from "./EFMedia/videoTasks/ScrubInputCache.ts";
 import { EFMedia } from "./EFMedia.js";
@@ -304,21 +305,21 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
    * - If main track segment is already cached: use it (avoid redundant lower-quality fetch)
    */
   async #fetchVideoSampleForFrame(
-    mediaEngine: any,
+    mediaEngine: MediaEngine,
     desiredSeekTimeMs: number,
     signal: AbortSignal,
   ): Promise<VideoSample | undefined> {
+    const mainTrack = mediaEngine.tracks.video;
+
     // FIRST: Check if main quality content is already cached - use it if so
-    // This avoids redundant lower-quality fetches when main is already loaded
-    const mainRendition = mediaEngine.videoRendition;
-    if (mainRendition) {
-      const mainSegmentId = mediaEngine.computeSegmentId(
+    if (mainTrack) {
+      const mainSegmentId = mediaEngine.index.segmentAt(
         desiredSeekTimeMs,
-        mainRendition,
+        mainTrack,
       );
       if (
         mainSegmentId !== undefined &&
-        mediaEngine.isSegmentCached(mainSegmentId, mainRendition)
+        mediaEngine.transport.isCached(mainSegmentId, mainTrack)
       ) {
         this.#currentRenditionId = "main";
         return this.#getMainVideoSampleForFrame(
@@ -340,8 +341,8 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     }
 
     // THIRD: In preview mode, try scrub track first for faster scrubbing
-    const scrubRendition = mediaEngine.getScrubVideoRendition?.();
-    if (scrubRendition) {
+    const scrubTrack = mediaEngine.tracks.scrub;
+    if (scrubTrack) {
       const scrubSample = await this.#getScrubVideoSampleForFrame(
         mediaEngine,
         desiredSeekTimeMs,
@@ -353,7 +354,6 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         this.#maybeScheduleQualityUpgrade(mediaEngine, desiredSeekTimeMs);
         return scrubSample;
       }
-      // Scrub track failed, fall through to main track
     }
 
     // FOURTH: Fall back to main video path
@@ -370,54 +370,47 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
    * Used in preview mode for faster response during timeline scrubbing.
    */
   async #getScrubVideoSampleForFrame(
-    mediaEngine: any,
+    mediaEngine: MediaEngine,
     desiredSeekTimeMs: number,
     signal: AbortSignal,
   ): Promise<VideoSample | undefined> {
-    const scrubRendition = mediaEngine.getScrubVideoRendition?.();
-    if (!scrubRendition) {
+    const scrubTrack = mediaEngine.tracks.scrub;
+    if (!scrubTrack) {
       return undefined;
     }
 
-    const scrubRenditionWithSrc = { ...scrubRendition, src: mediaEngine.src };
-    const segmentId = mediaEngine.computeSegmentId(
+    const segmentId = mediaEngine.index.segmentAt(
       desiredSeekTimeMs,
-      scrubRenditionWithSrc,
+      scrubTrack,
     );
     if (segmentId === undefined) {
       return undefined;
     }
 
-    // Get cached scrub video input or create new one
     const scrubInput = await scrubInputCache.getOrCreateInput(
       mediaEngine.src,
       segmentId,
       async () => {
-        // Fetch scrub video segment
         let initSegment: ArrayBuffer | undefined;
         let mediaSegment: ArrayBuffer | undefined;
 
         try {
-          const initP = mediaEngine.fetchInitSegment(
-            scrubRenditionWithSrc,
+          const initP = mediaEngine.transport.fetchInitSegment(
+            scrubTrack,
             signal,
           );
-          const mediaP = mediaEngine.fetchMediaSegment(
+          const mediaP = mediaEngine.transport.fetchMediaSegment(
             segmentId,
-            scrubRenditionWithSrc,
+            scrubTrack,
             signal,
           );
-          // Suppress the "losing" promise in Promise.all — when one rejects first,
-          // the other's rejection would be unhandled without this.
           initP.catch(() => {});
           mediaP.catch(() => {});
           [initSegment, mediaSegment] = await Promise.all([initP, mediaP]);
         } catch (error) {
-          // If aborted, re-throw to propagate cancellation
           if (error instanceof DOMException && error.name === "AbortError") {
             throw error;
           }
-          // Return undefined for expected errors - will fall back to main track
           return undefined;
         }
 
@@ -426,7 +419,6 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         }
         signal.throwIfAborted();
 
-        // Create combined blob and BufferedSeekingInput
         const combinedBlob = new Blob([initSegment, mediaSegment]);
         signal.throwIfAborted();
 
@@ -439,7 +431,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         return new BufferedSeekingInput(arrayBuffer, {
           videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
           audioBufferSize: EFMedia.AUDIO_SAMPLE_BUFFER_SIZE,
-          startTimeOffsetMs: scrubRendition.startTimeOffsetMs,
+          startTimeOffsetMs: scrubTrack.startTimeOffsetMs,
         });
       },
     );
@@ -457,7 +449,6 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
 
     signal.throwIfAborted();
 
-    // Cast MediaSample to VideoSample (it's a video track, so it's a VideoSample)
     return scrubInput.seek(videoTrack.id, desiredSeekTimeMs) as Promise<
       VideoSample | undefined
     >;
@@ -467,52 +458,45 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
    * Get main video sample for a given time.
    */
   async #getMainVideoSampleForFrame(
-    mediaEngine: any,
+    mediaEngine: MediaEngine,
     desiredSeekTimeMs: number,
     signal: AbortSignal,
   ): Promise<VideoSample | undefined> {
-    const videoRendition =
-      mediaEngine.getVideoRendition?.() ?? mediaEngine.videoRendition;
-    if (!videoRendition) {
+    const videoTrack = mediaEngine.tracks.video;
+    if (!videoTrack) {
       return undefined;
     }
 
-    const segmentId = mediaEngine.computeSegmentId(
+    const segmentId = mediaEngine.index.segmentAt(
       desiredSeekTimeMs,
-      videoRendition,
+      videoTrack,
     );
     if (segmentId === undefined) {
       return undefined;
     }
 
-    // Get cached main video input or create new one
     const mainInput = await mainVideoInputCache.getOrCreateInput(
       mediaEngine.src,
       segmentId,
-      videoRendition.id,
+      String(videoTrack.id),
       async () => {
-        // Fetch main video segment
         let initSegment: ArrayBuffer | undefined;
         let mediaSegment: ArrayBuffer | undefined;
 
         try {
-          const initP = mediaEngine.fetchInitSegment(videoRendition, signal);
-          const mediaP = mediaEngine.fetchMediaSegment(
+          const initP = mediaEngine.transport.fetchInitSegment(videoTrack, signal);
+          const mediaP = mediaEngine.transport.fetchMediaSegment(
             segmentId,
-            videoRendition,
+            videoTrack,
             signal,
           );
-          // Suppress the "losing" promise in Promise.all — when one rejects first,
-          // the other's rejection would be unhandled without this.
           initP.catch(() => {});
           mediaP.catch(() => {});
           [initSegment, mediaSegment] = await Promise.all([initP, mediaP]);
         } catch (error) {
-          // If aborted, re-throw to propagate cancellation
           if (error instanceof DOMException && error.name === "AbortError") {
             throw error;
           }
-          // Return undefined for expected errors
           if (
             error instanceof Error &&
             (error.message.includes("401") ||
@@ -533,7 +517,6 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         }
         signal.throwIfAborted();
 
-        // Create combined blob and BufferedSeekingInput
         const combinedBlob = new Blob([initSegment, mediaSegment]);
         signal.throwIfAborted();
 
@@ -543,12 +526,11 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         const { BufferedSeekingInput } =
           await import("./EFMedia/BufferedSeekingInput.js");
 
-        const input = new BufferedSeekingInput(arrayBuffer, {
+        return new BufferedSeekingInput(arrayBuffer, {
           videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
           audioBufferSize: EFMedia.AUDIO_SAMPLE_BUFFER_SIZE,
-          startTimeOffsetMs: videoRendition.startTimeOffsetMs,
+          startTimeOffsetMs: videoTrack.startTimeOffsetMs,
         });
-        return input;
       },
     );
 
@@ -558,15 +540,14 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
 
     signal.throwIfAborted();
 
-    const videoTrack = await mainInput.getFirstVideoTrack();
-    if (!videoTrack) {
+    const videoTrackInfo = await mainInput.getFirstVideoTrack();
+    if (!videoTrackInfo) {
       return undefined;
     }
 
     signal.throwIfAborted();
 
-    // Cast MediaSample to VideoSample (it's a video track, so it's a VideoSample)
-    const sample = (await mainInput.seek(videoTrack.id, desiredSeekTimeMs)) as
+    const sample = (await mainInput.seek(videoTrackInfo.id, desiredSeekTimeMs)) as
       | VideoSample
       | undefined;
     return sample;
@@ -981,15 +962,14 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     signal.throwIfAborted();
 
     if (useMainTrack) {
-      const videoRendition =
-        mediaEngine.getVideoRendition?.() || mediaEngine.videoRendition;
-      if (!videoRendition) {
+      const videoTrack = mediaEngine.tracks.video;
+      if (!videoTrack) {
         throw new Error("No video rendition available");
       }
 
-      const segmentId = mediaEngine.computeSegmentId(
+      const segmentId = mediaEngine.index.segmentAt(
         sourceTimeMs,
-        videoRendition,
+        videoTrack,
       );
       if (segmentId === undefined) {
         throw new Error(`Cannot compute segment ID for time ${sourceTimeMs}ms`);
@@ -998,12 +978,12 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       const seekingInput = await mainVideoInputCache.getOrCreateInput(
         mediaEngine.src,
         segmentId,
-        videoRendition.id,
+        String(videoTrack.id),
         async () => {
-          const initP = mediaEngine.fetchInitSegment(videoRendition, signal);
-          const mediaP = mediaEngine.fetchMediaSegment(
+          const initP = mediaEngine.transport.fetchInitSegment(videoTrack, signal);
+          const mediaP = mediaEngine.transport.fetchMediaSegment(
             segmentId,
-            videoRendition,
+            videoTrack,
             signal,
           );
           initP.catch(() => {});
@@ -1023,7 +1003,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
           return new BufferedSeekingInput(arrayBuffer, {
             videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
             audioBufferSize: EFMedia.AUDIO_SAMPLE_BUFFER_SIZE,
-            startTimeOffsetMs: videoRendition.startTimeOffsetMs,
+            startTimeOffsetMs: videoTrack.startTimeOffsetMs,
           });
         },
       );
@@ -1035,28 +1015,27 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         );
       }
 
-      const videoTrack = await seekingInput.getFirstVideoTrack();
+      const seekingVideoTrack = await seekingInput.getFirstVideoTrack();
       signal.throwIfAborted();
 
-      if (!videoTrack) {
+      if (!seekingVideoTrack) {
         throw new Error("No video track found in segment");
       }
 
-      videoSample = await seekingInput.seek(videoTrack.id, sourceTimeMs);
+      videoSample = await seekingInput.seek(seekingVideoTrack.id, sourceTimeMs);
       signal.throwIfAborted();
     } else {
-      const scrubRendition = mediaEngine.getScrubVideoRendition?.();
-      if (!scrubRendition) {
+      const scrubTrack = mediaEngine.tracks.scrub;
+      if (!scrubTrack) {
         return this.getVideoFrameAtSourceTime(sourceTimeMs, {
           quality: "main",
           signal,
         });
       }
 
-      const scrubRenditionWithSrc = { ...scrubRendition, src: mediaEngine.src };
-      const segmentId = mediaEngine.computeSegmentId(
+      const segmentId = mediaEngine.index.segmentAt(
         sourceTimeMs,
-        scrubRenditionWithSrc,
+        scrubTrack,
       );
 
       if (segmentId === undefined) {
@@ -1069,13 +1048,13 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         mediaEngine.src,
         segmentId,
         async () => {
-          const initP = mediaEngine.fetchInitSegment(
-            scrubRenditionWithSrc,
+          const initP = mediaEngine.transport.fetchInitSegment(
+            scrubTrack,
             signal,
           );
-          const mediaP = mediaEngine.fetchMediaSegment(
+          const mediaP = mediaEngine.transport.fetchMediaSegment(
             segmentId,
-            scrubRenditionWithSrc,
+            scrubTrack,
             signal,
           );
           initP.catch(() => {});
@@ -1095,7 +1074,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
           return new BufferedSeekingInput(arrayBuffer, {
             videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
             audioBufferSize: EFMedia.AUDIO_SAMPLE_BUFFER_SIZE,
-            startTimeOffsetMs: scrubRendition.startTimeOffsetMs,
+            startTimeOffsetMs: scrubTrack.startTimeOffsetMs,
           });
         },
       );
@@ -1108,17 +1087,17 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         });
       }
 
-      const videoTrack = await seekingInput.getFirstVideoTrack();
+      const seekingVideoTrack = await seekingInput.getFirstVideoTrack();
       signal.throwIfAborted();
 
-      if (!videoTrack) {
+      if (!seekingVideoTrack) {
         return this.getVideoFrameAtSourceTime(sourceTimeMs, {
           quality: "main",
           signal,
         });
       }
 
-      videoSample = await seekingInput.seek(videoTrack.id, sourceTimeMs);
+      videoSample = await seekingInput.seek(seekingVideoTrack.id, sourceTimeMs);
       signal.throwIfAborted();
     }
 
@@ -1226,22 +1205,16 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       return;
     }
 
-    // Get scrub rendition
-    const scrubRendition = mediaEngine.getScrubVideoRendition();
-    if (!scrubRendition) {
+    const scrubTrack = mediaEngine.tracks.scrub;
+    if (!scrubTrack) {
       log("prefetchScrubSegments: no scrub rendition available");
       return;
     }
 
-    const scrubRenditionWithSrc = {
-      ...scrubRendition,
-      src: mediaEngine.src,
-    };
-
     // Compute unique segment IDs needed for all timestamps
     const segmentIds = new Set<number>();
     for (const ts of timestamps) {
-      const segmentId = mediaEngine.computeSegmentId(ts, scrubRenditionWithSrc);
+      const segmentId = mediaEngine.index.segmentAt(ts, scrubTrack);
       if (segmentId !== undefined) {
         segmentIds.add(segmentId);
       }
@@ -1252,11 +1225,9 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       return;
     }
 
-    // For AssetMediaEngine, the scrub track is a single file (not segmented).
-    // We just need to fetch it once, and all segments become cached.
     // Check if ANY segment is already cached (meaning the file is loaded).
     const firstSegmentId = Array.from(segmentIds)[0]!;
-    if (mediaEngine.isSegmentCached(firstSegmentId, scrubRenditionWithSrc)) {
+    if (mediaEngine.transport.isCached(firstSegmentId, scrubTrack)) {
       log("prefetchScrubSegments: scrub track already cached");
       return;
     }
@@ -1265,7 +1236,6 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       `prefetchScrubSegments: fetching scrub track for ${segmentIds.size} segments...`,
     );
 
-    // Emit loading event for the entire duration
     const durationMs = mediaEngine.durationMs || 0;
     this.dispatchEvent(
       new CustomEvent("scrub-segment-loading", {
@@ -1281,13 +1251,11 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       }),
     );
 
-    // Fetch the scrub track (single file for all segments)
-    // Create a signal if not provided (prefetch is often called without one)
     const fetchSignal = signal ?? new AbortController().signal;
     try {
-      await mediaEngine.fetchMediaSegment(
+      await mediaEngine.transport.fetchMediaSegment(
         firstSegmentId,
-        scrubRenditionWithSrc,
+        scrubTrack,
         fetchSignal,
       );
       log(`prefetchScrubSegments: scrub track loaded`);
@@ -1295,7 +1263,6 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       log(`prefetchScrubSegments: failed to load scrub track`, error);
     }
 
-    // Emit loaded event
     this.dispatchEvent(
       new CustomEvent("scrub-segment-loading", {
         detail: {
@@ -1310,7 +1277,6 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       }),
     );
 
-    // Report progress
     onProgress?.(1, 1, [0, durationMs]);
     log(`prefetchScrubSegments: complete`);
   }
@@ -1319,37 +1285,36 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
    * Maybe schedule quality upgrade tasks for this element.
    * Called when returning a scrub sample - checks if state has changed and submits tasks.
    */
-  #maybeScheduleQualityUpgrade(mediaEngine: any, sourceTimeMs: number): void {
-    const mainRendition = mediaEngine.videoRendition;
-    if (!mainRendition) return;
+  #maybeScheduleQualityUpgrade(mediaEngine: MediaEngine, sourceTimeMs: number): void {
+    const mainTrack = mediaEngine.tracks.video;
+    if (!mainTrack) return;
 
-    const segmentId = mediaEngine.computeSegmentId(sourceTimeMs, mainRendition);
+    const segmentId = mediaEngine.index.segmentAt(sourceTimeMs, mainTrack);
     if (segmentId === undefined) return;
 
     const startTimeMs = this.startTimeMs;
 
-    // Check: has anything changed since last submission?
     const stateChanged =
       this.#upgradeState === null ||
       this.#upgradeState.segmentId !== segmentId ||
       this.#upgradeState.startTimeMs !== startTimeMs;
 
-    if (!stateChanged) return; // Nothing changed - O(1) early exit
+    if (!stateChanged) return;
 
     const segments = this.#computeLookaheadSegments(
       mediaEngine,
       sourceTimeMs,
-      mainRendition,
+      mainTrack,
     );
-    if (segments.length === 0) return; // All segments already cached
+    if (segments.length === 0) return;
 
     const tasks = segments.map((seg) => ({
-      key: `${this.id}:${seg.segmentId}:${mainRendition.id}`,
+      key: `${this.id}:${seg.segmentId}:${mainTrack.id}`,
       fetch: async (signal: AbortSignal) => {
-        await mediaEngine.fetchInitSegment(mainRendition, signal);
-        await mediaEngine.fetchMediaSegment(
+        await mediaEngine.transport.fetchInitSegment(mainTrack, signal);
+        await mediaEngine.transport.fetchMediaSegment(
           seg.segmentId,
-          mainRendition,
+          mainTrack,
           signal,
         );
       },
@@ -1361,11 +1326,9 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     if (scheduler) {
       scheduler.replaceForOwner(this.id, tasks);
     } else {
-      // Standalone mode: fire-and-forget
       this.#fetchStandalone(tasks);
     }
 
-    // Update intent state
     this.#upgradeState = {
       sourceTimeMs,
       segmentId,
@@ -1378,9 +1341,9 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
    * Compute lookahead segments with deadlines in timeline space.
    */
   #computeLookaheadSegments(
-    mediaEngine: any,
+    mediaEngine: MediaEngine,
     currentSourceTimeMs: number,
-    rendition: any,
+    track: import("./EFMedia/SegmentIndex.js").TrackRef,
     maxLookahead: number = 5,
   ): { segmentId: number; deadlineMs: number }[] {
     const results: { segmentId: number; deadlineMs: number }[] = [];
@@ -1390,22 +1353,21 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     let probeTimeMs = currentSourceTimeMs;
 
     while (seen.size < maxLookahead) {
-      const segmentId = mediaEngine.computeSegmentId(probeTimeMs, rendition);
+      const segmentId = mediaEngine.index.segmentAt(probeTimeMs, track);
       if (segmentId === undefined) break;
-      if (seen.has(segmentId)) break; // shouldn't happen, but guard against infinite loop
+      if (seen.has(segmentId)) break;
 
       seen.add(segmentId);
 
-      if (!mediaEngine.isSegmentCached(segmentId, rendition)) {
+      if (!mediaEngine.transport.isCached(segmentId, track)) {
         const offsetFromCurrentMs = probeTimeMs - currentSourceTimeMs;
         const deadlineMs = playheadMs + offsetFromCurrentMs;
         results.push({ segmentId, deadlineMs });
       }
 
-      // Advance to just past the end of this segment
       const thisDuration =
-        rendition.segmentDurationsMs?.[segmentId - 1] ??
-        rendition.segmentDurationMs ??
+        track.segmentDurationsMs?.[segmentId - 1] ??
+        track.segmentDurationMs ??
         2000;
       probeTimeMs += thisDuration;
     }

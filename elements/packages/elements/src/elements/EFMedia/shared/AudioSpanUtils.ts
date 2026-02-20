@@ -14,18 +14,17 @@ const fetchAudioSegmentData = async (
   mediaEngine: MediaEngine,
   signal: AbortSignal,
 ): Promise<Map<number, ArrayBuffer>> => {
-  const audioRendition = mediaEngine.audioRendition;
-  if (!audioRendition) {
-    throw new Error("Audio rendition not available");
+  const audioTrack = mediaEngine.tracks.audio;
+  if (!audioTrack) {
+    throw new Error("Audio track not available");
   }
 
   const segmentData = new Map<number, ArrayBuffer>();
 
-  // Fetch all segments - MediaEngine handles deduplication internally
   const fetchPromises = segmentIds.map(async (segmentId) => {
-    const arrayBuffer = await mediaEngine.fetchMediaSegment(
+    const arrayBuffer = await mediaEngine.transport.fetchMediaSegment(
       segmentId,
-      audioRendition,
+      audioTrack,
       signal,
     );
     return [segmentId, arrayBuffer] as [number, ArrayBuffer];
@@ -72,14 +71,14 @@ export const fetchAudioSpanningTime = async (
   const mediaEngine = await host.getMediaEngine(signal);
   signal.throwIfAborted();
 
-  // Return undefined if no audio rendition available
-  if (!mediaEngine?.audioRendition) {
+  const audioTrack = mediaEngine?.tracks.audio;
+  if (!audioTrack) {
     return undefined;
   }
 
-  // Fetch the init segment directly from media engine
-  const initSegment = await mediaEngine.fetchInitSegment(
-    mediaEngine.audioRendition,
+  // Fetch the init segment
+  const initSegment = await mediaEngine.transport.fetchInitSegment(
+    audioTrack,
     signal,
   );
   signal.throwIfAborted();
@@ -88,12 +87,11 @@ export const fetchAudioSpanningTime = async (
     return undefined;
   }
 
-  // Calculate segments needed using the media engine's method
-  const segmentRanges = mediaEngine.calculateAudioSegmentRange(
+  // Calculate segments needed
+  const segmentRanges = mediaEngine.index.segmentsInRange(
     fromMs,
     toMs,
-    mediaEngine.audioRendition,
-    host.intrinsicDurationMs || 10000,
+    audioTrack,
   );
 
   if (segmentRanges.length === 0) {

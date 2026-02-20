@@ -185,7 +185,21 @@ export interface CacheStats {
   recentKeys: string[];
 }
 
-// TODO: JitTranscodingClient interface removed - will return in a later release
+// Re-export the unified MediaEngine from its new canonical location
+export type {
+  MediaEngine,
+} from "../../elements/EFMedia/MediaEngine.js";
+export type {
+  TrackRef,
+  TrackSet,
+  TrackRole,
+  SegmentIndex,
+  SegmentTimeRange,
+} from "../../elements/EFMedia/SegmentIndex.js";
+export type { SegmentTransport } from "../../elements/EFMedia/SegmentTransport.js";
+export type { TimingModel } from "../../elements/EFMedia/TimingModel.js";
+
+// Legacy types kept for backwards compatibility
 export interface AudioRendition {
   id?: RenditionId;
   trackId: number | undefined;
@@ -203,101 +217,7 @@ export interface VideoRendition {
   startTimeOffsetMs?: number;
 }
 
-/**
- * Union type representing either an audio or video rendition.
- * Used in methods that can work with either type of media rendition.
- */
 export type MediaRendition = AudioRendition | VideoRendition;
-export interface MediaEngine {
-  durationMs: number;
-  src: string;
-  audioRendition?: AudioRendition;
-  videoRendition?: VideoRendition;
-  templates: {
-    initSegment: string;
-    mediaSegment: string;
-  };
-  fetchInitSegment: (
-    rendition: {
-      id?: RenditionId;
-      trackId: number | undefined;
-      src: string;
-    },
-    signal: AbortSignal,
-  ) => Promise<ArrayBuffer>;
-  fetchMediaSegment: (
-    segmentId: number,
-    rendition: { id?: RenditionId; trackId: number | undefined; src: string },
-    signal: AbortSignal,
-  ) => Promise<ArrayBuffer>;
-  computeSegmentId: (
-    desiredSeekTimeMs: number,
-    rendition: MediaRendition,
-  ) => number | undefined;
-
-  /**
-   * Get the video rendition if available, otherwise return undefined.
-   * Callers should handle undefined appropriately.
-   */
-  getVideoRendition: () => VideoRendition | undefined;
-
-  /**
-   * Get the audio rendition if available, otherwise return undefined.
-   * Callers should handle undefined appropriately.
-   */
-  getAudioRendition: () => AudioRendition | undefined;
-
-  /**
-   * Check if a segment is cached for a given rendition
-   */
-  isSegmentCached: (
-    segmentId: number,
-    rendition: AudioRendition | VideoRendition,
-  ) => boolean;
-
-  /**
-   * Get scrub video rendition if available, otherwise return undefined
-   * Each engine implements this based on their capabilities:
-   * - JitMediaEngine: looks for "scrub" rendition in manifest
-   * - AssetMediaEngine: returns regular video rendition (no separate scrub)
-   */
-  getScrubVideoRendition(): VideoRendition | undefined;
-
-  /**
-   * Calculate audio segments needed for a time range
-   * Each media engine implements this based on their segment structure
-   */
-  calculateAudioSegmentRange: (
-    fromMs: number,
-    toMs: number,
-    rendition: AudioRendition,
-    durationMs: number,
-  ) => SegmentTimeRange[];
-
-  /**
-   * Get buffer configuration for this media engine
-   * Returns preferred buffer settings that may override host defaults
-   */
-  getBufferConfig: () => {
-    videoBufferDurationMs: number;
-    audioBufferDurationMs: number;
-    maxVideoBufferFetches: number;
-    maxAudioBufferFetches: number;
-    bufferThresholdMs: number;
-  };
-
-  /**
-   * Extract thumbnail canvases at multiple timestamps efficiently
-   * Uses scrub rendition and batches by segment for optimal performance
-   * Returns thumbnail objects in same order as input timestamps
-   * Returns null for any timestamps that fail to extract
-   * @param signal - Optional AbortSignal to cancel in-flight requests when element is disconnected
-   */
-  extractThumbnails(
-    timestamps: number[],
-    signal?: AbortSignal,
-  ): Promise<(ThumbnailResult | null)[]>;
-}
 
 export interface ThumbnailResult {
   timestamp: number;
@@ -316,9 +236,4 @@ export interface AudioSpan {
   startMs: number;
   endMs: number;
   blob: Blob;
-}
-export interface SegmentTimeRange {
-  segmentId: number;
-  startMs: number;
-  endMs: number;
 }

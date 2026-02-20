@@ -2,9 +2,6 @@
  * URL generation utilities for transcoding endpoints
  */
 
-import type { RenditionId } from "../types/index.js";
-import type { MediaEngine } from "../types/index.ts";
-
 export class UrlGenerator {
   constructor(private baseUrl: () => string) {}
 
@@ -13,51 +10,6 @@ export class UrlGenerator {
    */
   getBaseUrl(): string {
     return this.baseUrl();
-  }
-
-  /**
-   * Generate video segment URL
-   */
-  generateSegmentUrl(
-    segmentId: "init" | number,
-    renditionId: RenditionId,
-    metadata: MediaEngine,
-  ): string {
-    // Determine which rendition to use based on renditionId
-    // Audio renditions: "audio"
-    // Video renditions: "high", "scrub", "low", "medium", etc.
-    const audioRendition = metadata.audioRendition;
-    const videoRendition = metadata.videoRendition;
-
-    let rendition;
-    if (renditionId === "audio") {
-      rendition = audioRendition;
-    } else {
-      // For all other rendition IDs (high, scrub, low, medium), use video rendition
-      rendition = videoRendition;
-    }
-
-    if (!rendition) {
-      console.error("Rendition not found", {
-        renditionId,
-        hasAudio: !!audioRendition,
-        hasVideo: !!videoRendition,
-        metadata,
-      });
-      throw new Error(
-        `Rendition ${renditionId} not found (hasAudio=${!!audioRendition}, hasVideo=${!!videoRendition})`,
-      );
-    }
-
-    const template =
-      segmentId === "init"
-        ? metadata.templates.initSegment
-        : metadata.templates.mediaSegment;
-    return template
-      .replace("{rendition}", renditionId)
-      .replace("{segmentId}", segmentId.toString())
-      .replace("{src}", metadata.src)
-      .replace("{trackId}", rendition.trackId?.toString() ?? "");
   }
 
   /**
