@@ -7,16 +7,16 @@ import type { NavNode } from "~/utils/skills.server";
 interface SkillsLayoutProps {
   children: React.ReactNode;
   allSkills?: { name: string; title: string; description: string }[];
+  allNavTrees?: Record<string, NavNode[]>;
   currentSkill?: string | null;
-  navTree?: NavNode[];
   currentReference?: string | null;
 }
 
 export function SkillsLayout({
   children,
   allSkills = [],
+  allNavTrees = {},
   currentSkill = null,
-  navTree = [],
   currentReference = null,
 }: SkillsLayoutProps) {
   const [isNavOpen, setIsNavOpen] = React.useState(false);
@@ -77,8 +77,8 @@ export function SkillsLayout({
         isOpen={isNavOpen}
         onClose={() => setIsNavOpen(false)}
         allSkills={allSkills}
+        allNavTrees={allNavTrees}
         currentSkill={currentSkill}
-        navTree={navTree}
         currentReference={currentReference}
       />
     </div>

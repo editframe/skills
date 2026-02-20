@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/catalog";
-import type { SkillReference } from "~/utils/skills.server";
-import { getSkillCatalog, getSkillNames } from "~/utils/skills.server";
+import type { SkillReference, NavNode } from "~/utils/skills.server";
+import { getSkillCatalog, getSkillNames, getSkillNavTree } from "~/utils/skills.server";
 import { SkillsLayout } from "~/components/skills/SkillsLayout";
 import { SkillPicker } from "~/components/skills/SkillsSidebar";
 import { MobileBreadcrumbBar } from "~/components/skills/MobileBreadcrumbBar";
@@ -21,7 +21,10 @@ export const meta = () => {
 export const loader = async () => {
   const skills = getSkillCatalog();
   const allSkills = getSkillNames();
-  return { skills, allSkills };
+  const allNavTrees: Record<string, NavNode[]> = Object.fromEntries(
+    allSkills.map((s) => [s.name, getSkillNavTree(s.name)])
+  );
+  return { skills, allSkills, allNavTrees };
 };
 
 interface SkillData {
@@ -34,7 +37,7 @@ interface SkillData {
 
 export default function SkillsCatalog({ loaderData }: Route.ComponentProps) {
   useTheme();
-  const { skills, allSkills } = loaderData;
+  const { skills, allSkills, allNavTrees } = loaderData;
 
   const tutorials = (skills as SkillData[]).flatMap((skill) =>
     skill.referencesMeta
@@ -43,7 +46,7 @@ export default function SkillsCatalog({ loaderData }: Route.ComponentProps) {
   );
 
   return (
-    <SkillsLayout allSkills={allSkills}>
+    <SkillsLayout allSkills={allSkills} allNavTrees={allNavTrees}>
       <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr] overflow-hidden">
         <SkillPicker allSkills={allSkills} currentSkill={null} />
 

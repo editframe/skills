@@ -131,7 +131,7 @@ function NavTreeSubNode({
   );
 }
 
-function NavTreeSection({
+export function NavTreeSection({
   node,
   skillName,
   referenceName,

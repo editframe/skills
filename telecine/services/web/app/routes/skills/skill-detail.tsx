@@ -8,7 +8,7 @@ import {
   getSkillNames,
   getSkillReferencesMeta,
 } from "~/utils/skills.server";
-import type { SkillReference } from "~/utils/skills.server";
+import type { SkillReference, NavNode } from "~/utils/skills.server";
 import { parseMdx } from "~/utils/mdx-bundler.server";
 import { getSkillsMDXComponents } from "~/utils/skills-mdx-components";
 import clsx from "clsx";
@@ -61,6 +61,9 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
   const navTree = getSkillNavTree(skillName);
   const referencesMeta = getSkillReferencesMeta(skillName);
   const allSkills = getSkillNames();
+  const allNavTrees: Record<string, NavNode[]> = Object.fromEntries(
+    allSkills.map((s) => [s.name, getSkillNavTree(s.name)])
+  );
 
   // Extract API metadata from frontmatter
   const apiMetadata = (parsed.frontmatter as any)?.api || null;
@@ -73,6 +76,7 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
     navTree,
     referencesMeta,
     allSkills,
+    allNavTrees,
     apiMetadata,
     description,
     isReference: false,
@@ -152,7 +156,7 @@ function LearningPathNav({
 
 export default function SkillDetail({ loaderData }: Route.ComponentProps) {
   useTheme();
-  const { skillName, referenceName, content, navTree, referencesMeta, allSkills, apiMetadata, isReference } =
+  const { skillName, referenceName, content, navTree, referencesMeta, allSkills, allNavTrees, apiMetadata, isReference } =
     loaderData;
   const { code } = content;
   const MDXAsComponent = React.useMemo(() => getMDXComponent(code), [code]);
@@ -170,8 +174,8 @@ export default function SkillDetail({ loaderData }: Route.ComponentProps) {
   return (
     <SkillsLayout
       allSkills={allSkills}
+      allNavTrees={allNavTrees}
       currentSkill={skillName}
-      navTree={navTree}
       currentReference={referenceName}
     >
       <div className="grid grid-cols-1 lg:grid-cols-[180px_240px_1fr] xl:grid-cols-[180px_240px_1fr_auto] overflow-hidden">
