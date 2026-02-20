@@ -372,11 +372,12 @@ function syncElementStyles(
     cloneStyle.filter = cs.filter;
     cloneStyle.backdropFilter = cs.backdropFilter;
 
-    // Width/height from canvas buffer dimensions to preserve aspect ratio
-    // Use the clone's canvas buffer dimensions directly, not computed styles from shadow content
+    // Width/height from source element's computed CSS layout dimensions.
+    // The canvas buffer represents internal resolution; the source element's CSS
+    // determines how large it appears in the layout.
     if (clone instanceof HTMLCanvasElement) {
-      cloneStyle.width = `${clone.width}px`;
-      cloneStyle.height = `${clone.height}px`;
+      cloneStyle.width = cs.width;
+      cloneStyle.height = cs.height;
     }
 
     cloneStyle.display = "block";
