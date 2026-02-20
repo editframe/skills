@@ -1,5 +1,6 @@
 services:
   worker-render-initializer:
+    profiles: ["render"]
     image: telecine-runner
     pull_policy: never
     depends_on:

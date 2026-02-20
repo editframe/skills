@@ -1,5 +1,6 @@
 services:
   worker-test-fast-initializer:
+    profiles: ["render"]
     image: telecine-runner
     pull_policy: never
     env_file:
@@ -27,6 +28,7 @@ services:
           memory: ${WORKER_TEST_FAST_INITIALIZER_MEMORY:-512M}
 
   worker-test-fast-main:
+    profiles: ["render"]
     image: telecine-runner
     pull_policy: never
     env_file:
@@ -53,6 +55,7 @@ services:
           memory: ${WORKER_TEST_FAST_MAIN_MEMORY:-512M}
 
   worker-test-fast-finalizer:
+    profiles: ["render"]
     image: telecine-runner
     pull_policy: never
     env_file:

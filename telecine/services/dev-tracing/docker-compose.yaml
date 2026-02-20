@@ -1,5 +1,6 @@
 services:
   tracing:
+    profiles: ["dev"]
     build:
       context: ./services/otel-relay
       dockerfile: Dockerfile

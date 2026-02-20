@@ -1,5 +1,6 @@
 services:
   scheduler-go:
+    profiles: ["render"]
     image: scheduler-go
     pull_policy: never
     restart: unless-stopped

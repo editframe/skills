@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Refresh the telecine-template database from telecine-main.
+# New worktrees clone this template for near-instant database setup.
+set -e
+
+echo "Updating template database..."
+
+# Terminate connections to both databases
+docker exec editframe-postgres psql -U postgres \
+  -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname IN ('telecine-template', 'telecine-main') AND pid <> pg_backend_pid();" \
+  -c "SELECT pg_sleep(0.2);" \
+  -c "DROP DATABASE IF EXISTS \"telecine-template\";" \
+  -c "CREATE DATABASE \"telecine-template\" TEMPLATE \"telecine-main\";" \
+  > /dev/null
+
+echo "Template database updated from telecine-main"

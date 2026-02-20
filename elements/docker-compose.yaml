@@ -1,8 +1,8 @@
 name: ef-elements
 services:
   runner:
-    build:
-      context: .
+    image: elements-runner
+    pull_policy: never
     init: true
     env_file:
       - .env
@@ -29,8 +29,8 @@ services:
       traefik.http.services.elements-test-${WORKTREE_ID:-main}.loadbalancer.server.port: 63315
 
   dev-projects:
-    build:
-      context: .
+    image: elements-runner
+    pull_policy: never
     init: true
     env_file:
       - .env

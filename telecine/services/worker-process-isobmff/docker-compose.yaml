@@ -1,5 +1,6 @@
 services:
   worker-process-isobmff:
+    profiles: ["render"]
     image: telecine-runner
     pull_policy: never
     env_file:

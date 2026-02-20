@@ -1,5 +1,6 @@
 services:
   worker-process-html-initializer:
+    profiles: ["render"]
     image: telecine-runner
     pull_policy: never
     env_file:

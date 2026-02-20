@@ -138,9 +138,15 @@ if [ "$FORCE" = false ]; then
   echo ""
 fi
 
+# Read scope to know what was running
+WORKTREE_SCOPE="web"
+if [ -f "$WORKTREE_ROOT/.worktree-scope" ]; then
+  WORKTREE_SCOPE=$(cat "$WORKTREE_ROOT/.worktree-scope")
+fi
+
 # Stop and remove Docker containers
 echo "1️⃣  Stopping and removing Docker containers..."
-if [ -d "$WORKTREE_ROOT/telecine" ] && [ -f "$WORKTREE_ROOT/telecine/scripts/docker-compose" ]; then
+if [ "$WORKTREE_SCOPE" != "elements" ] && [ -d "$WORKTREE_ROOT/telecine" ] && [ -f "$WORKTREE_ROOT/telecine/scripts/docker-compose" ]; then
   cd "$WORKTREE_ROOT/telecine"
   # Source worktree-config to get Docker project name
   if [ -f "$WORKTREE_ROOT/telecine/scripts/worktree-config" ]; then
@@ -149,6 +155,16 @@ if [ -d "$WORKTREE_ROOT/telecine" ] && [ -f "$WORKTREE_ROOT/telecine/scripts/doc
   # Stop and remove containers, volumes, and networks
   ./scripts/docker-compose down -v --remove-orphans 2>&1 | grep -v "No such" || true
   echo "   ✅ Telecine Docker resources stopped and removed"
+
+  # Drop worktree database from shared PostgreSQL
+  if [ -n "$WORKTREE_DATABASE" ] && [ "$WORKTREE_DATABASE" != "telecine-main" ]; then
+    if docker ps --filter "name=editframe-postgres" --format "{{.Names}}" | grep -q editframe-postgres; then
+      docker exec editframe-postgres psql -U postgres \
+        -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$WORKTREE_DATABASE' AND pid <> pg_backend_pid();" \
+        -c "DROP DATABASE IF EXISTS \"$WORKTREE_DATABASE\";" > /dev/null 2>&1 || true
+      echo "   ✅ Database '$WORKTREE_DATABASE' dropped"
+    fi
+  fi
 fi
 
 if [ -d "$WORKTREE_ROOT/elements" ]; then

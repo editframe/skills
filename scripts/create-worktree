@@ -1,37 +1,41 @@
 #!/usr/bin/env bash
-# Create a new worktree for a branch
-# Run from main worktree
+# Create a new worktree for a branch with scope-based service startup.
+# Run from main worktree.
+#
+# Usage: create-worktree <branch-name> [scope]
+#   scope: elements | web | render  (default: web)
+#
+# Scopes:
+#   elements  - Elements runner + dev-projects only. No telecine services.
+#   web       - Elements + telecine core (web, hasura, valkey, maintenance).
+#   render    - Elements + telecine core + render pipeline (workers, scheduler).
 
 set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 PROJECT_ROOT="$SCRIPT_DIR/.."
 
-# Check for branch name argument
 if [ -z "$1" ]; then
-  echo "Error: Branch name required" >&2
-  echo "Usage: $0 <branch-name>" >&2
+  echo "Usage: $0 <branch-name> [elements|web|render]" >&2
   exit 1
 fi
 
 BRANCH_NAME="$1"
+SCOPE="${2:-web}"
 
-# Check if we're in a git repository
+case "$SCOPE" in
+  elements|web|render) ;;
+  *) echo "Invalid scope: $SCOPE (must be elements, web, or render)" >&2; exit 1 ;;
+esac
+
 if ! git rev-parse --git-dir > /dev/null 2>&1; then
   echo "Error: Not in a git repository" >&2
   exit 1
 fi
 
-# Get current worktree root
 CURRENT_ROOT=$(git rev-parse --show-toplevel)
-
-# Check if we're in main worktree (should be)
 CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || git symbolic-ref --short HEAD 2>/dev/null)
-if [ "$CURRENT_BRANCH" != "main" ] && [ "$CURRENT_BRANCH" != "master" ]; then
-  echo "Warning: Not on main/master branch. Creating worktree from current branch: $CURRENT_BRANCH" >&2
-fi
 
-# Sanitize branch name function (from worktree-config)
 sanitize_branch_name() {
   local name="$1"
   name=$(echo "$name" | tr '[:upper:]' '[:lower:]')
@@ -40,371 +44,184 @@ sanitize_branch_name() {
   name=$(echo "$name" | sed 's/-\+/-/g')
   name=$(echo "$name" | cut -c1-63)
   name=$(echo "$name" | sed 's/-$//')
-  
   if [ -z "$name" ] || ! echo "$name" | grep -q '^[a-z0-9]'; then
-    echo "Error: Invalid branch name after sanitization: '$BRANCH_NAME' -> '$name'" >&2
+    echo "Error: Invalid branch name after sanitization" >&2
     exit 1
   fi
-  
   echo "$name"
 }
 
 SANITIZED_BRANCH=$(sanitize_branch_name "$BRANCH_NAME")
-
-# Determine worktree parent directory (monorepo parent)
 WORKTREE_PARENT=$(dirname "$CURRENT_ROOT")
 WORKTREE_DIR="$WORKTREE_PARENT/editframe-${SANITIZED_BRANCH}"
 
-# Check if worktree already exists
 if [ -d "$WORKTREE_DIR" ]; then
   echo "Error: Worktree directory already exists: $WORKTREE_DIR" >&2
   exit 1
 fi
 
-# Determine base branch for new branch creation
-if [ -z "$CURRENT_BRANCH" ] || [ "$CURRENT_BRANCH" = "HEAD" ]; then
-  # Detached HEAD, use main/master
+# Determine base branch
+BASE_BRANCH="${CURRENT_BRANCH:-main}"
+if [ "$BASE_BRANCH" = "HEAD" ]; then
   BASE_BRANCH="main"
-  if ! git show-ref --verify --quiet "refs/heads/main"; then
-    BASE_BRANCH="master"
-  fi
-else
-  BASE_BRANCH="$CURRENT_BRANCH"
 fi
 
-# Check if branch exists
 echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "Creating Worktree"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Creating worktree: $BRANCH_NAME (scope: $SCOPE)"
+echo "  Location: $WORKTREE_DIR"
 echo ""
 
-if git show-ref --verify --quiet "refs/heads/${BRANCH_NAME}"; then
-  echo "📦 Using existing branch: $BRANCH_NAME"
-else
-  echo "📦 Creating new branch: $BRANCH_NAME"
-fi
-echo "🌳 Worktree location: $WORKTREE_DIR"
-echo ""
-
-# Create worktree (suppress git output)
+# 1. Create git worktree
 if git show-ref --verify --quiet "refs/heads/${BRANCH_NAME}"; then
   git worktree add "$WORKTREE_DIR" "$BRANCH_NAME" > /dev/null 2>&1
 else
   git worktree add -b "$BRANCH_NAME" "$WORKTREE_DIR" "$BASE_BRANCH" > /dev/null 2>&1
 fi
 
-# Verify worktree structure
-if [ ! -d "$WORKTREE_DIR/elements" ] || [ ! -d "$WORKTREE_DIR/telecine" ] || [ ! -d "$WORKTREE_DIR/scripts" ]; then
-  echo "⚠️  Warning: Worktree structure incomplete. Expected elements/, telecine/, scripts/" >&2
-fi
+# Write scope file
+echo "$SCOPE" > "$WORKTREE_DIR/.worktree-scope"
 
-echo "✅ Worktree created"
-echo ""
-
-# Copy native build artifacts
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "Copying Build Artifacts"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-
-if [ -f "$WORKTREE_DIR/telecine/scripts/copy-native-build" ]; then
-  cd "$WORKTREE_DIR/telecine"
-  ./scripts/copy-native-build 2>&1 | grep -v "^Running:" | sed 's/^/   /' || {
-    echo "   ⚠️  Warning: Failed to copy some build artifacts. You may need to rebuild." >&2
-  }
-  cd "$CURRENT_ROOT"
-else
-  echo "   ⚠️  Warning: copy-native-build script not found. Skipping artifact copy." >&2
-fi
-
-echo ""
-
-# Copy .env files and ensure EF_TOKEN is set
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "Copying Configuration Files"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-
-ENV_COPIED=0
-if [ -f "$CURRENT_ROOT/telecine/.env" ]; then
-  if cp "$CURRENT_ROOT/telecine/.env" "$WORKTREE_DIR/telecine/.env" 2>/dev/null; then
-    echo "   ✅ telecine/.env"
-    ENV_COPIED=$((ENV_COPIED + 1))
-  else
-    echo "   ⚠️  Failed to copy telecine/.env" >&2
-  fi
-fi
-
-# Handle elements/.env - copy if exists, then ensure EF_TOKEN and EF_HOST are set
+# 2. Copy .env files
 if [ -f "$CURRENT_ROOT/elements/.env" ]; then
-  if cp "$CURRENT_ROOT/elements/.env" "$WORKTREE_DIR/elements/.env" 2>/dev/null; then
-    echo "   ✅ elements/.env (copied)"
-    ENV_COPIED=$((ENV_COPIED + 1))
-  else
-    echo "   ⚠️  Failed to copy elements/.env" >&2
-    # Create empty file if copy failed
-    touch "$WORKTREE_DIR/elements/.env"
-  fi
-else
-  # Create elements/.env if it doesn't exist
-  touch "$WORKTREE_DIR/elements/.env"
+  cp "$CURRENT_ROOT/elements/.env" "$WORKTREE_DIR/elements/.env" 2>/dev/null || true
 fi
 
-# Generate EF_TOKEN for the new worktree from its own database
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "Configuring EF_TOKEN"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-
-NEW_ELEMENTS_ENV="$WORKTREE_DIR/elements/.env"
-
-# Check if new worktree already has EF_TOKEN
-EF_TOKEN=""
-if [ -f "$NEW_ELEMENTS_ENV" ]; then
-  EF_TOKEN=$(grep -E "^EF_TOKEN=" "$NEW_ELEMENTS_ENV" | cut -d'=' -f2- | sed 's/^"//;s/"$//' | sed "s/^'//;s/'$//")
+if [ "$SCOPE" != "elements" ] && [ -f "$CURRENT_ROOT/telecine/.env" ]; then
+  cp "$CURRENT_ROOT/telecine/.env" "$WORKTREE_DIR/telecine/.env" 2>/dev/null || true
 fi
 
-# If no EF_TOKEN found, generate one from the new worktree's database
-if [ -z "$EF_TOKEN" ]; then
-  echo "   Generating forever token for collin@editframe.com (from worktree database)..."
+# 3. Copy native build artifacts (needed for telecine scopes)
+if [ "$SCOPE" != "elements" ] && [ -f "$WORKTREE_DIR/telecine/scripts/copy-native-build" ]; then
   cd "$WORKTREE_DIR/telecine"
-  
-  # Source worktree config to get docker project name and database
-  . scripts/worktree-config > /dev/null 2>&1 || true
-  
-  # Start runner if not already running (needed for database access)
-  NEW_RUNNER_NAME="${WORKTREE_DOCKER_PROJECT_NAME:-telecine}-runner"
-  
-  if ! docker ps --format '{{.Names}}' | grep -q "^${NEW_RUNNER_NAME}$"; then
-    ./scripts/docker-compose up -d runner > /dev/null 2>&1 || true
-    sleep 2
-  fi
-  
-  # Generate token (will use POSTGRES_DB from worktree-config)
-  EF_TOKEN=$(./scripts/run node --import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./loader.js", pathToFileURL("./"));' scripts/generate-forever-token.ts 2>&1 | tail -n1)
-  
-  if [ -z "$EF_TOKEN" ] || echo "$EF_TOKEN" | grep -q "Error"; then
-    echo "   ⚠️  Failed to generate token. You may need to set EF_TOKEN manually." >&2
-    EF_TOKEN=""
-  else
-    echo "   ✅ Token generated"
-  fi
+  ./scripts/copy-native-build > /dev/null 2>&1 || true
   cd "$CURRENT_ROOT"
-else
-  echo "   ✅ Using existing EF_TOKEN from worktree"
 fi
 
-# Update new worktree's elements/.env with EF_TOKEN, EF_HOST, and VITEST_BROWSER_MODE
-if [ -n "$EF_TOKEN" ]; then
-  # Create elements/.env if it doesn't exist
-  if [ ! -f "$NEW_ELEMENTS_ENV" ]; then
-    touch "$NEW_ELEMENTS_ENV"
-  fi
-  
-  # Determine telecine web container name for EF_HOST
-  # Pattern: {telecine-project-name}-web-1
-  TELECINE_WEB_HOST="http://telecine-web-1:3000"
-  
-  # Check telecine worktree config to determine container name
-  if [ -d "$WORKTREE_DIR/telecine" ] && [ -f "$WORKTREE_DIR/telecine/scripts/worktree-config" ]; then
-    cd "$WORKTREE_DIR/telecine"
-    if . scripts/worktree-config > /dev/null 2>&1; then
-      # Use the telecine worktree's docker project name to construct container name
-      # Docker Compose creates containers as {project-name}-{service}-{instance}
-      if [ "$WORKTREE_ID" != "main" ]; then
-        TELECINE_WEB_HOST="http://telecine-${WORKTREE_ID}-web-1:3000"
-      fi
-    fi
-    cd "$CURRENT_ROOT"
-  fi
-  
-  # Remove existing lines if present
-  grep -v "^EF_TOKEN=" "$NEW_ELEMENTS_ENV" > "$NEW_ELEMENTS_ENV.tmp" 2>/dev/null || true
-  grep -v "^EF_HOST=" "$NEW_ELEMENTS_ENV.tmp" > "$NEW_ELEMENTS_ENV.tmp2" 2>/dev/null || true
-  grep -v "^VITEST_BROWSER_MODE=" "$NEW_ELEMENTS_ENV.tmp2" > "$NEW_ELEMENTS_ENV.tmp" 2>/dev/null || true
-  mv "$NEW_ELEMENTS_ENV.tmp" "$NEW_ELEMENTS_ENV"
-  
-  # Add required variables
-  echo "EF_TOKEN=\"$EF_TOKEN\"" >> "$NEW_ELEMENTS_ENV"
-  echo "EF_HOST=\"$TELECINE_WEB_HOST\"" >> "$NEW_ELEMENTS_ENV"
-  echo "VITEST_BROWSER_MODE=\"connect\"" >> "$NEW_ELEMENTS_ENV"
-  
-  echo "   ✅ Updated elements/.env with EF_TOKEN, EF_HOST, and VITEST_BROWSER_MODE"
-fi
-
-if [ $ENV_COPIED -eq 0 ] && [ -z "$EF_TOKEN" ]; then
-  echo "   ℹ️  No .env files found to copy and token generation failed"
-fi
-
-# Copy dev-projects directory (gitignored, needed for dev server)
+# Copy dev-projects (gitignored, needed for elements dev server)
 if [ -d "$CURRENT_ROOT/elements/dev-projects" ]; then
-  if [ ! -d "$WORKTREE_DIR/elements/dev-projects" ]; then
-    mkdir -p "$WORKTREE_DIR/elements/dev-projects"
-  fi
-  if cp -r "$CURRENT_ROOT/elements/dev-projects"/* "$WORKTREE_DIR/elements/dev-projects/" 2>/dev/null; then
-    echo "   ✅ elements/dev-projects (gitignored files)"
+  mkdir -p "$WORKTREE_DIR/elements/dev-projects"
+  cp -r "$CURRENT_ROOT/elements/dev-projects"/* "$WORKTREE_DIR/elements/dev-projects/" 2>/dev/null || true
+fi
+
+# 4. Ensure shared infrastructure is running
+if ! docker network inspect editframe-shared > /dev/null 2>&1; then
+  echo "Starting shared infrastructure..."
+  cd "$PROJECT_ROOT"
+  docker compose --project-name editframe up -d > /dev/null 2>&1
+  cd "$CURRENT_ROOT"
+fi
+
+# 5. Database setup (for web/render scopes)
+if [ "$SCOPE" != "elements" ]; then
+  WORKTREE_DATABASE="telecine-${SANITIZED_BRANCH}"
+
+  # Check if template exists
+  TEMPLATE_EXISTS=$(docker exec editframe-postgres psql -U postgres -tAc "SELECT 1 FROM pg_database WHERE datname = 'telecine-template'" 2>/dev/null)
+
+  if [ "$TEMPLATE_EXISTS" = "1" ]; then
+    echo "Cloning database from template..."
+    docker exec editframe-postgres psql -U postgres \
+      -c "CREATE DATABASE \"$WORKTREE_DATABASE\" TEMPLATE \"telecine-template\";" \
+      > /dev/null 2>&1
   else
-    echo "   ⚠️  Failed to copy elements/dev-projects (may be empty)" >&2
+    echo "No template database found. Database will be created on first docker-compose run."
   fi
 fi
 
-echo ""
+# 6. Start elements runner and install dependencies
+echo "Starting elements runner..."
+cd "$WORKTREE_DIR/elements"
+./scripts/docker-compose up -d runner > /dev/null 2>&1
 
-# Start Docker resources (this creates volumes, then we can copy node_modules)
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "Starting Services"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
+echo "Installing elements dependencies..."
+./scripts/npm install > /dev/null 2>&1
 
-if [ ! -f "$WORKTREE_DIR/scripts/start" ]; then
-  echo "⚠️  Warning: start script not found. Skipping service startup." >&2
-else
-  cd "$WORKTREE_DIR"
-  
-  # Start runner services first to create volumes
-  echo "Creating volumes and starting runners..."
-  cd telecine
-  ./scripts/docker-compose up -d runner > /dev/null 2>&1 || true
-  cd "$WORKTREE_DIR/elements"
-  ./scripts/docker-compose up -d runner > /dev/null 2>&1 || true
-  sleep 2
-  cd "$WORKTREE_DIR"
-  
-  # Now copy node_modules from main worktree volumes
-  echo ""
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo "Copying Dependencies"
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo ""
-  
-  # Function to copy between Docker volumes
-  copy_docker_volume() {
-    local source_volume="$1"
-    local target_volume="$2"
-    local mount_path="$3"
-    
-    # Check if source volume exists
-    if ! docker volume inspect "$source_volume" > /dev/null 2>&1; then
-      echo "   ℹ️  Source volume not found (will install on first run)"
-      return 0
-    fi
-    
-    # Check if target volume exists (created by docker-compose)
-    if ! docker volume inspect "$target_volume" > /dev/null 2>&1; then
-      echo "   ℹ️  Target volume not created yet (will install on first run)"
-      return 0
-    fi
-    
-    # Use a temporary container to copy between volumes
-    # Mount both volumes and copy from source to target
-    # Create target directory first, then copy contents
-    docker run --rm \
-      -v "$source_volume:/source$mount_path:ro" \
-      -v "$target_volume:/target$mount_path" \
-      alpine:latest \
-      sh -c "mkdir -p /target$mount_path && if [ -d \"/source$mount_path\" ] && [ \"\$(ls -A /source$mount_path 2>/dev/null)\" ]; then cp -a \"/source$mount_path/\"* \"/target$mount_path/\" 2>/dev/null; fi" \
-      > /dev/null 2>&1 || true
-    
-    echo "   ✅ Copied"
-  }
-  
-  # Determine main worktree Docker project names
-  if [ "$CURRENT_BRANCH" = "main" ] || [ "$CURRENT_BRANCH" = "master" ]; then
-    MAIN_TELECINE_PROJECT="telecine"
-    MAIN_ELEMENTS_PROJECT="ef-elements"
-  else
-    # If creating from a worktree, try to detect main worktree project names
-    MAIN_TELECINE_PROJECT="telecine"
-    MAIN_ELEMENTS_PROJECT="ef-elements"
-  fi
-  
-  # Determine new worktree Docker project names
-  if [ "$BRANCH_NAME" = "main" ] || [ "$BRANCH_NAME" = "master" ]; then
-    NEW_TELECINE_PROJECT="telecine"
-    NEW_ELEMENTS_PROJECT="ef-elements"
-  else
-    NEW_TELECINE_PROJECT="telecine-${SANITIZED_BRANCH}"
-    NEW_ELEMENTS_PROJECT="ef-elements-${SANITIZED_BRANCH}"
-  fi
-  
-  # Copy telecine node_modules
-  MAIN_TELECINE_VOLUME="${MAIN_TELECINE_PROJECT}_node_modules"
-  NEW_TELECINE_VOLUME="${NEW_TELECINE_PROJECT}_node_modules"
-  echo -n "   telecine/node_modules ... "
-  copy_docker_volume "$MAIN_TELECINE_VOLUME" "$NEW_TELECINE_VOLUME" "/app/node_modules"
-  
-  # Copy elements node_modules
-  MAIN_ELEMENTS_VOLUME="${MAIN_ELEMENTS_PROJECT}_node_modules"
-  NEW_ELEMENTS_VOLUME="${NEW_ELEMENTS_PROJECT}_node_modules"
-  echo -n "   elements/node_modules ... "
-  copy_docker_volume "$MAIN_ELEMENTS_VOLUME" "$NEW_ELEMENTS_VOLUME" "/packages/node_modules"
-  
-  echo ""
-  
-  # Now run the full start script
-  set +e  # Temporarily disable exit on error
-  ./scripts/start
-  START_EXIT_CODE=$?
-  set -e  # Re-enable exit on error
-  
-  if [ $START_EXIT_CODE -ne 0 ]; then
-    echo ""
-    echo "⚠️  Warning: Some services may have failed to start." >&2
-    echo "   Check logs and start manually if needed:" >&2
-    echo "   cd $WORKTREE_DIR && ./scripts/start" >&2
-  fi
-fi
-
+echo "Starting elements dev server..."
+./scripts/docker-compose up -d dev-projects > /dev/null 2>&1
 cd "$CURRENT_ROOT"
 
-# Calculate domain and docker project names
+# 8. Start telecine containers (for web/render scopes)
+if [ "$SCOPE" != "elements" ]; then
+  # Set profile based on scope
+  case "$SCOPE" in
+    web)    export COMPOSE_PROFILES="" ;;
+    render) export COMPOSE_PROFILES="render" ;;
+  esac
+
+  # Start telecine runner and install dependencies first
+  echo "Starting telecine runner..."
+  cd "$WORKTREE_DIR/telecine"
+  ./scripts/docker-compose up -d runner > /dev/null 2>&1
+
+  echo "Installing telecine dependencies..."
+  ./scripts/npm install > /dev/null 2>&1
+
+  echo "Starting telecine services ($SCOPE)..."
+  ./scripts/docker-compose up -d > /dev/null 2>&1
+  cd "$CURRENT_ROOT"
+
+  # Run delta migrations if template was used (applies only new branch-specific migrations)
+  if [ "$TEMPLATE_EXISTS" = "1" ]; then
+    echo "Applying delta migrations..."
+    cd "$WORKTREE_DIR/telecine"
+    ./scripts/migrate-db > /dev/null 2>&1 || true
+    cd "$CURRENT_ROOT"
+  else
+    # No template: run full migrations + seed
+    echo "Running full migrations and seed..."
+    cd "$WORKTREE_DIR/telecine"
+    ./scripts/migrate-db > /dev/null 2>&1 || true
+    ./scripts/seed > /dev/null 2>&1 || true
+    cd "$CURRENT_ROOT"
+  fi
+
+  # Generate EF_TOKEN for elements to talk to this worktree's telecine
+  TELECINE_PROJECT_NAME="telecine-${SANITIZED_BRANCH}"
+  cd "$WORKTREE_DIR/telecine"
+  . scripts/worktree-config > /dev/null 2>&1 || true
+
+  EF_TOKEN=$(./scripts/run node \
+    --import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./loader.js", pathToFileURL("./"));' \
+    scripts/generate-forever-token.ts 2>&1 | tail -n1) || true
+  cd "$CURRENT_ROOT"
+
+  if [ -n "$EF_TOKEN" ] && ! echo "$EF_TOKEN" | grep -q "Error"; then
+    ELEMENTS_ENV="$WORKTREE_DIR/elements/.env"
+    # Determine telecine web container host
+    TELECINE_WEB_HOST="http://telecine-${SANITIZED_BRANCH}-web-1:3000"
+
+    # Remove existing lines if present, then add
+    grep -v "^EF_TOKEN=\|^EF_HOST=\|^VITEST_BROWSER_MODE=" "$ELEMENTS_ENV" > "$ELEMENTS_ENV.tmp" 2>/dev/null || true
+    mv "$ELEMENTS_ENV.tmp" "$ELEMENTS_ENV"
+    echo "EF_TOKEN=\"$EF_TOKEN\"" >> "$ELEMENTS_ENV"
+    echo "EF_HOST=\"$TELECINE_WEB_HOST\"" >> "$ELEMENTS_ENV"
+    echo "VITEST_BROWSER_MODE=\"connect\"" >> "$ELEMENTS_ENV"
+  fi
+fi
+
+# Calculate display info
 if [ "$BRANCH_NAME" = "main" ] || [ "$BRANCH_NAME" = "master" ]; then
   DOMAIN="main.localhost"
-  TELECINE_DOCKER="telecine"
-  ELEMENTS_DOCKER="ef-elements"
 else
   DOMAIN="${SANITIZED_BRANCH}.localhost"
-  TELECINE_DOCKER="telecine-${SANITIZED_BRANCH}"
-  ELEMENTS_DOCKER="ef-elements-${SANITIZED_BRANCH}"
 fi
 
-# Calculate ports for display
-if [ "$BRANCH_NAME" != "main" ] && [ "$BRANCH_NAME" != "master" ]; then
-  # Calculate port offset
-  PORT_HASH=$(echo -n "$BRANCH_NAME" | od -An -tu1 | awk '{sum += $1} END {print sum % 10}')
-  PORT_OFFSET=$((PORT_HASH * 1000))
-  POSTGRES_PORT=$((5432 + PORT_OFFSET))
-  VALKEY_PORT=$((6379 + PORT_OFFSET))
-else
-  POSTGRES_PORT=5432
-  VALKEY_PORT=6379
+echo ""
+echo "Worktree created: $BRANCH_NAME (scope: $SCOPE)"
+echo "  Location:  $WORKTREE_DIR"
+if [ "$SCOPE" != "elements" ]; then
+  echo "  Telecine:  http://${DOMAIN}:3000"
 fi
-
-# Display summary
+echo "  Elements:  http://${DOMAIN}:4321"
 echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "✅ Worktree Created Successfully"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Lifecycle:"
+echo "  Pause:     scripts/pause-worktree $BRANCH_NAME"
+echo "  Resume:    scripts/resume-worktree $BRANCH_NAME"
+if [ "$SCOPE" = "elements" ]; then
+  echo "  Upgrade:   scripts/upgrade-worktree $BRANCH_NAME web"
+elif [ "$SCOPE" = "web" ]; then
+  echo "  Upgrade:   scripts/upgrade-worktree $BRANCH_NAME render"
+fi
+echo "  Merge:     scripts/merge-worktree $BRANCH_NAME"
+echo "  Remove:    scripts/remove-worktree $BRANCH_NAME"
 echo ""
-echo "   Branch:        $BRANCH_NAME"
-echo "   Location:      $WORKTREE_DIR"
-echo ""
-echo "   Web Services:"
-echo "      Telecine:   http://${DOMAIN}:3000"
-echo "      Elements:   http://${DOMAIN}:4321"
-echo ""
-echo "   Database Ports (for host tools):"
-echo "      PostgreSQL: localhost:$POSTGRES_PORT"
-echo "      Valkey:     localhost:$VALKEY_PORT"
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-echo "Next steps:"
-echo "   1. cd $WORKTREE_DIR"
-echo "   2. Make your changes and commit"
-echo "   3. ./scripts/merge-worktree  (when ready to merge)"
-echo "   4. ./scripts/remove-worktree (after merging)"
-echo ""
-

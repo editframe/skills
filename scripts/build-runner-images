@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Build shared runner images used by all worktrees.
+# Run from main worktree when Dockerfiles change.
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_ROOT="$SCRIPT_DIR/.."
+
+echo "Building telecine-runner..."
+docker build -f "$PROJECT_ROOT/telecine/Dockerfile.runner" -t telecine-runner "$PROJECT_ROOT/telecine"
+
+echo ""
+echo "Building elements-runner..."
+docker build -t elements-runner "$PROJECT_ROOT/elements"
+
+echo ""
+echo "Done. Images built:"
+docker images --format '  {{.Repository}}:{{.Tag}}  {{.Size}}  ({{.CreatedSince}})' telecine-runner elements-runner

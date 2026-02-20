@@ -1,5 +1,6 @@
 services:
   jit-transcode-go:
+    profiles: ["render"]
     build:
       context: .
       dockerfile: services/jit-transcode-go/Dockerfile.dev

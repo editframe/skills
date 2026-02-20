@@ -3,42 +3,58 @@ set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 PROJECT_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
+WORKTREE_ROOT=$(cd "$PROJECT_ROOT" && git rev-parse --show-toplevel 2>/dev/null || echo "$PROJECT_ROOT/..")
 
-# Change to project root so npm install runs in the correct directory
+# Read scope from worktree config, default to render,dev for main
+SCOPE_FILE="$WORKTREE_ROOT/.worktree-scope"
+if [ -f "$SCOPE_FILE" ]; then
+  SCOPE=$(cat "$SCOPE_FILE")
+else
+  SCOPE="render"
+fi
+
+# Set Docker Compose profiles from scope
+case "$SCOPE" in
+  elements) echo "Scope is elements-only; skipping telecine start."; exit 0 ;;
+  web)      export COMPOSE_PROFILES="" ;;
+  render)   export COMPOSE_PROFILES="render" ;;
+  *)        export COMPOSE_PROFILES="render,dev" ;;
+esac
+
 cd "$PROJECT_ROOT"
 
-# Ensure docker services are started (needed for runner service to be available)
+# Start runner container
 echo "Starting runner container..."
 ${SCRIPT_DIR}/docker-compose up -d runner
-# Wait for runner to be ready
 sleep 2
 
-# Run npm install in the container
+# Install dependencies
 echo "Running npm install in container..."
 ${SCRIPT_DIR}/npm install
 
-# Build native transcode module (required for jit-transcoding service)
-# Check if build already exists (may have been copied from main worktree)
-# PROJECT_ROOT is telecine/, so check lib/transcode relative to that
+# Build native transcode module if needed
 TRANCODE_BUILD="$PROJECT_ROOT/lib/transcode/build/Release/playback.node"
 if [ ! -f "$TRANCODE_BUILD" ]; then
   echo "Building native transcode module in container..."
-  # Clean build directory to avoid CMake cache path mismatches
   ${SCRIPT_DIR}/docker-compose exec runner rm -rf lib/transcode/build
   ${SCRIPT_DIR}/docker-compose exec runner npm run build
 else
   echo "Native transcode module build already exists (copied from main worktree)"
 fi
 
-# Start docker services (all services needed for migrations)
-# The docker-compose wrapper script handles finding all compose files automatically
+# Start services (no --build since images are pre-built)
 . "$SCRIPT_DIR/worktree-config"
 
-${SCRIPT_DIR}/docker-compose up --build -d --force-recreate --wait
+${SCRIPT_DIR}/docker-compose up -d --force-recreate --wait
 
-# Wait a moment for volumes to be fully mounted and services to be ready
 sleep 2
 
 # Run migrations and seed
 ${SCRIPT_DIR}/migrate-db
 ${SCRIPT_DIR}/seed
+
+# Update template database on main so new worktrees get a fresh clone
+. "$SCRIPT_DIR/worktree-config"
+if [ "$WORKTREE_ID" = "main" ]; then
+  "$SCRIPT_DIR/../../scripts/update-template-db" 2>/dev/null || true
+fi

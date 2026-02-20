@@ -13,11 +13,8 @@ services:
   #     - /var/run/docker.sock:/var/run/docker.sock
 
   runner:
-    build:
-      context: ./
-      dockerfile: Dockerfile.runner
-      tags:
-        - telecine-runner
+    image: telecine-runner
+    pull_policy: never
     env_file:
       - ${PWD}/.env
     restart: no

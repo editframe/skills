@@ -1,5 +1,6 @@
 services:
   otel-viewer:
+    profiles: ["dev"]
     image: telecine-runner
     pull_policy: never
     working_dir: /app/services/otel-viewer

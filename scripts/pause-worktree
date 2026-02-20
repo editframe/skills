@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Stop all containers for a worktree without removing them.
+# Containers preserve state and resume in seconds.
+#
+# Usage: pause-worktree [branch-name]
+#   If branch-name is omitted, uses the current branch.
+
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# Find worktree root
+if [ -n "$1" ]; then
+  BRANCH_NAME="$1"
+  WORKTREE_ROOT=""
+  while IFS= read -r line; do
+    if [[ "$line" =~ ^worktree[[:space:]]+(.+)$ ]]; then
+      WORKTREE_ROOT="${BASH_REMATCH[1]}"
+    elif [[ "$line" =~ ^branch[[:space:]]+refs/heads/(.+)$ ]]; then
+      if [ "${BASH_REMATCH[1]}" = "$BRANCH_NAME" ]; then
+        break
+      fi
+      WORKTREE_ROOT=""
+    fi
+  done < <(git worktree list --porcelain)
+  if [ -z "$WORKTREE_ROOT" ]; then
+    echo "Error: Could not find worktree for branch '$BRANCH_NAME'" >&2
+    exit 1
+  fi
+else
+  WORKTREE_ROOT=$(git rev-parse --show-toplevel)
+  BRANCH_NAME=$(git branch --show-current 2>/dev/null)
+fi
+
+SCOPE="elements"
+if [ -f "$WORKTREE_ROOT/.worktree-scope" ]; then
+  SCOPE=$(cat "$WORKTREE_ROOT/.worktree-scope")
+fi
+
+echo "Pausing worktree: $BRANCH_NAME (scope: $SCOPE)"
+
+# Stop telecine containers
+if [ "$SCOPE" != "elements" ] && [ -f "$WORKTREE_ROOT/telecine/scripts/docker-compose" ]; then
+  cd "$WORKTREE_ROOT/telecine"
+  ./scripts/docker-compose stop > /dev/null 2>&1 || true
+fi
+
+# Stop elements containers
+if [ -f "$WORKTREE_ROOT/elements/scripts/docker-compose" ]; then
+  cd "$WORKTREE_ROOT/elements"
+  ./scripts/docker-compose stop > /dev/null 2>&1 || true
+fi
+
+echo "Paused. Resume with: scripts/resume-worktree $BRANCH_NAME"
