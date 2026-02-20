@@ -122,25 +122,9 @@ export const buildViteConfig = () => {
       ],
       build: {
         target: "es2022",
-        modulePreload: { polyfill: false },
         rollupOptions: {
           treeshake: "recommended",
           input: isSsrBuild ? "/app/services/web/server/app.ts" : undefined,
-          ...(!isSsrBuild ? {
-            output: {
-              manualChunks(id) {
-                if (id.includes("node_modules/three/") || id.includes("node_modules/@react-three/")) {
-                  return "vendor-three";
-                }
-                if (id.includes("node_modules/@editframe/") || id.includes("/elements/src/")) {
-                  return "vendor-editframe";
-                }
-                if (id.includes("node_modules/@phosphor-icons/")) {
-                  return "vendor-icons";
-                }
-              },
-            },
-          } : {}),
         },
       },
     };
