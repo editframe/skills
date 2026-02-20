@@ -43,7 +43,6 @@ export const cloudrun = new gcp.cloudrunv2.Service(
           envs: [
             envFromValue("VALKEY_HOST", valkeyInternalIp),
             envFromValue("VALKEY_PORT", "6379"),
-            envFromValue("PORT", "3000"),
             workerUrlEnv(workerConfigs.htmlInitializer, workers.htmlInitializer),
             workerUrlEnv(workerConfigs.htmlFinalizer, workers.htmlFinalizer),
             workerUrlEnv(workerConfigs.renderInitializer, workers.renderInitializer),
@@ -60,7 +59,7 @@ export const cloudrun = new gcp.cloudrunv2.Service(
             ...queueLimitEnvs(workerConfigs.ingestImage),
           ],
           ports: {
-            containerPort: 3000,
+            containerPort: 8080,
             name: "http1",
           },
           resources: {
@@ -74,14 +73,14 @@ export const cloudrun = new gcp.cloudrunv2.Service(
             periodSeconds: 5,
             httpGet: {
               path: "/health",
-              port: 3000,
+              port: 8080,
             },
             timeoutSeconds: 5,
           },
           livenessProbe: {
             httpGet: {
               path: "/health",
-              port: 3000,
+              port: 8080,
             },
           },
         },
