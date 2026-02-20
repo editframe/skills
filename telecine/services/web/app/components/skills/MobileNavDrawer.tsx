@@ -61,7 +61,7 @@ export function MobileNavDrawer({
         aria-modal="true"
       >
         {/* SkillPicker column */}
-        <div className="w-[180px] flex-shrink-0 flex flex-col">
+        <div className="w-[180px] flex-shrink-0 min-h-0 overflow-y-auto">
           <SkillPicker
             allSkills={allSkills}
             currentSkill={currentSkill}
@@ -72,7 +72,7 @@ export function MobileNavDrawer({
 
         {/* ReferenceNav column — only shown when inside a skill */}
         {currentSkill && navTree.length > 0 && (
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 min-h-0 overflow-y-auto">
             <ReferenceNav
               skillName={currentSkill}
               currentReference={currentReference}
