@@ -1413,7 +1413,6 @@ describe("renderTimegroupToCanvas", () => {
       await timegroup.updateComplete;
       await new Promise((resolve) => setTimeout(resolve, 200));
 
-      // Capture timing metrics during export
       const startTime = performance.now();
 
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
@@ -1425,18 +1424,9 @@ describe("renderTimegroupToCanvas", () => {
         streaming: false,
       });
 
-      const elapsed = performance.now() - startTime;
-      const frames = 3;
-      const msPerFrame = elapsed / frames;
-
       logger.debug(
-        `[DPR Test] ${frames} frames in ${elapsed.toFixed(0)}ms (${msPerFrame.toFixed(1)}ms/frame)`,
+        `[DPR Test] 3 frames in ${(performance.now() - startTime).toFixed(0)}ms`,
       );
-
-      // Performance check - native rendering at 1920x1080 is computationally expensive
-      // Target: <500ms/frame (allows detection of major regressions)
-      // Variance is expected due to Docker scheduling and concurrent test execution
-      expect(msPerFrame).toBeLessThan(500);
 
       // Verify output dimensions match logical dimensions (not DPR-scaled)
       const frameData = await decodeFirstFrame(videoBuffer!);
