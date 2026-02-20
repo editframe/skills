@@ -114,10 +114,8 @@ describe("makeMediaEngineTask", () => {
     );
 
     testWithElement(
-      "should create media engine for remote URLs with cloud configuration",
+      "should create media engine for remote URLs with configuration",
       async ({ element, configuration, expect }) => {
-        configuration.setAttribute("media-engine", "cloud");
-        (configuration as any).mediaEngine = "cloud";
         document.body.appendChild(configuration);
         configuration.appendChild(element);
 

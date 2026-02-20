@@ -10,24 +10,6 @@ export interface TimingModel {
 }
 
 /**
- * For fragmented MP4 served as JIT-style segments (AssetMediaEngine).
- * mediabunny sees absolute timestamps from the container (tfdt baseMediaDecodeTime),
- * so we add startTimeOffsetMs to map user timeline to container timeline.
- */
-export function createFragmentTiming(): TimingModel {
-  return {
-    toContainerSeconds(
-      timeMs: number,
-      _segmentId: number,
-      track: TrackRef,
-    ): number {
-      const startTimeOffsetMs = track.startTimeOffsetMs || 0;
-      return (timeMs + startTimeOffsetMs) / 1000;
-    },
-  };
-}
-
-/**
  * For byte-range sliced segments from full track files (FileMediaEngine).
  * mediabunny sees segment-relative timestamps since we sliced at segment boundaries,
  * so we subtract the segment's CTS to get relative time.

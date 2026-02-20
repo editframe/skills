@@ -263,11 +263,10 @@ describe("Media Engine Selection", () => {
     video.remove();
   });
 
-  test("creates media engine for remote URLs when configured with media-engine='cloud'", async ({
+  test("creates media engine for remote URLs when wrapped in configuration with api-host", async ({
     configuration,
     expect,
   }) => {
-    configuration.setAttribute("media-engine", "cloud");
     const video = document.createElement("ef-video");
     video.src = remoteSrc;
     configuration.appendChild(video);
@@ -281,7 +280,6 @@ describe("Media Engine Selection", () => {
     configuration,
     expect,
   }) => {
-    configuration.setAttribute("media-engine", "cloud");
     const video = document.createElement("ef-video");
     video.src = localSrc;
     configuration.appendChild(video);

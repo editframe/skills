@@ -101,7 +101,6 @@ async function collectJsonBody<T>(req: IncomingMessage): Promise<T> {
 
 // In-memory mapping of MD5 -> file path for API route handling
 
-
 export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
   return {
     name: "vite-plugin-editframe",
@@ -109,7 +108,11 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
     configureServer(server) {
       // Register JIT transcode middleware first (shared with production)
       const jitTranscodeMiddleware = createJitTranscodeMiddleware(
-        { root: options.root, cacheRoot: options.cacheRoot, handleRemoteUrls: options.handleRemoteUrls },
+        {
+          root: options.root,
+          cacheRoot: options.cacheRoot,
+          handleRemoteUrls: options.handleRemoteUrls,
+        },
         {
           generateTrack,
           generateScrubTrack,
@@ -144,8 +147,11 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
           return;
         }
 
-        const isRemote = src.startsWith("http://") || src.startsWith("https://");
-        const absolutePath = isRemote ? src : path.join(options.root, src).replace("dist/", "src/");
+        const isRemote =
+          src.startsWith("http://") || src.startsWith("https://");
+        const absolutePath = isRemote
+          ? src
+          : path.join(options.root, src).replace("dist/", "src/");
 
         log(`Handling assets API: ${urlPath} src=${src}`);
 
@@ -158,19 +164,27 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                 res.end();
                 return;
               }
-              const contentType = response.headers.get("content-type") ?? "application/octet-stream";
+              const contentType =
+                response.headers.get("content-type") ??
+                "application/octet-stream";
               const buffer = await response.arrayBuffer();
               res.writeHead(200, { "Content-Type": contentType });
               res.end(Buffer.from(buffer));
             } else {
-              const taskResult = await cacheImage(options.cacheRoot, absolutePath);
+              const taskResult = await cacheImage(
+                options.cacheRoot,
+                absolutePath,
+              );
               sendTaskResult(req, res, taskResult);
             }
             return;
           }
 
           if (urlPath === "/api/v1/assets/captions") {
-            const taskResult = await findOrCreateCaptions(options.cacheRoot, absolutePath);
+            const taskResult = await findOrCreateCaptions(
+              options.cacheRoot,
+              absolutePath,
+            );
             sendTaskResult(req, res, taskResult);
             return;
           }

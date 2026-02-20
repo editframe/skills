@@ -20,7 +20,6 @@ import {
 import {
   type TimingModel,
   createByteRangeTiming,
-  createFragmentTiming,
   createJitTiming,
 } from "./TimingModel.js";
 
@@ -86,25 +85,14 @@ type IndexData =
       type: "fragment";
       data: Record<number, TrackFragmentIndex>;
       src: string;
-      mode: "url" | "byteRange";
-      apiHost?: string;
-      fileId?: string;
-      templates?: { initSegment: string; mediaSegment: string };
+      apiHost: string;
+      fileId: string;
     }
   | {
       type: "manifest";
       data: ManifestResponse;
       src: string;
     };
-
-export async function fetchFragmentIndex(
-  fetchFn: FetchFn,
-  url: string,
-  signal?: AbortSignal,
-): Promise<Record<number, TrackFragmentIndex>> {
-  const fetcher = new CachedFetcher(fetchFn);
-  return fetcher.fetchJson(url, signal);
-}
 
 export async function fetchFileIndex(
   fetchFn: FetchFn,
@@ -193,53 +181,20 @@ export async function validateTrackAccess(
 // Engine composition from index data
 // ---------------------------------------------------------------------------
 
-function buildSourceUrl(src: string, baseUrl: string): string {
-  if (src.startsWith("http://") || src.startsWith("https://")) {
-    return src;
-  }
-  let base = baseUrl;
-  if (!base) {
-    base = typeof window !== "undefined" ? window.location.origin : "";
-  }
-  const normalizedSrc = src.startsWith("/") ? src : `/${src}`;
-  return `${base}${normalizedSrc}`;
-}
-
 function buildEngineComponents(
   indexData: IndexData,
   fetcher: CachedFetcher,
-  baseUrl: string,
 ): { index: SegmentIndex; transport: SegmentTransport; timing: TimingModel; src: string } {
   switch (indexData.type) {
     case "fragment": {
       const index = createFragmentIndex(indexData.data, indexData.src);
-
-      if (indexData.mode === "byteRange") {
-        const transport = createByteRangeTransport(
-          indexData.data,
-          indexData.fileId!,
-          indexData.apiHost!,
-          fetcher,
-        );
-        const timing = createByteRangeTiming(indexData.data);
-        return { index, transport, timing, src: indexData.src };
-      }
-
-      const sourceUrl = buildSourceUrl(indexData.src, baseUrl);
-      const jitBaseUrl = baseUrl || (typeof window !== "undefined" ? window.location.origin : "");
-      const templates = {
-        initSegment: `${jitBaseUrl}/api/v1/transcode/{rendition}/init.m4s?url=${encodeURIComponent(sourceUrl)}`,
-        mediaSegment: `${jitBaseUrl}/api/v1/transcode/{rendition}/{segmentId}.m4s?url=${encodeURIComponent(sourceUrl)}`,
-      };
-      const transport = createUrlTransport({
+      const transport = createByteRangeTransport(
+        indexData.data,
+        indexData.fileId,
+        indexData.apiHost,
         fetcher,
-        src: sourceUrl,
-        templates,
-        audioTrackId: typeof index.tracks.audio?.id === "number" ? index.tracks.audio.id : undefined,
-        videoTrackId: typeof index.tracks.video?.id === "number" ? index.tracks.video.id : undefined,
-        segmentIdOffset: 1, // Fragment index uses 0-based IDs, JIT URLs expect 1-based
-      });
-      const timing = createFragmentTiming();
+      );
+      const timing = createByteRangeTiming(indexData.data);
       return { index, transport, timing, src: indexData.src };
     }
 
@@ -269,7 +224,6 @@ export interface CreateMediaEngineOptions {
   requiredTracks: "audio" | "video" | "both";
   fetchFn: FetchFn;
   urlGenerator: UrlGenerator;
-  mediaEnginePreference?: "jit" | "local" | "cloud";
   signal?: AbortSignal;
 }
 
@@ -283,16 +237,14 @@ export async function createMediaEngineFromSource(
     requiredTracks,
     fetchFn,
     urlGenerator,
-    mediaEnginePreference,
     signal,
   } = opts;
 
   const fetcher = new CachedFetcher(fetchFn);
-  const baseUrl = urlGenerator.getBaseUrl();
 
   let indexData: IndexData;
 
-  // File-ID mode
+  // File-ID mode: byte-range transport against cloud API
   if (fileId !== null && fileId !== undefined && fileId.trim() !== "") {
     if (!apiHost) {
       throw new Error("API host is required for file-id mode");
@@ -303,54 +255,45 @@ export async function createMediaEngineFromSource(
       type: "fragment",
       data,
       src: fileId,
-      mode: "byteRange",
       apiHost,
       fileId,
     };
   } else if (!src || typeof src !== "string" || src.trim() === "") {
     return undefined;
   } else {
-    const lowerSrc = src.toLowerCase();
-    const isRemoteUrl =
-      lowerSrc.startsWith("http://") || lowerSrc.startsWith("https://");
-
-    if (mediaEnginePreference === "jit") {
-      let manifestSrc = src;
-      if (!isRemoteUrl && apiHost) {
-        const base = apiHost.replace(/\/$/, "");
-        const normalizedPath = src.replace(/^\.\//, "/src/");
-        manifestSrc = `${base}${normalizedPath}`;
-      }
-      const url = urlGenerator.generateManifestUrl(manifestSrc);
-      const manifest = await fetcher.fetchJson(url, signal);
-      signal?.throwIfAborted();
-      indexData = { type: "manifest", data: manifest, src: manifest.sourceUrl };
-    } else if (mediaEnginePreference === "local" || !isRemoteUrl) {
-      let normalizedSrc = src.startsWith("/") ? src.slice(1) : src;
-      normalizedSrc = normalizedSrc.replace(/^\/+/, "");
-      const apiBaseUrl = urlGenerator.getBaseUrl();
-      const url = apiBaseUrl
-        ? `${apiBaseUrl}/api/v1/files/index?src=${encodeURIComponent(normalizedSrc)}`
-        : `/api/v1/files/index?src=${encodeURIComponent(normalizedSrc)}`;
-      const data = await fetcher.fetchJson(url, signal);
-      signal?.throwIfAborted();
-      const finalSrc = src.startsWith("/") ? src.slice(1) : src;
-      indexData = { type: "fragment", data, src: finalSrc, mode: "url" };
-    } else {
-      const url = urlGenerator.generateManifestUrl(src);
-      const manifest = await fetcher.fetchJson(url, signal);
-      signal?.throwIfAborted();
-      indexData = { type: "manifest", data: manifest, src: manifest.sourceUrl };
-    }
+    // Src-based mode: always fetch manifest from the server.
+    // The server decides the transcoding strategy (local ffmpeg or cloud JIT).
+    const manifestSrc = resolveManifestSrc(src, apiHost);
+    const url = urlGenerator.generateManifestUrl(manifestSrc);
+    const manifest = await fetcher.fetchJson(url, signal);
+    signal?.throwIfAborted();
+    indexData = { type: "manifest", data: manifest, src: manifest.sourceUrl };
   }
 
   const { index, transport, timing, src: engineSrc } = buildEngineComponents(
     indexData,
     fetcher,
-    baseUrl,
   );
 
   await validateTrackAccess(transport, index.tracks, requiredTracks, signal);
 
   return createMediaEngine(index, transport, timing, engineSrc);
+}
+
+/**
+ * Resolve a src value to the URL the server should transcode.
+ * - Remote URLs (http/https) pass through as-is
+ * - Local paths are made absolute using apiHost when available
+ */
+function resolveManifestSrc(src: string, apiHost?: string): string {
+  const lower = src.toLowerCase();
+  if (lower.startsWith("http://") || lower.startsWith("https://")) {
+    return src;
+  }
+  if (apiHost) {
+    const base = apiHost.replace(/\/$/, "");
+    const normalizedPath = src.replace(/^\.\//, "/src/");
+    return `${base}${normalizedPath.startsWith("/") ? "" : "/"}${normalizedPath}`;
+  }
+  return src;
 }

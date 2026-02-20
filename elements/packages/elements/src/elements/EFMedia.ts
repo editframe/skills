@@ -477,7 +477,6 @@ export class EFMedia extends EFTargetable(
   ): Promise<MediaEngine | undefined> {
     const { src, fileId, apiHost, requiredTracks } = this;
     const urlGenerator = this.getUrlGenerator();
-    const configuration = this.closest("ef-configuration");
 
     return createMediaEngineFromSource({
       src,
@@ -486,7 +485,6 @@ export class EFMedia extends EFTargetable(
       requiredTracks,
       fetchFn: (url, init) => this.fetch(url, init),
       urlGenerator,
-      mediaEnginePreference: configuration?.mediaEngine,
       signal,
     });
   }

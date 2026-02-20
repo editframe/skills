@@ -32,7 +32,9 @@ const noopAssetFunctions = {
   generateTrackFragmentIndex: vi.fn(),
 };
 
-function makeFragmentIndex(overrides?: Partial<TrackFragmentIndex>): TrackFragmentIndex {
+function makeFragmentIndex(
+  overrides?: Partial<TrackFragmentIndex>,
+): TrackFragmentIndex {
   return {
     type: "video",
     codec: "avc1.640029",
@@ -58,7 +60,15 @@ describe("generateLocalJitManifest", () => {
     tmpDir = path.join(tmpdir(), `ef-jit-test-${Date.now()}`);
     await mkdir(tmpDir, { recursive: true });
     indexPath = path.join(tmpDir, "fragment-index.json");
-    const fragmentIndex = { 1: makeFragmentIndex(), 2: makeFragmentIndex({ type: "audio", codec: "mp4a.40.2", width: undefined, height: undefined }) };
+    const fragmentIndex = {
+      1: makeFragmentIndex(),
+      2: makeFragmentIndex({
+        type: "audio",
+        codec: "mp4a.40.2",
+        width: undefined,
+        height: undefined,
+      }),
+    };
     await writeFile(indexPath, JSON.stringify(fragmentIndex));
   });
 
@@ -93,7 +103,7 @@ describe("generateLocalJitManifest", () => {
 
 describe("createJitTranscodeMiddleware", () => {
   describe("remote URL handling", () => {
-    it("calls next() for remote URLs when handleRemoteUrls is false (default)", async () => {
+    it("calls next() for remote URLs when handleRemoteUrls is false", async () => {
       const middleware = createJitTranscodeMiddleware(
         { root: "/tmp", cacheRoot: "/tmp/cache", handleRemoteUrls: false },
         noopAssetFunctions,

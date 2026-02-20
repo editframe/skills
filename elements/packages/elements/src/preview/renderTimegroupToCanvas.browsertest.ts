@@ -1966,17 +1966,15 @@ describe("clone-timeline video rendition (reproduction)", () => {
    * Regression test: Clone preserves ef-configuration context
    *
    * Ensures createRenderClone() wraps the clone in a cloned ef-configuration element,
-   * so media elements can access configuration settings like media-engine via closest().
-   * Without this, clones would use a different media engine type than the original.
+   * so media elements can access configuration settings like api-host via closest().
    */
-  test("createRenderClone preserves ef-configuration context (media-engine attribute)", async () => {
+  test("createRenderClone preserves ef-configuration context (api-host attribute)", async () => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
 
-    // Use media-engine="local" to force AssetMediaEngine
     render(
       html`
-      <ef-configuration api-host="${apiHost}" signing-url="" media-engine="local">
+      <ef-configuration api-host="${apiHost}" signing-url="">
         <ef-timegroup mode="contain" id="config-loss-test"
           style="width: 800px; height: 450px; background: #1a1a2e;">
           <ef-video src="bars-n-tone.mp4" style="width: 100%; height: 100%; object-fit: contain;"></ef-video>
@@ -1995,10 +1993,10 @@ describe("clone-timeline video rendition (reproduction)", () => {
     const originalVideo = timegroup.querySelector("ef-video") as any;
     const originalConfig = originalVideo.closest("ef-configuration");
     expect(originalConfig).toBeTruthy();
-    expect(originalConfig.mediaEngine).toBe("local");
+    expect(originalConfig.apiHost).toBe(apiHost);
 
     const originalMediaEngine = originalVideo.mediaEngineTask?.value;
-    expect(originalMediaEngine.constructor.name).toBe("AssetMediaEngine");
+    expect(originalMediaEngine).toBeTruthy();
 
     // Create render clone
     const { clone, cleanup } = await timegroup.createRenderClone();
@@ -2010,12 +2008,12 @@ describe("clone-timeline video rendition (reproduction)", () => {
 
       // Clone should have ef-configuration parent with same settings
       expect(clonedConfig).toBeTruthy();
-      expect(clonedConfig.mediaEngine).toBe("local");
+      expect(clonedConfig.apiHost).toBe(apiHost);
 
       const clonedMediaEngine = clonedVideo.mediaEngineTask?.value;
 
-      // Clone should use same media engine type as original
-      expect(clonedMediaEngine.constructor.name).toBe("AssetMediaEngine");
+      // Clone should have a working media engine
+      expect(clonedMediaEngine).toBeTruthy();
     } finally {
       cleanup();
       container.remove();
@@ -2068,18 +2066,15 @@ describe("clone-timeline video rendition (reproduction)", () => {
 
   /**
    * Test that reproduces the local-remote.html configuration:
-   * - media-engine="local" with a remote HTTP URL
-   * - This forces AssetMediaEngine for remote URLs
+   * - remote HTTP URL served via manifest path
    */
-  test("createRenderClone with media-engine=local and remote URL", async () => {
+  test("createRenderClone with remote URL", async () => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
 
-    // This mimics local-remote.html: media-engine="local" + http:// src
-    // The difference is we use a URL that our test infrastructure can serve
     render(
       html`
-      <ef-configuration api-host="${apiHost}" signing-url="" media-engine="local">
+      <ef-configuration api-host="${apiHost}" signing-url="">
         <ef-timegroup mode="contain" id="local-remote-test"
           style="width: 800px; height: 450px; background: #1a1a2e;">
           <ef-video src="${apiHost}/bars-n-tone.mp4" style="width: 100%; height: 100%; object-fit: contain;"></ef-video>

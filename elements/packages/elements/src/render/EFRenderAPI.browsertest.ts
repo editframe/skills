@@ -49,7 +49,7 @@ describe("EFRenderAPI", () => {
 
   it("should return true for isReady when timegroup exists", async () => {
     document.body.innerHTML = `
-      <ef-configuration media-engine="local">
+      <ef-configuration>
         <ef-workbench>
           <ef-timegroup mode="fixed" duration="1s" style="width: 100px; height: 100px; background: red;">
           </ef-timegroup>
@@ -67,7 +67,7 @@ describe("EFRenderAPI", () => {
 
   it("should render to buffer", async () => {
     document.body.innerHTML = `
-      <ef-configuration media-engine="local">
+      <ef-configuration>
         <ef-workbench>
           <ef-timegroup mode="fixed" duration="0.1s" style="width: 100px; height: 100px; background: blue;">
             <ef-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='red'/%3E%3C/svg%3E" style="width: 100px; height: 100px;"></ef-image>
@@ -96,7 +96,7 @@ describe("EFRenderAPI", () => {
 
   it("should stream render chunks via window.onRenderChunk", async () => {
     document.body.innerHTML = `
-      <ef-configuration media-engine="local">
+      <ef-configuration>
         <ef-workbench>
           <ef-timegroup mode="fixed" duration="0.1s" style="width: 100px; height: 100px; background: green;">
             <ef-image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='yellow'/%3E%3C/svg%3E" style="width: 100px; height: 100px;"></ef-image>
@@ -145,7 +145,7 @@ describe("EFRenderAPI", () => {
 
   it("should throw error when renderStreaming called without onRenderChunk", async () => {
     document.body.innerHTML = `
-      <ef-configuration media-engine="local">
+      <ef-configuration>
         <ef-workbench>
           <ef-timegroup mode="fixed" duration="0.1s" style="width: 100px; height: 100px;">
           </ef-timegroup>
@@ -171,7 +171,7 @@ describe("EFRenderAPI", () => {
 
   it("should get render info", async () => {
     document.body.innerHTML = `
-      <ef-configuration media-engine="local">
+      <ef-configuration>
         <ef-workbench>
           <ef-timegroup mode="fixed" duration="2s" style="width: 200px; height: 150px;">
           </ef-timegroup>
@@ -195,7 +195,7 @@ describe("EFRenderAPI", () => {
 
   it("should hide workbench UI during render", async () => {
     document.body.innerHTML = `
-      <ef-configuration media-engine="local">
+      <ef-configuration>
         <ef-workbench>
           <ef-timegroup mode="fixed" duration="0.1s" style="width: 100px; height: 100px;">
           </ef-timegroup>
