@@ -16,6 +16,8 @@ import { useTheme } from "~/hooks/useTheme";
 import { SkillsLayout } from "~/components/skills/SkillsLayout";
 import { SkillPicker, ReferenceNav } from "~/components/skills/SkillsSidebar";
 import { OnThisPage } from "~/components/skills/OnThisPage";
+import { MobileBreadcrumbBar } from "~/components/skills/MobileBreadcrumbBar";
+import { MobileTocButton } from "~/components/skills/MobileTocButton";
 
 export const meta = ({ data }: Route.MetaArgs) => {
   if (!data) {
@@ -166,7 +168,12 @@ export default function SkillDetail({ loaderData }: Route.ComponentProps) {
   }, [skillName, referenceName]);
 
   return (
-    <SkillsLayout>
+    <SkillsLayout
+      allSkills={allSkills}
+      currentSkill={skillName}
+      navTree={navTree}
+      currentReference={referenceName}
+    >
       <div className="grid grid-cols-1 lg:grid-cols-[180px_240px_1fr] xl:grid-cols-[180px_240px_1fr_auto] overflow-hidden">
         <SkillPicker allSkills={allSkills} currentSkill={skillName} />
         <ReferenceNav
@@ -177,35 +184,15 @@ export default function SkillDetail({ loaderData }: Route.ComponentProps) {
 
         {/* Main content - clean white reading surface */}
         <main className="overflow-y-auto bg-white dark:bg-[#0a0a0a]" data-skills-main>
+          <MobileBreadcrumbBar
+            allSkills={allSkills}
+            currentSkill={skillName}
+            currentSkillTitle={skillTitle}
+            referencesMeta={referencesMeta}
+            currentReference={referenceName}
+            currentReferenceTitle={referenceTitle}
+          />
           <div className="max-w-4xl mx-auto px-6 lg:px-10 py-10 pb-24">
-            {/* Mobile breadcrumb */}
-            <div className="lg:hidden mb-6 flex items-center gap-2 text-[13px] flex-wrap text-gray-500 dark:text-gray-400">
-              <Link
-                to="/skills"
-                className="hover:text-gray-900 dark:hover:text-white transition-colors"
-              >
-                Skills
-              </Link>
-              <span className="text-gray-400 dark:text-gray-600">/</span>
-              <Link
-                to={`/skills/${skillName}`}
-                className={clsx(
-                  "hover:text-gray-900 dark:hover:text-white transition-colors",
-                  isReference ? "" : "text-gray-900 dark:text-gray-100 font-medium"
-                )}
-              >
-                {skillTitle}
-              </Link>
-              {isReference && (
-                <>
-                  <span className="text-gray-400 dark:text-gray-600">/</span>
-                  <span className="text-gray-900 dark:text-gray-100 font-medium">
-                    {referenceTitle}
-                  </span>
-                </>
-              )}
-            </div>
-
             {/* Desktop breadcrumb for reference pages only */}
             {isReference && (
               <div className="hidden lg:flex mb-6 items-center gap-2 text-[13px] text-gray-500 dark:text-gray-400">
@@ -289,6 +276,9 @@ export default function SkillDetail({ loaderData }: Route.ComponentProps) {
         {/* On This Page navigation */}
         <OnThisPage />
       </div>
+
+      {/* Mobile floating TOC button */}
+      <MobileTocButton />
     </SkillsLayout>
   );
 }

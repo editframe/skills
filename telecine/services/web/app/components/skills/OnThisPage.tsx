@@ -1,100 +1,57 @@
-import * as React from "react";
+import { usePageHeadings } from "~/hooks/usePageHeadings";
 
-interface Heading {
-  id: string;
-  text: string;
-  level: number;
+export function TocList({
+  activeId,
+  headings,
+  onNavigate,
+}: {
+  activeId: string;
+  headings: { id: string; text: string; level: number }[];
+  onNavigate?: () => void;
+}) {
+  return (
+    <ul className="space-y-2 text-sm border-l-2 border-gray-200 dark:border-gray-700">
+      {headings.map((heading) => (
+        <li
+          key={heading.id}
+          style={{ paddingLeft: heading.level === 3 ? "1rem" : "0.5rem" }}
+        >
+          <a
+            href={`#${heading.id}`}
+            onClick={onNavigate}
+            className={`block py-0.5 transition-colors ${
+              activeId === heading.id
+                ? "text-blue-600 dark:text-blue-400 font-medium border-l-2 border-blue-600 dark:border-blue-400 -ml-[2px] pl-[calc(0.5rem-2px)]"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            }`}
+            style={{
+              paddingLeft:
+                activeId === heading.id
+                  ? heading.level === 3
+                    ? "calc(1rem - 2px)"
+                    : "calc(0.5rem - 2px)"
+                  : undefined,
+            }}
+          >
+            {heading.text}
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 export function OnThisPage() {
-  const [headings, setHeadings] = React.useState<Heading[]>([]);
-  const [activeId, setActiveId] = React.useState<string>("");
+  const { headings, activeId } = usePageHeadings();
 
-  React.useEffect(() => {
-    // Extract headings from the main content
-    const mainElement = document.querySelector('main[data-skills-main]');
-    if (!mainElement) return;
-
-    const headingElements = mainElement.querySelectorAll('h2, h3');
-    const extractedHeadings: Heading[] = [];
-
-    headingElements.forEach((heading) => {
-      const id = heading.id || heading.textContent?.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '') || '';
-      if (!heading.id && id) {
-        heading.id = id;
-      }
-      
-      if (heading.id) {
-        extractedHeadings.push({
-          id: heading.id,
-          text: heading.textContent || '',
-          level: parseInt(heading.tagName[1]),
-        });
-      }
-    });
-
-    setHeadings(extractedHeadings);
-
-    // Set up intersection observer for active heading
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveId(entry.target.id);
-          }
-        });
-      },
-      {
-        rootMargin: '-80px 0px -80% 0px',
-      }
-    );
-
-    headingElements.forEach((heading) => {
-      if (heading.id) {
-        observer.observe(heading);
-      }
-    });
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
-
-  if (headings.length === 0) {
-    return null;
-  }
+  if (headings.length === 0) return null;
 
   return (
     <nav className="sticky top-10 hidden xl:block w-56 flex-shrink-0 pl-8">
       <div className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">
         On This Page
       </div>
-      <ul className="space-y-2 text-sm border-l-2 border-gray-200 dark:border-gray-700">
-        {headings.map((heading) => (
-          <li
-            key={heading.id}
-            style={{
-              paddingLeft: heading.level === 3 ? '1rem' : '0.5rem',
-            }}
-          >
-            <a
-              href={`#${heading.id}`}
-              className={`block py-0.5 transition-colors ${
-                activeId === heading.id
-                  ? 'text-blue-600 dark:text-blue-400 font-medium border-l-2 border-blue-600 dark:border-blue-400 -ml-[2px] pl-[calc(0.5rem-2px)]'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-              style={{
-                paddingLeft: activeId === heading.id 
-                  ? heading.level === 3 ? 'calc(1rem - 2px)' : 'calc(0.5rem - 2px)'
-                  : undefined
-              }}
-            >
-              {heading.text}
-            </a>
-          </li>
-        ))}
-      </ul>
+      <TocList headings={headings} activeId={activeId} />
     </nav>
   );
 }

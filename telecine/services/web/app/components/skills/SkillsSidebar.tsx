@@ -9,13 +9,16 @@ const NAV_BG = "bg-[#FAFAF9] dark:bg-[#1a1a1a]";
 interface SkillPickerProps {
   allSkills: { name: string; title: string; description: string }[];
   currentSkill: string | null;
+  onNavigate?: () => void;
+  inline?: boolean;
 }
 
-export function SkillPicker({ allSkills, currentSkill }: SkillPickerProps) {
+export function SkillPicker({ allSkills, currentSkill, onNavigate, inline }: SkillPickerProps) {
   return (
     <aside
       className={clsx(
-        "hidden lg:block overflow-y-auto pt-6 pb-20 px-3",
+        inline ? "block" : "hidden lg:block",
+        "overflow-y-auto pt-6 pb-20 px-3",
         NAV_BG,
         "border-r border-black/[0.06] dark:border-white/[0.12]",
       )}
@@ -27,6 +30,7 @@ export function SkillPicker({ allSkills, currentSkill }: SkillPickerProps) {
             <Link
               key={skill.name}
               to={`/skills/${skill.name}`}
+              onClick={onNavigate}
               className={clsx(
                 "block px-2.5 py-2 text-[13px] leading-tight rounded-md transition-colors",
                 isActive
@@ -50,10 +54,12 @@ function NavTreeItems({
   items,
   skillName,
   referenceName,
+  onNavigate,
 }: {
   items: NavNode["items"];
   skillName: string;
   referenceName: string | null;
+  onNavigate?: () => void;
 }) {
   return (
     <div className="space-y-px">
@@ -61,6 +67,7 @@ function NavTreeItems({
         <Link
           key={ref.name}
           to={`/skills/${skillName}/${ref.name}`}
+          onClick={onNavigate}
           className={clsx(
             "block px-3 py-1.5 text-[13px] leading-tight transition-all rounded-md",
             referenceName === ref.name
@@ -79,10 +86,12 @@ function NavTreeSubNode({
   node,
   skillName,
   referenceName,
+  onNavigate,
 }: {
   node: NavNode;
   skillName: string;
   referenceName: string | null;
+  onNavigate?: () => void;
 }) {
   const hasChildren = node.children.length > 0;
   const hasItems = node.items.length > 0;
@@ -101,6 +110,7 @@ function NavTreeSubNode({
             items={node.items}
             skillName={skillName}
             referenceName={referenceName}
+            onNavigate={onNavigate}
           />
         )}
         {hasChildren && (
@@ -111,6 +121,7 @@ function NavTreeSubNode({
                 node={child}
                 skillName={skillName}
                 referenceName={referenceName}
+                onNavigate={onNavigate}
               />
             ))}
           </div>
@@ -124,10 +135,12 @@ function NavTreeSection({
   node,
   skillName,
   referenceName,
+  onNavigate,
 }: {
   node: NavNode;
   skillName: string;
   referenceName: string | null;
+  onNavigate?: () => void;
 }) {
   const hasChildren = node.children.length > 0;
   const hasItems = node.items.length > 0;
@@ -157,6 +170,7 @@ function NavTreeSection({
             items={node.items}
             skillName={skillName}
             referenceName={referenceName}
+            onNavigate={onNavigate}
           />
         )}
         {hasChildren && (
@@ -167,6 +181,7 @@ function NavTreeSection({
                 node={child}
                 skillName={skillName}
                 referenceName={referenceName}
+                onNavigate={onNavigate}
               />
             ))}
           </div>
@@ -180,19 +195,24 @@ interface ReferenceNavProps {
   skillName: string;
   currentReference: string | null;
   navTree: NavNode[];
+  onNavigate?: () => void;
+  inline?: boolean;
 }
 
 export function ReferenceNav({
   skillName,
   currentReference,
   navTree,
+  onNavigate,
+  inline,
 }: ReferenceNavProps) {
   if (navTree.length === 0) return null;
 
   return (
     <aside
       className={clsx(
-        "hidden lg:block overflow-y-auto pt-6 pb-20 px-3",
+        inline ? "block" : "hidden lg:block",
+        "overflow-y-auto pt-6 pb-20 px-3",
         NAV_BG,
         "border-r border-black/[0.06] dark:border-white/[0.12]",
       )}
@@ -203,6 +223,7 @@ export function ReferenceNav({
           node={node}
           skillName={skillName}
           referenceName={currentReference}
+          onNavigate={onNavigate}
         />
       ))}
     </aside>

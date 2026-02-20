@@ -4,6 +4,7 @@ import type { SkillReference } from "~/utils/skills.server";
 import { getSkillCatalog, getSkillNames } from "~/utils/skills.server";
 import { SkillsLayout } from "~/components/skills/SkillsLayout";
 import { SkillPicker } from "~/components/skills/SkillsSidebar";
+import { MobileBreadcrumbBar } from "~/components/skills/MobileBreadcrumbBar";
 import { useTheme } from "~/hooks/useTheme";
 
 export const meta = () => {
@@ -42,11 +43,18 @@ export default function SkillsCatalog({ loaderData }: Route.ComponentProps) {
   );
 
   return (
-    <SkillsLayout>
+    <SkillsLayout allSkills={allSkills}>
       <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr] overflow-hidden">
         <SkillPicker allSkills={allSkills} currentSkill={null} />
 
         <main className="overflow-y-auto bg-white dark:bg-[#0a0a0a]">
+          <MobileBreadcrumbBar
+            allSkills={allSkills}
+            currentSkill={null}
+            currentSkillTitle={null}
+            currentReference={null}
+            currentReferenceTitle={null}
+          />
           <div className="max-w-4xl mx-auto px-6 lg:px-10 py-10 pb-24">
             {/* Page heading */}
             <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white mb-4">
