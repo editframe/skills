@@ -47,6 +47,46 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
       });
       server.middlewares.use(jitTranscodeMiddleware);
 
+      // Handle remote assets API format: /api/v1/assets/remote/image?url=<encoded>
+      // Fetches remote images server-side so the browser receives them as same-origin,
+      // preventing canvas CORS taint when drawImage() is called during rendering.
+      server.middlewares.use(async (req, res, next) => {
+        const log = debug("ef:vite-plugin");
+        const reqUrl = req.url || "";
+
+        if (!reqUrl.startsWith("/api/v1/assets/remote/image")) {
+          return next();
+        }
+
+        const url = new URL(reqUrl, `http://${req.headers.host}`);
+        const remoteUrl = url.searchParams.get("url");
+
+        if (!remoteUrl || (!remoteUrl.startsWith("http://") && !remoteUrl.startsWith("https://"))) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "url parameter must be an http/https URL" }));
+          return;
+        }
+
+        log(`Proxying remote image: ${remoteUrl}`);
+
+        try {
+          const response = await fetch(remoteUrl);
+          if (!response.ok) {
+            res.writeHead(response.status);
+            res.end();
+            return;
+          }
+          const contentType = response.headers.get("content-type") ?? "application/octet-stream";
+          const buffer = await response.arrayBuffer();
+          res.writeHead(200, { "Content-Type": contentType });
+          res.end(Buffer.from(buffer));
+        } catch (error) {
+          log(`Error proxying remote image: ${error}`);
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: (error as Error).message }));
+        }
+      });
+
       // Handle local assets API format: /api/v1/assets/local/*
       server.middlewares.use(async (req, res, next) => {
         const log = debug("ef:vite-plugin");

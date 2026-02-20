@@ -85,17 +85,21 @@ describe("EFImage", () => {
     });
   });
 
-  describe("direct URL support", () => {
-    test("assetPath returns https URLs unchanged", () => {
+  describe("remote URL proxying", () => {
+    test("assetPath proxies https URLs through remote image endpoint", () => {
       const image = document.createElement("ef-image");
       image.src = "https://example.com/image.jpg";
-      expect(image.assetPath()).toBe("https://example.com/image.jpg");
+      expect(image.assetPath()).toBe(
+        "/api/v1/assets/remote/image?url=https%3A%2F%2Fexample.com%2Fimage.jpg",
+      );
     });
 
-    test("assetPath returns http URLs unchanged", () => {
+    test("assetPath proxies http URLs through remote image endpoint", () => {
       const image = document.createElement("ef-image");
       image.src = "http://example.com/image.jpg";
-      expect(image.assetPath()).toBe("http://example.com/image.jpg");
+      expect(image.assetPath()).toBe(
+        "/api/v1/assets/remote/image?url=http%3A%2F%2Fexample.com%2Fimage.jpg",
+      );
     });
 
     test("assetPath preserves local file behavior", () => {
@@ -106,7 +110,7 @@ describe("EFImage", () => {
       );
     });
 
-    test("assetPath preserves asset-id priority over direct URL", () => {
+    test("assetPath preserves asset-id priority over remote URL", () => {
       const image = document.createElement("ef-image");
       const preview = document.createElement("ef-preview");
       preview.appendChild(image);
@@ -120,14 +124,13 @@ describe("EFImage", () => {
       preview.remove();
     });
 
-    test("handles CORS fallback for direct URLs", () => {
+    test("assetPath proxies cross-origin image URLs to avoid canvas CORS taint", () => {
       const image = document.createElement("ef-image");
       image.src =
         "https://storage.googleapis.com/editframe-assets-7ac794b/1080-cat.jpeg";
       expect(image.assetPath()).toBe(
-        "https://storage.googleapis.com/editframe-assets-7ac794b/1080-cat.jpeg",
+        "/api/v1/assets/remote/image?url=https%3A%2F%2Fstorage.googleapis.com%2Feditframe-assets-7ac794b%2F1080-cat.jpeg",
       );
-      // Note: CORS fallback behavior is tested in the fetchImage task logic
     });
   });
 
@@ -157,20 +160,18 @@ describe("EFImage", () => {
   });
 
   describe("WebP rendering", () => {
-    test("loads WebP via direct URL (img path) and transitions to ready", async () => {
+    test("remote URL renders canvas element (not img) to avoid CORS canvas taint", async () => {
       const image = document.createElement("ef-image");
-      const src = `${window.location.origin}/test.webp`;
-      image.src = src;
+      image.src = "https://example.com/image.webp";
       image.style.width = "100px";
       image.style.height = "100px";
       document.body.append(image);
       await image.updateComplete;
-      await image.loadImage();
 
-      expect(image.contentReadyState).toBe("ready");
-      const imgEl = image.imageRef.value;
-      expect(imgEl).toBeDefined();
-      expect(imgEl!.naturalWidth).toBeGreaterThan(0);
+      // Remote URLs must go through the proxy path (canvas), not the direct img path,
+      // so that ctx.drawImage() during rendering doesn't taint the canvas.
+      expect(image.canvasRef.value).toBeDefined();
+      expect(image.imageRef.value).toBeUndefined();
 
       image.remove();
     });

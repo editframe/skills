@@ -136,6 +136,9 @@ export class EFImage
       const path = `${this.apiHost}/api/v1/files/${this.fileId}`;
       return path;
     }
+    if (this.src.startsWith("http://") || this.src.startsWith("https://")) {
+      return `/api/v1/assets/remote/image?url=${encodeURIComponent(this.src)}`;
+    }
     if (this.isDirectUrl(this.src)) {
       return this.src;
     }
