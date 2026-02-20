@@ -22,7 +22,7 @@ export const backendService = new gcp.compute.BackendService(
       maxTtl: 86400,
       signedUrlCacheMaxAgeSec: 0,
     },
-    compressionMode: "DISABLED",
+    compressionMode: "AUTOMATIC",
     connectionDrainingTimeoutSec: 0,
     enableCdn: true,
     loadBalancingScheme: "EXTERNAL_MANAGED",
