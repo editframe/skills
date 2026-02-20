@@ -49,7 +49,7 @@ export const defineWorker = (config: QueueConfig) => {
             image: getImageRef(`worker-${config.name}`),
 
             envs: [
-              envFromValue("WORKER_MODE", "websocket"),
+              envFromValue("WORKER_MODE", "direct"),
               envFromValue("POSTGRES_MIN_CONNECTIONS", "1"),
               envFromValue("POSTGRES_MAX_CONNECTIONS", "1"),
               envFromSecretVersion("POSTGRES_PASSWORD", pgPassword),
