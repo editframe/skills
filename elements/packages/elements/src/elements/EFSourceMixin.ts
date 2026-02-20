@@ -86,8 +86,7 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
       // Normalize the path: remove leading slash and any double slashes
       let normalizedSrc = src.startsWith("/") ? src.slice(1) : src;
       normalizedSrc = normalizedSrc.replace(/^\/+/, "");
-      // Use production API format for local files
-      const md5Path = `/api/v1/files/local/md5?src=${encodeURIComponent(normalizedSrc)}`;
+      const md5Path = `/api/v1/files/md5?src=${encodeURIComponent(normalizedSrc)}`;
       const response = await fetch(md5Path, { signal });
       if (!response.ok) {
         return undefined;

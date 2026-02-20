@@ -288,6 +288,36 @@ describe("Media Engine Selection", () => {
     expect(engine).toBeInstanceOf(AssetMediaEngine);
     video.remove();
   });
+
+  test("requests fragment index at /api/v1/files/index?src= without 'local' in path", async ({
+    configuration,
+    expect,
+  }) => {
+    const originalFetch = window.fetch;
+    const capturedUrls: string[] = [];
+    vi.spyOn(window, "fetch").mockImplementation((input, init) => {
+      const url = input instanceof Request ? input.url : String(input);
+      capturedUrls.push(url);
+      return originalFetch.call(window, input, init);
+    });
+
+    const video = document.createElement("ef-video");
+    video.src = localSrc;
+    configuration.appendChild(video);
+    await video.getMediaEngine();
+
+    const indexRequests = capturedUrls.filter(
+      (url) => url.includes("/api/v1/files") && url.includes("index"),
+    );
+    expect(indexRequests.length).toBeGreaterThan(0);
+    for (const url of indexRequests) {
+      expect(url).toMatch(/\/api\/v1\/files\/index\?src=/);
+      expect(url).not.toContain("/local/");
+    }
+
+    vi.restoreAllMocks();
+    video.remove();
+  });
 });
 
 describe("EFMedia", () => {

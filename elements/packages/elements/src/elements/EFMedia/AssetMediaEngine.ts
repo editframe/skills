@@ -49,12 +49,10 @@ export class AssetMediaEngine extends BaseMediaEngine implements MediaEngine {
     let normalizedSrc = src.startsWith("/") ? src.slice(1) : src;
     normalizedSrc = normalizedSrc.replace(/^\/+/, "");
 
-    // Use production API format: /api/v1/files/local/index?src={src}
-    // This route is handled by the vite plugin for local development
     const apiBaseUrl = urlGenerator.getBaseUrl();
     const url = apiBaseUrl
-      ? `${apiBaseUrl}/api/v1/files/local/index?src=${encodeURIComponent(normalizedSrc)}`
-      : `/api/v1/files/local/index?src=${encodeURIComponent(normalizedSrc)}`;
+      ? `${apiBaseUrl}/api/v1/files/index?src=${encodeURIComponent(normalizedSrc)}`
+      : `/api/v1/files/index?src=${encodeURIComponent(normalizedSrc)}`;
     const data = await engine.fetchManifest(url, signal);
     engine.data = data as Record<number, TrackFragmentIndex>;
 

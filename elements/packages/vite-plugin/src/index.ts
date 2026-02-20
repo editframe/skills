@@ -114,26 +114,22 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
         }
       });
 
-      // Handle production API format for local files: /api/v1/files/local/* and /api/v1/isobmff_files/local/*
+      // Handle local file API: /api/v1/files/index, /api/v1/files/md5, /api/v1/files/track (src= identifies local source)
       server.middlewares.use(async (req, res, next) => {
         const log = debug("ef:vite-plugin");
         const reqUrl = req.url || "";
-
-        if (
-          !reqUrl.startsWith("/api/v1/files/local/") &&
-          !reqUrl.startsWith("/api/v1/isobmff_files/local/")
-        ) {
-          return next();
-        }
 
         const url = new URL(reqUrl, `http://${req.headers.host}`);
         const urlPath = url.pathname;
         const src = url.searchParams.get("src");
 
-        if (!src) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "src parameter is required" }));
-          return;
+        if (
+          !src ||
+          (urlPath !== "/api/v1/files/index" &&
+            urlPath !== "/api/v1/files/md5" &&
+            urlPath !== "/api/v1/files/track")
+        ) {
+          return next();
         }
 
         // Resolve src to absolute file path
@@ -141,14 +137,10 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
           ? src
           : path.join(options.root, src).replace("dist/", "src/");
 
-        log(`Handling local isobmff API: ${urlPath} for ${absolutePath}`);
+        log(`Handling local file API: ${urlPath} for ${absolutePath}`);
 
         try {
-          // Handle /api/v1/files/local/index or /api/v1/isobmff_files/local/index - fragment index
-          if (
-            urlPath === "/api/v1/files/local/index" ||
-            urlPath === "/api/v1/isobmff_files/local/index"
-          ) {
+          if (urlPath === "/api/v1/files/index") {
             log(`Serving track fragment index for ${absolutePath}`);
             const taskResult = await generateTrackFragmentIndex(
               options.cacheRoot,
@@ -158,11 +150,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
             return;
           }
 
-          // Handle /api/v1/files/local/md5 or /api/v1/isobmff_files/local/md5 - get MD5 hash for a file
-          if (
-            urlPath === "/api/v1/files/local/md5" ||
-            urlPath === "/api/v1/isobmff_files/local/md5"
-          ) {
+          if (urlPath === "/api/v1/files/md5") {
             log(`Getting MD5 for ${absolutePath}`);
             try {
               const md5 = await md5FilePath(absolutePath);
@@ -180,11 +168,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
             return;
           }
 
-          // Handle /api/v1/files/local/track or /api/v1/isobmff_files/local/track - track segments
-          if (
-            urlPath === "/api/v1/files/local/track" ||
-            urlPath === "/api/v1/isobmff_files/local/track"
-          ) {
+          if (urlPath === "/api/v1/files/track") {
             const trackIdStr = url.searchParams.get("trackId");
             const segmentIdStr = url.searchParams.get("segmentId");
 
@@ -198,7 +182,6 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
 
             const trackId = parseInt(trackIdStr, 10);
 
-            // For scrub track (trackId -1), use generateScrubTrack
             if (trackId === -1) {
               log(`Serving scrub track for ${absolutePath}`);
               const taskResult = await generateScrubTrack(
@@ -209,7 +192,6 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
               return;
             }
 
-            // For regular tracks, use generateTrack
             log(
               `Serving track ${trackId} segment ${segmentIdStr || "all"} for ${absolutePath}`,
             );
@@ -222,12 +204,8 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
             sendTaskResult(req, res, taskResult);
             return;
           }
-
-          // Unknown endpoint
-          res.writeHead(404, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Unknown isobmff endpoint" }));
         } catch (error) {
-          log(`Error handling isobmff request: ${error}`);
+          log(`Error handling local file request: ${error}`);
           if ((error as NodeJS.ErrnoException).code === "ENOENT") {
             res.writeHead(404, { "Content-Type": "text/plain" });
             res.end("File not found");
