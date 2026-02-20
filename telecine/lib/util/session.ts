@@ -275,3 +275,34 @@ export const createEmailPasswordSessionCookie = async (emailPassword: {
     confirmed: emailPassword.confirmed_at !== null,
   });
 };
+
+const LOGGED_IN_COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days, matches session
+
+export function loggedInCookieHeader(): string {
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  return `_logged_in=1; Path=/; SameSite=Lax; Max-Age=${LOGGED_IN_COOKIE_MAX_AGE}${secure}`;
+}
+
+export function clearLoggedInCookieHeader(): string {
+  return `_logged_in=; Path=/; SameSite=Lax; Max-Age=0`;
+}
+
+/** Returns a Headers object with both session and logged-in cookies set. */
+export async function createLoginHeaders(
+  sessionCookieValue: string,
+): Promise<Headers> {
+  const headers = new Headers();
+  headers.append("Set-Cookie", sessionCookieValue);
+  headers.append("Set-Cookie", loggedInCookieHeader());
+  return headers;
+}
+
+/** Returns a Headers object with both session and logged-in cookies cleared. */
+export async function createLogoutHeaders(
+  destroyedSessionCookie: string,
+): Promise<Headers> {
+  const headers = new Headers();
+  headers.append("Set-Cookie", destroyedSessionCookie);
+  headers.append("Set-Cookie", clearLoggedInCookieHeader());
+  return headers;
+}

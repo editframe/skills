@@ -3,7 +3,7 @@ import { redirect } from "react-router";
 import z from "zod";
 import { formFor } from "~/formFor";
 import { loginUserWithPassword } from "~/loginUserWithPassword.server";
-import { createEmailPasswordSessionCookie } from "@/util/session";
+import { createEmailPasswordSessionCookie, createLoginHeaders } from "@/util/session";
 import { Link, useSearchParams, useNavigation } from "react-router";
 import type { MetaFunction } from "react-router";
 import { commitSession } from "@/util/session";
@@ -46,18 +46,12 @@ export const action = async ({ request }: Route.ActionArgs) => {
       { status: 401 },
     );
   }
+  const sessionCookie = await createEmailPasswordSessionCookie(sessionInfo);
+  const loginHeaders = await createLoginHeaders(sessionCookie);
   if (loginData.redirect_to) {
-    return redirect(loginData.redirect_to, {
-      headers: {
-        "Set-Cookie": await createEmailPasswordSessionCookie(sessionInfo),
-      },
-    });
+    return redirect(loginData.redirect_to, { headers: loginHeaders });
   }
-  return redirect("/welcome", {
-    headers: {
-      "Set-Cookie": await createEmailPasswordSessionCookie(sessionInfo),
-    },
-  });
+  return redirect("/welcome", { headers: loginHeaders });
 };
 
 export const loader = async ({ context }: Route.LoaderArgs) => {

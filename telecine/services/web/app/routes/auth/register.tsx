@@ -2,7 +2,7 @@ import { data, redirect } from "react-router";
 import { useNavigation } from "react-router";
 import z from "zod";
 import { formFor } from "../../formFor";
-import { createEmailPasswordSessionCookie } from "@/util/session";
+import { createEmailPasswordSessionCookie, createLoginHeaders } from "@/util/session";
 import { registerUserWithPassword } from "~/registerUserWithPassword.server";
 import { useSearchParams } from "react-router";
 import { Link } from "react-router";
@@ -62,18 +62,12 @@ export const action = async ({ request }: Route.ActionArgs) => {
       },
       "REGISTRATION",
     );
+    const sessionCookie = await createEmailPasswordSessionCookie(emailPassword);
+    const loginHeaders = await createLoginHeaders(sessionCookie);
     if (registration.invite_id && registration.redirect_to) {
-      return redirect(registration.redirect_to, {
-        headers: {
-          "Set-Cookie": await createEmailPasswordSessionCookie(emailPassword),
-        },
-      });
+      return redirect(registration.redirect_to, { headers: loginHeaders });
     }
-    return redirect("/auth/onboarding", {
-      headers: {
-        "Set-Cookie": await createEmailPasswordSessionCookie(emailPassword),
-      },
-    });
+    return redirect("/auth/onboarding", { headers: loginHeaders });
   } catch (error: any) {
     logger.error(error, "Failed to create user");
     if (error?.constraint === "email_passwords_email_address_key") {

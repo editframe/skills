@@ -3,15 +3,16 @@ import { Link } from "react-router";
 import { ThemeToggle } from "~/components/ThemeToggle";
 import { LandingNavLink } from "./LandingNavLink";
 
+function readLoggedInCookie(): boolean {
+  return document.cookie.split(";").some((c) => c.trim().startsWith("_logged_in=1"));
+}
+
 export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    fetch("/auth/status")
-      .then((r) => r.json())
-      .then((data) => setIsLoggedIn(data.isLoggedIn))
-      .catch(() => {});
+    setIsLoggedIn(readLoggedInCookie());
   }, []);
 
   return (
