@@ -49,6 +49,13 @@ export interface AssetFunctions {
 export interface JitMiddlewareOptions {
   root: string;
   cacheRoot: string;
+  /**
+   * When true, remote URLs (http/https) are handled locally via ffprobe/ffmpeg
+   * rather than passed to a downstream proxy (e.g. recordReplayProxyPlugin).
+   * Set to true in dev-projects; leave false (default) in test environments
+   * that use recordReplayProxyPlugin to proxy remote URLs to the cloud API.
+   */
+  handleRemoteUrls?: boolean;
 }
 
 /**
@@ -437,9 +444,12 @@ export function createJitTranscodeMiddleware(
     // Resolve URL to either local file path or keep as remote URL (ffprobe supports both)
     const mediaPath = resolveMediaPath(sourceUrl, options.root);
 
-    // If the source is a remote URL (not a local file), let the next middleware handle it.
-    // This allows recordReplayProxyPlugin to serve cached remote-URL responses.
-    if (mediaPath.startsWith("http://") || mediaPath.startsWith("https://")) {
+    // If the source is a remote URL and handleRemoteUrls is not enabled, let the
+    // next middleware handle it (e.g. recordReplayProxyPlugin in test environments).
+    if (
+      !options.handleRemoteUrls &&
+      (mediaPath.startsWith("http://") || mediaPath.startsWith("https://"))
+    ) {
       return next();
     }
 

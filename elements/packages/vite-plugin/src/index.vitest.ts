@@ -28,6 +28,11 @@ import { createJitTranscodeMiddleware } from "./jitTranscodeMiddleware.js";
 interface VitePluginEditframeOptions {
   root: string;
   cacheRoot: string;
+  /**
+   * When true, remote URLs are handled locally via ffprobe/ffmpeg.
+   * Use in dev-projects; leave false (default) when using recordReplayProxyPlugin.
+   */
+  handleRemoteUrls?: boolean;
 }
 
 /**
@@ -103,11 +108,14 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
 
     configureServer(server) {
       // Register JIT transcode middleware first (shared with production)
-      const jitTranscodeMiddleware = createJitTranscodeMiddleware(options, {
-        generateTrack,
-        generateScrubTrack,
-        generateTrackFragmentIndex,
-      });
+      const jitTranscodeMiddleware = createJitTranscodeMiddleware(
+        { root: options.root, cacheRoot: options.cacheRoot, handleRemoteUrls: options.handleRemoteUrls },
+        {
+          generateTrack,
+          generateScrubTrack,
+          generateTrackFragmentIndex,
+        },
+      );
       server.middlewares.use(jitTranscodeMiddleware);
 
       // Handle assets API: /api/v1/assets/image and /api/v1/assets/captions
