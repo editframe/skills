@@ -6,7 +6,7 @@ import {
   getAllGuidesContent,
   getAllBlogsContent,
 } from "~/utils/doc.server";
-import { getSkillNames, getSkillReferences } from "~/utils/skills.server";
+import { getSkillNames, getSkillReferencesMeta } from "~/utils/skills.server";
 
 export const siteUrl = 'https://www.editframe.com';
 
@@ -92,9 +92,9 @@ export const loader: LoaderFunction = async () => {
     urlEntries.push(generateUrlEntry(`/skills/${skill.name}`, undefined, 'weekly', '0.8'));
     
     // Add skill reference pages
-    const references = getSkillReferences(skill.name);
+    const references = getSkillReferencesMeta(skill.name);
     for (const reference of references) {
-      urlEntries.push(generateUrlEntry(`/skills/${skill.name}/${reference}`, undefined, 'weekly', '0.7'));
+      urlEntries.push(generateUrlEntry(`/skills/${skill.name}/${reference.name}`, undefined, 'weekly', '0.7'));
     }
   }
 
