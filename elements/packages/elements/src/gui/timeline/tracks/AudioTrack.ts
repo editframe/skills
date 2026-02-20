@@ -77,7 +77,7 @@ export class EFAudioTrack extends TrackItem {
 
     try {
       const waveformData = await extractWaveformData(
-        src,
+        audio,
         this.#abortController.signal,
       );
 

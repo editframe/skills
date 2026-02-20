@@ -6,6 +6,8 @@
  * overview across the entire audio duration.
  */
 
+import type { EFMedia } from "../../../elements/EFMedia.js";
+
 /** Samples per second for waveform data - balances resolution vs. data size */
 export const WAVEFORM_SAMPLES_PER_SECOND = 100;
 
@@ -23,29 +25,49 @@ export interface WaveformData {
 const waveformCache = new Map<string, WaveformData>();
 
 /**
- * Extract waveform peak data from an audio URL.
- * Uses Web Audio API to decode and analyze the audio.
- * Results are cached by URL.
+ * Extract waveform peak data from a media element.
+ * Fetches audio through the media engine's transcoding pipeline,
+ * then decodes with Web Audio API.
+ * Results are cached by src URL.
  */
 export async function extractWaveformData(
-  audioUrl: string,
+  element: EFMedia,
   signal?: AbortSignal,
 ): Promise<WaveformData | null> {
-  // Check cache first
-  const cached = waveformCache.get(audioUrl);
+  const src = element.src;
+  if (!src) return null;
+
+  const cached = waveformCache.get(src);
   if (cached) {
     return cached;
   }
 
   try {
-    // Fetch the audio file
-    const response = await fetch(audioUrl, { signal });
-    if (!response.ok) {
-      console.warn(`Failed to fetch audio for waveform: ${response.status}`);
+    const mediaEngine = await element.getMediaEngine(signal);
+    signal?.throwIfAborted();
+
+    if (!mediaEngine?.tracks.audio) {
       return null;
     }
 
-    const arrayBuffer = await response.arrayBuffer();
+    const durationMs = mediaEngine.durationMs;
+    if (!durationMs || durationMs <= 0) {
+      return null;
+    }
+
+    const abortSignal = signal ?? new AbortController().signal;
+    const audioSpan = await element.fetchAudioSpanningTime(
+      0,
+      durationMs,
+      abortSignal,
+    );
+    signal?.throwIfAborted();
+
+    if (!audioSpan) {
+      return null;
+    }
+
+    const arrayBuffer = await audioSpan.blob.arrayBuffer();
     signal?.throwIfAborted();
 
     // Decode audio data
@@ -66,16 +88,15 @@ export async function extractWaveformData(
       audioBuffer,
       WAVEFORM_SAMPLES_PER_SECOND,
     );
-    const durationMs = audioBuffer.duration * 1000;
+    const decodedDurationMs = audioBuffer.duration * 1000;
 
     const waveformData: WaveformData = {
       peaks,
-      durationMs,
+      durationMs: decodedDurationMs,
       samplesPerSecond: WAVEFORM_SAMPLES_PER_SECOND,
     };
 
-    // Cache the result
-    waveformCache.set(audioUrl, waveformData);
+    waveformCache.set(src, waveformData);
 
     return waveformData;
   } catch (error) {

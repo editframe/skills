@@ -97,9 +97,8 @@ export class EFVideoTrack extends TrackItem {
         if (mediaEngine?.tracks.audio) {
           this._hasAudio = true;
 
-          // Load waveform data
           const waveformData = await extractWaveformData(
-            src,
+            video,
             this.#abortController.signal,
           );
 
