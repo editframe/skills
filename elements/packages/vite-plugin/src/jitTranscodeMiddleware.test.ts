@@ -1,6 +1,13 @@
-import { describe, it, expect, vi } from "vitest";
+import { writeFile, mkdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { createJitTranscodeMiddleware } from "./jitTranscodeMiddleware.js";
+import {
+  createJitTranscodeMiddleware,
+  generateLocalJitManifest,
+  type TrackFragmentIndex,
+} from "./jitTranscodeMiddleware.js";
 
 function makeReq(url: string): IncomingMessage {
   return {
@@ -24,6 +31,65 @@ const noopAssetFunctions = {
   generateScrubTrack: vi.fn(),
   generateTrackFragmentIndex: vi.fn(),
 };
+
+function makeFragmentIndex(overrides?: Partial<TrackFragmentIndex>): TrackFragmentIndex {
+  return {
+    type: "video",
+    codec: "avc1.640029",
+    duration: 30,
+    timescale: 90000,
+    startTimeOffsetMs: 0,
+    initSegment: { offset: 0, size: 1024 },
+    segments: [
+      { offset: 1024, size: 2048, duration: 9000 },
+      { offset: 3072, size: 2048, duration: 9000 },
+    ],
+    width: 1920,
+    height: 1080,
+    ...overrides,
+  };
+}
+
+describe("generateLocalJitManifest", () => {
+  let tmpDir: string;
+  let indexPath: string;
+
+  beforeEach(async () => {
+    tmpDir = path.join(tmpdir(), `ef-jit-test-${Date.now()}`);
+    await mkdir(tmpDir, { recursive: true });
+    indexPath = path.join(tmpDir, "fragment-index.json");
+    const fragmentIndex = { 1: makeFragmentIndex(), 2: makeFragmentIndex({ type: "audio", codec: "mp4a.40.2", width: undefined, height: undefined }) };
+    await writeFile(indexPath, JSON.stringify(fragmentIndex));
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it("uses .m4s extensions in endpoint templates so MSE SourceBuffer receives only moof+mdat per append", async () => {
+    const mockAssetFunctions = {
+      generateTrack: vi.fn(),
+      generateScrubTrack: vi.fn(),
+      generateTrackFragmentIndex: vi.fn().mockResolvedValue({
+        cachePath: indexPath,
+        md5Sum: "mock-md5",
+      }),
+    };
+
+    const manifest = await generateLocalJitManifest(
+      "/local/video.mp4",
+      "https://example.com/video.mp4",
+      "http://localhost:4321",
+      tmpDir,
+      mockAssetFunctions,
+    );
+
+    expect(manifest.endpoints.initSegment).toMatch(/init\.m4s/);
+    expect(manifest.endpoints.mediaSegment).toMatch(/\.m4s/);
+    expect(manifest.endpoints.initSegment).not.toMatch(/init\.mp4/);
+    expect(manifest.endpoints.mediaSegment).not.toMatch(/[0-9]+\.mp4/);
+  });
+});
 
 describe("createJitTranscodeMiddleware", () => {
   describe("remote URL handling", () => {

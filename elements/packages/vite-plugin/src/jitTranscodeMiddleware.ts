@@ -392,8 +392,8 @@ export async function generateLocalJitManifest(
         : [],
 
     endpoints: {
-      initSegment: `${baseUrl}/api/v1/transcode/{rendition}/init.mp4?url=${encodeURIComponent(sourceUrl)}`,
-      mediaSegment: `${baseUrl}/api/v1/transcode/{rendition}/{segmentId}.mp4?url=${encodeURIComponent(sourceUrl)}`,
+      initSegment: `${baseUrl}/api/v1/transcode/{rendition}/init.m4s?url=${encodeURIComponent(sourceUrl)}`,
+      mediaSegment: `${baseUrl}/api/v1/transcode/{rendition}/{segmentId}.m4s?url=${encodeURIComponent(sourceUrl)}`,
     },
 
     jitInfo: {
