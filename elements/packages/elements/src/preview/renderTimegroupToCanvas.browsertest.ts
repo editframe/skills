@@ -361,7 +361,7 @@ const test = baseTest.extend<{
   webpImageTimegroup: async ({}, use) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
-    const webpSrc = `${window.location.origin}/test.webp`;
+    const webpSrc = "/test.webp";
     render(
       html`
       <ef-configuration api-host="${apiHost}" signing-url="">
