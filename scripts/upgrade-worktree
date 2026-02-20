@@ -118,12 +118,16 @@ if [ "$CURRENT_SCOPE" = "elements" ]; then
     render) export COMPOSE_PROFILES="render" ;;
   esac
 
-  echo "Starting telecine services ($NEW_SCOPE)..."
   cd "$WORKTREE_ROOT/telecine"
-  ./scripts/docker-compose up -d > /dev/null 2>&1
+
+  echo "Starting telecine runner..."
+  ./scripts/docker-compose up -d runner > /dev/null 2>&1
 
   echo "Installing telecine dependencies..."
   ./scripts/npm install > /dev/null 2>&1
+
+  echo "Starting telecine services ($NEW_SCOPE)..."
+  ./scripts/docker-compose up -d > /dev/null 2>&1
 
   echo "Applying migrations..."
   ./scripts/migrate-db > /dev/null 2>&1 || true
