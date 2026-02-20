@@ -1,6 +1,7 @@
 import { data, Outlet } from "react-router";
 import { Links, Scripts, ScrollRestoration } from "react-router";
 import { Meta } from "react-router";
+import interFont from "~/assets/fonts/inter-latin.woff2?url";
 
 import {
   extractNewFlash,
@@ -95,19 +96,12 @@ export default function App({
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
-        <script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-6XC69KF8VD"
-        />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-6XC69KF8VD');
-            `,
-          }}
+        <link
+          rel="preload"
+          href={interFont}
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
         />
         <script
           dangerouslySetInnerHTML={{
@@ -147,16 +141,6 @@ export default function App({
             `,
           }}
         />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap"
-          rel="stylesheet"
-        />
         <link rel="icon" type="image/png" href="/images/favicon.png" />
         <Links />
       </head>
@@ -173,6 +157,20 @@ export default function App({
         <script
           dangerouslySetInnerHTML={{
             __html: `window.ENV = ${JSON.stringify(env)}`,
+          }}
+        />
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-6XC69KF8VD"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-6XC69KF8VD');
+            `,
           }}
         />
       </body>

@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { HeroDemo } from "../index";
+import { HeroDemo } from "../HeroDemo";
 
 export function HeroSection() {
   return (

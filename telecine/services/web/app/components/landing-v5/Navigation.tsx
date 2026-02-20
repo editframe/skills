@@ -1,14 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { ThemeToggle } from "~/components/ThemeToggle";
 import { LandingNavLink } from "./LandingNavLink";
 
-interface NavigationProps {
-  isLoggedIn: boolean;
-}
-
-export function Navigation({ isLoggedIn }: NavigationProps) {
+export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    fetch("/auth/status")
+      .then((r) => r.json())
+      .then((data) => setIsLoggedIn(data.isLoggedIn))
+      .catch(() => {});
+  }, []);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[var(--paper-cream)] border-b-2 border-[var(--ink-black)] dark:border-white">

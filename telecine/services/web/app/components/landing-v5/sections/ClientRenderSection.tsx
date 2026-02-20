@@ -1,4 +1,4 @@
-import { ClientRenderDemo } from "../index";
+import { ClientRenderDemo } from "../ClientRenderDemo";
 
 export function ClientRenderSection() {
   return (

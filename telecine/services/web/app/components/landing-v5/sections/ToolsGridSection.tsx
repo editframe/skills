@@ -1,4 +1,5 @@
-import { ThumbnailPicker, TextOverlayTool } from "../index";
+import { ThumbnailPicker } from "../tools/ThumbnailPicker";
+import { TextOverlayTool } from "../tools/TextOverlayTool";
 
 export function ToolsGridSection() {
   return (

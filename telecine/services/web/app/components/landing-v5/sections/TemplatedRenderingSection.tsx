@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { TemplatedRenderingDemo } from "../index";
+import { TemplatedRenderingDemo } from "../TemplatedRenderingDemo";
 
 export function TemplatedRenderingSection() {
   return (

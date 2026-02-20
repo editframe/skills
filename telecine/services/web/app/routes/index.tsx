@@ -1,6 +1,5 @@
 import { type MetaFunction } from "react";
-import { useLoaderData } from "react-router";
-import { maybeIdentityContext } from "~/middleware/context";
+import { type HeadersFunction } from "react-router";
 import { useTheme } from "~/hooks/useTheme";
 import { Navigation } from "~/components/landing-v5/Navigation";
 import "~/styles/landing.css";
@@ -18,12 +17,9 @@ import {
   RenderQueuePanel,
 } from "~/components/landing-v5/RenderQueue";
 
-import type { Route } from "./+types/index";
-
-export const loader = async ({ context }: Route.LoaderArgs) => {
-  const session = context.get(maybeIdentityContext);
-  return { isLoggedIn: !!session };
-};
+export const headers: HeadersFunction = () => ({
+  "Cache-Control": "public, max-age=0, s-maxage=300, stale-while-revalidate=3600",
+});
 
 export const meta: MetaFunction = () => {
   return [
@@ -45,7 +41,6 @@ export const meta: MetaFunction = () => {
 };
 
 export default function IndexPage() {
-  const { isLoggedIn } = useLoaderData<typeof loader>();
   useTheme();
 
   return (
@@ -54,7 +49,7 @@ export default function IndexPage() {
         <a href="#main-content" className="skip-to-content">
           Skip to content
         </a>
-        <Navigation isLoggedIn={isLoggedIn} />
+        <Navigation />
 
         <main id="main-content">
           <HeroSection />

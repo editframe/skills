@@ -1,4 +1,4 @@
-import { InteractivePlayground } from "../index";
+import { InteractivePlayground } from "../InteractivePlayground";
 
 export function PlaygroundSection() {
   return (

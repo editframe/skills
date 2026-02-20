@@ -6,5 +6,6 @@ export default {
   buildDirectory: "./services/web/build",
   future: {
     v8_middleware: true,
+    v8_splitRouteModules: true,
   },
 } satisfies Config;

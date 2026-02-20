@@ -1,4 +1,4 @@
-import { BeforeAfterComparison } from "../index";
+import { BeforeAfterComparison } from "../BeforeAfterComparison";
 
 export function BeforeAfterSection() {
   return (

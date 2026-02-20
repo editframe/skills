@@ -140,6 +140,7 @@ const routes = [
   route("/invitation/:token", "routes/org/invites/acceptInvitation.tsx"),
 
   ...prefix("/auth", [
+    route("/status", "routes/auth/status.ts"),
     // Direct registration is disabled for now
     // route("/register", "routes/auth/register.tsx"),
     route("/register", "routes/auth/typeform-registration.tsx"),

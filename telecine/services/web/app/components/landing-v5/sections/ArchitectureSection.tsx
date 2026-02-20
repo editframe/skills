@@ -1,4 +1,4 @@
-import { FanOutDiagram, JITStreamingDiagram } from "../index";
+import { FanOutDiagram, JITStreamingDiagram } from "../ArchitectureDiagram";
 
 export function ArchitectureSection() {
   return (

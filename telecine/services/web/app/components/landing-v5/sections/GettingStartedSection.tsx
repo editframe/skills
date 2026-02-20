@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { TerminalDemo } from "../index";
+import { TerminalDemo } from "../TerminalDemo";
 
 export function GettingStartedSection() {
   return (
