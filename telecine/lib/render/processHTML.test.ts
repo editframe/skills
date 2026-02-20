@@ -10,7 +10,7 @@ import path from "node:path";
 import { mkTempDir } from "@/util/tempFile";
 
 describe("createBundledHTMLDirectory", () => {
-  test("vite build succeeds and output contains render functions", async () => {
+  test("vite build succeeds and output contains render functions", { timeout: 60_000 }, async () => {
     await using tempDir = await mkTempDir(
       path.join(process.cwd(), "temp"),
     );

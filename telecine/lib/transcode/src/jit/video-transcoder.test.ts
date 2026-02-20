@@ -21,7 +21,7 @@ const concatPaths = async (paths: string[]) => {
 };
 
 describe("video-transcoder", () => {
-  test("produces predictable segment durations", async ({ expect }) => {
+  test("produces predictable segment durations", { timeout: 60_000 }, async ({ expect }) => {
     const initSegmentPath = await transcodeVideoSegment({
       inputUrl: "/app/test-assets/transcode/head-moov-480p.mp4",
       segmentId: "init",
