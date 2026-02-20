@@ -21,23 +21,35 @@ import { valkeyInternalIp } from "../valkey";
 import { type QueueConfig, queueEnvVars } from "./configs";
 
 export const defineWorker = (config: QueueConfig) => {
-  return new gcp.cloudrunv2.WorkerPool(
+  return new gcp.cloudrunv2.Service(
     `telecine-worker-${config.name}`,
     {
-      launchStage: "BETA",
+      ingress: "INGRESS_TRAFFIC_INTERNAL_ONLY",
+      launchStage: "GA",
       location: "us-central1",
       name: `telecine-worker-${config.name}`,
       project: "editframe",
-      scaling: {
-        scalingMode: "MANUAL",
-        manualInstanceCount: 0,
-      },
       template: {
+        scaling: {
+          minInstanceCount: 0,
+          maxInstanceCount: config.maxWorkerCount,
+        },
+        serviceAccount: serviceAccount.email,
+        maxInstanceRequestConcurrency: 1,
+        volumes: [
+          {
+            name: "cloudsql",
+            cloudSqlInstance: {
+              instances: [database.connectionName],
+            },
+          },
+        ],
         containers: [
           {
             image: getImageRef(`worker-${config.name}`),
 
             envs: [
+              envFromValue("WORKER_MODE", "websocket"),
               envFromValue("POSTGRES_MIN_CONNECTIONS", "1"),
               envFromValue("POSTGRES_MAX_CONNECTIONS", "1"),
               envFromSecretVersion("POSTGRES_PASSWORD", pgPassword),
@@ -72,10 +84,29 @@ export const defineWorker = (config: QueueConfig) => {
               ...queueEnvVars(),
               envFromValue("PINO_LOG_LEVEL", "debug"),
             ],
+            ports: {
+              containerPort: 3000,
+              name: "http1",
+            },
             resources: {
               limits: {
                 cpu: config.workerCpu,
                 memory: config.workerMemory,
+              },
+              startupCpuBoost: true,
+            },
+            startupProbe: {
+              failureThreshold: 5,
+              periodSeconds: 5,
+              tcpSocket: {
+                port: 3000,
+              },
+              timeoutSeconds: 5,
+            },
+            livenessProbe: {
+              httpGet: {
+                path: "/healthz",
+                port: 3000,
               },
             },
             volumeMounts: [
@@ -84,15 +115,6 @@ export const defineWorker = (config: QueueConfig) => {
                 name: "cloudsql",
               },
             ],
-          },
-        ],
-        serviceAccount: serviceAccount.email,
-        volumes: [
-          {
-            name: "cloudsql",
-            cloudSqlInstance: {
-              instances: [database.connectionName],
-            },
           },
         ],
         vpcAccess: {
@@ -116,7 +138,6 @@ export const defineWorker = (config: QueueConfig) => {
         actionSecret.version,
         hasuraJwtSecretToken.version,
       ],
-      ignoreChanges: ["scaling"],
     },
   );
 };

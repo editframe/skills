@@ -14,7 +14,7 @@ type Workers =
   | "renderFinalizer"
   | "ingestImage";
 
-export const workers: Record<Workers, gcp.cloudrunv2.WorkerPool> = {
+export const workers: Record<Workers, gcp.cloudrunv2.Service> = {
   ingestImage: defineWorker(workerConfigs.ingestImage),
   htmlFinalizer: defineWorker(workerConfigs.htmlFinalizer),
   htmlInitializer: defineWorker(workerConfigs.htmlInitializer),
