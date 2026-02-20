@@ -1723,6 +1723,7 @@ describe("benchmark: parallel image loading queue depth", () => {
       const html = `
         <div xmlns="http://www.w3.org/1999/xhtml" style="width:${WIDTH}px;height:${HEIGHT}px;background:linear-gradient(180deg, #0f0c29, #302b63, #24243e);position:relative;overflow:hidden;">
           <style>${styles}</style>
+          ${elements}
           <div style="position:absolute;bottom:20px;right:20px;color:white;font-size:48px;font-weight:bold;text-shadow:0 2px 10px rgba(0,0,0,0.5);">
             Frame ${index}
           </div>
