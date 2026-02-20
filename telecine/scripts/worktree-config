@@ -85,8 +85,8 @@ fi
 # Export database name for Docker Compose
 export POSTGRES_DB="$WORKTREE_DATABASE"
 
-# Calculate simple port offset for worktrees based on branch name
-# Uses a hash of branch name to get consistent port offset (0-9) * 1000
+# Calculate port offset for worktrees based on branch name
+# Uses cksum hash for better distribution across 200 slots (spacing of 100)
 # This allows host tools (like Postico) to connect while avoiding conflicts
 calculate_port_offset() {
   if [ "$IS_MAIN_WORKTREE" = true ]; then
@@ -94,9 +94,9 @@ calculate_port_offset() {
     return
   fi
   
-  # Simple hash: sum of character codes modulo 10, then multiply by 1000
-  local hash=$(echo -n "$BRANCH_NAME" | od -An -tu1 | awk '{sum += $1} END {print sum % 10}')
-  echo $((hash * 1000))
+  local hash=$(echo -n "$BRANCH_NAME" | cksum | awk '{print $1}')
+  local slot=$(( (hash % 200) + 1 ))
+  echo $(( slot * 100 ))
 }
 
 PORT_OFFSET=$(calculate_port_offset)
