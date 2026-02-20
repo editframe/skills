@@ -82,5 +82,7 @@ COPY --from=builder /app/package.json /app/package.json
 COPY --from=builder /app/node_modules/ /app/node_modules/
 COPY --from=builder /app/services/worker-render-initializer/dist/ /app/services/worker-render-initializer/dist/
 COPY --from=builder /app/.compile-cache/ /app/.compile-cache/
+COPY --from=builder /app/lib/ /app/lib/
+COPY --from=builder /app/tsconfig.json /app/tsconfig.json
 
 CMD ["node", "/app/services/worker-render-initializer/dist/server.js"]

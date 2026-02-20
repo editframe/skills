@@ -13,12 +13,11 @@ import {
   applicationSecret,
   hasuraJwtSecretToken,
 } from "../secrets";
-import { DEPLOYED_DOMAIN, GCP_PROJECT, GCP_REGION } from "../constants";
+import { DEPLOYED_DOMAIN } from "../constants";
 import { bucket } from "../storage";
 import { publicBucketName } from "../constants";
 import { getImageRef } from "../../util/getImageRef";
 import { valkeyInternalIp } from "../valkey";
-import { queueEnvVars } from "../queues/workers";
 import { workerResources } from "../../worker-resources.config";
 
 export const cloudrun = new gcp.cloudrunv2.Service(
@@ -78,9 +77,6 @@ export const cloudrun = new gcp.cloudrunv2.Service(
             envFromValue("GCLOUD_TRACE_EXPORT", "true"),
             envFromValue("WEB_HOST", `https://${DEPLOYED_DOMAIN}`),
             envFromValue("RENDER_HOST", `https://${DEPLOYED_DOMAIN}`),
-            envFromValue("GCP_PROJECT", GCP_PROJECT),
-            envFromValue("GCP_REGION", GCP_REGION),
-            ...queueEnvVars(),
             envFromValue("PINO_LOG_LEVEL", "debug"),
           ],
           livenessProbe: {

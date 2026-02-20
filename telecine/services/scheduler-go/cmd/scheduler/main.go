@@ -18,6 +18,7 @@ import (
 	"github.com/editframe/telecine/scheduler-go/internal/pool"
 	"github.com/editframe/telecine/scheduler-go/internal/queue"
 	"github.com/editframe/telecine/scheduler-go/internal/reconciler"
+	"github.com/editframe/telecine/scheduler-go/internal/stall"
 )
 
 func main() {
@@ -69,6 +70,10 @@ func main() {
 	// Create and start reconciler
 	rec := reconciler.New(client, claimMgr, queues, pools, logger)
 	go rec.Run(ctx)
+
+	// Start stall detector
+	stallDetector := stall.NewDetector(client, queues, logger)
+	go stallDetector.Run(ctx)
 
 	// HTTP server for health checks
 	handler := health.NewHandler(queues, pools)
