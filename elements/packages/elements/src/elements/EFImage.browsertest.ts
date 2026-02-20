@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import "./EFImage.js";
 import "../gui/EFPreview.js";
 import { v4 } from "uuid";
+import { TEST_SERVER_PORT } from "../../test/constants.js";
 
 describe("EFImage", () => {
   describe("when rendering", () => {
@@ -172,6 +173,27 @@ describe("EFImage", () => {
       // so that ctx.drawImage() during rendering doesn't taint the canvas.
       expect(image.canvasRef.value).toBeDefined();
       expect(image.imageRef.value).toBeUndefined();
+
+      image.remove();
+    });
+
+    test("loads remote WebP through proxy and populates canvas", async () => {
+      // Uses localhost so the Node.js proxy middleware can reach it directly,
+      // regardless of whether Traefik is in front for the browser connection.
+      const image = document.createElement("ef-image");
+      image.src = `http://localhost:${TEST_SERVER_PORT}/test.webp`;
+      image.style.width = "100px";
+      image.style.height = "100px";
+      document.body.append(image);
+      await image.updateComplete;
+      await image.loadImage();
+
+      expect(image.contentReadyState).toBe("ready");
+      expect(image.hasAlpha).toBe(true);
+      const canvasEl = image.canvasRef.value;
+      expect(canvasEl).toBeDefined();
+      expect(canvasEl!.width).toBeGreaterThan(0);
+      expect(canvasEl!.height).toBeGreaterThan(0);
 
       image.remove();
     });
