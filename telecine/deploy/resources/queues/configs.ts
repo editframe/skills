@@ -6,6 +6,7 @@ export interface QueueConfig {
   name: string;
   screaming: string;
   maxWorkerCount: number;
+  minWorkerCount: number;
   workerConcurrency: number;
   workerCpu: string;
   workerMemory: string;
@@ -26,6 +27,7 @@ export const workerConfigs: Record<Workers, QueueConfig> = {
     name: "ingest-image",
     screaming: "INGEST_IMAGE",
     maxWorkerCount: 10,
+    minWorkerCount: 0,
     workerConcurrency: 20,
     workerCpu: workerResources.ingestImage.cpu,
     workerMemory: workerResources.ingestImage.memory,
@@ -34,6 +36,7 @@ export const workerConfigs: Record<Workers, QueueConfig> = {
     name: "process-html-finalizer",
     screaming: "PROCESS_HTML_FINALIZER",
     maxWorkerCount: 10,
+    minWorkerCount: 0,
     workerConcurrency: 20,
     workerCpu: workerResources.htmlFinalizer.cpu,
     workerMemory: workerResources.htmlFinalizer.memory,
@@ -42,6 +45,7 @@ export const workerConfigs: Record<Workers, QueueConfig> = {
     name: "process-html-initializer",
     screaming: "PROCESS_HTML_INITIALIZER",
     maxWorkerCount: 20,
+    minWorkerCount: 1,
     workerConcurrency: 5,
     workerCpu: workerResources.htmlInitializer.cpu,
     workerMemory: workerResources.htmlInitializer.memory,
@@ -50,6 +54,7 @@ export const workerConfigs: Record<Workers, QueueConfig> = {
     name: "process-isobmff",
     screaming: "PROCESS_ISOBMFF",
     maxWorkerCount: 20,
+    minWorkerCount: 0,
     workerConcurrency: 5,
     workerCpu: workerResources.processISOBMFF.cpu,
     workerMemory: workerResources.processISOBMFF.memory,
@@ -58,6 +63,7 @@ export const workerConfigs: Record<Workers, QueueConfig> = {
     name: "render-initializer",
     screaming: "RENDER_INITIALIZER",
     maxWorkerCount: 10,
+    minWorkerCount: 1,
     workerConcurrency: 2,
     workerCpu: workerResources.renderInitializer.cpu,
     workerMemory: workerResources.renderInitializer.memory,
@@ -66,6 +72,7 @@ export const workerConfigs: Record<Workers, QueueConfig> = {
     name: "render-fragment",
     screaming: "RENDER_FRAGMENT",
     maxWorkerCount: 200,
+    minWorkerCount: 0,
     workerConcurrency: 1,
     workerCpu: workerResources.renderFragment.cpu,
     workerMemory: workerResources.renderFragment.memory,
@@ -74,6 +81,7 @@ export const workerConfigs: Record<Workers, QueueConfig> = {
     name: "render-finalizer",
     screaming: "RENDER_FINALIZER",
     maxWorkerCount: 10,
+    minWorkerCount: 0,
     workerConcurrency: 20,
     workerCpu: workerResources.renderFinalizer.cpu,
     workerMemory: workerResources.renderFinalizer.memory,

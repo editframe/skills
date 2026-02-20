@@ -10,6 +10,7 @@ import * as jitTranscoding from "./resources/jit-transcoding";
 import * as storage from "./resources/storage";
 import * as queues from "./resources/queues/workers";
 import * as maintenance from "./resources/maintenance";
+import * as schedulerGo from "./resources/scheduler-go";
 import "./resources/network";
 import "./resources/valkey";
 import "./resources/storage-backend";
@@ -30,6 +31,7 @@ const hasuraServiceAccount = pulumi.interpolate`serviceAccount:${hasura.serviceA
 const deployerWorkloadPool = pulumi.interpolate`principalSet://iam.googleapis.com/${infra.deployerWorkloadPool.name}/attribute.repository/editframe/telecine`;
 const queuesServiceAccount = pulumi.interpolate`serviceAccount:${queues.serviceAccount.email}`;
 const maintenanceServiceAccount = pulumi.interpolate`serviceAccount:${maintenance.serviceAccount.email}`;
+const schedulerGoServiceAccount = pulumi.interpolate`serviceAccount:${schedulerGo.serviceAccount.email}`;
 
 new gcp.projects.IAMBinding("cloudsql-clients", {
   members: [
@@ -90,6 +92,7 @@ new gcp.projects.IAMBinding("run-admins", {
     jitTranscodingServiceAccount,
     queuesServiceAccount,
     maintenanceServiceAccount,
+    schedulerGoServiceAccount,
     deployerWorkloadPool,
   ],
   role: "roles/run.admin",
@@ -150,6 +153,7 @@ new gcp.projects.IAMBinding("service-account-users", {
     deployerWorkloadPool,
     queuesServiceAccount,
     maintenanceServiceAccount,
+    schedulerGoServiceAccount,
   ],
   role: "roles/iam.serviceAccountUser",
   project: GCP_PROJECT,
@@ -177,6 +181,7 @@ new gcp.projects.IAMBinding("trace-agents", {
     jitTranscodingServiceAccount,
     queuesServiceAccount,
     maintenanceServiceAccount,
+    schedulerGoServiceAccount,
   ],
   role: "roles/cloudtrace.agent",
   project: GCP_PROJECT,
@@ -191,6 +196,7 @@ new gcp.projects.IAMBinding("cloudrun invokers", {
     hasuraServiceAccount,
     queuesServiceAccount,
     maintenanceServiceAccount,
+    schedulerGoServiceAccount,
   ],
   role: "roles/run.invoker",
   project: GCP_PROJECT,

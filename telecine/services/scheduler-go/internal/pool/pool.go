@@ -3,7 +3,9 @@ package pool
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
@@ -118,10 +120,17 @@ func (p *Pool) dial(ctx context.Context) (*conn, error) {
 	dialCtx, dialCancel := context.WithTimeout(ctx, 30*time.Second)
 	defer dialCancel()
 
+	headers := http.Header{
+		"X-Queue-Name": []string{p.queueName},
+	}
+
+	// On GCP, fetch an identity token for the worker's audience (base URL).
+	if token, err := fetchIDToken(dialCtx, p.url); err == nil && token != "" {
+		headers.Set("Authorization", "Bearer "+token)
+	}
+
 	ws, _, err := websocket.Dial(dialCtx, wsURL, &websocket.DialOptions{
-		HTTPHeader: http.Header{
-			"X-Queue-Name": []string{p.queueName},
-		},
+		HTTPHeader: headers,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("dial %s: %w", wsURL, err)
@@ -175,6 +184,33 @@ func (p *Pool) remove(c *conn) {
 			return
 		}
 	}
+}
+
+// fetchIDToken gets a GCP identity token from the metadata server for
+// service-to-service auth. Returns empty string when not running on GCP.
+func fetchIDToken(ctx context.Context, audience string) (string, error) {
+	metadataURL := "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity?audience=" + url.QueryEscape(audience)
+	req, err := http.NewRequestWithContext(ctx, "GET", metadataURL, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Metadata-Flavor", "Google")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("metadata server returned %d", resp.StatusCode)
+	}
+
+	token, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(token), nil
 }
 
 func (p *Pool) wsURL() string {

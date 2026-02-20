@@ -16,6 +16,7 @@ services:
     environment:
       - SHELL=/bin/sh
       - OTEL_SERVICE_NAME=worker-render-fragment
+      - WORKER_MODE=websocket
     volumes_from:
       - runner
     stop_grace_period: 1s
