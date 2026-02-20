@@ -2130,8 +2130,6 @@ describe("clone-timeline video rendition (reproduction)", () => {
 
     const originalVideoRendition = originalMediaEngine.getVideoRendition();
 
-    // With media-engine="local", remote URLs use AssetMediaEngine which requires
-    // the server to provide track fragment index at /@ef-track/<src>/index.json
     expect(originalMediaEngine.constructor.name).toBe("AssetMediaEngine");
     expect(originalVideoRendition).toBeTruthy();
 
