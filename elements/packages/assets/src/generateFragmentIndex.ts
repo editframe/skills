@@ -1,5 +1,10 @@
 import { Readable, Transform, Writable } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import { createWriteStream } from "node:fs";
+import { unlink } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { randomBytes } from "node:crypto";
 import debug from "debug";
 import type { TrackFragmentIndex, TrackSegment } from "./Probe.js";
 import { PacketProbe } from "./Probe.js";
@@ -219,24 +224,6 @@ class StreamingBoxParser extends Transform {
   getFragments(): Fragment[] {
     return this.fragments;
   }
-}
-
-// Helper function to create a readable stream from fragment data
-function createFragmentStream(fragmentData: Uint8Array): Readable {
-  let offset = 0;
-  return new Readable({
-    read() {
-      if (offset >= fragmentData.length) {
-        this.push(null);
-        return;
-      }
-
-      const chunkSize = Math.min(64 * 1024, fragmentData.length - offset); // 64KB chunks
-      const chunk = fragmentData.slice(offset, offset + chunkSize);
-      offset += chunkSize;
-      this.push(Buffer.from(chunk));
-    },
-  });
 }
 
 // Helper to convert timestamp from ffprobe timebase to track timescale
@@ -496,47 +483,58 @@ export const generateFragmentIndex = async (
   inputStream: Readable,
   startTimeOffsetMs?: number,
   trackIdMapping?: Record<number, number>, // Map from source track ID to desired track ID
+  options?: { tmpDir?: string },
 ): Promise<Record<number, TrackFragmentIndex>> => {
   // Step 1: Create a streaming parser that detects fragment boundaries
   const parser = new StreamingBoxParser();
 
-  // Step 2: Create a passthrough stream that doesn't buffer everything
-  const chunks: Buffer[] = [];
+  // Step 2: Write stream to a temp file to avoid buffering the entire MP4 in memory
+  const tempDir = options?.tmpDir ?? tmpdir();
+  const tempFile = join(tempDir, `ef-probe-${randomBytes(8).toString("hex")}.mp4`);
   let totalSize = 0;
 
   const dest = new Writable({
     write(chunk, _encoding, callback) {
-      chunks.push(chunk);
       totalSize += chunk.length;
       callback();
     },
   });
 
+  const tempWriteStream = createWriteStream(tempFile);
+
+  // Split input through both parser (for fragment detection) and temp file (for probing)
+  // We must tee the stream: pipe inputStream → parser → dest, and also write to tempFile
+  const teeTransform = new Transform({
+    transform(chunk, _encoding, callback) {
+      tempWriteStream.write(chunk);
+      this.push(chunk);
+      callback();
+    },
+    flush(callback) {
+      tempWriteStream.end(() => callback());
+    },
+  });
+
   // Process the stream through both parser and collection
-  await pipeline(inputStream, parser, dest);
+  await pipeline(inputStream, teeTransform, parser, dest);
   const fragments = parser.getFragments();
 
-  // If no data was collected, return empty result
+  // If no data was collected, clean up and return empty result
   if (totalSize === 0) {
+    await unlink(tempFile).catch(() => {});
     return {};
   }
 
-  // Step 3: Use ffprobe to analyze the complete stream for track metadata
-  const completeData = Buffer.concat(chunks as readonly Uint8Array[]);
-  const completeStream = createFragmentStream(
-    new Uint8Array(
-      completeData.buffer,
-      completeData.byteOffset,
-      completeData.byteLength,
-    ),
-  );
-
+  // Step 3: Use ffprobe to analyze the temp file for track metadata (avoids in-memory buffering)
   let probe: PacketProbe;
   try {
-    probe = await PacketProbe.probeStream(completeStream);
+    probe = await PacketProbe.probePath(tempFile);
   } catch (error) {
     console.warn("Failed to probe stream with ffprobe:", error);
+    await unlink(tempFile).catch(() => {});
     return {};
+  } finally {
+    await unlink(tempFile).catch(() => {});
   }
 
   const videoStreams = probe.videoStreams;

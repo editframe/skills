@@ -1,8 +1,10 @@
-import { test, describe, assert } from "vitest";
+import { test, describe, assert, beforeEach, afterEach } from "vitest";
 import { Readable, Transform } from "node:stream";
 import { generateFragmentIndex } from "./generateFragmentIndex";
 import { Probe } from "./Probe.js";
 import type { TrackFragmentIndex, VideoTrackFragmentIndex } from "./Probe.js";
+import { mkdir, rm, readdir } from "node:fs/promises";
+import { join } from "node:path";
 
 // =============================================================================
 // Test Fixtures: Single Source of Truth for Expected Data
@@ -469,6 +471,64 @@ describe("generateFragmentIndex", () => {
       assert.equal(track.segments.length, 10);
       assertSegmentsValid(track.segments);
     }, 15000);
+  });
+
+  describe("tmpDir option", () => {
+    let tmpDir: string;
+
+    beforeEach(async () => {
+      tmpDir = join(process.cwd(), "test-tmp-" + Date.now());
+      await mkdir(tmpDir, { recursive: true });
+    });
+
+    afterEach(async () => {
+      await rm(tmpDir, { recursive: true, force: true });
+    });
+
+    test("writes temp file to tmpDir and cleans it up after probing", async () => {
+      const testStream = await createTestStreamFromFile(
+        "test-assets/frame-count.mp4",
+      );
+
+      // Spy on tmpDir: sample for files during execution using polling
+      let peakFileCount = 0;
+      // Use a polling approach: check the dir after a small delay inside the promise
+      const resultPromise = generateFragmentIndex(testStream, undefined, undefined, { tmpDir });
+
+      // Poll tmpDir while the promise is running
+      const poll = setInterval(async () => {
+        try {
+          const files = await readdir(tmpDir);
+          peakFileCount = Math.max(peakFileCount, files.length);
+        } catch {}
+      }, 5);
+
+      const result = await resultPromise;
+      clearInterval(poll);
+
+      // Result should be identical to calling without tmpDir
+      assert.isObject(result);
+      assert.hasAllKeys(result, ["1"]);
+      const track = result[1]!;
+      assertVideoTrackMetadata(track, FRAME_COUNT_VIDEO_TRACK);
+
+      // A temp file must have been created in tmpDir during execution
+      assert.isAbove(peakFileCount, 0, "Temp file should have been written to tmpDir during probing");
+
+      // No temp files should remain in tmpDir after completion
+      const remaining = await readdir(tmpDir);
+      assert.deepEqual(remaining, [], "No temp files should remain in tmpDir after completion");
+    }, 15000);
+
+    test("produces identical output with and without tmpDir", async () => {
+      const stream1 = await createTestStreamFromFile("test-assets/bars-n-tone.mp4");
+      const stream2 = await createTestStreamFromFile("test-assets/bars-n-tone.mp4");
+
+      const withTmpDir = await generateFragmentIndex(stream1, undefined, undefined, { tmpDir });
+      const withoutTmpDir = await generateFragmentIndex(stream2);
+
+      assert.deepEqual(withTmpDir, withoutTmpDir);
+    }, 30000);
   });
 
   describe("edge cases and error handling", () => {
