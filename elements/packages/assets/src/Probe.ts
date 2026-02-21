@@ -355,6 +355,17 @@ abstract class ProbeBase {
     return this.mustReencodeAudio || this.mustReencodeVideo || this.mustRemux;
   }
 
+  get startTimeOffsetMs(): number | undefined {
+    if (this.data.format.start_time && Number(this.data.format.start_time) !== 0) {
+      return Number(this.data.format.start_time) * 1000;
+    }
+    const videoStream = this.videoStreams[0];
+    if (videoStream?.start_time && Number(videoStream.start_time) !== 0) {
+      return Number(videoStream.start_time) * 1000;
+    }
+    return undefined;
+  }
+
   get audioTimebase() {
     const audioStream = this.audioStreams[0];
     if (!audioStream) {

@@ -11,34 +11,11 @@ export const generateTrackFragmentIndexFromPath = async (
   const log = debug("ef:generateTrackFragment");
   const probe = await Probe.probePath(absolutePath);
 
-  // Extract timing offset from probe metadata (same logic as processISOBMFF.ts)
-  let startTimeOffsetMs: number | undefined;
-
-  // First check format-level start_time
-  if (probe.format.start_time && Number(probe.format.start_time) !== 0) {
-    startTimeOffsetMs = Number(probe.format.start_time) * 1000;
-    log(
-      `Extracted format start_time offset: ${probe.format.start_time}s (${startTimeOffsetMs}ms)`,
-    );
+  const startTimeOffsetMs = probe.startTimeOffsetMs;
+  if (startTimeOffsetMs !== undefined) {
+    log(`Extracted start_time offset: ${startTimeOffsetMs}ms`);
   } else {
-    // Check for video stream start_time (more common)
-    const videoStream = probe.streams.find(
-      (stream) => stream.codec_type === "video",
-    );
-    if (
-      videoStream &&
-      videoStream.start_time &&
-      Number(videoStream.start_time) !== 0
-    ) {
-      startTimeOffsetMs = Number(videoStream.start_time) * 1000;
-      log(
-        `Extracted video stream start_time offset: ${videoStream.start_time}s (${startTimeOffsetMs}ms)`,
-      );
-    } else {
-      log(
-        "No format/stream timing offset found - will detect from composition time",
-      );
-    }
+    log("No format/stream timing offset found - will detect from composition time");
   }
 
   log(
