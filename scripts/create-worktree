@@ -81,6 +81,11 @@ fi
 # Write scope file
 echo "$SCOPE" > "$WORKTREE_DIR/.worktree-scope"
 
+# Copy opencode.json if not already present (e.g. branch predates the commit)
+if [ ! -f "$WORKTREE_DIR/opencode.json" ] && [ -f "$CURRENT_ROOT/opencode.json" ]; then
+  cp "$CURRENT_ROOT/opencode.json" "$WORKTREE_DIR/opencode.json"
+fi
+
 # 2. Copy .env files
 if [ -f "$CURRENT_ROOT/elements/.env" ]; then
   cp "$CURRENT_ROOT/elements/.env" "$WORKTREE_DIR/elements/.env" 2>/dev/null || true
