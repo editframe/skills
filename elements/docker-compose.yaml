@@ -1,6 +1,9 @@
 name: ef-elements
 services:
   runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: elements-runner
     pull_policy: never
     init: true
