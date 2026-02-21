@@ -1,4 +1,4 @@
-import { describe, test, expect, afterEach } from "vitest";
+import { describe, test, expect, afterEach, vi } from "vitest";
 import "../../elements/EFPanZoom.js";
 import "../../elements/EFTimegroup.js";
 import "../../elements/EFVideo.js";
@@ -49,7 +49,6 @@ describe("Selection Handle Positioning (via EFTransformHandles)", () => {
     canvas.appendChild(element);
 
     await canvas.updateComplete;
-    await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Register element
     const api = new CanvasAPI(canvas as any);
@@ -57,8 +56,11 @@ describe("Selection Handle Positioning (via EFTransformHandles)", () => {
 
     // Select element
     canvas.selectionContext.select("test-element");
-    await canvas.updateComplete;
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Wait for transform handles to appear (canvas reacts to selection via RAF)
+    await vi.waitUntil(
+      () => container.querySelector("ef-transform-handles") !== null,
+      { timeout: 5000, interval: 16 },
+    );
 
     // Get element metadata
     const metadata = canvas.getElementData("test-element");
@@ -113,7 +115,12 @@ describe("Selection Handle Positioning (via EFTransformHandles)", () => {
 
     await canvas.updateComplete;
     await timegroup.updateComplete;
-    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Wait for timegroup to be auto-registered (canvas registers elements in RAF)
+    await vi.waitUntil(
+      () => canvas.getElementData("test-timegroup") !== null,
+      { timeout: 5000, interval: 16 },
+    );
 
     // Element should be auto-registered
     const metadata = canvas.getElementData("test-timegroup");
@@ -121,8 +128,11 @@ describe("Selection Handle Positioning (via EFTransformHandles)", () => {
 
     // Select timegroup
     canvas.selectionContext.select("test-timegroup");
-    await canvas.updateComplete;
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Wait for transform handles to appear
+    await vi.waitUntil(
+      () => container.querySelector("ef-transform-handles") !== null,
+      { timeout: 5000, interval: 16 },
+    );
 
     // Transform handles should be rendered
     const transformHandles = container.querySelector(
@@ -167,7 +177,6 @@ describe("Selection Handle Positioning (via EFTransformHandles)", () => {
     panZoom.y = 50;
     panZoom.scale = 1.5;
     await panZoom.updateComplete;
-    await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Create element
     const element = document.createElement("div");
@@ -181,15 +190,21 @@ describe("Selection Handle Positioning (via EFTransformHandles)", () => {
     canvas.appendChild(element);
 
     await canvas.updateComplete;
-    await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Register and select
     const api = new CanvasAPI(canvas as any);
     api.registerElement(element, "test-element");
     canvas.selectionContext.select("test-element");
-    await canvas.updateComplete;
-    // Wait longer for transform handles to update with scaled bounds
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    // Wait for transform handles to appear with valid scaled bounds
+    await vi.waitUntil(
+      () => {
+        const handles = container.querySelector(
+          "ef-transform-handles",
+        ) as any;
+        return handles && handles.bounds && handles.bounds.width > 0;
+      },
+      { timeout: 5000, interval: 16 },
+    );
 
     // Transform handles should be rendered
     const transformHandles = container.querySelector(

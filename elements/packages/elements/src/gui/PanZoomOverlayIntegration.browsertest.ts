@@ -33,10 +33,20 @@ afterEach(() => {
 });
 
 /**
- * Helper to wait for RAF updates
+ * Wait until an overlay item has a non-zero width style set (RAF loop has run at least once).
  */
-function waitForRaf(ms: number = 100): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+async function waitForOverlayUpdate(item: Element): Promise<void> {
+  await vi.waitUntil(
+    () => parseFloat((item as HTMLElement).style.width) > 0,
+    { timeout: 5000, interval: 16 },
+  );
+}
+
+/**
+ * Wait until a predicate is satisfied (e.g. overlay reached expected position after a change).
+ */
+async function waitFor(predicate: () => boolean): Promise<void> {
+  await vi.waitUntil(predicate, { timeout: 5000, interval: 16 });
 }
 
 /**
@@ -118,7 +128,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
 
-      await waitForRaf();
+      await waitForOverlayUpdate(overlayItem);
 
       // Verify overlay item position matches target
       const targetRect = target.getBoundingClientRect();
@@ -182,7 +192,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
 
-      await waitForRaf();
+      await waitForOverlayUpdate(overlayItem);
 
       // Now pan the view
       panZoom.x = 50;
@@ -190,7 +200,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       overlayLayer.panZoomTransform = { x: 50, y: 75, scale: 1 };
 
       await panZoom.updateComplete;
-      await waitForRaf();
+      await waitFor(() => overlayLayer.style.transform === "translate(50px, 75px)");
 
       // The overlay item should still visually overlay the target
       // Both target and overlay layer have moved by the same amount
@@ -247,13 +257,13 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
 
-      await waitForRaf();
+      await waitForOverlayUpdate(overlayItem);
 
       // Now zoom to 2x
       panZoom.scale = 2;
       overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 2 };
 
-      await waitForRaf();
+      await waitFor(() => parseFloat((overlayItem as HTMLElement).style.width) > 300);
 
       // Target is now scaled by 2x, so its screen size is 400x300
       // Overlay item should match this screen size
@@ -324,7 +334,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
 
-      await waitForRaf();
+      await waitForOverlayUpdate(overlayItem);
 
       // Verify alignment
       const targetRect = target.getBoundingClientRect();
@@ -363,7 +373,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       document.body.appendChild(panZoom);
       testElements.push(panZoom);
 
-      await waitForRaf();
+      await panZoom.updateComplete;
 
       // Create overlay layer as child of PanZoom (will consume context)
       const overlayLayer = document.createElement(
@@ -374,7 +384,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       panZoom.appendChild(overlayLayer);
       testElements.push(overlayLayer);
 
-      await waitForRaf();
+      await waitFor(() => overlayLayer.style.transform === "none");
 
       // When overlay is CHILD of panzoom, it delegates transform to parent
       // and sets its own transform to 'none'
@@ -440,7 +450,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       const positionChangedHandler = vi.fn();
       overlayItem.addEventListener("position-changed", positionChangedHandler);
 
-      await waitForRaf();
+      await waitFor(() => positionChangedHandler.mock.calls.length > 0);
 
       expect(positionChangedHandler).toHaveBeenCalled();
       const event = positionChangedHandler.mock
@@ -590,7 +600,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       const positionChangedHandler = vi.fn();
       overlayItem.addEventListener("position-changed", positionChangedHandler);
 
-      await waitForRaf();
+      await waitFor(() => positionChangedHandler.mock.calls.length > 0);
 
       // Verify rotation is captured
       expect(positionChangedHandler).toHaveBeenCalled();
@@ -646,7 +656,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
 
-      await waitForRaf();
+      await waitFor(() => (overlayItem as HTMLElement).style.transform.includes("rotate(30deg)"));
 
       // Initial rotation
       expect(overlayItem.style.transform).toContain("rotate(30deg)");
@@ -655,7 +665,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       panZoom.scale = 2;
       overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 2 };
 
-      await waitForRaf();
+      await waitFor(() => parseFloat((overlayItem as HTMLElement).style.width) > 300);
 
       // Rotation should still be 30deg
       expect(overlayItem.style.transform).toContain("rotate(30deg)");
@@ -723,7 +733,8 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       overlayLayer.appendChild(overlayItem2);
       testElements.push(overlayItem2);
 
-      await waitForRaf();
+      await waitForOverlayUpdate(overlayItem1);
+      await waitForOverlayUpdate(overlayItem2);
 
       const target1Rect = target1.getBoundingClientRect();
       const target2Rect = target2.getBoundingClientRect();
@@ -798,16 +809,16 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
 
-      await waitForRaf();
+      await waitForOverlayUpdate(overlayItem);
 
-      const initialLeft = parseFloat(overlayItem.style.left);
-      const initialTop = parseFloat(overlayItem.style.top);
+      const initialLeft = parseFloat((overlayItem as HTMLElement).style.left);
+      const initialTop = parseFloat((overlayItem as HTMLElement).style.top);
 
       // Move the target
       target.style.left = "300px";
       target.style.top = "250px";
 
-      await waitForRaf();
+      await waitFor(() => parseFloat((overlayItem as HTMLElement).style.left) !== initialLeft);
 
       // Overlay should have moved
       expect(parseFloat(overlayItem.style.left)).not.toBeCloseTo(
@@ -860,13 +871,13 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
 
-      await waitForRaf();
+      await waitForOverlayUpdate(overlayItem);
 
       // Resize the target
       target.style.width = "400px";
       target.style.height = "300px";
 
-      await waitForRaf();
+      await waitFor(() => parseFloat((overlayItem as HTMLElement).style.width) > 350);
 
       // Overlay should have resized
       expect(parseFloat(overlayItem.style.width)).toBeCloseTo(400, 1);
@@ -942,7 +953,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
 
-      await waitForRaf();
+      await waitForOverlayUpdate(overlayItem);
 
       // Verify overlay tracks child element correctly
       const childRect = childElement.getBoundingClientRect();
@@ -1024,7 +1035,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
 
-      await waitForRaf();
+      await waitForOverlayUpdate(overlayItem);
 
       const childRect = childElement.getBoundingClientRect();
       const overlayLayerRect = overlayLayer.getBoundingClientRect();
@@ -1089,7 +1100,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       testElements.push(overlayLayer);
 
       // Wait for overlay layer's transform to be applied
-      await waitForRaf();
+      await waitFor(() => overlayLayer.style.transform === "translate(200px, 150px)");
 
       // Verify overlay layer has correct transform
       expect(overlayLayer.style.transform).toBe("translate(200px, 150px)");
@@ -1107,7 +1118,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
 
-      await waitForRaf();
+      await waitForOverlayUpdate(overlayItem);
 
       // Overlay should be correctly positioned
       const targetRect = target.getBoundingClientRect();
@@ -1163,7 +1174,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
 
-      await waitForRaf();
+      await waitForOverlayUpdate(overlayItem);
 
       // Should still position correctly at minimum scale
       const targetRect = target.getBoundingClientRect();
@@ -1220,7 +1231,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
 
-      await waitForRaf();
+      await waitForOverlayUpdate(overlayItem);
 
       // At 5x scale, target screen size should be 1000x750
       const targetRect = target.getBoundingClientRect();
@@ -1251,7 +1262,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       document.body.appendChild(overlayLayer);
       testElements.push(overlayLayer);
 
-      await waitForRaf();
+      await waitFor(() => overlayLayer.style.transform.includes("translate(0px, 0px)"));
 
       // Should default to translate(0, 0)
       const transform = overlayLayer.style.transform;

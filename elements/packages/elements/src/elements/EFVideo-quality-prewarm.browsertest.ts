@@ -17,6 +17,7 @@ import {
   describe,
   expect,
   test,
+  vi,
 } from "vitest";
 import { getApiHost } from "../../test/setup.js";
 import "./EFVideo.js";
@@ -83,8 +84,11 @@ describe("quality pre-warming on src set", () => {
       return;
     }
 
-    // Allow the scheduler to start processing tasks
-    await new Promise((r) => setTimeout(r, 100));
+    // Wait for the scheduler to queue tasks (poll instead of fixed timeout)
+    await vi.waitUntil(
+      () => timegroup.qualityUpgradeScheduler.getQueueSnapshot().length > 0,
+      { timeout: 5000, interval: 50 },
+    );
 
     // Without the fix: no tasks are in the scheduler because #maybeScheduleQualityUpgrade
     // is only called from Stage 3 (first scrub frame at 5s).

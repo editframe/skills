@@ -187,7 +187,6 @@ describe("SelectionOverlay", () => {
 
   test(
     "box selection appears at correct viewport coordinates in grid layout",
-    { timeout: 1000 },
     async ({ expect }) => {
       // Create a grid layout similar to canvas-demo.html
       // This simulates the canvas being offset from viewport origin
@@ -243,8 +242,14 @@ describe("SelectionOverlay", () => {
       await panZoom?.updateComplete;
       await canvas?.updateComplete;
 
-      // Wait for overlay to be created
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      // Wait for overlay to be created (EFCanvas.setupSelectionOverlay runs in RAF)
+      await vi.waitUntil(
+        () =>
+          canvasArea.parentElement?.querySelector(
+            "ef-canvas-selection-overlay",
+          ) !== null,
+        { timeout: 5000, interval: 16 },
+      );
 
       // Find the overlay (it should be a sibling of pan-zoom, not inside canvas)
       const overlay = canvasArea.parentElement?.querySelector(
@@ -278,7 +283,6 @@ describe("SelectionOverlay", () => {
       );
 
       await canvas.updateComplete;
-      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Update box selection to (150, 150) in canvas space
       const canvasEndX = 150;
@@ -299,7 +303,11 @@ describe("SelectionOverlay", () => {
       );
 
       await canvas.updateComplete;
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      // Wait for RAF loop to process the box selection and render the .box-select div
+      await vi.waitUntil(() => overlay?.querySelector(".box-select") !== null, {
+        timeout: 5000,
+        interval: 16,
+      });
 
       // Check that the overlay has the correct screen coordinates
       // The box selection should appear at viewport coordinates, not offset by canvasArea position
@@ -334,7 +342,6 @@ describe("SelectionOverlay", () => {
 
   test(
     "renders highlight box when hovering element",
-    { timeout: 1000 },
     async ({ expect }) => {
       const container = document.createElement("div");
       container.style.width = "800px";
@@ -363,8 +370,12 @@ describe("SelectionOverlay", () => {
       await panZoom?.updateComplete;
       await canvas?.updateComplete;
 
-      // Wait for overlay to be created
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Wait for overlay to be created (EFCanvas.setupSelectionOverlay runs in RAF)
+      await vi.waitUntil(
+        () =>
+          container.querySelector("ef-canvas-selection-overlay") !== null,
+        { timeout: 5000, interval: 16 },
+      );
 
       const overlay = container.querySelector(
         "ef-canvas-selection-overlay",
@@ -372,8 +383,7 @@ describe("SelectionOverlay", () => {
       expect(overlay).toBeTruthy();
 
       // Initially no highlight box
-      let highlightBox = overlay.querySelector(".highlight-box");
-      expect(highlightBox).toBeFalsy();
+      expect(overlay.querySelector(".highlight-box")).toBeFalsy();
 
       // Hover over the element
       const element = canvas.querySelector(
@@ -381,12 +391,12 @@ describe("SelectionOverlay", () => {
       ) as HTMLElement;
       element.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
 
-      await canvas.updateComplete;
-      // Wait for RAF loop to update overlay bounds
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      // Highlight box should now appear
-      highlightBox = overlay.querySelector(".highlight-box");
+      // Wait for RAF loop to detect the change and re-render
+      await vi.waitUntil(
+        () => overlay.querySelector(".highlight-box") !== null,
+        { timeout: 5000, interval: 16 },
+      );
+      const highlightBox = overlay.querySelector(".highlight-box");
       expect(highlightBox).toBeTruthy();
 
       // Verify highlight box has position styles set
@@ -396,11 +406,11 @@ describe("SelectionOverlay", () => {
 
       // Mouseleave should remove highlight box
       element.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
-      await canvas.updateComplete;
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      highlightBox = overlay.querySelector(".highlight-box");
-      expect(highlightBox).toBeFalsy();
+      await vi.waitUntil(
+        () => overlay.querySelector(".highlight-box") === null,
+        { timeout: 5000, interval: 16 },
+      );
+      expect(overlay.querySelector(".highlight-box")).toBeFalsy();
 
       container.remove();
     },
@@ -408,7 +418,6 @@ describe("SelectionOverlay", () => {
 
   test(
     "highlight box positioned correctly relative to element",
-    { timeout: 1000 },
     async ({ expect }) => {
       const container = document.createElement("div");
       container.style.width = "800px";
@@ -436,7 +445,13 @@ describe("SelectionOverlay", () => {
 
       await panZoom?.updateComplete;
       await canvas?.updateComplete;
-      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Wait for overlay to be created (EFCanvas.setupSelectionOverlay runs in RAF)
+      await vi.waitUntil(
+        () =>
+          container.querySelector("ef-canvas-selection-overlay") !== null,
+        { timeout: 5000, interval: 16 },
+      );
 
       const overlay = container.querySelector(
         "ef-canvas-selection-overlay",
@@ -448,8 +463,11 @@ describe("SelectionOverlay", () => {
       ) as HTMLElement;
       element.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
 
-      await canvas.updateComplete;
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Wait for RAF loop to detect the change and render the highlight box
+      await vi.waitUntil(
+        () => overlay.querySelector(".highlight-box") !== null,
+        { timeout: 5000, interval: 16 },
+      );
 
       const highlightBox = overlay.querySelector(
         ".highlight-box",
