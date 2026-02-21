@@ -25,6 +25,7 @@ jobs:
             scheduler-go,
             maintenance,
             jit-transcoding,
+            migration-job,
             # transcribe
           ]
     permissions:
