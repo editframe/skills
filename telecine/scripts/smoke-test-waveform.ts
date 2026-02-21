@@ -1,109 +1,73 @@
 #!/usr/bin/env node
+export {};
 /**
- * Waveform smoke tests — inserts renders directly into the DB and polls
- * for completion. Exercises all ef-waveform modes concurrently to stress-test
+ * Waveform smoke tests — submits renders via the public API and polls for
+ * completion. Exercises all ef-waveform modes concurrently to stress-test
  * the FrameController abort race condition during seekForRender.
  *
- * Usage: ./scripts/run tsx scripts/smoke-test-waveform.ts
- *        ./scripts/run tsx scripts/smoke-test-waveform.ts --from <render-id>  # copies org/creator
- *        ./scripts/run tsx scripts/smoke-test-waveform.ts --timeout 180
+ * Usage: telecine/scripts/run tsx scripts/smoke-test-waveform.ts
+ *        EF_HOST=https://editframe.com EF_TOKEN=<token> telecine/scripts/run tsx scripts/smoke-test-waveform.ts
+ *        telecine/scripts/run tsx scripts/smoke-test-waveform.ts --timeout 300
  */
 
-import { db } from "@/sql-client.server";
-
+const EF_HOST = process.env.EF_HOST ?? "http://web:3000";
+const EF_TOKEN = process.env.EF_TOKEN;
 const args = process.argv.slice(2);
-const fromIdx = args.indexOf("--from");
-const fromRenderId = fromIdx !== -1 ? args[fromIdx + 1] : undefined;
 const timeoutIdx = args.indexOf("--timeout");
 const TIMEOUT_MS = (timeoutIdx !== -1 ? parseInt(args[timeoutIdx + 1]!) : 900) * 1000;
 
-async function resolveOrgAndCreator(): Promise<{
-  org_id: string;
-  creator_id: string;
-}> {
-  if (fromRenderId) {
-    const source = await db
-      .selectFrom("video2.renders")
-      .where("id", "=", fromRenderId)
-      .select(["org_id", "creator_id"])
-      .executeTakeFirstOrThrow();
-    return { org_id: source.org_id, creator_id: source.creator_id! };
-  }
-
-  // Fall back to most recent render in the DB
-  const latest = await db
-    .selectFrom("video2.renders")
-    .orderBy("created_at", "desc")
-    .select(["org_id", "creator_id"])
-    .executeTakeFirstOrThrow();
-  return { org_id: latest.org_id, creator_id: latest.creator_id! };
+if (!EF_TOKEN) {
+  console.error("EF_TOKEN environment variable is required");
+  process.exit(1);
 }
 
-async function createRender(
-  html: string,
-  org_id: string,
-  creator_id: string,
-): Promise<string> {
-  const result = await db
-    .insertInto("video2.renders")
-    .values({
-      org_id,
-      creator_id,
-      api_key_id: null,
-      html,
-      status: "created",
+const headers = {
+  Authorization: `Bearer ${EF_TOKEN}`,
+  "Content-Type": "application/json",
+};
+
+async function createRender(html: string): Promise<string> {
+  const res = await fetch(`${EF_HOST}/api/v1/renders`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
       strategy: "v1",
       fps: 30,
-      output_config: { container: "mp4", video: { codec: "h264" }, audio: { codec: "aac" } },
-      metadata: {},
       work_slice_ms: 4000,
-    })
-    .returning("id")
-    .executeTakeFirstOrThrow();
-  return result.id;
+      output: { container: "mp4", video: { codec: "h264" }, audio: { codec: "aac" } },
+      html,
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to create render: ${res.status} ${res.statusText} ${await res.text()}`);
+  }
+  const data = (await res.json()) as { id: string };
+  return data.id;
 }
 
-async function pollRender(id: string): Promise<{ status: string; failure_detail: string | null }> {
+async function pollRender(id: string): Promise<{ status: string; error?: string }> {
   const deadline = Date.now() + TIMEOUT_MS;
   while (Date.now() < deadline) {
-    const row = await db
-      .selectFrom("video2.renders")
-      .where("id", "=", id)
-      .select(["status", "failure_detail"])
-      .executeTakeFirstOrThrow();
-    if (row.status === "complete" || row.status === "failed") {
-      return { status: row.status, failure_detail: row.failure_detail ? String(row.failure_detail) : null };
-    }
-    await new Promise((r) => setTimeout(r, 3000));
+    const res = await fetch(`${EF_HOST}/api/v1/renders/${id}`, { headers });
+    const data = (await res.json()) as { status: string; error?: string };
+    if (data.status === "complete" || data.status === "failed") return data;
+    await new Promise((r) => setTimeout(r, 5000));
   }
-  return { status: "timeout", failure_detail: null };
+  return { status: "timeout" };
 }
 
-async function runTest(
-  name: string,
-  html: string,
-  org_id: string,
-  creator_id: string,
-): Promise<boolean> {
+async function runTest(name: string, html: string): Promise<boolean> {
   process.stdout.write(`  ${name} ... `);
   const start = Date.now();
   try {
-    const id = await createRender(html, org_id, creator_id);
+    const id = await createRender(html);
     const result = await pollRender(id);
     const elapsed = ((Date.now() - start) / 1000).toFixed(1);
     if (result.status === "complete") {
       console.log(`✓ complete (${elapsed}s) [${id}]`);
       return true;
     } else {
-      let detail = "";
-      if (result.failure_detail) {
-        try {
-          const parsed = JSON.parse(result.failure_detail);
-          detail = ` — ${parsed.message ?? result.failure_detail}`;
-        } catch {
-          detail = ` — ${result.failure_detail}`;
-        }
-      }
+      const detail = result.error ? ` — ${result.error}` : "";
       console.log(`✗ ${result.status} (${elapsed}s) [${id}]${detail}`);
       return false;
     }
@@ -126,43 +90,22 @@ const BASE_HTML = (waveformAttrs: string) => `
   </ef-timegroup>`;
 
 const TESTS: Array<{ name: string; html: string }> = [
-  {
-    name: "bars + interpolate-frequencies (fft)",
-    html: BASE_HTML(`mode="bars" bar-spacing="2"`),
-  },
-  {
-    name: "bars no interpolation (fft)",
-    html: BASE_HTML(`mode="bars" bar-spacing="2"`).replace("interpolate-frequencies ", ""),
-  },
-  {
-    name: "roundBars (fft)",
-    html: BASE_HTML(`mode="roundBars" bar-spacing="3"`),
-  },
-  {
-    name: "line (time-domain)",
-    html: BASE_HTML(`mode="line" line-width="3"`),
-  },
-  {
-    name: "curve (time-domain)",
-    html: BASE_HTML(`mode="curve" line-width="3"`),
-  },
+  { name: "bars + interpolate-frequencies (fft)", html: BASE_HTML(`mode="bars" bar-spacing="2"`) },
+  { name: "bars no interpolation (fft)",          html: BASE_HTML(`mode="bars" bar-spacing="2"`).replace("interpolate-frequencies ", "") },
+  { name: "roundBars (fft)",                      html: BASE_HTML(`mode="roundBars" bar-spacing="3"`) },
+  { name: "line (time-domain)",                   html: BASE_HTML(`mode="line" line-width="3"`) },
+  { name: "curve (time-domain)",                  html: BASE_HTML(`mode="curve" line-width="3"`) },
 ];
 
 async function main() {
-  const { org_id, creator_id } = await resolveOrgAndCreator();
-
-  console.log(`\nWaveform smoke tests`);
-  console.log(`  org:     ${org_id}`);
+  console.log(`\nWaveform smoke tests against ${EF_HOST}`);
   console.log(`  timeout: ${TIMEOUT_MS / 1000}s per render`);
   console.log(`  running: ${TESTS.length} tests concurrently\n`);
 
-  const results = await Promise.all(
-    TESTS.map((t) => runTest(t.name, t.html, org_id, creator_id)),
-  );
+  const results = await Promise.all(TESTS.map((t) => runTest(t.name, t.html)));
 
   const passed = results.filter(Boolean).length;
   console.log(`\n${passed}/${TESTS.length} passed`);
-
   if (passed < TESTS.length) process.exit(1);
 }
 
