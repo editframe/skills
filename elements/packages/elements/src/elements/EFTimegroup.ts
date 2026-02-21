@@ -1369,7 +1369,11 @@ export class EFTimegroup
 
     if (this.#previousDurationMs !== this.durationMs) {
       this.#previousDurationMs = this.durationMs;
-      this.#runThrottledFrameTask();
+      // Render clones are sequenced via seekForRender — don't trigger autonomous re-renders.
+      // This prevents FrameController.abort() from interrupting an in-progress seekForRender.
+      if (!this.hasAttribute("data-no-playback-controller")) {
+        this.#runThrottledFrameTask();
+      }
     }
   }
 

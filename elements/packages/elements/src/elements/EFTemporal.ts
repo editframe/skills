@@ -1065,7 +1065,12 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
         this.contentReadyState === "ready";
 
       if (sourceChanged || trimChanged || becameReady) {
-        if (this.rootTimegroup) {
+        // Render clones are sequenced via seekForRender — don't trigger autonomous re-renders,
+        // which would abort the in-progress seekForRender FrameController signal.
+        const isRenderClone = this.rootTimegroup?.hasAttribute(
+          "data-no-playback-controller",
+        );
+        if (this.rootTimegroup && !isRenderClone) {
           this.rootTimegroup.requestFrameRender();
         } else if (this.playbackController) {
           this.playbackController.runThrottledFrameTask();

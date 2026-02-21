@@ -46,7 +46,7 @@ export const workerConfigs: Record<Workers, QueueConfig> = {
     screaming: "PROCESS_HTML_INITIALIZER",
     maxWorkerCount: 20,
     minWorkerCount: 1,
-    workerConcurrency: 5,
+    workerConcurrency: 1,
     workerCpu: workerResources.htmlInitializer.cpu,
     workerMemory: workerResources.htmlInitializer.memory,
   },

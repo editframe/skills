@@ -49,6 +49,7 @@ services:
       traefik.http.routers.web3001-${WORKTREE_ID:-main}.service: web3001-${WORKTREE_ID:-main}
       traefik.http.services.web3001-${WORKTREE_ID:-main}.loadbalancer.server.port: 3001
 
+
 networks:
   traefik-shared:
     name: editframe-shared

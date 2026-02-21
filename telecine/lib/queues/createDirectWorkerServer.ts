@@ -13,6 +13,10 @@ export const createDirectWorkerServer = <Payload>(
     port: PORT,
     serviceName: `worker:${worker.name}`,
     createRequestHandler: async () => {
+      worker.warmUp().catch((err) => {
+        logger.error({ queue: worker.name, error: err }, "Worker warmUp failed");
+      });
+
       logger.info(
         { queue: worker.name, concurrency: worker.concurrency },
         "Starting work loops",

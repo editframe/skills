@@ -13,8 +13,8 @@ export const workerResources = {
     memory: "1Gi",
   },
   htmlInitializer: {
-    cpu: "1000m",
-    memory: "1Gi",
+    cpu: "2000m",
+    memory: "2Gi",
   },
   processISOBMFF: {
     cpu: "2000m",

@@ -134,7 +134,9 @@ export class EFImage
       return this.src;
     }
     // Normalize local paths: remove leading slashes (remote URLs are passed as-is)
-    const normalizedSrc = this.src.startsWith("/") ? this.src.replace(/^\/+/, "") : this.src;
+    const normalizedSrc = this.src.startsWith("/")
+      ? this.src.replace(/^\/+/, "")
+      : this.src;
     return `/api/v1/assets/image?src=${encodeURIComponent(normalizedSrc)}`;
   }
 

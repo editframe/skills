@@ -484,7 +484,10 @@ export function createJitTranscodeMiddleware(
       // Handle manifest.json endpoint
       if (endpoint === "manifest.json") {
         log(`Generating manifest for ${mediaPath}`);
-        const baseUrl = `${url.protocol}//${url.host}`;
+        const proto =
+          (req.headers["x-forwarded-proto"] as string | undefined) ||
+          url.protocol.replace(":", "");
+        const baseUrl = `${proto}://${url.host}`;
 
         try {
           const manifest = await generateLocalJitManifest(

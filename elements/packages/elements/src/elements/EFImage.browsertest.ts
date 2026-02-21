@@ -214,7 +214,6 @@ describe("EFImage", () => {
 
       image.remove();
     });
-
   });
 
   describe("contentReadyState", () => {

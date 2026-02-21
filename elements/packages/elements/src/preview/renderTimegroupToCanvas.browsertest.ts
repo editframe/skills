@@ -549,6 +549,8 @@ describe("renderTimegroupToCanvas", () => {
       const canvas = await captureTimegroupAtTime(videoTimegroup, {
         timeMs: 2000,
         scale: 1,
+        contentReadyMode: "blocking",
+        blockingTimeoutMs: 10000,
       });
 
       expect(hasCanvasContent(canvas)).toBe(true);

@@ -15,6 +15,10 @@ export const createWebSocketWorkerServer = <Payload>(
     port: PORT,
     serviceName: `worker:${worker.name}`,
     createRequestHandler: async () => {
+      worker.warmUp().catch((err) => {
+        logger.error({ queue: worker.name, error: err }, "Worker warmUp failed");
+      });
+
       wss = new WebSocketServer({ noServer: true });
 
       wss.on("connection", (ws) => {

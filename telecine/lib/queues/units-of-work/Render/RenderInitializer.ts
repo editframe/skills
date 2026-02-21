@@ -22,6 +22,9 @@ import { storageProvider } from "@/util/storageProvider.server";
 export const RenderInitializerWorker = new Worker({
   storage: valkey,
   queue: RenderInitializerQueue,
+  warmUp: async () => {
+    await ElectronRPCManager.getRPCClient();
+  },
   close: async () => {
     await ElectronRPCManager.closeRPCClient();
   },

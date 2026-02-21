@@ -22,6 +22,7 @@ interface WorkerArgs<Payload> {
   storage: ValKey;
   execute: (job: MaterializedJob<Payload>) => Promise<void>;
   close?: () => Promise<void>;
+  warmUp?: () => Promise<void>;
 }
 
 export class Worker<Payload = unknown> {
@@ -36,6 +37,7 @@ export class Worker<Payload = unknown> {
   concurrency: number;
   execute: (job: MaterializedJob<Payload>) => Promise<void>;
   close: () => Promise<void>;
+  warmUp: () => Promise<void>;
   logger: typeof logger;
 
   constructor(args: WorkerArgs<Payload>) {
@@ -49,6 +51,7 @@ export class Worker<Payload = unknown> {
     this.concurrency = args.queue.workerConcurrency ?? 1;
     this.execute = args.execute;
     this.close = args.close ?? (() => Promise.resolve());
+    this.warmUp = args.warmUp ?? (() => Promise.resolve());
 
     Worker.byName.set(this.name, this as Worker<unknown>);
   }
