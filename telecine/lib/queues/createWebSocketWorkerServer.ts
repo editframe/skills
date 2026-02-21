@@ -66,12 +66,9 @@ export const createWebSocketWorkerServer = <Payload>(
 
         ws.on("close", () => {
           clearInterval(heartbeat);
-          logger.info({ queue: worker.name }, "Scheduler disconnected, shutting down worker");
+          logger.info({ queue: worker.name }, "Scheduler disconnected, stopping work loops");
           activeConnection = null;
           stopLoops(ws);
-          eagerServer.close().catch((err) => {
-            logger.error({ queue: worker.name, error: err }, "Error during worker shutdown");
-          });
         });
 
         ws.on("error", (err) => {
