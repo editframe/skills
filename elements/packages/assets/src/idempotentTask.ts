@@ -138,7 +138,9 @@ export const idempotentTask = <T extends unknown[]>({
 
         const scanStartTime = Date.now();
         try {
-          const cacheDirs = await readdir(cacheDirRoot, { withFileTypes: true });
+          const cacheDirs = await readdir(cacheDirRoot, {
+            withFileTypes: true,
+          });
           log(
             `Scanning ${cacheDirs.length} cache directories for ${expectedFilename}`,
           );
@@ -176,23 +178,29 @@ export const idempotentTask = <T extends unknown[]>({
           );
         }
 
-        const resolvedMd5 = md5 ?? await (async () => {
-          const md5StartTime = Date.now();
-          log(`Computing MD5 for ${absolutePath}...`);
-          const computed = await md5FilePath(absolutePath);
-          const md5Elapsed = Date.now() - md5StartTime;
-          log(`MD5 computed in ${md5Elapsed}ms: ${computed}`);
-          return computed;
-        })();
+        const resolvedMd5 =
+          md5 ??
+          (await (async () => {
+            const md5StartTime = Date.now();
+            log(`Computing MD5 for ${absolutePath}...`);
+            const computed = await md5FilePath(absolutePath);
+            const md5Elapsed = Date.now() - md5StartTime;
+            log(`MD5 computed in ${md5Elapsed}ms: ${computed}`);
+            return computed;
+          })());
 
         const cacheDir = path.join(cacheDirRoot, resolvedMd5);
         log(`Cache dir: ${cacheDir}`);
         await mkdir(cacheDir, { recursive: true });
 
-        const resolvedCachePath = cachePath ?? path.join(cacheDir, expectedFilename);
+        const resolvedCachePath =
+          cachePath ?? path.join(cacheDir, expectedFilename);
 
         // Check if cache exists and is valid (not zero-byte)
-        if (existsSync(resolvedCachePath) && (await isValidCacheFile(resolvedCachePath))) {
+        if (
+          existsSync(resolvedCachePath) &&
+          (await isValidCacheFile(resolvedCachePath))
+        ) {
           log(`Returning cached ef:${label} task for ${resolvedCachePath}`);
           return { cachePath: resolvedCachePath, md5Sum: resolvedMd5 };
         }

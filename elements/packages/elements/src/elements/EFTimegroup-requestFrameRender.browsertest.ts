@@ -10,7 +10,14 @@
  * re-render so upgraded frames are always painted.
  */
 
-import { afterEach, beforeAll, beforeEach, describe, expect, test } from "vitest";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from "vitest";
 import { LitElement, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import type { EFTimegroup } from "./EFTimegroup.js";

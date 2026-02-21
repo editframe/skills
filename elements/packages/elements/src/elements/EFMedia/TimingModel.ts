@@ -24,9 +24,7 @@ export function createByteRangeTiming(
       track: TrackRef,
     ): number {
       const trackId =
-        typeof track.id === "number"
-          ? track.id
-          : Number.parseInt(track.id, 10);
+        typeof track.id === "number" ? track.id : Number.parseInt(track.id, 10);
       const trackData = data[trackId];
       if (!trackData) throw new Error("Track not found");
 

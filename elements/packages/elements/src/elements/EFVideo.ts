@@ -485,7 +485,10 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         let mediaSegment: ArrayBuffer | undefined;
 
         try {
-          const initP = mediaEngine.transport.fetchInitSegment(videoTrack, signal);
+          const initP = mediaEngine.transport.fetchInitSegment(
+            videoTrack,
+            signal,
+          );
           const mediaP = mediaEngine.transport.fetchMediaSegment(
             segmentId,
             videoTrack,
@@ -548,9 +551,10 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
 
     signal.throwIfAborted();
 
-    const sample = (await mainInput.seek(videoTrackInfo.id, desiredSeekTimeMs)) as
-      | VideoSample
-      | undefined;
+    const sample = (await mainInput.seek(
+      videoTrackInfo.id,
+      desiredSeekTimeMs,
+    )) as VideoSample | undefined;
     return sample;
   }
 
@@ -960,168 +964,173 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
 
     this.playbackController?.suspendSelfRender();
     try {
-    const mediaEngine = await this.getMediaEngine(signal);
-    signal.throwIfAborted();
-
-    if (!mediaEngine) {
-      throw new Error("No media engine available for frame capture");
-    }
-
-    const useMainTrack =
-      quality === "main" ||
-      (quality === "auto" && this.isInProductionRenderingMode());
-
-    let videoSample: any;
-
-    const { BufferedSeekingInput } =
-      await import("./EFMedia/BufferedSeekingInput.js");
-    signal.throwIfAborted();
-
-    if (useMainTrack) {
-      const videoTrack = mediaEngine.tracks.video;
-      if (!videoTrack) {
-        throw new Error("No video rendition available");
-      }
-
-      const segmentId = mediaEngine.index.segmentAt(
-        sourceTimeMs,
-        videoTrack,
-      );
-      if (segmentId === undefined) {
-        throw new Error(`Cannot compute segment ID for time ${sourceTimeMs}ms`);
-      }
-
-      const seekingInput = await mainVideoInputCache.getOrCreateInput(
-        mediaEngine.src,
-        segmentId,
-        String(videoTrack.id),
-        async () => {
-          const initP = mediaEngine.transport.fetchInitSegment(videoTrack, signal);
-          const mediaP = mediaEngine.transport.fetchMediaSegment(
-            segmentId,
-            videoTrack,
-            signal,
-          );
-          initP.catch(() => {});
-          mediaP.catch(() => {});
-          const [initSegment, mediaSegment] = await Promise.all([
-            initP,
-            mediaP,
-          ]);
-
-          if (!initSegment || !mediaSegment) {
-            return undefined;
-          }
-
-          const combinedBlob = new Blob([initSegment, mediaSegment]);
-          const arrayBuffer = await combinedBlob.arrayBuffer();
-
-          return new BufferedSeekingInput(arrayBuffer, {
-            videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
-            audioBufferSize: EFMedia.AUDIO_SAMPLE_BUFFER_SIZE,
-            startTimeOffsetMs: videoTrack.startTimeOffsetMs,
-          });
-        },
-      );
+      const mediaEngine = await this.getMediaEngine(signal);
       signal.throwIfAborted();
 
-      if (!seekingInput) {
-        throw new Error(
-          `Failed to fetch video segments for time ${sourceTimeMs}ms`,
+      if (!mediaEngine) {
+        throw new Error("No media engine available for frame capture");
+      }
+
+      const useMainTrack =
+        quality === "main" ||
+        (quality === "auto" && this.isInProductionRenderingMode());
+
+      let videoSample: any;
+
+      const { BufferedSeekingInput } =
+        await import("./EFMedia/BufferedSeekingInput.js");
+      signal.throwIfAborted();
+
+      if (useMainTrack) {
+        const videoTrack = mediaEngine.tracks.video;
+        if (!videoTrack) {
+          throw new Error("No video rendition available");
+        }
+
+        const segmentId = mediaEngine.index.segmentAt(sourceTimeMs, videoTrack);
+        if (segmentId === undefined) {
+          throw new Error(
+            `Cannot compute segment ID for time ${sourceTimeMs}ms`,
+          );
+        }
+
+        const seekingInput = await mainVideoInputCache.getOrCreateInput(
+          mediaEngine.src,
+          segmentId,
+          String(videoTrack.id),
+          async () => {
+            const initP = mediaEngine.transport.fetchInitSegment(
+              videoTrack,
+              signal,
+            );
+            const mediaP = mediaEngine.transport.fetchMediaSegment(
+              segmentId,
+              videoTrack,
+              signal,
+            );
+            initP.catch(() => {});
+            mediaP.catch(() => {});
+            const [initSegment, mediaSegment] = await Promise.all([
+              initP,
+              mediaP,
+            ]);
+
+            if (!initSegment || !mediaSegment) {
+              return undefined;
+            }
+
+            const combinedBlob = new Blob([initSegment, mediaSegment]);
+            const arrayBuffer = await combinedBlob.arrayBuffer();
+
+            return new BufferedSeekingInput(arrayBuffer, {
+              videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
+              audioBufferSize: EFMedia.AUDIO_SAMPLE_BUFFER_SIZE,
+              startTimeOffsetMs: videoTrack.startTimeOffsetMs,
+            });
+          },
         );
-      }
+        signal.throwIfAborted();
 
-      const seekingVideoTrack = await seekingInput.getFirstVideoTrack();
-      signal.throwIfAborted();
+        if (!seekingInput) {
+          throw new Error(
+            `Failed to fetch video segments for time ${sourceTimeMs}ms`,
+          );
+        }
 
-      if (!seekingVideoTrack) {
-        throw new Error("No video track found in segment");
-      }
+        const seekingVideoTrack = await seekingInput.getFirstVideoTrack();
+        signal.throwIfAborted();
 
-      videoSample = await seekingInput.seek(seekingVideoTrack.id, sourceTimeMs);
-      signal.throwIfAborted();
-    } else {
-      const scrubTrack = mediaEngine.tracks.scrub;
-      if (!scrubTrack) {
-        return this.getVideoFrameAtSourceTime(sourceTimeMs, {
-          quality: "main",
-          signal,
-        });
-      }
+        if (!seekingVideoTrack) {
+          throw new Error("No video track found in segment");
+        }
 
-      const segmentId = mediaEngine.index.segmentAt(
-        sourceTimeMs,
-        scrubTrack,
-      );
-
-      if (segmentId === undefined) {
-        throw new Error(
-          `Cannot compute scrub segment ID for time ${sourceTimeMs}ms`,
+        videoSample = await seekingInput.seek(
+          seekingVideoTrack.id,
+          sourceTimeMs,
         );
-      }
-
-      const seekingInput = await scrubInputCache.getOrCreateInput(
-        mediaEngine.src,
-        segmentId,
-        async () => {
-          const initP = mediaEngine.transport.fetchInitSegment(
-            scrubTrack,
+        signal.throwIfAborted();
+      } else {
+        const scrubTrack = mediaEngine.tracks.scrub;
+        if (!scrubTrack) {
+          return this.getVideoFrameAtSourceTime(sourceTimeMs, {
+            quality: "main",
             signal,
-          );
-          const mediaP = mediaEngine.transport.fetchMediaSegment(
-            segmentId,
-            scrubTrack,
-            signal,
-          );
-          initP.catch(() => {});
-          mediaP.catch(() => {});
-          const [initSegment, mediaSegment] = await Promise.all([
-            initP,
-            mediaP,
-          ]);
-
-          if (!initSegment || !mediaSegment) {
-            return undefined;
-          }
-
-          const combinedBlob = new Blob([initSegment, mediaSegment]);
-          const arrayBuffer = await combinedBlob.arrayBuffer();
-
-          return new BufferedSeekingInput(arrayBuffer, {
-            videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
-            audioBufferSize: EFMedia.AUDIO_SAMPLE_BUFFER_SIZE,
-            startTimeOffsetMs: scrubTrack.startTimeOffsetMs,
           });
-        },
-      );
-      signal.throwIfAborted();
+        }
 
-      if (!seekingInput) {
-        return this.getVideoFrameAtSourceTime(sourceTimeMs, {
-          quality: "main",
-          signal,
-        });
+        const segmentId = mediaEngine.index.segmentAt(sourceTimeMs, scrubTrack);
+
+        if (segmentId === undefined) {
+          throw new Error(
+            `Cannot compute scrub segment ID for time ${sourceTimeMs}ms`,
+          );
+        }
+
+        const seekingInput = await scrubInputCache.getOrCreateInput(
+          mediaEngine.src,
+          segmentId,
+          async () => {
+            const initP = mediaEngine.transport.fetchInitSegment(
+              scrubTrack,
+              signal,
+            );
+            const mediaP = mediaEngine.transport.fetchMediaSegment(
+              segmentId,
+              scrubTrack,
+              signal,
+            );
+            initP.catch(() => {});
+            mediaP.catch(() => {});
+            const [initSegment, mediaSegment] = await Promise.all([
+              initP,
+              mediaP,
+            ]);
+
+            if (!initSegment || !mediaSegment) {
+              return undefined;
+            }
+
+            const combinedBlob = new Blob([initSegment, mediaSegment]);
+            const arrayBuffer = await combinedBlob.arrayBuffer();
+
+            return new BufferedSeekingInput(arrayBuffer, {
+              videoBufferSize: EFMedia.VIDEO_SAMPLE_BUFFER_SIZE,
+              audioBufferSize: EFMedia.AUDIO_SAMPLE_BUFFER_SIZE,
+              startTimeOffsetMs: scrubTrack.startTimeOffsetMs,
+            });
+          },
+        );
+        signal.throwIfAborted();
+
+        if (!seekingInput) {
+          return this.getVideoFrameAtSourceTime(sourceTimeMs, {
+            quality: "main",
+            signal,
+          });
+        }
+
+        const seekingVideoTrack = await seekingInput.getFirstVideoTrack();
+        signal.throwIfAborted();
+
+        if (!seekingVideoTrack) {
+          return this.getVideoFrameAtSourceTime(sourceTimeMs, {
+            quality: "main",
+            signal,
+          });
+        }
+
+        videoSample = await seekingInput.seek(
+          seekingVideoTrack.id,
+          sourceTimeMs,
+        );
+        signal.throwIfAborted();
       }
 
-      const seekingVideoTrack = await seekingInput.getFirstVideoTrack();
-      signal.throwIfAborted();
-
-      if (!seekingVideoTrack) {
-        return this.getVideoFrameAtSourceTime(sourceTimeMs, {
-          quality: "main",
-          signal,
-        });
+      if (!videoSample) {
+        throw new Error(`No video sample found at ${sourceTimeMs}ms`);
       }
 
-      videoSample = await seekingInput.seek(seekingVideoTrack.id, sourceTimeMs);
-      signal.throwIfAborted();
-    }
-
-    if (!videoSample) {
-      throw new Error(`No video sample found at ${sourceTimeMs}ms`);
-    }
-
-    return videoSample.toVideoFrame();
+      return videoSample.toVideoFrame();
     } finally {
       this.playbackController?.resumeSelfRender();
     }
@@ -1304,7 +1313,10 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
    * Maybe schedule quality upgrade tasks for this element.
    * Called when returning a scrub sample - checks if state has changed and submits tasks.
    */
-  #maybeScheduleQualityUpgrade(mediaEngine: MediaEngine, sourceTimeMs: number): void {
+  #maybeScheduleQualityUpgrade(
+    mediaEngine: MediaEngine,
+    sourceTimeMs: number,
+  ): void {
     if (this.#renderingToVideo) return;
     const mainTrack = mediaEngine.tracks.video;
     if (!mainTrack) return;
@@ -1324,12 +1336,17 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       // active or waiting in the queue — either way it will populate the cache.
       const currentTaskKey = `${this.#upgradeOwnerId}:${segmentId}:${mainTrack.id}`;
       const scheduler = this.rootTimegroup?.qualityUpgradeScheduler;
-      if (scheduler?.isActive(currentTaskKey) || scheduler?.isPending(currentTaskKey)) {
+      if (
+        scheduler?.isActive(currentTaskKey) ||
+        scheduler?.isPending(currentTaskKey)
+      ) {
         return;
       }
       // Task is neither running nor queued — it completed (or failed) and the
       // segment may have been evicted. Re-submit.
-      this.rootTimegroup?.qualityUpgradeScheduler?.cancelForOwner(this.#upgradeOwnerId);
+      this.rootTimegroup?.qualityUpgradeScheduler?.cancelForOwner(
+        this.#upgradeOwnerId,
+      );
       this.#upgradeState = null;
       // Fall through to re-submit
     }
@@ -1442,7 +1459,9 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   ): void {
     if (reason === "src-change" || reason === "disconnect") {
       // Full cancel - old tasks reference a stale media engine
-      this.rootTimegroup?.qualityUpgradeScheduler?.cancelForOwner(this.#upgradeOwnerId);
+      this.rootTimegroup?.qualityUpgradeScheduler?.cancelForOwner(
+        this.#upgradeOwnerId,
+      );
     }
     // For bounds-change, don't cancel - old tasks may still be valid segments,
     // just with stale deadlines. replaceForOwner on next prepareFrame handles it.

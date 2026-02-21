@@ -185,9 +185,7 @@ export function createFragmentIndex(
 // ManifestIndex — backed by ManifestResponse (JIT transcoding)
 // ---------------------------------------------------------------------------
 
-export function createManifestIndex(
-  manifest: ManifestResponse,
-): SegmentIndex {
+export function createManifestIndex(manifest: ManifestResponse): SegmentIndex {
   const durationMs = manifest.durationMs;
   const tracks: TrackSet = {};
 
@@ -329,14 +327,15 @@ export function createManifestIndex(
       for (let i = startSegmentIndex; i <= endSegmentIndex; i++) {
         const segmentId = i + 1;
         const segmentStartMs = i * segmentDurationMs;
-        const segmentEndMs = Math.min(
-          (i + 1) * segmentDurationMs,
-          durationMs,
-        );
+        const segmentEndMs = Math.min((i + 1) * segmentDurationMs, durationMs);
 
         if (segmentStartMs >= durationMs) break;
         if (segmentStartMs < toMs && segmentEndMs > fromMs) {
-          segments.push({ segmentId, startMs: segmentStartMs, endMs: segmentEndMs });
+          segments.push({
+            segmentId,
+            startMs: segmentStartMs,
+            endMs: segmentEndMs,
+          });
         }
       }
 

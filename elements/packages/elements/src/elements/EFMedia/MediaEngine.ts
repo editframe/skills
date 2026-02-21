@@ -60,9 +60,8 @@ export function createMediaEngine(
       }
 
       // Use dynamic import to keep ThumbnailExtractor out of initial bundle
-      const { ThumbnailExtractor } = await import(
-        "./shared/ThumbnailExtractor.js"
-      );
+      const { ThumbnailExtractor } =
+        await import("./shared/ThumbnailExtractor.js");
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       const engine = this as MediaEngine;
       const extractor = new ThumbnailExtractor(engine);
@@ -184,7 +183,12 @@ export async function validateTrackAccess(
 function buildEngineComponents(
   indexData: IndexData,
   fetcher: CachedFetcher,
-): { index: SegmentIndex; transport: SegmentTransport; timing: TimingModel; src: string } {
+): {
+  index: SegmentIndex;
+  transport: SegmentTransport;
+  timing: TimingModel;
+  src: string;
+} {
   switch (indexData.type) {
     case "fragment": {
       const index = createFragmentIndex(indexData.data, indexData.src);
@@ -270,10 +274,12 @@ export async function createMediaEngineFromSource(
     indexData = { type: "manifest", data: manifest, src: manifest.sourceUrl };
   }
 
-  const { index, transport, timing, src: engineSrc } = buildEngineComponents(
-    indexData,
-    fetcher,
-  );
+  const {
+    index,
+    transport,
+    timing,
+    src: engineSrc,
+  } = buildEngineComponents(indexData, fetcher);
 
   await validateTrackAccess(transport, index.tracks, requiredTracks, signal);
 

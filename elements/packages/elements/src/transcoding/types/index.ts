@@ -186,9 +186,7 @@ export interface CacheStats {
 }
 
 // Re-export the unified MediaEngine from its new canonical location
-export type {
-  MediaEngine,
-} from "../../elements/EFMedia/MediaEngine.js";
+export type { MediaEngine } from "../../elements/EFMedia/MediaEngine.js";
 export type {
   TrackRef,
   TrackSet,

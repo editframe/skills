@@ -59,7 +59,6 @@ describe("Loading Indicator", () => {
 
     const loadingOverlay = shadowRoot?.querySelector(".loading-overlay");
     expect(loadingOverlay).toBeTruthy();
-
   });
 
   test("should hide loading overlay when not loading", async ({ expect }) => {

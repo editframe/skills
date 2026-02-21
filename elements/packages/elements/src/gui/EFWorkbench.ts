@@ -887,8 +887,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         (timegroup as any).contentReadyState === "loading";
     };
     timegroup.addEventListener("readystatechange", this.#readyStateHandler);
-    this.previewIsLoading =
-      (timegroup as any).contentReadyState === "loading";
+    this.previewIsLoading = (timegroup as any).contentReadyState === "loading";
   }
 
   /**
@@ -2587,11 +2586,15 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         ></div>
 
         <!-- Preview loading overlay (shown when timegroup content is loading) -->
-        ${this.previewIsLoading ? html`
+        ${
+          this.previewIsLoading
+            ? html`
           <div class="preview-loading-overlay">
             <div class="preview-loading-bar"></div>
           </div>
-        ` : ""}
+        `
+            : ""
+        }
         
         <!-- Playback stats overlay (visible in canvas mode only) -->
         ${this.renderPlaybackStats()}

@@ -56,7 +56,6 @@ export interface NativeRenderOptions {
    * This can provide a 4x speedup on 2x DPR displays!
    */
   skipDprScaling?: boolean;
-
 }
 
 /**

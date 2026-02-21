@@ -6,7 +6,10 @@ export const mediaCache = new SizeAwareLRUCache<string>(100 * 1024 * 1024);
 export const globalRequestDeduplicator = new RequestDeduplicator();
 
 export interface FetchFn {
-  (url: string, init?: { headers?: Record<string, string>; signal?: AbortSignal }): Promise<Response>;
+  (
+    url: string,
+    init?: { headers?: Record<string, string>; signal?: AbortSignal },
+  ): Promise<Response>;
 }
 
 export class CachedFetcher {

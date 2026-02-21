@@ -36,7 +36,9 @@ function resolveRenditionId(track: TrackRef): RenditionId {
   return "high";
 }
 
-export function createUrlTransport(opts: UrlTransportOptions): SegmentTransport {
+export function createUrlTransport(
+  opts: UrlTransportOptions,
+): SegmentTransport {
   const { fetcher, src, templates, audioTrackId, videoTrackId } = opts;
 
   function buildSegmentUrl(
@@ -134,9 +136,7 @@ export function createByteRangeTransport(
 
       const segment = trackData.segments[segmentId];
       if (!segment) {
-        throw new Error(
-          `Segment ${segmentId} not found for track ${trackId}`,
-        );
+        throw new Error(`Segment ${segmentId} not found for track ${trackId}`);
       }
 
       const url = buildTrackUrl(trackId);

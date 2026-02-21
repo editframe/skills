@@ -281,7 +281,10 @@ describe("QualityUpgradeScheduler", () => {
       const blocker: UpgradeTask = {
         key: "blocker:1:main",
         fetch: vi.fn().mockImplementation(
-          () => new Promise<void>((r) => { resolveBlocker = r; }),
+          () =>
+            new Promise<void>((r) => {
+              resolveBlocker = r;
+            }),
         ),
         deadlineMs: 0,
         owner: "blocker",
@@ -290,7 +293,9 @@ describe("QualityUpgradeScheduler", () => {
       let fetchCount = 0;
       const owner2Task: UpgradeTask = {
         key: "owner2:1:main",
-        fetch: vi.fn().mockImplementation(async () => { fetchCount++; }),
+        fetch: vi.fn().mockImplementation(async () => {
+          fetchCount++;
+        }),
         deadlineMs: 1,
         owner: "owner2",
       };
@@ -325,7 +330,10 @@ describe("QualityUpgradeScheduler", () => {
       const blocker: UpgradeTask = {
         key: "blocker:1:main",
         fetch: vi.fn().mockImplementation(
-          () => new Promise<void>((r) => { resolveBlocker = r; }),
+          () =>
+            new Promise<void>((r) => {
+              resolveBlocker = r;
+            }),
         ),
         deadlineMs: 0,
         owner: "blocker",
