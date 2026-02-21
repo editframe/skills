@@ -65,6 +65,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.ci-runner
+    image: ef-elements-ci-runner
+    pull_policy: never
     init: true
     env_file:
       - .env
