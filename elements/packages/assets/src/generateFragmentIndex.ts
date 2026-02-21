@@ -741,11 +741,11 @@ export const generateFragmentIndex = async (
     const streamPackets = (probe.packets as ProbePacket[]).filter(
       (p) => p.stream_index === videoStream.index,
     );
-    const keyframePackets = streamPackets.filter((p) => p.flags?.includes("K"));
-    const totalSampleCount = keyframePackets.length;
+    const keyframeCount = streamPackets.filter((p) => p.flags?.includes("K")).length;
+    const totalSampleCount = streamPackets.length;
 
     log(
-      `Complete stream has ${streamPackets.length} video packets, ${keyframePackets.length} keyframes for stream ${videoStream.index}`,
+      `Complete stream has ${streamPackets.length} video packets, ${keyframeCount} keyframes for stream ${videoStream.index}`,
     );
 
     // Calculate per-track timing offset from first packet for timeline mapping

@@ -21,7 +21,7 @@ const FRAME_COUNT_VIDEO_TRACK: Partial<VideoTrackFragmentIndex> = {
   codec: "avc1.64001f",
   duration: 101376,
   startTimeOffsetMs: 200,
-  sample_count: 10,
+  sample_count: 100,
   initSegment: { offset: 0, size: 919 },
 } as const;
 
@@ -36,7 +36,7 @@ const BARS_N_TONE_EXPECTED: Record<number, TrackFragmentIndex> = {
     width: 384,
     height: 216,
     timescale: 15360,
-    sample_count: 5,
+    sample_count: 300,
     codec: "avc1.64000d",
     duration: 152576,
     startTimeOffsetMs: 66.667,
