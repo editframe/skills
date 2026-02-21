@@ -41,7 +41,7 @@ services:
     volumes:
       - ${ELEMENTS_ROOT_HOST:-${PWD}}:/packages
       - node_modules:/packages/node_modules
-      - ${DEV_PROJECTS_HOST:-${ELEMENTS_ROOT_HOST:-${PWD}}/dev-projects}:/packages/dev-projects
+      - ${DEV_PROJECTS_HOST:-./dev-projects}:/packages/dev-projects
     stop_grace_period: 1s
     # Don't expose port directly - only accessible through Traefik
     expose:
