@@ -111,11 +111,12 @@ export class QualityUpgradeScheduler {
 
     // Add new tasks
     for (const task of tasks) {
-      // Skip if already active or completed
-      if (
-        this.#activeTasks.has(task.key) ||
-        this.#completedTasks.has(task.key)
-      ) {
+      // Skip only if the fetch is already in-flight — it will populate the
+      // cache when it completes. Completed tasks are intentionally NOT skipped
+      // here so that cache eviction is handled correctly: if a segment was
+      // previously fetched but has since been evicted from the LRU cache,
+      // #computeLookaheadSegments will include it again and it must re-run.
+      if (this.#activeTasks.has(task.key)) {
         continue;
       }
 
@@ -223,6 +224,14 @@ export class QualityUpgradeScheduler {
       startedAt: performance.now(),
       promise,
     });
+  }
+
+  /**
+   * Check whether a task is currently in-flight.
+   * Used by callers to distinguish "in-flight, wait" from "completed, may re-submit".
+   */
+  isActive(key: string): boolean {
+    return this.#activeTasks.has(key);
   }
 
   /**

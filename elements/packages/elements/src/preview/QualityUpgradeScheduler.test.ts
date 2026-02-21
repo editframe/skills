@@ -214,6 +214,61 @@ describe("QualityUpgradeScheduler", () => {
       ).toBe(false);
       expect(snapshot.some((t) => t.key === newTask.key)).toBe(true);
     });
+
+    it("re-runs a previously completed task when submitted again (cache eviction)", async () => {
+      let fetchCount = 0;
+      const task: UpgradeTask = {
+        key: "owner:1:main",
+        fetch: vi.fn().mockImplementation(async () => {
+          fetchCount++;
+        }),
+        deadlineMs: 0,
+        owner: "owner",
+      };
+
+      // First submission — runs to completion
+      scheduler.replaceForOwner("owner", [task]);
+      await new Promise((r) => setTimeout(r, 20));
+      expect(fetchCount).toBe(1);
+
+      // Second submission of same key (simulates cache eviction: segment was
+      // previously fetched but is no longer in cache).
+      // Without the fix: #completedTasks blocks re-run → fetchCount stays 1.
+      // With the fix: task is re-queued and runs again → fetchCount becomes 2.
+      scheduler.replaceForOwner("owner", [task]);
+      await new Promise((r) => setTimeout(r, 20));
+      expect(fetchCount).toBe(2);
+    });
+
+    it("does not re-run a task that is still in-flight", async () => {
+      let resolveTask!: () => void;
+      let fetchCount = 0;
+      const task: UpgradeTask = {
+        key: "owner:1:main",
+        fetch: vi.fn().mockImplementation(async () => {
+          fetchCount++;
+          await new Promise<void>((r) => {
+            resolveTask = r;
+          });
+        }),
+        deadlineMs: 0,
+        owner: "owner",
+      };
+
+      // Start the task but don't let it complete
+      scheduler.replaceForOwner("owner", [task]);
+      await new Promise((r) => setTimeout(r, 10));
+      expect(fetchCount).toBe(1);
+
+      // Re-submit while still in-flight — must NOT start a second fetch
+      scheduler.replaceForOwner("owner", [task]);
+      await new Promise((r) => setTimeout(r, 10));
+      expect(fetchCount).toBe(1);
+
+      // Let the first task finish
+      resolveTask();
+      await new Promise((r) => setTimeout(r, 10));
+    });
   });
 
   describe("cancelForOwner", () => {

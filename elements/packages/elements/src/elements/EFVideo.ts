@@ -592,6 +592,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     // Invalidate upgrade state on src/fileId change
     if (changedProperties.has("src") || changedProperties.has("fileId")) {
       this.#invalidateUpgradeState("src-change");
+      this.#prewarmQualityUpgrade();
     }
 
     // Invalidate upgrade state on trim/source changes
@@ -606,10 +607,32 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     );
     if (hasDurationChange) {
       this.#invalidateUpgradeState("bounds-change");
+      this.#prewarmQualityUpgrade();
     }
 
     // No need to clear canvas - displayFrame() overwrites it completely
     // and clearing creates blank frame gaps during transitions
+  }
+
+  /**
+   * Eagerly load the media engine and pre-warm main-quality segments for the
+   * start of this clip. Called when src/fileId or source bounds change so that
+   * segments are already in cache by the time the element first becomes visible.
+   *
+   * Without pre-warming, quality upgrade only begins after the first scrub frame
+   * is displayed, causing ~12 frames of blur at the cold-start of every clip.
+   */
+  #prewarmQualityUpgrade(): void {
+    if (this.isInProductionRenderingMode()) return;
+    if (!this.src && !this.fileId) return;
+
+    this.getMediaEngine()
+      .then((engine) => {
+        if (!engine) return;
+        const sourceInMs = this.sourceInMs ?? 0;
+        this.#maybeScheduleQualityUpgrade(engine, sourceInMs);
+      })
+      .catch(() => {});
   }
 
   render() {
@@ -1299,7 +1322,20 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       this.#upgradeState.segmentId !== segmentId ||
       this.#upgradeState.startTimeMs !== startTimeMs;
 
-    if (!stateChanged) return;
+    if (!stateChanged) {
+      // State matches what we previously submitted. Check if the task is still
+      // in-flight — if so, it will populate the cache when it completes.
+      const currentTaskKey = `${this.id}:${segmentId}:${mainTrack.id}`;
+      const scheduler = this.rootTimegroup?.qualityUpgradeScheduler;
+      if (scheduler?.isActive(currentTaskKey)) {
+        return; // Upgrade in progress, wait for it
+      }
+      // Task was previously submitted and completed, but the segment is no
+      // longer in cache (evicted). Clear tracking so it can be re-submitted.
+      this.rootTimegroup?.qualityUpgradeScheduler?.cancelForOwner(this.id);
+      this.#upgradeState = null;
+      // Fall through to re-submit
+    }
 
     const segments = this.#computeLookaheadSegments(
       mediaEngine,
