@@ -119,94 +119,90 @@ export const idempotentTask = <T extends unknown[]>({
       }
     }
 
-    // First, try to find existing cache by scanning cache directories
-    // This avoids expensive MD5 computation when cache already exists
-    const expectedFilename = filename(absolutePath, ...args);
-    let cachePath: string | null = null;
-    let md5: string | null = null;
-
-    // Scan cache directories to find existing cache file
-    const scanStartTime = Date.now();
-    try {
-      const cacheDirs = await readdir(cacheDirRoot, { withFileTypes: true });
-      log(
-        `Scanning ${cacheDirs.length} cache directories for ${expectedFilename}`,
-      );
-      for (const dir of cacheDirs) {
-        if (dir.isDirectory()) {
-          const candidatePath = path.join(
-            cacheDirRoot,
-            dir.name,
-            expectedFilename,
-          );
-          if (
-            existsSync(candidatePath) &&
-            (await isValidCacheFile(candidatePath))
-          ) {
-            cachePath = candidatePath;
-            md5 = dir.name; // Directory name is the MD5
-            const scanElapsed = Date.now() - scanStartTime;
-            log(
-              `Found existing cache in ${scanElapsed}ms: ${candidatePath} (skipped MD5)`,
-            );
-            break;
-          }
-        }
-      }
-      if (!cachePath) {
-        const scanElapsed = Date.now() - scanStartTime;
-        log(
-          `Cache scan completed in ${scanElapsed}ms, no cache found - will compute MD5`,
-        );
-      }
-    } catch (error) {
-      // If cache directory doesn't exist or can't be read, continue to MD5 computation
-      const scanElapsed = Date.now() - scanStartTime;
-      log(
-        `Cache scan failed after ${scanElapsed}ms, will compute MD5: ${error}`,
-      );
+    // Deduplicate concurrent callers by input parameters before any async work.
+    // Using a synchronous key prevents the TOCTOU race where two concurrent
+    // callers both pass the tasks[] check before either registers a task.
+    const inputKey = JSON.stringify([absolutePath, ...args]);
+    if (tasks[inputKey]) {
+      log(`Returning existing ef:${label} task for ${absolutePath}`);
+      return await tasks[inputKey];
     }
 
-    // Only compute MD5 if we didn't find an existing cache
-    if (!md5) {
-      const md5StartTime = Date.now();
-      log(`Computing MD5 for ${absolutePath}...`);
-      md5 = await md5FilePath(absolutePath);
-      const md5Elapsed = Date.now() - md5StartTime;
-      log(`MD5 computed in ${md5Elapsed}ms: ${md5}`);
-    }
-
-    const cacheDir = path.join(cacheDirRoot, md5);
-    log(`Cache dir: ${cacheDir}`);
-    await mkdir(cacheDir, { recursive: true });
-
-    if (!cachePath) {
-      cachePath = path.join(cacheDir, expectedFilename);
-    }
-    const key = cachePath;
-
-    // Check if cache exists and is valid (not zero-byte)
-    if (existsSync(cachePath) && (await isValidCacheFile(cachePath))) {
-      log(`Returning cached ef:${label} task for ${key}`);
-      return { cachePath, md5Sum: md5 };
-    }
-
-    const maybeTask = tasks[key];
-    if (maybeTask) {
-      log(`Returning existing ef:${label} task for ${key}`);
-      return await maybeTask;
-    }
-
-    log(`Creating new ef:${label} task for ${key}`);
     const fullTask = (async (): Promise<TaskResult> => {
       try {
-        log(`Awaiting task for ${key}`);
+        // Try to find existing cache by scanning cache directories.
+        // This avoids expensive MD5 computation when cache already exists.
+        const expectedFilename = filename(absolutePath, ...args);
+        let cachePath: string | null = null;
+        let md5: string | null = null;
+
+        const scanStartTime = Date.now();
+        try {
+          const cacheDirs = await readdir(cacheDirRoot, { withFileTypes: true });
+          log(
+            `Scanning ${cacheDirs.length} cache directories for ${expectedFilename}`,
+          );
+          for (const dir of cacheDirs) {
+            if (dir.isDirectory()) {
+              const candidatePath = path.join(
+                cacheDirRoot,
+                dir.name,
+                expectedFilename,
+              );
+              if (
+                existsSync(candidatePath) &&
+                (await isValidCacheFile(candidatePath))
+              ) {
+                cachePath = candidatePath;
+                md5 = dir.name; // Directory name is the MD5
+                const scanElapsed = Date.now() - scanStartTime;
+                log(
+                  `Found existing cache in ${scanElapsed}ms: ${candidatePath} (skipped MD5)`,
+                );
+                break;
+              }
+            }
+          }
+          if (!cachePath) {
+            const scanElapsed = Date.now() - scanStartTime;
+            log(
+              `Cache scan completed in ${scanElapsed}ms, no cache found - will compute MD5`,
+            );
+          }
+        } catch (error) {
+          const scanElapsed = Date.now() - scanStartTime;
+          log(
+            `Cache scan failed after ${scanElapsed}ms, will compute MD5: ${error}`,
+          );
+        }
+
+        const resolvedMd5 = md5 ?? await (async () => {
+          const md5StartTime = Date.now();
+          log(`Computing MD5 for ${absolutePath}...`);
+          const computed = await md5FilePath(absolutePath);
+          const md5Elapsed = Date.now() - md5StartTime;
+          log(`MD5 computed in ${md5Elapsed}ms: ${computed}`);
+          return computed;
+        })();
+
+        const cacheDir = path.join(cacheDirRoot, resolvedMd5);
+        log(`Cache dir: ${cacheDir}`);
+        await mkdir(cacheDir, { recursive: true });
+
+        const resolvedCachePath = cachePath ?? path.join(cacheDir, expectedFilename);
+
+        // Check if cache exists and is valid (not zero-byte)
+        if (existsSync(resolvedCachePath) && (await isValidCacheFile(resolvedCachePath))) {
+          log(`Returning cached ef:${label} task for ${resolvedCachePath}`);
+          return { cachePath: resolvedCachePath, md5Sum: resolvedMd5 };
+        }
+
+        log(`Running ef:${label} runner for ${resolvedCachePath}`);
         const result = await runner(absolutePath, ...args);
 
         if (result instanceof Readable) {
-          log(`Piping task for ${key} to cache`);
-          // Use temporary file to prevent reading incomplete results
-          const tempPath = `${cachePath}.tmp`;
+          log(`Piping task for ${resolvedCachePath} to cache`);
+          const tempPath = `${resolvedCachePath}.tmp`;
           const writeStream = createWriteStream(tempPath);
           result.pipe(writeStream);
 
@@ -216,29 +212,23 @@ export const idempotentTask = <T extends unknown[]>({
             writeStream.on("finish", () => resolve());
           });
 
-          // Atomically move completed file to final location
           const { rename } = await import("node:fs/promises");
-          await rename(tempPath, cachePath);
+          await rename(tempPath, resolvedCachePath);
         } else {
-          log(`Writing to ${cachePath}`);
-          await writeFile(cachePath, result);
+          log(`Writing to ${resolvedCachePath}`);
+          await writeFile(resolvedCachePath, result);
         }
 
-        // Clean up task reference after successful completion
-        delete tasks[key];
-
         return {
-          md5Sum: md5,
-          cachePath,
+          md5Sum: resolvedMd5,
+          cachePath: resolvedCachePath,
         };
-      } catch (error) {
-        // Clean up task reference on failure
-        delete tasks[key];
-        throw error;
+      } finally {
+        delete tasks[inputKey];
       }
     })();
 
-    tasks[key] = fullTask;
+    tasks[inputKey] = fullTask;
     return await fullTask;
   };
 };
