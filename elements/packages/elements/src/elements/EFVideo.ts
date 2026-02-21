@@ -103,40 +103,23 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         top: 0;
         left: 0;
         right: 0;
-        bottom: 0;
-        background: var(--ef-color-loading-overlay-bg, rgba(0, 0, 0, 0.5));
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        height: 2px;
+        overflow: hidden;
         z-index: 10;
-        backdrop-filter: blur(2px);
+        pointer-events: none;
+        background: var(--ef-color-loading-spinner-track, rgba(255, 255, 255, 0.1));
       }
-      .loading-content {
-        background: color-mix(in srgb, var(--ef-color-loading-overlay-bg, rgba(0, 0, 0, 0.5)) 120%, transparent);
-        border-radius: 8px;
-        padding: 16px 24px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        color: var(--ef-color-text, white);
-        font-size: 14px;
-        font-weight: 500;
+      .loading-bar {
+        position: absolute;
+        top: 0;
+        height: 100%;
+        width: 40%;
+        background: var(--ef-color-loading-spinner-fill, rgba(255, 255, 255, 0.8));
+        animation: loading-sweep 1.4s ease-in-out infinite;
       }
-      .loading-spinner {
-        width: 20px;
-        height: 20px;
-        border: 2px solid var(--ef-color-loading-spinner-track, rgba(255, 255, 255, 0.15));
-        border-left: 2px solid var(--ef-color-loading-spinner-fill, rgba(255, 255, 255, 0.85));
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-      }
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-      .loading-message {
-        font-size: 12px;
-        opacity: 0.8;
+      @keyframes loading-sweep {
+        0% { left: -40%; }
+        100% { left: 140%; }
       }
     `,
   ];
@@ -582,7 +565,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
 
     // Initialize delayed loading state with callback to update UI
     this.#delayedLoadingState = new DelayedLoadingState(
-      250,
+      100,
       (isLoading, message) => {
         this.setLoadingState(isLoading, null, message);
       },
@@ -622,17 +605,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       <canvas ${ref(this.canvasRef)}></canvas>
       ${
         this.loadingState.isLoading
-          ? html`
-        <div class="loading-overlay">
-          <div class="loading-content">
-            <div class="loading-spinner"></div>
-            <div>
-              <div>Loading Video...</div>
-              <div class="loading-message">${this.loadingState.message}</div>
-            </div>
-          </div>
-        </div>
-      `
+          ? html`<div class="loading-overlay"><div class="loading-bar"></div></div>`
           : ""
       }
     `;

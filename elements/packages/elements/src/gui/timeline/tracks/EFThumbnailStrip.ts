@@ -138,9 +138,9 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
         inset: 0;
         background: linear-gradient(
           90deg,
-          color-mix(in srgb, var(--ef-color-text, #fafafa) 4%, transparent) 0%,
-          color-mix(in srgb, var(--ef-color-text, #fafafa) 10%, transparent) 50%,
-          color-mix(in srgb, var(--ef-color-text, #fafafa) 4%, transparent) 100%
+          color-mix(in srgb, var(--ef-color-text, #fafafa) 12%, transparent) 0%,
+          color-mix(in srgb, var(--ef-color-text, #fafafa) 28%, transparent) 50%,
+          color-mix(in srgb, var(--ef-color-text, #fafafa) 12%, transparent) 100%
         );
         background-size: 200% 100%;
         pointer-events: none;

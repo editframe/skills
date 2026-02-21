@@ -158,13 +158,12 @@ describe("EFVideo loading overlay CSS variables", () => {
     document.body.innerHTML = "";
   });
 
-  test("overlay background reflects --ef-color-loading-overlay-bg", async ({
+  test("loading bar track reflects --ef-color-loading-spinner-track", async ({
     expect,
   }) => {
     const container = document.createElement("div");
-    // Override the CSS variable to a recognizable color
     container.style.setProperty(
-      "--ef-color-loading-overlay-bg",
+      "--ef-color-loading-spinner-track",
       "rgb(255, 0, 0)",
     );
     render(
@@ -180,7 +179,6 @@ describe("EFVideo loading overlay CSS variables", () => {
     const video = container.querySelector("ef-video") as HTMLElement;
     await (video as any).updateComplete;
 
-    // Set loading state
     (video as any).loadingState = {
       isLoading: true,
       operation: null,
@@ -193,12 +191,11 @@ describe("EFVideo loading overlay CSS variables", () => {
     const overlay = shadow.querySelector(".loading-overlay") as HTMLElement;
     expect(overlay).toBeTruthy();
 
-    // The overlay background must reflect the CSS custom property
     const bg = getComputedStyle(overlay).backgroundColor;
     expect(bg).toBe("rgb(255, 0, 0)");
   });
 
-  test("spinner border-left reflects --ef-color-loading-spinner-fill", async ({
+  test("loading bar fill reflects --ef-color-loading-spinner-fill", async ({
     expect,
   }) => {
     const container = document.createElement("div");
@@ -228,11 +225,11 @@ describe("EFVideo loading overlay CSS variables", () => {
     await (video as any).updateComplete;
 
     const shadow = video.shadowRoot!;
-    const spinner = shadow.querySelector(".loading-spinner") as HTMLElement;
-    expect(spinner).toBeTruthy();
+    const bar = shadow.querySelector(".loading-bar") as HTMLElement;
+    expect(bar).toBeTruthy();
 
-    const borderLeftColor = getComputedStyle(spinner).borderLeftColor;
-    expect(borderLeftColor).toBe("rgb(0, 255, 0)");
+    const bg = getComputedStyle(bar).backgroundColor;
+    expect(bg).toBe("rgb(0, 255, 0)");
   });
 });
 
@@ -241,7 +238,7 @@ describe("EFVideo prepareFrame triggers loading overlay", () => {
     document.body.innerHTML = "";
   });
 
-  test("loading overlay appears after 250ms debounce during load", async ({
+  test("loading overlay appears after 100ms debounce during load", async ({
     expect,
   }) => {
     const container = document.createElement("div");

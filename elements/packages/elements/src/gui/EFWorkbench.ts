@@ -240,27 +240,28 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
 
       .preview-loading-overlay {
         position: absolute;
-        inset: 0;
-        background: var(--ef-color-loading-overlay-bg, rgba(0, 0, 0, 0.5));
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        overflow: hidden;
         z-index: 8;
         pointer-events: none;
+        background: var(--ef-color-loading-spinner-track, rgba(255, 255, 255, 0.1));
       }
 
-      .preview-loading-spinner {
-        width: 28px;
-        height: 28px;
-        border: 3px solid var(--ef-color-loading-spinner-track, rgba(255, 255, 255, 0.15));
-        border-left: 3px solid var(--ef-color-loading-spinner-fill, rgba(255, 255, 255, 0.85));
-        border-radius: 50%;
-        animation: preview-spin 1s linear infinite;
+      .preview-loading-bar {
+        position: absolute;
+        top: 0;
+        height: 100%;
+        width: 40%;
+        background: var(--ef-color-loading-spinner-fill, rgba(255, 255, 255, 0.8));
+        animation: preview-sweep 1.4s ease-in-out infinite;
       }
 
-      @keyframes preview-spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+      @keyframes preview-sweep {
+        0% { left: -40%; }
+        100% { left: 140%; }
       }
       
       .clone-content {
@@ -2588,7 +2589,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         <!-- Preview loading overlay (shown when timegroup content is loading) -->
         ${this.previewIsLoading ? html`
           <div class="preview-loading-overlay">
-            <div class="preview-loading-spinner"></div>
+            <div class="preview-loading-bar"></div>
           </div>
         ` : ""}
         

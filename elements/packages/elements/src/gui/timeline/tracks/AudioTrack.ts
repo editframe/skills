@@ -41,9 +41,9 @@ export class EFAudioTrack extends TrackItem {
         right: 0;
         background: linear-gradient(
           90deg,
-          color-mix(in srgb, var(--ef-color-type-audio, #10b981) 8%, transparent) 0%,
-          color-mix(in srgb, var(--ef-color-type-audio, #10b981) 18%, transparent) 50%,
-          color-mix(in srgb, var(--ef-color-type-audio, #10b981) 8%, transparent) 100%
+          color-mix(in srgb, var(--ef-color-type-audio, #10b981) 20%, transparent) 0%,
+          color-mix(in srgb, var(--ef-color-type-audio, #10b981) 42%, transparent) 50%,
+          color-mix(in srgb, var(--ef-color-type-audio, #10b981) 20%, transparent) 100%
         );
         background-size: 200% 100%;
         border-radius: 2px;
