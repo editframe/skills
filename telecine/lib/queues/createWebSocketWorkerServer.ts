@@ -5,6 +5,7 @@ import type { Worker } from "./Worker";
 import { WebSocketServer, type WebSocket } from "ws";
 
 const TRY_AGAIN_LATER = 1013;
+const HEARTBEAT_INTERVAL_MS = 30_000;
 
 export const createWebSocketWorkerServer = <Payload>(
   worker: Worker<Payload>,
@@ -48,16 +49,33 @@ export const createWebSocketWorkerServer = <Payload>(
           "Work loops started",
         );
 
+        let isAlive = true;
+        const heartbeat = setInterval(() => {
+          if (!isAlive) {
+            logger.warn({ queue: worker.name }, "Scheduler heartbeat timeout, terminating connection");
+            ws.terminate();
+            return;
+          }
+          isAlive = false;
+          ws.ping();
+        }, HEARTBEAT_INTERVAL_MS);
+
+        ws.on("pong", () => {
+          isAlive = true;
+        });
+
         ws.on("close", () => {
-          logger.info({ queue: worker.name }, "Scheduler disconnected, stopping work loops");
+          clearInterval(heartbeat);
+          logger.info({ queue: worker.name }, "Scheduler disconnected, shutting down worker");
           activeConnection = null;
           stopLoops(ws);
+          eagerServer.close().catch((err) => {
+            logger.error({ queue: worker.name, error: err }, "Error during worker shutdown");
+          });
         });
 
         ws.on("error", (err) => {
           logger.warn({ queue: worker.name, error: err.message }, "WebSocket error");
-          activeConnection = null;
-          stopLoops(ws);
         });
       });
 
@@ -71,7 +89,6 @@ export const createWebSocketWorkerServer = <Payload>(
         { queue: worker.name, connections: connectionLoops.size },
         "Shutting down WebSocket worker server",
       );
-      // Abort all work loops from all connections
       const allAborts: Promise<void>[] = [];
       for (const [ws, loops] of connectionLoops) {
         for (const loop of loops) {
