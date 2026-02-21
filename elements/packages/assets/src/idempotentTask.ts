@@ -1,9 +1,57 @@
 import { createWriteStream, existsSync } from "node:fs";
-import path from "node:path";
+import path, { join } from "node:path";
 import { md5FilePath } from "./md5.js";
 import debug from "debug";
-import { mkdir, writeFile, stat, rename, readdir } from "node:fs/promises";
+import { mkdir, writeFile, stat, rename, readdir, readFile, rm } from "node:fs/promises";
 import { Readable } from "node:stream";
+import packageJson from "../package.json" with { type: "json" };
+
+const CACHE_VERSION = packageJson.version;
+
+// Per-root validation promises — serializes the version check within a process
+// and memoizes it so subsequent calls in the same process are free.
+const rootValidationPromises = new Map<string, Promise<void>>();
+
+async function ensureCacheVersion(cacheDirRoot: string): Promise<void> {
+  const existing = rootValidationPromises.get(cacheDirRoot);
+  if (existing) return existing;
+
+  const promise = (async () => {
+    const versionFile = join(cacheDirRoot, ".version");
+    let storedVersion: string | null = null;
+    try {
+      storedVersion = (await readFile(versionFile, "utf-8")).trim();
+    } catch {}
+
+    if (storedVersion === CACHE_VERSION) return;
+
+    const log = debug("ef:idempotentTask");
+    log(
+      `Cache version mismatch (stored: ${storedVersion ?? "none"}, current: ${CACHE_VERSION}) — busting computed caches in ${cacheDirRoot}`,
+    );
+
+    // Delete computed output directories; preserve downloaded .file entries
+    const entries = await readdir(cacheDirRoot, { withFileTypes: true }).catch(
+      () => [],
+    );
+    await Promise.all(
+      entries
+        .filter((e) => e.isDirectory())
+        .map((e) =>
+          rm(join(cacheDirRoot, e.name), {
+            recursive: true,
+            force: true,
+          }).catch(() => {}),
+        ),
+    );
+
+    await mkdir(cacheDirRoot, { recursive: true });
+    await writeFile(versionFile, CACHE_VERSION);
+  })();
+
+  rootValidationPromises.set(cacheDirRoot, promise);
+  return promise;
+}
 
 const MAX_CONCURRENT_RUNNERS = 4;
 let activeRunners = 0;
@@ -69,6 +117,7 @@ export const idempotentTask = <T extends unknown[]>({
     const log = debug(`ef:${label}`);
     const cacheDirRoot = path.join(rootDir, ".cache");
     await mkdir(cacheDirRoot, { recursive: true });
+    await ensureCacheVersion(cacheDirRoot);
 
     log(`Running ef:${label} task for ${absolutePath} in ${rootDir}`);
 
