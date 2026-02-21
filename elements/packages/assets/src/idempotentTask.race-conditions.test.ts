@@ -297,4 +297,94 @@ describe("idempotentTask Race Condition Protection", () => {
       expect(tempFiles.length).toBe(0);
     });
   });
+
+  describe("string result atomicity", () => {
+    test("no .tmp files remain after successful string task", async () => {
+      const stringTask = idempotentTask({
+        label: "string-atomic",
+        filename: () => "result.json",
+        runner: async () => '{"ok": true}',
+      });
+
+      await stringTask(testDir, testFilePath);
+
+      const cacheFiles = await import("node:fs").then((fs) =>
+        fs.readdirSync(join(testDir, ".cache"), { recursive: true }),
+      );
+      const tempFiles = cacheFiles.filter((f) =>
+        f.toString().includes(".tmp"),
+      );
+      expect(tempFiles.length).toBe(0);
+    });
+
+    test("no .tmp files remain after failed string task", async () => {
+      const failingStringTask = idempotentTask({
+        label: "string-fail",
+        filename: () => "result.json",
+        runner: async (): Promise<string> => {
+          throw new Error("runner failure");
+        },
+      });
+
+      await expect(
+        failingStringTask(testDir, testFilePath),
+      ).rejects.toThrow("runner failure");
+
+      const { existsSync: exists } = await import("node:fs");
+      const cacheRoot = join(testDir, ".cache");
+      if (exists(cacheRoot)) {
+        const cacheFiles = await import("node:fs").then((fs) =>
+          fs.readdirSync(cacheRoot, { recursive: true }),
+        );
+        const tempFiles = cacheFiles.filter((f) =>
+          f.toString().includes(".tmp"),
+        );
+        expect(tempFiles.length).toBe(0);
+      }
+    });
+
+    test("string result content is complete and correct", async () => {
+      const expected = '{"key": "value", "number": 42}';
+      const stringTask = idempotentTask({
+        label: "string-content",
+        filename: () => "data.json",
+        runner: async () => expected,
+      });
+
+      const result = await stringTask(testDir, testFilePath);
+
+      const { readFile } = await import("node:fs/promises");
+      const actual = await readFile(result.cachePath, "utf-8");
+      expect(actual).toBe(expected);
+    });
+  });
+
+  describe("HTTP URL detection", () => {
+    test("does not treat a local path containing 'http' as a URL", async () => {
+      // A path like /srv/httpd/media/video.mp4 contains "http" but is a local file.
+      // The includes("http") check is too broad and would attempt fetch() on it.
+      const httpInPathDir = join(testDir, "httpd-assets");
+      await mkdir(httpInPathDir, { recursive: true });
+      const localFileWithHttpInPath = join(httpInPathDir, "video.mp4");
+      await writeFile(localFileWithHttpInPath, "local file content");
+
+      const copyTask = idempotentTask({
+        label: "http-path-test",
+        filename: () => "output.txt",
+        runner: async (absolutePath: string) => {
+          const { createReadStream } = await import("node:fs");
+          return createReadStream(absolutePath);
+        },
+      });
+
+      // Should succeed as a local file read, not attempt fetch()
+      const result = await copyTask(testDir, localFileWithHttpInPath);
+      expect(result.cachePath).toBeDefined();
+      expect(existsSync(result.cachePath)).toBe(true);
+
+      const { readFile } = await import("node:fs/promises");
+      const cached = await readFile(result.cachePath, "utf-8");
+      expect(cached).toBe("local file content");
+    });
+  });
 });

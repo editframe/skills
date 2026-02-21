@@ -2,7 +2,7 @@ import { createWriteStream, existsSync } from "node:fs";
 import path from "node:path";
 import { md5FilePath } from "./md5.js";
 import debug from "debug";
-import { mkdir, writeFile, stat, readdir } from "node:fs/promises";
+import { mkdir, writeFile, stat, rename, readdir } from "node:fs/promises";
 import { Readable } from "node:stream";
 
 interface TaskOptions<T extends unknown[]> {
@@ -50,7 +50,7 @@ export const idempotentTask = <T extends unknown[]>({
     log(`Running ef:${label} task for ${absolutePath} in ${rootDir}`);
 
     // Handle HTTP downloads with proper race condition protection
-    if (absolutePath.includes("http")) {
+    if (absolutePath.startsWith("http://") || absolutePath.startsWith("https://")) {
       const safePath = absolutePath.replace(/[^a-zA-Z0-9]/g, "_");
       const downloadCachePath = path.join(
         rootDir,
@@ -99,7 +99,6 @@ export const idempotentTask = <T extends unknown[]>({
               });
 
               // Atomically move completed file to final location
-              const { rename } = await import("node:fs/promises");
               await rename(tempPath, downloadCachePath);
 
               log(`Download completed for ${absolutePath}`);
@@ -217,11 +216,12 @@ export const idempotentTask = <T extends unknown[]>({
           });
 
           // Atomically move completed file to final location
-          const { rename } = await import("node:fs/promises");
           await rename(tempPath, cachePath);
         } else {
           log(`Writing to ${cachePath}`);
-          await writeFile(cachePath, result);
+          const tempPath = `${cachePath}.tmp`;
+          await writeFile(tempPath, result);
+          await rename(tempPath, cachePath);
         }
 
         // Clean up task reference after successful completion
