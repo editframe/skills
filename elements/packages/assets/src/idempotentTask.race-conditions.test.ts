@@ -359,6 +359,40 @@ describe("idempotentTask Race Condition Protection", () => {
     });
   });
 
+  describe("concurrency limiting", () => {
+    test("limits concurrent runner executions to MAX_CONCURRENT_RUNNERS", async () => {
+      let activeRunners = 0;
+      let maxObservedConcurrency = 0;
+
+      // Create many distinct tasks (different args → different cache keys) to fill the semaphore
+      const concurrentTask = idempotentTask({
+        label: "concurrency-limit",
+        filename: (_: string, id: number) => `file-${id}.txt`,
+        runner: async (_: string, id: number) => {
+          activeRunners++;
+          maxObservedConcurrency = Math.max(maxObservedConcurrency, activeRunners);
+          // Hold the runner slot briefly so concurrent tasks queue up
+          await new Promise((resolve) => setTimeout(resolve, 20));
+          activeRunners--;
+          return `result-${id}`;
+        },
+      });
+
+      // Launch more tasks than MAX_CONCURRENT_RUNNERS at once
+      const taskCount = 20;
+      const promises = Array.from({ length: taskCount }, (_, i) =>
+        concurrentTask(testDir, testFilePath, i),
+      );
+
+      await Promise.all(promises);
+
+      // Concurrency must have been capped at MAX_CONCURRENT_RUNNERS (4)
+      expect(maxObservedConcurrency).toBeLessThanOrEqual(4);
+      // And some concurrency should have occurred (not sequential)
+      expect(maxObservedConcurrency).toBeGreaterThan(1);
+    }, 10000);
+  });
+
   describe("HTTP URL detection", () => {
     test("does not treat a local path containing 'http' as a URL", async () => {
       // A path like /srv/httpd/media/video.mp4 contains "http" but is a local file.

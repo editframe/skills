@@ -5,6 +5,29 @@ import debug from "debug";
 import { mkdir, writeFile, stat, rename, readdir } from "node:fs/promises";
 import { Readable } from "node:stream";
 
+const MAX_CONCURRENT_RUNNERS = 4;
+let activeRunners = 0;
+const runnerQueue: Array<() => void> = [];
+
+function acquireRunnerSlot(): Promise<void> {
+  if (activeRunners < MAX_CONCURRENT_RUNNERS) {
+    activeRunners++;
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    runnerQueue.push(() => {
+      activeRunners++;
+      resolve();
+    });
+  });
+}
+
+function releaseRunnerSlot(): void {
+  activeRunners--;
+  const next = runnerQueue.shift();
+  if (next) next();
+}
+
 interface TaskOptions<T extends unknown[]> {
   label: string;
   filename: (absolutePath: string, ...args: T) => string;
@@ -200,7 +223,13 @@ export const idempotentTask = <T extends unknown[]>({
     const fullTask = (async (): Promise<TaskResult> => {
       try {
         log(`Awaiting task for ${key}`);
-        const result = await runner(absolutePath, ...args);
+        await acquireRunnerSlot();
+        let result: string | Readable;
+        try {
+          result = await runner(absolutePath, ...args);
+        } finally {
+          releaseRunnerSlot();
+        }
 
         if (result instanceof Readable) {
           log(`Piping task for ${key} to cache`);
