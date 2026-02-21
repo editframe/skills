@@ -329,7 +329,6 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         mediaEngine.transport.isCached(mainSegmentId, mainTrack)
       ) {
         this.#currentRenditionId = "main";
-        console.log('[QUALITY] stage1-hit: using cached main quality', JSON.stringify({ id: this.id, segmentId: mainSegmentId, timeMs: desiredSeekTimeMs }));
         return this.#getMainVideoSampleForFrame(
           mediaEngine,
           desiredSeekTimeMs,
@@ -358,8 +357,6 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       );
       if (scrubSample) {
         this.#currentRenditionId = "scrub";
-        const mainSegmentId = mainTrack ? mediaEngine.index.segmentAt(desiredSeekTimeMs, mainTrack) : undefined;
-        console.log('[QUALITY] stage3-scrub: main not cached, using scrub', JSON.stringify({ id: this.id, timeMs: desiredSeekTimeMs, mainSegmentId, hasMainTrack: !!mainTrack }));
         // Got scrub - schedule background quality upgrade
         this.#maybeScheduleQualityUpgrade(mediaEngine, desiredSeekTimeMs);
         return scrubSample;
@@ -1338,12 +1335,10 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       const currentTaskKey = `${this.#upgradeOwnerId}:${segmentId}:${mainTrack.id}`;
       const scheduler = this.rootTimegroup?.qualityUpgradeScheduler;
       if (scheduler?.isActive(currentTaskKey) || scheduler?.isPending(currentTaskKey)) {
-        console.log('[QUALITY] schedule-skip: task active or pending', JSON.stringify({ id: this.id, key: currentTaskKey }));
         return;
       }
       // Task is neither running nor queued — it completed (or failed) and the
       // segment may have been evicted. Re-submit.
-      console.log('[QUALITY] schedule-resubmit: task gone, re-queuing', JSON.stringify({ id: this.id, segmentId, sourceTimeMs }));
       this.rootTimegroup?.qualityUpgradeScheduler?.cancelForOwner(this.#upgradeOwnerId);
       this.#upgradeState = null;
       // Fall through to re-submit
@@ -1354,10 +1349,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       sourceTimeMs,
       mainTrack,
     );
-    if (segments.length === 0) {
-      console.log('[QUALITY] schedule-skip: no lookahead segments (all cached or out of range)', JSON.stringify({ id: this.id, segmentId, sourceTimeMs }));
-      return;
-    }
+    if (segments.length === 0) return;
 
     const tasks = segments.map((seg) => ({
       key: `${this.#upgradeOwnerId}:${seg.segmentId}:${mainTrack.id}`,
@@ -1373,7 +1365,6 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       owner: this.#upgradeOwnerId,
     }));
 
-    console.log('[QUALITY] schedule-submit', JSON.stringify({ id: this.id, owner: this.#upgradeOwnerId, tasks: tasks.map(t => ({ key: t.key, deadlineMs: t.deadlineMs })) }));
     const scheduler = this.rootTimegroup?.qualityUpgradeScheduler;
     if (scheduler) {
       scheduler.replaceForOwner(this.#upgradeOwnerId, tasks);
