@@ -181,6 +181,7 @@ export class QualityUpgradeScheduler {
    * Start a single task.
    */
   #startTask(task: UpgradeTask): void {
+    console.log('[QUALITY] task-start', JSON.stringify({ key: task.key, owner: task.owner, deadlineMs: task.deadlineMs }));
     const promise = task
       .fetch(this.#abortController.signal)
       .then(() => {
@@ -192,6 +193,7 @@ export class QualityUpgradeScheduler {
           status: "completed",
         });
 
+        console.log('[QUALITY] task-complete: triggering re-render', JSON.stringify({ key: task.key, owner: task.owner }));
         // Trigger re-render so upgraded quality gets displayed
         this.#requestFrameRender();
 
@@ -207,6 +209,7 @@ export class QualityUpgradeScheduler {
           error instanceof DOMException && error.name === "AbortError";
 
         if (!isAbortError) {
+          console.log('[QUALITY] task-failed', JSON.stringify({ key: task.key, owner: task.owner, error: error instanceof Error ? error.message : String(error) }));
           this.#completedTasks.set(task.key, {
             key: task.key,
             owner: task.owner,
@@ -227,11 +230,17 @@ export class QualityUpgradeScheduler {
   }
 
   /**
-   * Check whether a task is currently in-flight.
-   * Used by callers to distinguish "in-flight, wait" from "completed, may re-submit".
+   * Check whether a task is currently in-flight (started, not yet complete).
    */
   isActive(key: string): boolean {
     return this.#activeTasks.has(key);
+  }
+
+  /**
+   * Check whether a task is waiting in the queue (submitted but not yet started).
+   */
+  isPending(key: string): boolean {
+    return this.#queue.some((t) => t.key === key);
   }
 
   /**
