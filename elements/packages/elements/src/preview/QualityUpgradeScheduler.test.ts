@@ -269,6 +269,88 @@ describe("QualityUpgradeScheduler", () => {
       resolveTask();
       await new Promise((r) => setTimeout(r, 10));
     });
+
+    it("replaceForOwner for one owner does not cancel another owner's pending tasks", async () => {
+      // Use maxConcurrent:1 so owner2's task stays queued behind the blocker
+      const serial = new QualityUpgradeScheduler({
+        requestFrameRender: vi.fn() as unknown as () => void,
+        maxConcurrent: 1,
+      });
+
+      let resolveBlocker!: () => void;
+      const blocker: UpgradeTask = {
+        key: "blocker:1:main",
+        fetch: vi.fn().mockImplementation(
+          () => new Promise<void>((r) => { resolveBlocker = r; }),
+        ),
+        deadlineMs: 0,
+        owner: "blocker",
+      };
+
+      let fetchCount = 0;
+      const owner2Task: UpgradeTask = {
+        key: "owner2:1:main",
+        fetch: vi.fn().mockImplementation(async () => { fetchCount++; }),
+        deadlineMs: 1,
+        owner: "owner2",
+      };
+
+      serial.replaceForOwner("blocker", [blocker]);
+      serial.replaceForOwner("owner2", [owner2Task]);
+      await new Promise((r) => setTimeout(r, 10));
+
+      expect(serial.isPending(owner2Task.key)).toBe(true);
+
+      // Replacing owner1's tasks must not touch owner2's queue entry
+      serial.replaceForOwner("owner1", []);
+      expect(serial.isPending(owner2Task.key)).toBe(true);
+
+      // Release blocker — owner2's task should now run
+      resolveBlocker();
+      await new Promise((r) => setTimeout(r, 20));
+      expect(fetchCount).toBe(1);
+
+      serial.dispose();
+    });
+  });
+
+  describe("isPending", () => {
+    it("returns true while a task is in the queue and false once it runs", async () => {
+      const serial = new QualityUpgradeScheduler({
+        requestFrameRender: vi.fn() as unknown as () => void,
+        maxConcurrent: 1,
+      });
+
+      let resolveBlocker!: () => void;
+      const blocker: UpgradeTask = {
+        key: "blocker:1:main",
+        fetch: vi.fn().mockImplementation(
+          () => new Promise<void>((r) => { resolveBlocker = r; }),
+        ),
+        deadlineMs: 0,
+        owner: "blocker",
+      };
+      const pending: UpgradeTask = {
+        key: "owner:2:main",
+        fetch: vi.fn().mockResolvedValue(undefined),
+        deadlineMs: 1,
+        owner: "owner",
+      };
+
+      serial.replaceForOwner("blocker", [blocker]);
+      serial.replaceForOwner("owner", [pending]);
+      await new Promise((r) => setTimeout(r, 10));
+
+      expect(serial.isPending(pending.key)).toBe(true);
+      expect(serial.isActive(pending.key)).toBe(false);
+
+      resolveBlocker();
+      await new Promise((r) => setTimeout(r, 20));
+
+      expect(serial.isPending(pending.key)).toBe(false);
+
+      serial.dispose();
+    });
   });
 
   describe("cancelForOwner", () => {
