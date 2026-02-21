@@ -4,11 +4,14 @@ import type { AbortableLoop } from "./AbortableLoop";
 import type { Worker } from "./Worker";
 import { WebSocketServer, type WebSocket } from "ws";
 
+const TRY_AGAIN_LATER = 1013;
+
 export const createWebSocketWorkerServer = <Payload>(
   worker: Worker<Payload>,
   PORT = process.env.PORT ? Number.parseInt(process.env.PORT) : 3000,
 ) => {
   let wss: WebSocketServer | null = null;
+  let activeConnection: WebSocket | null = null;
   const connectionLoops = new Map<WebSocket, AbortableLoop[]>();
 
   const eagerServer = createEagerBootServer({
@@ -22,6 +25,13 @@ export const createWebSocketWorkerServer = <Payload>(
       wss = new WebSocketServer({ noServer: true });
 
       wss.on("connection", (ws) => {
+        if (activeConnection) {
+          logger.error({ queue: worker.name }, "Rejecting second scheduler connection");
+          ws.close(TRY_AGAIN_LATER, "Worker already has an active connection");
+          return;
+        }
+        activeConnection = ws;
+
         logger.info(
           { queue: worker.name, concurrency: worker.concurrency },
           "Scheduler connected, starting work loops",
@@ -40,11 +50,13 @@ export const createWebSocketWorkerServer = <Payload>(
 
         ws.on("close", () => {
           logger.info({ queue: worker.name }, "Scheduler disconnected, stopping work loops");
+          activeConnection = null;
           stopLoops(ws);
         });
 
         ws.on("error", (err) => {
           logger.warn({ queue: worker.name, error: err.message }, "WebSocket error");
+          activeConnection = null;
           stopLoops(ws);
         });
       });
@@ -68,6 +80,7 @@ export const createWebSocketWorkerServer = <Payload>(
         ws.close();
       }
       connectionLoops.clear();
+      activeConnection = null;
       await Promise.all(allAborts);
       await worker.close();
       if (wss) {
