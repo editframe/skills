@@ -1,12 +1,12 @@
 import { basename } from "node:path";
 import { promisify } from "node:util";
-import { exec } from "node:child_process";
+import { execFile } from "node:child_process";
 
 import debug from "debug";
 
 import { idempotentTask } from "../idempotentTask.js";
 
-const execPromise = promisify(exec);
+const execFilePromise = promisify(execFile);
 
 const log = debug("ef:generateCaptions");
 
@@ -62,9 +62,9 @@ const convertWhisperToEditframeFormat = (
 };
 
 export const generateCaptionDataFromPath = async (absolutePath: string) => {
-  const command = `whisper_timestamped --language en --efficient --output_format json ${absolutePath}`;
-  log(`Running command: ${command}`);
-  const { stdout } = await execPromise(command);
+  const args = ["--language", "en", "--efficient", "--output_format", "json", absolutePath];
+  log("Running whisper_timestamped", args);
+  const { stdout } = await execFilePromise("whisper_timestamped", args);
 
   try {
     const whisperData = JSON.parse(stdout) as WhisperOutput;
