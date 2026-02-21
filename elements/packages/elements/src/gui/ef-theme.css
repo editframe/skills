@@ -65,6 +65,12 @@
   --ef-radius-sm: 0.25rem; /* 4px */
   --ef-radius-md: 0.375rem; /* 6px */
 
+  /* Loading state tokens */
+  --ef-color-loading-overlay-bg: rgba(0, 0, 0, 0.5);
+  --ef-color-loading-spinner-track: rgba(255, 255, 255, 0.15);
+  --ef-color-loading-spinner-fill: rgba(255, 255, 255, 0.85);
+  --ef-loading-shimmer-duration: 1.5s;
+
   /* Filmstrip component tokens (reference globals) */
   --filmstrip-bg: var(--ef-color-bg-inset);
   --filmstrip-item-bg: rgba(17, 17, 17, 0.9); /* Darker */
@@ -128,6 +134,11 @@
   --ef-color-type-text: #EA580C; /* Orange-600 */
   --ef-color-type-captions: #0891B2; /* Cyan-600 */
   --ef-color-type-timegroup: #475569; /* Slate-600 */
+
+  /* Loading state tokens — light mode */
+  --ef-color-loading-overlay-bg: rgba(0, 0, 0, 0.3);
+  --ef-color-loading-spinner-track: rgba(0, 0, 0, 0.12);
+  --ef-color-loading-spinner-fill: rgba(0, 0, 0, 0.75);
 
   /* Filmstrip light mode adjustments */
   --filmstrip-item-bg: rgba(238, 238, 238, 0.95);

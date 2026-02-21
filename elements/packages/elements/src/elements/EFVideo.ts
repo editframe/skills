@@ -103,40 +103,23 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         top: 0;
         left: 0;
         right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.6);
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        height: 2px;
+        overflow: hidden;
         z-index: 10;
-        backdrop-filter: blur(2px);
+        pointer-events: none;
+        background: var(--ef-color-loading-spinner-track, rgba(255, 255, 255, 0.1));
       }
-      .loading-content {
-        background: rgba(0, 0, 0, 0.8);
-        border-radius: 8px;
-        padding: 16px 24px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        color: white;
-        font-size: 14px;
-        font-weight: 500;
+      .loading-bar {
+        position: absolute;
+        top: 0;
+        height: 100%;
+        width: 40%;
+        background: var(--ef-color-loading-spinner-fill, rgba(255, 255, 255, 0.8));
+        animation: loading-sweep 1.4s ease-in-out infinite;
       }
-      .loading-spinner {
-        width: 20px;
-        height: 20px;
-        border: 2px solid rgba(255, 255, 255, 0.2);
-        border-left: 2px solid #fff;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-      }
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-      .loading-message {
-        font-size: 12px;
-        opacity: 0.8;
+      @keyframes loading-sweep {
+        0% { left: -40%; }
+        100% { left: 140%; }
       }
     `,
   ];
@@ -219,50 +202,55 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   async prepareFrame(_timeMs: number, signal: AbortSignal): Promise<void> {
     signal.throwIfAborted();
     this.unifiedVideoSeekTask.begin();
+    this.#delayedLoadingState.startLoading("prepare-frame", "");
 
-    // Use element's source time, not the passed root timegroup time.
-    // currentSourceTimeMs = ownCurrentTimeMs + (sourceIn || trimStart || 0)
-    // This correctly maps timeline position to actual media time.
-    const sourceTimeMs = this.currentSourceTimeMs;
-
-    const mediaEngine = await this.getMediaEngine(signal);
-    if (!mediaEngine) {
-      this.#cachedVideoSample = undefined;
-      this.#cachedVideoSampleTimeMs = sourceTimeMs;
-      this.unifiedVideoSeekTask.complete(undefined);
-      return;
-    }
-
-    signal.throwIfAborted();
-
-    // Fetch video sample at the correct source time
-    // Handle errors gracefully so one failed seek doesn't break subsequent frames
     try {
-      const videoSample = await this.#fetchVideoSampleForFrame(
-        mediaEngine,
-        sourceTimeMs,
-        signal,
-      );
+      // Use element's source time, not the passed root timegroup time.
+      // currentSourceTimeMs = ownCurrentTimeMs + (sourceIn || trimStart || 0)
+      // This correctly maps timeline position to actual media time.
+      const sourceTimeMs = this.currentSourceTimeMs;
+
+      const mediaEngine = await this.getMediaEngine(signal);
+      if (!mediaEngine) {
+        this.#cachedVideoSample = undefined;
+        this.#cachedVideoSampleTimeMs = sourceTimeMs;
+        this.unifiedVideoSeekTask.complete(undefined);
+        return;
+      }
 
       signal.throwIfAborted();
 
-      // Cache the result
-      this.#cachedVideoSample = videoSample;
-      this.#cachedVideoSampleTimeMs = sourceTimeMs;
-      this.unifiedVideoSeekTask.complete(videoSample);
-    } catch (error) {
-      // Re-throw abort errors to properly handle cancellation
-      if (error instanceof DOMException && error.name === "AbortError") {
-        this.unifiedVideoSeekTask.abort();
-        throw error;
-      }
+      // Fetch video sample at the correct source time
+      // Handle errors gracefully so one failed seek doesn't break subsequent frames
+      try {
+        const videoSample = await this.#fetchVideoSampleForFrame(
+          mediaEngine,
+          sourceTimeMs,
+          signal,
+        );
 
-      // For seek errors (NoSample, out of bounds, etc.), just clear cache
-      // This allows subsequent frames to retry instead of being stuck
-      console.warn(`Video seek error at ${sourceTimeMs}ms:`, error);
-      this.#cachedVideoSample = undefined;
-      this.#cachedVideoSampleTimeMs = sourceTimeMs;
-      this.unifiedVideoSeekTask.complete(undefined);
+        signal.throwIfAborted();
+
+        // Cache the result
+        this.#cachedVideoSample = videoSample;
+        this.#cachedVideoSampleTimeMs = sourceTimeMs;
+        this.unifiedVideoSeekTask.complete(videoSample);
+      } catch (error) {
+        // Re-throw abort errors to properly handle cancellation
+        if (error instanceof DOMException && error.name === "AbortError") {
+          this.unifiedVideoSeekTask.abort();
+          throw error;
+        }
+
+        // For seek errors (NoSample, out of bounds, etc.), just clear cache
+        // This allows subsequent frames to retry instead of being stuck
+        console.warn(`Video seek error at ${sourceTimeMs}ms:`, error);
+        this.#cachedVideoSample = undefined;
+        this.#cachedVideoSampleTimeMs = sourceTimeMs;
+        this.unifiedVideoSeekTask.complete(undefined);
+      }
+    } finally {
+      this.#delayedLoadingState.clearLoading("prepare-frame");
     }
   }
 
@@ -577,7 +565,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
 
     // Initialize delayed loading state with callback to update UI
     this.#delayedLoadingState = new DelayedLoadingState(
-      250,
+      100,
       (isLoading, message) => {
         this.setLoadingState(isLoading, null, message);
       },
@@ -617,17 +605,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       <canvas ${ref(this.canvasRef)}></canvas>
       ${
         this.loadingState.isLoading
-          ? html`
-        <div class="loading-overlay">
-          <div class="loading-content">
-            <div class="loading-spinner"></div>
-            <div>
-              <div>Loading Video...</div>
-              <div class="loading-message">${this.loadingState.message}</div>
-            </div>
-          </div>
-        </div>
-      `
+          ? html`<div class="loading-overlay"><div class="loading-bar"></div></div>`
           : ""
       }
     `;
