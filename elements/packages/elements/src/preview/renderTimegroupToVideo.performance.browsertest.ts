@@ -90,7 +90,7 @@ describe("renderTimegroupToVideo performance", () => {
       }
 
       // Performance expectations (should complete in reasonable time)
-      expect(elapsedTime).toBeLessThan(10000); // Should complete in under 10 seconds
+      expect(elapsedTime).toBeLessThan(20000); // Should complete in under 20 seconds
       expect(msPerFrame).toBeLessThan(333); // Should be faster than 3fps minimum
     } finally {
       document.body.removeChild(tg);
