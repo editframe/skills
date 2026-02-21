@@ -1254,7 +1254,8 @@ describe("renderTimegroupToCanvas", () => {
 
       await workbench.updateComplete;
       await timegroup.updateComplete;
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await timegroup.seekTask.taskComplete;
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Render video using the same path as workbench
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
@@ -1354,7 +1355,8 @@ describe("renderTimegroupToCanvas", () => {
 
       await workbench.updateComplete;
       await timegroup.updateComplete;
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await timegroup.seekTask.taskComplete;
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Render video using the same path as workbench
       const videoBuffer = await renderTimegroupToVideo(timegroup, {

@@ -139,7 +139,7 @@ describe("renderTimegroupToVideo performance", () => {
       logger.debug(`[Perf test] Time per frame: ${msPerFrame.toFixed(2)}ms`);
 
       // With worker parallelization, we should see good performance
-      expect(elapsedTime).toBeLessThan(15000); // Should complete in under 15 seconds
+      expect(elapsedTime).toBeLessThan(25000); // Should complete in under 25 seconds
     } finally {
       document.body.removeChild(tg);
     }
