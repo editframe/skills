@@ -97,10 +97,14 @@ if [ "$SCOPE" != "elements" ] && [ -f "$WORKTREE_DIR/telecine/scripts/copy-nativ
   cd "$CURRENT_ROOT"
 fi
 
-# Copy dev-projects (gitignored, needed for elements dev server)
+# Point dev-projects at the main worktree's copy via Docker volume override.
+# dev-projects is gitignored so worktrees only have committed stubs; the main
+# copy has the full set of assets, src files, etc.
 if [ -d "$CURRENT_ROOT/elements/dev-projects" ]; then
-  mkdir -p "$WORKTREE_DIR/elements/dev-projects"
-  cp -r "$CURRENT_ROOT/elements/dev-projects"/* "$WORKTREE_DIR/elements/dev-projects/" 2>/dev/null || true
+  ELEMENTS_ENV="$WORKTREE_DIR/elements/.env"
+  grep -v "^DEV_PROJECTS_HOST=" "$ELEMENTS_ENV" > "$ELEMENTS_ENV.tmp" 2>/dev/null || true
+  mv "$ELEMENTS_ENV.tmp" "$ELEMENTS_ENV"
+  echo "DEV_PROJECTS_HOST=\"$CURRENT_ROOT/elements/dev-projects\"" >> "$ELEMENTS_ENV"
 fi
 
 # 4. Ensure shared infrastructure is running

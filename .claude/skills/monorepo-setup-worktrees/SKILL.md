@@ -2,77 +2,87 @@
 name: monorepo-setup-worktrees
 description: git worktrees, git worktree setup, git worktree configuration, branching work syncing branches
 ---
-# Monorepo Worktree Setup
+# Monorepo Worktree System
 
-## Worktree Setup
+Scope-based worktree isolation for parallel development streams. Each worktree gets isolated Docker services, databases, and domains.
 
-### Telecine Worktrees
+## Scopes
 
-The telecine project uses git worktrees for branch isolation. Each worktree:
-- Has its own directory (e.g., `../telecine-feature-auth` for branch `feature-auth`)
-- Gets a unique domain based on branch name (e.g., `feature-auth.localhost`)
-- Uses isolated Docker Compose project names (e.g., `telecine-feature-auth`)
-- Shares a common Traefik instance for routing
+| Scope | Services | Containers | Create time |
+|-------|----------|------------|-------------|
+| `elements` | Elements runner + dev-projects only | 2 | ~28s |
+| `web` | Elements + telecine core (web, hasura, valkey, maintenance) | 8 | ~1:30 |
+| `render` | Elements + telecine core + render pipeline (workers, scheduler) | ~22 | ~2:30 |
 
-**Worktree Configuration Script**: `telecine/scripts/worktree-config`
-- Detects current branch and worktree context
-- Exports environment variables: `WORKTREE_BRANCH`, `WORKTREE_DOMAIN`, `WORKTREE_DOCKER_PROJECT_NAME`, `WORKTREE_DOCKER_NETWORK_NAME`
-- Must be sourced: `. scripts/worktree-config`
+Upgrade path: `elements` → `web` → `render`. Downgrade not supported.
 
-**Documentation**: See `telecine/WORKTREE_SETUP.md` for detailed worktree setup and Docker environment configuration.
+## Scripts
 
-### Elements Worktrees
-
-The elements project also uses git worktrees with similar structure:
-- Worktrees get isolated Docker environments
-- Docker project names: `ef-elements` (main) or `ef-elements-<branch-name>` (worktrees)
-- Unique domains: `main.localhost` or `<branch-name>.localhost`
-- Dev servers are routed through shared Traefik instance on port 4321
-- Accessible at `http://<branch-name>.localhost:4321`
-
-**Worktree Configuration Script**: `elements/scripts/worktree-config`
-- Same structure as telecine's worktree-config
-- Exports similar environment variables for elements-specific configuration
-
-**Elements Services**: Managed via `process-compose`:
-- `compose`: Docker Compose runner service for tests
-- `dev-projects`: Development server (routed through Traefik)
-- `host-chrome`: Playwright browser server (must run on macOS host, shared across all worktrees)
-
-### Creating Worktrees
-
-When creating worktrees for telecine or elements:
+All scripts run from the main worktree root:
 
 ```bash
-# Create worktree for telecine branch
-git worktree add ../telecine-<branch-name> <branch-name>
-
-# Create worktree for elements branch  
-git worktree add ../elements-<branch-name> <branch-name>
+scripts/create-worktree <branch> [elements|web|render]  # default: web
+scripts/pause-worktree <branch>                          # docker stop, ~1s
+scripts/resume-worktree <branch>                         # docker start, ~1-7s
+scripts/upgrade-worktree <branch> <new-scope>            # escalate scope
+scripts/remove-worktree [--force] <branch>               # full cleanup
+scripts/build-runner-images                              # rebuild shared Docker images
+scripts/update-template-db                               # refresh template from main DB
 ```
 
-### Dev Examples and Worktrees
+## Architecture
 
-When working in a worktree and creating new dev examples (e.g., in `elements/dev-projects/`), these files should be committed and merged into main along with the feature work:
+### Shared infrastructure
+- `editframe-postgres` — single shared PostgreSQL, each worktree gets its own database (`telecine-<branch>`)
+- `editframe-traefik` — shared reverse proxy, routes by `Host` header (`<branch>.localhost`)
+- `telecine-runner` / `elements-runner` — shared Docker images (not rebuilt per worktree)
 
-1. **Create dev examples** in your worktree as needed for development and testing
-2. **Commit dev examples** to your feature branch (use `git add -f` if `dev-projects/` is in `.gitignore`)
-3. **Merge to main** - dev examples are included in the merge along with feature code
-4. **Dev examples stay in main** - they become part of the shared development examples
+### Database template
+`telecine-template` is cloned from `telecine-main` (304 migrations + seed data, ~0.6s clone). Template auto-refreshes when `telecine/scripts/start` runs migrations on main.
 
-**Example workflow:**
-```bash
-# In worktree, create a new dev example
-cd elements/dev-projects
-# Create your-example.html
+### Port offsets
+Worktree services use `cksum`-based port offsets (200 slots, spacing of 100) so host tools like Postico can connect. Main worktree uses standard ports.
 
-# Force add if dev-projects is ignored
-git add -f elements/dev-projects/your-example.html
-git commit -m "feat: add your-example.html dev example"
+### Config scripts
+- `telecine/scripts/worktree-config` — exports `WORKTREE_ID`, `WORKTREE_DATABASE`, `WORKTREE_DOMAIN`, `WORKTREE_DOCKER_PROJECT_NAME`, port variables
+- `elements/scripts/worktree-config` — same pattern for elements
+- `.worktree-scope` file in worktree root tracks current scope
 
-# Merge to main (dev example included)
-cd /path/to/main/worktree
-git merge feat/your-feature
+### Docker Compose profiles
+- No profile = core services (always start): runner, web, valkey, graphql-engine, data-connector-agent, maintenance
+- `render` profile: all worker services, scheduler-go, jit-transcoding
+- `dev` profile: tracing, otel-viewer, mailhog, playwright
+- `telecine/scripts/start` reads `.worktree-scope` to set `COMPOSE_PROFILES`
+
+### Service startup ordering
+Runner must start and `npm install` must complete before other services that execute application code (web, dev-projects, workers). The create and upgrade scripts handle this: `up -d runner` → `npm install` → `up -d` (remaining services).
+
+## Worktree lifecycle
+
+```
+create (elements, 28s) → pause (1s) → resume (1s) → upgrade (web, 63s) → remove (16s)
+                                                          ↓
+                                                    upgrade (render)
 ```
 
-**Note**: While `elements/dev-projects/` may be in `.gitignore` for local development, important dev examples that demonstrate features should be force-added and committed to main so they're available to all developers.
+## Dev Server URLs
+
+The elements dev-projects Vite server uses `root: elements/dev-projects/`. Files are served at the root path — **not** under `/dev-projects/`.
+
+- `video.html` → `http://<branch>.localhost:4321/video.html`
+- `canvas-demo.html` → `http://<branch>.localhost:4321/canvas-demo.html`
+
+Never include `dev-projects/` in the URL path.
+
+## dev-projects in worktrees
+
+`elements/dev-projects/` is gitignored. Worktrees would only have committed stubs without the full asset/src tree.
+
+`create-worktree` sets `DEV_PROJECTS_HOST` in the worktree's `elements/.env` to point at main's dev-projects. The `docker-compose.yaml` dev-projects service mounts this path over `/packages/dev-projects`, so the worktree's dev server always has the full file tree from main.
+
+## Troubleshooting
+
+- **Port conflict**: two branches hashed to same offset. Extremely unlikely with cksum/200 slots but possible. Remove one worktree and recreate.
+- **Orphaned containers**: if `remove-worktree` fails mid-cleanup, use `docker rm -f` on containers matching `<branch>` in name.
+- **Stale template**: run `scripts/update-template-db` to refresh from current main DB state.
+- **Missing web service after upgrade**: upgrade script now starts runner + npm install before other services. If using old worktree scripts, `git merge main` into the worktree branch.
