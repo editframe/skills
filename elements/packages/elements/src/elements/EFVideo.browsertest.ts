@@ -26,9 +26,6 @@ async function waitForTaskIgnoringAborts(taskPromise: Promise<any>) {
 
 beforeAll(async () => {
   console.clear();
-  await fetch("/@ef-clear-cache", {
-    method: "DELETE",
-  });
 });
 
 beforeEach(() => {

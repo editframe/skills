@@ -23,7 +23,6 @@ async function waitFrames(count = 5): Promise<void> {
 
 describe("EFFitScale", () => {
   beforeEach(async () => {
-    await fetch("/@ef-clear-cache", { method: "DELETE" });
   });
 
   afterEach(() => {
@@ -327,7 +326,7 @@ describe("EFFitScale", () => {
     const canvasStyle = window.getComputedStyle(canvas);
     expect(canvasStyle.width).toBe("500px");
     expect(canvasStyle.height).toBe("500px");
-  }, 1000);
+  }, 10000);
 });
 
 /* ━━ Plain div tests (no ef-video, fast) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */

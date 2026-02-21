@@ -282,6 +282,11 @@ export default defineConfig(async () => {
       exclude: ["**/node_modules/**", "**/generated/**"],
       /* Globals MUST be enabled for testing library to automatically cleanup between tests */
       globals: true,
+      // Run test files sequentially to prevent resource contention from
+      // simultaneous FFmpeg processes, rendering tests, and DOM geometry tests.
+      // Browser mode runs all tests in iframes of a single page; concurrent files
+      // cause layout interference and scheduling contention.
+      fileParallelism: false,
       // Global setup file that runs before every test
       setupFiles: ["./packages/elements/test/setup.ts"],
       // No longer need global setup - proxy is integrated into Vite server

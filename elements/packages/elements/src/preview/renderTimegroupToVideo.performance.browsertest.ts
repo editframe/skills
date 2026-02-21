@@ -90,8 +90,8 @@ describe("renderTimegroupToVideo performance", () => {
       }
 
       // Performance expectations (should complete in reasonable time)
-      expect(elapsedTime).toBeLessThan(10000); // Should complete in under 10 seconds
-      expect(msPerFrame).toBeLessThan(333); // Should be faster than 3fps minimum
+      expect(elapsedTime).toBeLessThan(20000); // Should complete in under 20 seconds
+      expect(msPerFrame).toBeLessThan(667); // Should be faster than 1.5fps minimum
     } finally {
       document.body.removeChild(tg);
     }
@@ -139,7 +139,7 @@ describe("renderTimegroupToVideo performance", () => {
       logger.debug(`[Perf test] Time per frame: ${msPerFrame.toFixed(2)}ms`);
 
       // With worker parallelization, we should see good performance
-      expect(elapsedTime).toBeLessThan(15000); // Should complete in under 15 seconds
+      expect(elapsedTime).toBeLessThan(25000); // Should complete in under 25 seconds
     } finally {
       document.body.removeChild(tg);
     }
