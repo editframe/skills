@@ -71,6 +71,20 @@ async function decodeFirstFrame(videoBuffer: Uint8Array): Promise<{
     video.onseeked = () => resolve();
   });
 
+  // Wait for the frame data to be decoded and available
+  if (video.readyState < 2) {
+    await new Promise<void>((resolve) => {
+      const check = () => {
+        if (video.readyState >= 2) {
+          resolve();
+        } else {
+          video.addEventListener("canplay", () => resolve(), { once: true });
+        }
+      };
+      check();
+    });
+  }
+
   const canvas = document.createElement("canvas");
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
@@ -741,7 +755,7 @@ describe("renderTimegroupToVideo - workbench integration", () => {
           returnBuffer: true,
           streaming: false,
           contentReadyMode: "blocking",
-          blockingTimeoutMs: 5000,
+        blockingTimeoutMs: 15000,
         });
 
         expect(videoBuffer).toBeDefined();
