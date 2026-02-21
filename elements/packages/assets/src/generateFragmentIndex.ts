@@ -771,14 +771,15 @@ export const generateFragmentIndex = async (
       probe.packets as ProbePacket[],
     );
 
-    // Calculate total duration from cached stream packets
+    // Calculate total duration from cached stream packets (inclusive of last frame duration)
     let totalDuration = 0;
     if (streamPackets.length > 0) {
       const firstPacket = streamPackets[0]!;
       const lastPacket = streamPackets[streamPackets.length - 1]!;
       const firstPts = convertTimestamp(firstPacket.pts, timebase, timescale);
       const lastPts = convertTimestamp(lastPacket.pts, timebase, timescale);
-      totalDuration = lastPts - firstPts;
+      const lastDuration = convertTimestamp(lastPacket.duration ?? 0, timebase, timescale);
+      totalDuration = lastPts - firstPts + lastDuration;
     }
 
     const finalTrackId =
