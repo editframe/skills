@@ -155,6 +155,13 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   #standaloneUpgradeController: AbortController | null = null;
 
   /**
+   * Stable per-instance identifier for the quality upgrade scheduler.
+   * Uses this.id when available; falls back to a generated unique string so
+   * elements without an id attribute never collide with each other.
+   */
+  #upgradeOwnerId: string = crypto.randomUUID();
+
+  /**
    * Current rendition being displayed (for observability).
    */
   #currentRenditionId: "main" | "scrub" | undefined = undefined;
@@ -580,6 +587,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     // Invalidate upgrade state on src/fileId change
     if (changedProperties.has("src") || changedProperties.has("fileId")) {
       this.#invalidateUpgradeState("src-change");
+      this.#prewarmQualityUpgrade();
     }
 
     // Invalidate upgrade state on trim/source changes
@@ -594,10 +602,32 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     );
     if (hasDurationChange) {
       this.#invalidateUpgradeState("bounds-change");
+      this.#prewarmQualityUpgrade();
     }
 
     // No need to clear canvas - displayFrame() overwrites it completely
     // and clearing creates blank frame gaps during transitions
+  }
+
+  /**
+   * Eagerly load the media engine and pre-warm main-quality segments for the
+   * start of this clip. Called when src/fileId or source bounds change so that
+   * segments are already in cache by the time the element first becomes visible.
+   *
+   * Without pre-warming, quality upgrade only begins after the first scrub frame
+   * is displayed, causing ~12 frames of blur at the cold-start of every clip.
+   */
+  #prewarmQualityUpgrade(): void {
+    if (this.isInProductionRenderingMode()) return;
+    if (!this.src && !this.fileId) return;
+
+    this.getMediaEngine()
+      .then((engine) => {
+        if (!engine) return;
+        const sourceInMs = this.sourceInMs ?? 0;
+        this.#maybeScheduleQualityUpgrade(engine, sourceInMs);
+      })
+      .catch(() => {});
   }
 
   render() {
@@ -1277,7 +1307,20 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       this.#upgradeState.segmentId !== segmentId ||
       this.#upgradeState.startTimeMs !== startTimeMs;
 
-    if (!stateChanged) return;
+    if (!stateChanged) {
+      // State matches what we previously submitted. Check if the task is still
+      // active or waiting in the queue — either way it will populate the cache.
+      const currentTaskKey = `${this.#upgradeOwnerId}:${segmentId}:${mainTrack.id}`;
+      const scheduler = this.rootTimegroup?.qualityUpgradeScheduler;
+      if (scheduler?.isActive(currentTaskKey) || scheduler?.isPending(currentTaskKey)) {
+        return;
+      }
+      // Task is neither running nor queued — it completed (or failed) and the
+      // segment may have been evicted. Re-submit.
+      this.rootTimegroup?.qualityUpgradeScheduler?.cancelForOwner(this.#upgradeOwnerId);
+      this.#upgradeState = null;
+      // Fall through to re-submit
+    }
 
     const segments = this.#computeLookaheadSegments(
       mediaEngine,
@@ -1287,7 +1330,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     if (segments.length === 0) return;
 
     const tasks = segments.map((seg) => ({
-      key: `${this.id}:${seg.segmentId}:${mainTrack.id}`,
+      key: `${this.#upgradeOwnerId}:${seg.segmentId}:${mainTrack.id}`,
       fetch: async (signal: AbortSignal) => {
         await mediaEngine.transport.fetchInitSegment(mainTrack, signal);
         await mediaEngine.transport.fetchMediaSegment(
@@ -1297,12 +1340,12 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         );
       },
       deadlineMs: seg.deadlineMs,
-      owner: this.id,
+      owner: this.#upgradeOwnerId,
     }));
 
     const scheduler = this.rootTimegroup?.qualityUpgradeScheduler;
     if (scheduler) {
-      scheduler.replaceForOwner(this.id, tasks);
+      scheduler.replaceForOwner(this.#upgradeOwnerId, tasks);
     } else {
       this.#fetchStandalone(tasks);
     }
@@ -1387,7 +1430,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   ): void {
     if (reason === "src-change" || reason === "disconnect") {
       // Full cancel - old tasks reference a stale media engine
-      this.rootTimegroup?.qualityUpgradeScheduler?.cancelForOwner(this.id);
+      this.rootTimegroup?.qualityUpgradeScheduler?.cancelForOwner(this.#upgradeOwnerId);
     }
     // For bounds-change, don't cancel - old tasks may still be valid segments,
     // just with stale deadlines. replaceForOwner on next prepareFrame handles it.
