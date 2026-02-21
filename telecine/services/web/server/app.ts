@@ -22,10 +22,6 @@ import {
   storageProvider,
 } from "@/util/storageProvider.server";
 import { createRequestHandler } from "@react-router/express";
-import {
-  authRateLimiter,
-  strictAuthRateLimiter,
-} from "@/http/rateLimiter";
 
 const ALLOWED_ORIGINS = [
   "https://editframe.dev",
@@ -151,11 +147,6 @@ if (UPLOAD_TO_BUCKET) {
     readStream.pipe(res);
   });
 }
-
-app.use("/auth/login", strictAuthRateLimiter);
-app.use("/auth/reset-password", strictAuthRateLimiter);
-app.use("/auth/magic-link", strictAuthRateLimiter);
-app.use("/auth", authRateLimiter);
 
 let serverBuild: Promise<any> | undefined;
 const patchCustomElementsDefine = () => {
