@@ -409,6 +409,10 @@ export class EFMedia extends EFTargetable(
    * Uses caching based on src/fileId to avoid redundant fetches.
    */
   async getMediaEngine(signal?: AbortSignal): Promise<MediaEngine | undefined> {
+    if (!this.src && !this.fileId) {
+      return undefined;
+    }
+
     const srcKey = `${this.src}|${this.fileId}`;
 
     // Return cached if src hasn't changed

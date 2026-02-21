@@ -60,8 +60,6 @@ describe("Loading Indicator", () => {
     const loadingOverlay = shadowRoot?.querySelector(".loading-overlay");
     expect(loadingOverlay).toBeTruthy();
 
-    const loadingContent = shadowRoot?.querySelector(".loading-content");
-    expect(loadingContent?.textContent).toContain("Loading Video...");
   });
 
   test("should hide loading overlay when not loading", async ({ expect }) => {

@@ -189,6 +189,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       panZoom.y = 75;
       overlayLayer.panZoomTransform = { x: 50, y: 75, scale: 1 };
 
+      await panZoom.updateComplete;
       await waitForRaf();
 
       // The overlay item should still visually overlay the target

@@ -253,6 +253,10 @@ export async function renderVideoToVideo(
 
   const config = await resolveVideoConfig(video, options);
 
+  // Suspend the PlaybackController's self-render loop for the duration of
+  // this render to prevent concurrent frame fetches from interfering.
+  const pc = (video as any).playbackController;
+
   // Read CSS effects once before the frame loop (values don't change during rendering)
   const computedStyle = getComputedStyle(video);
   const cssFilter = computedStyle.filter;
@@ -385,6 +389,8 @@ export async function renderVideoToVideo(
   let totalSeekMs = 0;
   let totalDrawMs = 0;
   let totalEncodeMs = 0;
+
+  pc?.suspendSelfRender();
 
   try {
     for (let frameIndex = 0; frameIndex < config.totalFrames; frameIndex++) {
@@ -544,5 +550,7 @@ export async function renderVideoToVideo(
       // Ignore finalize errors during cleanup
     }
     throw error;
+  } finally {
+    pc?.resumeSelfRender();
   }
 }

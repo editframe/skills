@@ -289,7 +289,7 @@ describe("Media Engine Selection", () => {
     video.remove();
   });
 
-  test("requests fragment index at /api/v1/files/index?src= without 'local' in path", async ({
+  test("requests transcode manifest for local src paths", async ({
     configuration,
     expect,
   }) => {
@@ -306,13 +306,12 @@ describe("Media Engine Selection", () => {
     configuration.appendChild(video);
     await video.getMediaEngine();
 
-    const indexRequests = capturedUrls.filter(
-      (url) => url.includes("/api/v1/files") && url.includes("index"),
+    const manifestRequests = capturedUrls.filter((url) =>
+      url.includes("/api/v1/transcode/manifest.json"),
     );
-    expect(indexRequests.length).toBeGreaterThan(0);
-    for (const url of indexRequests) {
-      expect(url).toMatch(/\/api\/v1\/files\/index\?src=/);
-      expect(url).not.toContain("/local/");
+    expect(manifestRequests.length).toBeGreaterThan(0);
+    for (const url of manifestRequests) {
+      expect(url).toContain("url=");
     }
 
     vi.restoreAllMocks();

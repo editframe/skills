@@ -341,6 +341,17 @@ export class PlaybackController implements ReactiveController {
   #selfRenderAbortController?: AbortController;
   #selfRenderPromise?: Promise<void>;
   #selfRenderDirty = false;
+  #selfRenderSuspended = false;
+
+  suspendSelfRender(): void {
+    this.#selfRenderSuspended = true;
+    this.#selfRenderAbortController?.abort();
+    this.#selfRenderAbortController = undefined;
+  }
+
+  resumeSelfRender(): void {
+    this.#selfRenderSuspended = false;
+  }
 
   /**
    * Run frame rendering via FrameController, or directly on the host if it
@@ -367,6 +378,8 @@ export class PlaybackController implements ReactiveController {
     // Standalone FrameRenderable host (e.g. bare ef-video without a Timegroup)
     const host = this.#host as unknown as Partial<FrameRenderable>;
     if (!host.prepareFrame || !host.renderFrame) return;
+
+    if (this.#selfRenderSuspended) return;
 
     // If a render is in-flight, mark dirty so we re-render after it
     // completes (source mapping may have changed due to trim drag).
@@ -401,7 +414,7 @@ export class PlaybackController implements ReactiveController {
       } finally {
         this.#selfRenderPromise = undefined;
         // Re-render if source mapping changed while we were rendering
-        if (this.#selfRenderDirty) {
+        if (this.#selfRenderDirty && !this.#selfRenderSuspended) {
           this.#startSelfRender(host, this.currentTimeMs);
         }
       }

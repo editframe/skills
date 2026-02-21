@@ -155,6 +155,12 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   #standaloneUpgradeController: AbortController | null = null;
 
   /**
+   * Set to true while renderToVideo is executing to suppress background
+   * quality upgrade tasks that would race with the render pipeline.
+   */
+  #renderingToVideo = false;
+
+  /**
    * Stable per-instance identifier for the quality upgrade scheduler.
    * Uses this.id when available; falls back to a generated unique string so
    * elements without an id attribute never collide with each other.
@@ -1294,6 +1300,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
    * Called when returning a scrub sample - checks if state has changed and submits tasks.
    */
   #maybeScheduleQualityUpgrade(mediaEngine: MediaEngine, sourceTimeMs: number): void {
+    if (this.#renderingToVideo) return;
     const mainTrack = mediaEngine.tracks.video;
     if (!mainTrack) return;
 
@@ -1417,7 +1424,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
       }
       // After all tasks complete, trigger re-render
       if (!signal.aborted) {
-        this.playbackController?.runThrottledFrameTask();
+        this.playbackController?.runThrottledFrameTask().catch(() => {});
       }
     })().catch(() => {});
   }
@@ -1488,9 +1495,14 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   async renderToVideo(
     options?: import("../preview/renderTimegroupToVideo.types.js").RenderToVideoOptions,
   ): Promise<Uint8Array | undefined> {
-    const { renderVideoToVideo } =
-      await import("../preview/renderVideoToVideo.js");
-    return renderVideoToVideo(this, options);
+    this.#renderingToVideo = true;
+    try {
+      const { renderVideoToVideo } =
+        await import("../preview/renderVideoToVideo.js");
+      return await renderVideoToVideo(this, options);
+    } finally {
+      this.#renderingToVideo = false;
+    }
   }
 }
 
