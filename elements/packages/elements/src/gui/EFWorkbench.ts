@@ -237,6 +237,31 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         pointer-events: none;
         z-index: 1;
       }
+
+      .preview-loading-overlay {
+        position: absolute;
+        inset: 0;
+        background: var(--ef-color-loading-overlay-bg, rgba(0, 0, 0, 0.5));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 8;
+        pointer-events: none;
+      }
+
+      .preview-loading-spinner {
+        width: 28px;
+        height: 28px;
+        border: 3px solid var(--ef-color-loading-spinner-track, rgba(255, 255, 255, 0.15));
+        border-left: 3px solid var(--ef-color-loading-spinner-fill, rgba(255, 255, 255, 0.85));
+        border-radius: 50%;
+        animation: preview-spin 1s linear infinite;
+      }
+
+      @keyframes preview-spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
       
       .clone-content {
         position: absolute;
@@ -547,6 +572,12 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
 
   private exportAbortController: AbortController | null = null;
 
+  @state()
+  private previewIsLoading = false;
+
+  #trackedTimegroup: EFTimegroup | null = null;
+  #readyStateHandler: (() => void) | null = null;
+
   // Motion state tracking for adaptive resolution
   @state()
   private isPlaying = false;
@@ -737,6 +768,16 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       this.savePanZoomDebounceTimer = null;
     }
     this.savePreviewPanZoom();
+
+    // Clean up timegroup ready state listener
+    if (this.#trackedTimegroup && this.#readyStateHandler) {
+      this.#trackedTimegroup.removeEventListener(
+        "readystatechange",
+        this.#readyStateHandler,
+      );
+      this.#trackedTimegroup = null;
+      this.#readyStateHandler = null;
+    }
   }
 
   protected firstUpdated(): void {
@@ -756,6 +797,15 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         this.initCanvasMode();
       }
     });
+
+    // Set up preview loading state listener on the canvas slot's timegroup
+    this.#syncTimegroupListener();
+    const canvasSlot = this.shadowRoot?.querySelector('slot[name="canvas"]');
+    if (canvasSlot) {
+      canvasSlot.addEventListener("slotchange", () => {
+        this.#syncTimegroupListener();
+      });
+    }
   }
 
   // Track zoom for detecting changes that need canvas reinit
@@ -808,7 +858,36 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     // Find the timegroup in our canvas slot
     const canvas = this.querySelector("[slot='canvas']");
     if (!canvas) return null;
+    if (canvas instanceof EFTimegroup) return canvas;
     return canvas.querySelector("ef-timegroup") as EFTimegroup | null;
+  }
+
+  #syncTimegroupListener(): void {
+    const timegroup = this.getTimegroup();
+    if (timegroup === this.#trackedTimegroup) return;
+
+    if (this.#trackedTimegroup && this.#readyStateHandler) {
+      this.#trackedTimegroup.removeEventListener(
+        "readystatechange",
+        this.#readyStateHandler,
+      );
+    }
+
+    this.#trackedTimegroup = timegroup;
+
+    if (!timegroup) {
+      this.previewIsLoading = false;
+      this.#readyStateHandler = null;
+      return;
+    }
+
+    this.#readyStateHandler = () => {
+      this.previewIsLoading =
+        (timegroup as any).contentReadyState === "loading";
+    };
+    timegroup.addEventListener("readystatechange", this.#readyStateHandler);
+    this.previewIsLoading =
+      (timegroup as any).contentReadyState === "loading";
   }
 
   /**
@@ -2494,7 +2573,10 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         @wheel=${this.handleStageWheel}
       >
         <!-- Original timegroup (hidden in clone/canvas mode, visible in dom mode) -->
-        <slot name="canvas"></slot>
+        <slot
+          name="canvas"
+          @slotchange=${() => this.#syncTimegroupListener()}
+        ></slot>
         
         <!-- Canvas preview (visible in canvas mode only) -->
         <div 
@@ -2502,6 +2584,13 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
           ${ref(this.canvasPreviewRef)}
           style="display: ${this.presentationMode === "canvas" ? "block" : "none"}"
         ></div>
+
+        <!-- Preview loading overlay (shown when timegroup content is loading) -->
+        ${this.previewIsLoading ? html`
+          <div class="preview-loading-overlay">
+            <div class="preview-loading-spinner"></div>
+          </div>
+        ` : ""}
         
         <!-- Playback stats overlay (visible in canvas mode only) -->
         ${this.renderPlaybackStats()}

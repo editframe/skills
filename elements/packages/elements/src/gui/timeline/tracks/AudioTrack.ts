@@ -33,6 +33,28 @@ export class EFAudioTrack extends TrackItem {
         height: 100%;
         pointer-events: none;
       }
+      .shimmer-placeholder {
+        position: absolute;
+        left: 0;
+        top: 2px;
+        bottom: 2px;
+        right: 0;
+        background: linear-gradient(
+          90deg,
+          color-mix(in srgb, var(--ef-color-type-audio, #10b981) 8%, transparent) 0%,
+          color-mix(in srgb, var(--ef-color-type-audio, #10b981) 18%, transparent) 50%,
+          color-mix(in srgb, var(--ef-color-type-audio, #10b981) 8%, transparent) 100%
+        );
+        background-size: 200% 100%;
+        border-radius: 2px;
+      }
+      .shimmer-placeholder.is-loading {
+        animation: shimmer var(--ef-loading-shimmer-duration, 1.5s) linear infinite;
+      }
+      @keyframes shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
     `,
   ];
 
@@ -390,34 +412,9 @@ export class EFAudioTrack extends TrackItem {
     `;
   }
 
-  /**
-   * Render placeholder while loading
-   */
   #renderPlaceholder() {
-    return html`
-      <div
-        style="
-          position: absolute;
-          left: 0;
-          top: 2px;
-          bottom: 2px;
-          right: 0;
-          background: linear-gradient(90deg, 
-            ${this.getElementTypeColor()}22 0%, 
-            ${this.getElementTypeColor()}44 50%,
-            ${this.getElementTypeColor()}22 100%
-          );
-          background-size: 200% 100%;
-          animation: ${this._isLoading ? "shimmer 1.5s infinite" : "none"};
-          border-radius: 2px;
-        "
-      ></div>
-      <style>
-        @keyframes shimmer {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-      </style>
-    `;
+    return html`<div
+      class="shimmer-placeholder ${this._isLoading ? "is-loading" : ""}"
+    ></div>`;
   }
 }

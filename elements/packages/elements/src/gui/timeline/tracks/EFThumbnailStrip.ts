@@ -131,6 +131,30 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
         image-rendering: pixelated;
         image-rendering: crisp-edges;
       }
+
+      .shimmer-overlay {
+        display: none;
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          90deg,
+          color-mix(in srgb, var(--ef-color-text, #fafafa) 4%, transparent) 0%,
+          color-mix(in srgb, var(--ef-color-text, #fafafa) 10%, transparent) 50%,
+          color-mix(in srgb, var(--ef-color-text, #fafafa) 4%, transparent) 100%
+        );
+        background-size: 200% 100%;
+        pointer-events: none;
+      }
+
+      .shimmer-overlay.active {
+        display: block;
+        animation: shimmer-strip var(--ef-loading-shimmer-duration, 1.5s) linear infinite;
+      }
+
+      @keyframes shimmer-strip {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
     `,
   ];
 
@@ -162,6 +186,9 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
 
   @state()
   thumbnailDimensions = { width: 0, height: 0 };
+
+  @state()
+  _isLoadingThumbnails = false;
 
   #targetController?: TargetController;
   #abortController: AbortController | null = null;
@@ -538,6 +565,11 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       return { canvas: canvas ?? null };
     });
     this.#drawThumbnails(visibleThumbnails, results);
+
+    const hasEmptySlots = results.some((r) => r.canvas === null);
+    if (this._isLoadingThumbnails !== hasEmptySlots) {
+      this._isLoadingThumbnails = hasEmptySlots;
+    }
   }
 
   /**
@@ -951,12 +983,17 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     const pixelsPerMs = this.#effectivePixelsPerMs;
     const trackWidthPx = durationMs * pixelsPerMs;
 
-    // Render canvas container with explicit width clipping
-    return html`<div 
-      class="thumbnail-container" 
-      style="max-width: ${trackWidthPx}px;"
-      ${ref(this.#canvasContainer)}
-    ></div>`;
+    // Render canvas container with explicit width clipping, plus shimmer overlay
+    return html`
+      <div
+        class="thumbnail-container"
+        style="max-width: ${trackWidthPx}px;"
+        ${ref(this.#canvasContainer)}
+      ></div>
+      <div
+        class="shimmer-overlay ${this._isLoadingThumbnails ? "active" : ""}"
+      ></div>
+    `;
   }
 }
 

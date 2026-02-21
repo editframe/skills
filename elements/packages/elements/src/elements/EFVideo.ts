@@ -104,7 +104,7 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0, 0, 0, 0.6);
+        background: var(--ef-color-loading-overlay-bg, rgba(0, 0, 0, 0.5));
         display: flex;
         align-items: center;
         justify-content: center;
@@ -112,21 +112,21 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         backdrop-filter: blur(2px);
       }
       .loading-content {
-        background: rgba(0, 0, 0, 0.8);
+        background: color-mix(in srgb, var(--ef-color-loading-overlay-bg, rgba(0, 0, 0, 0.5)) 120%, transparent);
         border-radius: 8px;
         padding: 16px 24px;
         display: flex;
         align-items: center;
         gap: 12px;
-        color: white;
+        color: var(--ef-color-text, white);
         font-size: 14px;
         font-weight: 500;
       }
       .loading-spinner {
         width: 20px;
         height: 20px;
-        border: 2px solid rgba(255, 255, 255, 0.2);
-        border-left: 2px solid #fff;
+        border: 2px solid var(--ef-color-loading-spinner-track, rgba(255, 255, 255, 0.15));
+        border-left: 2px solid var(--ef-color-loading-spinner-fill, rgba(255, 255, 255, 0.85));
         border-radius: 50%;
         animation: spin 1s linear infinite;
       }
@@ -219,50 +219,55 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
   async prepareFrame(_timeMs: number, signal: AbortSignal): Promise<void> {
     signal.throwIfAborted();
     this.unifiedVideoSeekTask.begin();
+    this.#delayedLoadingState.startLoading("prepare-frame", "");
 
-    // Use element's source time, not the passed root timegroup time.
-    // currentSourceTimeMs = ownCurrentTimeMs + (sourceIn || trimStart || 0)
-    // This correctly maps timeline position to actual media time.
-    const sourceTimeMs = this.currentSourceTimeMs;
-
-    const mediaEngine = await this.getMediaEngine(signal);
-    if (!mediaEngine) {
-      this.#cachedVideoSample = undefined;
-      this.#cachedVideoSampleTimeMs = sourceTimeMs;
-      this.unifiedVideoSeekTask.complete(undefined);
-      return;
-    }
-
-    signal.throwIfAborted();
-
-    // Fetch video sample at the correct source time
-    // Handle errors gracefully so one failed seek doesn't break subsequent frames
     try {
-      const videoSample = await this.#fetchVideoSampleForFrame(
-        mediaEngine,
-        sourceTimeMs,
-        signal,
-      );
+      // Use element's source time, not the passed root timegroup time.
+      // currentSourceTimeMs = ownCurrentTimeMs + (sourceIn || trimStart || 0)
+      // This correctly maps timeline position to actual media time.
+      const sourceTimeMs = this.currentSourceTimeMs;
+
+      const mediaEngine = await this.getMediaEngine(signal);
+      if (!mediaEngine) {
+        this.#cachedVideoSample = undefined;
+        this.#cachedVideoSampleTimeMs = sourceTimeMs;
+        this.unifiedVideoSeekTask.complete(undefined);
+        return;
+      }
 
       signal.throwIfAborted();
 
-      // Cache the result
-      this.#cachedVideoSample = videoSample;
-      this.#cachedVideoSampleTimeMs = sourceTimeMs;
-      this.unifiedVideoSeekTask.complete(videoSample);
-    } catch (error) {
-      // Re-throw abort errors to properly handle cancellation
-      if (error instanceof DOMException && error.name === "AbortError") {
-        this.unifiedVideoSeekTask.abort();
-        throw error;
-      }
+      // Fetch video sample at the correct source time
+      // Handle errors gracefully so one failed seek doesn't break subsequent frames
+      try {
+        const videoSample = await this.#fetchVideoSampleForFrame(
+          mediaEngine,
+          sourceTimeMs,
+          signal,
+        );
 
-      // For seek errors (NoSample, out of bounds, etc.), just clear cache
-      // This allows subsequent frames to retry instead of being stuck
-      console.warn(`Video seek error at ${sourceTimeMs}ms:`, error);
-      this.#cachedVideoSample = undefined;
-      this.#cachedVideoSampleTimeMs = sourceTimeMs;
-      this.unifiedVideoSeekTask.complete(undefined);
+        signal.throwIfAborted();
+
+        // Cache the result
+        this.#cachedVideoSample = videoSample;
+        this.#cachedVideoSampleTimeMs = sourceTimeMs;
+        this.unifiedVideoSeekTask.complete(videoSample);
+      } catch (error) {
+        // Re-throw abort errors to properly handle cancellation
+        if (error instanceof DOMException && error.name === "AbortError") {
+          this.unifiedVideoSeekTask.abort();
+          throw error;
+        }
+
+        // For seek errors (NoSample, out of bounds, etc.), just clear cache
+        // This allows subsequent frames to retry instead of being stuck
+        console.warn(`Video seek error at ${sourceTimeMs}ms:`, error);
+        this.#cachedVideoSample = undefined;
+        this.#cachedVideoSampleTimeMs = sourceTimeMs;
+        this.unifiedVideoSeekTask.complete(undefined);
+      }
+    } finally {
+      this.#delayedLoadingState.clearLoading("prepare-frame");
     }
   }
 
