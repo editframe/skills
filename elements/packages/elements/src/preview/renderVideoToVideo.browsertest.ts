@@ -83,6 +83,53 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
     );
 
     it(
+      "should not propagate AbortError from background PlaybackController renders",
+      { timeout: 30000 },
+      async () => {
+        const { video, cleanup } = await createVideo();
+        try {
+          const abortErrors: Error[] = [];
+          const onUnhandledRejection = (e: PromiseRejectionEvent) => {
+            if (e.reason?.name === "AbortError") {
+              abortErrors.push(e.reason);
+              e.preventDefault();
+            }
+          };
+          window.addEventListener("unhandledrejection", onUnhandledRejection);
+
+          try {
+            // Trigger rapid background render cycles to race with getVideoFrameAtSourceTime.
+            // Each runThrottledFrameTask call may trigger #fetchStandalone which aborts the
+            // previous standalone controller, causing shared deduplicator promise rejections.
+            const pc = (video as any).playbackController;
+            if (pc) {
+              for (let i = 0; i < 5; i++) {
+                pc.runThrottledFrameTask().catch(() => {});
+              }
+            }
+
+            const frame = await video.getVideoFrameAtSourceTime(0, {
+              quality: "main",
+            });
+            frame.close();
+
+            // Allow any in-flight microtasks to settle
+            await new Promise((r) => setTimeout(r, 100));
+
+            expect(abortErrors).toHaveLength(0);
+          } finally {
+            window.removeEventListener(
+              "unhandledrejection",
+              onUnhandledRejection,
+            );
+          }
+        } finally {
+          cleanup();
+        }
+      },
+    );
+
+    it(
       "should return different frames at different source times",
       { timeout: 30000 },
       async () => {

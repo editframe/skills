@@ -958,6 +958,8 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     const signal = providedSignal ?? new AbortController().signal;
     signal.throwIfAborted();
 
+    this.playbackController?.suspendSelfRender();
+    try {
     const mediaEngine = await this.getMediaEngine(signal);
     signal.throwIfAborted();
 
@@ -1120,6 +1122,9 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     }
 
     return videoSample.toVideoFrame();
+    } finally {
+      this.playbackController?.resumeSelfRender();
+    }
   }
 
   /**
