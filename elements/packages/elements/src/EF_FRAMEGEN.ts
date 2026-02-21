@@ -331,6 +331,10 @@ export class EFFramegen {
     // See setupTemporalHierarchy.ts for detailed explanation.
     setupTemporalHierarchy(searchRoot, firstGroup);
 
+    // Suppress autonomous re-renders (EFTemporal/EFTimegroup.updated) while
+    // seekForRender is in progress — same protection applied to render clones.
+    firstGroup.setAttribute("data-no-playback-controller", "");
+
     // Use seekForRender for proper time seeking during rendering
     await firstGroup.seekForRender(startingTimeMs);
 
