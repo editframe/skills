@@ -69,5 +69,9 @@ export const sendTaskResult = (
   } catch (error) {
     const elapsed = Date.now() - sendStartTime;
     log(`Error sending file after ${elapsed}ms:`, error);
+    if (!res.headersSent) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: (error as Error).message }));
+    }
   }
 };

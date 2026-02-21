@@ -59,6 +59,8 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
           return next();
         }
 
+        forbidRelativePaths(req);
+
         const url = new URL(reqUrl, `http://${req.headers.host}`);
         const urlPath = url.pathname;
         const src = url.searchParams.get("src");
@@ -142,6 +144,8 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
         ) {
           return next();
         }
+
+        forbidRelativePaths(req);
 
         // Resolve src to absolute file path
         const absolutePath = src.startsWith("http")
@@ -239,7 +243,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
 
         log(`Handling ${req.url} at ${new Date().toISOString()}`);
 
-        options.cacheRoot = options.cacheRoot.replace("dist/", "src/");
+        const cacheRoot = options.cacheRoot.replace("dist/", "src/");
 
         const efPrefix = req.url.split("/")[1];
 
@@ -250,9 +254,9 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
               res.end();
               break;
             }
-            log(`Clearing cache for ${options.cacheRoot}`);
+            log(`Clearing cache for ${cacheRoot}`);
             // Retry cache clearing to handle race conditions with concurrent tests
-            const cachePath = join(options.cacheRoot, ".cache");
+            const cachePath = join(cacheRoot, ".cache");
             const maxRetries = 3;
             for (let attempt = 0; attempt < maxRetries; attempt++) {
               try {

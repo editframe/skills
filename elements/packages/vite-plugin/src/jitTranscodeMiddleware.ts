@@ -5,26 +5,11 @@ import path from "node:path";
 import type { IncomingMessage, NextFunction } from "connect";
 import debug from "debug";
 import mime from "mime";
+import type { TrackFragmentIndex } from "@editframe/assets";
 
 import { forbidRelativePaths } from "./forbidRelativePaths.js";
 
-/**
- * Type for the TrackFragmentIndex from assets package.
- * Duplicated here to avoid import issues between package and direct imports.
- */
-export interface TrackFragmentIndex {
-  type: "video" | "audio";
-  codec: string;
-  duration: number;
-  timescale: number;
-  startTimeOffsetMs: number;
-  initSegment: { offset: number; size: number };
-  segments: Array<{ offset: number; size: number; duration: number }>;
-  width?: number;
-  height?: number;
-  channel_count?: number;
-  sample_rate?: number;
-}
+export type { TrackFragmentIndex };
 
 /**
  * Asset functions required by the JIT middleware.
