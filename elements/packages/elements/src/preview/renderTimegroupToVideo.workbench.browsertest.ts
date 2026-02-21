@@ -755,7 +755,7 @@ describe("renderTimegroupToVideo - workbench integration", () => {
           returnBuffer: true,
           streaming: false,
           contentReadyMode: "blocking",
-        blockingTimeoutMs: 15000,
+          blockingTimeoutMs: 15000,
         });
 
         expect(videoBuffer).toBeDefined();

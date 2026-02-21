@@ -137,7 +137,10 @@ describe("useTimingInfo", () => {
     // Now trigger frame task via seek (proper API that triggers both task and update)
     await timegroup.seek(1000);
     // Wait for React to process the state update
-    await vi.waitUntil(() => updates.length >= 1, { timeout: 5000, interval: 16 });
+    await vi.waitUntil(() => updates.length >= 1, {
+      timeout: 5000,
+      interval: 16,
+    });
 
     // Should have exactly one update from frame task
     assert.ok(updates.length >= 1, "Should update once per frame task");
@@ -177,12 +180,18 @@ describe("useTimingInfo", () => {
 
     // Seek to different times
     await timegroup.seek(1000);
-    await vi.waitUntil(() => updates.length > 0, { timeout: 5000, interval: 16 });
+    await vi.waitUntil(() => updates.length > 0, {
+      timeout: 5000,
+      interval: 16,
+    });
     const updatesAfterFirstSeek = updates.length;
     assert.ok(updatesAfterFirstSeek > 0, "Should update after first seek");
 
     await timegroup.seek(2000);
-    await vi.waitUntil(() => updates.length > updatesAfterFirstSeek, { timeout: 5000, interval: 16 });
+    await vi.waitUntil(() => updates.length > updatesAfterFirstSeek, {
+      timeout: 5000,
+      interval: 16,
+    });
     const updatesAfterSecondSeek = updates.length;
     assert.ok(
       updatesAfterSecondSeek > updatesAfterFirstSeek,

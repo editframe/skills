@@ -36,10 +36,10 @@ afterEach(() => {
  * Wait until an overlay item has a non-zero width style set (RAF loop has run at least once).
  */
 async function waitForOverlayUpdate(item: Element): Promise<void> {
-  await vi.waitUntil(
-    () => parseFloat((item as HTMLElement).style.width) > 0,
-    { timeout: 5000, interval: 16 },
-  );
+  await vi.waitUntil(() => parseFloat((item as HTMLElement).style.width) > 0, {
+    timeout: 5000,
+    interval: 16,
+  });
 }
 
 /**
@@ -200,7 +200,9 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       overlayLayer.panZoomTransform = { x: 50, y: 75, scale: 1 };
 
       await panZoom.updateComplete;
-      await waitFor(() => overlayLayer.style.transform === "translate(50px, 75px)");
+      await waitFor(
+        () => overlayLayer.style.transform === "translate(50px, 75px)",
+      );
 
       // The overlay item should still visually overlay the target
       // Both target and overlay layer have moved by the same amount
@@ -263,7 +265,9 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       panZoom.scale = 2;
       overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 2 };
 
-      await waitFor(() => parseFloat((overlayItem as HTMLElement).style.width) > 300);
+      await waitFor(
+        () => parseFloat((overlayItem as HTMLElement).style.width) > 300,
+      );
 
       // Target is now scaled by 2x, so its screen size is 400x300
       // Overlay item should match this screen size
@@ -656,7 +660,9 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
 
-      await waitFor(() => (overlayItem as HTMLElement).style.transform.includes("rotate(30deg)"));
+      await waitFor(() =>
+        (overlayItem as HTMLElement).style.transform.includes("rotate(30deg)"),
+      );
 
       // Initial rotation
       expect(overlayItem.style.transform).toContain("rotate(30deg)");
@@ -665,7 +671,9 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       panZoom.scale = 2;
       overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 2 };
 
-      await waitFor(() => parseFloat((overlayItem as HTMLElement).style.width) > 300);
+      await waitFor(
+        () => parseFloat((overlayItem as HTMLElement).style.width) > 300,
+      );
 
       // Rotation should still be 30deg
       expect(overlayItem.style.transform).toContain("rotate(30deg)");
@@ -818,7 +826,10 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       target.style.left = "300px";
       target.style.top = "250px";
 
-      await waitFor(() => parseFloat((overlayItem as HTMLElement).style.left) !== initialLeft);
+      await waitFor(
+        () =>
+          parseFloat((overlayItem as HTMLElement).style.left) !== initialLeft,
+      );
 
       // Overlay should have moved
       expect(parseFloat(overlayItem.style.left)).not.toBeCloseTo(
@@ -877,7 +888,9 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       target.style.width = "400px";
       target.style.height = "300px";
 
-      await waitFor(() => parseFloat((overlayItem as HTMLElement).style.width) > 350);
+      await waitFor(
+        () => parseFloat((overlayItem as HTMLElement).style.width) > 350,
+      );
 
       // Overlay should have resized
       expect(parseFloat(overlayItem.style.width)).toBeCloseTo(400, 1);
@@ -1100,7 +1113,9 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       testElements.push(overlayLayer);
 
       // Wait for overlay layer's transform to be applied
-      await waitFor(() => overlayLayer.style.transform === "translate(200px, 150px)");
+      await waitFor(
+        () => overlayLayer.style.transform === "translate(200px, 150px)",
+      );
 
       // Verify overlay layer has correct transform
       expect(overlayLayer.style.transform).toBe("translate(200px, 150px)");
@@ -1262,7 +1277,9 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       document.body.appendChild(overlayLayer);
       testElements.push(overlayLayer);
 
-      await waitFor(() => overlayLayer.style.transform.includes("translate(0px, 0px)"));
+      await waitFor(() =>
+        overlayLayer.style.transform.includes("translate(0px, 0px)"),
+      );
 
       // Should default to translate(0, 0)
       const transform = overlayLayer.style.transform;

@@ -117,10 +117,10 @@ describe("Selection Handle Positioning (via EFTransformHandles)", () => {
     await timegroup.updateComplete;
 
     // Wait for timegroup to be auto-registered (canvas registers elements in RAF)
-    await vi.waitUntil(
-      () => canvas.getElementData("test-timegroup") !== null,
-      { timeout: 5000, interval: 16 },
-    );
+    await vi.waitUntil(() => canvas.getElementData("test-timegroup") !== null, {
+      timeout: 5000,
+      interval: 16,
+    });
 
     // Element should be auto-registered
     const metadata = canvas.getElementData("test-timegroup");
@@ -198,9 +198,7 @@ describe("Selection Handle Positioning (via EFTransformHandles)", () => {
     // Wait for transform handles to appear with valid scaled bounds
     await vi.waitUntil(
       () => {
-        const handles = container.querySelector(
-          "ef-transform-handles",
-        ) as any;
+        const handles = container.querySelector("ef-transform-handles") as any;
         return handles && handles.bounds && handles.bounds.width > 0;
       },
       { timeout: 5000, interval: 16 },

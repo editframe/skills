@@ -185,43 +185,43 @@ describe("SelectionOverlay", () => {
     expect(true).toBe(true);
   });
 
-  test(
-    "box selection appears at correct viewport coordinates in grid layout",
-    async ({ expect }) => {
-      // Create a grid layout similar to canvas-demo.html
-      // This simulates the canvas being offset from viewport origin
-      const container = document.createElement("div");
-      container.style.display = "grid";
-      container.style.gridTemplateColumns = "240px 1fr";
-      container.style.gridTemplateRows = "auto 1fr";
-      container.style.width = "100vw";
-      container.style.height = "100vh";
-      container.style.position = "fixed";
-      container.style.top = "0";
-      container.style.left = "0";
+  test("box selection appears at correct viewport coordinates in grid layout", async ({
+    expect,
+  }) => {
+    // Create a grid layout similar to canvas-demo.html
+    // This simulates the canvas being offset from viewport origin
+    const container = document.createElement("div");
+    container.style.display = "grid";
+    container.style.gridTemplateColumns = "240px 1fr";
+    container.style.gridTemplateRows = "auto 1fr";
+    container.style.width = "100vw";
+    container.style.height = "100vh";
+    container.style.position = "fixed";
+    container.style.top = "0";
+    container.style.left = "0";
 
-      // Create a toolbar (grid row 1, spans both columns)
-      const toolbar = document.createElement("div");
-      toolbar.style.gridColumn = "1 / -1";
-      toolbar.style.height = "60px";
-      toolbar.style.background = "rgba(30, 41, 59, 0.95)";
-      container.appendChild(toolbar);
+    // Create a toolbar (grid row 1, spans both columns)
+    const toolbar = document.createElement("div");
+    toolbar.style.gridColumn = "1 / -1";
+    toolbar.style.height = "60px";
+    toolbar.style.background = "rgba(30, 41, 59, 0.95)";
+    container.appendChild(toolbar);
 
-      // Create hierarchy panel (grid column 1, row 2)
-      const hierarchyPanel = document.createElement("div");
-      hierarchyPanel.style.background = "rgb(30 41 59)";
-      hierarchyPanel.style.width = "240px";
-      container.appendChild(hierarchyPanel);
+    // Create hierarchy panel (grid column 1, row 2)
+    const hierarchyPanel = document.createElement("div");
+    hierarchyPanel.style.background = "rgb(30 41 59)";
+    hierarchyPanel.style.width = "240px";
+    container.appendChild(hierarchyPanel);
 
-      // Create canvas area (grid column 2, row 2) - this is offset from viewport origin
-      const canvasArea = document.createElement("div");
-      canvasArea.style.position = "relative";
-      canvasArea.style.overflow = "hidden";
-      canvasArea.style.background = "#0f172a";
-      container.appendChild(canvasArea);
+    // Create canvas area (grid column 2, row 2) - this is offset from viewport origin
+    const canvasArea = document.createElement("div");
+    canvasArea.style.position = "relative";
+    canvasArea.style.overflow = "hidden";
+    canvasArea.style.background = "#0f172a";
+    container.appendChild(canvasArea);
 
-      render(
-        html`
+    render(
+      html`
           <ef-pan-zoom style="width: 100%; height: 100%;" x="0" y="0" scale="1">
             <ef-canvas style="width: 2000px; height: 1200px;">
               <div
@@ -231,125 +231,121 @@ describe("SelectionOverlay", () => {
             </ef-canvas>
           </ef-pan-zoom>
         `,
-        canvasArea,
-      );
+      canvasArea,
+    );
 
-      document.body.appendChild(container);
+    document.body.appendChild(container);
 
-      const panZoom = canvasArea.querySelector("ef-pan-zoom") as any;
-      const canvas = canvasArea.querySelector("ef-canvas") as any;
+    const panZoom = canvasArea.querySelector("ef-pan-zoom") as any;
+    const canvas = canvasArea.querySelector("ef-canvas") as any;
 
-      await panZoom?.updateComplete;
-      await canvas?.updateComplete;
+    await panZoom?.updateComplete;
+    await canvas?.updateComplete;
 
-      // Wait for overlay to be created (EFCanvas.setupSelectionOverlay runs in RAF)
-      await vi.waitUntil(
-        () =>
-          canvasArea.parentElement?.querySelector(
-            "ef-canvas-selection-overlay",
-          ) !== null,
-        { timeout: 5000, interval: 16 },
-      );
+    // Wait for overlay to be created (EFCanvas.setupSelectionOverlay runs in RAF)
+    await vi.waitUntil(
+      () =>
+        canvasArea.parentElement?.querySelector(
+          "ef-canvas-selection-overlay",
+        ) !== null,
+      { timeout: 5000, interval: 16 },
+    );
 
-      // Find the overlay (it should be a sibling of pan-zoom, not inside canvas)
-      const overlay = canvasArea.parentElement?.querySelector(
-        "ef-canvas-selection-overlay",
-      ) as any;
+    // Find the overlay (it should be a sibling of pan-zoom, not inside canvas)
+    const overlay = canvasArea.parentElement?.querySelector(
+      "ef-canvas-selection-overlay",
+    ) as any;
 
-      expect(overlay).toBeTruthy();
+    expect(overlay).toBeTruthy();
 
-      // Get the canvas area's bounding rect to understand the offset
-      canvasArea.getBoundingClientRect();
-      const panZoomRect = panZoom.getBoundingClientRect();
+    // Get the canvas area's bounding rect to understand the offset
+    canvasArea.getBoundingClientRect();
+    const panZoomRect = panZoom.getBoundingClientRect();
 
-      // Start box selection at canvas position (50, 50)
-      // Calculate screen position accounting for pan-zoom transform
-      const canvasStartX = 50;
-      const canvasStartY = 50;
-      const screenStartX =
-        panZoomRect.left + canvasStartX * panZoom.scale + panZoom.x;
-      const screenStartY =
-        panZoomRect.top + canvasStartY * panZoom.scale + panZoom.y;
+    // Start box selection at canvas position (50, 50)
+    // Calculate screen position accounting for pan-zoom transform
+    const canvasStartX = 50;
+    const canvasStartY = 50;
+    const screenStartX =
+      panZoomRect.left + canvasStartX * panZoom.scale + panZoom.x;
+    const screenStartY =
+      panZoomRect.top + canvasStartY * panZoom.scale + panZoom.y;
 
-      // Simulate pointer down to start box selection
-      canvas.dispatchEvent(
-        new PointerEvent("pointerdown", {
-          clientX: screenStartX,
-          clientY: screenStartY,
-          button: 0,
-          bubbles: true,
-          pointerId: 1,
-        }),
-      );
+    // Simulate pointer down to start box selection
+    canvas.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        clientX: screenStartX,
+        clientY: screenStartY,
+        button: 0,
+        bubbles: true,
+        pointerId: 1,
+      }),
+    );
 
-      await canvas.updateComplete;
+    await canvas.updateComplete;
 
-      // Update box selection to (150, 150) in canvas space
-      const canvasEndX = 150;
-      const canvasEndY = 150;
-      const screenEndX =
-        panZoomRect.left + canvasEndX * panZoom.scale + panZoom.x;
-      const screenEndY =
-        panZoomRect.top + canvasEndY * panZoom.scale + panZoom.y;
+    // Update box selection to (150, 150) in canvas space
+    const canvasEndX = 150;
+    const canvasEndY = 150;
+    const screenEndX =
+      panZoomRect.left + canvasEndX * panZoom.scale + panZoom.x;
+    const screenEndY = panZoomRect.top + canvasEndY * panZoom.scale + panZoom.y;
 
-      canvas.dispatchEvent(
-        new PointerEvent("pointermove", {
-          clientX: screenEndX,
-          clientY: screenEndY,
-          button: 0,
-          bubbles: true,
-          pointerId: 1,
-        }),
-      );
+    canvas.dispatchEvent(
+      new PointerEvent("pointermove", {
+        clientX: screenEndX,
+        clientY: screenEndY,
+        button: 0,
+        bubbles: true,
+        pointerId: 1,
+      }),
+    );
 
-      await canvas.updateComplete;
-      // Wait for RAF loop to process the box selection and render the .box-select div
-      await vi.waitUntil(() => overlay?.querySelector(".box-select") !== null, {
-        timeout: 5000,
-        interval: 16,
-      });
+    await canvas.updateComplete;
+    // Wait for RAF loop to process the box selection and render the .box-select div
+    await vi.waitUntil(() => overlay?.querySelector(".box-select") !== null, {
+      timeout: 5000,
+      interval: 16,
+    });
 
-      // Check that the overlay has the correct screen coordinates
-      // The box selection should appear at viewport coordinates, not offset by canvasArea position
-      const boxSelectDiv = overlay?.querySelector(".box-select");
-      expect(boxSelectDiv).toBeTruthy();
+    // Check that the overlay has the correct screen coordinates
+    // The box selection should appear at viewport coordinates, not offset by canvasArea position
+    const boxSelectDiv = overlay?.querySelector(".box-select");
+    expect(boxSelectDiv).toBeTruthy();
 
-      if (boxSelectDiv) {
-        const computedStyle = window.getComputedStyle(boxSelectDiv);
-        const overlayRect = overlay.getBoundingClientRect();
+    if (boxSelectDiv) {
+      const computedStyle = window.getComputedStyle(boxSelectDiv);
+      const overlayRect = overlay.getBoundingClientRect();
 
-        // The overlay should be positioned fixed at viewport origin
-        expect(overlayRect.left).toBe(0);
-        expect(overlayRect.top).toBe(0);
+      // The overlay should be positioned fixed at viewport origin
+      expect(overlayRect.left).toBe(0);
+      expect(overlayRect.top).toBe(0);
 
-        // The box-select div should be positioned absolutely within the fixed overlay
-        // Its position should match the screen coordinates we calculated
-        const boxLeft = parseFloat(computedStyle.left);
-        const boxTop = parseFloat(computedStyle.top);
+      // The box-select div should be positioned absolutely within the fixed overlay
+      // Its position should match the screen coordinates we calculated
+      const boxLeft = parseFloat(computedStyle.left);
+      const boxTop = parseFloat(computedStyle.top);
 
-        // Expected screen bounds for canvas (50, 50) to (150, 150)
-        const expectedLeft = screenStartX;
-        const expectedTop = screenStartY;
+      // Expected screen bounds for canvas (50, 50) to (150, 150)
+      const expectedLeft = screenStartX;
+      const expectedTop = screenStartY;
 
-        // Allow 1px tolerance for rounding
-        expect(Math.abs(boxLeft - expectedLeft)).toBeLessThan(1);
-        expect(Math.abs(boxTop - expectedTop)).toBeLessThan(1);
-      }
+      // Allow 1px tolerance for rounding
+      expect(Math.abs(boxLeft - expectedLeft)).toBeLessThan(1);
+      expect(Math.abs(boxTop - expectedTop)).toBeLessThan(1);
+    }
 
-      container.remove();
-    },
-  );
+    container.remove();
+  });
 
-  test(
-    "renders highlight box when hovering element",
-    async ({ expect }) => {
-      const container = document.createElement("div");
-      container.style.width = "800px";
-      container.style.height = "600px";
-      container.style.position = "relative";
+  test("renders highlight box when hovering element", async ({ expect }) => {
+    const container = document.createElement("div");
+    container.style.width = "800px";
+    container.style.height = "600px";
+    container.style.position = "relative";
 
-      render(
-        html`
+    render(
+      html`
           <ef-pan-zoom style="width: 100%; height: 100%;" x="0" y="0" scale="1">
             <ef-canvas style="width: 100%; height: 100%;">
               <div
@@ -360,72 +356,70 @@ describe("SelectionOverlay", () => {
             </ef-canvas>
           </ef-pan-zoom>
         `,
-        container,
-      );
-      document.body.appendChild(container);
+      container,
+    );
+    document.body.appendChild(container);
 
-      const panZoom = container.querySelector("ef-pan-zoom") as any;
-      const canvas = container.querySelector("ef-canvas") as any;
+    const panZoom = container.querySelector("ef-pan-zoom") as any;
+    const canvas = container.querySelector("ef-canvas") as any;
 
-      await panZoom?.updateComplete;
-      await canvas?.updateComplete;
+    await panZoom?.updateComplete;
+    await canvas?.updateComplete;
 
-      // Wait for overlay to be created (EFCanvas.setupSelectionOverlay runs in RAF)
-      await vi.waitUntil(
-        () =>
-          container.querySelector("ef-canvas-selection-overlay") !== null,
-        { timeout: 5000, interval: 16 },
-      );
+    // Wait for overlay to be created (EFCanvas.setupSelectionOverlay runs in RAF)
+    await vi.waitUntil(
+      () => container.querySelector("ef-canvas-selection-overlay") !== null,
+      { timeout: 5000, interval: 16 },
+    );
 
-      const overlay = container.querySelector(
-        "ef-canvas-selection-overlay",
-      ) as any;
-      expect(overlay).toBeTruthy();
+    const overlay = container.querySelector(
+      "ef-canvas-selection-overlay",
+    ) as any;
+    expect(overlay).toBeTruthy();
 
-      // Initially no highlight box
-      expect(overlay.querySelector(".highlight-box")).toBeFalsy();
+    // Initially no highlight box
+    expect(overlay.querySelector(".highlight-box")).toBeFalsy();
 
-      // Hover over the element
-      const element = canvas.querySelector(
-        '[data-element-id="hover-element"]',
-      ) as HTMLElement;
-      element.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    // Hover over the element
+    const element = canvas.querySelector(
+      '[data-element-id="hover-element"]',
+    ) as HTMLElement;
+    element.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
 
-      // Wait for RAF loop to detect the change and re-render
-      await vi.waitUntil(
-        () => overlay.querySelector(".highlight-box") !== null,
-        { timeout: 5000, interval: 16 },
-      );
-      const highlightBox = overlay.querySelector(".highlight-box");
-      expect(highlightBox).toBeTruthy();
+    // Wait for RAF loop to detect the change and re-render
+    await vi.waitUntil(() => overlay.querySelector(".highlight-box") !== null, {
+      timeout: 5000,
+      interval: 16,
+    });
+    const highlightBox = overlay.querySelector(".highlight-box");
+    expect(highlightBox).toBeTruthy();
 
-      // Verify highlight box has position styles set
-      const style = window.getComputedStyle(highlightBox!);
-      expect(parseFloat(style.width)).toBeGreaterThan(0);
-      expect(parseFloat(style.height)).toBeGreaterThan(0);
+    // Verify highlight box has position styles set
+    const style = window.getComputedStyle(highlightBox!);
+    expect(parseFloat(style.width)).toBeGreaterThan(0);
+    expect(parseFloat(style.height)).toBeGreaterThan(0);
 
-      // Mouseleave should remove highlight box
-      element.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
-      await vi.waitUntil(
-        () => overlay.querySelector(".highlight-box") === null,
-        { timeout: 5000, interval: 16 },
-      );
-      expect(overlay.querySelector(".highlight-box")).toBeFalsy();
+    // Mouseleave should remove highlight box
+    element.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+    await vi.waitUntil(() => overlay.querySelector(".highlight-box") === null, {
+      timeout: 5000,
+      interval: 16,
+    });
+    expect(overlay.querySelector(".highlight-box")).toBeFalsy();
 
-      container.remove();
-    },
-  );
+    container.remove();
+  });
 
-  test(
-    "highlight box positioned correctly relative to element",
-    async ({ expect }) => {
-      const container = document.createElement("div");
-      container.style.width = "800px";
-      container.style.height = "600px";
-      container.style.position = "relative";
+  test("highlight box positioned correctly relative to element", async ({
+    expect,
+  }) => {
+    const container = document.createElement("div");
+    container.style.width = "800px";
+    container.style.height = "600px";
+    container.style.position = "relative";
 
-      render(
-        html`
+    render(
+      html`
           <ef-pan-zoom style="width: 100%; height: 100%;" x="0" y="0" scale="1">
             <ef-canvas style="width: 100%; height: 100%;">
               <div
@@ -436,63 +430,59 @@ describe("SelectionOverlay", () => {
             </ef-canvas>
           </ef-pan-zoom>
         `,
-        container,
-      );
-      document.body.appendChild(container);
+      container,
+    );
+    document.body.appendChild(container);
 
-      const panZoom = container.querySelector("ef-pan-zoom") as any;
-      const canvas = container.querySelector("ef-canvas") as any;
+    const panZoom = container.querySelector("ef-pan-zoom") as any;
+    const canvas = container.querySelector("ef-canvas") as any;
 
-      await panZoom?.updateComplete;
-      await canvas?.updateComplete;
+    await panZoom?.updateComplete;
+    await canvas?.updateComplete;
 
-      // Wait for overlay to be created (EFCanvas.setupSelectionOverlay runs in RAF)
-      await vi.waitUntil(
-        () =>
-          container.querySelector("ef-canvas-selection-overlay") !== null,
-        { timeout: 5000, interval: 16 },
-      );
+    // Wait for overlay to be created (EFCanvas.setupSelectionOverlay runs in RAF)
+    await vi.waitUntil(
+      () => container.querySelector("ef-canvas-selection-overlay") !== null,
+      { timeout: 5000, interval: 16 },
+    );
 
-      const overlay = container.querySelector(
-        "ef-canvas-selection-overlay",
-      ) as any;
+    const overlay = container.querySelector(
+      "ef-canvas-selection-overlay",
+    ) as any;
 
-      // Hover over the element
-      const element = canvas.querySelector(
-        '[data-element-id="positioned-element"]',
-      ) as HTMLElement;
-      element.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    // Hover over the element
+    const element = canvas.querySelector(
+      '[data-element-id="positioned-element"]',
+    ) as HTMLElement;
+    element.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
 
-      // Wait for RAF loop to detect the change and render the highlight box
-      await vi.waitUntil(
-        () => overlay.querySelector(".highlight-box") !== null,
-        { timeout: 5000, interval: 16 },
-      );
+    // Wait for RAF loop to detect the change and render the highlight box
+    await vi.waitUntil(() => overlay.querySelector(".highlight-box") !== null, {
+      timeout: 5000,
+      interval: 16,
+    });
 
-      const highlightBox = overlay.querySelector(
-        ".highlight-box",
-      ) as HTMLElement;
-      expect(highlightBox).toBeTruthy();
+    const highlightBox = overlay.querySelector(".highlight-box") as HTMLElement;
+    expect(highlightBox).toBeTruthy();
 
-      // Get element's screen position
-      const elementRect = element.getBoundingClientRect();
+    // Get element's screen position
+    const elementRect = element.getBoundingClientRect();
 
-      // Get highlight box position
-      const boxStyle = window.getComputedStyle(highlightBox);
-      const boxLeft = parseFloat(boxStyle.left);
-      const boxTop = parseFloat(boxStyle.top);
-      const boxWidth = parseFloat(boxStyle.width);
-      const boxHeight = parseFloat(boxStyle.height);
+    // Get highlight box position
+    const boxStyle = window.getComputedStyle(highlightBox);
+    const boxLeft = parseFloat(boxStyle.left);
+    const boxTop = parseFloat(boxStyle.top);
+    const boxWidth = parseFloat(boxStyle.width);
+    const boxHeight = parseFloat(boxStyle.height);
 
-      // Highlight box should match element position (within 2px tolerance)
-      expect(Math.abs(boxLeft - elementRect.left)).toBeLessThan(2);
-      expect(Math.abs(boxTop - elementRect.top)).toBeLessThan(2);
-      expect(Math.abs(boxWidth - elementRect.width)).toBeLessThan(2);
-      expect(Math.abs(boxHeight - elementRect.height)).toBeLessThan(2);
+    // Highlight box should match element position (within 2px tolerance)
+    expect(Math.abs(boxLeft - elementRect.left)).toBeLessThan(2);
+    expect(Math.abs(boxTop - elementRect.top)).toBeLessThan(2);
+    expect(Math.abs(boxWidth - elementRect.width)).toBeLessThan(2);
+    expect(Math.abs(boxHeight - elementRect.height)).toBeLessThan(2);
 
-      container.remove();
-    },
-  );
+    container.remove();
+  });
 });
 
 /**
