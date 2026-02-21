@@ -40,9 +40,6 @@ import "../canvas/EFCanvas.js";
 
 beforeAll(async () => {
   console.clear();
-  await fetch("/@ef-clear-cache", {
-    method: "DELETE",
-  });
 });
 
 beforeEach(() => {

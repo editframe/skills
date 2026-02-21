@@ -23,7 +23,6 @@ async function waitFrames(count = 5): Promise<void> {
 
 describe("EFFitScale", () => {
   beforeEach(async () => {
-    await fetch("/@ef-clear-cache", { method: "DELETE" });
   });
 
   afterEach(() => {
