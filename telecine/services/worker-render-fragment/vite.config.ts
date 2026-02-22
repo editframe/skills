@@ -32,9 +32,10 @@ export default defineConfig({
       treeshake: "recommended",
 
       output: {
+        inlineDynamicImports: true,
         preserveModules: false,
         entryFileNames: "server.js",
-        chunkFileNames: "[name]-[hash].js",
+        chunkFileNames: "server.js",
         assetFileNames: "assets/[name].[ext]",
       },
       plugins: [rollupTsConfigPaths({})],
