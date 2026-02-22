@@ -32,11 +32,9 @@ export default defineConfig({
       treeshake: "recommended",
 
       output: {
-        // IMPLEMENTATION GUIDELINES: Create single bundle file for easier deployment
-        inlineDynamicImports: true,
         preserveModules: false,
         entryFileNames: "server.js",
-        chunkFileNames: "server.js",
+        chunkFileNames: "chunks/[name]-[hash].js",
         assetFileNames: "assets/[name].[ext]",
       },
       plugins: [rollupTsConfigPaths({})],

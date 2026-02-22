@@ -1,4 +1,6 @@
+import { createServer } from "node:http";
 import { logger } from "@/logging";
+import { healthCheck } from "@/http/healthCheck";
 import { createDirectWorkerServer } from "./createDirectWorkerServer";
 import { createWebSocketWorkerServer } from "./createWebSocketWorkerServer";
 import type { Worker } from "./Worker";
@@ -19,7 +21,19 @@ export const createWorkerServer = <Payload>(
 
   if (mode === "websocket") {
     logger.info({ queue: worker.name, mode }, "Starting WebSocket worker server");
-    return createWebSocketWorkerServer(worker, PORT);
+
+    const server = createServer((req, res) => {
+      if (!healthCheck(req, res)) {
+        res.writeHead(404).end();
+      }
+    });
+
+    console.log(`worker:${worker.name} binding to port ${PORT}`);
+    server.listen(PORT, () => {
+      console.log(`worker:${worker.name} listening on port ${PORT} (health checks ready)`);
+    });
+
+    return createWebSocketWorkerServer(worker, server);
   }
 
   logger.info({ queue: worker.name, mode }, "Starting direct worker server");
