@@ -34,7 +34,7 @@ export default defineConfig({
       output: {
         preserveModules: false,
         entryFileNames: "server.js",
-        chunkFileNames: "chunks/[name]-[hash].js",
+        chunkFileNames: "[name]-[hash].js",
         assetFileNames: "assets/[name].[ext]",
       },
       plugins: [rollupTsConfigPaths({})],
