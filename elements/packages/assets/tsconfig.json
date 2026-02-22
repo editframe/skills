@@ -1,5 +1,9 @@
 {
   "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext"
+  },
   "include": ["./src/**/*.*"],
   "exclude": ["./src/**/*.test.ts", "./src/**/*.browsertest.ts"]
 }
