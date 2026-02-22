@@ -799,6 +799,46 @@ describe("SegmentEncoder", () => {
     }, 6000);
   });
 
+  describe("Stdout Isolation", () => {
+    test("generateMediaSegment does not write to console.log (stdout contamination fix)", async () => {
+      const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const engine = new TestFramegenEngine(480, 270);
+
+      const encoder = createSegmentEncoder({
+        engine,
+        renderOptions: {
+          durationMs: 200,
+          encoderOptions: {
+            ...createTestRenderOptions().encoderOptions,
+            sequenceNumber: 1,
+            isInitSegment: false,
+            toMs: 200,
+            fromMs: 0,
+            video: {
+              width: 480,
+              height: 270,
+              framerate: 15,
+              codec: "avc1",
+              bitrate: 250000,
+            },
+          },
+        },
+      });
+
+      await encoder.generateMediaSegment();
+
+      expect(consoleLogSpy).not.toHaveBeenCalled();
+      consoleLogSpy.mockRestore();
+    }, 10000);
+
+    test("constructor does not write to console.error when no abort/error occurs", () => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      createSegmentEncoder();
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+      consoleErrorSpy.mockRestore();
+    });
+  });
+
   describe("Performance and Resource Management", () => {
     test("completes encoding within reasonable time", async () => {
       const engine = new TestFramegenEngine(480, 270); // Small resolution

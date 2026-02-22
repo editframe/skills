@@ -2,7 +2,6 @@ import { once, EventEmitter } from "node:events";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { context, propagation } from "@opentelemetry/api";
 import ISOBoxer from "codem-isoboxer";
 
 import * as logging from "@/logging";
@@ -79,7 +78,7 @@ export class SegmentEncoder extends EventEmitter {
 
     const abortHandler = () => {
       this.abortSignal.removeEventListener("abort", abortHandler);
-      console.error("Tearing down due to abort signal.");
+      this.logger.warn("Tearing down due to abort signal.");
     };
     this.abortSignal = abortSignal;
     this.abortSignal.addEventListener("abort", abortHandler);
@@ -87,7 +86,7 @@ export class SegmentEncoder extends EventEmitter {
     this.engine = engine;
     this.engine.onError((error) => {
       this.abortSignal.removeEventListener("abort", abortHandler);
-      console.error("Error in renderer", error);
+      this.logger.error({ error }, "Error in renderer");
     });
 
     this.renderOptions = renderOptions;
@@ -816,11 +815,9 @@ export class SegmentEncoder extends EventEmitter {
     }
 
     const videoBmdtsMs = this.renderOptions.encoderOptions.fromMs;
-    console.log(
-      "REPACKAGE MEDIA SEGMENT",
-      audioBmdtsUs,
-      videoBmdtsMs,
-      this.renderOptions,
+    this.logger.debug(
+      { audioBmdtsUs, videoBmdtsMs, renderOptions: this.renderOptions },
+      "Repackage media segment",
     );
 
     return repackageMediaSegment(
