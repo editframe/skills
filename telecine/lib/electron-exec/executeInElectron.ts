@@ -164,10 +164,13 @@ const spawnElectronBootloader = async (script: string) => {
           const dataString = data.toString();
           const lines = dataString.split("\n");
           for (const line of lines) {
+            if (!line.trim()) continue;
             try {
-              logger.debug(JSON.parse(line), "Electron stdout");
-            } catch (error) {
-              logger.debug(line);
+              const parsed = JSON.parse(line);
+              const { msg, level, time, pid, hostname, name, ...rest } = parsed;
+              logger.debug({ electronLog: rest }, msg ?? "Electron stdout");
+            } catch {
+              logger.debug({ electronLog: line }, "Electron stdout");
             }
           }
         });

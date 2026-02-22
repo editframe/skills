@@ -853,20 +853,34 @@ export const rpcServerReady = (async () => {
               totalMs: segmentTotalMs,
             });
 
-            // Log aggregated timing stats
+            // Log aggregated timing stats as structured info
             if (frameTiming.length > 0) {
-              const avgClone = frameTiming.reduce((sum, f) => sum + f.cloneMs, 0) / frameTiming.length;
-              const avgSeek = frameTiming.reduce((sum, f) => sum + f.seekMs, 0) / frameTiming.length;
-              const avgRender = frameTiming.reduce((sum, f) => sum + f.renderMs, 0) / frameTiming.length;
-              const avgCapture = frameTiming.reduce((sum, f) => sum + f.captureMs, 0) / frameTiming.length;
-              const avgCanvas = frameTiming.reduce((sum, f) => sum + f.canvasMs, 0) / frameTiming.length;
-              const avgBlob = frameTiming.reduce((sum, f) => sum + f.blobMs, 0) / frameTiming.length;
-              const avgSerialize = frameTiming.reduce((sum, f) => sum + f.serializeMs, 0) / frameTiming.length;
-              const avgIpcRoundTrip = frameTiming.reduce((sum, f) => sum + f.ipcRoundTripMs, 0) / frameTiming.length;
-              const avgIpcOverhead = frameTiming.reduce((sum, f) => sum + f.ipcOverheadMs, 0) / frameTiming.length;
+              const avg = (key: keyof FrameTimingData) =>
+                Number((frameTiming.reduce((sum, f) => sum + (f[key] as number), 0) / frameTiming.length).toFixed(2));
               const totalDataSize = frameTiming.reduce((sum, f) => sum + f.jpegSize, 0);
-              
-              logger.info(`🔧 [RPC_SERVER] Segment ${segmentIndex} timing summary: ${frameTiming.length} frames, avgClone=${avgClone.toFixed(1)}ms avgSeek=${avgSeek.toFixed(1)}ms avgRender=${avgRender.toFixed(1)}ms avgCanvas=${avgCanvas.toFixed(1)}ms avgBlob=${avgBlob.toFixed(1)}ms avgSerialize=${avgSerialize.toFixed(1)}ms avgIpcRoundTrip=${avgIpcRoundTrip.toFixed(1)}ms avgIpcOverhead=${avgIpcOverhead.toFixed(1)}ms totalDataSize=${(totalDataSize / 1024 / 1024).toFixed(2)}MB segmentTotal=${segmentTotalMs.toFixed(0)}ms`);
+
+              logger.info(
+                {
+                  component: "SegmentEncoder",
+                  renderId,
+                  segmentIndex,
+                  frameBreakdown: {
+                    frameCount: frameTiming.length,
+                    avgCloneMs: avg("cloneMs"),
+                    avgSeekMs: avg("seekMs"),
+                    avgRenderMs: avg("renderMs"),
+                    avgCaptureMs: avg("captureMs"),
+                    avgCanvasMs: avg("canvasMs"),
+                    avgBlobMs: avg("blobMs"),
+                    avgSerializeMs: avg("serializeMs"),
+                    avgIpcRoundTripMs: avg("ipcRoundTripMs"),
+                    avgIpcOverheadMs: avg("ipcOverheadMs"),
+                    totalDataSizeMB: Number((totalDataSize / 1024 / 1024).toFixed(3)),
+                    segmentTotalMs: Number(segmentTotalMs.toFixed(0)),
+                  },
+                },
+                "Frame breakdown timing",
+              );
             }
 
             return new Uint8Array(fragmentBuffer);

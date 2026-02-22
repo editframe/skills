@@ -42,6 +42,8 @@ export const initializeInstrumentation = ({
   const sdk = new NodeSDK({
     resource: new Resource({
       [SEMRESATTRS_SERVICE_NAME]: serviceName,
+      "host.name": process.env.HOSTNAME ?? "unknown",
+      "cloud.run.revision": process.env.K_REVISION ?? "unknown",
     }),
 
     metricReader: new PeriodicExportingMetricReader({

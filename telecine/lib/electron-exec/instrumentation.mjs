@@ -57,13 +57,13 @@ class LoggingTraceExporter extends OTLPTraceExporter {
   }
 }
 
-const spanProcessor = exportToGoogleCloud
-  ? undefined
-  : new SimpleSpanProcessor(
-      new LoggingTraceExporter({
-        url: `${otelEndpoint}/v1/traces`,
-      }),
-    );
+const traceExporter = exportToGoogleCloud
+  ? new TraceExporter()
+  : new LoggingTraceExporter({
+      url: `${otelEndpoint}/v1/traces`,
+    });
+
+const spanProcessor = new SimpleSpanProcessor(traceExporter);
 
 const logExporter = exportToGoogleCloud
   ? undefined
@@ -79,6 +79,8 @@ logger.debug(
 const sdk = new NodeSDK({
   resource: new Resource({
     [SEMRESATTRS_SERVICE_NAME]: "telecine-electron",
+    "host.name": process.env.HOSTNAME ?? "unknown",
+    "cloud.run.revision": process.env.K_REVISION ?? "unknown",
   }),
 
   metricReader: new PeriodicExportingMetricReader({
@@ -87,7 +89,7 @@ const sdk = new NodeSDK({
 
   instrumentations: [new PgInstrumentation(), new PinoInstrumentation()],
 
-  spanProcessors: spanProcessor ? [spanProcessor] : [],
+  spanProcessors: [spanProcessor],
   logExporter,
 });
 
