@@ -104,4 +104,4 @@ VITEST_ARGS=()
 if [[ ! " ${ARGS[*]} " =~ " --watch " ]]; then
   VITEST_ARGS+=(--run)
 fi
-DEBUG="" MONOREPO_ROOT="$MONOREPO_ROOT" WS_ENDPOINT="$WS_ENDPOINT" VITEST_BROWSER_MODE="$VITEST_BROWSER_MODE" "${SCRIPT_DIR}"/run npx vitest "${VITEST_ARGS[@]}" --config vitest.config.browser.ts --configLoader bundle "${ARGS[@]}"
+DEBUG="" MONOREPO_ROOT="$MONOREPO_ROOT" WS_ENDPOINT="$WS_ENDPOINT" VITEST_BROWSER_MODE="$VITEST_BROWSER_MODE" "${SCRIPT_DIR}"/run npx vitest "${VITEST_ARGS[@]}" --config vitest.config.browser.ts --configLoader bundle --retry=1 "${ARGS[@]}"
