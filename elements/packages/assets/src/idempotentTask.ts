@@ -17,6 +17,7 @@ import { Readable } from "node:stream";
 const CACHE_VERSION: string = (
   JSON.parse(
     readFileSync(
+      // @ts-ignore - import.meta.url is available at runtime (ESM); tsconfig uses CommonJS for type-checking only
       path.join(path.dirname(fileURLToPath(import.meta.url)), "../package.json"),
       "utf-8",
     ),
