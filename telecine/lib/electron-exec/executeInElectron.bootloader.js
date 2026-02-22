@@ -2,19 +2,20 @@ import electron from "electron";
 import "./init-electron.js";
 import "./instrumentation.mjs";
 
+import { existsSync } from "node:fs";
 import opentelemetry, {
   SpanStatusCode,
   trace,
   context,
   propagation,
 } from "@opentelemetry/api";
-import { createServer } from "rolldown-vite";
-import tsconfigPaths from "vite-tsconfig-paths";
-
-import { viteAliases } from "../util/viteAliases.js";
 
 const tracer = opentelemetry.trace.getTracer("electron-bootloader");
 const execPath = process.argv[3];
+
+// Derive a pre-built bundle path: replace .ts extension with .electron.js
+const prebuiltPath = execPath?.replace(/\.ts$/, ".electron.js");
+const usePrebuilt = prebuiltPath && existsSync(prebuiltPath);
 
 let parentContext = context.active();
 if (process.env.OTEL_TRACE_CONTEXT) {
@@ -61,23 +62,33 @@ electron.app.on("ready", async () => {
 
       try {
         span.setAttribute("script.path", execPath);
+        span.setAttribute("usePrebuilt", usePrebuilt ?? false);
 
-        // Create Vite dev server in middleware mode (no HTTP listener needed)
-        server = await createServer({
-          root: "/app",
-          plugins: [tsconfigPaths()],
-          resolve: { alias: viteAliases },
-          optimizeDeps: {
-            exclude: ["@editframe/elements"],
-          },
-          server: {
-            middlewareMode: true,
-            hmr: false,
-          },
-        });
+        let imported;
+        if (usePrebuilt) {
+          process.stderr.write(`[BOOTLOADER] Loading pre-built bundle: ${prebuiltPath}\n`);
+          imported = await import(prebuiltPath);
+        } else {
+          process.stderr.write(`[BOOTLOADER] No pre-built bundle found, starting Vite for: ${execPath}\n`);
+          const { createServer } = await import("rolldown-vite");
+          const { default: tsconfigPaths } = await import("vite-tsconfig-paths");
+          const { viteAliases } = await import("../util/viteAliases.js");
 
-        // Load the script module via SSR (keeps module runner alive)
-        const imported = await server.ssrLoadModule(execPath);
+          server = await createServer({
+            root: "/app",
+            plugins: [tsconfigPaths()],
+            resolve: { alias: viteAliases },
+            optimizeDeps: {
+              exclude: ["@editframe/elements"],
+            },
+            server: {
+              middlewareMode: true,
+              hmr: false,
+            },
+          });
+
+          imported = await server.ssrLoadModule(execPath);
+        }
 
         // Wait for the RPC server to complete (keeps process alive for RPC calls)
         if (imported?.rpcServerReady) {
