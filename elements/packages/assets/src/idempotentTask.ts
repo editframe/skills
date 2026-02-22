@@ -1,5 +1,6 @@
 import { createWriteStream, existsSync, readFileSync } from "node:fs";
 import path, { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { md5FilePath } from "./md5.js";
 import debug from "debug";
 import {
@@ -13,10 +14,12 @@ import {
 } from "node:fs/promises";
 import { Readable } from "node:stream";
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const CACHE_VERSION: string = (
   JSON.parse(
-    readFileSync(path.join(__dirname, "../package.json"), "utf-8"),
+    readFileSync(
+      path.join(path.dirname(fileURLToPath(import.meta.url)), "../package.json"),
+      "utf-8",
+    ),
   ) as { version: string }
 ).version;
 
