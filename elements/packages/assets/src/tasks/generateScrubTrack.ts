@@ -20,29 +20,7 @@ export const generateScrubTrackFromPath = async (absolutePath: string) => {
   // Get the scrub track stream from FFmpeg (low-res transcoded video)
   const scrubStream = probe.createScrubTrackReadstream();
 
-  // Extract timing offset from probe metadata (same logic as generateTrackFragmentIndex)
-  let startTimeOffsetMs: number | undefined;
-
-  // First check format-level start_time
-  if (probe.format.start_time && Number(probe.format.start_time) !== 0) {
-    startTimeOffsetMs = Number(probe.format.start_time) * 1000;
-    log(
-      `Extracted format start_time offset: ${probe.format.start_time}s (${startTimeOffsetMs}ms)`,
-    );
-  } else {
-    // Check for video stream start_time (more common)
-    const videoStream = probe.videoStreams[0];
-    if (
-      videoStream &&
-      videoStream.start_time &&
-      Number(videoStream.start_time) !== 0
-    ) {
-      startTimeOffsetMs = Number(videoStream.start_time) * 1000;
-      log(
-        `Extracted video stream start_time offset: ${videoStream.start_time}s (${startTimeOffsetMs}ms)`,
-      );
-    }
-  }
+  const startTimeOffsetMs = probe.startTimeOffsetMs;
 
   // Create a PassThrough to tee the stream
   const outputStream = new PassThrough();

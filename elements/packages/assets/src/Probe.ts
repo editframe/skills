@@ -1,13 +1,10 @@
-import { exec, spawn } from "node:child_process";
-import { promisify } from "node:util";
+import { spawn } from "node:child_process";
 import { createReadStream } from "node:fs";
 
 import * as z from "zod";
 import debug from "debug";
 import type { Readable } from "node:stream";
 import { truncateDecimal } from "./truncateDecimal";
-
-const execPromise = promisify(exec);
 
 const log = debug("ef:assets:probe");
 
@@ -192,12 +189,32 @@ class FFProbeRunner {
     absolutePath: string,
     includePackets: boolean,
   ): Promise<any> {
-    const probeCommand = `ffprobe ${buildProbeArgs({ showPackets: includePackets }).join(" ")} ${absolutePath}`;
-    log("Probing", probeCommand);
-    const probeResult = await execPromise(probeCommand);
-    log("Probe result", probeResult.stdout);
-    log("Probe stderr", probeResult.stderr);
-    return JSON.parse(probeResult.stdout);
+    const args = [...buildProbeArgs({ showPackets: includePackets }), absolutePath];
+    log("Probing", "ffprobe", args);
+
+    const probe = spawn("ffprobe", args, { stdio: ["ignore", "pipe", "pipe"] });
+
+    const stdoutChunks: Buffer[] = [];
+    const stderrChunks: Buffer[] = [];
+
+    probe.stdout.on("data", (data: Buffer) => stdoutChunks.push(data));
+    probe.stderr.on("data", (data: Buffer) => stderrChunks.push(data));
+
+    await new Promise<void>((resolve, reject) => {
+      probe.on("error", reject);
+      probe.on("close", (code) => {
+        if (code !== 0) {
+          const stderr = Buffer.concat(stderrChunks).toString("utf8");
+          reject(new Error(`ffprobe exited with code ${code}: ${stderr}`));
+        } else {
+          resolve();
+        }
+      });
+    });
+
+    const stdout = Buffer.concat(stdoutChunks).toString("utf8");
+    log("Probe result", stdout);
+    return JSON.parse(stdout);
   }
 
   static async probeStream(
@@ -336,6 +353,17 @@ abstract class ProbeBase {
 
   get mustProcess() {
     return this.mustReencodeAudio || this.mustReencodeVideo || this.mustRemux;
+  }
+
+  get startTimeOffsetMs(): number | undefined {
+    if (this.data.format.start_time && Number(this.data.format.start_time) !== 0) {
+      return Number(this.data.format.start_time) * 1000;
+    }
+    const videoStream = this.videoStreams[0];
+    if (videoStream?.start_time && Number(videoStream.start_time) !== 0) {
+      return Number(videoStream.start_time) * 1000;
+    }
+    return undefined;
   }
 
   get audioTimebase() {

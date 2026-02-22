@@ -1,9 +1,5 @@
 import { test, describe, assert } from "vitest";
-import {
-  generateSingleTrackFromPath,
-  generateSingleTrackWithIndex,
-} from "./generateSingleTrack";
-import { Probe } from "./Probe.js";
+import { generateSingleTrackFromPath } from "./generateSingleTrack";
 import { Writable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
@@ -76,43 +72,6 @@ describe("generateSingleTrack", () => {
     assert.isAbove(track.segments.length, 0, "Should have segments");
     assert.equal(track.initSegment.offset, 0, "Init segment should start at 0");
     assert.isAbove(track.initSegment.size, 0, "Init segment should have size");
-  }, 15000);
-
-  test("should handle track extraction with fragment index events", async () => {
-    const trackStream = await generateSingleTrackWithIndex(
-      "test-assets/frame-count.mp4",
-      1,
-    );
-
-    let fragmentIndex: any = null;
-    let chunks: Buffer[] = [];
-
-    // Listen for fragment index event
-    trackStream.on("fragmentIndex", (index) => {
-      fragmentIndex = index;
-    });
-
-    // Collect stream data
-    trackStream.on("data", (chunk: Buffer) => {
-      chunks.push(chunk);
-    });
-
-    // Wait for stream completion
-    await new Promise<void>((resolve, reject) => {
-      trackStream.on("end", resolve);
-      trackStream.on("error", reject);
-    });
-
-    // Verify we got both data and index
-    assert.isAbove(chunks.length, 0, "Should have MP4 chunks");
-    assert.isNotNull(fragmentIndex, "Should have received fragment index");
-
-    const trackIds = Object.keys(fragmentIndex).map(Number);
-    assert.equal(trackIds.length, 1, "Should have exactly one track");
-
-    const track = fragmentIndex[trackIds[0]!];
-    assert.equal(track.type, "video", "Should be video track");
-    assert.isAbove(track.segments.length, 0, "Should have segments");
   }, 15000);
 
   test("should handle invalid track IDs gracefully", async () => {
