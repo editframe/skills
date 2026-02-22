@@ -13,7 +13,6 @@ function makeReq(headers: Record<string, string> = {}): IncomingMessage {
 }
 
 function makeRes(): ServerResponse & { _body: string; _statusCode: number } {
-  const chunks: Buffer[] = [];
   const res = {
     writeHead: vi.fn(function (this: any, code: number) {
       this._statusCode = code;
@@ -51,7 +50,10 @@ describe("sendTaskResult", () => {
 
     sendTaskResult(req, res, { cachePath: missingFile, md5Sum: "abc123" });
 
-    expect(res.writeHead).toHaveBeenCalledWith(500, expect.objectContaining({ "Content-Type": expect.any(String) }));
+    expect(res.writeHead).toHaveBeenCalledWith(
+      500,
+      expect.objectContaining({ "Content-Type": expect.any(String) }),
+    );
     expect(res.end).toHaveBeenCalled();
   });
 

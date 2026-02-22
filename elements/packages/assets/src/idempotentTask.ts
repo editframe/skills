@@ -1,12 +1,24 @@
-import { createWriteStream, existsSync } from "node:fs";
+import { createWriteStream, existsSync, readFileSync } from "node:fs";
 import path, { join } from "node:path";
 import { md5FilePath } from "./md5.js";
 import debug from "debug";
-import { mkdir, writeFile, stat, rename, readdir, readFile, rm } from "node:fs/promises";
+import {
+  mkdir,
+  writeFile,
+  stat,
+  rename,
+  readdir,
+  readFile,
+  rm,
+} from "node:fs/promises";
 import { Readable } from "node:stream";
-import packageJson from "../package.json" with { type: "json" };
 
-const CACHE_VERSION = packageJson.version;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const CACHE_VERSION: string = (
+  JSON.parse(
+    readFileSync(path.join(__dirname, "../package.json"), "utf-8"),
+  ) as { version: string }
+).version;
 
 // Per-root validation promises — serializes the version check within a process
 // and memoizes it so subsequent calls in the same process are free.
@@ -122,7 +134,10 @@ export const idempotentTask = <T extends unknown[]>({
     log(`Running ef:${label} task for ${absolutePath} in ${rootDir}`);
 
     // Handle HTTP downloads with proper race condition protection
-    if (absolutePath.startsWith("http://") || absolutePath.startsWith("https://")) {
+    if (
+      absolutePath.startsWith("http://") ||
+      absolutePath.startsWith("https://")
+    ) {
       const safePath = absolutePath.replace(/[^a-zA-Z0-9]/g, "_");
       const downloadCachePath = path.join(
         rootDir,
@@ -277,7 +292,13 @@ export const idempotentTask = <T extends unknown[]>({
         }
 
         log(`Running ef:${label} runner for ${resolvedCachePath}`);
-        const result = await runner(absolutePath, ...args);
+        await acquireRunnerSlot();
+        let result: string | Readable;
+        try {
+          result = await runner(absolutePath, ...args);
+        } finally {
+          releaseRunnerSlot();
+        }
 
         if (result instanceof Readable) {
           log(`Piping task for ${resolvedCachePath} to cache`);

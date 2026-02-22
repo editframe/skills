@@ -30,10 +30,7 @@ interface FilesDeps {
     trackUrl: string,
   ) => Promise<any>;
   generateScrubTrack: (cacheRoot: string, src: string) => Promise<any>;
-  generateTrackFragmentIndex: (
-    cacheRoot: string,
-    src: string,
-  ) => Promise<any>;
+  generateTrackFragmentIndex: (cacheRoot: string, src: string) => Promise<any>;
   md5FilePath: (src: string) => Promise<string>;
 }
 
@@ -118,8 +115,12 @@ export function createLocalFilesApiMiddleware(
   options: PluginOptions,
   deps: FilesDeps,
 ): Middleware {
-  const { generateTrack, generateScrubTrack, generateTrackFragmentIndex, md5FilePath } =
-    deps;
+  const {
+    generateTrack,
+    generateScrubTrack,
+    generateTrackFragmentIndex,
+    md5FilePath,
+  } = deps;
   return async (req, res, next) => {
     const log = debug("ef:vite-plugin:files");
     const reqUrl = req.url || "";
@@ -253,7 +254,9 @@ export async function handleClearCache(
         `Warning: Cache clear attempt ${attempt + 1} failed: ${error.message}`,
       );
       if (attempt === maxRetries - 1) {
-        log(`Cache clear failed after ${maxRetries} attempts, continuing anyway`);
+        log(
+          `Cache clear failed after ${maxRetries} attempts, continuing anyway`,
+        );
       }
     }
   }

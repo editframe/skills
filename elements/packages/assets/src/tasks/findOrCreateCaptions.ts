@@ -62,7 +62,14 @@ const convertWhisperToEditframeFormat = (
 };
 
 export const generateCaptionDataFromPath = async (absolutePath: string) => {
-  const args = ["--language", "en", "--efficient", "--output_format", "json", absolutePath];
+  const args = [
+    "--language",
+    "en",
+    "--efficient",
+    "--output_format",
+    "json",
+    absolutePath,
+  ];
   log("Running whisper_timestamped", args);
   const { stdout } = await execFilePromise("whisper_timestamped", args);
 

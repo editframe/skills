@@ -33,23 +33,25 @@ const noopAssetFunctions = {
 };
 
 function makeFragmentIndex(
-  overrides?: Partial<TrackFragmentIndex>,
+  overrides?: Record<string, unknown>,
 ): TrackFragmentIndex {
   return {
+    track: 0,
     type: "video",
     codec: "avc1.640029",
     duration: 30,
     timescale: 90000,
+    sample_count: 2,
     startTimeOffsetMs: 0,
     initSegment: { offset: 0, size: 1024 },
     segments: [
-      { offset: 1024, size: 2048, duration: 9000 },
-      { offset: 3072, size: 2048, duration: 9000 },
+      { offset: 1024, size: 2048, duration: 9000, cts: 0, dts: 0 },
+      { offset: 3072, size: 2048, duration: 9000, cts: 9000, dts: 9000 },
     ],
     width: 1920,
     height: 1080,
     ...overrides,
-  };
+  } as TrackFragmentIndex;
 }
 
 describe("generateLocalJitManifest", () => {

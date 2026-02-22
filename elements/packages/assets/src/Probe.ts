@@ -189,7 +189,10 @@ class FFProbeRunner {
     absolutePath: string,
     includePackets: boolean,
   ): Promise<any> {
-    const args = [...buildProbeArgs({ showPackets: includePackets }), absolutePath];
+    const args = [
+      ...buildProbeArgs({ showPackets: includePackets }),
+      absolutePath,
+    ];
     log("Probing", "ffprobe", args);
 
     const probe = spawn("ffprobe", args, { stdio: ["ignore", "pipe", "pipe"] });
@@ -356,7 +359,10 @@ abstract class ProbeBase {
   }
 
   get startTimeOffsetMs(): number | undefined {
-    if (this.data.format.start_time && Number(this.data.format.start_time) !== 0) {
+    if (
+      this.data.format.start_time &&
+      Number(this.data.format.start_time) !== 0
+    ) {
       return Number(this.data.format.start_time) * 1000;
     }
     const videoStream = this.videoStreams[0];

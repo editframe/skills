@@ -102,7 +102,10 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
       );
 
       server.middlewares.use(
-        createAssetsApiMiddleware(options, { cacheImage, findOrCreateCaptions }),
+        createAssetsApiMiddleware(options, {
+          cacheImage,
+          findOrCreateCaptions,
+        }),
       );
 
       server.middlewares.use(
@@ -250,9 +253,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                 await writeFile(paths.baseline, buffer);
                 log(`Created baseline at ${paths.baseline}`);
                 res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(
-                  JSON.stringify({ match: true, baselineCreated: true }),
-                );
+                res.end(JSON.stringify({ match: true, baselineCreated: true }));
                 break;
               }
 
@@ -267,7 +268,11 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
               if (result.match) {
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(
-                  JSON.stringify({ match: true, diffCount: 0, diffPercentage: 0 }),
+                  JSON.stringify({
+                    match: true,
+                    diffCount: 0,
+                    diffPercentage: 0,
+                  }),
                 );
               } else if (result.reason === "pixel-diff") {
                 const diffPercentage = result.diffPercentage ?? 0;
@@ -277,18 +282,28 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                 );
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(
-                  JSON.stringify({ match, diffCount: result.diffCount, diffPercentage }),
+                  JSON.stringify({
+                    match,
+                    diffCount: result.diffCount,
+                    diffPercentage,
+                  }),
                 );
               } else if (result.reason === "layout-diff") {
                 log(`Layout diff detected`);
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(
-                  JSON.stringify({ match: false, error: "Images have different dimensions" }),
+                  JSON.stringify({
+                    match: false,
+                    error: "Images have different dimensions",
+                  }),
                 );
               } else {
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(
-                  JSON.stringify({ match: false, error: `Comparison failed: ${result.reason}` }),
+                  JSON.stringify({
+                    match: false,
+                    error: `Comparison failed: ${result.reason}`,
+                  }),
                 );
               }
             } catch (error) {
@@ -348,7 +363,11 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
               if (result.match) {
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(
-                  JSON.stringify({ match: true, diffCount: 0, diffPercentage: 0 }),
+                  JSON.stringify({
+                    match: true,
+                    diffCount: 0,
+                    diffPercentage: 0,
+                  }),
                 );
               } else if (result.reason === "pixel-diff") {
                 const diffPercentage = result.diffPercentage ?? 0;
@@ -358,17 +377,27 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                 );
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(
-                  JSON.stringify({ match, diffCount: result.diffCount, diffPercentage }),
+                  JSON.stringify({
+                    match,
+                    diffCount: result.diffCount,
+                    diffPercentage,
+                  }),
                 );
               } else if (result.reason === "layout-diff") {
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(
-                  JSON.stringify({ match: false, error: "Images have different dimensions" }),
+                  JSON.stringify({
+                    match: false,
+                    error: "Images have different dimensions",
+                  }),
                 );
               } else {
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(
-                  JSON.stringify({ match: false, error: `Comparison failed: ${result.reason}` }),
+                  JSON.stringify({
+                    match: false,
+                    error: `Comparison failed: ${result.reason}`,
+                  }),
                 );
               }
             } catch (error) {

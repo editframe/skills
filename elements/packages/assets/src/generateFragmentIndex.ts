@@ -490,7 +490,10 @@ export const generateFragmentIndex = async (
 
   // Step 2: Write stream to a temp file to avoid buffering the entire MP4 in memory
   const tempDir = options?.tmpDir ?? tmpdir();
-  const tempFile = join(tempDir, `ef-probe-${randomBytes(8).toString("hex")}.mp4`);
+  const tempFile = join(
+    tempDir,
+    `ef-probe-${randomBytes(8).toString("hex")}.mp4`,
+  );
   let totalSize = 0;
 
   const dest = new Writable({
@@ -739,7 +742,9 @@ export const generateFragmentIndex = async (
     const streamPackets = (probe.packets as ProbePacket[]).filter(
       (p) => p.stream_index === videoStream.index,
     );
-    const keyframeCount = streamPackets.filter((p) => p.flags?.includes("K")).length;
+    const keyframeCount = streamPackets.filter((p) =>
+      p.flags?.includes("K"),
+    ).length;
     const totalSampleCount = streamPackets.length;
 
     log(
@@ -776,7 +781,11 @@ export const generateFragmentIndex = async (
       const lastPacket = streamPackets[streamPackets.length - 1]!;
       const firstPts = convertTimestamp(firstPacket.pts, timebase, timescale);
       const lastPts = convertTimestamp(lastPacket.pts, timebase, timescale);
-      const lastDuration = convertTimestamp(lastPacket.duration ?? 0, timebase, timescale);
+      const lastDuration = convertTimestamp(
+        lastPacket.duration ?? 0,
+        timebase,
+        timescale,
+      );
       totalDuration = lastPts - firstPts + lastDuration;
     }
 

@@ -311,9 +311,7 @@ describe("idempotentTask Race Condition Protection", () => {
       const cacheFiles = await import("node:fs").then((fs) =>
         fs.readdirSync(join(testDir, ".cache"), { recursive: true }),
       );
-      const tempFiles = cacheFiles.filter((f) =>
-        f.toString().includes(".tmp"),
-      );
+      const tempFiles = cacheFiles.filter((f) => f.toString().includes(".tmp"));
       expect(tempFiles.length).toBe(0);
     });
 
@@ -326,9 +324,9 @@ describe("idempotentTask Race Condition Protection", () => {
         },
       });
 
-      await expect(
-        failingStringTask(testDir, testFilePath),
-      ).rejects.toThrow("runner failure");
+      await expect(failingStringTask(testDir, testFilePath)).rejects.toThrow(
+        "runner failure",
+      );
 
       const { existsSync: exists } = await import("node:fs");
       const cacheRoot = join(testDir, ".cache");
@@ -370,7 +368,10 @@ describe("idempotentTask Race Condition Protection", () => {
         filename: (_: string, id: number) => `file-${id}.txt`,
         runner: async (_: string, id: number) => {
           activeRunners++;
-          maxObservedConcurrency = Math.max(maxObservedConcurrency, activeRunners);
+          maxObservedConcurrency = Math.max(
+            maxObservedConcurrency,
+            activeRunners,
+          );
           // Hold the runner slot briefly so concurrent tasks queue up
           await new Promise((resolve) => setTimeout(resolve, 20));
           activeRunners--;

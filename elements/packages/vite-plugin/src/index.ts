@@ -45,7 +45,10 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
       );
 
       server.middlewares.use(
-        createAssetsApiMiddleware(options, { cacheImage, findOrCreateCaptions }),
+        createAssetsApiMiddleware(options, {
+          cacheImage,
+          findOrCreateCaptions,
+        }),
       );
 
       server.middlewares.use(
@@ -120,9 +123,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
               } catch (error) {
                 log(`Error signing URL token: ${error}`);
                 res.writeHead(500, { "Content-Type": "application/json" });
-                res.end(
-                  JSON.stringify({ error: "Failed to sign URL token" }),
-                );
+                res.end(JSON.stringify({ error: "Failed to sign URL token" }));
               }
             });
 

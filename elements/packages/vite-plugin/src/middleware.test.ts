@@ -33,14 +33,24 @@ function makeRes() {
 const options = { root: "/project", cacheRoot: "/project/.cache" };
 
 const mockAssetsDeps = {
-  cacheImage: vi.fn().mockResolvedValue({ cachePath: "/cache/img.png", md5Sum: "abc" }),
-  findOrCreateCaptions: vi.fn().mockResolvedValue({ cachePath: "/cache/cap.vtt", md5Sum: "def" }),
+  cacheImage: vi
+    .fn()
+    .mockResolvedValue({ cachePath: "/cache/img.png", md5Sum: "abc" }),
+  findOrCreateCaptions: vi
+    .fn()
+    .mockResolvedValue({ cachePath: "/cache/cap.vtt", md5Sum: "def" }),
 };
 
 const mockFilesDeps = {
-  generateTrack: vi.fn().mockResolvedValue({ cachePath: "/cache/track.mp4", md5Sum: "ghi" }),
-  generateScrubTrack: vi.fn().mockResolvedValue({ cachePath: "/cache/scrub.mp4", md5Sum: "jkl" }),
-  generateTrackFragmentIndex: vi.fn().mockResolvedValue({ cachePath: "/cache/index.json", md5Sum: "mno" }),
+  generateTrack: vi
+    .fn()
+    .mockResolvedValue({ cachePath: "/cache/track.mp4", md5Sum: "ghi" }),
+  generateScrubTrack: vi
+    .fn()
+    .mockResolvedValue({ cachePath: "/cache/scrub.mp4", md5Sum: "jkl" }),
+  generateTrackFragmentIndex: vi
+    .fn()
+    .mockResolvedValue({ cachePath: "/cache/index.json", md5Sum: "mno" }),
   md5FilePath: vi.fn().mockResolvedValue("deadbeef"),
 };
 
@@ -52,7 +62,11 @@ describe("createAssetsApiMiddleware", () => {
   it("calls next() for unrelated URLs", async () => {
     const middleware = createAssetsApiMiddleware(options, mockAssetsDeps);
     const next = vi.fn();
-    await middleware(makeReq("/api/v1/files/index?src=foo.mp4"), makeRes(), next);
+    await middleware(
+      makeReq("/api/v1/files/index?src=foo.mp4"),
+      makeRes(),
+      next,
+    );
     expect(next).toHaveBeenCalledOnce();
   });
 
@@ -60,7 +74,11 @@ describe("createAssetsApiMiddleware", () => {
     const middleware = createAssetsApiMiddleware(options, mockAssetsDeps);
     const next = vi.fn();
     await expect(
-      middleware(makeReq("/api/v1/assets/image?src=../../etc/passwd"), makeRes(), next),
+      middleware(
+        makeReq("/api/v1/assets/image?src=../../etc/passwd"),
+        makeRes(),
+        next,
+      ),
     ).rejects.toThrow("Relative paths are forbidden");
     expect(next).not.toHaveBeenCalled();
   });
@@ -69,12 +87,19 @@ describe("createAssetsApiMiddleware", () => {
     const middleware = createAssetsApiMiddleware(options, mockAssetsDeps);
     const res = makeRes();
     await middleware(makeReq("/api/v1/assets/image"), res, vi.fn());
-    expect(res.writeHead).toHaveBeenCalledWith(400, expect.objectContaining({ "Content-Type": "application/json" }));
+    expect(res.writeHead).toHaveBeenCalledWith(
+      400,
+      expect.objectContaining({ "Content-Type": "application/json" }),
+    );
   });
 
   it("calls cacheImage for local /api/v1/assets/image", async () => {
     const middleware = createAssetsApiMiddleware(options, mockAssetsDeps);
-    await middleware(makeReq("/api/v1/assets/image?src=video.mp4"), makeRes(), vi.fn());
+    await middleware(
+      makeReq("/api/v1/assets/image?src=video.mp4"),
+      makeRes(),
+      vi.fn(),
+    );
     expect(mockAssetsDeps.cacheImage).toHaveBeenCalledWith(
       options.cacheRoot,
       "/project/video.mp4",
@@ -91,18 +116,29 @@ describe("createAssetsApiMiddleware", () => {
 
     const middleware = createAssetsApiMiddleware(options, mockAssetsDeps);
     const res = makeRes();
-    await middleware(makeReq("/api/v1/assets/image?src=https://example.com/img.png"), res, vi.fn());
+    await middleware(
+      makeReq("/api/v1/assets/image?src=https://example.com/img.png"),
+      res,
+      vi.fn(),
+    );
 
     expect(mockFetch).toHaveBeenCalledWith("https://example.com/img.png");
     expect(mockAssetsDeps.cacheImage).not.toHaveBeenCalled();
-    expect(res.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ "Content-Type": "image/png" }));
+    expect(res.writeHead).toHaveBeenCalledWith(
+      200,
+      expect.objectContaining({ "Content-Type": "image/png" }),
+    );
 
     vi.unstubAllGlobals();
   });
 
   it("calls findOrCreateCaptions for /api/v1/assets/captions", async () => {
     const middleware = createAssetsApiMiddleware(options, mockAssetsDeps);
-    await middleware(makeReq("/api/v1/assets/captions?src=audio.mp3"), makeRes(), vi.fn());
+    await middleware(
+      makeReq("/api/v1/assets/captions?src=audio.mp3"),
+      makeRes(),
+      vi.fn(),
+    );
     expect(mockAssetsDeps.findOrCreateCaptions).toHaveBeenCalledWith(
       options.cacheRoot,
       "/project/audio.mp3",
@@ -113,13 +149,20 @@ describe("createAssetsApiMiddleware", () => {
     const middleware = createAssetsApiMiddleware(options, mockAssetsDeps);
     const res = makeRes();
     await middleware(makeReq("/api/v1/assets/unknown?src=foo"), res, vi.fn());
-    expect(res.writeHead).toHaveBeenCalledWith(404, expect.objectContaining({ "Content-Type": "application/json" }));
+    expect(res.writeHead).toHaveBeenCalledWith(
+      404,
+      expect.objectContaining({ "Content-Type": "application/json" }),
+    );
   });
 
   it("does not mutate options.cacheRoot", async () => {
     const opts = { root: "/project/dist", cacheRoot: "/project/dist/.cache" };
     const middleware = createAssetsApiMiddleware(opts, mockAssetsDeps);
-    await middleware(makeReq("/api/v1/assets/image?src=video.mp4"), makeRes(), vi.fn());
+    await middleware(
+      makeReq("/api/v1/assets/image?src=video.mp4"),
+      makeRes(),
+      vi.fn(),
+    );
     expect(opts.cacheRoot).toBe("/project/dist/.cache");
   });
 });
@@ -132,7 +175,11 @@ describe("createLocalFilesApiMiddleware", () => {
   it("calls next() for unrelated URLs", async () => {
     const middleware = createLocalFilesApiMiddleware(options, mockFilesDeps);
     const next = vi.fn();
-    await middleware(makeReq("/api/v1/assets/image?src=foo.mp4"), makeRes(), next);
+    await middleware(
+      makeReq("/api/v1/assets/image?src=foo.mp4"),
+      makeRes(),
+      next,
+    );
     expect(next).toHaveBeenCalledOnce();
   });
 
@@ -147,14 +194,22 @@ describe("createLocalFilesApiMiddleware", () => {
     const middleware = createLocalFilesApiMiddleware(options, mockFilesDeps);
     const next = vi.fn();
     await expect(
-      middleware(makeReq("/api/v1/files/index?src=../../etc/passwd"), makeRes(), next),
+      middleware(
+        makeReq("/api/v1/files/index?src=../../etc/passwd"),
+        makeRes(),
+        next,
+      ),
     ).rejects.toThrow("Relative paths are forbidden");
     expect(next).not.toHaveBeenCalled();
   });
 
   it("calls generateTrackFragmentIndex for /api/v1/files/index", async () => {
     const middleware = createLocalFilesApiMiddleware(options, mockFilesDeps);
-    await middleware(makeReq("/api/v1/files/index?src=video.mp4"), makeRes(), vi.fn());
+    await middleware(
+      makeReq("/api/v1/files/index?src=video.mp4"),
+      makeRes(),
+      vi.fn(),
+    );
     expect(mockFilesDeps.generateTrackFragmentIndex).toHaveBeenCalledWith(
       options.cacheRoot,
       "/project/video.mp4",
@@ -165,14 +220,23 @@ describe("createLocalFilesApiMiddleware", () => {
     const middleware = createLocalFilesApiMiddleware(options, mockFilesDeps);
     const res = makeRes();
     await middleware(makeReq("/api/v1/files/md5?src=video.mp4"), res, vi.fn());
-    expect(mockFilesDeps.md5FilePath).toHaveBeenCalledWith("/project/video.mp4");
-    expect(res.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({ "Content-Type": "application/json" }));
+    expect(mockFilesDeps.md5FilePath).toHaveBeenCalledWith(
+      "/project/video.mp4",
+    );
+    expect(res.writeHead).toHaveBeenCalledWith(
+      200,
+      expect.objectContaining({ "Content-Type": "application/json" }),
+    );
     expect(res.end).toHaveBeenCalledWith(JSON.stringify({ md5: "deadbeef" }));
   });
 
   it("calls generateScrubTrack for /api/v1/files/track?trackId=-1", async () => {
     const middleware = createLocalFilesApiMiddleware(options, mockFilesDeps);
-    await middleware(makeReq("/api/v1/files/track?src=video.mp4&trackId=-1"), makeRes(), vi.fn());
+    await middleware(
+      makeReq("/api/v1/files/track?src=video.mp4&trackId=-1"),
+      makeRes(),
+      vi.fn(),
+    );
     expect(mockFilesDeps.generateScrubTrack).toHaveBeenCalledWith(
       options.cacheRoot,
       "/project/video.mp4",
@@ -182,7 +246,11 @@ describe("createLocalFilesApiMiddleware", () => {
 
   it("calls generateTrack for /api/v1/files/track?trackId=0", async () => {
     const middleware = createLocalFilesApiMiddleware(options, mockFilesDeps);
-    await middleware(makeReq("/api/v1/files/track?src=video.mp4&trackId=0"), makeRes(), vi.fn());
+    await middleware(
+      makeReq("/api/v1/files/track?src=video.mp4&trackId=0"),
+      makeRes(),
+      vi.fn(),
+    );
     expect(mockFilesDeps.generateTrack).toHaveBeenCalledWith(
       options.cacheRoot,
       "/project/video.mp4",
@@ -194,14 +262,25 @@ describe("createLocalFilesApiMiddleware", () => {
   it("returns 400 when trackId is missing for /api/v1/files/track", async () => {
     const middleware = createLocalFilesApiMiddleware(options, mockFilesDeps);
     const res = makeRes();
-    await middleware(makeReq("/api/v1/files/track?src=video.mp4"), res, vi.fn());
-    expect(res.writeHead).toHaveBeenCalledWith(400, expect.objectContaining({ "Content-Type": "application/json" }));
+    await middleware(
+      makeReq("/api/v1/files/track?src=video.mp4"),
+      res,
+      vi.fn(),
+    );
+    expect(res.writeHead).toHaveBeenCalledWith(
+      400,
+      expect.objectContaining({ "Content-Type": "application/json" }),
+    );
   });
 
   it("does not mutate options.cacheRoot", async () => {
     const opts = { root: "/project/dist", cacheRoot: "/project/dist/.cache" };
     const middleware = createLocalFilesApiMiddleware(opts, mockFilesDeps);
-    await middleware(makeReq("/api/v1/files/index?src=video.mp4"), makeRes(), vi.fn());
+    await middleware(
+      makeReq("/api/v1/files/index?src=video.mp4"),
+      makeRes(),
+      vi.fn(),
+    );
     expect(opts.cacheRoot).toBe("/project/dist/.cache");
   });
 });
@@ -236,7 +315,9 @@ describe("handleClearCache", () => {
     const res = makeRes();
     await handleClearCache(req, res, tmpDir);
 
-    expect(res.writeHead).toHaveBeenCalledWith(200, { "Content-Type": "text/plain" });
+    expect(res.writeHead).toHaveBeenCalledWith(200, {
+      "Content-Type": "text/plain",
+    });
     expect(res.end).toHaveBeenCalledWith("Cache cleared");
 
     await expect(access(cacheDir)).rejects.toThrow();
@@ -246,7 +327,9 @@ describe("handleClearCache", () => {
     const req = makeReq("/@ef-clear-cache", "DELETE");
     const res = makeRes();
     await handleClearCache(req, res, join(tmpDir, "nonexistent"));
-    expect(res.writeHead).toHaveBeenCalledWith(200, { "Content-Type": "text/plain" });
+    expect(res.writeHead).toHaveBeenCalledWith(200, {
+      "Content-Type": "text/plain",
+    });
   });
 
   it("does not read or write the cacheRoot argument - only uses it as a path base", async () => {

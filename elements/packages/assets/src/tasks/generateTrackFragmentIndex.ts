@@ -15,7 +15,9 @@ export const generateTrackFragmentIndexFromPath = async (
   if (startTimeOffsetMs !== undefined) {
     log(`Extracted start_time offset: ${startTimeOffsetMs}ms`);
   } else {
-    log("No format/stream timing offset found - will detect from composition time");
+    log(
+      "No format/stream timing offset found - will detect from composition time",
+    );
   }
 
   log(
@@ -32,9 +34,16 @@ export const generateTrackFragmentIndexFromPath = async (
       log(`Processing track ${trackId} (${stream.codec_type})`);
       const trackStream = probe.createTrackReadstream(streamIndex);
       const trackIdMapping = { 0: trackId };
-      return generateFragmentIndex(trackStream, startTimeOffsetMs, trackIdMapping);
+      return generateFragmentIndex(
+        trackStream,
+        startTimeOffsetMs,
+        trackIdMapping,
+      );
     })
-    .filter((task): task is Promise<Record<number, TrackFragmentIndex>> => task !== null);
+    .filter(
+      (task): task is Promise<Record<number, TrackFragmentIndex>> =>
+        task !== null,
+    );
 
   const scrubTask: Promise<Record<number, TrackFragmentIndex> | null> =
     probe.videoStreams.length > 0

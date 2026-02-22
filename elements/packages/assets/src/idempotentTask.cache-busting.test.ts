@@ -1,12 +1,15 @@
 import { describe, test, expect, beforeEach, afterEach } from "vitest";
 import { mkdir, rm, writeFile, readFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { idempotentTask } from "./idempotentTask.js";
 
 // The actual package version — any stale stamp we plant must differ from this
-import packageJson from "../package.json" with { type: "json" };
-const CURRENT_VERSION = packageJson.version;
+const CURRENT_VERSION = (
+  JSON.parse(readFileSync(join(__dirname, "../package.json"), "utf-8")) as {
+    version: string;
+  }
+).version;
 const STALE_VERSION = "0.0.0";
 
 describe("idempotentTask version-based cache busting", () => {
@@ -48,7 +51,10 @@ describe("idempotentTask version-based cache busting", () => {
     // Plant a fake computed output cache (simulates a previous run)
     const fakeComputedDir = join(cacheDir, "abc123deadbeef");
     await mkdir(fakeComputedDir, { recursive: true });
-    await writeFile(join(fakeComputedDir, "video.tracks.json"), '{"stale": true}');
+    await writeFile(
+      join(fakeComputedDir, "video.tracks.json"),
+      '{"stale": true}',
+    );
 
     // No .version file — should be treated as incompatible
     const task = makeTask();
@@ -64,7 +70,10 @@ describe("idempotentTask version-based cache busting", () => {
     // Plant fake computed output
     const fakeComputedDir = join(cacheDir, "abc123deadbeef");
     await mkdir(fakeComputedDir, { recursive: true });
-    await writeFile(join(fakeComputedDir, "video.tracks.json"), '{"stale": true}');
+    await writeFile(
+      join(fakeComputedDir, "video.tracks.json"),
+      '{"stale": true}',
+    );
 
     const task = makeTask();
     await task(testDir, sourceFile);
@@ -82,7 +91,10 @@ describe("idempotentTask version-based cache busting", () => {
     // Stale computed output
     const fakeComputedDir = join(cacheDir, "abc123deadbeef");
     await mkdir(fakeComputedDir, { recursive: true });
-    await writeFile(join(fakeComputedDir, "video.tracks.json"), '{"stale": true}');
+    await writeFile(
+      join(fakeComputedDir, "video.tracks.json"),
+      '{"stale": true}',
+    );
 
     const task = makeTask();
     await task(testDir, sourceFile);
@@ -99,7 +111,10 @@ describe("idempotentTask version-based cache busting", () => {
     // Fake computed output from a previous run at the same version
     const fakeComputedDir = join(cacheDir, "abc123deadbeef");
     await mkdir(fakeComputedDir, { recursive: true });
-    await writeFile(join(fakeComputedDir, "video.tracks.json"), '{"current": true}');
+    await writeFile(
+      join(fakeComputedDir, "video.tracks.json"),
+      '{"current": true}',
+    );
 
     const task = makeTask();
     await task(testDir, sourceFile);
