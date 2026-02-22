@@ -24,9 +24,11 @@ type Pool struct {
 	url       string
 	logger    zerolog.Logger
 
-	mu     sync.Mutex
-	conns  []*conn
-	nextID int
+	mu         sync.Mutex
+	conns      []*conn
+	nextID     int
+	pending    int // dials in flight, counted toward effective size
+	shrinkable int // completed dials to discard when they land (absorbs Shrink calls against pending)
 }
 
 func New(queueName, url string, logger zerolog.Logger) *Pool {
@@ -37,77 +39,94 @@ func New(queueName, url string, logger zerolog.Logger) *Pool {
 	}
 }
 
+// Size returns the number of established connections plus in-flight dials
+// (minus any dials reserved for discard by Shrink). This gives the reconciler
+// an accurate view of the effective pool size without waiting for dials.
 func (p *Pool) Size() int {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	return len(p.conns)
+	return len(p.conns) + p.pending - p.shrinkable
 }
 
-// Grow opens n new WebSocket connections concurrently.
-// Returns the number successfully opened.
-func (p *Pool) Grow(ctx context.Context, n int) int {
-	type result struct {
-		c   *conn
-		err error
-	}
-	results := make(chan result, n)
+// Grow starts n new WebSocket dials in background goroutines and returns
+// immediately. Each successful dial adds a connection to the pool; failures
+// are logged and decremented from the pending count.
+func (p *Pool) Grow(ctx context.Context, n int) {
+	p.mu.Lock()
+	p.pending += n
+	p.mu.Unlock()
 
 	for i := 0; i < n; i++ {
 		go func() {
 			c, err := p.dial(ctx)
-			results <- result{c, err}
+			p.mu.Lock()
+			p.pending--
+			if err == nil {
+				if p.shrinkable > 0 {
+					// A Shrink was called while this dial was in-flight; discard it.
+					p.shrinkable--
+					p.mu.Unlock()
+					c.cancel()
+					p.logger.Info().
+						Str("event", "poolShrunk").
+						Int("closed", 1).
+						Int("poolSize", p.Size()).
+						Msg("shrunk pool")
+					return
+				}
+				p.conns = append(p.conns, c)
+			}
+			opened := len(p.conns)
+			p.mu.Unlock()
+
+			if err != nil {
+				p.logger.Warn().Err(err).Msg("failed to dial worker")
+				return
+			}
+			p.logger.Info().
+				Str("event", "poolGrew").
+				Int("opened", 1).
+				Int("poolSize", opened).
+				Msg("grew pool")
 		}()
 	}
-
-	opened := 0
-	for i := 0; i < n; i++ {
-		r := <-results
-		if r.err != nil {
-			p.logger.Warn().Err(r.err).Msg("failed to dial worker")
-			continue
-		}
-		p.mu.Lock()
-		p.conns = append(p.conns, r.c)
-		p.mu.Unlock()
-		opened++
-	}
-
-	if opened > 0 {
-		p.logger.Info().
-			Str("event", "poolGrew").
-			Int("opened", opened).
-			Int("requested", n).
-			Int("poolSize", p.Size()).
-			Msg("grew pool")
-	}
-	return opened
 }
 
-// Shrink closes n connections (newest first — LIFO).
-// Returns the number actually closed.
+// Shrink closes n connections (newest first — LIFO), absorbing pending dials
+// as needed. Returns the number actually closed or reserved to close.
 func (p *Pool) Shrink(n int) int {
 	p.mu.Lock()
+
+	// Absorb from pending dials first (they will be discarded when they land).
+	fromPending := n
+	if fromPending > p.pending {
+		fromPending = p.pending
+	}
+	p.shrinkable += fromPending
+	n -= fromPending
+
+	// Close established connections for the remainder.
 	if n > len(p.conns) {
 		n = len(p.conns)
 	}
-	// Take from the end (newest)
 	toClose := make([]*conn, n)
 	copy(toClose, p.conns[len(p.conns)-n:])
 	p.conns = p.conns[:len(p.conns)-n]
+	total := fromPending + n
 	p.mu.Unlock()
 
 	for _, c := range toClose {
 		c.cancel()
 	}
 
-	if n > 0 {
+	if total > 0 {
 		p.logger.Info().
 			Str("event", "poolShrunk").
-			Int("closed", n).
+			Int("closed", total).
 			Int("poolSize", p.Size()).
 			Msg("shrunk pool")
 	}
-	return n
+	return total
 }
 
 // CloseAll closes every connection in the pool.
