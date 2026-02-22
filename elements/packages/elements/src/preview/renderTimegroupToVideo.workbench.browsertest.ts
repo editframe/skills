@@ -60,28 +60,30 @@ async function decodeFirstFrame(videoBuffer: Uint8Array): Promise<{
   const video = document.createElement("video");
   video.src = url;
   video.muted = true;
+  video.preload = "auto";
 
   await new Promise<void>((resolve, reject) => {
     video.onloadedmetadata = () => resolve();
     video.onerror = () => reject(new Error("Failed to load video"));
   });
 
-  video.currentTime = 0;
+  // Use requestVideoFrameCallback when available — it fires only when a
+  // decoded frame is actually ready to paint, which is the deterministic
+  // signal we need.  Fall back to onseeked + canplaythrough on older builds.
   await new Promise<void>((resolve) => {
-    video.onseeked = () => resolve();
+    if (typeof (video as any).requestVideoFrameCallback === "function") {
+      (video as any).requestVideoFrameCallback(() => resolve());
+      video.currentTime = 0;
+    } else {
+      video.onseeked = () => resolve();
+      video.currentTime = 0;
+    }
   });
 
-  // Wait for the frame data to be decoded and available
+  // Extra safety: ensure at least HAVE_CURRENT_DATA before drawing
   if (video.readyState < 2) {
     await new Promise<void>((resolve) => {
-      const check = () => {
-        if (video.readyState >= 2) {
-          resolve();
-        } else {
-          video.addEventListener("canplay", () => resolve(), { once: true });
-        }
-      };
-      check();
+      video.addEventListener("canplaythrough", () => resolve(), { once: true });
     });
   }
 

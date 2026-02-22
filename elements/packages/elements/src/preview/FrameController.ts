@@ -137,6 +137,17 @@ export function isFrameRenderable(
 }
 
 /**
+ * Per-phase timing data returned by FrameController.renderFrame().
+ * All values are in milliseconds.
+ */
+export interface RenderFrameTiming {
+  queryMs: number;
+  prepareMs: number;
+  renderMs: number;
+  animsMs: number;
+}
+
+/**
  * Options for FrameController.renderFrame()
  */
 export interface RenderFrameOptions {
@@ -163,12 +174,6 @@ export class FrameController {
   #abortController: AbortController | null = null;
   #renderInProgress = false;
   #pendingRenderTime: number | null = null;
-  #frameCount = 0;
-  #totalQueryMs = 0;
-  #totalPrepareMs = 0;
-  #totalRenderMs = 0;
-  #totalAnimsMs = 0;
-
   /**
    * Last successfully rendered time. Used for deduplication when multiple
    * callers (e.g., PlaybackController RAF loop and canvas render loop)
@@ -205,20 +210,20 @@ export class FrameController {
   async renderFrame(
     timeMs: number,
     options: RenderFrameOptions = {},
-  ): Promise<void> {
+  ): Promise<RenderFrameTiming | null> {
     const { waitForLitUpdate = true, onAnimationsUpdate } = options;
 
     // Deduplicate: skip if we just rendered this exact time.
     // This prevents double-rendering when multiple RAF loops (e.g., PlaybackController
     // and canvas render loop) both call renderFrame() for the same frame.
     if (timeMs === this.#lastRenderedTimeMs) {
-      return;
+      return null;
     }
 
     // If a render is in progress, queue this one
     if (this.#renderInProgress) {
       this.#pendingRenderTime = timeMs;
-      return;
+      return null;
     }
 
     // Cancel any previous render operation
@@ -272,21 +277,8 @@ export class FrameController {
       }
       const animsMs = performance.now() - tAnims;
 
-      this.#frameCount++;
-      this.#totalQueryMs += queryMs;
-      this.#totalPrepareMs += prepareMs;
-      this.#totalRenderMs += renderMs;
-      this.#totalAnimsMs += animsMs;
-
-      if (this.#frameCount % 60 === 0) {
-        this.#frameCount = 0;
-        this.#totalQueryMs = 0;
-        this.#totalPrepareMs = 0;
-        this.#totalRenderMs = 0;
-        this.#totalAnimsMs = 0;
-      }
-
       this.#lastRenderedTimeMs = timeMs;
+      return { queryMs, prepareMs, renderMs, animsMs };
     } finally {
       this.#renderInProgress = false;
 

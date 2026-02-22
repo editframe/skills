@@ -114,6 +114,24 @@ const INITIALIZER_WARN_THRESHOLD_MS = 100;
  */
 export type TimeMode = "fit" | "fixed" | "sequence" | "contain";
 
+/**
+ * Per-phase timing data returned by seekForRender().
+ * All values are in milliseconds.
+ */
+export interface SeekForRenderTiming {
+  updateComplete1Ms: number;
+  updateComplete2Ms: number;
+  updateComplete3Ms: number;
+  textSegmentsMs: number;
+  renderFrameMs: number;
+  renderFrameQueryMs: number;
+  renderFramePrepareMs: number;
+  renderFrameDrawMs: number;
+  renderFrameAnimsMs: number;
+  frameTasksMs: number;
+  totalMs: number;
+}
+
 // Cache for duration calculations to avoid O(n) recalculation on every access
 // Used by all modes (sequence, contain) to avoid repeated iteration through children
 let durationCache: WeakMap<EFTimegroup, number> = new WeakMap();
@@ -1045,7 +1063,11 @@ export class EFTimegroup
    * @param timeMs - Time in milliseconds to seek to
    * @internal
    */
-  async seekForRender(timeMs: number): Promise<void> {
+  async seekForRender(
+    timeMs: number,
+  ): Promise<SeekForRenderTiming> {
+    const t0 = performance.now();
+
     // Set time directly (skip seekTask overhead)
     const newTime = timeMs / 1000;
     this.#userTimeMs = timeMs;
@@ -1061,7 +1083,9 @@ export class EFTimegroup
     this.requestUpdate("currentTime");
 
     // First await: let Lit propagate time to children
+    const t1 = performance.now();
     await this.updateComplete;
+    const updateComplete1Ms = performance.now() - t1;
 
     // Collect all LitElement descendants (not just those with frameTask)
     // This ensures ef-text, ef-captions, and other reactive elements update
@@ -1069,18 +1093,23 @@ export class EFTimegroup
 
     // Wait for ALL LitElement descendants to complete their reactive updates
     // This is critical for elements like ef-text and ef-captions that don't have frameTask
+    const t2 = performance.now();
     await Promise.all(allLitElements.map((el) => el.updateComplete));
+    const updateComplete2Ms = performance.now() - t2;
 
     // OwnCurrentTimeController defers child updates via queueMicrotask.
     // Those microtasks have fired by this point (between await boundaries).
     // Await a second pass of updateComplete to catch those deferred updates.
+    const t3 = performance.now();
     await Promise.all(allLitElements.map((el) => el.updateComplete));
+    const updateComplete3Ms = performance.now() - t3;
 
     // Wait for ef-text elements to have their segments ready
     // ef-text creates segments asynchronously via requestAnimationFrame
     const textElements = allLitElements.filter(
       (el) => el.tagName === "EF-TEXT",
     );
+    const t4 = performance.now();
     if (textElements.length > 0) {
       await Promise.all(
         textElements.map((el) => {
@@ -1099,23 +1128,47 @@ export class EFTimegroup
       // (which costs 16-40ms and is throttled in hidden tabs).
       void this.offsetHeight;
     }
+    const textSegmentsMs = performance.now() - t4;
 
     // Use FrameController for centralized element coordination
     // This replaces the old distributed frameTask system
     // Animation updates are handled via the onAnimationsUpdate callback
-    await this.#frameController.renderFrame(timeMs, {
-      waitForLitUpdate: false,
-      onAnimationsUpdate: (root) => {
-        updateAnimations(root as typeof this);
-        // CRITICAL: Force style recalculation after updateAnimations sets animation.currentTime
-        // Without this, getComputedStyle may return stale values (e.g., opacity: 0 instead of 1)
-        // Accessing offsetWidth triggers synchronous style recalc
-        void (root as HTMLElement).offsetWidth;
+    const t5 = performance.now();
+    const frameControllerTiming = await this.#frameController.renderFrame(
+      timeMs,
+      {
+        waitForLitUpdate: false,
+        onAnimationsUpdate: (root) => {
+          updateAnimations(root as typeof this);
+          // CRITICAL: Force style recalculation after updateAnimations sets animation.currentTime
+          // Without this, getComputedStyle may return stale values (e.g., opacity: 0 instead of 1)
+          // Accessing offsetWidth triggers synchronous style recalc
+          void (root as HTMLElement).offsetWidth;
+        },
       },
-    });
+    );
+    const renderFrameMs = performance.now() - t5;
 
     // Execute custom frame tasks registered via addFrameTask()
+    const t6 = performance.now();
     await this.#executeCustomFrameTasks();
+    const frameTasksMs = performance.now() - t6;
+
+    const totalMs = performance.now() - t0;
+
+    return {
+      updateComplete1Ms,
+      updateComplete2Ms,
+      updateComplete3Ms,
+      textSegmentsMs,
+      renderFrameMs,
+      renderFrameQueryMs: frameControllerTiming?.queryMs ?? 0,
+      renderFramePrepareMs: frameControllerTiming?.prepareMs ?? 0,
+      renderFrameDrawMs: frameControllerTiming?.renderMs ?? 0,
+      renderFrameAnimsMs: frameControllerTiming?.animsMs ?? 0,
+      frameTasksMs,
+      totalMs,
+    };
   }
 
   /**

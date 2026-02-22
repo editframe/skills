@@ -1,6 +1,9 @@
 import type { VideoRenderOptions } from "@editframe/assets";
 
-import { shallowGetTimegroups } from "./elements/EFTimegroup.js";
+import {
+  shallowGetTimegroups,
+  type SeekForRenderTiming,
+} from "./elements/EFTimegroup.js";
 import { setupTemporalHierarchy } from "./elements/setupTemporalHierarchy.js";
 
 import { setupBrowserTracing } from "./otel/setupBrowserTracing.js";
@@ -104,6 +107,22 @@ export class EFFramegen {
   // Frame sequence coordination
   public frameTasksInProgress = false;
   public currentFrameNumber = 0;
+
+  // Per-phase timing accumulators (reset every 30 frames)
+  private timingFrameCount = 0;
+  private timingAccum: SeekForRenderTiming = {
+    updateComplete1Ms: 0,
+    updateComplete2Ms: 0,
+    updateComplete3Ms: 0,
+    textSegmentsMs: 0,
+    renderFrameMs: 0,
+    renderFrameQueryMs: 0,
+    renderFramePrepareMs: 0,
+    renderFrameDrawMs: 0,
+    renderFrameAnimsMs: 0,
+    frameTasksMs: 0,
+    totalMs: 0,
+  };
 
   trace(...args: any[]) {
     console.trace("[EF_FRAMEGEN]", ...args);
@@ -389,7 +408,32 @@ export class EFFramegen {
     const frameTimeMs = Number(Number(frameTime).toFixed(5));
 
     // Use seekForRender for proper time seeking during rendering
-    await firstGroup.seekForRender(frameTimeMs);
+    const timing = await firstGroup.seekForRender(frameTimeMs);
+    this.timingFrameCount++;
+    for (const key of Object.keys(this.timingAccum) as (keyof SeekForRenderTiming)[]) {
+      this.timingAccum[key] += timing[key];
+    }
+    if (this.timingFrameCount >= 30) {
+      const n = this.timingFrameCount;
+      console.log(
+        `[EF_FRAMEGEN] seekForRender phase avg (${n} frames):`,
+        `total=${(this.timingAccum.totalMs / n).toFixed(1)}ms`,
+        `uc1=${( this.timingAccum.updateComplete1Ms / n).toFixed(1)}ms`,
+        `uc2=${( this.timingAccum.updateComplete2Ms / n).toFixed(1)}ms`,
+        `uc3=${( this.timingAccum.updateComplete3Ms / n).toFixed(1)}ms`,
+        `text=${( this.timingAccum.textSegmentsMs / n).toFixed(1)}ms`,
+        `renderFrame=${( this.timingAccum.renderFrameMs / n).toFixed(1)}ms`,
+        `rf.query=${( this.timingAccum.renderFrameQueryMs / n).toFixed(1)}ms`,
+        `rf.prepare=${( this.timingAccum.renderFramePrepareMs / n).toFixed(1)}ms`,
+        `rf.draw=${( this.timingAccum.renderFrameDrawMs / n).toFixed(1)}ms`,
+        `rf.anims=${( this.timingAccum.renderFrameAnimsMs / n).toFixed(1)}ms`,
+        `frameTasks=${( this.timingAccum.frameTasksMs / n).toFixed(1)}ms`,
+      );
+      this.timingFrameCount = 0;
+      for (const key of Object.keys(this.timingAccum) as (keyof SeekForRenderTiming)[]) {
+        this.timingAccum[key] = 0;
+      }
+    }
     if (this.showFrameBox) {
       this.frameBox.innerHTML = `
         <div>🖼️   Frame: ${frameNumber}</div>
