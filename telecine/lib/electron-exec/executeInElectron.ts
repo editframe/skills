@@ -146,6 +146,7 @@ const spawnElectronBootloader = async (script: string) => {
               OTEL_EXPORTER_OTLP_ENDPOINT:
                 process.env.OTEL_EXPORTER_OTLP_ENDPOINT ||
                 "http://tracing:4318",
+              OTEL_SERVICE_NAME: "telecine-electron",
               OTEL_TRACE_CONTEXT: JSON.stringify(traceContext),
               ELECTRON_SPAWN_TIME: String(spawnTime),
               // Ensure FFmpeg libraries are found by native module
