@@ -28,13 +28,6 @@ export const global: DataShape = {
   getRecord: (data: any) => data?.record,
 };
 
-export type RowTypeOrgScoped<Q> =
-  Q extends ProgressiveQueryDescriptor<infer Data, any>
-    ? Data extends { org: { rows: (infer R)[] } | null }
-      ? NonNullable<R>
-      : never
-    : never;
-
 export type RowTypeGlobal<Q> =
   Q extends ProgressiveQueryDescriptor<infer Data, any>
     ? Data extends { rows: (infer R)[] }

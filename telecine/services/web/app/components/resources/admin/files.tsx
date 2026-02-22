@@ -22,11 +22,6 @@ const IndexQuery = progressiveQuery(
       $offset: Int!
       $where_clause: video2_files_bool_exp
     ) {
-      page_info: video2_files_aggregate(where: $where_clause) {
-        aggregate {
-          count
-        }
-      }
       rows: video2_files(
         where: $where_clause
         order_by: { created_at: desc }
@@ -52,6 +47,19 @@ const IndexQuery = progressiveQuery(
         user {
           first_name
           last_name
+        }
+      }
+    }
+  `),
+  graphql(`
+    query AdminFilesCount(
+      $limit: Int!
+      $offset: Int!
+      $where_clause: video2_files_bool_exp
+    ) {
+      page_info: video2_files_aggregate(where: $where_clause) {
+        aggregate {
+          count
         }
       }
     }
