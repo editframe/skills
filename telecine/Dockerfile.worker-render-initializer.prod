@@ -40,6 +40,7 @@ WORKDIR /app/services/worker-render-initializer
 RUN npx vite build
 
 WORKDIR /app
+RUN npx vite build --config /app/lib/electron-exec/vite.electron-rpc.config.ts
 
 RUN rm -rf node_modules && npm install --only=production
 
