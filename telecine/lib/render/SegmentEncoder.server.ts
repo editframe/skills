@@ -528,16 +528,20 @@ export class SegmentEncoder extends EventEmitter {
     const frameStartTime = performance.now();
 
     // Draw the first frame once to bypass rendering a blank frame.
-    // this.logger.info("Drawing first frame");
     await this.engine.beginFrame(1, false);
     await this.engine.captureFrame(
       1,
       this.renderOptions.encoderOptions.video.framerate,
     );
-    // this.logger.info("First frame drawn");
 
     const frameTimes: number[] = [];
     let longestFrameTime = 0;
+
+    // Start frame 0's beginFrame before the loop so it can overlap with other work
+    let pendingBeginFrame: Promise<Buffer | ArrayBuffer> = this.engine.beginFrame(
+      0,
+      this.totalFrameCount === 1,
+    );
 
     for (
       let frameNumber = 0;
@@ -560,14 +564,12 @@ export class SegmentEncoder extends EventEmitter {
         const frameStart = performance.now();
         this.abortSignal.throwIfAborted();
 
-        this.logger.info(
+        this.logger.trace(
           { frameNumber, totalFrameCount: this.totalFrameCount, frameStart },
-          "Calling engine.beginFrame",
+          "Awaiting beginFrame",
         );
-        const audioSamples = await this.engine.beginFrame(
-          frameNumber,
-          frameNumber === this.totalFrameCount - 1,
-        );
+        const audioSamples = await pendingBeginFrame;
+
         this.logger.trace(
           { frameNumber, totalFrameCount: this.totalFrameCount, frameStart },
           "Calling engine.captureFrame",
@@ -595,6 +597,16 @@ export class SegmentEncoder extends EventEmitter {
           imageBufferBytes: imageBuffer.byteLength,
           audioSamplesBytes: audioSamples?.byteLength ?? 0,
         });
+
+        // captureFrame(N) is complete — safe to advance DOM to frame N+1 now.
+        // Start beginFrame(N+1) concurrently with writing frame N to ffmpeg.
+        const isLastFrame = frameNumber === this.totalFrameCount - 1;
+        if (!isLastFrame) {
+          pendingBeginFrame = this.engine.beginFrame(
+            frameNumber + 1,
+            frameNumber + 1 === this.totalFrameCount - 1,
+          );
+        }
 
         const writePromise = promiseWithResolvers<void>();
         if (videoEncoder.process.stdin.destroyed) {

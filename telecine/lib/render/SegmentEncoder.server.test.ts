@@ -1040,4 +1040,125 @@ describe("SegmentEncoder", () => {
       expect(result.directive).toContain("us"); // microsecond units
     });
   });
+
+  describe("Frame Pipeline Overlap", () => {
+    test("captureFrame(N) completes before beginFrame(N+1) starts", async () => {
+      // Safety invariant: beginFrame(N+1) must not start until captureFrame(N) has completed,
+      // to avoid DOM state mutation that would break the frame verification strip.
+      const captureEndedForFrame: boolean[] = [];
+      const beginFrameStartedWithPriorCaptureDone: boolean[] = [];
+
+      const engine = new TestFramegenEngine(480, 270);
+
+      const originalCaptureFrame = engine.captureFrame.bind(engine);
+      engine.captureFrame = vi.fn().mockImplementation(async (frameNumber: number, fps: number) => {
+        const result = await originalCaptureFrame(frameNumber, fps);
+        captureEndedForFrame[frameNumber] = true;
+        return result;
+      });
+
+      const originalBeginFrame = engine.beginFrame.bind(engine);
+      engine.beginFrame = vi.fn().mockImplementation(async (frameNumber: number, isLast: boolean) => {
+        if (frameNumber > 0) {
+          beginFrameStartedWithPriorCaptureDone[frameNumber] = captureEndedForFrame[frameNumber - 1] === true;
+        }
+        return originalBeginFrame(frameNumber, isLast);
+      });
+
+      const encoder = createSegmentEncoder({
+        engine,
+        renderOptions: {
+          durationMs: 200,
+          encoderOptions: {
+            ...createTestRenderOptions().encoderOptions,
+            toMs: 200,
+            video: { width: 480, height: 270, framerate: 15, codec: "avc1", bitrate: 250000 },
+          },
+        },
+      });
+
+      await encoder.generateStandaloneSegment();
+
+      expect(encoder.totalFrameCount).toBeGreaterThanOrEqual(3);
+
+      // For every frame N+1, captureFrame(N) must have completed before beginFrame(N+1) starts
+      for (let n = 1; n < encoder.totalFrameCount; n++) {
+        expect(beginFrameStartedWithPriorCaptureDone[n]).toBe(true);
+      }
+    }, 10000);
+
+    test("write(N) is in flight while beginFrame(N+1) executes", async () => {
+      // Performance invariant: write(N) and beginFrame(N+1) run concurrently.
+      // In serial mode: captureFrame(N) → write(N) fully drains → beginFrame(N+1)
+      // In pipelined mode: captureFrame(N) → Promise.all([write(N), beginFrame(N+1)])
+      //
+      // We verify pipelined behavior by making beginFrame(1) slow (setImmediate delay)
+      // and checking that write(0) has NOT yet completed (callback not fired) when
+      // beginFrame(1) starts. We simulate a slow write by making the write callback
+      // deferred via setImmediate too — and check ordering.
+      //
+      // In serial mode: write(0) fires callback BEFORE beginFrame(1) starts.
+      //   → write0Complete=true when beginFrame(1) starts.
+      // In pipelined mode: write(0) and beginFrame(1) run in parallel.
+      //   → write0Complete=false when beginFrame(1) starts (if write is also deferred).
+
+      let write0Complete = false;
+      let write0CompleteWhenBeginFrame1Started = true; // assume serial (guilty) until proven
+
+      const engine = new TestFramegenEngine(480, 270);
+
+      // Defer write(0)'s callback via setImmediate to simulate async drain
+      const originalBuildVideoEncoder = SegmentEncoder.prototype.buildVideoEncoder;
+      SegmentEncoder.prototype.buildVideoEncoder = function(paths: any) {
+        const encoder = originalBuildVideoEncoder.call(this, paths);
+        const originalWrite = encoder.process.stdin.write.bind(encoder.process.stdin);
+        let writeCount = 0;
+        (encoder.process.stdin as any).write = function(chunk: any, encoding: any, callback: any) {
+          const idx = writeCount++;
+          if (idx === 0 && typeof callback === 'function') {
+            const cb = callback;
+            return (originalWrite as any)(chunk, encoding, (err: any) => {
+              // Defer the callback to ensure async gap for pipelining to be observable
+              setImmediate(() => {
+                write0Complete = true;
+                cb(err);
+              });
+            });
+          }
+          return (originalWrite as any)(chunk, encoding, callback);
+        };
+        return encoder;
+      };
+
+      const originalBeginFrame = engine.beginFrame.bind(engine);
+      engine.beginFrame = vi.fn().mockImplementation(async (frameNumber: number, isLast: boolean) => {
+        if (frameNumber === 1) {
+          write0CompleteWhenBeginFrame1Started = write0Complete;
+        }
+        return originalBeginFrame(frameNumber, isLast);
+      });
+
+      const encoder = createSegmentEncoder({
+        engine,
+        renderOptions: {
+          durationMs: 200,
+          encoderOptions: {
+            ...createTestRenderOptions().encoderOptions,
+            toMs: 200,
+            video: { width: 480, height: 270, framerate: 15, codec: "avc1", bitrate: 250000 },
+          },
+        },
+      });
+
+      try {
+        await encoder.generateStandaloneSegment();
+      } finally {
+        SegmentEncoder.prototype.buildVideoEncoder = originalBuildVideoEncoder;
+      }
+
+      // In pipelined execution: beginFrame(1) starts before the deferred write(0) callback fires,
+      // so write0Complete is false when beginFrame(1) starts.
+      expect(write0CompleteWhenBeginFrame1Started).toBe(false);
+    }, 10000);
+  });
 });
