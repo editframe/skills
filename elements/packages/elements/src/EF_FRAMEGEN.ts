@@ -410,7 +410,9 @@ export class EFFramegen {
     // Use seekForRender for proper time seeking during rendering
     const timing = await firstGroup.seekForRender(frameTimeMs);
     this.timingFrameCount++;
-    for (const key of Object.keys(this.timingAccum) as (keyof SeekForRenderTiming)[]) {
+    for (const key of Object.keys(
+      this.timingAccum,
+    ) as (keyof SeekForRenderTiming)[]) {
       this.timingAccum[key] += timing[key];
     }
     if (this.timingFrameCount >= 30) {
@@ -418,19 +420,21 @@ export class EFFramegen {
       console.log(
         `[EF_FRAMEGEN] seekForRender phase avg (${n} frames):`,
         `total=${(this.timingAccum.totalMs / n).toFixed(1)}ms`,
-        `uc1=${( this.timingAccum.updateComplete1Ms / n).toFixed(1)}ms`,
-        `uc2=${( this.timingAccum.updateComplete2Ms / n).toFixed(1)}ms`,
-        `uc3=${( this.timingAccum.updateComplete3Ms / n).toFixed(1)}ms`,
-        `text=${( this.timingAccum.textSegmentsMs / n).toFixed(1)}ms`,
-        `renderFrame=${( this.timingAccum.renderFrameMs / n).toFixed(1)}ms`,
-        `rf.query=${( this.timingAccum.renderFrameQueryMs / n).toFixed(1)}ms`,
-        `rf.prepare=${( this.timingAccum.renderFramePrepareMs / n).toFixed(1)}ms`,
-        `rf.draw=${( this.timingAccum.renderFrameDrawMs / n).toFixed(1)}ms`,
-        `rf.anims=${( this.timingAccum.renderFrameAnimsMs / n).toFixed(1)}ms`,
-        `frameTasks=${( this.timingAccum.frameTasksMs / n).toFixed(1)}ms`,
+        `uc1=${(this.timingAccum.updateComplete1Ms / n).toFixed(1)}ms`,
+        `uc2=${(this.timingAccum.updateComplete2Ms / n).toFixed(1)}ms`,
+        `uc3=${(this.timingAccum.updateComplete3Ms / n).toFixed(1)}ms`,
+        `text=${(this.timingAccum.textSegmentsMs / n).toFixed(1)}ms`,
+        `renderFrame=${(this.timingAccum.renderFrameMs / n).toFixed(1)}ms`,
+        `rf.query=${(this.timingAccum.renderFrameQueryMs / n).toFixed(1)}ms`,
+        `rf.prepare=${(this.timingAccum.renderFramePrepareMs / n).toFixed(1)}ms`,
+        `rf.draw=${(this.timingAccum.renderFrameDrawMs / n).toFixed(1)}ms`,
+        `rf.anims=${(this.timingAccum.renderFrameAnimsMs / n).toFixed(1)}ms`,
+        `frameTasks=${(this.timingAccum.frameTasksMs / n).toFixed(1)}ms`,
       );
       this.timingFrameCount = 0;
-      for (const key of Object.keys(this.timingAccum) as (keyof SeekForRenderTiming)[]) {
+      for (const key of Object.keys(
+        this.timingAccum,
+      ) as (keyof SeekForRenderTiming)[]) {
         this.timingAccum[key] = 0;
       }
     }

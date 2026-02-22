@@ -1063,9 +1063,7 @@ export class EFTimegroup
    * @param timeMs - Time in milliseconds to seek to
    * @internal
    */
-  async seekForRender(
-    timeMs: number,
-  ): Promise<SeekForRenderTiming> {
+  async seekForRender(timeMs: number): Promise<SeekForRenderTiming> {
     const t0 = performance.now();
 
     // Set time directly (skip seekTask overhead)
