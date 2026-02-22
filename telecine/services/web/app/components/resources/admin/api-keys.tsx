@@ -11,11 +11,6 @@ const IndexQuery = progressiveQuery(
   "ef-admin",
   graphql(`
     query APIKeys($limit: Int!, $offset: Int!) {
-      page_info: identity_api_keys_aggregate {
-        aggregate {
-          count
-        }
-      }
       rows: identity_api_keys(order_by: {created_at: desc}, limit: $limit, offset: $offset) {
         id
         user_id
@@ -34,6 +29,15 @@ const IndexQuery = progressiveQuery(
         org {
           id
           display_name
+        }
+      }
+    }
+  `),
+  graphql(`
+    query APIKeysCount($limit: Int!, $offset: Int!) {
+      page_info: identity_api_keys_aggregate {
+        aggregate {
+          count
         }
       }
     }

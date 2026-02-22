@@ -19,11 +19,6 @@ const IndexQuery = progressiveQuery(
   "ef-admin",
   graphql(`
     query AdminOrgs($limit: Int!, $offset: Int!, $where_clause: orgs_bool_exp, $start_date: timestamptz!, $end_date: timestamptz!) {
-      page_info: orgs_aggregate(where: $where_clause) {
-        aggregate {
-          count
-        }
-      }
       rows: orgs(
         where: $where_clause,
         order_by: {created_at: desc},
@@ -54,6 +49,15 @@ const IndexQuery = progressiveQuery(
               duration_ms
             }
           }
+        }
+      }
+    }
+  `),
+  graphql(`
+    query AdminOrgsCount($limit: Int!, $offset: Int!, $where_clause: orgs_bool_exp, $start_date: timestamptz!, $end_date: timestamptz!) {
+      page_info: orgs_aggregate(where: $where_clause) {
+        aggregate {
+          count
         }
       }
     }
