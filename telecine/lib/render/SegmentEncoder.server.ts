@@ -537,7 +537,16 @@ export class SegmentEncoder extends EventEmitter {
     // this.logger.info("First frame drawn");
 
     const frameTimes: number[] = [];
+    const beginFrameTimes: number[] = [];
+    const captureFrameTimes: number[] = [];
+    const writeFrameTimes: number[] = [];
     let longestFrameTime = 0;
+
+    // Prime the pipeline: begin frame 0 before the loop starts.
+    let pendingBeginFrame: Promise<Buffer | ArrayBuffer> = this.engine.beginFrame(
+      0,
+      this.totalFrameCount === 1,
+    );
 
     for (
       let frameNumber = 0;
@@ -560,23 +569,28 @@ export class SegmentEncoder extends EventEmitter {
         const frameStart = performance.now();
         this.abortSignal.throwIfAborted();
 
-        this.logger.info(
-          { frameNumber, totalFrameCount: this.totalFrameCount, frameStart },
-          "Calling engine.beginFrame",
-        );
-        const audioSamples = await this.engine.beginFrame(
-          frameNumber,
-          frameNumber === this.totalFrameCount - 1,
-        );
-        this.logger.trace(
-          { frameNumber, totalFrameCount: this.totalFrameCount, frameStart },
-          "Calling engine.captureFrame",
-        );
+        const beginFrameStart = performance.now();
+        const audioSamples = await pendingBeginFrame;
+        const beginFrameMs = performance.now() - beginFrameStart;
+        beginFrameTimes.push(beginFrameMs);
+
+        const isNextLast = frameNumber + 1 === this.totalFrameCount - 1;
+        const captureFrameStart = performance.now();
+
+        // Pipeline: kick off beginFrame for the next frame concurrently with captureFrame.
+        if (frameNumber + 1 < this.totalFrameCount) {
+          pendingBeginFrame = this.engine.beginFrame(
+            frameNumber + 1,
+            isNextLast,
+          );
+        }
 
         const imageBuffer = await this.engine.captureFrame(
           frameNumber,
           this.renderOptions.encoderOptions.video.framerate,
         );
+        const captureFrameMs = performance.now() - captureFrameStart;
+        captureFrameTimes.push(captureFrameMs);
 
         if (imageBuffer.byteLength === 0) {
           this.logger.error(
@@ -596,6 +610,7 @@ export class SegmentEncoder extends EventEmitter {
           audioSamplesBytes: audioSamples?.byteLength ?? 0,
         });
 
+        const writeStart = performance.now();
         const writePromise = promiseWithResolvers<void>();
         if (videoEncoder.process.stdin.destroyed) {
           this.logger.error("Video encoder stdin is destroyed");
@@ -619,6 +634,8 @@ export class SegmentEncoder extends EventEmitter {
         // This MUST come after the optional drain event, otherwise we're waiting on a callback
         // that can only occur after buffered writes have been flushed.
         await writePromise.promise;
+        const writeMs = performance.now() - writeStart;
+        writeFrameTimes.push(writeMs);
 
         const frameTime = performance.now() - frameStart;
         frameTimes.push(frameTime);
@@ -627,16 +644,6 @@ export class SegmentEncoder extends EventEmitter {
         span.setAttributes({
           frameTimeMs: Number(frameTime.toFixed(2)),
         });
-
-        this.logger.trace(
-          {
-            frameNumber,
-            totalFrameCount: this.totalFrameCount,
-            frameTime,
-            audioSamplesBytes: audioSamples?.byteLength,
-          },
-          "Frame ended",
-        );
 
         // Emit frame rendered event
         this.emit("frameRendered", {
@@ -654,6 +661,20 @@ export class SegmentEncoder extends EventEmitter {
         }
       });
     }
+
+    const avg = (arr: number[]) =>
+      arr.length === 0 ? 0 : arr.reduce((a, b) => a + b, 0) / arr.length;
+
+    this.logger.info(
+      {
+        event: "framePhaseBreakdown",
+        avgBeginFrameMs: Number(avg(beginFrameTimes).toFixed(2)),
+        avgCaptureFrameMs: Number(avg(captureFrameTimes).toFixed(2)),
+        avgWriteMs: Number(avg(writeFrameTimes).toFixed(2)),
+        frameCount: frameTimes.length,
+      },
+      "Frame phase breakdown",
+    );
 
     this.logger.trace("Awaiting encoders exit");
 
