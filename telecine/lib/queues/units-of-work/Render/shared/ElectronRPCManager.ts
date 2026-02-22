@@ -44,6 +44,17 @@ export class ElectronRPCManager {
     return await ElectronRPCManager.rpcPromise;
   }
 
+  static async prewarm(): Promise<void> {
+    const startMs = performance.now();
+    try {
+      await ElectronRPCManager.getRPCClient();
+      const electronStartMs = Math.round(performance.now() - startMs);
+      logger.info({ event: "electronPrewarm", electronStartMs }, "Electron RPC prewarmed");
+    } catch (error) {
+      logger.warn({ event: "electronPrewarmFailed", error }, "Electron RPC prewarm failed, will retry on first job");
+    }
+  }
+
   static async closeRPCClient(): Promise<void> {
     if (ElectronRPCManager.rpcClient) {
       logger.debug("Closing Electron RPC client");

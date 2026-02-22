@@ -28,6 +28,45 @@ describe("ElectronRPCManager observability", () => {
     (ElectronRPCManager as any).rpcPromise = undefined;
   });
 
+  describe("prewarm", () => {
+    test("calls getRPCClient and logs electronPrewarm with electronStartMs on success", async () => {
+      const fakeClient = { rpc: { call: vi.fn() } };
+      mockCreateElectronRPC().mockResolvedValue(fakeClient);
+
+      await ElectronRPCManager.prewarm();
+
+      expect(mockCreateElectronRPC()).toHaveBeenCalledOnce();
+      const prewarmLogs = mockLogger().info.mock.calls.filter(
+        ([obj]: [any]) => typeof obj === "object" && obj?.event === "electronPrewarm",
+      );
+      expect(prewarmLogs).toHaveLength(1);
+      expect(prewarmLogs[0]![0]).toMatchObject({
+        event: "electronPrewarm",
+        electronStartMs: expect.any(Number),
+      });
+    });
+
+    test("does not throw if getRPCClient fails, logs electronPrewarmFailed", async () => {
+      mockCreateElectronRPC().mockRejectedValue(new Error("Electron failed"));
+
+      await expect(ElectronRPCManager.prewarm()).resolves.toBeUndefined();
+
+      const failedLogs = mockLogger().warn.mock.calls.filter(
+        ([obj]: [any]) => typeof obj === "object" && obj?.event === "electronPrewarmFailed",
+      );
+      expect(failedLogs).toHaveLength(1);
+    });
+
+    test("isReady() returns true after successful prewarm", async () => {
+      const fakeClient = { rpc: { call: vi.fn() } };
+      mockCreateElectronRPC().mockResolvedValue(fakeClient);
+
+      expect(ElectronRPCManager.isReady()).toBe(false);
+      await ElectronRPCManager.prewarm();
+      expect(ElectronRPCManager.isReady()).toBe(true);
+    });
+  });
+
   test("logs electronColdStart with durationMs on first getRPCClient call", async () => {
     const fakeClient = { rpc: { call: vi.fn() } };
     mockCreateElectronRPC().mockResolvedValue(fakeClient);

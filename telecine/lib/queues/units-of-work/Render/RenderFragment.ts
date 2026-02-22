@@ -15,6 +15,9 @@ import { ProgressTracker } from "@/progress-tracking/ProgressTracker";
 export const RenderFragmentWorker = new Worker({
   storage: valkey,
   queue: RenderFragmentQueue,
+  warmUp: async () => {
+    await ElectronRPCManager.prewarm();
+  },
   close: async () => {
     await ElectronRPCManager.closeRPCClient();
   },
