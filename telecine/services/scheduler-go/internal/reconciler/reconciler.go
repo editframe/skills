@@ -143,26 +143,42 @@ func (r *Reconciler) reconcileQueue(ctx context.Context, q queue.Queue, stats qu
 
 	if delta > 0 {
 		r.logger.Info().
+			Str("event", "scalingUp").
 			Str("queue", q.Name).
 			Int("delta", delta).
-			Int("current", currentSize).
-			Int("target", myClaim).
+			Int("currentConnections", currentSize).
+			Int("targetConnections", myClaim).
 			Int("rawTarget", rawTarget).
 			Float64("smoothed", state.smoothedTarget).
-			Int("queued", stats.Queued).
+			Int("queueDepth", stats.Queued).
 			Int("claimed", stats.Claimed).
+			Int("stalled", stats.Stalled).
 			Msg("scaling up")
 		p.Grow(ctx, delta)
 	} else if delta < 0 {
 		r.logger.Info().
+			Str("event", "scalingDown").
 			Str("queue", q.Name).
 			Int("delta", delta).
-			Int("current", currentSize).
-			Int("target", myClaim).
+			Int("currentConnections", currentSize).
+			Int("targetConnections", myClaim).
 			Int("rawTarget", rawTarget).
 			Float64("smoothed", state.smoothedTarget).
+			Int("queueDepth", stats.Queued).
+			Int("claimed", stats.Claimed).
+			Int("stalled", stats.Stalled).
 			Msg("scaling down")
 		p.Shrink(-delta)
+	} else {
+		r.logger.Debug().
+			Str("event", "scalingSteady").
+			Str("queue", q.Name).
+			Int("currentConnections", currentSize).
+			Int("targetConnections", myClaim).
+			Int("rawTarget", rawTarget).
+			Float64("smoothed", state.smoothedTarget).
+			Int("queueDepth", stats.Queued).
+			Msg("pool at target")
 	}
 }
 

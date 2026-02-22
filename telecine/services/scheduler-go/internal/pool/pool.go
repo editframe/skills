@@ -73,7 +73,12 @@ func (p *Pool) Grow(ctx context.Context, n int) int {
 	}
 
 	if opened > 0 {
-		p.logger.Info().Int("opened", opened).Int("requested", n).Int("poolSize", p.Size()).Msg("grew pool")
+		p.logger.Info().
+			Str("event", "poolGrew").
+			Int("opened", opened).
+			Int("requested", n).
+			Int("poolSize", p.Size()).
+			Msg("grew pool")
 	}
 	return opened
 }
@@ -96,7 +101,11 @@ func (p *Pool) Shrink(n int) int {
 	}
 
 	if n > 0 {
-		p.logger.Info().Int("closed", n).Int("poolSize", p.Size()).Msg("shrunk pool")
+		p.logger.Info().
+			Str("event", "poolShrunk").
+			Int("closed", n).
+			Int("poolSize", p.Size()).
+			Msg("shrunk pool")
 	}
 	return n
 }
@@ -149,7 +158,11 @@ func (p *Pool) dial(ctx context.Context) (*conn, error) {
 		id:     id,
 	}
 
-	p.logger.Debug().Int("connID", id).Msg("connected")
+	p.logger.Info().
+		Str("event", "workerConnected").
+		Int("connID", id).
+		Str("url", wsURL).
+		Msg("worker connected")
 
 	// Read goroutine: blocks until the worker closes or errors.
 	// When it returns, the connection is dead — remove it from pool.
@@ -162,7 +175,11 @@ func (p *Pool) readLoop(ctx context.Context, c *conn) {
 	defer func() {
 		c.ws.CloseNow()
 		p.remove(c)
-		p.logger.Debug().Int("connID", c.id).Msg("connection closed")
+		p.logger.Info().
+			Str("event", "workerDisconnected").
+			Int("connID", c.id).
+			Int("poolSize", p.Size()).
+			Msg("worker disconnected")
 	}()
 
 	for {

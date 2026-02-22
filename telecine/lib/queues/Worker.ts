@@ -224,6 +224,11 @@ export class Worker<Payload = unknown> {
 
   workLoop() {
     const loopId = randomUUID();
+    let idlePollCount = 0;
+    let idleStartMs: number | null = null;
+    const IDLE_LOG_INTERVAL_MS = 60_000;
+    let lastIdleLogMs: number | null = null;
+
     return abortableLoopWithBackoff({
       spanName: "worker.workLoop",
       backoffMs: 1000,
@@ -234,9 +239,56 @@ export class Worker<Payload = unknown> {
           queue: this.queue.name,
         });
         if (!job) {
-          this.logger.debug("No job to claim");
+          if (idleStartMs === null) {
+            idleStartMs = Date.now();
+          }
+          idlePollCount++;
+          const now = Date.now();
+          const idleDurationMs = now - idleStartMs;
+          if (idleDurationMs >= IDLE_LOG_INTERVAL_MS && (lastIdleLogMs === null || now - lastIdleLogMs >= IDLE_LOG_INTERVAL_MS)) {
+            lastIdleLogMs = now;
+            this.logger.info(
+              {
+                queue: this.queue.name,
+                idleDurationMs,
+                pollCount: idlePollCount,
+                event: "workerIdle",
+              },
+              "Worker idle",
+            );
+          }
           return RequestSleep;
         }
+        // Reset idle tracking when a job is claimed.
+        if (idleStartMs !== null) {
+          this.logger.info(
+            {
+              queue: this.queue.name,
+              idleDurationMs: Date.now() - idleStartMs,
+              pollCount: idlePollCount,
+              event: "workerIdleEnded",
+            },
+            "Worker idle ended, job claimed",
+          );
+          idleStartMs = null;
+          idlePollCount = 0;
+        }
+
+        // Log queue depth at claim time for competition analysis.
+        this.queue.getStats().then((stats) => {
+          this.logger.info(
+            {
+              queue: this.queue.name,
+              jobId: job.jobId,
+              workflowId: job.workflowId,
+              queueDepthQueued: stats.queued,
+              queueDepthClaimed: stats.claimed,
+              event: "jobClaimed",
+            },
+            "Job claimed",
+          );
+        }).catch(() => {});
+
         using _claimExtender = this.extendClaimTimeout(job, signal);
         this.logger.debug(job, "Claimed job");
         const workflow = Workflow.fromName(job.workflow);

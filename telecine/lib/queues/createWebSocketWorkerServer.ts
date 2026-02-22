@@ -1,5 +1,6 @@
 import { logger } from "@/logging";
 import { createEagerBootServer } from "@/http/createEagerBootServer";
+import { executeRootSpan } from "@/tracing";
 import type { AbortableLoop } from "./AbortableLoop";
 import type { Worker } from "./Worker";
 import { WebSocketServer, type WebSocket } from "ws";
@@ -14,6 +15,28 @@ export const createWebSocketWorkerServer = <Payload>(
   let wss: WebSocketServer | null = null;
   let activeConnection: WebSocket | null = null;
   const connectionLoops = new Map<WebSocket, AbortableLoop[]>();
+
+  // Track active job state for drain span
+  let activeJobId: string | undefined;
+  let drainSpanEnd: ((hadActiveJob: boolean, jobId?: string) => void) | null = null;
+
+  // Startup span: covers process start through first scheduler connection (rpcReady).
+  // Started here (before warmUp) and ended when the first WebSocket connection arrives.
+  let startupSpanEnd: (() => void) | null = null;
+  const startupSpanPromise = executeRootSpan("worker.startup", async (span) => {
+    span.setAttributes({
+      workerType: worker.name,
+      "host.name": process.env.HOSTNAME ?? "unknown",
+      K_REVISION: process.env.K_REVISION ?? "unknown",
+    });
+
+    // The span ends when startupSpanEndFn is called (on first scheduler connection).
+    await new Promise<void>((resolve) => {
+      startupSpanEnd = resolve;
+    });
+  });
+  // Prevent unhandled rejection if startup span throws (it shouldn't).
+  startupSpanPromise.catch(() => {});
 
   const eagerServer = createEagerBootServer({
     port: PORT,
@@ -33,8 +56,19 @@ export const createWebSocketWorkerServer = <Payload>(
         }
         activeConnection = ws;
 
+        // End the startup span: worker is now rpcReady (scheduler connected).
+        if (startupSpanEnd) {
+          startupSpanEnd();
+          startupSpanEnd = null;
+          logger.info({ queue: worker.name }, "Worker startup span ended (rpcReady)");
+        }
+
         logger.info(
-          { queue: worker.name, concurrency: worker.concurrency },
+          {
+            queue: worker.name,
+            concurrency: worker.concurrency,
+            event: "schedulerConnected",
+          },
           "Scheduler connected, starting work loops",
         );
 
@@ -66,7 +100,10 @@ export const createWebSocketWorkerServer = <Payload>(
 
         ws.on("close", () => {
           clearInterval(heartbeat);
-          logger.info({ queue: worker.name }, "Scheduler disconnected, stopping work loops");
+          logger.info(
+            { queue: worker.name, event: "schedulerDisconnected" },
+            "Scheduler disconnected, stopping work loops",
+          );
           activeConnection = null;
           stopLoops(ws);
         });
@@ -82,6 +119,47 @@ export const createWebSocketWorkerServer = <Payload>(
       };
     },
     onClose: async () => {
+      // SIGTERM drain span: starts when shutdown begins, ends when active job finishes.
+      const hadActiveJob = !!activeJobId;
+      const jobId = activeJobId;
+      const drainStartMs = Date.now();
+
+      logger.info(
+        { queue: worker.name, hadActiveJob, jobId: jobId ?? null, event: "drainStarted" },
+        "Worker draining",
+      );
+
+      const drainSpanResult = executeRootSpan("worker.drain", async (span) => {
+        span.setAttributes({
+          workerType: worker.name,
+          "host.name": process.env.HOSTNAME ?? "unknown",
+          K_REVISION: process.env.K_REVISION ?? "unknown",
+          hadActiveJob,
+          ...(jobId ? { jobId } : {}),
+        });
+
+        if (hadActiveJob) {
+          // Wait for drain signal (set by job completion hook).
+          await new Promise<void>((resolve) => {
+            drainSpanEnd = (_hadJob, _jid) => resolve();
+          });
+        }
+
+        const drainDurationMs = Date.now() - drainStartMs;
+        span.setAttribute("drainDurationMs", drainDurationMs);
+
+        logger.info(
+          {
+            queue: worker.name,
+            hadActiveJob,
+            jobId: jobId ?? null,
+            drainDurationMs,
+            event: "drainCompleted",
+          },
+          "Worker drain complete",
+        );
+      });
+
       logger.info(
         { queue: worker.name, connections: connectionLoops.size },
         "Shutting down WebSocket worker server",
@@ -96,6 +174,14 @@ export const createWebSocketWorkerServer = <Payload>(
       connectionLoops.clear();
       activeConnection = null;
       await Promise.all(allAborts);
+
+      // Signal drain span to end now (loops have stopped, any active job has been released).
+      if (drainSpanEnd) {
+        drainSpanEnd(hadActiveJob, jobId);
+        drainSpanEnd = null;
+      }
+      await drainSpanResult;
+
       await worker.close();
       if (wss) {
         wss.close();
@@ -135,5 +221,9 @@ export const createWebSocketWorkerServer = <Payload>(
     waitForServer: eagerServer.waitForServer,
     waitForInitialization: eagerServer.waitForInitialization,
     close: eagerServer.close,
+    /** Called by Worker.executeJob to track which job is currently active. */
+    setActiveJobId: (jobId: string | undefined) => {
+      activeJobId = jobId;
+    },
   };
 };
