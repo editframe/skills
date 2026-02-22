@@ -49,7 +49,8 @@ Queue names, worker service names, and resource allocations are defined in sourc
 | `telecine/scripts/restart-render.ts` | Restart a failed render: resets DB status, re-enqueues initializer job |
 | `telecine/scripts/create-render.ts` | Create a test render from an existing render's org context |
 | `telecine/scripts/render-logs [-f] <id>` | Grep docker compose logs for initializer/fragment/finalizer services |
-| `telecine/scripts/smoke-test.ts` | End-to-end production smoke tests via the public API |
+| `telecine/scripts/smoke-test.ts` | End-to-end smoke tests via the public API |
+| `telecine/scripts/smoke-test-waveform.ts` | Waveform-specific smoke test: inserts renders directly into DB, exercises all ef-waveform modes concurrently |
 | `telecine/scripts/console` | Node REPL with project imports (db, valkey, queues available) |
 
 Run `.ts` scripts via: `telecine/scripts/run tsx scripts/<script>.ts <args>`
@@ -128,6 +129,32 @@ Render status values: `created` -> `queued` -> `rendering` -> `complete` | `fail
 4. **If you need worker logs** -- query Cloud Run logs with `gcloud` using the render ID (see commands above). In local dev, use `--logs` flag or `render-logs` script.
 5. **To retry** -- use `restart-render.ts` to reset DB state and re-enqueue the initializer.
 6. **For production DB access** -- use `telecine/scripts/debug-prod-web --use-prod-db --shell` to get a container with production database connectivity.
+
+## Diagnosing Electron RPC Failures
+
+Fragment renders fail via RPC timeout. The stack trace tells you how far rendering got:
+
+- **`RPC.ts:182`** — initial 5 s timer fired, no keepalives received at all. Electron never started rendering. Causes: scheduler opened more connections than the single local container can handle (see below), Electron failed to load the page, or the render context couldn't be created.
+- **`RPC.ts:153`** — keepalive-reset timer fired mid-render. At least one frame rendered before the hang. Causes: a race condition aborted an in-flight fetch (the `AbortError` case), a frame took too long, or Electron crashed mid-segment.
+
+### AbortError / FrameController race
+
+If Electron logs show `[EF_FRAMEGEN.beginFrame] error: [object DOMException]` / `AbortError: The user aborted a request`, a fetch started during `seekForRender` was cancelled by an autonomous re-render firing concurrently. This is a timing-dependent race: `EFTemporal.updated()` or `EFTimegroup.updated()` fires when media loads and calls `FrameController.abort()`, killing the in-flight GCS fetch.
+
+Fix: set `data-no-playback-controller` on the timegroup before `seekForRender` to suppress autonomous re-renders — the same attribute used on render clones. Check `EF_FRAMEGEN.ts` `initialize()` and `EFTemporal.ts`/`EFTimegroup.ts` `updated()`.
+
+### Scheduler over-scaling in local dev
+
+In production, `MAX_WORKER_COUNT` controls how many Cloud Run instances the scheduler spins up. Locally there is one container per queue. If the scheduler opens more WebSocket connections than the single container expects (e.g. 30 connections for 30 queued jobs), every concurrent `renderFragment` RPC call beyond the worker's `WORKER_CONCURRENCY` quota times out at `RPC.ts:182` before Electron starts processing it.
+
+The two dials and how they interact:
+
+| Dial | Production | Local dev |
+|---|---|---|
+| `MAX_WORKER_COUNT` | scales container count | must match `scale:` in docker-compose (usually 1) |
+| `WORKER_CONCURRENCY` | jobs per container | effective parallelism when `MAX_WORKER_COUNT=1` |
+
+Both are read from `telecine/.env` (via `env_file` in worker containers and `${VAR:-default}` substitution in `scheduler-go/docker-compose.yaml`). Changing them requires `telecine/scripts/docker-compose up -d` (not just `restart`) to force recreation with the new env.
 
 ## Key Source Files
 

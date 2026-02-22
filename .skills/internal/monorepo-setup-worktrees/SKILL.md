@@ -65,6 +65,21 @@ create (elements, 28s) → pause (1s) → resume (1s) → upgrade (web, 63s) →
                                                     upgrade (render)
 ```
 
+## Dev Server URLs
+
+The elements dev-projects Vite server uses `root: elements/dev-projects/`. Files are served at the root path — **not** under `/dev-projects/`.
+
+- `video.html` → `http://<branch>.localhost:4321/video.html`
+- `canvas-demo.html` → `http://<branch>.localhost:4321/canvas-demo.html`
+
+Never include `dev-projects/` in the URL path.
+
+## dev-projects in worktrees
+
+`elements/dev-projects/` is gitignored. Worktrees would only have committed stubs without the full asset/src tree.
+
+`create-worktree` sets `DEV_PROJECTS_HOST` in the worktree's `elements/.env` to point at main's dev-projects. The `docker-compose.yaml` dev-projects service mounts this path over `/packages/dev-projects`, so the worktree's dev server always has the full file tree from main.
+
 ## Troubleshooting
 
 - **Port conflict**: two branches hashed to same offset. Extremely unlikely with cksum/200 slots but possible. Remove one worktree and recreate.
