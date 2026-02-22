@@ -11,8 +11,8 @@ type Workers =
   | "processISOBMFF"
   | "renderInitializer"
   | "renderFragment"
-  | "renderFinalizer"
-  | "ingestImage";
+  | "renderFragmentGpu"
+  | "renderFinalizer";
 
 export const workers: Record<Workers, gcp.cloudrunv2.Service> = {
   ingestImage: defineWorker(workerConfigs.ingestImage),
@@ -21,5 +21,9 @@ export const workers: Record<Workers, gcp.cloudrunv2.Service> = {
   processISOBMFF: defineWorker(workerConfigs.processISOBMFF),
   renderInitializer: defineWorker(workerConfigs.renderInitializer),
   renderFragment: defineWorker(workerConfigs.renderFragment),
+  renderFragmentGpu: defineWorker(workerConfigs.renderFragmentGpu, {
+    type: "nvidia-l4",
+    zonalRedundancyDisabled: true,
+  }),
   renderFinalizer: defineWorker(workerConfigs.renderFinalizer),
 };

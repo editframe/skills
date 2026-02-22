@@ -3,6 +3,7 @@ import { Worker } from "@/queues/Worker";
 import { valkey } from "@/valkey/valkey";
 import { checkoutRenderSource } from "./source/checkoutRenderSource";
 import { RenderFragmentQueue } from "./RenderFragmentQueue";
+import { RenderFragmentGpuQueue } from "./RenderFragmentGpuQueue";
 import { ElectronRPCManager } from "./shared/ElectronRPCManager";
 import {
   renderFragmentFilePath,
@@ -12,16 +13,7 @@ import { storageProvider } from "@/util/storageProvider.server";
 import type { AssetsMetadataBundle } from "./shared/assetMetadata";
 import { ProgressTracker } from "@/progress-tracking/ProgressTracker";
 
-export const RenderFragmentWorker = new Worker({
-  storage: valkey,
-  queue: RenderFragmentQueue,
-  warmUp: async () => {
-    await ElectronRPCManager.prewarm();
-  },
-  close: async () => {
-    await ElectronRPCManager.closeRPCClient();
-  },
-  execute: async ({ payload: { render, fragment } }) => {
+const executeFragment = async ({ payload: { render, fragment } }: { payload: { render: any; fragment: any } }) => {
     await using renderSource = await checkoutRenderSource(
       render.id,
       render.org_id,
@@ -115,5 +107,28 @@ export const RenderFragmentWorker = new Worker({
 
     const progressTracker = new ProgressTracker(`render:${render.id}`);
     progressTracker.incrementCompletion(1);
+};
+
+export const RenderFragmentWorker = new Worker({
+  storage: valkey,
+  queue: RenderFragmentQueue,
+  warmUp: async () => {
+    await ElectronRPCManager.prewarm();
   },
+  close: async () => {
+    await ElectronRPCManager.closeRPCClient();
+  },
+  execute: executeFragment,
+});
+
+export const RenderFragmentGpuWorker = new Worker({
+  storage: valkey,
+  queue: RenderFragmentGpuQueue,
+  warmUp: async () => {
+    await ElectronRPCManager.prewarm();
+  },
+  close: async () => {
+    await ElectronRPCManager.closeRPCClient();
+  },
+  execute: executeFragment,
 });

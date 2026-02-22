@@ -509,6 +509,7 @@ export interface Video2RenderFragments {
 export interface Video2Renders {
   api_key_id: string | null;
   attempt_count: Generated<number>;
+  backend: Generated<string>;
   byte_size: number | null;
   completed_at: Timestamp | null;
   created_at: Generated<Timestamp>;

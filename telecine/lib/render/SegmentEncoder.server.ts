@@ -13,6 +13,7 @@ import type {
 } from "./engines/FramegenEngine";
 import { DisposableMuxer } from "./DisposableMuxer";
 import { DisposableEncoder } from "./DisposableEncoder";
+import { hasGpu } from "@/util/gpuDetect";
 import {
   repackageInitSegment,
   repackageMediaSegment,
@@ -241,6 +242,14 @@ export class SegmentEncoder extends EventEmitter {
       ? ["-vf", `crop=${this.width}:${this.height}:0:0`]
       : [];
 
+    const videoCodecArgs = hasGpu()
+      ? // NVENC hardware encoder: offloads H.264 encoding to GPU NVENC silicon
+        // biome-ignore format: strict command line format
+        ["-c:v", "h264_nvenc", "-g", `${groupSize}`, "-preset", "p4", "-profile:v", "high", "-level:v", "4.0", "-pix_fmt", "yuv420p"]
+      : // Software encoder: libx264 ultrafast for CPU instances
+        // biome-ignore format: strict command line format
+        ["-c:v", "libx264", "-g", `${groupSize}`, "-preset", "ultrafast", "-tune", "zerolatency", "-profile:v", "high", "-level:v", "4.0", "-pix_fmt", "yuv420p"];
+
     // biome-ignore format: strict command line format
     return new DisposableEncoder([
       ...imageInputArgs,
@@ -249,20 +258,7 @@ export class SegmentEncoder extends EventEmitter {
       "-i",
       "-",
       ...cropFilter,
-      "-c:v",
-      "libx264",
-      "-g",
-      `${groupSize}`,
-      "-preset",
-      "ultrafast",
-      "-tune",
-      "zerolatency",
-      "-profile:v",
-      "high",
-      "-level:v",
-      "4.0",
-      "-pix_fmt",
-      "yuv420p",
+      ...videoCodecArgs,
       "-color_range",
       "tv",
       "-colorspace",

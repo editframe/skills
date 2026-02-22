@@ -39,6 +39,7 @@ func LoadQueues(logger *zerolog.Logger) []Queue {
 		{"process-html-finalizer", "PROCESS_HTML_FINALIZER"},
 		{"render-initializer", "RENDER_INITIALIZER"},
 		{"render-fragment", "RENDER_FRAGMENT"},
+		{"render-fragment-gpu", "RENDER_FRAGMENT_GPU"},
 		{"render-finalizer", "RENDER_FINALIZER"},
 		{"process-isobmff", "PROCESS_ISOBMFF"},
 		{"ingest-image", "INGEST_IMAGE"},

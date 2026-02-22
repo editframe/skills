@@ -11,6 +11,7 @@ import { createRpcClient } from "./RPC";
 import { promiseWithResolvers } from "@/util/promiseWithResolvers";
 import { raceTimeout } from "@/util/raceTimeout";
 import { logger } from "@/logging";
+import { hasGpu } from "@/util/gpuDetect";
 
 const XVFB_DISPLAY = ":99";
 let xvfbProcess: ChildProcess | null = null;
@@ -122,7 +123,10 @@ const spawnElectronBootloader = async (script: string) => {
     "spawnElectronBootloader",
     async (span) => {
       try {
-        await ensureXvfb();
+        const gpuMode = hasGpu();
+        if (!gpuMode) {
+          await ensureXvfb();
+        }
         const socketPath = makeSocketPath();
 
         const traceContext: Record<string, unknown> = {};
@@ -141,7 +145,7 @@ const spawnElectronBootloader = async (script: string) => {
             stdio: ["ignore", "pipe", "pipe"],
             env: {
               ...process.env,
-              DISPLAY: XVFB_DISPLAY,
+              ...(gpuMode ? { EF_GPU_RENDER: "1" } : { DISPLAY: XVFB_DISPLAY }),
               EF_SOCKET_PATH: socketPath,
               OTEL_EXPORTER_OTLP_ENDPOINT:
                 process.env.OTEL_EXPORTER_OTLP_ENDPOINT ||

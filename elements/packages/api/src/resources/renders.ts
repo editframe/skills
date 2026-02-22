@@ -65,6 +65,7 @@ export const CreateRenderPayload = z.object({
   metadata: z.record(z.string(), z.string()).optional(),
   duration_ms: z.number().int().optional(),
   strategy: z.enum(["v1"]).default("v1").optional(),
+  backend: z.enum(["cpu", "gpu"]).default("cpu").optional(),
   output: RenderOutputConfiguration.default({
     container: "mp4",
     video: {
@@ -152,6 +153,7 @@ export interface CreateRenderPayload {
   duration_ms?: number;
   metadata?: Record<string, string>;
   strategy?: "v1";
+  backend?: "cpu" | "gpu";
   output?: z.infer<typeof RenderOutputConfiguration>;
 }
 

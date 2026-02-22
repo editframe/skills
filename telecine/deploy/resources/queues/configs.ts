@@ -19,8 +19,8 @@ type Workers =
   | "processISOBMFF"
   | "renderInitializer"
   | "renderFragment"
-  | "renderFinalizer"
-  | "ingestImage";
+  | "renderFragmentGpu"
+  | "renderFinalizer";
 
 export const workerConfigs: Record<Workers, QueueConfig> = {
   ingestImage: {
@@ -76,6 +76,15 @@ export const workerConfigs: Record<Workers, QueueConfig> = {
     workerConcurrency: 1,
     workerCpu: workerResources.renderFragment.cpu,
     workerMemory: workerResources.renderFragment.memory,
+  },
+  renderFragmentGpu: {
+    name: "render-fragment-gpu",
+    screaming: "RENDER_FRAGMENT_GPU",
+    maxWorkerCount: 20,
+    minWorkerCount: 0,
+    workerConcurrency: 8,
+    workerCpu: workerResources.renderFragmentGpu.cpu,
+    workerMemory: workerResources.renderFragmentGpu.memory,
   },
   renderFinalizer: {
     name: "render-finalizer",

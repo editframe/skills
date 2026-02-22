@@ -40,6 +40,7 @@ insert_permissions:
         status: created
       columns:
         - api_key_id
+        - backend
         - duration_ms
         - fps
         - height
@@ -56,6 +57,7 @@ select_permissions:
   - role: ef-admin
     permission:
       columns:
+        - backend
         - restricted
         - byte_size
         - duration_ms
@@ -82,6 +84,7 @@ select_permissions:
     permission:
       columns:
         - api_key_id
+        - backend
         - byte_size
         - completed_at
         - created_at
@@ -113,6 +116,7 @@ select_permissions:
     permission:
       columns:
         - api_key_id
+        - backend
         - byte_size
         - completed_at
         - created_at
@@ -146,6 +150,7 @@ select_permissions:
     permission:
       columns:
         - api_key_id
+        - backend
         - byte_size
         - completed_at
         - created_at
@@ -174,6 +179,7 @@ select_permissions:
     permission:
       columns:
         - api_key_id
+        - backend
         - byte_size
         - completed_at
         - created_at

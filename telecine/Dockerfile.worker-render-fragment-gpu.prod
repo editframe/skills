@@ -1,0 +1,110 @@
+FROM node:22-slim AS builder
+
+ENV NODE_ENV=production
+ENV NODE_COMPILE_CACHE=/app/.compile-cache
+
+WORKDIR /app
+
+RUN apt-get update \
+  && apt-get install -y \
+  zsh \
+  unzip \
+  libnss3 \
+  libgtk-3-0 \
+  libxss1 \
+  libasound2 \
+  libxrandr2 \
+  libgconf-2-4 \
+  libxdamage1 \
+  libxcomposite1 \
+  libxcursor1 \
+  libxi6 \
+  libxtst6 \
+  libnss3-dev \
+  libdrm2 \
+  libxkbcommon0 \
+  libgtk2.0-0 \
+  libegl1-mesa \
+  libgles2-mesa \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+COPY package.json package-lock.json ./
+RUN npm install
+
+COPY lib/ lib/
+COPY services/worker-render-fragment-gpu/ services/worker-render-fragment-gpu/
+COPY tsconfig.json ./
+
+WORKDIR /app/services/worker-render-fragment-gpu
+RUN npx vite build
+
+WORKDIR /app
+RUN npx vite build --config /app/lib/electron-exec/vite.electron-rpc.config.ts
+
+RUN rm -rf node_modules && npm install --only=production
+
+COPY scripts/docker-compile-cache-prewarm /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-compile-cache-prewarm && \
+    docker-compile-cache-prewarm "node /app/services/worker-render-fragment-gpu/dist/server.js" 3000 /health
+
+FROM nvidia/cuda:12.6.3-runtime-ubuntu22.04
+
+ENV NODE_ENV=production
+ENV NODE_COMPILE_CACHE=/app/.compile-cache
+
+# Install Node.js 22
+RUN apt-get update \
+  && apt-get install -y curl \
+  && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+  && apt-get install -y nodejs \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install runtime dependencies.
+# No Xvfb: GPU instances use EGL directly via NVIDIA drivers.
+# ffmpeg-nvenc: NVIDIA-capable ffmpeg with h264_nvenc support.
+RUN apt-get update \
+  && apt-get install -y \
+  zsh \
+  unzip \
+  libnss3 \
+  libgtk-3-0 \
+  libxss1 \
+  libasound2 \
+  libxrandr2 \
+  libgconf-2-4 \
+  libxdamage1 \
+  libxcomposite1 \
+  libxcursor1 \
+  libxi6 \
+  libxtst6 \
+  libnss3-dev \
+  libdrm2 \
+  libxkbcommon0 \
+  libgtk2.0-0 \
+  libegl1-mesa \
+  libgles2-mesa \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Install jellyfin-ffmpeg which includes h264_nvenc support
+RUN apt-get update \
+  && apt-get install -y wget \
+  && wget -q https://repo.jellyfin.org/files/ffmpeg/ubuntu/latest-6/amd64/jellyfin-ffmpeg6_6.0.1-8-noble_amd64.deb \
+  && dpkg -i jellyfin-ffmpeg6_6.0.1-8-noble_amd64.deb || apt-get install -yf \
+  && ln -sf /usr/lib/jellyfin-ffmpeg/ffmpeg /usr/local/bin/ffmpeg \
+  && rm jellyfin-ffmpeg6_6.0.1-8-noble_amd64.deb \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app/package.json /app/package.json
+COPY --from=builder /app/node_modules/ /app/node_modules/
+COPY --from=builder /app/services/worker-render-fragment-gpu/dist/ /app/services/worker-render-fragment-gpu/dist/
+COPY --from=builder /app/.compile-cache/ /app/.compile-cache/
+COPY --from=builder /app/lib/ /app/lib/
+COPY --from=builder /app/tsconfig.json /app/tsconfig.json
+
+CMD ["node", "/app/services/worker-render-fragment-gpu/dist/server.js"]

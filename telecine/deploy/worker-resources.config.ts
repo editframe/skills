@@ -28,6 +28,10 @@ export const workerResources = {
     cpu: "2000m",
     memory: "4Gi",
   },
+  renderFragmentGpu: {
+    cpu: "8000m",
+    memory: "32Gi",
+  },
   renderFinalizer: {
     cpu: "1000m",
     memory: "2Gi",

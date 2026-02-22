@@ -20,7 +20,20 @@ import { getImageRef } from "../../util/getImageRef";
 import { valkeyInternalIp } from "../valkey";
 import { type QueueConfig, queueEnvVars } from "./configs";
 
-export const defineWorker = (config: QueueConfig) => {
+export interface GpuConfig {
+  type: "nvidia-l4";
+  zonalRedundancyDisabled: boolean;
+}
+
+export const defineWorker = (config: QueueConfig, gpu?: GpuConfig) => {
+  const gpuResourceLimits: Record<string, string> = gpu
+    ? { "nvidia.com/gpu": "1" }
+    : {};
+
+  const nodeSelector: Record<string, string> = gpu
+    ? { "run.googleapis.com/accelerator": gpu.type }
+    : {};
+
   return new gcp.cloudrunv2.Service(
     `telecine-worker-${config.name}`,
     {
@@ -29,13 +42,15 @@ export const defineWorker = (config: QueueConfig) => {
       location: "us-central1",
       name: `telecine-worker-${config.name}`,
       project: "editframe",
+      ...(gpu ? { gpuZonalRedundancyDisabled: gpu.zonalRedundancyDisabled } : {}),
       template: {
         scaling: {
           minInstanceCount: 0,
           maxInstanceCount: config.maxWorkerCount,
         },
         serviceAccount: serviceAccount.email,
-        maxInstanceRequestConcurrency: 1,
+        maxInstanceRequestConcurrency: config.workerConcurrency,
+        ...(Object.keys(nodeSelector).length > 0 ? { nodeSelector } : {}),
         volumes: [
           {
             name: "cloudsql",
@@ -92,6 +107,7 @@ export const defineWorker = (config: QueueConfig) => {
               limits: {
                 cpu: config.workerCpu,
                 memory: config.workerMemory,
+                ...gpuResourceLimits,
               },
               startupCpuBoost: true,
             },

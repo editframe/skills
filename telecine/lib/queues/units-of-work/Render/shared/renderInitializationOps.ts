@@ -15,6 +15,7 @@ import { storageProvider } from "@/util/storageProvider.server";
 import { renderStillFilePath } from "@/util/filePaths";
 import type { RenderEngineContext } from "./renderEngineTypes";
 import { RenderFragmentQueue } from "../RenderFragmentQueue";
+import { RenderFragmentGpuQueue } from "../RenderFragmentGpuQueue";
 import { extractFragmentCompletionInfo } from "../fragments/extractFragmentCompletionInfo";
 import type { QueuePayload } from "../../../Queue";
 
@@ -136,7 +137,7 @@ export const createFragmentJobs = (
     }
 
     jobs.push({
-      queue: RenderFragmentQueue.name,
+      queue: updatedRender.backend === "gpu" ? RenderFragmentGpuQueue.name : RenderFragmentQueue.name,
       orgId: updatedRender.org_id,
       workflowId: updatedRender.id,
       jobId: `${updatedRender.id}-${fragmentId}`,
