@@ -14,14 +14,12 @@ import {
 } from "node:fs/promises";
 import { Readable } from "node:stream";
 
+// @ts-ignore - import.meta.url is available at runtime; tsconfig uses CommonJS module for type-checking only
+const _pkgDir = path.dirname(fileURLToPath(import.meta.url));
 const CACHE_VERSION: string = (
-  JSON.parse(
-    readFileSync(
-      // @ts-ignore - import.meta.url is available at runtime (ESM); tsconfig uses CommonJS for type-checking only
-      path.join(path.dirname(fileURLToPath(import.meta.url)), "../package.json"),
-      "utf-8",
-    ),
-  ) as { version: string }
+  JSON.parse(readFileSync(path.join(_pkgDir, "../package.json"), "utf-8")) as {
+    version: string;
+  }
 ).version;
 
 // Per-root validation promises — serializes the version check within a process
