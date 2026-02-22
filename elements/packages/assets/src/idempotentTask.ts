@@ -1,6 +1,5 @@
 import { createWriteStream, existsSync, readFileSync } from "node:fs";
 import path, { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { md5FilePath } from "./md5.js";
 import debug from "debug";
 import {
@@ -14,14 +13,8 @@ import {
 } from "node:fs/promises";
 import { Readable } from "node:stream";
 
-const CACHE_VERSION: string = (
-  JSON.parse(
-    readFileSync(
-      path.join(path.dirname(fileURLToPath(import.meta.url)), "../package.json"),
-      "utf-8",
-    ),
-  ) as { version: string }
-).version;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const CACHE_VERSION: string = (JSON.parse(readFileSync(path.join(__dirname, "../package.json"), "utf-8")) as { version: string }).version;
 
 // Per-root validation promises — serializes the version check within a process
 // and memoizes it so subsequent calls in the same process are free.
