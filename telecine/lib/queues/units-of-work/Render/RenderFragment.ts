@@ -72,7 +72,19 @@ export const RenderFragmentWorker = new Worker({
     );
 
     // Use electronRPC to process fragment in Electron subprocess
+    const warm = ElectronRPCManager.isReady();
+    const electronRpcStartMs = performance.now();
     const electronRpc = await ElectronRPCManager.getRPCClient();
+    logger.info(
+      {
+        event: "electronRpcAcquired",
+        renderId: render.id,
+        segmentId: fragment.segment_id,
+        warm,
+        electronRpcAcquireMs: Math.round(performance.now() - electronRpcStartMs),
+      },
+      "Electron RPC acquired",
+    );
     const fragmentBytes = await electronRpc.rpc.call("renderFragment", {
       width: render.width,
       height: render.height,

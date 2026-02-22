@@ -12,23 +12,28 @@ export class ElectronRPCManager {
   private static rpcClient: ElectronRPC | undefined;
   private static rpcPromise: Promise<ElectronRPC> | undefined;
 
+  static isReady(): boolean {
+    return ElectronRPCManager.rpcClient !== undefined;
+  }
+
   static async getRPCClient(): Promise<ElectronRPC> {
     if (ElectronRPCManager.rpcClient) {
       return ElectronRPCManager.rpcClient;
     }
 
     if (!ElectronRPCManager.rpcPromise) {
-      logger.debug("Creating new Electron RPC client");
+      const startMs = performance.now();
       ElectronRPCManager.rpcPromise = createElectronRPC();
 
       try {
         ElectronRPCManager.rpcClient = await ElectronRPCManager.rpcPromise;
+        const electronStartMs = Math.round(performance.now() - startMs);
+        logger.info({ event: "electronColdStart", electronStartMs }, "Electron RPC client started");
         return ElectronRPCManager.rpcClient;
       } catch (error) {
-        // Reset promise on failure so next call can retry
         logger.error(
+          { event: "electronColdStartFailed" },
           "Failed to create Electron RPC client, will retry on next request",
-          error,
         );
         ElectronRPCManager.rpcPromise = undefined;
         throw error;
