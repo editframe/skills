@@ -60,7 +60,8 @@ electronApp.whenReady().then(() => setTimeout(async () => {
 
 if (process.env.DEBUG_ELECTRON || process.env.EF_GPU_RENDER) {
   electronApp.commandLine.appendSwitch("enable-logging");
-  electronApp.commandLine.appendSwitch("v", "1");
+  electronApp.commandLine.appendSwitch("v", "0");
+  electronApp.commandLine.appendSwitch("vmodule", "gpu_init=2,angle*=2,vulkan*=2,gpu_service*=2,command_buffer*=2,viz_main*=2,gpu_channel*=2,in_process_gpu*=2,gpu_process*=2");
 }
 
 if (process.env.DEBUG_ELECTRON) {
