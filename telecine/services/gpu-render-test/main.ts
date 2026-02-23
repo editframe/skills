@@ -2,25 +2,31 @@
  * Cloud Run Job: GPU render test
  *
  * Renders a simple HTML composition on the GPU worker (via EGL + h264_nvenc),
- * uploads the resulting MP4 to GCS, and prints the download URL.
+ * uploads the resulting MP4 to GCS, and prints a signed download URL.
  *
  * Deploy + run via:
  *   telecine/scripts/deploy-gpu-render-test-job
  */
 
 import { createHash } from "node:crypto";
+import { execFile } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { promisify } from "node:util";
 import { Storage } from "@google-cloud/storage";
 
-import { createElectronRPC } from "@/queues/units-of-work/Render/ElectronRPCClient";
-import { createBundledHTMLDirectory } from "@/render/processHTML";
+import { executeInElectronWithRpc } from "@/electron-exec/executeInElectron";
 import { buildFragmentIds } from "@/queues/units-of-work/Render/fragments/buildFragmentIds";
-import { createAssetsMetadataBundle } from "@/queues/units-of-work/Render/shared/assetMetadata";
+import type { AssetsMetadataBundle } from "@/queues/units-of-work/Render/shared/assetMetadata";
+import type { ElectronRPCClient } from "@/queues/units-of-work/Render/ElectronRPCServer";
+
+const execFileAsync = promisify(execFile);
 
 const BUCKET = process.env.STORAGE_BUCKET ?? "telecine-dot-dev-data-4fedc83";
 const ORG_ID = "gpu-test-org";
 const WORK_SLICE_MS = 2000;
+const ELECTRON_RPC_SCRIPT =
+  "/app/lib/queues/units-of-work/Render/ElectronRPCServer.ts";
 
 const HTML = `
 <ef-timegroup class="w-[640px] h-[360px]" mode="fixed" duration="3s">
@@ -39,23 +45,107 @@ function log(msg: string) {
   process.stdout.write(`[gpu-render-test] ${msg}\n`);
 }
 
-function fail(msg: string) {
-  process.stderr.write(`[gpu-render-test] FAIL: ${msg}\n`);
+// ---------------------------------------------------------------------------
+// Inline HTML bundling — avoids importing processHTML.ts (pulls in DB/Valkey)
+// ---------------------------------------------------------------------------
+async function bundleHTML(html: string, bundleDir: string): Promise<string> {
+  const WEB_HOST = process.env.WEB_HOST ?? "http://localhost:3000";
+
+  const viteAliases = JSON.stringify({
+    "@editframe/elements/preview/renderTimegroupToVideo":
+      "/app/node_modules/@editframe/elements/dist/preview/renderTimegroupToVideo.js",
+    "@editframe/elements/preview/renderTimegroupToCanvas":
+      "/app/node_modules/@editframe/elements/dist/preview/renderTimegroupToCanvas.js",
+  });
+
+  const files: Record<string, string> = {
+    "index.ts": `
+      import "@editframe/elements";
+      import "@editframe/elements/styles.css";
+      import { renderTimegroupToVideo } from "@editframe/elements/preview/renderTimegroupToVideo";
+      import { captureTimegroupAtTime } from "@editframe/elements/preview/renderTimegroupToCanvas";
+      (window as any).renderTimegroupToVideo = renderTimegroupToVideo;
+      (window as any).captureTimegroupAtTime = captureTimegroupAtTime;
+    `,
+    "index.html": `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <script type="module" src="./index.ts"></script>
+        <link rel="stylesheet" href="./styles.css">
+      </head>
+      <body>
+        <ef-configuration api-host="${WEB_HOST}">
+          ${html}
+        </ef-configuration>
+      </body>
+      </html>
+    `,
+    "styles.css": `
+      @tailwind base;
+      @tailwind components;
+      @tailwind utilities;
+    `,
+    "package.json": "{}",
+    "vite.config.js": `
+      import { viteSingleFile } from "vite-plugin-singlefile";
+      export default {
+        plugins: [viteSingleFile()],
+        resolve: {
+          alias: ${viteAliases},
+        }
+      };
+    `,
+    "postcss.config.cjs": `
+      module.exports = {
+        plugins: { tailwindcss: {} },
+      };
+    `,
+    "tailwind.config.js": `
+      module.exports = {
+        content: ["./index.html"],
+        theme: { extend: {} },
+        plugins: [],
+      };
+    `,
+  };
+
+  await Promise.all(
+    Object.entries(files).map(([name, content]) =>
+      writeFile(path.join(bundleDir, name), content),
+    ),
+  );
+
+  const { stdout, stderr } = await execFileAsync(
+    "node",
+    [
+      path.join(process.cwd(), "node_modules", "rolldown-vite", "bin", "vite.js"),
+      "build",
+    ],
+    { cwd: bundleDir },
+  );
+
+  if (stdout) log(`vite stdout: ${stdout}`);
+  if (stderr) log(`vite stderr: ${stderr}`);
+
+  return path.join(bundleDir, "dist");
 }
 
 // ---------------------------------------------------------------------------
 step("1. Bundle HTML");
 const templateHash = createHash("sha256").update(HTML).digest("hex").substring(0, 16);
 const bundleDir = `/tmp/gpu-render-test-${templateHash}`;
-const indexPath = path.join(bundleDir, "dist", "index.html");
-
 await mkdir(bundleDir, { recursive: true });
-await createBundledHTMLDirectory(bundleDir, HTML);
-log(`Bundle written to: ${bundleDir}`);
+const distDir = await bundleHTML(HTML, bundleDir);
+const indexPath = path.join(distDir, "index.html");
+log(`Bundle written to: ${distDir}`);
 
 // ---------------------------------------------------------------------------
 step("2. Spawn Electron RPC");
-const electronRpc = await createElectronRPC();
+const electronRpc = await executeInElectronWithRpc(ELECTRON_RPC_SCRIPT) as {
+  processExit: Promise<number>;
+  rpc: ElectronRPCClient;
+};
 log("Electron RPC ready");
 
 // ---------------------------------------------------------------------------
@@ -66,7 +156,8 @@ const renderInfo = await electronRpc.rpc.call("getRenderInfo", {
 });
 log(`Render info: ${renderInfo.width}x${renderInfo.height} @ ${renderInfo.durationMs}ms`);
 
-const assetsBundle = await createAssetsMetadataBundle(renderInfo.assets, ORG_ID);
+// Pure CSS/HTML render — no media assets
+const assetsBundle: AssetsMetadataBundle = { fragmentIndexes: {} };
 
 // ---------------------------------------------------------------------------
 step("4. Render fragments");
@@ -116,16 +207,16 @@ await storage.bucket(BUCKET).file(gcsPath).save(finalBuffer, {
   contentType: "video/mp4",
 });
 
-const signedUrl = await storage
+const [signedUrl] = await storage
   .bucket(BUCKET)
   .file(gcsPath)
   .getSignedUrl({
     action: "read",
-    expires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
+    expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
   });
 
 log(`Uploaded to gs://${BUCKET}/${gcsPath}`);
-log(`Download URL (7-day signed):\n  ${signedUrl[0]}`);
+log(`Download URL (7-day signed):\n  ${signedUrl}`);
 
 // ---------------------------------------------------------------------------
 process.stdout.write("\n[gpu-render-test] All steps completed.\n");
