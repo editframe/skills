@@ -1,6 +1,6 @@
 ---
 title: Media Pipeline
-description: Complete workflow from uploading a media file to using it in a composition
+description: End-to-end workflow for uploading a media file, waiting for processing, and using the processed file in a composition.
 type: how-to
 nav:
   parent: "Guides"

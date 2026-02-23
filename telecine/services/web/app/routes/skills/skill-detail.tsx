@@ -37,10 +37,8 @@ export const meta = ({ data }: Route.MetaArgs) => {
 
   return [
     { title: `${title} - Editframe` },
-    {
-      name: "description",
-      content: metaDescription,
-    },
+    { name: "description", content: metaDescription },
+    { property: "og:description", content: metaDescription },
   ];
 };
 

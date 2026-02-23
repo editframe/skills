@@ -1,6 +1,6 @@
 ---
 title: Testing Webhooks
-description: Test webhook endpoints locally with ngrok, webhook.site, and the Editframe CLI
+description: Test Editframe webhook endpoints locally using ngrok tunnels, webhook.site inspection, and the CLI test command.
 type: how-to
 nav:
   parent: "Testing"

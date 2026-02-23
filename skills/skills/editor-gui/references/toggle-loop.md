@@ -1,6 +1,6 @@
 ---
 title: Toggle Loop Element
-description: Button to toggle loop playback on/off
+description: Button component that toggles loop playback on and off, with visual state reflecting whether the composition will loop.
 type: reference
 nav:
   parent: "Playback Controls"

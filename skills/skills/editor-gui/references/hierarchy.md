@@ -1,6 +1,6 @@
 ---
 title: Hierarchy Element
-description: Layer panel displaying composition structure with selection and expansion
+description: Layer panel that displays the composition element tree with collapsible groups, selection highlighting, and drag-to-reorder.
 type: reference
 nav:
   parent: "Editor Shells"

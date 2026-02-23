@@ -1,6 +1,6 @@
 ---
 title: CSS Variables
-description: Dynamic CSS variables for time-based animations and progress tracking
+description: Dynamic CSS custom properties updated each frame with current time, duration, and progress values for time-driven animations.
 type: reference
 nav:
   parent: "Layout & Timing"

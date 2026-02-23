@@ -1,6 +1,6 @@
 ---
 title: Getting Started
-description: Create your first Editframe project and render it to video
+description: Create and render your first Editframe video project from a template in under five minutes using the create CLI tool.
 type: tutorial
 nav:
   parent: "Quick Start"

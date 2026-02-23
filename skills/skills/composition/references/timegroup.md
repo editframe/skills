@@ -1,6 +1,6 @@
 ---
 title: Timegroup Element
-description: Container element for sequencing and grouping composition elements
+description: Container element for grouping and sequencing composition elements, controlling layout mode, duration, and playback behavior.
 type: reference
 nav:
   parent: "Layout & Timing"

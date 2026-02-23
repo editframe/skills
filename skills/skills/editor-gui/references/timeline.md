@@ -1,6 +1,6 @@
 ---
 title: Timeline Element
-description: Full-featured timeline editor with tracks, hierarchy, zoom, and playback controls
+description: Complete timeline editor with zoomable tracks, multi-level hierarchy, scrubber, and synchronized playback controls.
 type: reference
 nav:
   parent: "Timeline"

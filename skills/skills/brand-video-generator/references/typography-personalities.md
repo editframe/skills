@@ -1,6 +1,6 @@
 ---
 title: Typography Personalities
-description: What font choices signal about brand personality and how to use them in video
+description: What font choices communicate about brand personality and how to pair typefaces effectively in video title sequences.
 type: reference
 order: 7
 ---

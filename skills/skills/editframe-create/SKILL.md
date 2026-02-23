@@ -1,7 +1,7 @@
 ---
 name: editframe-create
 title: Create Project
-description: Scaffold new Editframe video projects with templates and tooling. Use when creating a new project, starting from scratch, setting up a new composition, or when a user wants to make their first video with Editframe.
+description: Scaffold new Editframe video projects from templates. Generates project structure, installs dependencies, and sets up composition tooling to start immediately.
 order: 1
 license: MIT
 metadata:

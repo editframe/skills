@@ -1,6 +1,6 @@
 ---
 title: useMediaInfo Hook
-description: Access media metadata like duration and loading state from Video and Audio components
+description: React hook for reading media metadata — duration, loading state, and dimensions — from Video and Audio composition elements.
 type: reference
 nav:
   parent: "React"

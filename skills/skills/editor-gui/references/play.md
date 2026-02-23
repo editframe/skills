@@ -1,6 +1,6 @@
 ---
 title: Play Button Element
-description: Play button that auto-hides when playing
+description: Play button component that auto-hides when the composition is already playing, for clean minimal editor control bars.
 type: reference
 nav:
   parent: "Playback Controls"

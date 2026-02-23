@@ -1,6 +1,6 @@
 ---
 title: Transcribe
-description: Generate word-level captions from audio or video files
+description: Generate word-level captions from audio or video files using Whisper, outputting JSON or WebVTT for use with ef-captions.
 type: reference
 nav:
   parent: "Commands / Media"

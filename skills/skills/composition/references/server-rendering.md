@@ -1,6 +1,6 @@
 ---
 title: Server-Side Rendering
-description: SSR-safe imports and Next.js/Remix integration for Editframe
+description: Use SSR-safe imports and integrate Editframe with Next.js, Remix, and other server-rendered frameworks without hydration errors.
 type: reference
 nav:
   parent: "Advanced"

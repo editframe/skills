@@ -1,6 +1,6 @@
 ---
 title: Workbench Element
-description: Full-featured video editor UI with preview, timeline, hierarchy, and export controls
+description: Full-featured video editor layout combining preview, timeline, hierarchy panel, and export controls in one component.
 type: reference
 nav:
   parent: "Editor Shells"

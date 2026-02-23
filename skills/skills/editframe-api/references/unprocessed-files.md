@@ -1,6 +1,6 @@
 ---
 title: Video Files
-description: Upload video files using the unified files API with automatic ISOBMFF processing
+description: Upload raw video files through the Editframe files API with automatic ISOBMFF processing for streaming-optimized playback.
 type: reference
 nav:
   parent: "API Reference / Files"

@@ -1,6 +1,6 @@
 ---
 title: Utilities
-description: Authentication, dependency checking, webhook testing, and file inspection
+description: CLI utilities for authentication, dependency checks, webhook testing, and video file inspection during development.
 type: reference
 nav:
   parent: "Commands / Utilities"

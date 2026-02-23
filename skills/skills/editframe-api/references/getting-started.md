@@ -1,6 +1,6 @@
 ---
 title: Getting Started
-description: Install the Editframe API package, get an API key, and render your first video from an HTML composition
+description: Install the Editframe API package, obtain an API key, and submit your first HTML composition as a cloud render job.
 type: tutorial
 nav:
   parent: "Quick Start"

@@ -1,6 +1,6 @@
 ---
 title: Active Root Temporal Element
-description: Display the ID of the active root temporal from canvas selection
+description: Component that displays the ID of whichever root temporal element is currently active based on canvas selection state.
 type: reference
 nav:
   parent: "Editor Shells"

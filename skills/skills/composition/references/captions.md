@@ -1,6 +1,6 @@
 ---
 title: Captions Element
-description: Synchronized captions with word-level highlighting
+description: Synchronized caption display with word-level highlighting, custom styling via CSS parts, and WebVTT/JSON caption file support.
 type: reference
 nav:
   parent: "Media"

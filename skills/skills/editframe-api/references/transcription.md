@@ -1,6 +1,6 @@
 ---
 title: Transcription
-description: Generate audio transcriptions from uploaded video files
+description: Generate spoken-word transcriptions from uploaded video files, returning word-level timestamps for caption generation.
 type: reference
 nav:
   parent: "API Reference"

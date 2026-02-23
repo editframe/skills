@@ -1,6 +1,6 @@
 ---
 title: Package Entry Points
-description: Complete guide to Editframe package exports and when to use each
+description: Complete guide to Editframe package entry points and exports — when to import from @editframe/elements vs @editframe/react vs core.
 type: reference
 nav:
   parent: "Advanced"

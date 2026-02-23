@@ -1,6 +1,6 @@
 ---
 title: CSS Parts Reference
-description: Catalog of ::part() selectors for styling internal elements of Editframe web components
+description: Catalog of CSS ::part() selectors for styling internal shadow DOM elements of Editframe web components from external stylesheets.
 type: reference
 nav:
   parent: "Advanced"

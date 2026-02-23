@@ -1,6 +1,6 @@
 ---
 title: Canvas Elements
-description: Interactive canvas with selection, drag-and-drop, and transform handles
+description: Interactive canvas area with element selection, drag-and-drop repositioning, and transform handle integration.
 type: reference
 nav:
   parent: "Preview & Canvas"

@@ -1,6 +1,6 @@
 ---
 title: Webhook Security
-description: HMAC signature verification, replay attack prevention, and security best practices
+description: Verify HMAC-SHA256 signatures on incoming webhook requests and prevent replay attacks with timestamp validation.
 type: reference
 nav:
   parent: "Security"

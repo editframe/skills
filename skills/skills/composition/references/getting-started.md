@@ -1,6 +1,6 @@
 ---
 title: Getting Started
-description: Build your first HTML video composition with Editframe Elements
+description: Build your first HTML video composition with Editframe Elements — install the package, place elements, and render to MP4.
 type: tutorial
 nav:
   parent: "Quick Start"

@@ -1,7 +1,7 @@
 ---
 name: webhooks
 title: Webhooks
-description: Webhook notifications for render completion, file processing, and other async events. Configure webhook URLs, verify signatures, and handle event payloads for real-time status updates.
+description: Webhook notifications for render completion and file processing events. Configure endpoints, verify HMAC signatures, and handle real-time status payloads.
 order: 35
 license: MIT
 metadata:
