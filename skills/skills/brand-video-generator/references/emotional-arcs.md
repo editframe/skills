@@ -1,6 +1,6 @@
 ---
 title: Emotional Arcs
-description: Proven narrative arc structures for guiding viewer emotion through a video: tension, release, and resolution patterns.
+description: "Proven narrative arc structures for guiding viewer emotion through a video: tension, release, and resolution patterns."
 type: explanation
 order: 5
 ---

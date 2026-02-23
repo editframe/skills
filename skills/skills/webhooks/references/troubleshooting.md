@@ -1,6 +1,6 @@
 ---
 title: Troubleshooting Webhooks
-description: Diagnose and fix common webhook issues: signature verification failures, delivery timeouts, retries, and missed events.
+description: "Diagnose and fix common webhook issues: signature verification failures, delivery timeouts, retries, and missed events."
 type: reference
 nav:
   parent: "Troubleshooting"

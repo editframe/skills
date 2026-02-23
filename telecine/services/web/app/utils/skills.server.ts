@@ -275,7 +275,13 @@ export const getSkillReferencesMeta = (skillName: string): SkillReference[] => {
   for (const file of files) {
     const name = file.replace(".md", "");
     const content = readFileSync(join(referencesPath, file), "utf8");
-    const { attributes } = fm<ReferenceFrontmatter>(content);
+    let attributes: ReferenceFrontmatter;
+    try {
+      attributes = fm<ReferenceFrontmatter>(content).attributes;
+    } catch (err) {
+      console.error(`Failed to parse frontmatter in ${skillName}/references/${file}:`, err);
+      continue;
+    }
 
     // If file has sections, emit root entry + section entries
     if (attributes.sections && attributes.sections.length > 0) {

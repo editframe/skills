@@ -1,6 +1,6 @@
 ---
 title: Process
-description: Four-phase animation iteration process: establish motion intent, rough timing, refine easing, and polish with detail.
+description: "Four-phase animation iteration process: establish motion intent, rough timing, refine easing, and polish with detail."
 type: explanation
 order: 4
 ---
