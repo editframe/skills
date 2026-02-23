@@ -23,12 +23,17 @@ electronApp.commandLine.appendSwitch("disable-accelerated-video-decode");
 
 if (process.env.EF_GPU_RENDER) {
   // On Cloud Run GPU instances (NVIDIA L4):
-  // - /dev/dri render nodes are NOT provided — EGL hardware rasterization is
-  //   not available. Chromium rasterization falls back to swiftshader (CPU).
-  // - /dev/nvidia0 + /dev/nvidiactl ARE present — NVENC encoding via FFmpeg works.
-  // - ozone-platform=headless (spawn arg) avoids requiring a display server.
-  // - use-angle=swiftshader: explicit software rasterizer for offscreen frame capture.
-  electronApp.commandLine.appendSwitch("use-angle", "swiftshader");
+  // /dev/dri render nodes are absent, but NVIDIA's EGL driver supports
+  // EGL_EXT_platform_device which uses /dev/nvidia0 directly.
+  // libEGL_nvidia.so.0 is manually installed in the Docker image (the container
+  // toolkit doesn't inject it) along with the GLVND ICD (10_nvidia.json).
+  // ozone-platform=headless is passed as a spawn arg.
+  // use-angle=default lets ANGLE pick up the NVIDIA EGL ICD via GLVND.
+  electronApp.commandLine.appendSwitch("use-angle", "default");
+  electronApp.commandLine.appendSwitch("enable-gpu-rasterization");
+  electronApp.commandLine.appendSwitch("enable-zero-copy");
+  electronApp.commandLine.appendSwitch("ignore-gpu-blocklist");
+  electronApp.commandLine.appendSwitch("disable-gpu-sandbox");
 } else {
   // On CPU instances: software vsync is required with Xvfb.
   electronApp.commandLine.appendSwitch("disable-gpu-vsync");
