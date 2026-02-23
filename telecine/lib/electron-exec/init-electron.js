@@ -46,16 +46,24 @@ if (process.env.EF_GPU_RENDER) {
 electronApp.commandLine.appendSwitch("enable-features", "CanvasDrawElement");
 electronApp.commandLine.appendSwitch("enable-accelerated-2d-canvas");
 
-// Log GPU info on ready to verify actual rasterization path
-electronApp.whenReady().then(async () => {
+// Log GPU info after initialization to verify actual rasterization path.
+// Delay 2s to allow the GPU process to fully initialize before querying.
+electronApp.whenReady().then(() => setTimeout(async () => {
   const info = await electronApp.getGPUInfo("complete");
-  const gpuDevices = (info.gpuDevice || []).map(d => `${d.vendorId}:${d.deviceId} ${d.driverVersion || ""}`).join(", ");
+  const gpuDevices = (info.gpuDevice || []).map(d => `${d.vendorId}:${d.deviceId} driver=${d.driverVersion || "?"}`).join(", ");
   const status = electronApp.getGPUFeatureStatus();
+  const glRenderer = info.auxAttributes?.glRenderer || "unknown";
+  const glVendor = info.auxAttributes?.glVendor || "unknown";
   process.stderr.write(`[electron-gpu] devices: ${gpuDevices}\n`);
+  process.stderr.write(`[electron-gpu] gl_renderer: ${glRenderer}\n`);
+  process.stderr.write(`[electron-gpu] gl_vendor: ${glVendor}\n`);
   process.stderr.write(`[electron-gpu] gpu_compositing: ${status.gpu_compositing}\n`);
   process.stderr.write(`[electron-gpu] rasterization: ${status.rasterization}\n`);
   process.stderr.write(`[electron-gpu] webgl: ${status.webgl}\n`);
-});
+  // Log any feature status items that are "disabled" to understand why
+  const disabled = Object.entries(status).filter(([, v]) => String(v).includes("disabled")).map(([k, v]) => `${k}:${v}`).join(", ");
+  if (disabled) process.stderr.write(`[electron-gpu] disabled features: ${disabled}\n`);
+}, 2000));
 
 if (process.env.DEBUG_ELECTRON) {
   electronApp.commandLine.appendSwitch("enable-crash-reporter");
