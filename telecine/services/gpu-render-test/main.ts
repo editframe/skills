@@ -137,11 +137,11 @@ const electronProc = spawn(
   "node_modules/.bin/electron",
   [
     // GPU flags — must be CLI args so they propagate to the GPU subprocess.
-    // --use-angle=vulkan tells ANGLE to use Vulkan as its backend.
+    // --use-angle=default lets ANGLE pick the best backend (EGL/GLES on
+    // NVIDIA with our headless EGL setup, since Vulkan layer is broken).
     // Do NOT set --use-gl=egl: it conflicts with --use-angle in Chromium's
-    // GL implementation lookup table. Chromium auto-infers --use-gl=angle
-    // when --use-angle is set.
-    "--use-angle=vulkan",
+    // GL implementation lookup table. Chromium auto-infers --use-gl=angle.
+    "--use-angle=default",
     "--enable-features=Vulkan",
     "--enable-gpu-rasterization",
     "--enable-zero-copy",
@@ -156,7 +156,7 @@ const electronProc = spawn(
     "--disable-seccomp-filter-sandbox",
     "--enable-logging=stderr",
     "--v=1",
-    "--vmodule=gpu_init=3,angle*=3,vulkan*=3,egl*=3,gl_surface*=3,display*=3,gpu_process*=3,in_process_gpu*=3,gl_factory*=3",
+    "--vmodule=gpu_init=3,angle*=3,vulkan*=3,egl*=3,gl_surface*=3,display*=3,gpu_process*=3,in_process_gpu*=3,gl_factory*=3,ozone*=3",
     scriptPath,
   ],
   {
@@ -166,8 +166,10 @@ const electronProc = spawn(
       __GLX_VENDOR_LIBRARY_NAME: "nvidia",
       LIBGL_ALWAYS_SOFTWARE: "0",
       VK_ICD_FILENAMES: "/etc/vulkan/icd.d/nvidia_icd.json",
-      VK_LAYER_PATH: "/etc/vulkan/implicit_layer.d",
-      VK_LOADER_DEBUG: "error",
+      // Disable the NV optimus implicit layer — it fails to resolve
+      // vkGetInstanceProcAddr on Cloud Run and is unnecessary (single GPU).
+      DISABLE_LAYER_NV_OPTIMUS_1: "1",
+      VK_LOADER_DEBUG: "all",
       LD_PRELOAD: "/usr/lib/x86_64-linux-gnu/fake_sysfs_access.so",
     },
     timeout: 60000,
