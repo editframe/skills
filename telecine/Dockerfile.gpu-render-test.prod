@@ -154,13 +154,19 @@ COPY --from=builder /app/services/gpu-render-test/dist/ /app/services/gpu-render
 COPY --from=builder /app/lib/ /app/lib/
 COPY --from=builder /app/tsconfig.json /app/tsconfig.json
 
+# Copy the nvidia_icd.json and libGLX_nvidia.so from the extracted driver
+# The official ICD uses libGLX_nvidia.so.0, not libEGL_nvidia.so.0
+COPY --from=nvidia-gl /tmp/nvidia/nvidia_icd.json /tmp/nvidia_icd_original.json
+COPY --from=nvidia-gl /tmp/nvidia/libGLX_nvidia.so.${NVIDIA_DRIVER_VERSION} /usr/lib/x86_64-linux-gnu/
+RUN ln -sf libGLX_nvidia.so.${NVIDIA_DRIVER_VERSION} /usr/lib/x86_64-linux-gnu/libGLX_nvidia.so.0 && \
+    cp /tmp/nvidia_icd_original.json /etc/vulkan/icd.d/nvidia_icd.json && \
+    rm /tmp/nvidia_icd_original.json && \
+    ldconfig
+
 # Diagnostics: verify NVIDIA EGL/Vulkan ICDs + libs are present, then run the job.
 CMD ["bash", "-c", "\
   echo '=== host driver ===' && nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>&1; \
   echo '=== nvidia-smi ===' && nvidia-smi -L 2>&1; \
-  echo '=== /dev/nvidia* ===' && ls -la /dev/nvidia* 2>/dev/null || echo MISSING; \
-  echo '=== all vulkan ICDs ===' && find /etc/vulkan /usr/share/vulkan -name '*.json' -exec echo {} \\; -exec cat {} \\; 2>/dev/null || echo NONE; \
-  echo '=== all EGL ICDs ===' && find /usr/share/glvnd -name '*.json' -exec echo {} \\; -exec cat {} \\; 2>/dev/null || echo NONE; \
+  echo '=== Vulkan ICD ===' && cat /etc/vulkan/icd.d/nvidia_icd.json 2>&1; \
   echo '=== ldconfig nvidia ===' && ldconfig -p | grep -i nvidia; \
-  echo '=== libvulkan ===' && ldconfig -p | grep -i vulkan; \
   exec node /app/services/gpu-render-test/dist/main.js"]
