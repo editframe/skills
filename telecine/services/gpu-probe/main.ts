@@ -73,7 +73,7 @@ const nvenc = spawnSync(
   [
     "-y",
     "-f", "lavfi",
-    "-i", "color=red:size=64x64:duration=1:rate=30",
+    "-i", "color=red:size=320x240:duration=1:rate=30",
     "-c:v", "h264_nvenc",
     "-f", "null",
     "-",
