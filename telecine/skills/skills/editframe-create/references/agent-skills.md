@@ -1,6 +1,6 @@
 ---
 title: Agent Skills
-description: Install AI coding agent skills for Editframe development assistance
+description: Install Editframe AI coding agent skills into Cursor, Windsurf, and other LLM-based IDEs for in-editor composition help.
 type: how-to
 skill: false
 nav:

@@ -1,6 +1,6 @@
 ---
 title: Trim Handles Element
-description: Interactive trim handles for adjusting media start and end points
+description: Draggable in-point and out-point handles for trimming media element duration directly on the composition timeline.
 type: reference
 nav:
   parent: "Timeline"

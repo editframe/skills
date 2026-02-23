@@ -1,6 +1,6 @@
 ---
 title: Pause Button Element
-description: Pause button that auto-hides when paused
+description: Pause button that renders only when the composition is playing, auto-hiding when already paused for clean editor UIs.
 type: reference
 nav:
   parent: "Playback Controls"

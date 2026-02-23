@@ -1,6 +1,6 @@
 ---
 title: Cloud Render
-description: Render video compositions in the Editframe cloud and manage assets
+description: Submit Editframe compositions to the cloud render pipeline and download completed videos without local ffmpeg.
 type: reference
 nav:
   parent: "Commands / Cloud"

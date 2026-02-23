@@ -1,6 +1,6 @@
 ---
 title: Timeline Ruler Element
-description: Time ruler showing frame markers and time labels with zoom support
+description: Time ruler with zoom-aware frame markers and time labels for precise timeline navigation in editor interfaces.
 type: reference
 nav:
   parent: "Timeline"

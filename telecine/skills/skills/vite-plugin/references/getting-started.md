@@ -1,6 +1,6 @@
 ---
 title: Getting Started
-description: Installation and configuration of the Editframe Vite plugin
+description: Install and configure the Editframe Vite plugin to enable local asset serving, JIT transcoding, and visual testing.
 type: reference
 nav:
   parent: vite-plugin

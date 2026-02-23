@@ -1,6 +1,6 @@
 ---
 title: Audio Element
-description: Audio element for music, voiceover, and sound effects with trimming and volume control
+description: Audio element for music, voiceover, and sound effects with trim controls, volume adjustment, and loop support in compositions.
 type: reference
 nav:
   parent: "Media"

@@ -1,6 +1,6 @@
 ---
 title: Render
-description: Render video compositions to MP4 locally using the Editframe CLI
+description: Render Editframe HTML compositions to MP4 files locally using headless Chrome and ffmpeg via the Editframe CLI.
 type: reference
 nav:
   parent: "Commands / Local"

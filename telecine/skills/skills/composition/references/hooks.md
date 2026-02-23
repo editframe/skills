@@ -1,6 +1,6 @@
 ---
 title: Hooks
-description: React hooks for accessing timing information and pan/zoom transforms
+description: React hooks for reading current playback time, pan/zoom transform, and media loading state from within composition components.
 type: reference
 nav:
   parent: "React"

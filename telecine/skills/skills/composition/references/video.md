@@ -1,6 +1,6 @@
 ---
 title: Video Element
-description: Video element with source trimming, volume control, and muting
+description: Video element with source trimming, volume control, muting, and frame-accurate playback for Editframe compositions.
 type: reference
 nav:
   parent: "Media"

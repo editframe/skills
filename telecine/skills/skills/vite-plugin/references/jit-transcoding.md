@@ -1,6 +1,6 @@
 ---
 title: JIT Transcoding
-description: On-demand video transcoding during development for instant playback of any video format
+description: On-demand video transcoding during local development for instant browser-compatible playback of any input video format.
 type: reference
 nav:
   parent: "Features"

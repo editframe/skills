@@ -1,6 +1,6 @@
 ---
 title: Thumbnail Strip Element
-description: Video thumbnail strip showing preview frames along timeline
+description: Video thumbnail strip that generates and displays preview frames at regular intervals along the composition timeline.
 type: reference
 nav:
   parent: "Timeline"

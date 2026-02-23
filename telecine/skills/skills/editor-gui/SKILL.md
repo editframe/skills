@@ -1,7 +1,7 @@
 ---
 name: editor-gui
 title: Editor Toolkit
-description: Build video editing interfaces with Editframe's GUI components. Assemble timeline, scrubber, filmstrip, preview, playback controls, and transform handles into custom editing UIs. Use when building video editors, editing tools, or when working with timeline, scrubber, preview, playback controls, trim handles, hierarchy, or editor UIs.
+description: Build video editing interfaces with Editframe's GUI components. Assemble timeline, scrubber, filmstrip, preview, playback controls, and transform handles.
 order: 15
 license: MIT
 metadata:

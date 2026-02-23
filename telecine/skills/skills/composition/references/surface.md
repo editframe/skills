@@ -1,6 +1,6 @@
 ---
 title: Surface Element
-description: Mirror/duplicate of another element's canvas output
+description: Mirror or duplicate another element's canvas output into a new position, useful for picture-in-picture and reflection effects.
 type: reference
 nav:
   parent: "Layout & Timing"

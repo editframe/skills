@@ -1,6 +1,6 @@
 ---
 title: Waveform Element
-description: Audio waveform visualization with multiple display modes
+description: Audio waveform visualization element with bar, line, and mirror display modes, synced to composition playback time.
 type: reference
 nav:
   parent: "Media"

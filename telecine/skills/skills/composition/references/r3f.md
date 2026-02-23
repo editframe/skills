@@ -1,6 +1,6 @@
 ---
 title: React Three Fiber Integration
-description: Render 3D scenes with React Three Fiber in Editframe compositions
+description: Integrate React Three Fiber 3D scenes into Editframe compositions with frame-accurate scrubbing and video export support.
 type: reference
 nav:
   parent: "Advanced"

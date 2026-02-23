@@ -1,6 +1,6 @@
 ---
 title: Transition Styles
-description: Types of transitions, their emotional impact, and when to use them in video
+description: Types of video transitions — cut, dissolve, wipe, and motion — their emotional impact, and when to apply each.
 type: reference
 order: 4
 ---
