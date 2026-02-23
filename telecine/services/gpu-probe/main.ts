@@ -43,11 +43,20 @@ try {
 }
 
 // ---------------------------------------------------------------------------
-// 1b. vulkaninfo (diagnostic: show available Vulkan extensions)
+// 1b. vulkaninfo (diagnostic: show available Vulkan extensions and ICD details)
 // ---------------------------------------------------------------------------
 step("1b. vulkaninfo");
 try {
-  const vkInfo = execSync("vulkaninfo --summary 2>&1 || vulkaninfo 2>&1 | head -80", { encoding: "utf8", shell: true });
+  // Show ICD files present (toolkit injects these at runtime)
+  const icdFiles = execSync("find /usr/share/vulkan /etc/vulkan -name '*.json' 2>/dev/null || echo 'no ICD dirs'", { encoding: "utf8", shell: true });
+  process.stdout.write(`ICD files:\n${icdFiles}`);
+  // Show NVIDIA ICD json content if present
+  const nvidiaIcd = execSync("cat /usr/share/vulkan/icd.d/nvidia_icd.json 2>/dev/null || echo 'no nvidia icd'", { encoding: "utf8", shell: true });
+  process.stdout.write(`nvidia_icd.json: ${nvidiaIcd}`);
+  // Check which libGLX_nvidia.so paths exist
+  const libPaths = execSync("find /usr -name 'libGLX_nvidia*' -o -name 'libEGL_nvidia*' 2>/dev/null | head -10", { encoding: "utf8", shell: true });
+  process.stdout.write(`NVIDIA GL libs:\n${libPaths || '(none found)'}\n`);
+  const vkInfo = execSync("vulkaninfo --summary 2>&1", { encoding: "utf8", shell: true });
   process.stdout.write(vkInfo.slice(0, 3000));
   pass("vulkaninfo ran");
 } catch (err) {
