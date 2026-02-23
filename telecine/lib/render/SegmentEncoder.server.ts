@@ -108,7 +108,7 @@ export class SegmentEncoder extends EventEmitter {
 
   get groupSize() {
     if (this.renderOptions.encoderOptions.isInitSegment) {
-      return 1;
+      return hasGpu() ? 2 : 1;
     }
     return (
       (this.renderOptions.encoderOptions.keyframeIntervalMs / 1000) *
@@ -245,7 +245,7 @@ export class SegmentEncoder extends EventEmitter {
     const videoCodecArgs = hasGpu()
       ? // NVENC hardware encoder: offloads H.264 encoding to GPU NVENC silicon
         // biome-ignore format: strict command line format
-        ["-c:v", "h264_nvenc", "-g", `${groupSize}`, "-bf", "0", "-preset", "p4", "-profile:v", "high", "-level:v", "4.0", "-pix_fmt", "yuv420p"]
+        ["-c:v", "h264_nvenc", "-g", `${groupSize}`, "-bf", "0", "-b_adapt", "0", "-preset", "p4", "-profile:v", "high", "-level:v", "4.0", "-pix_fmt", "yuv420p"]
       : // Software encoder: libx264 ultrafast for CPU instances
         // biome-ignore format: strict command line format
         ["-c:v", "libx264", "-g", `${groupSize}`, "-preset", "ultrafast", "-tune", "zerolatency", "-profile:v", "high", "-level:v", "4.0", "-pix_fmt", "yuv420p"];
