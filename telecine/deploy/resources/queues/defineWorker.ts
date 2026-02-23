@@ -30,9 +30,9 @@ export const defineWorker = (config: QueueConfig, gpu?: GpuConfig) => {
     ? { "nvidia.com/gpu": "1" }
     : {};
 
-  const nodeSelector: Record<string, string> = gpu
-    ? { "run.googleapis.com/accelerator": gpu.type }
-    : {};
+  const nodeSelector = gpu
+    ? { accelerator: gpu.type }
+    : undefined;
 
   return new gcp.cloudrunv2.Service(
     `telecine-worker-${config.name}`,
@@ -50,7 +50,7 @@ export const defineWorker = (config: QueueConfig, gpu?: GpuConfig) => {
         },
         serviceAccount: serviceAccount.email,
         maxInstanceRequestConcurrency: config.workerConcurrency,
-        ...(Object.keys(nodeSelector).length > 0 ? { nodeSelector } : {}),
+        ...(nodeSelector ? { nodeSelector } : {}),
         volumes: [
           {
             name: "cloudsql",
