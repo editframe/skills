@@ -1,6 +1,6 @@
 ---
 title: Focus Overlay Element
-description: Visual indicator highlighting the focused element in a composition
+description: Visual focus indicator that highlights and outlines the currently selected element in an Editframe composition preview.
 type: reference
 nav:
   parent: "Preview & Canvas"

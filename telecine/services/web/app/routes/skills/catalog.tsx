@@ -8,13 +8,12 @@ import { MobileBreadcrumbBar } from "~/components/skills/MobileBreadcrumbBar";
 import { useTheme } from "~/hooks/useTheme";
 
 export const meta = () => {
+  const description =
+    "API references, tutorials, and guides for building video compositions, editor UIs, and integrations with Editframe.";
   return [
     { title: "Documentation - Editframe" },
-    {
-      name: "description",
-      content:
-        "API references, tutorials, and guides for building video compositions, editor UIs, and integrations with Editframe.",
-    },
+    { name: "description", content: description },
+    { property: "og:description", content: description },
   ];
 };
 

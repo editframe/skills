@@ -1,6 +1,6 @@
 ---
 title: Render to Video Tutorial
-description: End-to-end guide to rendering compositions as MP4 video in the browser
+description: End-to-end guide to exporting Editframe compositions as MP4 video files using the browser renderer or Editframe CLI.
 type: tutorial
 nav:
   parent: "Rendering"

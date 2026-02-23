@@ -1,6 +1,6 @@
 ---
 title: Timeline Root
-description: Wrapper component required for React-based timelines to ensure proper rendering
+description: Required wrapper component for React-based Editframe timelines that sets up rendering context and playback coordination.
 type: reference
 nav:
   parent: "React"

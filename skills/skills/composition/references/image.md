@@ -1,6 +1,6 @@
 ---
 title: Image Element
-description: Static image element with duration control and CSS positioning
+description: Static image element with configurable display duration, CSS positioning, and fit/fill/cover layout modes for compositions.
 type: reference
 nav:
   parent: "Media"

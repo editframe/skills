@@ -1,6 +1,6 @@
 ---
 title: Video Fundamentals
-description: Essential concepts for video storytelling including transitions, emotional arcs, and brand identity
+description: Essential video storytelling concepts — transitions, emotional arcs, pacing, and brand identity — for composition planning.
 type: reference
 order: 1
 ---

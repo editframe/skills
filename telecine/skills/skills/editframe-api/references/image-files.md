@@ -1,6 +1,6 @@
 ---
 title: Image Files
-description: Upload and manage static images using the unified files API
+description: Upload and manage static image files through the Editframe unified files API for use in compositions and renders.
 type: reference
 nav:
   parent: "API Reference / Files"

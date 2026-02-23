@@ -1,6 +1,6 @@
 ---
 title: Caption Files
-description: Upload and manage subtitle files using the unified files API
+description: Upload and manage WebVTT or SRT subtitle files through the Editframe files API for synchronized caption playback.
 type: reference
 nav:
   parent: "API Reference / Files"

@@ -1,6 +1,6 @@
 ---
 title: Toggle Play Element
-description: Combined play/pause button that switches content based on playback state
+description: Combined play/pause toggle button that switches between play and pause states with configurable icons and labels.
 type: reference
 nav:
   parent: "Playback Controls"

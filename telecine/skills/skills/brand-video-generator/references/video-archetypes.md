@@ -1,6 +1,6 @@
 ---
 title: Video Archetypes
-description: Common video patterns and structures organized by industry and objective
+description: Common video narrative archetypes — explainer, testimonial, product demo, and more — with structure and pacing guidance.
 type: reference
 order: 2
 ---

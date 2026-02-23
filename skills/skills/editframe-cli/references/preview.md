@@ -1,6 +1,6 @@
 ---
 title: Preview
-description: Preview Editframe compositions in the browser during development
+description: Open an Editframe composition in the browser for live preview during development, with hot-reload on file changes.
 type: how-to
 nav:
   parent: "Commands / Local"

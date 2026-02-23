@@ -1,6 +1,6 @@
 ---
 title: Local File API
-description: Development endpoints for file upload and ISOBMFF processing during local development
+description: Local development endpoints for file upload and ISOBMFF video processing, mirroring the Editframe cloud files API.
 type: reference
 nav:
   parent: "Features"

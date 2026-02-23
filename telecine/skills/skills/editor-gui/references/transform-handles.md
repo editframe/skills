@@ -1,6 +1,6 @@
 ---
 title: Transform Handles Element
-description: Resize and rotation handles for interactive element transformation
+description: Interactive resize and rotation handles for transforming composition elements with mouse drag in the preview canvas.
 type: reference
 nav:
   parent: "Transform & Manipulation"

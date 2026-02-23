@@ -1,6 +1,6 @@
 ---
 title: Preview Element
-description: Preview container with focus tracking for composition elements
+description: Composition preview container with automatic focus tracking, zoom-to-fit behavior, and overlay layer integration.
 type: reference
 nav:
   parent: "Preview & Canvas"

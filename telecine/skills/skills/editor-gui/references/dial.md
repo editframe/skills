@@ -1,6 +1,6 @@
 ---
 title: Dial Element
-description: Rotary control for angle input with circular interaction
+description: Rotary dial input for angle values, supporting mouse and touch circular drag gestures with configurable min, max, and step.
 type: reference
 nav:
   parent: "Transform & Manipulation"

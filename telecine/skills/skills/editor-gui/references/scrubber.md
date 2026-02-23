@@ -1,6 +1,6 @@
 ---
 title: Scrubber Element
-description: Timeline scrubber control with horizontal and vertical modes for playback navigation
+description: Timeline scrubber with horizontal seek and vertical zoom modes, keyboard shortcuts, and frame-accurate time control.
 type: reference
 nav:
   parent: "Timeline"

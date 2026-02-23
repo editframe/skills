@@ -1,6 +1,6 @@
 ---
 title: Render Strategies
-description: Three approaches to rendering compositions — CLI, browser, and cloud — and when to use each
+description: Three approaches to rendering Editframe compositions — CLI, browser-side, and cloud — with tradeoffs and when to use each.
 type: explanation
 nav:
   parent: "Concepts"

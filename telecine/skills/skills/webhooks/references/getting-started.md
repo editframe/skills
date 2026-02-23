@@ -1,6 +1,6 @@
 ---
 title: Getting Started with Webhooks
-description: Set up webhook notifications for render completion and file processing events
+description: Configure a webhook endpoint URL to receive Editframe event notifications for render completion and file processing.
 type: tutorial
 nav:
   parent: "Quick Start"

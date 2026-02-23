@@ -1,6 +1,6 @@
 ---
 title: Render API
-description: Export compositions to video in the browser or via CLI with full control over encoding options
+description: Export compositions to video in the browser or via CLI with full control over resolution, bitrate, and encoding options.
 type: reference
 nav:
   parent: "Rendering"

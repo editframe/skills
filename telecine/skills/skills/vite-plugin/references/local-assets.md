@@ -1,6 +1,6 @@
 ---
 title: Local Assets API
-description: Development endpoints for local asset management, image caching, and caption generation
+description: Local development endpoints for asset management, image thumbnail caching, and automatic caption file generation.
 type: reference
 nav:
   parent: "Features"

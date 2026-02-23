@@ -1,6 +1,6 @@
 ---
 title: Resizable Box Element
-description: Resizable container with drag handles for interactive resizing
+description: Resizable box component with draggable edge and corner handles, supporting configurable minimum and maximum size constraints.
 type: reference
 nav:
   parent: "Transform & Manipulation"

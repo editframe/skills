@@ -1,6 +1,6 @@
 ---
 title: Configuration Element
-description: Configuration wrapper for media engine selection and API settings
+description: Configuration wrapper for selecting media engine (ffmpeg or native) and setting API credentials for Editframe compositions.
 type: reference
 nav:
   parent: "Advanced"

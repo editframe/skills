@@ -1,6 +1,6 @@
 ---
 title: Overlay Layer Element
-description: Container for positioned overlay items that track elements
+description: Container that positions overlay items absolutely over a composition, anchoring them to their target elements during playback.
 type: reference
 nav:
   parent: "Overlay System"

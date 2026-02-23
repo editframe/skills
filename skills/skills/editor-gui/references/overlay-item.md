@@ -1,6 +1,6 @@
 ---
 title: Overlay Item Element
-description: Individual overlay that tracks and follows a target element
+description: Individual overlay element that tracks a specific composition element, following its position and size during playback.
 type: reference
 nav:
   parent: "Overlay System"

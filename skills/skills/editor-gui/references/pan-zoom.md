@@ -1,6 +1,6 @@
 ---
 title: Pan-Zoom Element
-description: Interactive pan and zoom container with gesture support
+description: Interactive container providing pan and zoom navigation with touch gesture support, mouse wheel zoom, and programmatic control.
 type: reference
 nav:
   parent: "Preview & Canvas"

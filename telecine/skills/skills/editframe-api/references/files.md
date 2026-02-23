@@ -1,6 +1,6 @@
 ---
 title: Files
-description: Unified API for uploading, processing, and managing video, image, and caption files
+description: Unified API for uploading, processing, and managing video, image, and caption files used in Editframe compositions and renders.
 type: reference
 nav:
   parent: "API Reference"

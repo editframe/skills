@@ -1,6 +1,6 @@
 ---
 title: Text Element
-description: Animated text with character, word, and line splitting
+description: Animated text element with automatic character, word, and line splitting for per-unit CSS animation and stagger effects.
 type: reference
 nav:
   parent: "Media"

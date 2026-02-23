@@ -1,6 +1,6 @@
 ---
 title: Visual Testing
-description: Visual regression testing for compositions using image diff comparison
+description: Automated visual regression testing for Editframe compositions, comparing rendered frames against stored baseline images.
 type: reference
 nav:
   parent: "Features"

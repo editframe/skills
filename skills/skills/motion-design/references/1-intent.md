@@ -1,6 +1,6 @@
 ---
 title: Intent
-description: Map message and emotion to motion characteristics before choosing timing or easing
+description: Define motion intent by mapping message and emotional goal to specific motion characteristics before choosing timing or easing.
 type: explanation
 order: 1
 ---

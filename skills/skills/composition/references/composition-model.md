@@ -1,6 +1,6 @@
 ---
 title: Composition Model
-description: Mental model for how timegroup trees, temporal scheduling, and element rendering work together
+description: Mental model for how timegroup trees, temporal scheduling, and element rendering work together in an Editframe composition.
 type: explanation
 nav:
   parent: "Concepts"

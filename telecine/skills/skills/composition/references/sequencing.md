@@ -1,6 +1,6 @@
 ---
 title: Sequencing Scenes
-description: How to create sequential scene playback with cuts and transitions
+description: Create sequential scene playback using seq-mode timegroups, with automatic cuts and configurable transition timing between scenes.
 type: how-to
 nav:
   parent: "Layout & Timing"

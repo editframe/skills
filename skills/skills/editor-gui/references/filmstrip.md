@@ -1,6 +1,6 @@
 ---
 title: Filmstrip Element
-description: Visual timeline showing composition hierarchy and track layout
+description: Visual timeline panel showing composition hierarchy as stacked tracks with time-proportional widths and playhead indicator.
 type: reference
 nav:
   parent: "Timeline"

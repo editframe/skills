@@ -1,6 +1,6 @@
 ---
 title: Webhook Events
-description: Complete reference of webhook event types and their payload structures
+description: Complete reference for all Editframe webhook event types, payload schemas, and the conditions that trigger each event.
 type: reference
 nav:
   parent: "Events & Payloads"

@@ -1,6 +1,6 @@
 ---
 title: Attention
-description: Sequential attention flow, stagger patterns, and choreography for animation
+description: Directing viewer attention with stagger, sequential choreography, and visual hierarchy in multi-element animations.
 type: explanation
 order: 3
 ---

@@ -14,7 +14,7 @@ Disallow: /org/
 Disallow: /auth/
 Disallow: /ef-sign-url
 
-Sitemap: https://www.editframe.com/sitemap.xml
+Sitemap: https://editframe.com/sitemap.xml
 `;
 
   return new Response(content, {

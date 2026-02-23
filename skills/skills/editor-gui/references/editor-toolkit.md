@@ -1,6 +1,6 @@
 ---
 title: Building Custom Editors
-description: Compose Preview, Controls, Filmstrip, Workbench, and Hierarchy to build custom video editor interfaces
+description: Compose Preview, Controls, Filmstrip, Workbench, and Hierarchy components to build fully custom video editor interfaces.
 type: how-to
 nav:
   parent: "Getting Started"

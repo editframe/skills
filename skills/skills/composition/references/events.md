@@ -1,6 +1,6 @@
 ---
 title: Custom Events
-description: Catalog of all custom events dispatched by Editframe elements for interactive UI components.
+description: Catalog of all custom DOM events dispatched by Editframe elements for building interactive player and editor UI components.
 type: reference
 nav:
   parent: "Advanced"

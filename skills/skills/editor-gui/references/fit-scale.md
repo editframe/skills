@@ -1,6 +1,6 @@
 ---
 title: Fit Scale Element
-description: Responsive container that scales content to fit while preserving aspect ratio
+description: Responsive wrapper that scales its content uniformly to fill available space while preserving the original aspect ratio.
 type: reference
 nav:
   parent: "Preview & Canvas"

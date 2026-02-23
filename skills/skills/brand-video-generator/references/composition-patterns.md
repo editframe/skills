@@ -1,6 +1,6 @@
 ---
 title: Composition Patterns
-description: Common structural patterns for video composition with Editframe Elements
+description: Structural patterns for video composition layout — rule of thirds, headroom, symmetry, and visual hierarchy guidance.
 type: reference
 order: 3
 ---

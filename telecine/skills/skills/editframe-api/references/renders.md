@@ -1,6 +1,6 @@
 ---
 title: Renders
-description: Create render jobs, monitor progress, and download completed videos or images
+description: Create render jobs from HTML compositions, poll for completion, and download finished videos or image outputs.
 type: reference
 nav:
   parent: "API Reference / Renders"

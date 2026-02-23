@@ -1,6 +1,6 @@
 ---
 title: URL Signing
-description: Enable browser-based playback of Editframe media by generating short-lived, scoped tokens for CDN access
+description: Generate short-lived signed CDN tokens to enable browser-based playback of private Editframe media files securely.
 type: explanation
 nav:
   parent: "Concepts"

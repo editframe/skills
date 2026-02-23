@@ -1,7 +1,7 @@
 ---
 name: editframe-api
 title: Server API
-description: JavaScript/TypeScript SDK for Editframe's video rendering API. Create renders, upload media files (video, image, caption), manage files, and sign URLs for browser-based playback. Use when working with the @editframe/api package, rendering videos programmatically, or integrating Editframe into applications.
+description: JavaScript/TypeScript SDK for Editframe's video rendering API. Create renders, upload video and image files, manage assets, and sign URLs for playback.
 order: 30
 license: MIT
 metadata:

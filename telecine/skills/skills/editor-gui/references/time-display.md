@@ -1,6 +1,6 @@
 ---
 title: Time Display Element
-description: Formatted time display showing current time and duration
+description: Formatted time display showing current playback position and total duration, with configurable frame rate and format options.
 type: reference
 nav:
   parent: "Timeline"

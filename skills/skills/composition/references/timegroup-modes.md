@@ -1,6 +1,6 @@
 ---
 title: Timegroup Modes
-description: How the four timegroup modes work and when to use each
+description: How the four timegroup layout modes — par, seq, excl, and media — control duration, ordering, and child element scheduling.
 type: explanation
 nav:
   parent: "Concepts"

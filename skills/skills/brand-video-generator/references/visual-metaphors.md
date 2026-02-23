@@ -1,6 +1,6 @@
 ---
 title: Visual Metaphors
-description: Quick reference for representing abstract concepts visually in video
+description: Reference for translating abstract concepts into concrete visual metaphors for use in brand video storytelling.
 type: reference
 order: 8
 ---

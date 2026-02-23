@@ -1,6 +1,6 @@
 ---
 title: Controls Element
-description: Context bridge for playback controls targeting non-ancestor elements
+description: Context bridge that routes playback control actions to non-ancestor timeline elements in complex, nested editor layouts.
 type: reference
 nav:
   parent: "Playback Controls"

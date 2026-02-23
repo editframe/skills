@@ -1,6 +1,6 @@
 ---
 title: Transcription
-description: Generate caption data for ef-captions
+description: Generate word-level transcription data from audio and video files for use with ef-captions synchronized caption playback.
 type: how-to
 nav:
   parent: "Rendering"

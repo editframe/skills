@@ -1,6 +1,6 @@
 ---
 title: Color Psychology
-description: Emotional associations and strategic use of colors in video content
+description: Emotional associations and strategic use of colors in branded video, with palette selection guidance for key moods.
 type: explanation
 order: 6
 ---

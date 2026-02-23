@@ -1,6 +1,6 @@
 ---
 title: Physics Model
-description: Material, weight, and force determine motion profiles for animation
+description: How material weight, elasticity, and applied force shape motion profiles — spring, gravity, and friction in animation.
 type: explanation
 order: 2
 ---

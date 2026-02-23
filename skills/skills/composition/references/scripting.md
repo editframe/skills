@@ -1,6 +1,6 @@
 ---
 title: Scripting
-description: Add dynamic JavaScript behavior to timegroups with initializers and frame tasks
+description: Add dynamic JavaScript behavior to timegroups with initializer callbacks and per-frame task functions for procedural animation.
 type: reference
 nav:
   parent: "Rendering"

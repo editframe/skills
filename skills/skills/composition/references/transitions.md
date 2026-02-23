@@ -1,6 +1,6 @@
 ---
 title: Transitions
-description: Create smooth transitions between sequence items using overlap and CSS animations
+description: Create smooth CSS-animated transitions between sequence items using configurable overlap duration and animation keyframes.
 type: how-to
 nav:
   parent: "Layout & Timing"

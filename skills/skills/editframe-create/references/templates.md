@@ -1,6 +1,6 @@
 ---
 title: Templates
-description: Available project templates and their contents
+description: Available Editframe project templates — plain HTML, React, and more — and the file structure each template provides.
 type: reference
 nav:
   parent: "Reference"

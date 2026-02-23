@@ -1,6 +1,6 @@
 ---
 title: Time Model
-description: How time propagation and duration calculation work in compositions
+description: How time propagation works in composition trees: duration inheritance, offset calculation, and element scheduling rules.
 type: explanation
 nav:
   parent: "Concepts"
