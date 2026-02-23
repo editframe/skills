@@ -50,13 +50,7 @@ electronApp.commandLine.appendSwitch("enable-accelerated-2d-canvas");
 electronApp.whenReady().then(() => setTimeout(async () => {
   try {
     const info = await electronApp.getGPUInfo("complete");
-    const glRenderer = info.auxAttributes?.glRenderer || "unknown";
-    const glVendor = info.auxAttributes?.glVendor || "unknown";
-    const gpuDevices = info.gpuDevice?.map(d => `${d.vendorId}:${d.deviceId} ${d.driverVersion}`) || [];
-    process.stderr.write(`[electron-gpu] gl_renderer: ${glRenderer} / gl_vendor: ${glVendor} / devices: ${gpuDevices.join(", ")}\n`);
-    if (info.featureStatus) {
-      process.stderr.write(`[electron-gpu] feature_status: ${JSON.stringify(info.featureStatus)}\n`);
-    }
+    process.stderr.write(`[electron-gpu] FULL_GPU_INFO: ${JSON.stringify(info)}\n`);
   } catch (err) {
     process.stderr.write(`[electron-gpu] getGPUInfo failed: ${err.message}\n`);
   }
