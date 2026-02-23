@@ -52,12 +52,14 @@ FROM debian:bullseye-slim AS gpu-shims
 # Compile against Debian Bullseye's libpci-dev (pci.h 3.7.0) to match
 # Chromium's sysroot ABI. Struct layouts must match exactly since ANGLE
 # accesses pci_access->devices and pci_dev->vendor_id etc by offset.
-RUN apt-get update && apt-get install -y gcc libpci-dev pkg-config && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y gcc libpci-dev libegl-dev libgles-dev pkg-config && rm -rf /var/lib/apt/lists/*
 COPY lib/gpu-shim/fake_libpci.c /build/fake_libpci.c
 COPY lib/gpu-shim/fake_sysfs_access.c /build/fake_sysfs_access.c
+COPY lib/gpu-shim/egl_test.c /build/egl_test.c
 RUN gcc -shared -fPIC -o /build/libpci.so.3 /build/fake_libpci.c \
     $(pkg-config --cflags libpci) -Wl,--no-as-needed && \
-    gcc -shared -fPIC -o /build/fake_sysfs_access.so /build/fake_sysfs_access.c -ldl
+    gcc -shared -fPIC -o /build/fake_sysfs_access.so /build/fake_sysfs_access.c -ldl && \
+    gcc -o /build/egl_test /build/egl_test.c -lEGL -ldl
 
 # ---------------------------------------------------------------------------
 # Extract NVIDIA EGL/OpenGL userspace libraries from the driver installer.
@@ -190,6 +192,8 @@ RUN ln -sf libGLX_nvidia.so.${NVIDIA_DRIVER_VERSION} /usr/lib/x86_64-linux-gnu/l
 COPY --from=gpu-shims /build/libpci.so.3 /usr/lib/x86_64-linux-gnu/libpci.so.3
 # Fake sysfs access shim: intercepts access("/sys/bus/pci/") to return 0.
 COPY --from=gpu-shims /build/fake_sysfs_access.so /usr/lib/x86_64-linux-gnu/fake_sysfs_access.so
+# EGL diagnostic binary
+COPY --from=gpu-shims /build/egl_test /usr/local/bin/egl_test
 RUN ldconfig
 
 # Diagnostics: verify NVIDIA EGL/Vulkan ICDs + libs and GPU shims are present.
