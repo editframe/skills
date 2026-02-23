@@ -145,7 +145,10 @@ const spawnElectronBootloader = async (script: string) => {
             env: {
               ...process.env,
               ...(gpuMode
-                ? { EF_GPU_RENDER: "1", DISPLAY: XVFB_DISPLAY }
+                // No DISPLAY in GPU mode: ozone-platform=headless (set in
+                // init-electron.js) bypasses X11. DISPLAY would cause Chromium
+                // to prefer GLX over EGL, routing through Mesa instead of NVIDIA.
+                ? { EF_GPU_RENDER: "1" }
                 : { DISPLAY: XVFB_DISPLAY }),
               EF_ELECTRON_SCRIPT: script,
               EF_SOCKET_PATH: socketPath,

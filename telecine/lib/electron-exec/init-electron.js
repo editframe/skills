@@ -22,13 +22,19 @@ electronApp.commandLine.appendSwitch("disable-frame-rate-limit");
 electronApp.commandLine.appendSwitch("disable-accelerated-video-decode");
 
 if (process.env.EF_GPU_RENDER) {
-  // On GPU instances: Xvfb provides DISPLAY; use-angle=gles forces ANGLE to use
-  // the GLES2/EGL backend (not GLX). With Xvfb present, ANGLE's "default" picks
-  // GLX (Mesa software GL) — "gles" explicitly routes through EGL so the NVIDIA
-  // injected libEGL_nvidia.so is used for actual GPU rendering.
-  // --ignore-gpu-blocklist overrides Chromium's cloud/headless GPU blocklist.
-  // --disable-gpu-sandbox is required in containers.
+  // On GPU instances: no display server.
+  // use-gl=egl: force Chromium to use the EGL path (not GLX). Required in
+  //   Electron 32+; without it, Chromium selects GLX which routes through
+  //   Xvfb/Mesa software GL even when NVIDIA EGL ICD is present.
+  // use-angle=gles: ANGLE uses GLES2 via EGL — picks up NVIDIA's injected
+  //   libEGL_nvidia.so via the GLVND dispatcher (libegl1).
+  // ozone-platform=headless: no X11/Wayland display server needed.
+  //   With DISPLAY unset, this prevents Chromium from trying to connect to X11.
+  // ignore-gpu-blocklist: Cloud Run GPU nodes are on Chromium's headless blocklist.
+  // disable-gpu-sandbox: required in containers (no kernel GPU sandbox).
+  electronApp.commandLine.appendSwitch("use-gl", "egl");
   electronApp.commandLine.appendSwitch("use-angle", "gles");
+  electronApp.commandLine.appendSwitch("ozone-platform", "headless");
   electronApp.commandLine.appendSwitch("enable-gpu-rasterization");
   electronApp.commandLine.appendSwitch("enable-zero-copy");
   electronApp.commandLine.appendSwitch("ignore-gpu-blocklist");
