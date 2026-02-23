@@ -315,9 +315,80 @@ int stat(const char *path, struct stat *buf) {
     return real_stat(path, buf);
 }
 
-/* ---------- Intercept readdir/scandir for /dev/dri ---------- */
+/* ---------- Intercept directory enumeration for /dev/dri ---------- */
 
 typedef DIR* (*opendir_fn)(const char*);
+typedef struct dirent* (*readdir_fn)(DIR*);
+typedef int (*closedir_fn)(DIR*);
+
+/* Fake DIR handle for /dev/dri enumeration */
+#define FAKE_DRI_DIR_SENTINEL ((DIR*)(void*)0xDEAD0001)
+static int fake_dri_dir_pos = 0;
+
+DIR *opendir(const char *name) {
+    static opendir_fn real_opendir = NULL;
+    if (!real_opendir) real_opendir = (opendir_fn)dlsym(RTLD_NEXT, "opendir");
+    if (name && strcmp(name, "/dev/dri") == 0) {
+        fake_dri_dir_pos = 0;
+        return FAKE_DRI_DIR_SENTINEL;
+    }
+    return real_opendir(name);
+}
+
+struct dirent *readdir(DIR *dirp) {
+    static readdir_fn real_readdir = NULL;
+    if (!real_readdir) real_readdir = (readdir_fn)dlsym(RTLD_NEXT, "readdir");
+    if (dirp == FAKE_DRI_DIR_SENTINEL) {
+        static struct dirent entries[4];
+        if (fake_dri_dir_pos == 0) {
+            fake_dri_dir_pos++;
+            memset(&entries[0], 0, sizeof(struct dirent));
+            strcpy(entries[0].d_name, ".");
+            entries[0].d_type = DT_DIR;
+            return &entries[0];
+        }
+        if (fake_dri_dir_pos == 1) {
+            fake_dri_dir_pos++;
+            memset(&entries[1], 0, sizeof(struct dirent));
+            strcpy(entries[1].d_name, "..");
+            entries[1].d_type = DT_DIR;
+            return &entries[1];
+        }
+        if (fake_dri_dir_pos == 2) {
+            fake_dri_dir_pos++;
+            memset(&entries[2], 0, sizeof(struct dirent));
+            strcpy(entries[2].d_name, "renderD128");
+            entries[2].d_type = DT_CHR;
+            return &entries[2];
+        }
+        if (fake_dri_dir_pos == 3) {
+            fake_dri_dir_pos++;
+            memset(&entries[3], 0, sizeof(struct dirent));
+            strcpy(entries[3].d_name, "card0");
+            entries[3].d_type = DT_CHR;
+            return &entries[3];
+        }
+        return NULL;
+    }
+    return real_readdir(dirp);
+}
+
+int closedir(DIR *dirp) {
+    static closedir_fn real_closedir = NULL;
+    if (!real_closedir) real_closedir = (closedir_fn)dlsym(RTLD_NEXT, "closedir");
+    if (dirp == FAKE_DRI_DIR_SENTINEL) {
+        fake_dri_dir_pos = 0;
+        return 0;
+    }
+    return real_closedir(dirp);
+}
+
+int dirfd(DIR *dirp) {
+    static int (*real_dirfd)(DIR*) = NULL;
+    if (!real_dirfd) real_dirfd = dlsym(RTLD_NEXT, "dirfd");
+    if (dirp == FAKE_DRI_DIR_SENTINEL) return -1;
+    return real_dirfd(dirp);
+}
 
 /* Intercept access() to make /dev/dri/renderD128 appear to exist */
 int access(const char *pathname, int mode) {

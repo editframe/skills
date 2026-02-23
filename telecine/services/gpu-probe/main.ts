@@ -278,5 +278,236 @@ try {
 }
 
 // ---------------------------------------------------------------------------
+// 5. Shared texture DMA-BUF delivery test (ozone-drm + fake_drm + libgbm_cuda)
+// ---------------------------------------------------------------------------
+step("5. Shared texture DMA-BUF delivery (ozone-drm + useSharedTexture)");
+
+const sharedTexScript = `
+const { app, BrowserWindow } = require('electron');
+
+const log = (msg) => process.stderr.write('[shared-tex] ' + msg + '\\n');
+
+app.whenReady().then(async () => {
+  log('app ready, creating BrowserWindow with useSharedTexture');
+
+  let win;
+  try {
+    win = new BrowserWindow({
+      width: ${WIDTH},
+      height: ${HEIGHT},
+      show: false,
+      webPreferences: {
+        offscreen: { useSharedTexture: true },
+        sandbox: false,
+      },
+    });
+  } catch (err) {
+    log('FAIL BrowserWindow creation: ' + err.message);
+    process.exit(1);
+  }
+
+  log('BrowserWindow created, loading page');
+  win.webContents.setFrameRate(${FPS});
+
+  await win.loadURL('data:text/html,' + encodeURIComponent(\`
+    <body style="margin:0;background:#1a1a2e;display:flex;align-items:center;justify-content:center;height:100vh">
+      <div id="c" style="font:bold 120px monospace;color:#e94560">000</div>
+      <script>
+        let n = 0;
+        function tick() {
+          document.getElementById('c').textContent = String(n++).padStart(3,'0');
+          requestAnimationFrame(tick);
+        }
+        tick();
+      </script>
+    </body>
+  \`));
+
+  log('page loaded, waiting for paint events');
+
+  let frameCount = 0;
+  const MAX_FRAMES = 10;
+
+  win.webContents.on('paint', (event, dirty, image) => {
+    if (frameCount >= MAX_FRAMES) return;
+    frameCount++;
+
+    const info = {};
+    info.hasTexture = !!event.texture;
+    info.dirty = dirty;
+    info.imageEmpty = image.isEmpty();
+    info.imageSize = image.getSize();
+
+    if (event.texture) {
+      const tex = event.texture;
+      const ti = tex.textureInfo || {};
+      info.widgetType = ti.widgetType;
+      info.pixelFormat = ti.pixelFormat;
+      info.codedSize = ti.codedSize;
+      info.visibleRect = ti.visibleRect;
+      info.contentRect = ti.contentRect;
+      info.timestamp = ti.timestamp;
+
+      const handle = ti.handle || {};
+      info.handleKeys = Object.keys(handle);
+      info.hasNativePixmap = !!handle.nativePixmap;
+      info.hasNtHandle = !!handle.ntHandle;
+      info.hasIoSurface = !!handle.ioSurface;
+
+      if (handle.nativePixmap) {
+        const np = handle.nativePixmap;
+        info.modifier = np.modifier;
+        info.supportsZeroCopy = np.supportsZeroCopyWebGpuImport;
+        info.planeCount = np.planes ? np.planes.length : 0;
+        if (np.planes) {
+          info.planes = np.planes.map((p, i) => ({
+            index: i,
+            fd: p.fd,
+            stride: p.stride,
+            offset: p.offset,
+            size: p.size,
+          }));
+        }
+      }
+
+      try { tex.release(); } catch (e) { info.releaseError = e.message; }
+    }
+
+    log('FRAME ' + frameCount + ': ' + JSON.stringify(info));
+
+    if (frameCount >= MAX_FRAMES) {
+      log('SHARED_TEX_DONE');
+      setTimeout(() => app.quit(), 200);
+    }
+  });
+
+  win.webContents.invalidate();
+});
+
+app.on('gpu-info-update', () => {
+  const gpuInfo = app.getGPUInfo('complete').then(info => {
+    log('GPU_INFO: ' + JSON.stringify({
+      vendor: info?.gpuDevice?.[0]?.vendorId,
+      device: info?.gpuDevice?.[0]?.deviceId,
+      driver: info?.gpuDevice?.[0]?.driverVersion,
+      glRenderer: info?.auxAttributes?.glRenderer,
+      glVendor: info?.auxAttributes?.glVendor,
+    }));
+  }).catch(() => {});
+});
+`;
+
+const sharedTexScriptPath = "/tmp/gpu-probe-shared-tex.js";
+writeFileSync(sharedTexScriptPath, sharedTexScript);
+
+try {
+  const sharedTexElectron = spawn("node_modules/.bin/electron", [
+    "--no-sandbox",
+    "--use-angle=vulkan",
+    "--enable-gpu-rasterization",
+    "--enable-zero-copy",
+    "--ignore-gpu-blocklist",
+    "--disable-gpu-sandbox",
+    "--disable-vulkan-surface",
+    "--ozone-platform=drm",
+    "--disable-setuid-sandbox",
+    "--disable-seccomp-filter-sandbox",
+    "--enable-logging",
+    "--v=1",
+    sharedTexScriptPath,
+  ], {
+    stdio: ["ignore", "pipe", "pipe"],
+    env: {
+      ...process.env,
+      EF_GPU_RENDER: "1",
+      __GLX_VENDOR_LIBRARY_NAME: "nvidia",
+      LIBGL_ALWAYS_SOFTWARE: "0",
+      VK_ICD_FILENAMES: "/etc/vulkan/icd.d/nvidia_icd.json",
+      DISABLE_LAYER_NV_OPTIMUS_1: "1",
+      VK_LOADER_DEBUG: "error",
+      LD_PRELOAD: [
+        "/usr/lib/x86_64-linux-gnu/fake_drm.so",
+        "/usr/lib/x86_64-linux-gnu/fake_sysfs_access.so",
+      ].join(":"),
+    },
+  });
+
+  let sharedTexStderr = "";
+  let sharedTexStdout = "";
+
+  sharedTexElectron.stderr.on("data", (d: Buffer) => {
+    sharedTexStderr += d.toString();
+  });
+  sharedTexElectron.stdout.on("data", (d: Buffer) => {
+    sharedTexStdout += d.toString();
+  });
+
+  const sharedTexResult = await new Promise<{ success: boolean; error?: string }>((resolve) => {
+    const timeout = setTimeout(() => {
+      sharedTexElectron.kill();
+      resolve({ success: false, error: "Timeout after 60s" });
+    }, 60_000);
+
+    sharedTexElectron.on("close", (code) => {
+      clearTimeout(timeout);
+      const done = sharedTexStderr.includes("SHARED_TEX_DONE");
+      resolve({ success: done, error: done ? undefined : `exit ${code}` });
+    });
+
+    sharedTexElectron.on("error", (err) => {
+      clearTimeout(timeout);
+      resolve({ success: false, error: err.message });
+    });
+  });
+
+  // Print all shared-tex log lines from stderr
+  const sharedTexLines = sharedTexStderr.split("\n").filter((l: string) =>
+    l.includes("[shared-tex]") || l.includes("ERROR") || l.includes("FATAL") ||
+    l.includes("Check failed") || l.includes("gbm") || l.includes("GBM") ||
+    l.includes("drm") || l.includes("DRM") || l.includes("dri") ||
+    l.includes("ozone") || l.includes("Ozone") || l.includes("pixmap") ||
+    l.includes("native_pixmap") || l.includes("NativePixmap") ||
+    l.includes("SharedImage") || l.includes("shared_image") ||
+    l.includes("GpuMemoryBuffer") || l.includes("gpu_memory_buffer")
+  );
+  process.stdout.write(`Shared texture stderr (${sharedTexLines.length} relevant lines):\n`);
+  for (const line of sharedTexLines.slice(0, 100)) {
+    process.stdout.write(`  ${line}\n`);
+  }
+
+  // Also dump the last 30 lines of full stderr for context
+  const allStderrLines = sharedTexStderr.split("\n");
+  process.stdout.write(`\nFull stderr tail (last 30 lines of ${allStderrLines.length}):\n`);
+  for (const line of allStderrLines.slice(-30)) {
+    process.stdout.write(`  ${line}\n`);
+  }
+
+  if (sharedTexResult.success) {
+    // Check if any frame had real DMA-BUF fds
+    const frameLines = sharedTexStderr.split("\n").filter((l: string) => l.includes("FRAME "));
+    const hasDmaBuf = frameLines.some((l: string) => {
+      try {
+        const json = l.substring(l.indexOf("{"));
+        const info = JSON.parse(json);
+        return info.hasNativePixmap && info.planeCount > 0 &&
+               info.planes?.some((p: { fd: number }) => p.fd > 0);
+      } catch { return false; }
+    });
+
+    if (hasDmaBuf) {
+      pass("Shared texture delivers real DMA-BUF fds");
+    } else {
+      fail("Shared texture paint events received but no DMA-BUF fds found");
+    }
+  } else {
+    fail(`Shared texture test failed: ${sharedTexResult.error}`);
+  }
+} catch (err) {
+  fail(`Shared texture test threw: ${err instanceof Error ? err.stack ?? err.message : err}`);
+} finally {
+  try { unlinkSync(sharedTexScriptPath); } catch {}
+}
+
+// ---------------------------------------------------------------------------
 process.stdout.write("\n[gpu-probe] Done.\n");
 process.exit(0);
