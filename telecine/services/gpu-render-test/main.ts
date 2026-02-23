@@ -95,11 +95,24 @@ app.on("child-process-gone", (_event, details) => {
   process.stderr.write("[DIAG] child-process-gone: " + JSON.stringify(details) + "\\n");
 });
 
+app.on("gpu-info-update", () => {
+  process.stderr.write("[DIAG] gpu-info-update event\\n");
+});
+
 app.whenReady().then(async () => {
   process.stderr.write("[DIAG] app ready\\n");
+  process.stderr.write("[DIAG] command line: " + JSON.stringify(process.argv) + "\\n");
 
-  // Wait for GPU info to settle
-  await new Promise(r => setTimeout(r, 5000));
+  // Try getGPUInfo immediately, then again after wait
+  try {
+    const info1 = await app.getGPUInfo("basic");
+    process.stderr.write("[DIAG] GPU_INFO_IMMEDIATE: " + JSON.stringify(info1) + "\\n");
+  } catch (err) {
+    process.stderr.write("[DIAG] getGPUInfo immediate error: " + err.message + "\\n");
+  }
+
+  // Wait for GPU process to fully initialize
+  await new Promise(r => setTimeout(r, 8000));
 
   try {
     const info = await app.getGPUInfo("complete");
@@ -108,15 +121,34 @@ app.whenReady().then(async () => {
     process.stderr.write("[DIAG] getGPUInfo error: " + err.message + "\\n");
   }
 
-  // Also try to create a window and check WebGL
+  // Create a window and check WebGL + renderer details
   try {
     const win = new BrowserWindow({
       width: 320, height: 240,
       show: false,
       webPreferences: { offscreen: true },
     });
-    await win.loadURL("data:text/html,<canvas id='c'></canvas><script>document.title=JSON.stringify({webgl:!!document.getElementById('c').getContext('webgl2'),renderer:document.getElementById('c').getContext('webgl2')?.getParameter(0x1F01)||'none'})</script>");
-    await new Promise(r => setTimeout(r, 1000));
+    await win.loadURL(\`data:text/html,<canvas id='c' width='320' height='240'></canvas><script>
+      const c = document.getElementById('c');
+      const gl = c.getContext('webgl2') || c.getContext('webgl');
+      const info = {
+        webgl: !!gl,
+        version: gl ? gl.getParameter(gl.VERSION) : 'none',
+        renderer: gl ? gl.getParameter(gl.RENDERER) : 'none',
+        vendor: gl ? gl.getParameter(gl.VENDOR) : 'none',
+        unmaskedRenderer: 'none',
+        unmaskedVendor: 'none'
+      };
+      if (gl) {
+        const ext = gl.getExtension('WEBGL_debug_renderer_info');
+        if (ext) {
+          info.unmaskedRenderer = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL);
+          info.unmaskedVendor = gl.getParameter(ext.UNMASKED_VENDOR_WEBGL);
+        }
+      }
+      document.title = JSON.stringify(info);
+    </script>\`);
+    await new Promise(r => setTimeout(r, 2000));
     const title = win.getTitle();
     process.stderr.write("[DIAG] WebGL test: " + title + "\\n");
     win.close();
@@ -137,11 +169,11 @@ const electronProc = spawn(
   "node_modules/.bin/electron",
   [
     // GPU flags — must be CLI args so they propagate to the GPU subprocess.
-    // --use-angle=default lets ANGLE pick the best backend (EGL/GLES on
-    // NVIDIA with our headless EGL setup, since Vulkan layer is broken).
+    // --use-angle=vulkan tells ANGLE to use its Vulkan backend, which works
+    // headless without X11. The default backend tries X11 EGL and fails.
     // Do NOT set --use-gl=egl: it conflicts with --use-angle in Chromium's
     // GL implementation lookup table. Chromium auto-infers --use-gl=angle.
-    "--use-angle=default",
+    "--use-angle=vulkan",
     "--enable-features=Vulkan",
     "--enable-gpu-rasterization",
     "--enable-zero-copy",
@@ -169,7 +201,7 @@ const electronProc = spawn(
       // Disable the NV optimus implicit layer — it fails to resolve
       // vkGetInstanceProcAddr on Cloud Run and is unnecessary (single GPU).
       DISABLE_LAYER_NV_OPTIMUS_1: "1",
-      VK_LOADER_DEBUG: "all",
+      VK_LOADER_DEBUG: "error",
       LD_PRELOAD: "/usr/lib/x86_64-linux-gnu/fake_sysfs_access.so",
     },
     timeout: 60000,
