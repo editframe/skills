@@ -1,0 +1,96 @@
+FROM node:22-slim AS builder
+
+ENV NODE_ENV=production
+
+WORKDIR /app
+
+RUN apt-get update \
+  && apt-get install -y \
+  unzip \
+  libnss3 \
+  libgtk-3-0 \
+  libxss1 \
+  libasound2 \
+  libxrandr2 \
+  libgconf-2-4 \
+  libxdamage1 \
+  libxcomposite1 \
+  libxcursor1 \
+  libxi6 \
+  libxtst6 \
+  libnss3-dev \
+  libdrm2 \
+  libxkbcommon0 \
+  libgtk2.0-0 \
+  libegl1-mesa \
+  libgles2-mesa \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+COPY package.json package-lock.json ./
+RUN npm install
+
+COPY lib/ lib/
+COPY services/gpu-probe/ services/gpu-probe/
+COPY tsconfig.json ./
+
+WORKDIR /app/services/gpu-probe
+RUN npx vite build
+
+WORKDIR /app
+RUN npx vite build --config /app/lib/electron-exec/vite.electron-rpc.config.ts
+
+RUN rm -rf node_modules && npm install --only=production
+
+FROM nvidia/cuda:12.6.3-runtime-ubuntu22.04
+
+ENV NODE_ENV=production
+
+RUN apt-get update \
+  && apt-get install -y curl \
+  && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+  && apt-get install -y nodejs \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+RUN apt-get update \
+  && apt-get install -y \
+  unzip \
+  libnss3 \
+  libgtk-3-0 \
+  libxss1 \
+  libasound2 \
+  libxrandr2 \
+  libgconf-2-4 \
+  libxdamage1 \
+  libxcomposite1 \
+  libxcursor1 \
+  libxi6 \
+  libxtst6 \
+  libnss3-dev \
+  libdrm2 \
+  libxkbcommon0 \
+  libgtk2.0-0 \
+  libegl1-mesa \
+  libgles2-mesa \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN apt-get update \
+  && apt-get install -y wget \
+  && wget -q https://repo.jellyfin.org/files/ffmpeg/ubuntu/latest-6/amd64/jellyfin-ffmpeg6_6.0.1-8-noble_amd64.deb \
+  && dpkg -i jellyfin-ffmpeg6_6.0.1-8-noble_amd64.deb || apt-get install -yf \
+  && ln -sf /usr/lib/jellyfin-ffmpeg/ffmpeg /usr/local/bin/ffmpeg \
+  && rm jellyfin-ffmpeg6_6.0.1-8-noble_amd64.deb \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app/package.json /app/package.json
+COPY --from=builder /app/node_modules/ /app/node_modules/
+COPY --from=builder /app/services/gpu-probe/dist/ /app/services/gpu-probe/dist/
+COPY --from=builder /app/lib/ /app/lib/
+COPY --from=builder /app/tsconfig.json /app/tsconfig.json
+
+CMD ["node", "/app/services/gpu-probe/dist/main.js"]
