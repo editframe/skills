@@ -143,18 +143,7 @@ try {
   log(`vulkaninfo failed (non-fatal): ${err}`);
 }
 
-// Show the ICD JSON contents so we know what library_path it points to.
-try {
-  const { readFile } = await import("node:fs/promises");
-  for (const icdPath of ["/etc/vulkan/icd.d/nvidia_icd.json", "/etc/vulkan/icd.d/nvidia_icd.x86_64.json", "/usr/share/vulkan/icd.d/nvidia_icd.json"]) {
-    try {
-      const icdJson = await readFile(icdPath, "utf8");
-      log(`ICD file ${icdPath}: ${icdJson.trim()}`);
-    } catch {}
-  }
-} catch (err) {
-  log(`ICD read failed (non-fatal): ${err}`);
-}
+
 
 // ---------------------------------------------------------------------------
 step("1. Bundle HTML");

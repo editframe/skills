@@ -47,8 +47,9 @@ ENV NODE_ENV=production
 # Tell the NVIDIA container toolkit to inject graphics libs (Vulkan ICD,
 # libEGL_nvidia, /dev/dri render nodes) in addition to the default
 # compute+utility capabilities.
-ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics,video
 ENV NVIDIA_VISIBLE_DEVICES=all
+ENV DISPLAY=:99
 
 RUN apt-get update \
   && apt-get install -y curl \
@@ -77,8 +78,11 @@ RUN apt-get update \
   libdrm2 \
   libxkbcommon0 \
   libgtk2.0-0 \
-  libegl1-mesa \
-  libgles2-mesa \
+  xvfb \
+  libgbm1 \
+  libegl1 \
+  libgl1 \
+  libgles2 \
   libvulkan1 \
   vulkan-tools \
   && apt-get clean \
@@ -99,4 +103,4 @@ COPY --from=builder /app/services/gpu-render-test/dist/ /app/services/gpu-render
 COPY --from=builder /app/lib/ /app/lib/
 COPY --from=builder /app/tsconfig.json /app/tsconfig.json
 
-CMD ["node", "/app/services/gpu-render-test/dist/main.js"]
+CMD ["bash", "-c", "Xvfb :99 -screen 0 1920x1080x24 -ac +extension GLX +render -noreset & sleep 1 && exec node /app/services/gpu-render-test/dist/main.js"]
