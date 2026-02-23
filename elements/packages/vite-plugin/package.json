@@ -1,6 +1,6 @@
 {
   "name": "@editframe/vite-plugin",
-  "version": "0.40.1",
+  "version": "0.40.2",
   "description": "Editframe vite plugin",
   "exports": {
     ".": {
@@ -20,8 +20,8 @@
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
-    "@editframe/api": "0.40.1",
-    "@editframe/assets": "0.40.1",
+    "@editframe/api": "0.40.2",
+    "@editframe/assets": "0.40.2",
     "connect": "^3.7.0",
     "debug": "^4.3.5",
     "mime": "^4.0.3",
