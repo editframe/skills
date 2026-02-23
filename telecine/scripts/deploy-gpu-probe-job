@@ -57,7 +57,7 @@ if [ "$LOGS_ONLY" -eq 0 ]; then
     --vpc-egress=private-ranges-only \
     --network=default \
     --subnet=default \
-    --set-env-vars="NODE_ENV=production,PINO_LOG_LEVEL=debug" \
+    --set-env-vars="NODE_ENV=production,PINO_LOG_LEVEL=debug,NVIDIA_DRIVER_CAPABILITIES=all" \
   2>/dev/null || \
   gcloud alpha run jobs update "${JOB_NAME}" \
     --project="${PROJECT}" \
@@ -74,7 +74,7 @@ if [ "$LOGS_ONLY" -eq 0 ]; then
     --vpc-egress=private-ranges-only \
     --network=default \
     --subnet=default \
-    --set-env-vars="NODE_ENV=production,PINO_LOG_LEVEL=debug"
+    --set-env-vars="NODE_ENV=production,PINO_LOG_LEVEL=debug,NVIDIA_DRIVER_CAPABILITIES=all"
 
   echo "==> Executing job..."
   gcloud alpha run jobs execute "${JOB_NAME}" \
