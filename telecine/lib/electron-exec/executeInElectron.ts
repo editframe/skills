@@ -186,25 +186,10 @@ const spawnElectronBootloader = async (script: string) => {
         });
 
         electronProcess.stderr.on("data", (data) => {
-          if (data.toString().includes("Failed to connect to the bus:")) {
-            return;
-          }
-
-          if (data.toString().includes("org.freedesktop.DBus.NameHasOwner")) {
-            return;
-          }
-
-          if (
-            data
-              .toString()
-              .includes(
-                "Exiting GPU process due to errors during initialization",
-              )
-          ) {
-            return;
-          }
-
-          logger.debug({ data: data.toString() }, "Electron stderr");
+          const str = data.toString();
+          if (str.includes("Failed to connect to the bus:")) return;
+          if (str.includes("org.freedesktop.DBus.NameHasOwner")) return;
+          logger.info({ data: str }, "Electron stderr");
         });
 
         const processExit = new Promise((resolve, reject) => {

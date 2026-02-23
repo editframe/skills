@@ -30,6 +30,9 @@ if (process.env.EF_GPU_RENDER) {
   // Vulkan on headless instances lacks VK_KHR_surface/VK_KHR_xcb_surface.
   // This flag tells ANGLE to skip surface/swapchain requirements and use bitblt.
   electronApp.commandLine.appendSwitch("disable-vulkan-surface");
+  // Always emit Chromium GPU logs to stderr so Cloud Run captures them.
+  electronApp.commandLine.appendSwitch("enable-logging", "stderr");
+  electronApp.commandLine.appendSwitch("log-level", "0");
 } else {
   // On CPU instances: software vsync is required with Xvfb.
   electronApp.commandLine.appendSwitch("disable-gpu-vsync");
