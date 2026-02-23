@@ -134,10 +134,13 @@ const spawnElectronBootloader = async (script: string) => {
 
         const spawnTime = Date.now();
 
+        const gpuSpawnArgs = gpuMode ? ["--ozone-platform=headless"] : [];
+
         const electronProcess = spawn(
           "node_modules/.bin/electron",
           [
             "--no-sandbox",
+            ...gpuSpawnArgs,
             "/app/lib/electron-exec/executeInElectron.bootloader.js",
           ],
           {

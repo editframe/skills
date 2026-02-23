@@ -107,7 +107,9 @@ COPY --from=builder /app/tsconfig.json /app/tsconfig.json
 # Diagnostic entrypoint: verify GPU access before starting the render job
 CMD ["bash", "-c", "\
   echo '=== /dev/dri ===' && ls -la /dev/dri/ 2>/dev/null || echo MISSING; \
-  echo '=== GLVND EGL ICD ===' && ls /usr/share/glvnd/egl_vendor.d/ 2>/dev/null || echo MISSING; \
+  echo '=== /dev/nvidia* ===' && ls -la /dev/nvidia* 2>/dev/null || echo MISSING; \
+  echo '=== GLVND EGL ICD ===' && ls -la /usr/share/glvnd/egl_vendor.d/ 2>/dev/null || echo MISSING; \
+  echo '=== /etc/vulkan/icd.d ===' && ls -la /etc/vulkan/icd.d/ 2>/dev/null || echo MISSING; \
   echo '=== libEGL candidates ===' && ldconfig -p | grep -i egl || echo none; \
-  echo '=== nvidia-smi ===' && nvidia-smi 2>&1 | head -5 || echo MISSING; \
+  echo '=== nvidia-smi ===' && nvidia-smi 2>&1 | head -8 || echo MISSING; \
   exec node /app/services/gpu-render-test/dist/main.js"]

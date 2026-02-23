@@ -32,9 +32,10 @@ if (process.env.EF_GPU_RENDER) {
   //   With DISPLAY unset, this prevents Chromium from trying to connect to X11.
   // ignore-gpu-blocklist: Cloud Run GPU nodes are on Chromium's headless blocklist.
   // disable-gpu-sandbox: required in containers (no kernel GPU sandbox).
+  // ozone-platform=headless is passed as a spawn arg (not here) because
+  // Ozone platform selection happens before the app is ready.
   electronApp.commandLine.appendSwitch("use-gl", "egl");
   electronApp.commandLine.appendSwitch("use-angle", "gles");
-  electronApp.commandLine.appendSwitch("ozone-platform", "headless");
   electronApp.commandLine.appendSwitch("enable-gpu-rasterization");
   electronApp.commandLine.appendSwitch("enable-zero-copy");
   electronApp.commandLine.appendSwitch("ignore-gpu-blocklist");
