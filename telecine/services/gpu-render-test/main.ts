@@ -119,10 +119,13 @@ async function bundleHTML(html: string, bundleDir: string): Promise<string> {
   const { stdout, stderr } = await execFileAsync(
     "node",
     [
-      path.join(process.cwd(), "node_modules", "rolldown-vite", "bin", "vite.js"),
+      "/app/node_modules/rolldown-vite/bin/vite.js",
       "build",
     ],
-    { cwd: bundleDir },
+    {
+      cwd: bundleDir,
+      env: { ...process.env, NODE_PATH: "/app/node_modules" },
+    },
   );
 
   if (stdout) log(`vite stdout: ${stdout}`);
