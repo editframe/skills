@@ -22,13 +22,14 @@ electronApp.commandLine.appendSwitch("disable-frame-rate-limit");
 electronApp.commandLine.appendSwitch("disable-accelerated-video-decode");
 
 if (process.env.EF_GPU_RENDER) {
-  // On GPU instances: Xvfb provides DISPLAY; EGL lets Chromium talk directly
-  // to the NVIDIA driver without a full X11/GLX stack.
-  // NVIDIA_DRIVER_CAPABILITIES=graphics causes the container toolkit to inject
-  // libEGL_nvidia.so, which libegl1 (the Khronos loader) discovers automatically.
+  // On GPU instances: Xvfb provides DISPLAY; ANGLE with default backend picks
+  // EGL on Linux and routes through the NVIDIA-injected libEGL_nvidia.so.
+  // In Electron 32+ (Chromium 128+) the only allowed GL implementation is
+  // "egl-angle" — use-gl=egl is not valid. use-angle=default lets ANGLE
+  // choose GLES via EGL automatically.
   // --ignore-gpu-blocklist overrides Chromium's cloud/headless GPU blocklist.
-  // --disable-gpu-sandbox is required in containers — no kernel sandbox available.
-  electronApp.commandLine.appendSwitch("use-gl", "egl");
+  // --disable-gpu-sandbox is required in containers.
+  electronApp.commandLine.appendSwitch("use-angle", "default");
   electronApp.commandLine.appendSwitch("enable-gpu-rasterization");
   electronApp.commandLine.appendSwitch("enable-zero-copy");
   electronApp.commandLine.appendSwitch("ignore-gpu-blocklist");
