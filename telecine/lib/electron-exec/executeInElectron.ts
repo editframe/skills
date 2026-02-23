@@ -139,6 +139,7 @@ const spawnElectronBootloader = async (script: string) => {
               "--ozone-platform=headless",
               "--disable-vulkan-surface",
               "--disable-vulkan-fallback-to-gl-for-testing",
+              "--in-process-gpu",
             ]
           : [];
 
