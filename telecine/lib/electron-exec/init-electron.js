@@ -22,8 +22,10 @@ electronApp.commandLine.appendSwitch("disable-frame-rate-limit");
 electronApp.commandLine.appendSwitch("disable-accelerated-video-decode");
 
 if (process.env.EF_GPU_RENDER) {
-  // On GPU instances: use EGL for hardware-accelerated compositing via ANGLE.
-  // No Xvfb is running; Electron uses the NVIDIA driver directly.
+  // On GPU instances: no display server is running.
+  // Use the headless ozone platform so Electron doesn't try to connect to X11.
+  // Then layer EGL on top for hardware-accelerated compositing via the NVIDIA driver.
+  electronApp.commandLine.appendSwitch("ozone-platform", "headless");
   electronApp.commandLine.appendSwitch("use-gl", "egl");
   electronApp.commandLine.appendSwitch("use-angle", "gl");
 } else {
