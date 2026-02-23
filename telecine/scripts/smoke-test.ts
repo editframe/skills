@@ -11,9 +11,10 @@
 
 const EF_HOST = process.env.EF_HOST ?? "https://editframe.com";
 const EF_TOKEN = process.env.EF_TOKEN;
-const TIMEOUT_S = parseInt(
-  process.argv[process.argv.indexOf("--timeout") + 1] ?? "180",
-);
+const timeoutIdx = process.argv.indexOf("--timeout");
+const TIMEOUT_S = timeoutIdx >= 0
+  ? parseInt(process.argv[timeoutIdx + 1] ?? "180", 10)
+  : 180;
 
 if (!EF_TOKEN) {
   console.error("EF_TOKEN environment variable is required");
