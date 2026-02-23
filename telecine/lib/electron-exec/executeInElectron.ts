@@ -149,7 +149,9 @@ const spawnElectronBootloader = async (script: string) => {
             stdio: ["ignore", "pipe", "pipe"],
             env: {
               ...process.env,
-              ...(gpuMode ? { EF_GPU_RENDER: "1" } : { DISPLAY: XVFB_DISPLAY }),
+              ...(gpuMode
+                ? { EF_GPU_RENDER: "1", GDK_BACKEND: "offscreen" }
+                : { DISPLAY: XVFB_DISPLAY }),
               EF_ELECTRON_SCRIPT: script,
               EF_SOCKET_PATH: socketPath,
               OTEL_EXPORTER_OTLP_ENDPOINT:
