@@ -43,6 +43,18 @@ try {
 }
 
 // ---------------------------------------------------------------------------
+// 1b. vulkaninfo (diagnostic: show available Vulkan extensions)
+// ---------------------------------------------------------------------------
+step("1b. vulkaninfo");
+try {
+  const vkInfo = execSync("vulkaninfo --summary 2>&1 || vulkaninfo 2>&1 | head -80", { encoding: "utf8", shell: true });
+  process.stdout.write(vkInfo.slice(0, 3000));
+  pass("vulkaninfo ran");
+} catch (err) {
+  process.stdout.write(`vulkaninfo not available: ${err instanceof Error ? err.message : err}\n`);
+}
+
+// ---------------------------------------------------------------------------
 // 2. Electron EGL capture
 // ---------------------------------------------------------------------------
 step("2. Electron EGL offscreen capture");

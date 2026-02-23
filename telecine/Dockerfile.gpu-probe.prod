@@ -76,6 +76,8 @@ RUN apt-get update \
   libgtk2.0-0 \
   libegl1-mesa \
   libgles2-mesa \
+  libvulkan1 \
+  vulkan-tools \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
