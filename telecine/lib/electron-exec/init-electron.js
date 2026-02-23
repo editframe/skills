@@ -24,25 +24,21 @@ electronApp.commandLine.appendSwitch("disable-accelerated-video-decode");
 if (process.env.EF_GPU_RENDER) {
   // On Cloud Run GPU instances (NVIDIA L4):
   // /dev/dri render nodes are absent, only /dev/nvidia0 + /dev/nvidiactl.
-  // NVIDIA's EGL driver supports EGL_EXT_platform_device for headless
-  // rendering through /dev/nvidia0 without X11/Wayland/DRM.
-  // Use native GL via EGL (--use-angle=gl) to avoid the
-  // DisableInProcessGpuVulkan blocker in gpu_init.cc.
+  // Use ANGLE Vulkan for GPU rasterization. --use-gl=egl forces EGL instead
+  // of GLX (GLX tries X11 which fails headless). --disable-vulkan-surface
+  // skips VK_EXT_headless_surface (not available on this driver).
+  // EGL_PLATFORM=surfaceless is set in executeInElectron.ts env.
   // ozone-platform=headless is passed as a spawn arg in executeInElectron.ts.
-  electronApp.commandLine.appendSwitch("use-angle", "gl");
+  electronApp.commandLine.appendSwitch("use-angle", "vulkan");
+  electronApp.commandLine.appendSwitch("use-gl", "egl");
   electronApp.commandLine.appendSwitch("enable-features", "Vulkan,CanvasDrawElement");
   electronApp.commandLine.appendSwitch("enable-gpu-rasterization");
   electronApp.commandLine.appendSwitch("enable-zero-copy");
   electronApp.commandLine.appendSwitch("ignore-gpu-blocklist");
   electronApp.commandLine.appendSwitch("disable-gpu-sandbox");
+  electronApp.commandLine.appendSwitch("disable-vulkan-surface");
   electronApp.commandLine.appendSwitch("disable-gpu-process-crash-limit");
   electronApp.commandLine.appendSwitch("disable-gpu-watchdog");
-} else {
-  // On CPU instances: software vsync is required with Xvfb.
-  electronApp.commandLine.appendSwitch("disable-gpu-vsync");
-  electronApp.commandLine.appendSwitch("disable-software-vsync");
-  electronApp.commandLine.appendSwitch("use-angle", "default");
-  electronApp.commandLine.appendSwitch("enable-features", "CanvasDrawElement");
 }
 
 electronApp.commandLine.appendSwitch("enable-accelerated-2d-canvas");

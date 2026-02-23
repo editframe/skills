@@ -137,6 +137,7 @@ const spawnElectronBootloader = async (script: string) => {
         const gpuSpawnArgs = gpuMode
           ? [
               "--ozone-platform=headless",
+              "--disable-vulkan-surface",
               "--enable-logging=stderr",
               "--disable-setuid-sandbox",
               "--disable-seccomp-filter-sandbox",
@@ -156,11 +157,15 @@ const spawnElectronBootloader = async (script: string) => {
               ...process.env,
               ...(gpuMode
                 // No DISPLAY in GPU mode: ozone-platform=headless bypasses X11.
-                // VK_ICD_FILENAMES restricts the Vulkan loader to ONLY the NVIDIA
-                // ICD. LD_PRELOAD: fake_sysfs_access.so intercepts access("/sys/bus/pci/")
+                // EGL_PLATFORM=surfaceless prevents EGL from trying X11/Wayland.
+                // VK_ICD_FILENAMES restricts the Vulkan loader to ONLY the NVIDIA ICD.
+                // LD_PRELOAD: fake_sysfs_access.so intercepts access("/sys/bus/pci/")
                 // so ANGLE's libpci loader proceeds to dlopen our fake libpci.so.3.
                 ? {
                     EF_GPU_RENDER: "1",
+                    EGL_PLATFORM: "surfaceless",
+                    __GLX_VENDOR_LIBRARY_NAME: "nvidia",
+                    LIBGL_ALWAYS_SOFTWARE: "0",
                     VK_ICD_FILENAMES: "/etc/vulkan/icd.d/nvidia_icd.json",
                     VK_LAYER_PATH: "/etc/vulkan/implicit_layer.d",
                     VK_LOADER_DEBUG: "error",
