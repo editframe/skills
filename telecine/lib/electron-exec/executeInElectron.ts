@@ -134,13 +134,14 @@ const spawnElectronBootloader = async (script: string) => {
 
         const spawnTime = Date.now();
 
+        const angleBackend = process.env.EF_ANGLE_BACKEND ?? "vulkan";
         const gpuSpawnArgs = gpuMode
           ? [
               // GPU flags must be CLI args so Chromium copies them to the GPU
               // subprocess. Do NOT set --use-gl=egl: it conflicts with
               // --use-angle in Chromium's GL implementation lookup table.
               // Chromium auto-infers --use-gl=angle when --use-angle is set.
-              "--use-angle=vulkan",
+              `--use-angle=${angleBackend}`,
               "--enable-gpu-rasterization",
               "--enable-zero-copy",
               "--ignore-gpu-blocklist",

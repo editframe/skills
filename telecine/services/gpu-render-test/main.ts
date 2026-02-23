@@ -1,262 +1,296 @@
 /**
- * Minimal GPU diagnostic for Cloud Run L4 instances.
+ * GPU render test: runs the same composition twice on Cloud Run L4 —
+ * once with CPU (swiftshader) and once with GPU (ANGLE Vulkan on NVIDIA L4).
+ * Compares fragment timings and uploads both MP4s to GCS.
  *
- * Tests from first principles:
- *   1. NVIDIA device access
- *   2. EGL display initialization (surfaceless, device)
- *   3. Vulkan ICD
- *   4. Bare Electron boot with GPU flags → GPU info dump
- *
- * No render pipeline, no RPC, no composition bundling.
+ * Set RENDER_MODE=cpu or RENDER_MODE=gpu to run only one mode.
+ * Default: run both.
  */
 
-import { execFile, spawn } from "node:child_process";
+import { createHash } from "node:crypto";
+import { execFile } from "node:child_process";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { promisify } from "node:util";
+import { Storage } from "@google-cloud/storage";
+
+import { executeInElectronWithRpc } from "@/electron-exec/executeInElectron";
+import { buildFragmentIds } from "@/queues/units-of-work/Render/fragments/buildFragmentIds";
+import type { AssetsMetadataBundle } from "@/queues/units-of-work/Render/shared/assetMetadata";
+import type { ElectronRPCClient } from "@/queues/units-of-work/Render/ElectronRPCServer";
 
 const execFileAsync = promisify(execFile);
 
+const BUCKET = process.env.STORAGE_BUCKET ?? "telecine-dot-dev-data-4fedc83";
+const ORG_ID = "gpu-test-org";
+const WORK_SLICE_MS = 2000;
+const ELECTRON_RPC_SCRIPT =
+  "/app/lib/queues/units-of-work/Render/ElectronRPCServer.ts";
+
+const HTML = `
+<ef-timegroup class="w-[640px] h-[360px]" mode="fixed" duration="3s">
+  <div class="w-full h-full flex items-center justify-center"
+       style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <span class="text-white font-bold" style="font-size: 48px;">GPU Render Test</span>
+  </div>
+</ef-timegroup>
+`;
+
+const RENDER_MODE = process.env.RENDER_MODE ?? "both";
+
 function step(msg: string) {
-  process.stdout.write(`\n[gpu-diag] === ${msg} ===\n`);
+  process.stdout.write(`\n[gpu-render-test] === ${msg} ===\n`);
 }
 
 function log(msg: string) {
-  process.stdout.write(`[gpu-diag] ${msg}\n`);
+  process.stdout.write(`[gpu-render-test] ${msg}\n`);
 }
 
 // ---------------------------------------------------------------------------
-step("1. NVIDIA device access");
-try {
-  const { stdout } = await execFileAsync("ls", ["-la", "/dev/nvidia0", "/dev/nvidiactl", "/dev/nvidia-uvm"]);
-  log(stdout.trim());
-} catch (e: any) {
-  log(`NVIDIA devices not found: ${e.message}`);
+// Inline HTML bundling — avoids importing processHTML.ts (pulls in DB/Valkey)
+// ---------------------------------------------------------------------------
+async function bundleHTML(html: string, bundleDir: string): Promise<string> {
+  const WEB_HOST = process.env.WEB_HOST ?? "http://localhost:3000";
+
+  const viteAliases = JSON.stringify({
+    "@editframe/elements/preview/renderTimegroupToVideo":
+      "/app/node_modules/@editframe/elements/dist/preview/renderTimegroupToVideo.js",
+    "@editframe/elements/preview/renderTimegroupToCanvas":
+      "/app/node_modules/@editframe/elements/dist/preview/renderTimegroupToCanvas.js",
+  });
+
+  const files: Record<string, string> = {
+    "index.ts": `
+      import "@editframe/elements";
+      import "@editframe/elements/styles.css";
+      import { renderTimegroupToVideo } from "@editframe/elements/preview/renderTimegroupToVideo";
+      import { captureTimegroupAtTime } from "@editframe/elements/preview/renderTimegroupToCanvas";
+      (window as any).renderTimegroupToVideo = renderTimegroupToVideo;
+      (window as any).captureTimegroupAtTime = captureTimegroupAtTime;
+    `,
+    "index.html": `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <script type="module" src="./index.ts"></script>
+        <link rel="stylesheet" href="./styles.css">
+      </head>
+      <body>
+        <ef-configuration api-host="${WEB_HOST}">
+          ${html}
+        </ef-configuration>
+      </body>
+      </html>
+    `,
+    "styles.css": `
+      @tailwind base;
+      @tailwind components;
+      @tailwind utilities;
+    `,
+    "package.json": "{}",
+    "vite.config.js": `
+      import { viteSingleFile } from "vite-plugin-singlefile";
+      export default {
+        plugins: [viteSingleFile()],
+        resolve: {
+          alias: ${viteAliases},
+        }
+      };
+    `,
+    "postcss.config.cjs": `
+      module.exports = {
+        plugins: { tailwindcss: {} },
+      };
+    `,
+    "tailwind.config.js": `
+      module.exports = {
+        content: ["./index.html"],
+        theme: { extend: {} },
+        plugins: [],
+      };
+    `,
+  };
+
+  await Promise.all(
+    Object.entries(files).map(([name, content]) =>
+      writeFile(path.join(bundleDir, name), content),
+    ),
+  );
+
+  const { stdout, stderr } = await execFileAsync(
+    "node",
+    ["/app/node_modules/rolldown-vite/bin/vite.js", "build"],
+    { cwd: bundleDir },
+  );
+
+  if (stdout) log(`vite stdout: ${stdout}`);
+  if (stderr) log(`vite stderr: ${stderr}`);
+
+  return path.join(bundleDir, "dist");
 }
-try {
-  const { stdout } = await execFileAsync("ls", ["-la", "/dev/dri/"], { timeout: 3000 });
-  log(`DRI devices: ${stdout.trim()}`);
-} catch {
-  log("No /dev/dri (expected on Cloud Run)");
+
+// ---------------------------------------------------------------------------
+async function doRender(
+  mode: "cpu" | "gpu",
+  indexPath: string,
+): Promise<{ timings: Record<string, number>; totalBytes: number; gcsUrl: string }> {
+  step(`RENDER [${mode.toUpperCase()}]`);
+
+  // Both modes use headless ozone (hasGpu() returns true on Cloud Run because
+  // NVIDIA_VISIBLE_DEVICES is always set by the container runtime).
+  // The ANGLE backend controls whether rasterization uses the NVIDIA GPU
+  // (vulkan) or Chromium's bundled software Vulkan (swiftshader).
+  if (mode === "gpu") {
+    process.env.EF_ANGLE_BACKEND = "vulkan";
+  } else {
+    process.env.EF_ANGLE_BACKEND = "swiftshader";
+  }
+
+  const renderStart = Date.now();
+
+  log(`Spawning Electron RPC (${mode} mode)...`);
+  const electronRpc = (await executeInElectronWithRpc(ELECTRON_RPC_SCRIPT)) as {
+    processExit: Promise<number>;
+    rpc: ElectronRPCClient;
+  };
+  const rpcReady = Date.now();
+  log(`Electron RPC ready in ${rpcReady - renderStart}ms`);
+
+  const renderInfo = await electronRpc.rpc.call("getRenderInfo", {
+    location: `file://${indexPath}`,
+    orgId: ORG_ID,
+  });
+  log(
+    `Render info: ${renderInfo.width}x${renderInfo.height} @ ${renderInfo.durationMs}ms`,
+  );
+
+  const assetsBundle: AssetsMetadataBundle = { fragmentIndexes: {} };
+  const renderId = `gpu-test-${mode}-${Date.now()}`;
+  const fragmentIds = buildFragmentIds({
+    duration_ms: renderInfo.durationMs,
+    work_slice_ms: WORK_SLICE_MS,
+  });
+
+  log(`Rendering ${fragmentIds.length} fragments (${fragmentIds.join(", ")})`);
+
+  const timings: Record<string, number> = {};
+  const segmentBuffers: Buffer[] = [];
+
+  for (const fragmentId of fragmentIds) {
+    const start = Date.now();
+    const buffer = await electronRpc.rpc.call("renderFragment", {
+      width: renderInfo.width,
+      height: renderInfo.height,
+      location: `file://${indexPath}`,
+      orgId: ORG_ID,
+      renderId,
+      segmentDurationMs: WORK_SLICE_MS,
+      segmentIndex: fragmentId,
+      durationMs: renderInfo.durationMs,
+      fps: 30,
+      fileType: "fragment",
+      assetsBundle,
+    });
+    const elapsed = Date.now() - start;
+    timings[`fragment_${fragmentId}`] = elapsed;
+    log(`Fragment ${fragmentId}: ${buffer.length} bytes in ${elapsed}ms`);
+    segmentBuffers.push(Buffer.from(buffer));
+  }
+
+  await electronRpc.rpc.call("terminate");
+  await electronRpc.processExit;
+  log("Electron process exited cleanly");
+
+  const totalRender = Date.now() - renderStart;
+  timings["total"] = totalRender;
+  timings["rpc_ready"] = rpcReady - renderStart;
+
+  const finalBuffer = Buffer.concat(segmentBuffers);
+  log(`Final MP4: ${finalBuffer.length} bytes, total time: ${totalRender}ms`);
+
+  // Upload
+  const gcsPath = `gpu-render-test/${renderId}/output.mp4`;
+  const storage = new Storage();
+  await storage.bucket(BUCKET).file(gcsPath).save(finalBuffer, {
+    contentType: "video/mp4",
+  });
+
+  const [signedUrl] = await storage
+    .bucket(BUCKET)
+    .file(gcsPath)
+    .getSignedUrl({
+      action: "read",
+      expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+    });
+
+  log(`Uploaded: gs://${BUCKET}/${gcsPath}`);
+  log(`URL: ${signedUrl}`);
+
+  return { timings, totalBytes: finalBuffer.length, gcsUrl: signedUrl };
 }
+
+// ---------------------------------------------------------------------------
+// Main
+// ---------------------------------------------------------------------------
+step("0. Quick GPU check");
 try {
   const { stdout } = await execFileAsync("nvidia-smi", ["-L"], { timeout: 5000 });
-  log(`nvidia-smi: ${stdout.trim()}`);
+  log(stdout.trim());
 } catch (e: any) {
   log(`nvidia-smi: ${e.message}`);
 }
 
-// ---------------------------------------------------------------------------
-step("2. EGL display test (native C)");
-try {
-  const { stdout, stderr } = await execFileAsync("egl_test", [], {
-    timeout: 10000,
-    env: { ...process.env },
-  });
-  log(stdout);
-  if (stderr) log(`stderr: ${stderr}`);
-} catch (e: any) {
-  log(`egl_test failed: ${e.stdout || ""}\n${e.stderr || e.message}`);
-}
-
-// Also try with EGL_PLATFORM=surfaceless
-try {
-  const { stdout } = await execFileAsync("egl_test", [], {
-    timeout: 10000,
-    env: { ...process.env, EGL_PLATFORM: "surfaceless" },
-  });
-  log(`With EGL_PLATFORM=surfaceless:\n${stdout}`);
-} catch (e: any) {
-  log(`egl_test with surfaceless: ${e.stdout || ""}\n${e.stderr || e.message}`);
-}
+step("1. Bundle HTML");
+const templateHash = createHash("sha256")
+  .update(HTML)
+  .digest("hex")
+  .substring(0, 16);
+const bundleDir = `/app/temp/gpu-render-test-${templateHash}`;
+await mkdir(bundleDir, { recursive: true });
+const distDir = await bundleHTML(HTML, bundleDir);
+const indexPath = path.join(distDir, "index.html");
+log(`Bundle: ${distDir}`);
 
 // ---------------------------------------------------------------------------
-step("3. Vulkan ICD");
-try {
-  const { stdout } = await execFileAsync("vulkaninfo", ["--summary"], {
-    timeout: 10000,
-    env: { ...process.env, VK_ICD_FILENAMES: "/etc/vulkan/icd.d/nvidia_icd.json" },
-  });
-  log(stdout.trim());
-} catch (e: any) {
-  log(`vulkaninfo: ${e.stderr || e.message}`);
+const results: Record<string, any> = {};
+
+if (RENDER_MODE === "cpu" || RENDER_MODE === "both") {
+  results.cpu = await doRender("cpu", indexPath);
+}
+
+if (RENDER_MODE === "gpu" || RENDER_MODE === "both") {
+  results.gpu = await doRender("gpu", indexPath);
 }
 
 // ---------------------------------------------------------------------------
-step("4. Bare Electron GPU boot");
+step("COMPARISON");
 
-/**
- * Spawn Electron with GPU flags, load about:blank, dump GPU info, exit.
- * This is the simplest possible Electron GPU test — no RPC, no render code.
- */
-const electronScript = `
-const { app } = require("electron");
-const { BrowserWindow } = require("electron");
-
-app.on("child-process-gone", (_event, details) => {
-  process.stderr.write("[DIAG] child-process-gone: " + JSON.stringify(details) + "\\n");
-});
-
-app.on("gpu-info-update", () => {
-  process.stderr.write("[DIAG] gpu-info-update event\\n");
-});
-
-app.whenReady().then(async () => {
-  process.stderr.write("[DIAG] app ready\\n");
-  process.stderr.write("[DIAG] command line: " + JSON.stringify(process.argv) + "\\n");
-
-  // Try getGPUInfo immediately, then again after wait
-  try {
-    const info1 = await app.getGPUInfo("basic");
-    process.stderr.write("[DIAG] GPU_INFO_IMMEDIATE: " + JSON.stringify(info1) + "\\n");
-  } catch (err) {
-    process.stderr.write("[DIAG] getGPUInfo immediate error: " + err.message + "\\n");
+for (const [mode, res] of Object.entries(results)) {
+  log(`\n${mode.toUpperCase()} timings:`);
+  for (const [k, v] of Object.entries(res.timings)) {
+    log(`  ${k}: ${v}ms`);
   }
-
-  // Wait for GPU process to fully initialize
-  await new Promise(r => setTimeout(r, 8000));
-
-  try {
-    const info = await app.getGPUInfo("complete");
-    process.stderr.write("[DIAG] FULL_GPU_INFO: " + JSON.stringify(info) + "\\n");
-  } catch (err) {
-    process.stderr.write("[DIAG] getGPUInfo error: " + err.message + "\\n");
-  }
-
-  // Create a window and check WebGL + renderer details
-  try {
-    const win = new BrowserWindow({
-      width: 320, height: 240,
-      show: false,
-      webPreferences: { offscreen: true },
-    });
-    await win.loadURL(\`data:text/html,<canvas id='c' width='320' height='240'></canvas><script>
-      const c = document.getElementById('c');
-      const gl = c.getContext('webgl2') || c.getContext('webgl');
-      const info = {
-        webgl: !!gl,
-        version: gl ? gl.getParameter(gl.VERSION) : 'none',
-        renderer: gl ? gl.getParameter(gl.RENDERER) : 'none',
-        vendor: gl ? gl.getParameter(gl.VENDOR) : 'none',
-        unmaskedRenderer: 'none',
-        unmaskedVendor: 'none'
-      };
-      if (gl) {
-        const ext = gl.getExtension('WEBGL_debug_renderer_info');
-        if (ext) {
-          info.unmaskedRenderer = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL);
-          info.unmaskedVendor = gl.getParameter(ext.UNMASKED_VENDOR_WEBGL);
-        }
-      }
-      document.title = JSON.stringify(info);
-    </script>\`);
-    await new Promise(r => setTimeout(r, 2000));
-    const title = win.getTitle();
-    process.stderr.write("[DIAG] WebGL test: " + title + "\\n");
-    win.close();
-  } catch (err) {
-    process.stderr.write("[DIAG] WebGL test error: " + err.message + "\\n");
-  }
-
-  process.stderr.write("[DIAG] done\\n");
-  app.quit();
-});
-`;
-
-import { writeFile } from "node:fs/promises";
-const scriptPath = "/tmp/gpu-diag-electron.cjs";
-await writeFile(scriptPath, electronScript);
-
-const electronProc = spawn(
-  "node_modules/.bin/electron",
-  [
-    // GPU flags — must be CLI args so they propagate to the GPU subprocess.
-    // --use-angle=vulkan tells ANGLE to use its Vulkan backend, which works
-    // headless without X11. The default backend tries X11 EGL and fails.
-    // Do NOT set --use-gl=egl: it conflicts with --use-angle in Chromium's
-    // GL implementation lookup table. Chromium auto-infers --use-gl=angle.
-    "--use-angle=vulkan",
-    "--enable-features=Vulkan",
-    "--enable-gpu-rasterization",
-    "--enable-zero-copy",
-    "--ignore-gpu-blocklist",
-    "--disable-gpu-sandbox",
-    "--disable-vulkan-surface",
-    "--disable-gpu-process-crash-limit",
-    "--disable-gpu-watchdog",
-    "--ozone-platform=headless",
-    "--no-sandbox",
-    "--disable-setuid-sandbox",
-    "--disable-seccomp-filter-sandbox",
-    "--enable-logging=stderr",
-    "--v=1",
-    "--vmodule=gpu_init=3,angle*=3,vulkan*=3,egl*=3,gl_surface*=3,display*=3,gpu_process*=3,in_process_gpu*=3,gl_factory*=3,ozone*=3",
-    scriptPath,
-  ],
-  {
-    stdio: ["ignore", "pipe", "pipe"],
-    env: {
-      ...process.env,
-      __GLX_VENDOR_LIBRARY_NAME: "nvidia",
-      LIBGL_ALWAYS_SOFTWARE: "0",
-      VK_ICD_FILENAMES: "/etc/vulkan/icd.d/nvidia_icd.json",
-      // Disable the NV optimus implicit layer — it fails to resolve
-      // vkGetInstanceProcAddr on Cloud Run and is unnecessary (single GPU).
-      DISABLE_LAYER_NV_OPTIMUS_1: "1",
-      VK_LOADER_DEBUG: "error",
-      LD_PRELOAD: "/usr/lib/x86_64-linux-gnu/fake_sysfs_access.so",
-    },
-    timeout: 60000,
-  },
-);
-
-let stderr = "";
-electronProc.stderr.on("data", (data: Buffer) => {
-  const str = data.toString();
-  stderr += str;
-  // Filter: only log [DIAG] lines and Chromium ERROR/WARNING/gpu lines
-  for (const line of str.split("\n")) {
-    if (line.includes("[DIAG]") ||
-        line.includes("ERROR") ||
-        line.includes("WARNING") ||
-        line.includes("gpu_init") ||
-        line.includes("GpuInit") ||
-        line.includes("ANGLE") ||
-        line.includes("angle_") ||
-        line.includes("egl") ||
-        line.includes("EGL") ||
-        line.includes("vulkan") ||
-        line.includes("Vulkan") ||
-        line.includes("CreateCommandBuffer") ||
-        line.includes("ContextResult") ||
-        line.includes("child-process-gone") ||
-        line.includes("in_process") ||
-        line.includes("InProcess") ||
-        line.includes("gl_surface") ||
-        line.includes("display")) {
-      process.stdout.write(`[electron] ${line}\n`);
-    }
-  }
-});
-
-electronProc.stdout.on("data", (data: Buffer) => {
-  process.stdout.write(`[electron-stdout] ${data.toString()}`);
-});
-
-const exitCode = await new Promise<number>((resolve) => {
-  electronProc.on("close", (code) => resolve(code ?? 1));
-  electronProc.on("error", () => resolve(1));
-});
-
-log(`Electron exited with code ${exitCode}`);
-
-// Print full stderr if short enough, or if it contains key diagnostics
-if (stderr.length < 5000) {
-  log(`Full electron stderr:\n${stderr}`);
-} else {
-  // Extract just the [DIAG] lines
-  const diagLines = stderr.split("\n").filter(l => l.includes("[DIAG]"));
-  log(`Diagnostic lines:\n${diagLines.join("\n")}`);
+  log(`  output size: ${res.totalBytes} bytes`);
 }
 
-// ---------------------------------------------------------------------------
-process.stdout.write("\n[gpu-diag] All diagnostics completed.\n");
+if (results.cpu && results.gpu) {
+  log("\n--- CPU vs GPU ---");
+  const cpuFragments = Object.entries(results.cpu.timings)
+    .filter(([k]) => k.startsWith("fragment_"))
+    .map(([, v]) => v as number);
+  const gpuFragments = Object.entries(results.gpu.timings)
+    .filter(([k]) => k.startsWith("fragment_"))
+    .map(([, v]) => v as number);
+
+  const cpuTotal = cpuFragments.reduce((a, b) => a + b, 0);
+  const gpuTotal = gpuFragments.reduce((a, b) => a + b, 0);
+
+  log(`CPU fragment total: ${cpuTotal}ms`);
+  log(`GPU fragment total: ${gpuTotal}ms`);
+  log(`Speedup: ${(cpuTotal / gpuTotal).toFixed(2)}x`);
+  log(`CPU total (incl. init): ${results.cpu.timings.total}ms`);
+  log(`GPU total (incl. init): ${results.gpu.timings.total}ms`);
+}
+
+process.stdout.write("\n[gpu-render-test] Done.\n");
 process.exit(0);

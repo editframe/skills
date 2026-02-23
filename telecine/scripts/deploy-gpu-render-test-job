@@ -16,10 +16,12 @@ set -euo pipefail
 
 SKIP_BUILD=0
 LOGS_ONLY=0
+RENDER_MODE=both
 for arg in "$@"; do
   case $arg in
     --skip-build) SKIP_BUILD=1 ;;
     --logs-only)  LOGS_ONLY=1; SKIP_BUILD=1 ;;
+    --mode=*)     RENDER_MODE="${arg#--mode=}" ;;
   esac
 done
 
@@ -56,7 +58,7 @@ if [ "$LOGS_ONLY" -eq 0 ]; then
     --vpc-egress=private-ranges-only \
     --network=default \
     --subnet=default \
-    --set-env-vars="NODE_ENV=production,PINO_LOG_LEVEL=debug,STORAGE_BUCKET=telecine-dot-dev-data-4fedc83" \
+    --set-env-vars="NODE_ENV=production,PINO_LOG_LEVEL=debug,STORAGE_BUCKET=telecine-dot-dev-data-4fedc83,RENDER_MODE=${RENDER_MODE}" \
   2>/dev/null || \
   gcloud alpha run jobs update "${JOB_NAME}" \
     --project="${PROJECT}" \
@@ -73,7 +75,7 @@ if [ "$LOGS_ONLY" -eq 0 ]; then
     --vpc-egress=private-ranges-only \
     --network=default \
     --subnet=default \
-    --set-env-vars="NODE_ENV=production,PINO_LOG_LEVEL=debug,STORAGE_BUCKET=telecine-dot-dev-data-4fedc83"
+    --set-env-vars="NODE_ENV=production,PINO_LOG_LEVEL=debug,STORAGE_BUCKET=telecine-dot-dev-data-4fedc83,RENDER_MODE=${RENDER_MODE}"
 
   echo "==> Executing job..."
   gcloud alpha run jobs execute "${JOB_NAME}" \
