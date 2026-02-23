@@ -29,13 +29,12 @@ if (process.env.EF_GPU_RENDER) {
   // --disable-vulkan-surface is passed as spawn arg to skip VK_EXT_headless_surface.
   // ozone-platform=headless is passed as a spawn arg in executeInElectron.ts.
   electronApp.commandLine.appendSwitch("use-angle", "vulkan");
-  electronApp.commandLine.appendSwitch("enable-features", "Vulkan,VulkanFromANGLE,DefaultANGLEVulkan,CanvasDrawElement");
+  electronApp.commandLine.appendSwitch("enable-features", "Vulkan,CanvasDrawElement");
   electronApp.commandLine.appendSwitch("enable-gpu-rasterization");
   electronApp.commandLine.appendSwitch("enable-zero-copy");
   electronApp.commandLine.appendSwitch("ignore-gpu-blocklist");
   electronApp.commandLine.appendSwitch("disable-gpu-sandbox");
   electronApp.commandLine.appendSwitch("disable-vulkan-surface");
-  electronApp.commandLine.appendSwitch("disable-gpu-driver-bug-workarounds");
 } else {
   // On CPU instances: software vsync is required with Xvfb.
   electronApp.commandLine.appendSwitch("disable-gpu-vsync");

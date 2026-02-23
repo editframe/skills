@@ -132,6 +132,48 @@ async function bundleHTML(html: string, bundleDir: string): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------
+step("0. Vulkan diagnostics");
+try {
+  const { stdout: vkOut } = await execFileAsync("vulkaninfo", ["--summary"], { timeout: 10000 });
+  log(`vulkaninfo:\n${vkOut}`);
+} catch (e: any) {
+  log(`vulkaninfo failed (expected if not installed): ${e.message}`);
+}
+try {
+  const { stdout: chromeGpuFlags } = await execFileAsync("node_modules/.bin/electron", [
+    "--no-sandbox",
+    "--ozone-platform=headless",
+    "--disable-vulkan-surface",
+    "--enable-features=Vulkan",
+    "--use-angle=vulkan",
+    "--ignore-gpu-blocklist",
+    "--disable-gpu-sandbox",
+    "--enable-logging=stderr",
+    "--headless",
+    "--dump-dom",
+    "chrome://gpu",
+  ], {
+    timeout: 15000,
+    env: {
+      ...process.env,
+      VK_ICD_FILENAMES: "/etc/vulkan/icd.d/nvidia_icd.json",
+      VK_LAYER_PATH: "/etc/vulkan/implicit_layer.d",
+    },
+  });
+  const lines = chromeGpuFlags.split("\n").filter(l =>
+    l.includes("Vulkan") || l.includes("vulkan") || l.includes("ANGLE") ||
+    l.includes("angle") || l.includes("GPU") || l.includes("Canvas") ||
+    l.includes("Rasterization") || l.includes("Compositing") ||
+    l.includes("hardware_acceleration") || l.includes("gl_renderer") ||
+    l.includes("Driver") || l.includes("disabled") || l.includes("enabled") ||
+    l.includes("Software")
+  );
+  log(`chrome://gpu relevant lines:\n${lines.join("\n")}`);
+} catch (e: any) {
+  log(`chrome://gpu dump failed: ${e.stderr || e.message}`);
+}
+
+// ---------------------------------------------------------------------------
 step("1. Bundle HTML");
 const templateHash = createHash("sha256").update(HTML).digest("hex").substring(0, 16);
 // Use /app/temp so vite can resolve node_modules via normal parent-dir traversal

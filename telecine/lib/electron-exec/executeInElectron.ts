@@ -140,7 +140,8 @@ const spawnElectronBootloader = async (script: string) => {
               "--disable-vulkan-surface",
               "--disable-vulkan-fallback-to-gl-for-testing",
               "--enable-logging=stderr",
-              "--vmodule=*/gpu/*=2,*/angle/*=2,*/vulkan/*=2,*/viz/*=1",
+              "--disable-setuid-sandbox",
+              "--disable-seccomp-filter-sandbox",
             ]
           : [];
 
