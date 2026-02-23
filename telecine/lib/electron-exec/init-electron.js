@@ -22,10 +22,10 @@ electronApp.commandLine.appendSwitch("disable-frame-rate-limit");
 electronApp.commandLine.appendSwitch("disable-accelerated-video-decode");
 
 if (process.env.EF_GPU_RENDER) {
-  // On GPU instances with --ozone-platform=headless, ANGLE defaults to trying X11 EGL
-  // which fails without a display server. Force ANGLE to use the Vulkan backend instead,
-  // which initializes directly against the NVIDIA driver without needing an X display.
-  electronApp.commandLine.appendSwitch("use-angle", "vulkan");
+  // On GPU instances with --ozone-platform=headless, ANGLE's default EGL tries X11.
+  // SwiftShader provides software rasterization that works headlessly and confirms the
+  // full frame-capture pipeline (hardware encoding happens separately via h264_nvenc).
+  electronApp.commandLine.appendSwitch("use-angle", "swiftshader");
 } else {
   // On CPU instances: software vsync is required with Xvfb.
   electronApp.commandLine.appendSwitch("disable-gpu-vsync");
