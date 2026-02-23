@@ -80,7 +80,7 @@ export const workerConfigs: Record<Workers, QueueConfig> = {
   renderFragmentGpu: {
     name: "render-fragment-gpu",
     screaming: "RENDER_FRAGMENT_GPU",
-    maxWorkerCount: 20,
+    maxWorkerCount: 2,
     minWorkerCount: 0,
     workerConcurrency: 8,
     workerCpu: workerResources.renderFragmentGpu.cpu,
