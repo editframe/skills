@@ -282,7 +282,8 @@ export default defineConfig(async () => {
       exclude: ["**/node_modules/**", "**/generated/**"],
       /* Globals MUST be enabled for testing library to automatically cleanup between tests */
       globals: true,
-      maxConcurrency: 10,
+      maxConcurrency: 1,
+      fileParallelism: false,
       // Global setup file that runs before every test
       setupFiles: ["./packages/elements/test/setup.ts"],
       // No longer need global setup - proxy is integrated into Vite server
