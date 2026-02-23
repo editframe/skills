@@ -22,8 +22,10 @@ electronApp.commandLine.appendSwitch("disable-frame-rate-limit");
 electronApp.commandLine.appendSwitch("disable-accelerated-video-decode");
 
 if (process.env.EF_GPU_RENDER) {
-  // On GPU instances with --ozone-platform=headless, Chromium's only allowed GL
-  // implementation is (gl=egl-angle,angle=default) — its default. Don't override it.
+  // On GPU instances with --ozone-platform=headless, ANGLE defaults to trying X11 EGL
+  // which fails without a display server. Force ANGLE to use the Vulkan backend instead,
+  // which initializes directly against the NVIDIA driver without needing an X display.
+  electronApp.commandLine.appendSwitch("use-angle", "vulkan");
 } else {
   // On CPU instances: software vsync is required with Xvfb.
   electronApp.commandLine.appendSwitch("disable-gpu-vsync");
