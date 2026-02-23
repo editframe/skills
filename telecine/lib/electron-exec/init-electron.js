@@ -22,12 +22,8 @@ electronApp.commandLine.appendSwitch("disable-frame-rate-limit");
 electronApp.commandLine.appendSwitch("disable-accelerated-video-decode");
 
 if (process.env.EF_GPU_RENDER) {
-  // On GPU instances: use ANGLE/EGL for hardware-accelerated compositing.
-  // The headless ozone platform (passed as spawn arg) only allows egl-angle/angle=default.
-  // use-gl=angle routes through ANGLE; use-angle=default lets ANGLE pick the best backend
-  // (EGL on Linux with NVIDIA drivers).
-  electronApp.commandLine.appendSwitch("use-gl", "angle");
-  electronApp.commandLine.appendSwitch("use-angle", "default");
+  // On GPU instances with --ozone-platform=headless, Chromium's only allowed GL
+  // implementation is (gl=egl-angle,angle=default) — its default. Don't override it.
 } else {
   // On CPU instances: software vsync is required with Xvfb.
   electronApp.commandLine.appendSwitch("disable-gpu-vsync");

@@ -39,6 +39,7 @@ RUN npx vite build
 
 WORKDIR /app
 RUN npx vite build --config /app/lib/electron-exec/vite.electron-rpc.config.ts
+RUN npx vite build --config /app/lib/electron-exec/vite.probe-electron.config.ts
 
 RUN rm -rf node_modules && npm install --only=production
 

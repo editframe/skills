@@ -11,7 +11,7 @@ import opentelemetry, {
 } from "@opentelemetry/api";
 
 const tracer = opentelemetry.trace.getTracer("electron-bootloader");
-const execPath = process.argv[3];
+const execPath = process.env.EF_ELECTRON_SCRIPT ?? process.argv[3];
 
 // Derive a pre-built bundle path: replace .ts extension with .electron.js
 const prebuiltPath = execPath?.replace(/\.ts$/, ".electron.js");
