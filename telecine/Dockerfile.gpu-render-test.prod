@@ -44,6 +44,12 @@ FROM nvidia/cuda:12.6.3-runtime-ubuntu22.04
 
 ENV NODE_ENV=production
 
+# Tell the NVIDIA container toolkit to inject graphics libs (Vulkan ICD,
+# libEGL_nvidia, /dev/dri render nodes) in addition to the default
+# compute+utility capabilities.
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
+ENV NVIDIA_VISIBLE_DEVICES=all
+
 RUN apt-get update \
   && apt-get install -y curl \
   && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
@@ -73,6 +79,8 @@ RUN apt-get update \
   libgtk2.0-0 \
   libegl1-mesa \
   libgles2-mesa \
+  libvulkan1 \
+  vulkan-tools \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

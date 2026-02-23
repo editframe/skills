@@ -23,11 +23,15 @@ electronApp.commandLine.appendSwitch("disable-accelerated-video-decode");
 
 if (process.env.EF_GPU_RENDER) {
   // On GPU instances: --ozone-platform=headless (spawn arg) avoids requiring X11.
-  // use-angle=swiftshader: software rasterizer for headless frame capture.
-  // Vulkan headless (VK_KHR_surface/VK_KHR_xcb_surface not available without X11)
-  // so we cannot use use-angle=vulkan here. Hardware encoding via h264_nvenc
-  // is handled separately by ffmpeg, not by Chromium's GPU pipeline.
-  electronApp.commandLine.appendSwitch("use-angle", "swiftshader");
+  // ANGLE's Vulkan backend renders offscreen without a display server — it does
+  // not need VK_KHR_surface/VK_KHR_xcb_surface. The NVIDIA Vulkan ICD is injected
+  // by the container toolkit when NVIDIA_DRIVER_CAPABILITIES includes "graphics".
+  // --ignore-gpu-blocklist overrides Chromium's headless GPU blocklist.
+  electronApp.commandLine.appendSwitch("use-angle", "vulkan");
+  electronApp.commandLine.appendSwitch("use-vulkan", "true");
+  electronApp.commandLine.appendSwitch("enable-gpu-rasterization");
+  electronApp.commandLine.appendSwitch("ignore-gpu-blocklist");
+  electronApp.commandLine.appendSwitch("disable-gpu-sandbox");
 } else {
   // On CPU instances: software vsync is required with Xvfb.
   electronApp.commandLine.appendSwitch("disable-gpu-vsync");
