@@ -38,12 +38,12 @@ export const defineWorker = (config: QueueConfig, gpu?: GpuConfig) => {
     `telecine-worker-${config.name}`,
     {
       ingress: "INGRESS_TRAFFIC_INTERNAL_ONLY",
-      launchStage: "GA",
+      launchStage: gpu ? "BETA" : "GA",
       location: "us-central1",
       name: `telecine-worker-${config.name}`,
       project: "editframe",
-      ...(gpu ? { gpuZonalRedundancyDisabled: gpu.zonalRedundancyDisabled } : {}),
       template: {
+        ...(gpu ? { gpuZonalRedundancyDisabled: gpu.zonalRedundancyDisabled } : {}),
         scaling: {
           minInstanceCount: 0,
           maxInstanceCount: config.maxWorkerCount,
