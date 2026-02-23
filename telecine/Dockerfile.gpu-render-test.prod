@@ -156,12 +156,11 @@ COPY --from=builder /app/tsconfig.json /app/tsconfig.json
 
 # Diagnostics: verify NVIDIA EGL/Vulkan ICDs + libs are present, then run the job.
 CMD ["bash", "-c", "\
-  echo '=== GLVND EGL ICD ===' && cat /usr/share/glvnd/egl_vendor.d/10_nvidia.json 2>/dev/null || echo MISSING; \
-  echo '=== Vulkan ICD ===' && cat /etc/vulkan/icd.d/nvidia_icd.json 2>/dev/null || echo MISSING; \
-  echo '=== Vulkan Layer ===' && cat /etc/vulkan/implicit_layer.d/nvidia_layers.json 2>/dev/null || echo MISSING; \
-  echo '=== libEGL_nvidia ===' && ls -la /usr/lib/x86_64-linux-gnu/libEGL_nvidia* 2>/dev/null || echo MISSING; \
-  echo '=== libnvidia-vulkan-producer ===' && ls -la /usr/lib/x86_64-linux-gnu/libnvidia-vulkan-producer* 2>/dev/null || echo MISSING; \
-  echo '=== ldconfig nvidia ===' && ldconfig -p | grep -i nvidia; \
+  echo '=== host driver ===' && nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>&1; \
   echo '=== nvidia-smi ===' && nvidia-smi -L 2>&1; \
   echo '=== /dev/nvidia* ===' && ls -la /dev/nvidia* 2>/dev/null || echo MISSING; \
+  echo '=== all vulkan ICDs ===' && find /etc/vulkan /usr/share/vulkan -name '*.json' -exec echo {} \\; -exec cat {} \\; 2>/dev/null || echo NONE; \
+  echo '=== all EGL ICDs ===' && find /usr/share/glvnd -name '*.json' -exec echo {} \\; -exec cat {} \\; 2>/dev/null || echo NONE; \
+  echo '=== ldconfig nvidia ===' && ldconfig -p | grep -i nvidia; \
+  echo '=== libvulkan ===' && ldconfig -p | grep -i vulkan; \
   exec node /app/services/gpu-render-test/dist/main.js"]
