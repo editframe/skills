@@ -35,6 +35,9 @@ if (process.env.EF_GPU_RENDER) {
   electronApp.commandLine.appendSwitch("ignore-gpu-blocklist");
   electronApp.commandLine.appendSwitch("disable-gpu-sandbox");
   electronApp.commandLine.appendSwitch("disable-vulkan-surface");
+  electronApp.commandLine.appendSwitch("gpu-vendor-id", "0x10de");
+  electronApp.commandLine.appendSwitch("gpu-device-id", "0x27b8");
+  electronApp.commandLine.appendSwitch("gpu-driver-version", "535.261.03");
 } else {
   // On CPU instances: software vsync is required with Xvfb.
   electronApp.commandLine.appendSwitch("disable-gpu-vsync");
