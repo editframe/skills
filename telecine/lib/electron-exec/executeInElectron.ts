@@ -134,7 +134,13 @@ const spawnElectronBootloader = async (script: string) => {
 
         const spawnTime = Date.now();
 
-        const gpuSpawnArgs = gpuMode ? ["--ozone-platform=headless"] : [];
+        const gpuSpawnArgs = gpuMode
+          ? [
+              "--ozone-platform=headless",
+              "--disable-vulkan-surface",
+              "--disable-vulkan-fallback-to-gl-for-testing",
+            ]
+          : [];
 
         const electronProcess = spawn(
           "node_modules/.bin/electron",
@@ -156,6 +162,7 @@ const spawnElectronBootloader = async (script: string) => {
                     EF_GPU_RENDER: "1",
                     VK_ICD_FILENAMES: "/etc/vulkan/icd.d/nvidia_icd.json",
                     VK_LAYER_PATH: "/etc/vulkan/implicit_layer.d",
+                    VK_LOADER_DEBUG: "all",
                   }
                 : { DISPLAY: XVFB_DISPLAY }),
               EF_ELECTRON_SCRIPT: script,

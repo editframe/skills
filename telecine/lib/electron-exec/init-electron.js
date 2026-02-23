@@ -58,8 +58,11 @@ electronApp.whenReady().then(() => setTimeout(async () => {
   }
 }, 2000));
 
+if (process.env.DEBUG_ELECTRON || process.env.EF_GPU_RENDER) {
+  electronApp.commandLine.appendSwitch("enable-logging");
+  electronApp.commandLine.appendSwitch("v", "1");
+}
+
 if (process.env.DEBUG_ELECTRON) {
   electronApp.commandLine.appendSwitch("enable-crash-reporter");
-  electronApp.commandLine.appendSwitch("enable-logging");
-  electronApp.commandLine.appendSwitch("v", "0");
 }
