@@ -11,7 +11,7 @@ import { createRpcClient } from "./RPC";
 import { promiseWithResolvers } from "@/util/promiseWithResolvers";
 import { raceTimeout } from "@/util/raceTimeout";
 import { logger } from "@/logging";
-
+import { hasGpu } from "@/util/gpuDetect";
 
 const XVFB_DISPLAY = ":99";
 let xvfbProcess: ChildProcess | null = null;
@@ -123,7 +123,10 @@ const spawnElectronBootloader = async (script: string) => {
     "spawnElectronBootloader",
     async (span) => {
       try {
-        await ensureXvfb();
+        const gpuMode = hasGpu();
+        if (!gpuMode) {
+          await ensureXvfb();
+        }
         const socketPath = makeSocketPath();
 
         const traceContext: Record<string, unknown> = {};
@@ -131,17 +134,22 @@ const spawnElectronBootloader = async (script: string) => {
 
         const spawnTime = Date.now();
 
+        const gpuSpawnArgs = gpuMode
+          ? ["--ozone-platform=headless"]
+          : [];
+
         const electronProcess = spawn(
           "node_modules/.bin/electron",
           [
             "--no-sandbox",
+            ...gpuSpawnArgs,
             "/app/lib/electron-exec/executeInElectron.bootloader.js",
           ],
           {
             stdio: ["ignore", "pipe", "pipe"],
             env: {
               ...process.env,
-              DISPLAY: XVFB_DISPLAY,
+              ...(gpuMode ? { EF_GPU_RENDER: "1" } : { DISPLAY: XVFB_DISPLAY }),
               EF_ELECTRON_SCRIPT: script,
               EF_SOCKET_PATH: socketPath,
               OTEL_EXPORTER_OTLP_ENDPOINT:
