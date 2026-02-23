@@ -25,16 +25,17 @@ if (process.env.EF_GPU_RENDER) {
   // On Cloud Run GPU instances (NVIDIA L4):
   // /dev/dri render nodes are absent, only /dev/nvidia0 + /dev/nvidiactl.
   // ANGLE's default backend tries X11 EGL and fails without a display.
-  // The Vulkan backend handles headless/surfaceless natively via the
-  // NVIDIA Vulkan ICD (libEGL_nvidia.so.0) which uses /dev/nvidia0 directly.
+  // Use Vulkan+ANGLE via feature flags + --use-angle=vulkan.
+  // --disable-vulkan-surface is passed as spawn arg to skip VK_EXT_headless_surface.
   // ozone-platform=headless is passed as a spawn arg in executeInElectron.ts.
   electronApp.commandLine.appendSwitch("use-angle", "vulkan");
-  electronApp.commandLine.appendSwitch("enable-features", "Vulkan,CanvasDrawElement");
+  electronApp.commandLine.appendSwitch("enable-features", "Vulkan,VulkanFromANGLE,DefaultANGLEVulkan,CanvasDrawElement");
   electronApp.commandLine.appendSwitch("enable-gpu-rasterization");
   electronApp.commandLine.appendSwitch("enable-zero-copy");
   electronApp.commandLine.appendSwitch("ignore-gpu-blocklist");
   electronApp.commandLine.appendSwitch("disable-gpu-sandbox");
   electronApp.commandLine.appendSwitch("disable-vulkan-surface");
+  electronApp.commandLine.appendSwitch("disable-gpu-driver-bug-workarounds");
 } else {
   // On CPU instances: software vsync is required with Xvfb.
   electronApp.commandLine.appendSwitch("disable-gpu-vsync");
@@ -53,10 +54,21 @@ electronApp.whenReady().then(() => setTimeout(async () => {
     const glVendor = info.auxAttributes?.glVendor || "unknown";
     const gpuDevices = info.gpuDevice?.map(d => `${d.vendorId}:${d.deviceId} ${d.driverVersion}`) || [];
     process.stderr.write(`[electron-gpu] gl_renderer: ${glRenderer} / gl_vendor: ${glVendor} / devices: ${gpuDevices.join(", ")}\n`);
+    if (info.featureStatus) {
+      process.stderr.write(`[electron-gpu] feature_status: ${JSON.stringify(info.featureStatus)}\n`);
+    }
   } catch (err) {
     process.stderr.write(`[electron-gpu] getGPUInfo failed: ${err.message}\n`);
   }
 }, 2000));
+
+electronApp.on("gpu-info-update", () => {
+  process.stderr.write(`[electron-gpu] gpu-info-update event fired\n`);
+});
+
+electronApp.on("child-process-gone", (event, details) => {
+  process.stderr.write(`[electron-gpu] child-process-gone: type=${details.type} reason=${details.reason} exitCode=${details.exitCode} name=${details.name}\n`);
+});
 
 if (process.env.DEBUG_ELECTRON || process.env.EF_GPU_RENDER) {
   electronApp.commandLine.appendSwitch("enable-logging");
