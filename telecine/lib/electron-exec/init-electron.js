@@ -22,11 +22,12 @@ electronApp.commandLine.appendSwitch("disable-frame-rate-limit");
 electronApp.commandLine.appendSwitch("disable-accelerated-video-decode");
 
 if (process.env.EF_GPU_RENDER) {
-  // On GPU instances: use EGL for hardware-accelerated compositing via the NVIDIA driver.
-  // Note: --ozone-platform=headless is passed as a spawn arg in executeInElectron.ts
-  // because ozone platform selection happens before app initialization.
-  electronApp.commandLine.appendSwitch("use-gl", "egl");
-  electronApp.commandLine.appendSwitch("use-angle", "gl");
+  // On GPU instances: use ANGLE/EGL for hardware-accelerated compositing.
+  // The headless ozone platform (passed as spawn arg) only allows egl-angle/angle=default.
+  // use-gl=angle routes through ANGLE; use-angle=default lets ANGLE pick the best backend
+  // (EGL on Linux with NVIDIA drivers).
+  electronApp.commandLine.appendSwitch("use-gl", "angle");
+  electronApp.commandLine.appendSwitch("use-angle", "default");
 } else {
   // On CPU instances: software vsync is required with Xvfb.
   electronApp.commandLine.appendSwitch("disable-gpu-vsync");
