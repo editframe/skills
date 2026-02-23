@@ -189,6 +189,7 @@ const spawnElectronBootloader = async (script: string) => {
           const str = data.toString();
           if (str.includes("Failed to connect to the bus:")) return;
           if (str.includes("org.freedesktop.DBus.NameHasOwner")) return;
+          process.stdout.write(`[electron-stderr] ${str}`);
           logger.info({ data: str }, "Electron stderr");
         });
 
