@@ -149,7 +149,7 @@ export async function createBundledHTMLDirectory(
             },
           };
         `,
-      "tailwind.config.js": /* JS */ `
+      "tailwind.config.cjs": /* JS */ `
           module.exports = {
             content: [
               "./index.html",${process.env.NODE_ENV === "production" ? "" : `"/app/lib/packages/packages/elements/src/**/*.ts"`}
