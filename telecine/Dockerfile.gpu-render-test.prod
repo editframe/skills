@@ -41,6 +41,25 @@ WORKDIR /app
 RUN npx vite build --config /app/lib/electron-exec/vite.electron-rpc.config.ts
 
 # ---------------------------------------------------------------------------
+# Build GPU shims for Cloud Run:
+# 1. fake_libpci.so.3 — ANGLE dlopen("libpci.so.3") to enumerate GPUs. Our
+#    shim returns a single NVIDIA L4 device (Cloud Run has no PCI bus).
+# 2. fake_sysfs_access.so — LD_PRELOAD shim that intercepts access() to make
+#    ANGLE believe /sys/bus/pci/ exists (sysfs has no PCI entries on Cloud Run).
+# ---------------------------------------------------------------------------
+FROM debian:bullseye-slim AS gpu-shims
+
+# Compile against Debian Bullseye's libpci-dev (pci.h 3.7.0) to match
+# Chromium's sysroot ABI. Struct layouts must match exactly since ANGLE
+# accesses pci_access->devices and pci_dev->vendor_id etc by offset.
+RUN apt-get update && apt-get install -y gcc libpci-dev pkg-config && rm -rf /var/lib/apt/lists/*
+COPY lib/gpu-shim/fake_libpci.c /build/fake_libpci.c
+COPY lib/gpu-shim/fake_sysfs_access.c /build/fake_sysfs_access.c
+RUN gcc -shared -fPIC -o /build/libpci.so.3 /build/fake_libpci.c \
+    $(pkg-config --cflags libpci) -Wl,--no-as-needed && \
+    gcc -shared -fPIC -o /build/fake_sysfs_access.so /build/fake_sysfs_access.c -ldl
+
+# ---------------------------------------------------------------------------
 # Extract NVIDIA EGL/OpenGL userspace libraries from the driver installer.
 # Cloud Run GPU nodes have /dev/nvidia0 + /dev/nvidiactl but NOT /dev/dri.
 # The container toolkit does NOT inject the graphics libraries (libEGL_nvidia).
@@ -163,10 +182,20 @@ RUN ln -sf libGLX_nvidia.so.${NVIDIA_DRIVER_VERSION} /usr/lib/x86_64-linux-gnu/l
     rm /tmp/nvidia_icd_original.json && \
     ldconfig
 
-# Diagnostics: verify NVIDIA EGL/Vulkan ICDs + libs are present, then run the job.
+# Fake libpci.so.3: ANGLE dlopen's this to enumerate GPUs. Our shim returns
+# a single NVIDIA L4 device, bypassing the missing PCI bus on Cloud Run.
+COPY --from=gpu-shims /build/libpci.so.3 /usr/lib/x86_64-linux-gnu/libpci.so.3
+# Fake sysfs access shim: intercepts access("/sys/bus/pci/") to return 0.
+COPY --from=gpu-shims /build/fake_sysfs_access.so /usr/lib/x86_64-linux-gnu/fake_sysfs_access.so
+RUN ldconfig
+
+# Diagnostics: verify NVIDIA EGL/Vulkan ICDs + libs and GPU shims are present.
 CMD ["bash", "-c", "\
   echo '=== host driver ===' && nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>&1; \
   echo '=== nvidia-smi ===' && nvidia-smi -L 2>&1; \
   echo '=== Vulkan ICD ===' && cat /etc/vulkan/icd.d/nvidia_icd.json 2>&1; \
   echo '=== ldconfig nvidia ===' && ldconfig -p | grep -i nvidia; \
+  echo '=== fake libpci ===' && ldconfig -p | grep libpci; \
+  echo '=== sysfs pci ===' && ls -la /sys/bus/pci/ 2>&1 || echo '/sys/bus/pci does not exist'; \
+  echo '=== fake_sysfs_access.so ===' && ls -la /usr/lib/x86_64-linux-gnu/fake_sysfs_access.so 2>&1; \
   exec node /app/services/gpu-render-test/dist/main.js"]

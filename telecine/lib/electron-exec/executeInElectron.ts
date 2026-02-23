@@ -161,11 +161,14 @@ const spawnElectronBootloader = async (script: string) => {
                 // VK_ICD_FILENAMES restricts the Vulkan loader to ONLY the NVIDIA
                 // ICD, avoiding Mesa ICDs (Intel, radeon, lavapipe) that fail on
                 // Cloud Run and cause vkCreateInstance to return -7.
+                // LD_PRELOAD: fake_sysfs_access.so intercepts access("/sys/bus/pci/")
+                // so ANGLE's libpci loader proceeds to dlopen our fake libpci.so.3.
                 ? {
                     EF_GPU_RENDER: "1",
                     VK_ICD_FILENAMES: "/etc/vulkan/icd.d/nvidia_icd.json",
                     VK_LAYER_PATH: "/etc/vulkan/implicit_layer.d",
                     VK_LOADER_DEBUG: "all",
+                    LD_PRELOAD: "/usr/lib/x86_64-linux-gnu/fake_sysfs_access.so",
                   }
                 : { DISPLAY: XVFB_DISPLAY }),
               EF_ELECTRON_SCRIPT: script,
