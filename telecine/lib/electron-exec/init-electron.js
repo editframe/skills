@@ -22,17 +22,12 @@ electronApp.commandLine.appendSwitch("disable-frame-rate-limit");
 electronApp.commandLine.appendSwitch("disable-accelerated-video-decode");
 
 if (process.env.EF_GPU_RENDER) {
-  // On GPU instances: --ozone-platform=headless (spawn arg) avoids requiring X11
-  // for the browser process. use-angle=vulkan initializes ANGLE against the Vulkan
-  // driver directly — no EGL display needed, no X server required.
-  electronApp.commandLine.appendSwitch("use-gl", "angle");
-  electronApp.commandLine.appendSwitch("use-angle", "vulkan");
-  // Vulkan on headless instances lacks VK_KHR_surface/VK_KHR_xcb_surface.
-  // This flag tells ANGLE to skip surface/swapchain requirements and use bitblt.
-  electronApp.commandLine.appendSwitch("disable-vulkan-surface");
-  // Always emit Chromium GPU logs to stderr so Cloud Run captures them.
-  electronApp.commandLine.appendSwitch("enable-logging", "stderr");
-  electronApp.commandLine.appendSwitch("log-level", "0");
+  // On GPU instances: --ozone-platform=headless (spawn arg) avoids requiring X11.
+  // use-angle=swiftshader: software rasterizer for headless frame capture.
+  // Vulkan headless (VK_KHR_surface/VK_KHR_xcb_surface not available without X11)
+  // so we cannot use use-angle=vulkan here. Hardware encoding via h264_nvenc
+  // is handled separately by ffmpeg, not by Chromium's GPU pipeline.
+  electronApp.commandLine.appendSwitch("use-angle", "swiftshader");
 } else {
   // On CPU instances: software vsync is required with Xvfb.
   electronApp.commandLine.appendSwitch("disable-gpu-vsync");
