@@ -148,10 +148,15 @@ const spawnElectronBootloader = async (script: string) => {
             env: {
               ...process.env,
               ...(gpuMode
-                // No DISPLAY in GPU mode: ozone-platform=headless (set in
-                // init-electron.js) bypasses X11. DISPLAY would cause Chromium
-                // to prefer GLX over EGL, routing through Mesa instead of NVIDIA.
-                ? { EF_GPU_RENDER: "1" }
+                // No DISPLAY in GPU mode: ozone-platform=headless bypasses X11.
+                // VK_ICD_FILENAMES restricts the Vulkan loader to ONLY the NVIDIA
+                // ICD, avoiding Mesa ICDs (Intel, radeon, lavapipe) that fail on
+                // Cloud Run and cause vkCreateInstance to return -7.
+                ? {
+                    EF_GPU_RENDER: "1",
+                    VK_ICD_FILENAMES: "/etc/vulkan/icd.d/nvidia_icd.json",
+                    VK_LAYER_PATH: "/etc/vulkan/implicit_layer.d",
+                  }
                 : { DISPLAY: XVFB_DISPLAY }),
               EF_ELECTRON_SCRIPT: script,
               EF_SOCKET_PATH: socketPath,
