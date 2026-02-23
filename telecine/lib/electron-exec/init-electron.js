@@ -22,13 +22,11 @@ electronApp.commandLine.appendSwitch("disable-frame-rate-limit");
 electronApp.commandLine.appendSwitch("disable-accelerated-video-decode");
 
 if (process.env.EF_GPU_RENDER) {
-  // On GPU instances: --ozone-platform=headless (spawn arg) avoids X11.
-  // EGL_PLATFORM=device (env) routes ANGLE's EGL calls through the NVIDIA device
-  // extension (EGL_EXT_platform_device) — surfaceless, no X display needed.
-  // use-gl=angle is the only allowed impl on this Electron build; use-angle=gles
-  // makes ANGLE use OpenGL ES via EGL, which EGL_PLATFORM=device redirects to NVIDIA.
+  // On GPU instances: --ozone-platform=headless (spawn arg) avoids requiring X11
+  // for the browser process. use-angle=vulkan initializes ANGLE against the Vulkan
+  // driver directly — no EGL display needed, no X server required.
   electronApp.commandLine.appendSwitch("use-gl", "angle");
-  electronApp.commandLine.appendSwitch("use-angle", "gles");
+  electronApp.commandLine.appendSwitch("use-angle", "vulkan");
 } else {
   // On CPU instances: software vsync is required with Xvfb.
   electronApp.commandLine.appendSwitch("disable-gpu-vsync");

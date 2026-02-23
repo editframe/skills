@@ -23,7 +23,18 @@ registerRcpHandler("captureFrame", async () => {
     },
   });
 
+  // Subscribe to the paint event to start the offscreen rendering loop.
+  // This is required with GPU-accelerated offscreen rendering — Chromium only
+  // starts compositing frames once there is an active paint subscriber.
+  const paintPromise = new Promise<void>((resolve) => {
+    win.webContents.on("paint", () => resolve());
+  });
+
+  win.webContents.setFrameRate(60);
   await win.loadURL("data:text/html,<body style='background:red;margin:0'></body>");
+
+  // Wait for at least one rendered frame before capturing.
+  await paintPromise;
 
   const image = await win.webContents.capturePage();
   const png = image.toPNG();

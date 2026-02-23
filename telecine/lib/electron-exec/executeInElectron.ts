@@ -149,15 +149,7 @@ const spawnElectronBootloader = async (script: string) => {
             stdio: ["ignore", "pipe", "pipe"],
             env: {
               ...process.env,
-              ...(gpuMode
-                ? {
-                    EF_GPU_RENDER: "1",
-                    // EGL_PLATFORM=device tells the EGL loader to use EGL_EXT_platform_device,
-                    // which initializes against the NVIDIA driver directly without an X display.
-                    // This is the surfaceless EGL path — no Xvfb needed.
-                    EGL_PLATFORM: "device",
-                  }
-                : { DISPLAY: XVFB_DISPLAY }),
+              ...(gpuMode ? { EF_GPU_RENDER: "1" } : { DISPLAY: XVFB_DISPLAY }),
               EF_ELECTRON_SCRIPT: script,
               EF_SOCKET_PATH: socketPath,
               OTEL_EXPORTER_OTLP_ENDPOINT:
