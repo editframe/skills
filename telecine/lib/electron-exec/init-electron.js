@@ -27,6 +27,9 @@ if (process.env.EF_GPU_RENDER) {
   // driver directly — no EGL display needed, no X server required.
   electronApp.commandLine.appendSwitch("use-gl", "angle");
   electronApp.commandLine.appendSwitch("use-angle", "vulkan");
+  // Vulkan on headless instances lacks VK_KHR_surface/VK_KHR_xcb_surface.
+  // This flag tells ANGLE to skip surface/swapchain requirements and use bitblt.
+  electronApp.commandLine.appendSwitch("disable-vulkan-surface");
 } else {
   // On CPU instances: software vsync is required with Xvfb.
   electronApp.commandLine.appendSwitch("disable-gpu-vsync");
