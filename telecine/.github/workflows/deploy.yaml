@@ -21,6 +21,7 @@ jobs:
             worker-process-isobmff,
             worker-render-initializer,
             worker-render-fragment,
+            worker-render-fragment-gpu,
             worker-render-finalizer,
             scheduler-go,
             maintenance,
