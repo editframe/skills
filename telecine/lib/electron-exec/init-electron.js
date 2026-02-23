@@ -35,6 +35,8 @@ if (process.env.EF_GPU_RENDER) {
   electronApp.commandLine.appendSwitch("ignore-gpu-blocklist");
   electronApp.commandLine.appendSwitch("disable-gpu-sandbox");
   electronApp.commandLine.appendSwitch("disable-vulkan-surface");
+  electronApp.commandLine.appendSwitch("disable-gpu-process-crash-limit");
+  electronApp.commandLine.appendSwitch("disable-gpu-watchdog");
 } else {
   // On CPU instances: software vsync is required with Xvfb.
   electronApp.commandLine.appendSwitch("disable-gpu-vsync");
@@ -65,8 +67,8 @@ electronApp.on("child-process-gone", (event, details) => {
 
 if (process.env.DEBUG_ELECTRON || process.env.EF_GPU_RENDER) {
   electronApp.commandLine.appendSwitch("enable-logging");
-  electronApp.commandLine.appendSwitch("v", "0");
-  electronApp.commandLine.appendSwitch("vmodule", "gpu_init=2,angle*=2,vulkan*=2,gpu_service*=2,command_buffer*=2,viz_main*=2,gpu_channel*=2,in_process_gpu*=2,gpu_process*=2");
+  electronApp.commandLine.appendSwitch("v", "1");
+  electronApp.commandLine.appendSwitch("vmodule", "gpu_init=3,angle*=3,vulkan*=3,gpu_service*=3,command_buffer*=2,viz_main*=2,gpu_channel*=2,in_process_gpu*=3,gpu_process*=3,gpu_info*=3,gl_surface*=3,egl*=3,display*=3");
 }
 
 if (process.env.DEBUG_ELECTRON) {

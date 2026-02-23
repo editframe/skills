@@ -132,45 +132,68 @@ async function bundleHTML(html: string, bundleDir: string): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------
-step("0. Vulkan diagnostics");
+step("0. GPU diagnostics");
+
+// 0a. Vulkan info — full output to capture extensions list
 try {
-  const { stdout: vkOut } = await execFileAsync("vulkaninfo", ["--summary"], { timeout: 10000 });
-  log(`vulkaninfo:\n${vkOut}`);
+  const { stdout: vkSummary } = await execFileAsync("vulkaninfo", ["--summary"], {
+    timeout: 10000,
+    env: {
+      ...process.env,
+      VK_ICD_FILENAMES: "/etc/vulkan/icd.d/nvidia_icd.json",
+    },
+  });
+  log(`vulkaninfo --summary:\n${vkSummary}`);
 } catch (e: any) {
-  log(`vulkaninfo failed (expected if not installed): ${e.message}`);
+  log(`vulkaninfo --summary failed: ${e.stderr || e.message}`);
 }
+
+// 0b. Check for VK_EXT_headless_surface specifically (critical for ANGLE headless Vulkan)
 try {
-  const { stdout: chromeGpuFlags } = await execFileAsync("node_modules/.bin/electron", [
-    "--no-sandbox",
-    "--ozone-platform=headless",
-    "--disable-vulkan-surface",
-    "--enable-features=Vulkan",
-    "--use-angle=vulkan",
-    "--ignore-gpu-blocklist",
-    "--disable-gpu-sandbox",
-    "--enable-logging=stderr",
-    "--headless",
-    "--dump-dom",
-    "chrome://gpu",
-  ], {
+  const { stdout: vkFull } = await execFileAsync("vulkaninfo", [], {
     timeout: 15000,
     env: {
       ...process.env,
       VK_ICD_FILENAMES: "/etc/vulkan/icd.d/nvidia_icd.json",
-      VK_LAYER_PATH: "/etc/vulkan/implicit_layer.d",
     },
   });
-  const lines = chromeGpuFlags.split("\n").filter(l =>
-    l.includes("Vulkan") || l.includes("vulkan") || l.includes("ANGLE") ||
-    l.includes("angle") || l.includes("GPU") || l.includes("Canvas") ||
-    l.includes("Rasterization") || l.includes("Compositing") ||
-    l.includes("hardware_acceleration") || l.includes("gl_renderer") ||
-    l.includes("Driver") || l.includes("disabled") || l.includes("enabled") ||
-    l.includes("Software")
+  const extensionLines = vkFull.split("\n").filter(l =>
+    l.includes("headless") || l.includes("surface") || l.includes("display") ||
+    l.includes("VK_KHR") || l.includes("VK_EXT") || l.includes("Instance Extensions")
   );
-  log(`chrome://gpu relevant lines:\n${lines.join("\n")}`);
+  log(`Vulkan extensions (surface/display related):\n${extensionLines.join("\n")}`);
 } catch (e: any) {
-  log(`chrome://gpu dump failed: ${e.stderr || e.message}`);
+  log(`vulkaninfo full failed: ${e.stderr || e.message}`);
+}
+
+// 0c. EGL info — check if NVIDIA EGL platform_device works
+try {
+  const { stdout: eglOut, stderr: eglErr } = await execFileAsync("eglinfo", [], {
+    timeout: 10000,
+    env: {
+      ...process.env,
+      // Force EGL device platform (headless, no X11/Wayland needed)
+      EGL_PLATFORM: "device",
+    },
+  });
+  log(`eglinfo:\n${eglOut}`);
+  if (eglErr) log(`eglinfo stderr:\n${eglErr}`);
+} catch (e: any) {
+  log(`eglinfo failed: ${e.stderr || e.message}`);
+}
+
+// 0d. List /dev/nvidia* and /dev/dri* for reference
+try {
+  const { stdout: devList } = await execFileAsync("ls", ["-la", "/dev/nvidia0", "/dev/nvidiactl", "/dev/nvidia-uvm"], { timeout: 5000 });
+  log(`NVIDIA devices:\n${devList}`);
+} catch (e: any) {
+  log(`NVIDIA device listing: ${e.message}`);
+}
+try {
+  const { stdout: driList } = await execFileAsync("ls", ["-la", "/dev/dri/"], { timeout: 5000 });
+  log(`DRI devices:\n${driList}`);
+} catch (e: any) {
+  log(`No /dev/dri: ${e.message}`);
 }
 
 // ---------------------------------------------------------------------------
