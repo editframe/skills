@@ -48,10 +48,89 @@ COPY scripts/docker-compile-cache-prewarm /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-compile-cache-prewarm && \
     docker-compile-cache-prewarm "node /app/services/worker-render-fragment-gpu/dist/server.js" 3000 /health
 
+# ---------------------------------------------------------------------------
+# Build GPU shims for Cloud Run:
+# 1. fake_libpci.so.3 — ANGLE dlopen("libpci.so.3") to enumerate GPUs. Our
+#    shim returns a single NVIDIA L4 device (Cloud Run has no PCI bus).
+# 2. fake_sysfs_access.so — LD_PRELOAD shim that intercepts access() to make
+#    ANGLE believe /sys/bus/pci/ exists (sysfs has no PCI entries on Cloud Run).
+# ---------------------------------------------------------------------------
+FROM debian:bullseye-slim AS gpu-shims
+
+RUN apt-get update && apt-get install -y gcc libpci-dev libegl-dev libgles-dev pkg-config && rm -rf /var/lib/apt/lists/*
+COPY lib/gpu-shim/fake_libpci.c /build/fake_libpci.c
+COPY lib/gpu-shim/fake_sysfs_access.c /build/fake_sysfs_access.c
+RUN gcc -shared -fPIC -o /build/libpci.so.3 /build/fake_libpci.c \
+    $(pkg-config --cflags libpci) -Wl,--no-as-needed && \
+    gcc -shared -fPIC -o /build/fake_sysfs_access.so /build/fake_sysfs_access.c -ldl
+
+# ---------------------------------------------------------------------------
+# Extract NVIDIA EGL/OpenGL userspace libraries from the driver installer.
+# Cloud Run GPU nodes have /dev/nvidia0 + /dev/nvidiactl but NOT /dev/dri.
+# The container toolkit does NOT inject the graphics libraries (libEGL_nvidia).
+# NVIDIA's EGL driver supports EGL_EXT_platform_device which uses /dev/nvidia0
+# directly for headless rendering without /dev/dri.
+# ---------------------------------------------------------------------------
+FROM nvidia/cuda:12.6.3-runtime-ubuntu22.04 AS nvidia-gl
+
+ARG NVIDIA_DRIVER_VERSION=535.261.03
+ENV NVIDIA_DRIVER_VERSION=${NVIDIA_DRIVER_VERSION}
+
+RUN apt-get update && apt-get install -y wget && \
+    wget -q https://us.download.nvidia.com/tesla/${NVIDIA_DRIVER_VERSION}/NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run && \
+    chmod +x NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run && \
+    ./NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run --extract-only --target /tmp/nvidia && \
+    rm NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run
+
+# ---------------------------------------------------------------------------
+# Runtime image
+# ---------------------------------------------------------------------------
 FROM nvidia/cuda:12.6.3-runtime-ubuntu22.04
 
 ENV NODE_ENV=production
 ENV NODE_COMPILE_CACHE=/app/.compile-cache
+
+ARG NVIDIA_DRIVER_VERSION=535.261.03
+ENV NVIDIA_DRIVER_CAPABILITIES=all
+ENV NVIDIA_VISIBLE_DEVICES=all
+
+# GLVND EGL ICD: tells the EGL loader (libegl1) to load libEGL_nvidia.so.0
+RUN mkdir -p /usr/share/glvnd/egl_vendor.d && \
+    echo '{"file_format_version":"1.0.0","ICD":{"library_path":"libEGL_nvidia.so.0"}}' \
+    > /usr/share/glvnd/egl_vendor.d/10_nvidia.json
+
+# Vulkan ICD: use libEGL_nvidia.so.0 for headless rendering.
+# The official nvidia_icd.json from the driver points to libGLX_nvidia.so.0
+# which pulls in X11 dependencies.
+RUN mkdir -p /etc/vulkan/icd.d && \
+    printf '{"file_format_version":"1.0.0","ICD":{"library_path":"libEGL_nvidia.so.0","api_version":"1.3"}}' \
+    > /etc/vulkan/icd.d/nvidia_icd.json
+
+# Vulkan implicit layer — disable_environment is REQUIRED by the Vulkan
+# loader spec for implicit layers. Without it the loader skips the layer.
+RUN mkdir -p /etc/vulkan/implicit_layer.d && \
+    printf '{"file_format_version":"1.0.0","layer":{"name":"VK_LAYER_NV_optimus","type":"INSTANCE","library_path":"libnvidia-vulkan-producer.so","api_version":"1.3","implementation_version":"0","description":"NVIDIA Vulkan Producer Layer","disable_environment":{"DISABLE_LAYER_NV_OPTIMUS_1":""}}}' \
+    > /etc/vulkan/implicit_layer.d/nvidia_layers.json
+
+# Copy NVIDIA EGL/OpenGL/Vulkan userspace libraries from the driver extraction.
+# These talk to /dev/nvidia0 via ioctls — /dev/dri is NOT required.
+COPY --from=nvidia-gl /tmp/nvidia/libEGL_nvidia.so.${NVIDIA_DRIVER_VERSION} /usr/lib/x86_64-linux-gnu/
+COPY --from=nvidia-gl /tmp/nvidia/libGLESv2_nvidia.so.${NVIDIA_DRIVER_VERSION} /usr/lib/x86_64-linux-gnu/
+COPY --from=nvidia-gl /tmp/nvidia/libnvidia-eglcore.so.${NVIDIA_DRIVER_VERSION} /usr/lib/x86_64-linux-gnu/
+COPY --from=nvidia-gl /tmp/nvidia/libnvidia-glcore.so.${NVIDIA_DRIVER_VERSION} /usr/lib/x86_64-linux-gnu/
+COPY --from=nvidia-gl /tmp/nvidia/libnvidia-glsi.so.${NVIDIA_DRIVER_VERSION} /usr/lib/x86_64-linux-gnu/
+COPY --from=nvidia-gl /tmp/nvidia/libnvidia-glvkspirv.so.${NVIDIA_DRIVER_VERSION} /usr/lib/x86_64-linux-gnu/
+COPY --from=nvidia-gl /tmp/nvidia/libnvidia-tls.so.${NVIDIA_DRIVER_VERSION} /usr/lib/x86_64-linux-gnu/
+COPY --from=nvidia-gl /tmp/nvidia/libnvidia-vulkan-producer.so.${NVIDIA_DRIVER_VERSION} /usr/lib/x86_64-linux-gnu/
+COPY --from=nvidia-gl /tmp/nvidia/libnvidia-allocator.so.${NVIDIA_DRIVER_VERSION} /usr/lib/x86_64-linux-gnu/
+COPY --from=nvidia-gl /tmp/nvidia/libGLX_nvidia.so.${NVIDIA_DRIVER_VERSION} /usr/lib/x86_64-linux-gnu/
+
+RUN ln -sf libEGL_nvidia.so.${NVIDIA_DRIVER_VERSION} /usr/lib/x86_64-linux-gnu/libEGL_nvidia.so.0 && \
+    ln -sf libGLESv2_nvidia.so.${NVIDIA_DRIVER_VERSION} /usr/lib/x86_64-linux-gnu/libGLESv2_nvidia.so.0 && \
+    ln -sf libnvidia-vulkan-producer.so.${NVIDIA_DRIVER_VERSION} /usr/lib/x86_64-linux-gnu/libnvidia-vulkan-producer.so && \
+    ln -sf libnvidia-allocator.so.${NVIDIA_DRIVER_VERSION} /usr/lib/x86_64-linux-gnu/libnvidia-allocator.so.1 && \
+    ln -sf libGLX_nvidia.so.${NVIDIA_DRIVER_VERSION} /usr/lib/x86_64-linux-gnu/libGLX_nvidia.so.0 && \
+    ldconfig
 
 # Install Node.js 22
 RUN apt-get update \
@@ -63,9 +142,6 @@ RUN apt-get update \
 
 WORKDIR /app
 
-# Install runtime dependencies.
-# No Xvfb: GPU instances use EGL directly via NVIDIA drivers.
-# ffmpeg-nvenc: NVIDIA-capable ffmpeg with h264_nvenc support.
 RUN apt-get update \
   && apt-get install -y \
   zsh \
@@ -85,12 +161,15 @@ RUN apt-get update \
   libdrm2 \
   libxkbcommon0 \
   libgtk2.0-0 \
-  libegl1-mesa \
-  libgles2-mesa \
+  libgbm1 \
+  libegl1 \
+  libgl1 \
+  libgles2 \
+  libvulkan1 \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install jellyfin-ffmpeg which includes h264_nvenc support
+# jellyfin-ffmpeg includes h264_nvenc support
 RUN apt-get update \
   && apt-get install -y wget \
   && wget https://repo.jellyfin.org/files/ffmpeg/ubuntu/latest-7.x/amd64/jellyfin-ffmpeg7_7.1.3-3-jammy_amd64.deb \
@@ -106,5 +185,12 @@ COPY --from=builder /app/services/worker-render-fragment-gpu/dist/ /app/services
 COPY --from=builder /app/.compile-cache/ /app/.compile-cache/
 COPY --from=builder /app/lib/ /app/lib/
 COPY --from=builder /app/tsconfig.json /app/tsconfig.json
+
+# Fake libpci.so.3: ANGLE dlopen's this to enumerate GPUs. Our shim returns
+# a single NVIDIA L4 device, bypassing the missing PCI bus on Cloud Run.
+COPY --from=gpu-shims /build/libpci.so.3 /usr/lib/x86_64-linux-gnu/libpci.so.3
+# Fake sysfs access shim: intercepts access("/sys/bus/pci/") to return 0.
+COPY --from=gpu-shims /build/fake_sysfs_access.so /usr/lib/x86_64-linux-gnu/fake_sysfs_access.so
+RUN ldconfig
 
 CMD ["node", "/app/services/worker-render-fragment-gpu/dist/server.js"]
