@@ -54,6 +54,14 @@ const startupContext = trace.setSpan(parentContext, startupSpan);
 
 electron.app.on("window-all-closed", () => {});
 
+electron.app.on("child-process-gone", (_event, details) => {
+  process.stderr.write(`[BOOTLOADER] child-process-gone: type=${details.type} reason=${details.reason} exitCode=${details.exitCode}\n`);
+});
+
+process.on("uncaughtException", (err) => {
+  process.stderr.write(`[BOOTLOADER] uncaughtException: ${err.stack || err.message}\n`);
+});
+
 electron.app.on("ready", async () => {
   await context.with(startupContext, async () => {
     await tracer.startActiveSpan("executeScript", async (span) => {

@@ -28,10 +28,6 @@ if (process.env.EF_GPU_RENDER) {
   // so we cannot use use-angle=vulkan here. Hardware encoding via h264_nvenc
   // is handled separately by ffmpeg, not by Chromium's GPU pipeline.
   electronApp.commandLine.appendSwitch("use-angle", "swiftshader");
-  // Disable Chromium's GPU process to prevent GTK display initialization crashes
-  // in headless environments. Swiftshader runs in the renderer process directly.
-  electronApp.commandLine.appendSwitch("disable-gpu");
-  electronApp.commandLine.appendSwitch("no-zygote");
 } else {
   // On CPU instances: software vsync is required with Xvfb.
   electronApp.commandLine.appendSwitch("disable-gpu-vsync");
