@@ -44,12 +44,13 @@ FROM nvidia/cuda:12.6.3-runtime-ubuntu22.04
 
 ENV NODE_ENV=production
 
-# graphics,video: inject libEGL_nvidia.so, Vulkan ICD, /dev/dri render nodes
+# graphics,video: tells the NVIDIA container toolkit to inject libEGL_nvidia,
+# Vulkan ICD, and /dev/dri render nodes (when available on the host).
+# On Cloud Run, /dev/dri is NOT provided — only CUDA (/dev/nvidia0) and NVENC
+# are accessible. Chromium rasterization uses swiftshader (CPU) as a result.
+# NVENC (h264_nvenc via FFmpeg) still uses the GPU for encoding.
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics,video
 ENV NVIDIA_VISIBLE_DEVICES=all
-# Tell the GLVND EGL dispatcher where to find vendor ICD files.
-# The NVIDIA container toolkit injects nvidia_icd.json here at runtime.
-ENV __EGL_VENDOR_LIBRARY_DIRS=/usr/share/glvnd/egl_vendor.d
 
 RUN apt-get update \
   && apt-get install -y curl \
@@ -79,13 +80,10 @@ RUN apt-get update \
   libxkbcommon0 \
   libgtk2.0-0 \
   libgbm1 \
-  libglvnd0 \
-  libglvnd-dev \
   libegl1 \
   libgl1 \
   libgles2 \
   libvulkan1 \
-  vulkan-tools \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -104,12 +102,4 @@ COPY --from=builder /app/services/gpu-render-test/dist/ /app/services/gpu-render
 COPY --from=builder /app/lib/ /app/lib/
 COPY --from=builder /app/tsconfig.json /app/tsconfig.json
 
-# Diagnostic entrypoint: verify GPU access before starting the render job
-CMD ["bash", "-c", "\
-  echo '=== /dev/dri ===' && ls -la /dev/dri/ 2>/dev/null || echo MISSING; \
-  echo '=== /dev/nvidia* ===' && ls -la /dev/nvidia* 2>/dev/null || echo MISSING; \
-  echo '=== GLVND EGL ICD ===' && ls -la /usr/share/glvnd/egl_vendor.d/ 2>/dev/null || echo MISSING; \
-  echo '=== /etc/vulkan/icd.d ===' && ls -la /etc/vulkan/icd.d/ 2>/dev/null || echo MISSING; \
-  echo '=== libEGL candidates ===' && ldconfig -p | grep -i egl || echo none; \
-  echo '=== nvidia-smi ===' && nvidia-smi 2>&1 | head -8 || echo MISSING; \
-  exec node /app/services/gpu-render-test/dist/main.js"]
+CMD ["node", "/app/services/gpu-render-test/dist/main.js"]

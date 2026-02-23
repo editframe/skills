@@ -22,24 +22,13 @@ electronApp.commandLine.appendSwitch("disable-frame-rate-limit");
 electronApp.commandLine.appendSwitch("disable-accelerated-video-decode");
 
 if (process.env.EF_GPU_RENDER) {
-  // On GPU instances: no display server.
-  // use-gl=egl: force Chromium to use the EGL path (not GLX). Required in
-  //   Electron 32+; without it, Chromium selects GLX which routes through
-  //   Xvfb/Mesa software GL even when NVIDIA EGL ICD is present.
-  // use-angle=gles: ANGLE uses GLES2 via EGL — picks up NVIDIA's injected
-  //   libEGL_nvidia.so via the GLVND dispatcher (libegl1).
-  // ozone-platform=headless: no X11/Wayland display server needed.
-  //   With DISPLAY unset, this prevents Chromium from trying to connect to X11.
-  // ignore-gpu-blocklist: Cloud Run GPU nodes are on Chromium's headless blocklist.
-  // disable-gpu-sandbox: required in containers (no kernel GPU sandbox).
-  // ozone-platform=headless is passed as a spawn arg (not here) because
-  // Ozone platform selection happens before the app is ready.
-  electronApp.commandLine.appendSwitch("use-gl", "egl");
-  electronApp.commandLine.appendSwitch("use-angle", "gles");
-  electronApp.commandLine.appendSwitch("enable-gpu-rasterization");
-  electronApp.commandLine.appendSwitch("enable-zero-copy");
-  electronApp.commandLine.appendSwitch("ignore-gpu-blocklist");
-  electronApp.commandLine.appendSwitch("disable-gpu-sandbox");
+  // On Cloud Run GPU instances (NVIDIA L4):
+  // - /dev/dri render nodes are NOT provided — EGL hardware rasterization is
+  //   not available. Chromium rasterization falls back to swiftshader (CPU).
+  // - /dev/nvidia0 + /dev/nvidiactl ARE present — NVENC encoding via FFmpeg works.
+  // - ozone-platform=headless (spawn arg) avoids requiring a display server.
+  // - use-angle=swiftshader: explicit software rasterizer for offscreen frame capture.
+  electronApp.commandLine.appendSwitch("use-angle", "swiftshader");
 } else {
   // On CPU instances: software vsync is required with Xvfb.
   electronApp.commandLine.appendSwitch("disable-gpu-vsync");
@@ -53,23 +42,12 @@ if (process.env.EF_GPU_RENDER) {
 electronApp.commandLine.appendSwitch("enable-features", "CanvasDrawElement");
 electronApp.commandLine.appendSwitch("enable-accelerated-2d-canvas");
 
-// Log GPU info after initialization to verify actual rasterization path.
-// Delay 2s to allow the GPU process to fully initialize before querying.
+// Log GPU renderer string so we can confirm swiftshader is active.
 electronApp.whenReady().then(() => setTimeout(async () => {
   const info = await electronApp.getGPUInfo("complete");
-  const gpuDevices = (info.gpuDevice || []).map(d => `${d.vendorId}:${d.deviceId} driver=${d.driverVersion || "?"}`).join(", ");
-  const status = electronApp.getGPUFeatureStatus();
   const glRenderer = info.auxAttributes?.glRenderer || "unknown";
   const glVendor = info.auxAttributes?.glVendor || "unknown";
-  process.stderr.write(`[electron-gpu] devices: ${gpuDevices}\n`);
-  process.stderr.write(`[electron-gpu] gl_renderer: ${glRenderer}\n`);
-  process.stderr.write(`[electron-gpu] gl_vendor: ${glVendor}\n`);
-  process.stderr.write(`[electron-gpu] gpu_compositing: ${status.gpu_compositing}\n`);
-  process.stderr.write(`[electron-gpu] rasterization: ${status.rasterization}\n`);
-  process.stderr.write(`[electron-gpu] webgl: ${status.webgl}\n`);
-  // Log any feature status items that are "disabled" to understand why
-  const disabled = Object.entries(status).filter(([, v]) => String(v).includes("disabled")).map(([k, v]) => `${k}:${v}`).join(", ");
-  if (disabled) process.stderr.write(`[electron-gpu] disabled features: ${disabled}\n`);
+  process.stderr.write(`[electron-gpu] gl_renderer: ${glRenderer} / gl_vendor: ${glVendor}\n`);
 }, 2000));
 
 if (process.env.DEBUG_ELECTRON) {

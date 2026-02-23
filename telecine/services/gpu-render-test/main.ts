@@ -132,20 +132,6 @@ async function bundleHTML(html: string, bundleDir: string): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------
-// Probe Vulkan device visibility before Electron launches — this tells us
-// whether NVIDIA_DRIVER_CAPABILITIES=graphics successfully injected the ICD.
-try {
-  const { stdout: vkInfo } = await execFileAsync("vulkaninfo", ["--summary"], {
-    env: { ...process.env },
-  });
-  log(`vulkaninfo: ${vkInfo.split("\n").slice(0, 10).join(" | ")}`);
-} catch (err) {
-  log(`vulkaninfo failed (non-fatal): ${err}`);
-}
-
-
-
-// ---------------------------------------------------------------------------
 step("1. Bundle HTML");
 const templateHash = createHash("sha256").update(HTML).digest("hex").substring(0, 16);
 // Use /app/temp so vite can resolve node_modules via normal parent-dir traversal
