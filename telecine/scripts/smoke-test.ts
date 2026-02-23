@@ -5,6 +5,8 @@
  *
  * Usage: EF_TOKEN=<token> EF_HOST=https://editframe.com tsx scripts/smoke-test.ts
  *        EF_TOKEN=<token> EF_HOST=https://editframe.com tsx scripts/smoke-test.ts --timeout 120
+ *
+ * EF_BACKEND=cpu|gpu|both  (default: cpu)
  */
 
 const EF_HOST = process.env.EF_HOST ?? "https://editframe.com";
@@ -94,73 +96,89 @@ const COMMON = {
   work_slice_ms: 4000,
 };
 
-const TESTS: Array<{ name: string; payload: Record<string, unknown> }> = [
-  {
-    name: "text composition (mp4)",
-    payload: {
-      ...COMMON,
-      output: MP4_OUTPUT,
-      html: `
-        <ef-timegroup mode="fixed" duration="2s" class="aspect-[16/9] w-[1280px] h-[720px] bg-black flex items-center justify-center">
-          <h1 style="color:white;font-size:72px;font-family:sans-serif;">Smoke Test</h1>
-        </ef-timegroup>`,
+const BACKEND = (process.env.EF_BACKEND ?? "cpu") as "cpu" | "gpu" | "both";
+
+function testsForBackend(backend: "cpu" | "gpu"): Array<{ name: string; payload: Record<string, unknown> }> {
+  const tag = backend.toUpperCase();
+  return [
+    {
+      name: `[${tag}] text composition (mp4)`,
+      payload: {
+        ...COMMON,
+        backend,
+        output: MP4_OUTPUT,
+        html: `
+          <ef-timegroup mode="fixed" duration="2s" class="aspect-[16/9] w-[1280px] h-[720px] bg-black flex items-center justify-center">
+            <h1 style="color:white;font-size:72px;font-family:sans-serif;">Smoke Test</h1>
+          </ef-timegroup>`,
+      },
     },
-  },
-  {
-    name: "text composition (png still)",
-    payload: {
-      ...COMMON,
-      output: PNG_OUTPUT,
-      html: `<ef-timegroup mode="fixed" duration="1s" class="aspect-[16/9] w-[1280px] h-[720px] bg-white flex items-center justify-center">
-          <h1 style="color:black;font-size:72px;font-family:sans-serif;">PNG Still</h1>
-        </ef-timegroup>`,
+    {
+      name: `[${tag}] text composition (png still)`,
+      payload: {
+        ...COMMON,
+        backend,
+        output: PNG_OUTPUT,
+        html: `<ef-timegroup mode="fixed" duration="1s" class="aspect-[16/9] w-[1280px] h-[720px] bg-white flex items-center justify-center">
+            <h1 style="color:black;font-size:72px;font-family:sans-serif;">PNG Still</h1>
+          </ef-timegroup>`,
+      },
     },
-  },
-  {
-    name: "text composition (jpeg still)",
-    payload: {
-      ...COMMON,
-      output: JPEG_OUTPUT,
-      html: `<ef-timegroup mode="fixed" duration="1s" class="aspect-[16/9] w-[1280px] h-[720px] bg-blue-500 flex items-center justify-center">
-          <h1 style="color:white;font-size:72px;font-family:sans-serif;">JPEG Still</h1>
-        </ef-timegroup>`,
+    {
+      name: `[${tag}] text composition (jpeg still)`,
+      payload: {
+        ...COMMON,
+        backend,
+        output: JPEG_OUTPUT,
+        html: `<ef-timegroup mode="fixed" duration="1s" class="aspect-[16/9] w-[1280px] h-[720px] bg-blue-500 flex items-center justify-center">
+            <h1 style="color:white;font-size:72px;font-family:sans-serif;">JPEG Still</h1>
+          </ef-timegroup>`,
+      },
     },
-  },
-  {
-    name: "square mp4 (1:1 aspect ratio)",
-    payload: {
-      ...COMMON,
-      output: MP4_OUTPUT,
-      html: `<ef-timegroup mode="fixed" duration="2s" class="aspect-[1/1] w-[500px] h-[500px] bg-purple-600 flex items-center justify-center">
-          <h1 style="color:white;font-size:48px;font-family:sans-serif;">1:1</h1>
-        </ef-timegroup>`,
+    {
+      name: `[${tag}] square mp4 (1:1 aspect ratio)`,
+      payload: {
+        ...COMMON,
+        backend,
+        output: MP4_OUTPUT,
+        html: `<ef-timegroup mode="fixed" duration="2s" class="aspect-[1/1] w-[500px] h-[500px] bg-purple-600 flex items-center justify-center">
+            <h1 style="color:white;font-size:48px;font-family:sans-serif;">1:1</h1>
+          </ef-timegroup>`,
+      },
     },
-  },
-  {
-    name: "vertical mp4 (9:16 aspect ratio)",
-    payload: {
-      ...COMMON,
-      output: MP4_OUTPUT,
-      html: `<ef-timegroup mode="fixed" duration="2s" class="aspect-[9/16] w-[720px] h-[1280px] bg-green-600 flex items-center justify-center">
-          <h1 style="color:white;font-size:48px;font-family:sans-serif;">9:16</h1>
-        </ef-timegroup>`,
+    {
+      name: `[${tag}] vertical mp4 (9:16 aspect ratio)`,
+      payload: {
+        ...COMMON,
+        backend,
+        output: MP4_OUTPUT,
+        html: `<ef-timegroup mode="fixed" duration="2s" class="aspect-[9/16] w-[720px] h-[1280px] bg-green-600 flex items-center justify-center">
+            <h1 style="color:white;font-size:48px;font-family:sans-serif;">9:16</h1>
+          </ef-timegroup>`,
+      },
     },
-  },
-  {
-    name: "remote image + audio + waveform (mp4)",
-    payload: {
-      ...COMMON,
-      output: MP4_OUTPUT,
-      html: `<ef-timegroup mode="contain" class="w-[1080px] h-[1080px] bg-[rgb(192,192,192)]">
-          <ef-image class="w-full h-full absolute inset-0" src="https://storage.googleapis.com/editframe-assets-7ac794b/1080-cat.jpeg"></ef-image>
-          <ef-audio fft-size="512" interpolate-frequencies src="https://storage.googleapis.com/editframe-assets-7ac794b/card-joker.mp3" id="sample-audio"></ef-audio>
-          <div class="absolute inset-0 grid place-items-center">
-            <ef-waveform target="sample-audio" mode="bars" bar-spacing="2" class="w-full h-[1080px]" style="color: rgb(106, 90, 205)"></ef-waveform>
-          </div>
-        </ef-timegroup>`,
+    {
+      name: `[${tag}] remote image + audio + waveform (mp4)`,
+      payload: {
+        ...COMMON,
+        backend,
+        output: MP4_OUTPUT,
+        html: `<ef-timegroup mode="contain" class="w-[1080px] h-[1080px] bg-[rgb(192,192,192)]">
+            <ef-image class="w-full h-full absolute inset-0" src="https://storage.googleapis.com/editframe-assets-7ac794b/1080-cat.jpeg"></ef-image>
+            <ef-audio fft-size="512" interpolate-frequencies src="https://storage.googleapis.com/editframe-assets-7ac794b/card-joker.mp3" id="sample-audio"></ef-audio>
+            <div class="absolute inset-0 grid place-items-center">
+              <ef-waveform target="sample-audio" mode="bars" bar-spacing="2" class="w-full h-[1080px]" style="color: rgb(106, 90, 205)"></ef-waveform>
+            </div>
+          </ef-timegroup>`,
+      },
     },
-  },
-];
+  ];
+}
+
+const TESTS: Array<{ name: string; payload: Record<string, unknown> }> =
+  BACKEND === "both"
+    ? [...testsForBackend("cpu"), ...testsForBackend("gpu")]
+    : testsForBackend(BACKEND);
 
 async function main() {
   console.log(`\nSmoke tests against ${EF_HOST}`);
