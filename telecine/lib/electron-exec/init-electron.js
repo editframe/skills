@@ -22,23 +22,10 @@ electronApp.commandLine.appendSwitch("disable-frame-rate-limit");
 electronApp.commandLine.appendSwitch("disable-accelerated-video-decode");
 
 if (process.env.EF_GPU_RENDER) {
-  // On Cloud Run GPU instances (NVIDIA L4):
-  // /dev/dri render nodes are absent, only /dev/nvidia0 + /dev/nvidiactl.
-  // Use ANGLE Vulkan for GPU rasterization. --use-gl=egl forces EGL instead
-  // of GLX (GLX tries X11 which fails headless). --disable-vulkan-surface
-  // skips VK_EXT_headless_surface (not available on this driver).
-  // EGL_PLATFORM=surfaceless is set in executeInElectron.ts env.
-  // ozone-platform=headless is passed as a spawn arg in executeInElectron.ts.
-  electronApp.commandLine.appendSwitch("use-angle", "vulkan");
-  electronApp.commandLine.appendSwitch("use-gl", "egl");
+  // GPU flags that only affect the browser process (not forwarded to GPU subprocess).
+  // Critical GPU flags like --use-angle are passed as CLI args in executeInElectron.ts
+  // so they propagate to the GPU subprocess via Chromium's command-line copying.
   electronApp.commandLine.appendSwitch("enable-features", "Vulkan,CanvasDrawElement");
-  electronApp.commandLine.appendSwitch("enable-gpu-rasterization");
-  electronApp.commandLine.appendSwitch("enable-zero-copy");
-  electronApp.commandLine.appendSwitch("ignore-gpu-blocklist");
-  electronApp.commandLine.appendSwitch("disable-gpu-sandbox");
-  electronApp.commandLine.appendSwitch("disable-vulkan-surface");
-  electronApp.commandLine.appendSwitch("disable-gpu-process-crash-limit");
-  electronApp.commandLine.appendSwitch("disable-gpu-watchdog");
 }
 
 electronApp.commandLine.appendSwitch("enable-accelerated-2d-canvas");

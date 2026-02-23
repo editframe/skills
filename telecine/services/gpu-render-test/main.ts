@@ -91,19 +91,6 @@ const electronScript = `
 const { app } = require("electron");
 const { BrowserWindow } = require("electron");
 
-app.commandLine.appendSwitch("use-angle", "vulkan");
-app.commandLine.appendSwitch("use-gl", "egl");
-app.commandLine.appendSwitch("enable-features", "Vulkan");
-app.commandLine.appendSwitch("enable-gpu-rasterization");
-app.commandLine.appendSwitch("ignore-gpu-blocklist");
-app.commandLine.appendSwitch("disable-gpu-sandbox");
-app.commandLine.appendSwitch("disable-vulkan-surface");
-app.commandLine.appendSwitch("disable-gpu-process-crash-limit");
-app.commandLine.appendSwitch("disable-gpu-watchdog");
-app.commandLine.appendSwitch("enable-logging");
-app.commandLine.appendSwitch("v", "1");
-app.commandLine.appendSwitch("vmodule", "gpu_init=3,angle*=3,vulkan*=3,egl*=3,gl_surface*=3,display*=3,gpu_process*=3,in_process_gpu*=3");
-
 app.on("child-process-gone", (_event, details) => {
   process.stderr.write("[DIAG] child-process-gone: " + JSON.stringify(details) + "\\n");
 });
@@ -149,19 +136,33 @@ await writeFile(scriptPath, electronScript);
 const electronProc = spawn(
   "node_modules/.bin/electron",
   [
-    "--no-sandbox",
-    "--ozone-platform=headless",
+    // GPU flags — must be CLI args so they propagate to the GPU subprocess.
+    // --use-angle=vulkan tells ANGLE to use Vulkan as its backend.
+    // Do NOT set --use-gl=egl: it conflicts with --use-angle in Chromium's
+    // GL implementation lookup table. Chromium auto-infers --use-gl=angle
+    // when --use-angle is set.
+    "--use-angle=vulkan",
+    "--enable-features=Vulkan",
+    "--enable-gpu-rasterization",
+    "--enable-zero-copy",
+    "--ignore-gpu-blocklist",
+    "--disable-gpu-sandbox",
     "--disable-vulkan-surface",
-    "--enable-logging=stderr",
+    "--disable-gpu-process-crash-limit",
+    "--disable-gpu-watchdog",
+    "--ozone-platform=headless",
+    "--no-sandbox",
     "--disable-setuid-sandbox",
     "--disable-seccomp-filter-sandbox",
+    "--enable-logging=stderr",
+    "--v=1",
+    "--vmodule=gpu_init=3,angle*=3,vulkan*=3,egl*=3,gl_surface*=3,display*=3,gpu_process*=3,in_process_gpu*=3,gl_factory*=3",
     scriptPath,
   ],
   {
     stdio: ["ignore", "pipe", "pipe"],
     env: {
       ...process.env,
-      EGL_PLATFORM: "surfaceless",
       __GLX_VENDOR_LIBRARY_NAME: "nvidia",
       LIBGL_ALWAYS_SOFTWARE: "0",
       VK_ICD_FILENAMES: "/etc/vulkan/icd.d/nvidia_icd.json",
@@ -169,7 +170,7 @@ const electronProc = spawn(
       VK_LOADER_DEBUG: "error",
       LD_PRELOAD: "/usr/lib/x86_64-linux-gnu/fake_sysfs_access.so",
     },
-    timeout: 30000,
+    timeout: 60000,
   },
 );
 

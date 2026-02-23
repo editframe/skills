@@ -136,11 +136,22 @@ const spawnElectronBootloader = async (script: string) => {
 
         const gpuSpawnArgs = gpuMode
           ? [
-              "--ozone-platform=headless",
+              // GPU flags must be CLI args so Chromium copies them to the GPU
+              // subprocess. Do NOT set --use-gl=egl: it conflicts with
+              // --use-angle in Chromium's GL implementation lookup table.
+              // Chromium auto-infers --use-gl=angle when --use-angle is set.
+              "--use-angle=vulkan",
+              "--enable-gpu-rasterization",
+              "--enable-zero-copy",
+              "--ignore-gpu-blocklist",
+              "--disable-gpu-sandbox",
               "--disable-vulkan-surface",
-              "--enable-logging=stderr",
+              "--disable-gpu-process-crash-limit",
+              "--disable-gpu-watchdog",
+              "--ozone-platform=headless",
               "--disable-setuid-sandbox",
               "--disable-seccomp-filter-sandbox",
+              "--enable-logging=stderr",
             ]
           : [];
 
@@ -157,13 +168,11 @@ const spawnElectronBootloader = async (script: string) => {
               ...process.env,
               ...(gpuMode
                 // No DISPLAY in GPU mode: ozone-platform=headless bypasses X11.
-                // EGL_PLATFORM=surfaceless prevents EGL from trying X11/Wayland.
                 // VK_ICD_FILENAMES restricts the Vulkan loader to ONLY the NVIDIA ICD.
                 // LD_PRELOAD: fake_sysfs_access.so intercepts access("/sys/bus/pci/")
                 // so ANGLE's libpci loader proceeds to dlopen our fake libpci.so.3.
                 ? {
                     EF_GPU_RENDER: "1",
-                    EGL_PLATFORM: "surfaceless",
                     __GLX_VENDOR_LIBRARY_NAME: "nvidia",
                     LIBGL_ALWAYS_SOFTWARE: "0",
                     VK_ICD_FILENAMES: "/etc/vulkan/icd.d/nvidia_icd.json",
