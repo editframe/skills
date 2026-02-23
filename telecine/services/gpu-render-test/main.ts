@@ -10,7 +10,7 @@
 
 import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
-import { mkdir, symlink, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { Storage } from "@google-cloud/storage";
@@ -110,13 +110,11 @@ async function bundleHTML(html: string, bundleDir: string): Promise<string> {
     `,
   };
 
-  await Promise.all([
-    ...Object.entries(files).map(([name, content]) =>
+  await Promise.all(
+    Object.entries(files).map(([name, content]) =>
       writeFile(path.join(bundleDir, name), content),
     ),
-    // Symlink node_modules so vite can resolve plugins (vite-plugin-singlefile etc.)
-    symlink("/app/node_modules", path.join(bundleDir, "node_modules")),
-  ]);
+  );
 
   const { stdout, stderr } = await execFileAsync(
     "node",
@@ -136,7 +134,8 @@ async function bundleHTML(html: string, bundleDir: string): Promise<string> {
 // ---------------------------------------------------------------------------
 step("1. Bundle HTML");
 const templateHash = createHash("sha256").update(HTML).digest("hex").substring(0, 16);
-const bundleDir = `/tmp/gpu-render-test-${templateHash}`;
+// Use /app/temp so vite can resolve node_modules via normal parent-dir traversal
+const bundleDir = `/app/temp/gpu-render-test-${templateHash}`;
 await mkdir(bundleDir, { recursive: true });
 const distDir = await bundleHTML(HTML, bundleDir);
 const indexPath = path.join(distDir, "index.html");
