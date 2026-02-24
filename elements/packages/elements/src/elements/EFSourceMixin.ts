@@ -17,14 +17,12 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
 ) {
   class EFSourceElement extends superClass {
     get apiHost() {
-      const apiHost =
+      return (
         (this.closest("ef-configuration") as any)?.apiHost ??
         (this.closest("ef-workbench") as any)?.apiHost ??
-        (this.closest("ef-preview") as any)?.apiHost;
-
-      // Return undefined instead of defaulting to external URL
-      // This allows components to use current origin when apiHost is not set
-      return apiHost;
+        (this.closest("ef-preview") as any)?.apiHost ??
+        window.location.origin
+      );
     }
 
     @property({ type: String, reflect: true })
