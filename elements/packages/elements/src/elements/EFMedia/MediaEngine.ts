@@ -218,6 +218,97 @@ function buildEngineComponents(
 }
 
 // ---------------------------------------------------------------------------
+// Native audio engine — fetches an audio file directly without transcoding
+// ---------------------------------------------------------------------------
+
+/**
+ * Creates a MediaEngine that fetches an audio file directly without going
+ * through the transcoding manifest endpoint. Used when no apiHost is
+ * configured (no telecine server available) and the src is an absolute URL.
+ *
+ * The entire file is treated as a single audio "segment". Duration is
+ * determined by decoding the file with AudioContext.
+ */
+async function createNativeAudioEngine(
+  src: string,
+  fetchFn: FetchFn,
+  signal?: AbortSignal,
+): Promise<MediaEngine> {
+  const fetcher = new CachedFetcher(fetchFn);
+
+  const response = await fetchFn(src, { signal });
+  signal?.throwIfAborted();
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch audio file: ${response.status} ${response.statusText}`,
+    );
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  signal?.throwIfAborted();
+
+  const audioCtx = new AudioContext();
+  let durationMs: number;
+  try {
+    const decoded = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+    durationMs = decoded.duration * 1000;
+  } finally {
+    await audioCtx.close();
+  }
+
+  const audioTrack: TrackRef = {
+    role: "audio",
+    id: 0,
+    src,
+  };
+
+  const tracks: TrackSet = { audio: audioTrack };
+
+  const index: SegmentIndex = {
+    durationMs,
+    tracks,
+
+    segmentAt(_timeMs: number, _track: TrackRef): number | undefined {
+      return 0;
+    },
+
+    segmentsInRange(
+      fromMs: number,
+      toMs: number,
+      _track: TrackRef,
+    ): import("./SegmentIndex.js").SegmentTimeRange[] {
+      if (fromMs >= toMs) return [];
+      return [{ segmentId: 0, startMs: 0, endMs: durationMs }];
+    },
+  };
+
+  const transport: SegmentTransport = {
+    async fetchInitSegment(
+      _track: TrackRef,
+      _signal: AbortSignal,
+    ): Promise<ArrayBuffer> {
+      return new ArrayBuffer(0);
+    },
+
+    async fetchMediaSegment(
+      _segmentId: number,
+      _track: TrackRef,
+      signal: AbortSignal,
+    ): Promise<ArrayBuffer> {
+      return fetcher.fetchArrayBuffer(src, signal);
+    },
+
+    isCached(_segmentId: number, _track: TrackRef): boolean {
+      return fetcher.has(src);
+    },
+  };
+
+  const timing = createJitTiming();
+
+  return createMediaEngine(index, transport, timing, src);
+}
+
+// ---------------------------------------------------------------------------
 // Top-level factory — called by EFMedia.#createMediaEngine
 // ---------------------------------------------------------------------------
 
@@ -264,6 +355,11 @@ export async function createMediaEngineFromSource(
     };
   } else if (!src || typeof src !== "string" || src.trim() === "") {
     return undefined;
+  } else if (!apiHost && isAbsoluteUrl(src) && requiredTracks === "audio") {
+    // No transcoding server available: fetch the audio file directly.
+    // Only applicable for audio-only elements (requiredTracks === "audio") since
+    // video rendering requires transcoded segments for frame-accurate seeking.
+    return createNativeAudioEngine(src, fetchFn, signal);
   } else {
     // Src-based mode: always fetch manifest from the server.
     // The server decides the transcoding strategy (local ffmpeg or cloud JIT).
@@ -286,14 +382,18 @@ export async function createMediaEngineFromSource(
   return createMediaEngine(index, transport, timing, engineSrc);
 }
 
+function isAbsoluteUrl(src: string): boolean {
+  const lower = src.toLowerCase();
+  return lower.startsWith("http://") || lower.startsWith("https://");
+}
+
 /**
  * Resolve a src value to the URL the server should transcode.
  * - Remote URLs (http/https) pass through as-is
  * - Local paths are made absolute using apiHost when available
  */
 function resolveManifestSrc(src: string, apiHost?: string): string {
-  const lower = src.toLowerCase();
-  if (lower.startsWith("http://") || lower.startsWith("https://")) {
+  if (isAbsoluteUrl(src)) {
     return src;
   }
   if (apiHost) {
