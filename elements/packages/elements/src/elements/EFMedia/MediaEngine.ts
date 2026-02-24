@@ -355,11 +355,16 @@ export async function createMediaEngineFromSource(
     };
   } else if (!src || typeof src !== "string" || src.trim() === "") {
     return undefined;
-  } else if (!apiHost && isAbsoluteUrl(src) && requiredTracks === "audio") {
+  } else if (!apiHost && requiredTracks === "audio") {
     // No transcoding server available: fetch the audio file directly.
+    // Resolve relative paths against the document location so the browser
+    // can fetch them correctly (e.g. "./assets/audio.mp3" → absolute URL).
     // Only applicable for audio-only elements (requiredTracks === "audio") since
     // video rendering requires transcoded segments for frame-accurate seeking.
-    return createNativeAudioEngine(src, fetchFn, signal);
+    const resolvedSrc = isAbsoluteUrl(src)
+      ? src
+      : new URL(src, document.location.href).href;
+    return createNativeAudioEngine(resolvedSrc, fetchFn, signal);
   } else {
     // Src-based mode: always fetch manifest from the server.
     // The server decides the transcoding strategy (local ffmpeg or cloud JIT).

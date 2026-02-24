@@ -81,6 +81,23 @@ describe("ef-audio without apiHost", () => {
     expect(directRequests.length).toBeGreaterThan(0);
   });
 
+  test("creates a media engine for a relative src path when no apiHost is set", async ({
+    expect,
+  }) => {
+    const timegroup = document.createElement("ef-timegroup");
+    timegroup.setAttribute("mode", "contain");
+    const audio = document.createElement("ef-audio") as EFAudio;
+    audio.src = "/test_audio.mp4";
+    timegroup.appendChild(audio);
+    container.appendChild(timegroup);
+
+    await audio.updateComplete;
+
+    const engine = await audio.getMediaEngine();
+    expect(engine).toBeTruthy();
+    expect(engine?.tracks.audio).toBeTruthy();
+  });
+
   test("can fetch audio spanning a time range without a telecine server", async ({
     expect,
   }) => {
