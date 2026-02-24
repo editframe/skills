@@ -14,9 +14,10 @@ export const loader = async (args: LoaderFunctionArgs) => {
 
 export const meta: MetaFunction = () => {
   return [
+    { title: "Programmatically Make Videos | Editframe" },
     {
-      title: "Editframe | Programmatically Make Videos",
-      description: "Launch video features in days, not months",
+      name: "description",
+      content: "Launch video features in days, not months",
     },
   ];
 };

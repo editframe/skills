@@ -49,7 +49,7 @@ export const loader = async () => {
 };
 
 export const meta: MetaFunction = () => {
-  return [{ title: "Login with magic link | Editframe" }];
+  return [{ title: "Login With Magic Link | Editframe" }];
 };
 export default function Welcome() {
   const [searchParams] = useSearchParams();

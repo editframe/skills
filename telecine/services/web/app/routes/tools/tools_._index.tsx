@@ -212,7 +212,7 @@ export const loader = async (_: LoaderFunctionArgs) => {
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Editframe Tools" },
+    { title: "Video Tools | Editframe" },
     {
       name: "description",
       content: "Explore our suite of video editing tools powered by Editframe.",

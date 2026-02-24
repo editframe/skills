@@ -69,7 +69,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 };
 
 export const meta: MetaFunction = () => {
-  return [{ title: "New organization | Editframe" }];
+  return [{ title: "New Organization | Editframe" }];
 };
 export default function Welcome() {
   const navigation = useNavigation();

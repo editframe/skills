@@ -77,14 +77,14 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if (!data) {
-    return [{ title: "Blogs" }];
+    return [{ title: "Blog | Editframe" }];
   }
   const { post } = data;
   const title = post.frontmatter.meta.find((m) => m.title)?.title;
   const description = post.frontmatter.meta.find(
     (m) => m.name === "description",
   )?.content;
-  return [{ title: `${title} | Blogs`, description }];
+  return [{ title: `${title} | Editframe` }, { name: "description", content: description }];
 };
 
 export default function BlogPage() {

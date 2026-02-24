@@ -15,8 +15,7 @@ export const loader = async (args: LoaderFunctionArgs) => {
 export const meta: MetaFunction = () => {
   return [
     {
-      title:
-        "Upload Audio to TikTok, Instagram, YouTube, Facebook, or Shorts | Editframe",
+      title: "Upload Audio to Social Media | Editframe",
       description: "Add music to YouTube by making a video.",
     },
   ];

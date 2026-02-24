@@ -21,22 +21,19 @@ import { MobileTocButton } from "~/components/skills/MobileTocButton";
 
 export const meta = ({ data }: Route.MetaArgs) => {
   if (!data) {
-    return [{ title: "Skills - Editframe" }];
+    return [{ title: "Documentation | Editframe" }];
   }
 
-  const { skillName, referenceName, description } = data;
-  const title = referenceName
-    ? `${referenceName} - ${skillName} - Skills`
-    : `${skillName} - Skills`;
+  const { skillTitle, description } = data;
 
   const metaDescription = description
     ? description.length > 160
       ? description.slice(0, 157) + "..."
       : description
-    : `Documentation for ${skillName}`;
+    : `Documentation for ${skillTitle}`;
 
   return [
-    { title: `${title} - Editframe` },
+    { title: `${skillTitle} | Editframe` },
     { name: "description", content: metaDescription },
     { property: "og:description", content: metaDescription },
   ];
@@ -67,8 +64,11 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
   const apiMetadata = (parsed.frontmatter as any)?.api || null;
   const description = (parsed.frontmatter as any)?.description || null;
 
+  const skillTitle = allSkills.find((s: { name: string }) => s.name === skillName)?.title || skillName;
+
   return {
     skillName,
+    skillTitle,
     referenceName: null,
     content: parsed,
     navTree,
@@ -154,11 +154,10 @@ function LearningPathNav({
 
 export default function SkillDetail({ loaderData }: Route.ComponentProps) {
   useTheme();
-  const { skillName, referenceName, content, navTree, referencesMeta, allSkills, allNavTrees, apiMetadata, isReference } =
+  const { skillName, skillTitle, referenceName, content, navTree, referencesMeta, allSkills, allNavTrees, apiMetadata, isReference } =
     loaderData;
   const { code } = content;
   const MDXAsComponent = React.useMemo(() => getMDXComponent(code), [code]);
-  const skillTitle = allSkills.find((s: { name: string }) => s.name === skillName)?.title || skillName;
   const referenceTitle = referenceName ? referencesMeta.find((r: SkillReference) => r.name === referenceName)?.title || referenceName : null;
 
   // Scroll to top when navigating between pages

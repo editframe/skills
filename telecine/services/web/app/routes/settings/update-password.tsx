@@ -70,7 +70,7 @@ export const loader = async () => {
 };
 
 export const meta: MetaFunction = () => {
-  return [{ title: "Settings | Editframe" }];
+  return [{ title: "Update Password | Editframe" }];
 };
 export default function Page() {
   return (

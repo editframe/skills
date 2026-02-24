@@ -91,7 +91,7 @@ const CreateProjectSchema = z.object({
 const createKey = formFor(CreateProjectSchema);
 
 export const meta: MetaFunction = () => {
-  return [{ title: "New API key | Editframe" }];
+  return [{ title: "New API Key | Editframe" }];
 };
 
 export const action = async ({ request, context }: Route.ActionArgs) => {

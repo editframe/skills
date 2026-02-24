@@ -15,7 +15,7 @@ export const loader = async (args: LoaderFunctionArgs) => {
 export const meta: MetaFunction = () => {
   return [
     {
-      title: "Mute Video| Editframe",
+      title: "Mute Video | Editframe",
       description: "Remove audio and sound from your video.",
     },
   ];

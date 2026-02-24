@@ -94,22 +94,22 @@ function LearningPathNav({
 
 export const meta = ({ data }: Route.MetaArgs) => {
   if (!data) {
-    return [{ title: "Skills - Editframe" }];
+    return [{ title: "Documentation | Editframe" }];
   }
 
-  const { skillName, referenceName, description } = data;
-  const title = referenceName
-    ? `${referenceName} - ${skillName} - Skills`
-    : `${skillName} - Skills`;
+  const { skillTitle, referenceTitle, description } = data;
+  const title = referenceTitle
+    ? `${referenceTitle} | ${skillTitle}`
+    : skillTitle;
 
   const metaDescription = description
     ? description.length > 160
       ? description.slice(0, 157) + "..."
       : description
-    : `Documentation for ${skillName}`;
+    : `Documentation for ${skillTitle}`;
 
   return [
-    { title: `${title} - Editframe` },
+    { title: `${title} | Editframe` },
     { name: "description", content: metaDescription },
     { property: "og:description", content: metaDescription },
   ];
@@ -152,9 +152,14 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
   const apiMetadata = (parsed.frontmatter as any)?.api || null;
   const description = (parsed.frontmatter as any)?.description || null;
 
+  const skillTitle = allSkills.find((s: { name: string }) => s.name === skillName)?.title || skillName;
+  const referenceTitle = referencesMeta.find((r: { name: string }) => r.name === referenceParam)?.title || referenceParam;
+
   return {
     skillName,
+    skillTitle,
     referenceName: referenceParam,
+    referenceTitle,
     content: parsed,
     navTree,
     referencesMeta,
@@ -168,12 +173,10 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
 
 export default function ReferenceDetail({ loaderData }: Route.ComponentProps) {
   useTheme();
-  const { skillName, referenceName, content, navTree, referencesMeta, allSkills, allNavTrees, apiMetadata } =
+  const { skillName, skillTitle, referenceName, referenceTitle, content, navTree, referencesMeta, allSkills, allNavTrees, apiMetadata } =
     loaderData;
   const { code } = content;
   const MDXAsComponent = React.useMemo(() => getMDXComponent(code), [code]);
-  const skillTitle = allSkills.find((s: { name: string }) => s.name === skillName)?.title || skillName;
-  const referenceTitle = referenceName ? referencesMeta.find((r: SkillReference) => r.name === referenceName)?.title || referenceName : null;
 
   // Scroll to top when navigating between pages
   React.useEffect(() => {

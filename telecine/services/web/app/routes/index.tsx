@@ -23,18 +23,18 @@ export const headers: HeadersFunction = () => ({
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Editframe | Build Video With Code" },
+    { title: "Build Video With Code | Editframe" },
     {
       name: "description",
       content: "The developer platform for programmatic video. Declarative HTML + CSS compositions with scripting and React support. Instant preview and hyperscale rendering.",
     },
-    { property: "og:title", content: "Editframe | Build Video With Code" },
+    { property: "og:title", content: "Build Video With Code | Editframe" },
     { property: "og:description", content: "The developer platform for programmatic video. HTML + CSS compositions with scripting and React support. Instant preview and hyperscale rendering." },
     { property: "og:type", content: "website" },
     { property: "og:url", content: "https://editframe.com" },
     { property: "og:image", content: "https://editframe.com/og-image.png" },
     { name: "twitter:card", content: "summary_large_image" },
-    { name: "twitter:title", content: "Editframe | Build Video With Code" },
+    { name: "twitter:title", content: "Build Video With Code | Editframe" },
     { name: "twitter:description", content: "The developer platform for programmatic video. HTML + CSS compositions with scripting and React support. Instant preview and hyperscale rendering." },
     { name: "twitter:image", content: "https://editframe.com/og-image.png" },
   ];

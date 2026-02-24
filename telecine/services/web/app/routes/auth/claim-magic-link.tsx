@@ -26,7 +26,7 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
   }
 };
 export const meta: MetaFunction = () => {
-  return [{ title: "Login with magic link | Editframe" }];
+  return [{ title: "Claim Magic Link | Editframe" }];
 };
 export default function Welcome() {
   return (

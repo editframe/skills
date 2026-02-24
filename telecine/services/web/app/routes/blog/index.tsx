@@ -15,7 +15,7 @@ export const loader = async (_: LoaderFunctionArgs) => {
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Editframe Blog" },
+    { title: "Blog | Editframe" },
     {
       name: "description",
       content:

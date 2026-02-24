@@ -14,7 +14,7 @@ import { identityContext } from "~/middleware/context";
 import type { Route } from "./+types/next";
 
 export const meta: MetaFunction = () => {
-  return [{ title: "Welcome | Editframe" }];
+  return [{ title: "Onboarding | Editframe" }];
 };
 
 const schema = z.object({
