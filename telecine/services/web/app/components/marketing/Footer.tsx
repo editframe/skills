@@ -9,6 +9,7 @@ export function Footer() {
       { name: "Documentation", href: "/docs" },
       { name: "Guides", href: "/guides" },
       { name: "Tools", href: "/tools" },
+      { name: "Pricing", href: "/pricing" },
     ],
     technologies: [
       { name: "React", href: "/react" },

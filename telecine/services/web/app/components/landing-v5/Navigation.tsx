@@ -23,6 +23,7 @@ export function Navigation() {
         </Link>
         <div className="hidden md:flex items-center gap-1">
           <LandingNavLink to="/skills">Docs & Skills</LandingNavLink>
+          <LandingNavLink to="/pricing">Pricing</LandingNavLink>
         </div>
         <div className="flex items-center gap-3">
           <ThemeToggle />
@@ -62,6 +63,9 @@ export function Navigation() {
           <div className="px-6 py-4 flex flex-col gap-2">
             <LandingNavLink to="/skills" onClick={() => setMobileMenuOpen(false)}>
               Docs & Skills
+            </LandingNavLink>
+            <LandingNavLink to="/pricing" onClick={() => setMobileMenuOpen(false)}>
+              Pricing
             </LandingNavLink>
             {!isLoggedIn && (
               <>
