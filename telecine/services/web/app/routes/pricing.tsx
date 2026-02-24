@@ -34,7 +34,6 @@ const tiers = [
     ],
     cta: "Get started",
     ctaHref: "/auth/register",
-    highlight: false,
   },
   {
     name: "Team",
@@ -52,11 +51,10 @@ const tiers = [
     ],
     cta: "Contact sales",
     ctaHref: "mailto:hello@editframe.com",
-    highlight: false,
   },
   {
     name: "Cloud",
-    employees: "11–20 employees, or any size needing cloud",
+    employees: "11–20, or any size needing cloud",
     price: "Contact us",
     period: "+ usage",
     color: "var(--poster-red)",
@@ -72,7 +70,6 @@ const tiers = [
     ],
     cta: "Contact sales",
     ctaHref: "mailto:hello@editframe.com",
-    highlight: true,
   },
   {
     name: "Enterprise",
@@ -91,7 +88,6 @@ const tiers = [
     ],
     cta: "Contact us",
     ctaHref: "mailto:hello@editframe.com",
-    highlight: false,
   },
 ];
 
@@ -111,34 +107,6 @@ const usageMetrics = [
 ];
 
 const comparisonFeatures = [
-  {
-    name: "Client-Side SDK",
-    free: true,
-    team: true,
-    cloud: true,
-    enterprise: true,
-  },
-  {
-    name: "Browser rendering",
-    free: true,
-    team: true,
-    cloud: true,
-    enterprise: true,
-  },
-  {
-    name: "CLI rendering",
-    free: true,
-    team: true,
-    cloud: true,
-    enterprise: true,
-  },
-  {
-    name: "Commercial use",
-    free: true,
-    team: true,
-    cloud: true,
-    enterprise: true,
-  },
   {
     name: "Server-Side Rendering",
     free: false,
@@ -168,6 +136,13 @@ const comparisonFeatures = [
     enterprise: true,
   },
   {
+    name: "48-hour response time",
+    free: false,
+    team: true,
+    cloud: true,
+    enterprise: true,
+  },
+  {
     name: "Priority support",
     free: false,
     team: false,
@@ -181,6 +156,20 @@ const comparisonFeatures = [
     cloud: false,
     enterprise: true,
   },
+  {
+    name: "Dedicated infrastructure",
+    free: false,
+    team: false,
+    cloud: false,
+    enterprise: true,
+  },
+];
+
+const tierColors = [
+  "var(--poster-green)",
+  "var(--poster-blue)",
+  "var(--poster-red)",
+  "var(--poster-gold)",
 ];
 
 const CheckIcon = () => (
@@ -215,7 +204,41 @@ const CrossIcon = () => (
   </div>
 );
 
-export default function CloudPage() {
+const billingDetails = [
+  {
+    label: "Processor",
+    value: "Stripe (USD)",
+    color: "var(--poster-blue)",
+  },
+  {
+    label: "Billing cycle",
+    value: "Base fees monthly in advance; usage monthly in arrears",
+    color: "var(--poster-red)",
+  },
+  {
+    label: "Renewal",
+    value: "Automatic. Cancel at least 24 hours before renewal",
+    color: "var(--poster-gold)",
+  },
+  {
+    label: "Money-back guarantee",
+    value: "14 days on first paid subscription",
+    color: "var(--poster-green)",
+  },
+  {
+    label: "Plan changes",
+    value: "Upgrades prorated immediately; downgrades take effect next cycle",
+    color: "var(--poster-blue)",
+  },
+  {
+    label: "Taxes",
+    value:
+      "Excluded from listed fees. You are responsible for applicable VAT, GST, and sales tax",
+    color: "var(--poster-red)",
+  },
+];
+
+export default function PricingPage() {
   useTheme();
 
   return (
@@ -226,11 +249,8 @@ export default function CloudPage() {
       <section className="pt-32 pb-20 border-b-4 border-[var(--ink-black)] dark:border-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center max-w-4xl mx-auto">
-            <p className="text-sm font-bold uppercase tracking-widest text-[var(--poster-red)] mb-4">
-              Pricing
-            </p>
             <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter uppercase leading-none mb-6">
-              Cloud
+              Pricing
             </h1>
             <p className="text-lg text-[var(--warm-gray)] max-w-2xl mx-auto leading-relaxed">
               Free for individuals and small teams. Paid plans for larger
@@ -250,21 +270,7 @@ export default function CloudPage() {
                   className="absolute -bottom-2 -right-2 md:-bottom-3 md:-right-3 w-full h-full"
                   style={{ backgroundColor: tier.color }}
                 />
-                <div
-                  className={`relative bg-white dark:bg-[#1a1a1a] text-[var(--ink-black)] dark:text-white p-5 md:p-6 h-full flex flex-col ${
-                    tier.highlight
-                      ? "border-4 border-[var(--poster-red)]"
-                      : "border-4 border-[var(--ink-black)] dark:border-white/20"
-                  }`}
-                >
-                  {tier.highlight && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[var(--poster-red)] px-3 py-1">
-                      <span className="text-white text-xs font-bold uppercase tracking-widest whitespace-nowrap">
-                        Most Popular
-                      </span>
-                    </div>
-                  )}
-
+                <div className="relative bg-white dark:bg-[#1a1a1a] text-[var(--ink-black)] dark:text-white border-4 border-[var(--ink-black)] dark:border-white/20 p-5 md:p-6 h-full flex flex-col">
                   <h3 className="text-2xl font-black uppercase tracking-tight mb-1">
                     {tier.name}
                   </h3>
@@ -299,22 +305,14 @@ export default function CloudPage() {
                   {tier.ctaHref.startsWith("mailto:") ? (
                     <a
                       href={tier.ctaHref}
-                      className={`block text-center px-6 py-3 font-bold text-sm uppercase tracking-wider transition-all ${
-                        tier.highlight
-                          ? "bg-[var(--poster-red)] text-white shadow-poster-hard hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
-                          : "border-2 border-[var(--ink-black)] dark:border-white hover:bg-[var(--ink-black)] hover:text-white dark:hover:bg-white dark:hover:text-black"
-                      }`}
+                      className="block text-center px-6 py-3 font-bold text-sm uppercase tracking-wider transition-all border-2 border-[var(--ink-black)] dark:border-white hover:bg-[var(--ink-black)] hover:text-white dark:hover:bg-white dark:hover:text-black"
                     >
                       {tier.cta}
                     </a>
                   ) : (
                     <Link
                       to={tier.ctaHref}
-                      className={`block text-center px-6 py-3 font-bold text-sm uppercase tracking-wider transition-all ${
-                        tier.highlight
-                          ? "bg-[var(--poster-red)] text-white shadow-poster-hard hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
-                          : "border-2 border-[var(--ink-black)] dark:border-white hover:bg-[var(--ink-black)] hover:text-white dark:hover:bg-white dark:hover:text-black"
-                      }`}
+                      className="block text-center px-6 py-3 font-bold text-sm uppercase tracking-wider transition-all border-2 border-[var(--ink-black)] dark:border-white hover:bg-[var(--ink-black)] hover:text-white dark:hover:bg-white dark:hover:text-black"
                     >
                       {tier.cta}
                     </Link>
@@ -345,22 +343,21 @@ export default function CloudPage() {
               <div className="w-24 h-1 bg-[var(--poster-blue)]" />
             </div>
             <p className="text-lg text-white/60 max-w-2xl mx-auto leading-relaxed">
-              Cloud Tier usage fees apply in addition to the base subscription.
-              Base fees billed monthly in advance; usage billed monthly in
-              arrears.
+              Cloud Tier includes usage-based billing for rendering and
+              streaming. Contact us for current rates.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             {usageMetrics.map((metric) => (
-              <div
-                key={metric.name}
-                className="flex items-start gap-4 p-6 border-l-4"
-                style={{ borderColor: metric.color }}
-              >
-                <div>
+              <div key={metric.name} className="relative">
+                <div
+                  className="absolute -bottom-2 -right-2 w-full h-full"
+                  style={{ backgroundColor: metric.color, opacity: 0.3 }}
+                />
+                <div className="relative bg-white/5 border-2 border-white/10 p-6">
                   <div
-                    className="font-black text-lg uppercase tracking-tight mb-2"
+                    className="font-black text-lg uppercase tracking-tight mb-3"
                     style={{ color: metric.color }}
                   >
                     {metric.name}
@@ -393,6 +390,10 @@ export default function CloudPage() {
               <div className="w-24 h-1 bg-[var(--poster-red)]" />
               <div className="w-24 h-1 bg-[var(--poster-green)]" />
             </div>
+            <p className="text-sm text-[var(--warm-gray)]">
+              All tiers include Client-Side SDK, browser rendering, CLI
+              rendering, and commercial use rights.
+            </p>
           </div>
 
           <div className="relative max-w-5xl mx-auto">
@@ -404,18 +405,19 @@ export default function CloudPage() {
                     <th className="text-left py-4 px-6 font-bold text-sm uppercase tracking-wider">
                       Feature
                     </th>
-                    <th className="text-center py-4 px-4 font-bold text-sm uppercase tracking-wider">
-                      Free
-                    </th>
-                    <th className="text-center py-4 px-4 font-bold text-sm uppercase tracking-wider">
-                      Team
-                    </th>
-                    <th className="text-center py-4 px-4 font-bold text-sm uppercase tracking-wider">
-                      Cloud
-                    </th>
-                    <th className="text-center py-4 px-4 font-bold text-sm uppercase tracking-wider">
-                      Enterprise
-                    </th>
+                    {["Free", "Team", "Cloud", "Enterprise"].map((name, i) => (
+                      <th key={name} className="text-center py-4 px-4">
+                        <div className="flex flex-col items-center gap-1">
+                          <div
+                            className="w-full h-1 mb-1"
+                            style={{ backgroundColor: tierColors[i] }}
+                          />
+                          <span className="font-bold text-sm uppercase tracking-wider">
+                            {name}
+                          </span>
+                        </div>
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -470,46 +472,23 @@ export default function CloudPage() {
           </div>
 
           <div className="space-y-0">
-            {[
-              {
-                label: "Processor",
-                value: "Stripe (USD)",
-              },
-              {
-                label: "Billing cycle",
-                value:
-                  "Base fees monthly in advance; usage monthly in arrears",
-              },
-              {
-                label: "Renewal",
-                value:
-                  "Automatic. Cancel at least 24 hours before renewal",
-              },
-              {
-                label: "Money-back guarantee",
-                value: "14 days on first paid subscription",
-              },
-              {
-                label: "Plan changes",
-                value:
-                  "Upgrades prorated immediately; downgrades take effect next cycle",
-              },
-              {
-                label: "Taxes",
-                value:
-                  "Excluded from listed fees. You are responsible for applicable VAT, GST, and sales tax",
-              },
-            ].map((item, i) => (
+            {billingDetails.map((item, i) => (
               <div
                 key={i}
-                className="flex flex-col sm:flex-row gap-2 sm:gap-4 py-4 border-b-2 border-[var(--ink-black)]/10 dark:border-white/10 last:border-b-0"
+                className="flex items-start gap-4 py-5 border-b-2 border-[var(--ink-black)]/10 dark:border-white/10 last:border-b-0"
               >
-                <div className="flex-shrink-0 sm:w-48">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--warm-gray)]">
+                <div
+                  className="flex-shrink-0 w-1 h-full min-h-[2.5rem] self-stretch"
+                  style={{ backgroundColor: item.color }}
+                />
+                <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4">
+                  <span className="flex-shrink-0 sm:w-52 font-black text-sm uppercase tracking-tight">
                     {item.label}
                   </span>
+                  <span className="text-sm text-[var(--warm-gray)]">
+                    {item.value}
+                  </span>
                 </div>
-                <div className="text-sm">{item.value}</div>
               </div>
             ))}
           </div>
@@ -550,27 +529,6 @@ export default function CloudPage() {
               />
             </svg>
           </a>
-        </div>
-      </section>
-
-      {/* Legal links */}
-      <section className="py-12 bg-[var(--paper-cream)] border-t-4 border-[var(--ink-black)] dark:border-white">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <p className="text-sm text-[var(--warm-gray)]">
-            <Link
-              to="/terms"
-              className="underline underline-offset-2 hover:text-[var(--ink-black)] dark:hover:text-white transition-colors"
-            >
-              Terms of Service
-            </Link>
-            {" · "}
-            <Link
-              to="/privacy"
-              className="underline underline-offset-2 hover:text-[var(--ink-black)] dark:hover:text-white transition-colors"
-            >
-              Privacy Policy
-            </Link>
-          </p>
         </div>
       </section>
 
