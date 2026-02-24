@@ -288,10 +288,9 @@ try {
 }
 
 // ---------------------------------------------------------------------------
-// 5. Shared texture DMA-BUF delivery test — SKIPPED for benchmark run
+// 5. Shared texture DMA-BUF delivery test (custom Electron + headless ozone)
 // ---------------------------------------------------------------------------
-if (false) {
-step("5. Shared texture DMA-BUF (ozone-wayland + ANGLE-Vulkan + VulkanFromANGLE + useSharedTexture)");
+step("5. Shared texture DMA-BUF (ozone-headless + ANGLE-Vulkan + useSharedTexture)");
 
 const sharedTexScript = `
 const { app, BrowserWindow } = require('electron');
@@ -301,11 +300,8 @@ const log = (msg) => process.stderr.write('[shared-tex] ' + msg + '\\n');
 app.whenReady().then(async () => {
   log('app ready');
 
-  // Dump GPU feature status
   const gpuFeatures = app.getGPUFeatureStatus();
   log('GPU_FEATURES: ' + JSON.stringify(gpuFeatures));
-
-  log('creating BrowserWindow with useSharedTexture');
 
   let win;
   try {
@@ -323,7 +319,6 @@ app.whenReady().then(async () => {
     process.exit(1);
   }
 
-  log('BrowserWindow created, loading page');
   win.webContents.setFrameRate(${FPS});
 
   await win.loadURL('data:text/html,' + encodeURIComponent(\`
@@ -354,57 +349,33 @@ app.whenReady().then(async () => {
     info.dirty = dirty;
     info.imageEmpty = image.isEmpty();
     info.imageSize = image.getSize();
-
-    // Enumerate all event properties for diagnostics
     info.eventKeys = Object.keys(event);
-    info.eventProto = Object.getOwnPropertyNames(Object.getPrototypeOf(event));
 
     if (event.texture) {
       const tex = event.texture;
-      info.textureKeys = Object.keys(tex);
-
       const ti = tex.textureInfo || {};
-      info.textureInfoKeys = Object.keys(ti);
-      info.widgetType = ti.widgetType;
       info.pixelFormat = ti.pixelFormat;
       info.codedSize = ti.codedSize;
-      info.visibleRect = ti.visibleRect;
-      info.contentRect = ti.contentRect;
-      info.timestamp = ti.timestamp;
 
       const handle = ti.handle || {};
       info.handleKeys = Object.keys(handle);
       info.hasNativePixmap = !!handle.nativePixmap;
-      info.hasNtHandle = !!handle.ntHandle;
-      info.hasIoSurface = !!handle.ioSurface;
-      info.hasSharedMemory = !!handle.sharedMemory;
 
       if (handle.nativePixmap) {
         const np = handle.nativePixmap;
-        info.nativePixmapKeys = Object.keys(np);
         info.modifier = np.modifier;
         info.supportsZeroCopy = np.supportsZeroCopyWebGpuImport;
         info.planeCount = np.planes ? np.planes.length : 0;
         if (np.planes) {
           info.planes = np.planes.map((p, i) => ({
-            index: i,
-            fd: p.fd,
-            stride: p.stride,
-            offset: p.offset,
-            size: p.size,
+            index: i, fd: p.fd, stride: p.stride, offset: p.offset, size: p.size,
           }));
         }
       }
 
-      if (handle.sharedMemory) {
-        info.sharedMemoryKeys = Object.keys(handle.sharedMemory);
-      }
-
       try { tex.release(); } catch (e) { info.releaseError = e.message; }
     } else {
-      // No texture — try to get bitmap info for comparison
       info.bitmapSize = image.getBitmap ? image.getBitmap().length : 'no getBitmap';
-      info.toPNGSize = image.toPNG ? image.toPNG().length : 'no toPNG';
     }
 
     log('FRAME ' + frameCount + ': ' + JSON.stringify(info));
@@ -423,15 +394,10 @@ app.on('gpu-info-update', () => {
     log('GPU_INFO: ' + JSON.stringify({
       vendor: info?.gpuDevice?.[0]?.vendorId,
       device: info?.gpuDevice?.[0]?.deviceId,
-      driver: info?.gpuDevice?.[0]?.driverVersion,
       glRenderer: info?.auxAttributes?.glRenderer,
-      glVendor: info?.auxAttributes?.glVendor,
-      glVersion: info?.auxAttributes?.glVersion,
       gpuCompositing: info?.featureStatus?.gpu_compositing,
       rasterization: info?.featureStatus?.rasterization,
-      opengl: info?.featureStatus?.opengl,
       vulkan: info?.featureStatus?.vulkan,
-      skiaGraphite: info?.featureStatus?.skia_graphite,
     }));
   }).catch(() => {});
 });
@@ -440,96 +406,33 @@ app.on('gpu-info-update', () => {
 const sharedTexScriptPath = "/tmp/gpu-probe-shared-tex.js";
 writeFileSync(sharedTexScriptPath, sharedTexScript);
 
-// Start headless weston compositor for wayland platform support
-const XDG_RUNTIME_DIR = "/tmp/xdg-runtime";
-const WAYLAND_DISPLAY = "wayland-gpu-probe";
-run(`mkdir -p ${XDG_RUNTIME_DIR} && chmod 0700 ${XDG_RUNTIME_DIR}`);
-const weston = spawn("weston", [
-  "--backend=headless-backend.so",
-  `--socket=${WAYLAND_DISPLAY}`,
-  "--width=640",
-  "--height=480",
-  "--use-pixman",
-  "--no-config",
-], {
-  stdio: ["ignore", "pipe", "pipe"],
-  env: {
-    ...process.env,
-    XDG_RUNTIME_DIR,
-    LD_PRELOAD: [
-      "/usr/lib/x86_64-linux-gnu/fake_drm.so",
-      "/usr/lib/x86_64-linux-gnu/fake_sysfs_access.so",
-    ].join(":"),
-  },
-});
-
-let westonStderr = "";
-weston.stderr.on("data", (d: Buffer) => { westonStderr += d.toString(); });
-weston.stdout.on("data", (d: Buffer) => { westonStderr += d.toString(); });
-
-// Give weston time to start and create the socket
-await new Promise<void>((resolve) => {
-  const check = () => {
-    if (existsSync(`${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}`)) {
-      resolve();
-    } else {
-      setTimeout(check, 100);
-    }
-  };
-  setTimeout(check, 200);
-  // Timeout after 5s
-  setTimeout(() => resolve(), 5000);
-});
-
-const westonReady = existsSync(`${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}`);
-process.stdout.write(`Weston headless: ${westonReady ? "ready" : "FAILED to start"}\n`);
-if (westonStderr) {
-  const lines = westonStderr.split("\n").slice(0, 40);
-  process.stdout.write(`Weston output (first 40 lines):\n${lines.join("\n")}\n`);
-}
-// List XDG_RUNTIME_DIR contents
-process.stdout.write(`XDG_RUNTIME_DIR contents: ${run(`ls -la ${XDG_RUNTIME_DIR}/`)}\n`);
-
 try {
-  // Config: ozone-wayland + ANGLE Vulkan + VulkanFromANGLE (shared VkInstance)
-  // - ANGLE uses NVIDIA Vulkan for hardware WebGL/Canvas rendering
-  // - VulkanFromANGLE makes Skia reuse ANGLE's VkInstance instead of creating
-  //   a second one (which crashes because NVIDIA's ICD probes wayland env)
-  // - GBM device from libgbm_cuda.so.1 provides native pixmaps
-  // - SupportsNativePixmaps() checks GBM device + not-software-GL → should be true
+  // Uses ozone-headless (patched to return real GBM-backed NativePixmapDmaBuf)
+  // No Weston compositor needed — headless ozone handles everything
   const sharedTexElectron = spawn("node_modules/.bin/electron", [
     "--no-sandbox",
+    "--use-angle=vulkan",
     "--enable-gpu-rasterization",
     "--enable-zero-copy",
     "--ignore-gpu-blocklist",
     "--disable-gpu-sandbox",
-    "--ozone-platform=wayland",
-    "--render-node-override=/dev/dri/renderD128",
+    "--disable-vulkan-surface",
+    "--ozone-platform=headless",
     "--disable-setuid-sandbox",
     "--disable-seccomp-filter-sandbox",
-    "--disable-accelerated-video-decode",
-    "--disable-accelerated-video-encode",
-    "--use-angle=vulkan",
-    "--disable-vulkan-surface",
-    "--enable-features=VulkanFromANGLE,Vulkan",
-    "--disable-features=VaapiVideoDecoder,VaapiVideoEncoder,VaapiVideoDecodeLinuxGL,UseChromeOSDirectVideoDecoder",
     "--enable-logging",
     "--v=1",
-    "--vmodule=*/gpu/*=2,*/viz/*=2,*/ozone/*=2,*/gl/*=2,*/gbm/*=2,*/native_pixmap/*=2,*/shared_image/*=2,*/vulkan/*=2,*/wayland/*=2,*/buffer/*=2,*/offscreen/*=2,*/frame_sink/*=2",
     sharedTexScriptPath,
   ], {
     stdio: ["ignore", "pipe", "pipe"],
     env: {
       ...process.env,
       EF_GPU_RENDER: "1",
-      XDG_RUNTIME_DIR,
-      WAYLAND_DISPLAY,
       __GLX_VENDOR_LIBRARY_NAME: "nvidia",
       LIBGL_ALWAYS_SOFTWARE: "0",
       VK_ICD_FILENAMES: "/etc/vulkan/icd.d/nvidia_icd.json",
       DISABLE_LAYER_NV_OPTIMUS_1: "1",
       VK_LOADER_DEBUG: "error",
-      __EGL_VENDOR_LIBRARY_FILENAMES: "/usr/share/glvnd/egl_vendor.d/10_nvidia.json",
       LD_PRELOAD: [
         "/usr/lib/x86_64-linux-gnu/fake_drm.so",
         "/usr/lib/x86_64-linux-gnu/fake_sysfs_access.so",
@@ -537,7 +440,6 @@ try {
     },
   });
 
-  // Only keep relevant lines to avoid OOM on huge stderr
   const relevantLines: string[] = [];
   const tailLines: string[] = [];
   const MAX_TAIL = 50;
@@ -551,35 +453,15 @@ try {
     pendingChunk = lines.pop() ?? "";
     for (const line of lines) {
       totalLines++;
-      // Keep lines from our shims, our test script, errors, or crash info
       if (line.includes("[shared-tex]") || line.includes("[fake_drm]") ||
           line.includes("[libgbm_cuda]") || line.includes("ERROR:") ||
-          line.includes("FATAL") || line.includes("Check failed") ||
-          line.includes("SIGSEGV") || line.includes("SHARED_TEX_DONE") ||
-          line.includes("gbm") || line.includes("GBM") ||
+          line.includes("FATAL") || line.includes("SHARED_TEX_DONE") ||
+          line.includes("headless:") || line.includes("DMA-BUF") ||
           line.includes("native_pixmap") || line.includes("NativePixmap") ||
-          line.includes("SharedImage") || line.includes("GpuMemoryBuffer") ||
-          line.includes("ozone") || line.includes("wayland") ||
-          line.includes("vulkan") || line.includes("Vulkan") ||
-          line.includes("vk_loader") || line.includes("ANGLE") ||
-          line.includes("EGL") || line.includes("egl") ||
-          line.includes("GL_") || line.includes("context") ||
-          line.includes("pixmap") || line.includes("Pixmap") ||
-          line.includes("gpu_init") || line.includes("GpuInit") ||
-          line.includes("shared_image") || line.includes("ContextResult") ||
-          line.includes("supports_native") || line.includes("gpu_feature") ||
-          line.includes("gl_surface") || line.includes("GLSurface") ||
-          line.includes("SupportsNativePixmaps") || line.includes("BufferManager") ||
-          line.includes("buffer_manager") || line.includes("surface_factory") ||
-          line.includes("SurfaceFactory") || line.includes("WaylandSurface") ||
-          line.includes("OffscreenCanvas") || line.includes("offscreen") ||
-          line.includes("frame_sink") || line.includes("FrameSink") ||
-          line.includes("frame_pool") || line.includes("FramePool") ||
-          line.includes("CreateCommandBuffer") || line.includes("compositor") ||
-          line.includes("Compositor") || line.includes("software") ||
-          line.includes("Software") || line.includes("SwiftShader") ||
+          line.includes("GpuMemoryBuffer") || line.includes("ANGLE") ||
           line.includes("GPU_FEATURES") || line.includes("GPU_INFO") ||
-          line.includes("gpu_compositing") || line.includes("GpuCompositing")) {
+          line.includes("gpu_compositing") || line.includes("CreateNativePixmap") ||
+          line.includes("GBM") || line.includes("gbm")) {
         relevantLines.push(line);
       }
       if (line.includes("SHARED_TEX_DONE")) sharedTexDone = true;
@@ -588,7 +470,7 @@ try {
     }
   });
 
-  sharedTexElectron.stdout.on("data", () => {}); // drain
+  sharedTexElectron.stdout.on("data", () => {});
 
   const sharedTexResult = await new Promise<{ success: boolean; error?: string }>((resolve) => {
     const timeout = setTimeout(() => {
@@ -607,9 +489,9 @@ try {
     });
   });
 
-  process.stdout.write(`\nShared texture stderr: ${totalLines} total lines, ${relevantLines.length} relevant\n`);
+  process.stdout.write(`\nShared texture: ${totalLines} total stderr lines, ${relevantLines.length} relevant\n`);
   process.stdout.write(`\nRelevant lines:\n`);
-  for (const line of relevantLines.slice(0, 800)) {
+  for (const line of relevantLines.slice(0, 200)) {
     process.stdout.write(`  ${line}\n`);
   }
   process.stdout.write(`\nTail (last ${tailLines.length} lines):\n`);
@@ -639,10 +521,8 @@ try {
 } catch (err) {
   fail(`Shared texture test threw: ${err instanceof Error ? err.stack ?? err.message : err}`);
 } finally {
-  try { weston.kill(); } catch {}
   try { unlinkSync(sharedTexScriptPath); } catch {}
 }
-} // end if(false) — skip step 5
 
 // ---------------------------------------------------------------------------
 process.stdout.write("\n[gpu-probe] Done.\n");

@@ -82,6 +82,18 @@ RUN apt-get update && apt-get install -y wget && \
     rm NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run
 
 # ---------------------------------------------------------------------------
+# Unpack custom Electron build with headless DMA-BUF patch
+# (downloaded to .editframe-downloads/ by deploy-gpu-probe-job before build)
+# ---------------------------------------------------------------------------
+FROM debian:bullseye-slim AS electron-build
+
+RUN apt-get update && apt-get install -y unzip && rm -rf /var/lib/apt/lists/*
+COPY .editframe-downloads/editframe-v40.1.0-dmabuf.zip /tmp/electron-dist.zip
+RUN mkdir -p /tmp/electron-dist && \
+    unzip /tmp/electron-dist.zip -d /tmp/electron-dist && \
+    rm /tmp/electron-dist.zip
+
+# ---------------------------------------------------------------------------
 # Runtime image
 # ---------------------------------------------------------------------------
 FROM nvidia/cuda:12.6.3-runtime-ubuntu22.04
@@ -187,5 +199,8 @@ COPY --from=native-build /build/fake_sysfs_access.so /usr/lib/x86_64-linux-gnu/
 RUN ln -sf /usr/lib/x86_64-linux-gnu/libgbm_cuda.so.1 /usr/lib/x86_64-linux-gnu/libgbm.so.1 && \
     ln -sf libgbm.so.1 /usr/lib/x86_64-linux-gnu/libgbm.so && \
     ldconfig
+
+# Replace npm-installed Electron with custom build (headless DMA-BUF patch)
+COPY --from=electron-build /tmp/electron-dist/ /app/node_modules/electron/dist/
 
 CMD ["node", "/app/services/gpu-probe/dist/main.js"]

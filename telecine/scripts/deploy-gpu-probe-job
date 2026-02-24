@@ -34,6 +34,9 @@ IMAGE="${REPO}/${IMAGE_NAME}:${GIT_SHA}"
 
 if [ "$LOGS_ONLY" -eq 0 ]; then
   if [ "$SKIP_BUILD" -eq 0 ]; then
+    echo "==> Downloading custom Electron build..."
+    "${SCRIPT_DIR}/download-electron-build" v40.1.0-dmabuf
+
     echo "==> Building image..."
     "${SCRIPT_DIR}/build-docker-prod" "${IMAGE_NAME}"
 

@@ -4,15 +4,19 @@ set -euo pipefail
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-# Use RUNNER_WORKSPACE if available (for GitHub Actions), otherwise fall back to HOME or script directory
-DOWNLOAD_DIR=".editframe-downloads"
+# Download to telecine/.editframe-downloads/ (Docker build context)
+TELECINE_DIR="${SCRIPT_DIR}/.."
+DOWNLOAD_DIR="${TELECINE_DIR}/.editframe-downloads"
 mkdir -p "$DOWNLOAD_DIR"
 
 # Check if the file exists, if not, download it
-ELECTRON_BUILD_FILE="$DOWNLOAD_DIR/editframe-v32.1.2.zip"
+ELECTRON_VERSION="${1:-v40.1.0-dmabuf}"
+ELECTRON_BUILD_FILE="$DOWNLOAD_DIR/editframe-${ELECTRON_VERSION}.zip"
 
 if [ ! -f "$ELECTRON_BUILD_FILE" ]; then
-    echo "⚛️ Downloading Electron build..."
-    gcloud storage cp gs://editframe-electron-builds/editframe-v32.1.2.zip "$ELECTRON_BUILD_FILE"
-    echo "⚛️Download complete."
+    echo "Downloading Electron build (${ELECTRON_VERSION})..."
+    gcloud storage cp "gs://editframe-electron-builds/editframe-${ELECTRON_VERSION}.zip" "$ELECTRON_BUILD_FILE"
+    echo "Download complete."
 fi
+
+echo "$ELECTRON_BUILD_FILE"
