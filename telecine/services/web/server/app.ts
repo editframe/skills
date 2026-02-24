@@ -91,7 +91,9 @@ app.get("/healthz", (_req, res) => {
 
 app.use((req, res, next) => {
   const host = req.get("host") || "";
-  const protocol = req.protocol || "https";
+  // GCP load balancer terminates TLS and forwards plain HTTP, so req.protocol
+  // is always "http". Use X-Forwarded-Proto from the load balancer instead.
+  const protocol = req.get("x-forwarded-proto") || req.protocol || "https";
   const path = req.originalUrl || req.url || "";
 
   // Skip redirect for API routes (routes handled by other services never reach this middleware)
