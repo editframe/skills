@@ -136,13 +136,6 @@ const comparisonFeatures = [
     enterprise: true,
   },
   {
-    name: "48-hour response time",
-    free: false,
-    team: true,
-    cloud: true,
-    enterprise: true,
-  },
-  {
     name: "Priority support",
     free: false,
     team: false,
