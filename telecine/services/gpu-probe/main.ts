@@ -420,8 +420,10 @@ try {
     "--ozone-platform=headless",
     "--disable-setuid-sandbox",
     "--disable-seccomp-filter-sandbox",
+    "--enable-features=Vulkan,VulkanFromANGLE,UseSkiaRenderer",
     "--enable-logging",
-    "--v=1",
+    "--v=0",
+    "--vmodule=*/gpu_init/*=2,*/gpu_feature*=2,*/surface_factory*=2,*/native_pixmap*=2,*/headless*=2,*/offscreen*=2,*/shared_image*=2,*/compositor*=1",
     sharedTexScriptPath,
   ], {
     stdio: ["ignore", "pipe", "pipe"],
@@ -461,7 +463,18 @@ try {
           line.includes("GpuMemoryBuffer") || line.includes("ANGLE") ||
           line.includes("GPU_FEATURES") || line.includes("GPU_INFO") ||
           line.includes("gpu_compositing") || line.includes("CreateNativePixmap") ||
-          line.includes("GBM") || line.includes("gbm")) {
+          line.includes("GBM") || line.includes("gbm") ||
+          line.includes("gpu_init") || line.includes("GpuInit") ||
+          line.includes("Compositor") || line.includes("compositor") ||
+          line.includes("SharedImage") || line.includes("shared_image") ||
+          line.includes("gpu_feature") || line.includes("GpuFeature") ||
+          line.includes("vulkan") || line.includes("Vulkan") ||
+          line.includes("ContextResult") || line.includes("GpuChannel") ||
+          line.includes("offscreen") || line.includes("Offscreen") ||
+          line.includes("surface_factory") || line.includes("SurfaceFactory") ||
+          line.includes("Software") || line.includes("software") ||
+          line.includes("SwiftShader") || line.includes("UseSkia") ||
+          line.includes("disabled") || line.includes("blocklist")) {
         relevantLines.push(line);
       }
       if (line.includes("SHARED_TEX_DONE")) sharedTexDone = true;
