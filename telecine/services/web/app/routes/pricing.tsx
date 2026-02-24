@@ -7,7 +7,7 @@ import "~/styles/landing.css";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Cloud Pricing | Editframe" },
+    { title: "Pricing | Editframe" },
     {
       name: "description",
       content:

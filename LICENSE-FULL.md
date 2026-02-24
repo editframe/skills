@@ -50,13 +50,13 @@ A limited, non-exclusive, non-transferable, revocable license to use the Client-
 
 ### 2.2 Team Tier (4–10 Employees)
 
-Includes all Free Tier rights. Full Client-Side SDK use for any business purpose including production. Does not include Cloud Services. See [editframe.com/cloud](https://editframe.com/cloud) for pricing.
+Includes all Free Tier rights. Full Client-Side SDK use for any business purpose including production. Does not include Cloud Services. See [editframe.com/pricing](https://editframe.com/pricing) for pricing.
 
 ### 2.3 Cloud Tier (11–20 Employees, or Any Size Requiring Cloud)
 
 Required for organizations with 11–20 employees, or any organization using Cloud Services.
 
-Includes all Team Tier rights, plus Server-Side Rendering and Premium Player via API. Usage-based billing applies in addition to base subscription. See [editframe.com/cloud](https://editframe.com/cloud) for pricing.
+Includes all Team Tier rights, plus Server-Side Rendering and Premium Player via API. Usage-based billing applies in addition to base subscription. See [editframe.com/pricing](https://editframe.com/pricing) for pricing.
 
 ### 2.4 Enterprise (21+ Employees)
 

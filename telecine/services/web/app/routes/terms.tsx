@@ -113,7 +113,7 @@ export default function TermsPage() {
 
             <p>
               See{" "}
-              <a href="https://editframe.com/cloud">editframe.com/cloud</a> for
+              <a href="https://editframe.com/pricing">editframe.com/pricing</a> for
               current rates.
             </p>
 

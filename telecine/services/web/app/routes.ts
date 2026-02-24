@@ -21,7 +21,7 @@ const routes = [
   route("/with/animejs", "routes/with/animejs.tsx"),
   route("/terms", "routes/terms.tsx"),
   route("/privacy", "routes/privacy.tsx"),
-  route("/cloud", "routes/cloud.tsx"),
+  route("/pricing", "routes/pricing.tsx"),
   route("/docs", "routes/docs-redirect.ts"),
   route("/docs/*", "routes/docs-redirect.ts", { id: "routes/docs-redirect-wildcard" }),
   route("/guides/*", "routes/guides-redirect.ts"),

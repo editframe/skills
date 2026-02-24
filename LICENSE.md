@@ -47,7 +47,7 @@ All paid tiers include full SDK rights.
 
 Cloud Rendering & Player — parallel rendering and CDN streaming optimized for editing workflows — requires a Cloud Tier subscription regardless of company size.
 
-[View pricing →](https://editframe.com/cloud) · Enterprise: [hello@editframe.com](mailto:hello@editframe.com)
+[View pricing →](https://editframe.com/pricing) · Enterprise: [hello@editframe.com](mailto:hello@editframe.com)
 
 ---
 
