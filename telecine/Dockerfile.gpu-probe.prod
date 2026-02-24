@@ -99,7 +99,7 @@ RUN mkdir -p /usr/share/glvnd/egl_vendor.d && \
 
 # Vulkan ICD
 RUN mkdir -p /etc/vulkan/icd.d && \
-    printf '{"file_format_version":"1.0.0","ICD":{"library_path":"libEGL_nvidia.so.0","api_version":"1.3"}}' \
+    printf '{"file_format_version":"1.0.0","ICD":{"library_path":"libGLX_nvidia.so.0","api_version":"1.3.242"}}' \
     > /etc/vulkan/icd.d/nvidia_icd.json
 
 # Vulkan implicit layer

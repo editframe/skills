@@ -170,7 +170,9 @@ static int bpp_for_format(uint32_t format) {
 /* ---- GBM API implementation ---- */
 
 struct gbm_device *gbm_create_device(int fd) {
-    if (load_cuda() != 0) return NULL;
+    fprintf(stderr, "[libgbm_cuda] gbm_create_device(fd=%d) called\n", fd);
+    if (load_cuda() != 0) { fprintf(stderr, "[libgbm_cuda] CUDA load failed\n"); return NULL; }
+    fprintf(stderr, "[libgbm_cuda] CUDA loaded OK\n");
 
     struct gbm_device *dev = calloc(1, sizeof(*dev));
     if (!dev) return NULL;
@@ -178,13 +180,16 @@ struct gbm_device *gbm_create_device(int fd) {
 
     CUresult r;
     r = cu_init(0);
-    if (r != 0) { free(dev); return NULL; }
+    if (r != 0) { fprintf(stderr, "[libgbm_cuda] cuInit failed: %d\n", r); free(dev); return NULL; }
+    fprintf(stderr, "[libgbm_cuda] cuInit OK\n");
 
     r = cu_device_get(&dev->cuda_dev, 0);
-    if (r != 0) { free(dev); return NULL; }
+    if (r != 0) { fprintf(stderr, "[libgbm_cuda] cuDeviceGet failed: %d\n", r); free(dev); return NULL; }
+    fprintf(stderr, "[libgbm_cuda] cuDeviceGet OK (dev=%d)\n", dev->cuda_dev);
 
     r = cu_ctx_create(&dev->cuda_ctx, 0, dev->cuda_dev);
-    if (r != 0) { free(dev); return NULL; }
+    if (r != 0) { fprintf(stderr, "[libgbm_cuda] cuCtxCreate failed: %d\n", r); free(dev); return NULL; }
+    fprintf(stderr, "[libgbm_cuda] cuCtxCreate OK\n");
 
     CUmemAllocationProp prop;
     memset(&prop, 0, sizeof(prop));
@@ -194,10 +199,16 @@ struct gbm_device *gbm_create_device(int fd) {
     prop.location.id = dev->cuda_dev;
 
     r = cu_mem_get_granularity(&dev->granularity, &prop, CU_MEM_ALLOC_GRANULARITY_MINIMUM);
-    if (r != 0) { cu_ctx_destroy(dev->cuda_ctx); free(dev); return NULL; }
+    if (r != 0) { fprintf(stderr, "[libgbm_cuda] cuMemGetGranularity failed: %d\n", r); cu_ctx_destroy(dev->cuda_ctx); free(dev); return NULL; }
 
     dev->initialized = 1;
+    fprintf(stderr, "[libgbm_cuda] gbm_create_device OK (granularity=%zu)\n", dev->granularity);
     return dev;
+}
+
+const char *gbm_device_get_backend_name(struct gbm_device *dev) {
+    (void)dev;
+    return "cuda";
 }
 
 void gbm_device_destroy(struct gbm_device *dev) {
@@ -259,13 +270,29 @@ static struct gbm_bo *alloc_bo(struct gbm_device *dev,
     prop.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
     prop.location.id = dev->cuda_dev;
 
+    fprintf(stderr, "[libgbm_cuda] alloc_bo: %ux%u fmt=0x%x stride=%u raw=%zu aligned=%zu\n",
+            width, height, format, stride, raw_size, aligned);
+
     CUmemGenericAllocationHandle handle = 0;
     CUresult r = cu_mem_create(&handle, aligned, &prop, 0);
-    if (r != 0) return NULL;
+    if (r != 0) {
+        const char *name = NULL;
+        if (cu_get_error) cu_get_error(r, &name);
+        fprintf(stderr, "[libgbm_cuda] alloc_bo: cuMemCreate FAILED: %d (%s)\n", r, name ? name : "?");
+        return NULL;
+    }
 
     int fd = -1;
     r = cu_mem_export(&fd, handle, CU_MEM_HANDLE_TYPE_POSIX_FILE_DESCRIPTOR, 0);
-    if (r != 0) { cu_mem_release(handle); return NULL; }
+    if (r != 0) {
+        const char *name = NULL;
+        if (cu_get_error) cu_get_error(r, &name);
+        fprintf(stderr, "[libgbm_cuda] alloc_bo: cuMemExport FAILED: %d (%s)\n", r, name ? name : "?");
+        cu_mem_release(handle);
+        return NULL;
+    }
+
+    fprintf(stderr, "[libgbm_cuda] alloc_bo: OK fd=%d handle=%llu\n", fd, handle);
 
     struct gbm_bo *bo = calloc(1, sizeof(*bo));
     if (!bo) { close(fd); cu_mem_release(handle); return NULL; }

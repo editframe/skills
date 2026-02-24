@@ -67,14 +67,17 @@ pass("h264_nvenc encode works");
 // ---------------------------------------------------------------------------
 // 3. Electron offscreen capture → raw frames → ffmpeg h264_nvenc → MP4
 // ---------------------------------------------------------------------------
-step("3. Electron offscreen → h264_nvenc → MP4");
+step("3. Electron offscreen → encode benchmark (h264_nvenc vs libx264)");
 
-const WIDTH = 640;
-const HEIGHT = 480;
+const WIDTH = 1920;
+const HEIGHT = 1080;
 const FPS = 30;
-const DURATION_SEC = 3;
+const DURATION_SEC = 5;
 const TOTAL_FRAMES = FPS * DURATION_SEC;
 const OUTPUT_PATH = "/tmp/gpu-probe-output.mp4";
+const RAW_FRAMES_PATH = "/tmp/gpu-probe-raw.bgra";
+const OUTPUT_NVENC = "/tmp/gpu-probe-nvenc.mp4";
+const OUTPUT_X264 = "/tmp/gpu-probe-x264.mp4";
 
 // Electron script that renders a frame counter and emits raw BGRA via stdout
 const electronScript = `
@@ -132,28 +135,10 @@ const electronScriptPath = "/tmp/gpu-probe-electron.js";
 writeFileSync(electronScriptPath, electronScript);
 
 try {
-  // Spawn ffmpeg to receive raw BGRA frames on stdin
-  const ffmpeg = spawn("ffmpeg", [
-    "-y",
-    "-f", "rawvideo",
-    "-pixel_format", "bgra",
-    "-video_size", `${WIDTH}x${HEIGHT}`,
-    "-framerate", String(FPS),
-    "-i", "pipe:0",
-    "-c:v", "h264_nvenc",
-    "-preset", "p4",
-    "-profile:v", "main",
-    "-pix_fmt", "yuv420p",
-    "-movflags", "+faststart",
-    OUTPUT_PATH,
-  ], {
-    stdio: ["pipe", "pipe", "pipe"],
-  });
+  // Phase 1: Capture raw frames from GPU-rasterized Electron to a file
+  process.stdout.write(`Capturing ${TOTAL_FRAMES} frames at ${WIDTH}x${HEIGHT}...\n`);
+  const captureStart = Date.now();
 
-  let ffmpegStderr = "";
-  ffmpeg.stderr.on("data", (d: Buffer) => { ffmpegStderr += d.toString(); });
-
-  // Spawn Electron with GPU shims
   const electron = spawn("node_modules/.bin/electron", [
     "--no-sandbox",
     "--use-angle=vulkan",
@@ -180,107 +165,133 @@ try {
     },
   });
 
+  // Write raw frames to file for reuse
+  const { createWriteStream } = await import("node:fs");
+  const rawStream = createWriteStream(RAW_FRAMES_PATH);
+  electron.stdout.pipe(rawStream);
+
   let electronStderr = "";
   let framesDone = false;
-
-  // Pipe Electron stdout (raw frames) → ffmpeg stdin
-  electron.stdout.pipe(ffmpeg.stdin);
-
   electron.stderr.on("data", (d: Buffer) => {
     const s = d.toString();
     electronStderr += s;
-    if (s.includes("FRAMES_DONE")) {
-      framesDone = true;
-    }
+    if (s.includes("FRAMES_DONE")) framesDone = true;
   });
 
-  // Wait for both processes
-  const result = await new Promise<{ success: boolean; error?: string }>((resolve) => {
-    let electronDone = false;
-    let ffmpegDone = false;
-
-    const timeout = setTimeout(() => {
-      electron.kill();
-      ffmpeg.kill();
-      resolve({ success: false, error: "Timeout after 60s" });
-    }, 60_000);
-
-    electron.on("close", (code) => {
-      electronDone = true;
-      process.stdout.write(`Electron exited: ${code}\n`);
-      if (electronDone && ffmpegDone) {
-        clearTimeout(timeout);
-        resolve({ success: framesDone });
-      }
-    });
-
-    ffmpeg.on("close", (code) => {
-      ffmpegDone = true;
-      process.stdout.write(`FFmpeg exited: ${code}\n`);
-      if (electronDone && ffmpegDone) {
-        clearTimeout(timeout);
-        resolve({ success: framesDone && code === 0 });
-      }
-    });
-
-    electron.on("error", (err) => {
-      clearTimeout(timeout);
-      resolve({ success: false, error: `Electron error: ${err.message}` });
-    });
+  await new Promise<void>((resolve) => {
+    const timeout = setTimeout(() => { electron.kill(); resolve(); }, 120_000);
+    electron.on("close", () => { clearTimeout(timeout); resolve(); });
   });
 
-  // Log stderr summaries
-  const stderrLines = electronStderr.split("\n").filter((l: string) => l.includes("ERROR") || l.includes("FAIL") || l.includes("FRAMES_DONE"));
-  if (stderrLines.length > 0) {
-    process.stdout.write(`Electron stderr highlights:\n${stderrLines.join("\n")}\n`);
-  }
-  if (ffmpegStderr) {
-    // Show last 20 lines of ffmpeg output
-    const lines = ffmpegStderr.split("\n");
-    process.stdout.write(`FFmpeg output (last 20 lines):\n${lines.slice(-20).join("\n")}\n`);
-  }
+  const captureMs = Date.now() - captureStart;
+  const rawSize = existsSync(RAW_FRAMES_PATH) ? run(`stat -c%s ${RAW_FRAMES_PATH}`).trim() : "0";
+  const expectedSize = WIDTH * HEIGHT * 4 * TOTAL_FRAMES;
+  process.stdout.write(`Capture: ${captureMs}ms, raw=${rawSize} bytes (expected ${expectedSize})\n`);
+  process.stdout.write(`Capture FPS: ${(TOTAL_FRAMES / (captureMs / 1000)).toFixed(1)} fps\n`);
 
-  if (!result.success) {
-    fail(`Pipeline failed: ${result.error ?? "frames not completed"}`);
-    // Don't exit — continue to upload whatever we have
-  }
-
-  // Check output file
-  if (existsSync(OUTPUT_PATH)) {
-    const stat = run(`ls -la ${OUTPUT_PATH}`);
-    process.stdout.write(`Output: ${stat}`);
-    const probe = run(`ffmpeg -i ${OUTPUT_PATH} 2>&1 | head -20`);
-    process.stdout.write(`Probe: ${probe}`);
-    pass(`MP4 created at ${OUTPUT_PATH}`);
-
-    // Upload to GCS
-    step("4. Upload to GCS");
-    const ts = new Date().toISOString().replace(/[:.]/g, "-");
-    const gcsPath = `gs://telecine-dot-dev-data-4fedc83/gpu-probe/${ts}/output.mp4`;
-    const upload = spawnSync("gcloud", [
-      "storage", "cp", OUTPUT_PATH, gcsPath,
-      "--project=editframe",
-    ], { encoding: "utf8", timeout: 30_000 });
-    if (upload.status === 0) {
-      pass(`Uploaded to ${gcsPath}`);
-    } else {
-      process.stdout.write(`Upload failed: ${upload.stderr}\n`);
-      fail("GCS upload failed");
-    }
+  if (!framesDone || rawSize === "0") {
+    fail("Frame capture failed");
   } else {
-    fail("No output file produced");
+    pass(`Captured ${TOTAL_FRAMES} frames in ${captureMs}ms`);
   }
+
+  // Log electron errors
+  const stderrLines = electronStderr.split("\n").filter((l: string) =>
+    l.includes("ERROR") || l.includes("FAIL") || l.includes("FRAMES_DONE") || l.includes("ANGLE"));
+  if (stderrLines.length > 0) {
+    process.stdout.write(`Electron stderr highlights:\n${stderrLines.slice(0, 10).join("\n")}\n`);
+  }
+
+  // Phase 2: Encode with h264_nvenc
+  step("3a. Encode: h264_nvenc (GPU)");
+  const nvencStart = Date.now();
+  const nvencResult = spawnSync("ffmpeg", [
+    "-y", "-f", "rawvideo", "-pixel_format", "bgra",
+    "-video_size", `${WIDTH}x${HEIGHT}`, "-framerate", String(FPS),
+    "-i", RAW_FRAMES_PATH,
+    "-c:v", "h264_nvenc", "-preset", "p4", "-profile:v", "high",
+    "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+    OUTPUT_NVENC,
+  ], { encoding: "utf8", timeout: 120_000 });
+  const nvencMs = Date.now() - nvencStart;
+  const nvencSize = existsSync(OUTPUT_NVENC) ? run(`stat -c%s ${OUTPUT_NVENC}`).trim() : "0";
+  const nvencFps = (TOTAL_FRAMES / (nvencMs / 1000)).toFixed(1);
+
+  process.stdout.write(`h264_nvenc: ${nvencMs}ms (${nvencFps} fps), output=${nvencSize} bytes\n`);
+  if (nvencResult.status === 0) {
+    pass(`h264_nvenc: ${nvencMs}ms, ${nvencFps} fps, ${nvencSize} bytes`);
+  } else {
+    fail(`h264_nvenc failed: ${nvencResult.stderr?.slice(-500)}`);
+  }
+
+  // Phase 3: Encode with libx264 ultrafast
+  step("3b. Encode: libx264 ultrafast (CPU)");
+  const x264Start = Date.now();
+  const x264Result = spawnSync("ffmpeg", [
+    "-y", "-f", "rawvideo", "-pixel_format", "bgra",
+    "-video_size", `${WIDTH}x${HEIGHT}`, "-framerate", String(FPS),
+    "-i", RAW_FRAMES_PATH,
+    "-c:v", "libx264", "-preset", "ultrafast", "-tune", "zerolatency",
+    "-profile:v", "high", "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+    OUTPUT_X264,
+  ], { encoding: "utf8", timeout: 120_000 });
+  const x264Ms = Date.now() - x264Start;
+  const x264Size = existsSync(OUTPUT_X264) ? run(`stat -c%s ${OUTPUT_X264}`).trim() : "0";
+  const x264Fps = (TOTAL_FRAMES / (x264Ms / 1000)).toFixed(1);
+
+  process.stdout.write(`libx264: ${x264Ms}ms (${x264Fps} fps), output=${x264Size} bytes\n`);
+  if (x264Result.status === 0) {
+    pass(`libx264: ${x264Ms}ms, ${x264Fps} fps, ${x264Size} bytes`);
+  } else {
+    fail(`libx264 failed: ${x264Result.stderr?.slice(-500)}`);
+  }
+
+  // Phase 4: Encode with libx264 superfast (slightly better quality than ultrafast)
+  step("3c. Encode: libx264 superfast (CPU)");
+  const x264sfStart = Date.now();
+  const x264sfResult = spawnSync("ffmpeg", [
+    "-y", "-f", "rawvideo", "-pixel_format", "bgra",
+    "-video_size", `${WIDTH}x${HEIGHT}`, "-framerate", String(FPS),
+    "-i", RAW_FRAMES_PATH,
+    "-c:v", "libx264", "-preset", "superfast",
+    "-profile:v", "high", "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+    OUTPUT_X264,
+  ], { encoding: "utf8", timeout: 120_000 });
+  const x264sfMs = Date.now() - x264sfStart;
+  const x264sfSize = existsSync(OUTPUT_X264) ? run(`stat -c%s ${OUTPUT_X264}`).trim() : "0";
+  const x264sfFps = (TOTAL_FRAMES / (x264sfMs / 1000)).toFixed(1);
+
+  process.stdout.write(`libx264 superfast: ${x264sfMs}ms (${x264sfFps} fps), output=${x264sfSize} bytes\n`);
+  if (x264sfResult.status === 0) {
+    pass(`libx264 superfast: ${x264sfMs}ms, ${x264sfFps} fps, ${x264sfSize} bytes`);
+  } else {
+    fail(`libx264 superfast failed: ${x264sfResult.stderr?.slice(-500)}`);
+  }
+
+  // Summary
+  step("3d. Encode benchmark summary");
+  process.stdout.write(`\n=== ENCODE BENCHMARK (${WIDTH}x${HEIGHT} @ ${FPS}fps, ${TOTAL_FRAMES} frames) ===\n`);
+  process.stdout.write(`Capture (GPU raster → toBitmap):  ${captureMs}ms  (${(TOTAL_FRAMES / (captureMs / 1000)).toFixed(1)} fps)\n`);
+  process.stdout.write(`h264_nvenc p4:                    ${nvencMs}ms  (${nvencFps} fps)  ${nvencSize} bytes\n`);
+  process.stdout.write(`libx264 ultrafast:                ${x264Ms}ms  (${x264Fps} fps)  ${x264Size} bytes\n`);
+  process.stdout.write(`libx264 superfast:                ${x264sfMs}ms  (${x264sfFps} fps)  ${x264sfSize} bytes\n`);
+  process.stdout.write(`===\n\n`);
+
 } catch (err) {
   fail(`Pipeline threw: ${err instanceof Error ? err.stack ?? err.message : err}`);
 } finally {
   try { unlinkSync(electronScriptPath); } catch {}
   try { unlinkSync(OUTPUT_PATH); } catch {}
+  try { unlinkSync(RAW_FRAMES_PATH); } catch {}
+  try { unlinkSync(OUTPUT_NVENC); } catch {}
+  try { unlinkSync(OUTPUT_X264); } catch {}
 }
 
 // ---------------------------------------------------------------------------
-// 5. Shared texture DMA-BUF delivery test (ozone-wayland + weston headless + libgbm_cuda)
+// 5. Shared texture DMA-BUF delivery test — SKIPPED for benchmark run
 // ---------------------------------------------------------------------------
-step("5. Shared texture DMA-BUF delivery (ozone-wayland + useSharedTexture)");
+if (false) {
+step("5. Shared texture DMA-BUF (ozone-wayland + ANGLE-Vulkan + VulkanFromANGLE + useSharedTexture)");
 
 const sharedTexScript = `
 const { app, BrowserWindow } = require('electron');
@@ -288,7 +299,13 @@ const { app, BrowserWindow } = require('electron');
 const log = (msg) => process.stderr.write('[shared-tex] ' + msg + '\\n');
 
 app.whenReady().then(async () => {
-  log('app ready, creating BrowserWindow with useSharedTexture');
+  log('app ready');
+
+  // Dump GPU feature status
+  const gpuFeatures = app.getGPUFeatureStatus();
+  log('GPU_FEATURES: ' + JSON.stringify(gpuFeatures));
+
+  log('creating BrowserWindow with useSharedTexture');
 
   let win;
   try {
@@ -338,9 +355,16 @@ app.whenReady().then(async () => {
     info.imageEmpty = image.isEmpty();
     info.imageSize = image.getSize();
 
+    // Enumerate all event properties for diagnostics
+    info.eventKeys = Object.keys(event);
+    info.eventProto = Object.getOwnPropertyNames(Object.getPrototypeOf(event));
+
     if (event.texture) {
       const tex = event.texture;
+      info.textureKeys = Object.keys(tex);
+
       const ti = tex.textureInfo || {};
+      info.textureInfoKeys = Object.keys(ti);
       info.widgetType = ti.widgetType;
       info.pixelFormat = ti.pixelFormat;
       info.codedSize = ti.codedSize;
@@ -353,9 +377,11 @@ app.whenReady().then(async () => {
       info.hasNativePixmap = !!handle.nativePixmap;
       info.hasNtHandle = !!handle.ntHandle;
       info.hasIoSurface = !!handle.ioSurface;
+      info.hasSharedMemory = !!handle.sharedMemory;
 
       if (handle.nativePixmap) {
         const np = handle.nativePixmap;
+        info.nativePixmapKeys = Object.keys(np);
         info.modifier = np.modifier;
         info.supportsZeroCopy = np.supportsZeroCopyWebGpuImport;
         info.planeCount = np.planes ? np.planes.length : 0;
@@ -370,7 +396,15 @@ app.whenReady().then(async () => {
         }
       }
 
+      if (handle.sharedMemory) {
+        info.sharedMemoryKeys = Object.keys(handle.sharedMemory);
+      }
+
       try { tex.release(); } catch (e) { info.releaseError = e.message; }
+    } else {
+      // No texture — try to get bitmap info for comparison
+      info.bitmapSize = image.getBitmap ? image.getBitmap().length : 'no getBitmap';
+      info.toPNGSize = image.toPNG ? image.toPNG().length : 'no toPNG';
     }
 
     log('FRAME ' + frameCount + ': ' + JSON.stringify(info));
@@ -385,13 +419,19 @@ app.whenReady().then(async () => {
 });
 
 app.on('gpu-info-update', () => {
-  const gpuInfo = app.getGPUInfo('complete').then(info => {
+  app.getGPUInfo('complete').then(info => {
     log('GPU_INFO: ' + JSON.stringify({
       vendor: info?.gpuDevice?.[0]?.vendorId,
       device: info?.gpuDevice?.[0]?.deviceId,
       driver: info?.gpuDevice?.[0]?.driverVersion,
       glRenderer: info?.auxAttributes?.glRenderer,
       glVendor: info?.auxAttributes?.glVendor,
+      glVersion: info?.auxAttributes?.glVersion,
+      gpuCompositing: info?.featureStatus?.gpu_compositing,
+      rasterization: info?.featureStatus?.rasterization,
+      opengl: info?.featureStatus?.opengl,
+      vulkan: info?.featureStatus?.vulkan,
+      skiaGraphite: info?.featureStatus?.skia_graphite,
     }));
   }).catch(() => {});
 });
@@ -403,12 +443,13 @@ writeFileSync(sharedTexScriptPath, sharedTexScript);
 // Start headless weston compositor for wayland platform support
 const XDG_RUNTIME_DIR = "/tmp/xdg-runtime";
 const WAYLAND_DISPLAY = "wayland-gpu-probe";
-run(`mkdir -p ${XDG_RUNTIME_DIR}`);
+run(`mkdir -p ${XDG_RUNTIME_DIR} && chmod 0700 ${XDG_RUNTIME_DIR}`);
 const weston = spawn("weston", [
-  "--backend=headless",
+  "--backend=headless-backend.so",
   `--socket=${WAYLAND_DISPLAY}`,
   "--width=640",
   "--height=480",
+  "--use-pixman",
   "--no-config",
 ], {
   stdio: ["ignore", "pipe", "pipe"],
@@ -443,24 +484,38 @@ await new Promise<void>((resolve) => {
 const westonReady = existsSync(`${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}`);
 process.stdout.write(`Weston headless: ${westonReady ? "ready" : "FAILED to start"}\n`);
 if (westonStderr) {
-  const lines = westonStderr.split("\n").slice(0, 20);
-  process.stdout.write(`Weston output (first 20 lines):\n${lines.join("\n")}\n`);
+  const lines = westonStderr.split("\n").slice(0, 40);
+  process.stdout.write(`Weston output (first 40 lines):\n${lines.join("\n")}\n`);
 }
+// List XDG_RUNTIME_DIR contents
+process.stdout.write(`XDG_RUNTIME_DIR contents: ${run(`ls -la ${XDG_RUNTIME_DIR}/`)}\n`);
 
 try {
+  // Config: ozone-wayland + ANGLE Vulkan + VulkanFromANGLE (shared VkInstance)
+  // - ANGLE uses NVIDIA Vulkan for hardware WebGL/Canvas rendering
+  // - VulkanFromANGLE makes Skia reuse ANGLE's VkInstance instead of creating
+  //   a second one (which crashes because NVIDIA's ICD probes wayland env)
+  // - GBM device from libgbm_cuda.so.1 provides native pixmaps
+  // - SupportsNativePixmaps() checks GBM device + not-software-GL → should be true
   const sharedTexElectron = spawn("node_modules/.bin/electron", [
     "--no-sandbox",
-    "--use-angle=vulkan",
     "--enable-gpu-rasterization",
     "--enable-zero-copy",
     "--ignore-gpu-blocklist",
     "--disable-gpu-sandbox",
-    "--disable-vulkan-surface",
     "--ozone-platform=wayland",
+    "--render-node-override=/dev/dri/renderD128",
     "--disable-setuid-sandbox",
     "--disable-seccomp-filter-sandbox",
+    "--disable-accelerated-video-decode",
+    "--disable-accelerated-video-encode",
+    "--use-angle=vulkan",
+    "--disable-vulkan-surface",
+    "--enable-features=VulkanFromANGLE,Vulkan",
+    "--disable-features=VaapiVideoDecoder,VaapiVideoEncoder,VaapiVideoDecodeLinuxGL,UseChromeOSDirectVideoDecoder",
     "--enable-logging",
     "--v=1",
+    "--vmodule=*/gpu/*=2,*/viz/*=2,*/ozone/*=2,*/gl/*=2,*/gbm/*=2,*/native_pixmap/*=2,*/shared_image/*=2,*/vulkan/*=2,*/wayland/*=2,*/buffer/*=2,*/offscreen/*=2,*/frame_sink/*=2",
     sharedTexScriptPath,
   ], {
     stdio: ["ignore", "pipe", "pipe"],
@@ -474,6 +529,7 @@ try {
       VK_ICD_FILENAMES: "/etc/vulkan/icd.d/nvidia_icd.json",
       DISABLE_LAYER_NV_OPTIMUS_1: "1",
       VK_LOADER_DEBUG: "error",
+      __EGL_VENDOR_LIBRARY_FILENAMES: "/usr/share/glvnd/egl_vendor.d/10_nvidia.json",
       LD_PRELOAD: [
         "/usr/lib/x86_64-linux-gnu/fake_drm.so",
         "/usr/lib/x86_64-linux-gnu/fake_sysfs_access.so",
@@ -481,15 +537,58 @@ try {
     },
   });
 
-  let sharedTexStderr = "";
-  let sharedTexStdout = "";
+  // Only keep relevant lines to avoid OOM on huge stderr
+  const relevantLines: string[] = [];
+  const tailLines: string[] = [];
+  const MAX_TAIL = 50;
+  let totalLines = 0;
+  let sharedTexDone = false;
+  let pendingChunk = "";
 
   sharedTexElectron.stderr.on("data", (d: Buffer) => {
-    sharedTexStderr += d.toString();
+    const text = pendingChunk + d.toString();
+    const lines = text.split("\n");
+    pendingChunk = lines.pop() ?? "";
+    for (const line of lines) {
+      totalLines++;
+      // Keep lines from our shims, our test script, errors, or crash info
+      if (line.includes("[shared-tex]") || line.includes("[fake_drm]") ||
+          line.includes("[libgbm_cuda]") || line.includes("ERROR:") ||
+          line.includes("FATAL") || line.includes("Check failed") ||
+          line.includes("SIGSEGV") || line.includes("SHARED_TEX_DONE") ||
+          line.includes("gbm") || line.includes("GBM") ||
+          line.includes("native_pixmap") || line.includes("NativePixmap") ||
+          line.includes("SharedImage") || line.includes("GpuMemoryBuffer") ||
+          line.includes("ozone") || line.includes("wayland") ||
+          line.includes("vulkan") || line.includes("Vulkan") ||
+          line.includes("vk_loader") || line.includes("ANGLE") ||
+          line.includes("EGL") || line.includes("egl") ||
+          line.includes("GL_") || line.includes("context") ||
+          line.includes("pixmap") || line.includes("Pixmap") ||
+          line.includes("gpu_init") || line.includes("GpuInit") ||
+          line.includes("shared_image") || line.includes("ContextResult") ||
+          line.includes("supports_native") || line.includes("gpu_feature") ||
+          line.includes("gl_surface") || line.includes("GLSurface") ||
+          line.includes("SupportsNativePixmaps") || line.includes("BufferManager") ||
+          line.includes("buffer_manager") || line.includes("surface_factory") ||
+          line.includes("SurfaceFactory") || line.includes("WaylandSurface") ||
+          line.includes("OffscreenCanvas") || line.includes("offscreen") ||
+          line.includes("frame_sink") || line.includes("FrameSink") ||
+          line.includes("frame_pool") || line.includes("FramePool") ||
+          line.includes("CreateCommandBuffer") || line.includes("compositor") ||
+          line.includes("Compositor") || line.includes("software") ||
+          line.includes("Software") || line.includes("SwiftShader") ||
+          line.includes("GPU_FEATURES") || line.includes("GPU_INFO") ||
+          line.includes("gpu_compositing") || line.includes("GpuCompositing")) {
+        relevantLines.push(line);
+      }
+      if (line.includes("SHARED_TEX_DONE")) sharedTexDone = true;
+      tailLines.push(line);
+      if (tailLines.length > MAX_TAIL) tailLines.shift();
+    }
   });
-  sharedTexElectron.stdout.on("data", (d: Buffer) => {
-    sharedTexStdout += d.toString();
-  });
+
+  sharedTexElectron.stdout.on("data", () => {}); // drain
 
   const sharedTexResult = await new Promise<{ success: boolean; error?: string }>((resolve) => {
     const timeout = setTimeout(() => {
@@ -499,8 +598,7 @@ try {
 
     sharedTexElectron.on("close", (code) => {
       clearTimeout(timeout);
-      const done = sharedTexStderr.includes("SHARED_TEX_DONE");
-      resolve({ success: done, error: done ? undefined : `exit ${code}` });
+      resolve({ success: sharedTexDone, error: sharedTexDone ? undefined : `exit ${code}` });
     });
 
     sharedTexElectron.on("error", (err) => {
@@ -509,31 +607,18 @@ try {
     });
   });
 
-  // Print all shared-tex log lines from stderr
-  const sharedTexLines = sharedTexStderr.split("\n").filter((l: string) =>
-    l.includes("[shared-tex]") || l.includes("ERROR") || l.includes("FATAL") ||
-    l.includes("Check failed") || l.includes("gbm") || l.includes("GBM") ||
-    l.includes("drm") || l.includes("DRM") || l.includes("dri") ||
-    l.includes("ozone") || l.includes("Ozone") || l.includes("pixmap") ||
-    l.includes("native_pixmap") || l.includes("NativePixmap") ||
-    l.includes("SharedImage") || l.includes("shared_image") ||
-    l.includes("GpuMemoryBuffer") || l.includes("gpu_memory_buffer")
-  );
-  process.stdout.write(`Shared texture stderr (${sharedTexLines.length} relevant lines):\n`);
-  for (const line of sharedTexLines.slice(0, 100)) {
+  process.stdout.write(`\nShared texture stderr: ${totalLines} total lines, ${relevantLines.length} relevant\n`);
+  process.stdout.write(`\nRelevant lines:\n`);
+  for (const line of relevantLines.slice(0, 800)) {
     process.stdout.write(`  ${line}\n`);
   }
-
-  // Also dump the last 30 lines of full stderr for context
-  const allStderrLines = sharedTexStderr.split("\n");
-  process.stdout.write(`\nFull stderr tail (last 30 lines of ${allStderrLines.length}):\n`);
-  for (const line of allStderrLines.slice(-30)) {
+  process.stdout.write(`\nTail (last ${tailLines.length} lines):\n`);
+  for (const line of tailLines) {
     process.stdout.write(`  ${line}\n`);
   }
 
   if (sharedTexResult.success) {
-    // Check if any frame had real DMA-BUF fds
-    const frameLines = sharedTexStderr.split("\n").filter((l: string) => l.includes("FRAME "));
+    const frameLines = relevantLines.filter((l: string) => l.includes("FRAME "));
     const hasDmaBuf = frameLines.some((l: string) => {
       try {
         const json = l.substring(l.indexOf("{"));
@@ -557,6 +642,7 @@ try {
   try { weston.kill(); } catch {}
   try { unlinkSync(sharedTexScriptPath); } catch {}
 }
+} // end if(false) — skip step 5
 
 // ---------------------------------------------------------------------------
 process.stdout.write("\n[gpu-probe] Done.\n");

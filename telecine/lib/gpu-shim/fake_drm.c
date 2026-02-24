@@ -165,6 +165,7 @@ int open(const char *pathname, int flags, ...) {
         int fd = real_open("/dev/null", flags & ~O_CREAT, mode);
         if (fd >= 0) {
             add_fake_fd(fd);
+            fprintf(stderr, "[fake_drm] open(%s) -> fake fd %d\n", pathname, fd);
         }
         return fd;
     }
@@ -321,73 +322,100 @@ typedef DIR* (*opendir_fn)(const char*);
 typedef struct dirent* (*readdir_fn)(DIR*);
 typedef int (*closedir_fn)(DIR*);
 
-/* Fake DIR handle for /dev/dri enumeration */
-#define FAKE_DRI_DIR_SENTINEL ((DIR*)(void*)0xDEAD0001)
+/* Track the real DIR* we hand back for /dev/dri, so we can intercept reads */
+static DIR *fake_dri_dirp = NULL;
 static int fake_dri_dir_pos = 0;
 
 DIR *opendir(const char *name) {
     static opendir_fn real_opendir = NULL;
     if (!real_opendir) real_opendir = (opendir_fn)dlsym(RTLD_NEXT, "opendir");
     if (name && strcmp(name, "/dev/dri") == 0) {
-        fake_dri_dir_pos = 0;
-        return FAKE_DRI_DIR_SENTINEL;
+        /* Open a real directory so the DIR* is valid glibc memory.
+           We intercept readdir to return fake entries. */
+        DIR *d = real_opendir("/tmp");
+        if (d) {
+            fake_dri_dirp = d;
+            fake_dri_dir_pos = 0;
+            fprintf(stderr, "[fake_drm] opendir(/dev/dri) -> real DIR* %p (backed by /tmp)\n", (void*)d);
+        }
+        return d;
     }
     return real_opendir(name);
+}
+
+/* Fake dirent entry builder — works for both readdir and readdir64 since
+   struct dirent and struct dirent64 have the same layout on x86_64 glibc */
+static struct dirent *fake_readdir_entry(void) {
+    static struct dirent entries[4];
+    if (fake_dri_dir_pos == 0) {
+        fake_dri_dir_pos++;
+        memset(&entries[0], 0, sizeof(struct dirent));
+        strcpy(entries[0].d_name, ".");
+        entries[0].d_type = DT_DIR;
+        entries[0].d_ino = 1;
+        entries[0].d_reclen = sizeof(struct dirent);
+        return &entries[0];
+    }
+    if (fake_dri_dir_pos == 1) {
+        fake_dri_dir_pos++;
+        memset(&entries[1], 0, sizeof(struct dirent));
+        strcpy(entries[1].d_name, "..");
+        entries[1].d_type = DT_DIR;
+        entries[1].d_ino = 2;
+        entries[1].d_reclen = sizeof(struct dirent);
+        return &entries[1];
+    }
+    if (fake_dri_dir_pos == 2) {
+        fake_dri_dir_pos++;
+        memset(&entries[2], 0, sizeof(struct dirent));
+        strcpy(entries[2].d_name, "renderD128");
+        entries[2].d_type = DT_CHR;
+        entries[2].d_ino = 3;
+        entries[2].d_reclen = sizeof(struct dirent);
+        return &entries[2];
+    }
+    if (fake_dri_dir_pos == 3) {
+        fake_dri_dir_pos++;
+        memset(&entries[3], 0, sizeof(struct dirent));
+        strcpy(entries[3].d_name, "card0");
+        entries[3].d_type = DT_CHR;
+        entries[3].d_ino = 4;
+        entries[3].d_reclen = sizeof(struct dirent);
+        return &entries[3];
+    }
+    return NULL;
 }
 
 struct dirent *readdir(DIR *dirp) {
     static readdir_fn real_readdir = NULL;
     if (!real_readdir) real_readdir = (readdir_fn)dlsym(RTLD_NEXT, "readdir");
-    if (dirp == FAKE_DRI_DIR_SENTINEL) {
-        static struct dirent entries[4];
-        if (fake_dri_dir_pos == 0) {
-            fake_dri_dir_pos++;
-            memset(&entries[0], 0, sizeof(struct dirent));
-            strcpy(entries[0].d_name, ".");
-            entries[0].d_type = DT_DIR;
-            return &entries[0];
-        }
-        if (fake_dri_dir_pos == 1) {
-            fake_dri_dir_pos++;
-            memset(&entries[1], 0, sizeof(struct dirent));
-            strcpy(entries[1].d_name, "..");
-            entries[1].d_type = DT_DIR;
-            return &entries[1];
-        }
-        if (fake_dri_dir_pos == 2) {
-            fake_dri_dir_pos++;
-            memset(&entries[2], 0, sizeof(struct dirent));
-            strcpy(entries[2].d_name, "renderD128");
-            entries[2].d_type = DT_CHR;
-            return &entries[2];
-        }
-        if (fake_dri_dir_pos == 3) {
-            fake_dri_dir_pos++;
-            memset(&entries[3], 0, sizeof(struct dirent));
-            strcpy(entries[3].d_name, "card0");
-            entries[3].d_type = DT_CHR;
-            return &entries[3];
-        }
-        return NULL;
+    if (fake_dri_dirp && dirp == fake_dri_dirp) {
+        return fake_readdir_entry();
     }
     return real_readdir(dirp);
+}
+
+/* readdir64 — returns struct dirent64* but on x86_64 glibc the layout
+   is identical to struct dirent, so we can safely cast our fake entries */
+struct dirent64 *readdir64(DIR *dirp) {
+    typedef struct dirent64* (*readdir64_fn)(DIR*);
+    static readdir64_fn real_readdir64 = NULL;
+    if (!real_readdir64) real_readdir64 = (readdir64_fn)dlsym(RTLD_NEXT, "readdir64");
+    if (fake_dri_dirp && dirp == fake_dri_dirp) {
+        return (struct dirent64*)fake_readdir_entry();
+    }
+    return real_readdir64(dirp);
 }
 
 int closedir(DIR *dirp) {
     static closedir_fn real_closedir = NULL;
     if (!real_closedir) real_closedir = (closedir_fn)dlsym(RTLD_NEXT, "closedir");
-    if (dirp == FAKE_DRI_DIR_SENTINEL) {
+    if (fake_dri_dirp && dirp == fake_dri_dirp) {
+        fprintf(stderr, "[fake_drm] closedir(/dev/dri)\n");
+        fake_dri_dirp = NULL;
         fake_dri_dir_pos = 0;
-        return 0;
     }
     return real_closedir(dirp);
-}
-
-int dirfd(DIR *dirp) {
-    static int (*real_dirfd)(DIR*) = NULL;
-    if (!real_dirfd) real_dirfd = dlsym(RTLD_NEXT, "dirfd");
-    if (dirp == FAKE_DRI_DIR_SENTINEL) return -1;
-    return real_dirfd(dirp);
 }
 
 /* Intercept access() to make /dev/dri/renderD128 appear to exist */
@@ -504,4 +532,156 @@ int ioctl(int fd, unsigned long request, ...) {
 
     /* Default: return success for unknown DRM ioctls */
     return 0;
+}
+
+/* ---------- Intercept drmGetDevices2/drmGetDevices ---------- */
+
+/*
+ * drmDevice struct layout from libdrm (xf86drm.h).
+ * drmFreeDevice() just calls free() on the pointer, so we must allocate
+ * the entire device (struct + nodes array + path strings) in one block.
+ */
+
+#define DRM_NODE_PRIMARY 0
+#define DRM_NODE_RENDER  2
+#define DRM_NODE_MAX     3
+#define DRM_BUS_PCI      0
+
+typedef struct _drmPciBusInfo {
+    uint16_t domain;
+    uint8_t bus;
+    uint8_t dev;
+    uint8_t func;
+} drmPciBusInfo;
+
+typedef struct _drmPciDeviceInfo {
+    uint16_t vendor_id;
+    uint16_t device_id;
+    uint16_t subvendor_id;
+    uint16_t subdevice_id;
+    uint8_t revision_id;
+} drmPciDeviceInfo;
+
+typedef struct _drmDevice {
+    char **nodes;
+    int available_nodes;
+    int bustype;
+    union { drmPciBusInfo *pci; void *_pad[4]; } businfo;
+    union { drmPciDeviceInfo *pci; void *_pad[4]; } deviceinfo;
+} drmDevice, *drmDevicePtr;
+
+/* Fake NVIDIA L4 PCI device: 0000:03:00.0, vendor 0x10de, device 0x27b8 */
+static drmDevicePtr make_fake_device(void) {
+    /* Single allocation block:
+     *   drmDevice struct
+     *   char* nodes[DRM_NODE_MAX]
+     *   drmPciBusInfo
+     *   drmPciDeviceInfo
+     *   char card_path[] = "/dev/dri/card0\0"
+     *   char render_path[] = "/dev/dri/renderD128\0"
+     */
+    const char *card_path = "/dev/dri/card0";
+    const char *render_path = "/dev/dri/renderD128";
+    size_t card_len = strlen(card_path) + 1;
+    size_t render_len = strlen(render_path) + 1;
+
+    size_t total = sizeof(drmDevice)
+                 + sizeof(char*) * DRM_NODE_MAX
+                 + sizeof(drmPciBusInfo)
+                 + sizeof(drmPciDeviceInfo)
+                 + card_len
+                 + render_len;
+
+    char *block = calloc(1, total);
+    if (!block) return NULL;
+
+    drmDevice *dev = (drmDevice*)block;
+    char *ptr = block + sizeof(drmDevice);
+
+    /* nodes array */
+    dev->nodes = (char**)ptr;
+    ptr += sizeof(char*) * DRM_NODE_MAX;
+
+    /* PCI bus info */
+    drmPciBusInfo *bus = (drmPciBusInfo*)ptr;
+    ptr += sizeof(drmPciBusInfo);
+    bus->domain = 0;
+    bus->bus = 3;
+    bus->dev = 0;
+    bus->func = 0;
+
+    /* PCI device info */
+    drmPciDeviceInfo *info = (drmPciDeviceInfo*)ptr;
+    ptr += sizeof(drmPciDeviceInfo);
+    info->vendor_id = 0x10de;    /* NVIDIA */
+    info->device_id = 0x27b8;    /* L4 */
+    info->subvendor_id = 0x10de;
+    info->subdevice_id = 0x16a1;
+    info->revision_id = 0xa1;
+
+    /* Path strings */
+    char *card_str = ptr;
+    memcpy(card_str, card_path, card_len);
+    ptr += card_len;
+
+    char *render_str = ptr;
+    memcpy(render_str, render_path, render_len);
+
+    /* Wire up the device */
+    dev->nodes[DRM_NODE_PRIMARY] = card_str;
+    dev->nodes[DRM_NODE_RENDER] = render_str;
+    dev->available_nodes = (1 << DRM_NODE_PRIMARY) | (1 << DRM_NODE_RENDER);
+    dev->bustype = DRM_BUS_PCI;
+    dev->businfo.pci = bus;
+    dev->deviceinfo.pci = info;
+
+    return dev;
+}
+
+/*
+ * drmGetDevices2(flags, devices[], max_devices)
+ *   devices == NULL → return count
+ *   devices != NULL → fill array, return count stored
+ */
+int drmGetDevices2(uint32_t flags, drmDevicePtr devices[], int max_devices) {
+    (void)flags;
+    fprintf(stderr, "[fake_drm] drmGetDevices2(flags=%u, devices=%p, max=%d)\n",
+            flags, (void*)devices, max_devices);
+    if (!devices) return 1; /* one device available */
+    if (max_devices < 1) return 0;
+
+    devices[0] = make_fake_device();
+    if (!devices[0]) return -12; /* -ENOMEM */
+    return 1;
+}
+
+int drmGetDevices(drmDevicePtr devices[], int max_devices) {
+    return drmGetDevices2(1 /* DRM_DEVICE_GET_PCI_REVISION */, devices, max_devices);
+}
+
+/* drmGetDevice2(fd, flags, device) — look up device for an open DRM fd */
+int drmGetDevice2(int fd, uint32_t flags, drmDevicePtr *device) {
+    (void)flags;
+    if (!device) return -22; /* -EINVAL */
+    if (!is_fake_fd(fd)) {
+        /* Not our fd — try the real function if available */
+        static int (*real_fn)(int, uint32_t, drmDevicePtr*) = NULL;
+        if (!real_fn) real_fn = dlsym(RTLD_NEXT, "drmGetDevice2");
+        if (real_fn) return real_fn(fd, flags, device);
+        return -19; /* -ENODEV */
+    }
+    fprintf(stderr, "[fake_drm] drmGetDevice2(fd=%d)\n", fd);
+    *device = make_fake_device();
+    return *device ? 0 : -12;
+}
+
+/* drmFreeDevice/drmFreeDevices — our structs are single calloc blocks */
+void drmFreeDevice(drmDevicePtr *device) {
+    if (device && *device) { free(*device); *device = NULL; }
+}
+
+void drmFreeDevices(drmDevicePtr devices[], int count) {
+    for (int i = 0; i < count; i++) {
+        if (devices[i]) { free(devices[i]); devices[i] = NULL; }
+    }
 }
