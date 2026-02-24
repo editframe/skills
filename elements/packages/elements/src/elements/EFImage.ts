@@ -133,6 +133,11 @@ export class EFImage
     if (this.isDirectUrl(this.src)) {
       return this.src;
     }
+    // Without a telecine server, resolve the src directly against the document
+    // origin rather than routing through the assets proxy.
+    if (!this.apiHost) {
+      return new URL(this.src, document.location.href).href;
+    }
     // Normalize local paths: remove leading slashes (remote URLs are passed as-is)
     const normalizedSrc = this.src.startsWith("/")
       ? this.src.replace(/^\/+/, "")

@@ -87,28 +87,57 @@ describe("EFImage", () => {
   });
 
   describe("assetPath routing", () => {
-    test("routes https src through assets image endpoint", () => {
+    test("routes https src through assets image endpoint when apiHost is set", () => {
       const image = document.createElement("ef-image");
+      const preview = document.createElement("ef-preview");
+      preview.appendChild(image);
+      preview.apiHost = "https://api.test.com";
+      document.body.appendChild(preview);
       image.src = "https://example.com/image.jpg";
       expect(image.assetPath()).toBe(
         "/api/v1/assets/image?src=https%3A%2F%2Fexample.com%2Fimage.jpg",
       );
+      preview.remove();
     });
 
-    test("routes http src through assets image endpoint", () => {
+    test("routes http src through assets image endpoint when apiHost is set", () => {
       const image = document.createElement("ef-image");
+      const preview = document.createElement("ef-preview");
+      preview.appendChild(image);
+      preview.apiHost = "https://api.test.com";
+      document.body.appendChild(preview);
       image.src = "http://example.com/image.jpg";
       expect(image.assetPath()).toBe(
         "/api/v1/assets/image?src=http%3A%2F%2Fexample.com%2Fimage.jpg",
       );
+      preview.remove();
     });
 
-    test("routes local file src through assets image endpoint", () => {
+    test("routes local file src through assets image endpoint when apiHost is set", () => {
       const image = document.createElement("ef-image");
+      const preview = document.createElement("ef-preview");
+      preview.appendChild(image);
+      preview.apiHost = "https://api.test.com";
+      document.body.appendChild(preview);
       image.src = "local-image.jpg";
       expect(image.assetPath()).toBe(
         "/api/v1/assets/image?src=local-image.jpg",
       );
+      preview.remove();
+    });
+
+    test("resolves src directly when no apiHost is set", () => {
+      const image = document.createElement("ef-image");
+      image.src = "local-image.jpg";
+      expect(image.assetPath()).toBe(
+        new URL("local-image.jpg", document.location.href).href,
+      );
+    });
+
+    test("resolves absolute src directly when no apiHost is set", () => {
+      const image = document.createElement("ef-image");
+      image.src = "https://example.com/image.jpg";
+      expect(image.assetPath()).toBe("https://example.com/image.jpg");
     });
 
     test("file-id takes priority over src", () => {
@@ -125,13 +154,18 @@ describe("EFImage", () => {
       preview.remove();
     });
 
-    test("cross-origin src routes through assets endpoint to prevent canvas CORS taint", () => {
+    test("cross-origin src routes through assets endpoint when apiHost is set to prevent canvas CORS taint", () => {
       const image = document.createElement("ef-image");
+      const preview = document.createElement("ef-preview");
+      preview.appendChild(image);
+      preview.apiHost = "https://api.test.com";
+      document.body.appendChild(preview);
       image.src =
         "https://storage.googleapis.com/editframe-assets-7ac794b/1080-cat.jpeg";
       expect(image.assetPath()).toBe(
         "/api/v1/assets/image?src=https%3A%2F%2Fstorage.googleapis.com%2Feditframe-assets-7ac794b%2F1080-cat.jpeg",
       );
+      preview.remove();
     });
   });
 
@@ -178,13 +212,18 @@ describe("EFImage", () => {
     });
 
     test("loads remote WebP through proxy and populates canvas", async () => {
-      // Uses localhost so the Node.js proxy middleware can reach it directly,
-      // regardless of whether Traefik is in front for the browser connection.
+      // Requires apiHost so the assets proxy can reach localhost directly
+      // (the browser inside Docker can't reach localhost:PORT directly).
+      const apiHost = `${window.location.protocol}//${window.location.host}`;
+      const preview = document.createElement("ef-preview");
+      preview.apiHost = apiHost;
+      document.body.append(preview);
+
       const image = document.createElement("ef-image");
       image.src = `http://localhost:${TEST_SERVER_PORT}/test.webp`;
       image.style.width = "100px";
       image.style.height = "100px";
-      document.body.append(image);
+      preview.append(image);
       await image.updateComplete;
       await image.loadImage();
 
@@ -195,7 +234,7 @@ describe("EFImage", () => {
       expect(canvasEl!.width).toBeGreaterThan(0);
       expect(canvasEl!.height).toBeGreaterThan(0);
 
-      image.remove();
+      preview.remove();
     });
 
     test("loads WebP via canvas path and sets hasAlpha to true", async () => {
