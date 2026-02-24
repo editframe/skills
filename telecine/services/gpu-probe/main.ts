@@ -278,9 +278,9 @@ try {
 }
 
 // ---------------------------------------------------------------------------
-// 5. Shared texture DMA-BUF delivery test (ozone-drm + fake_drm + libgbm_cuda)
+// 5. Shared texture DMA-BUF delivery test (ozone-wayland + weston headless + libgbm_cuda)
 // ---------------------------------------------------------------------------
-step("5. Shared texture DMA-BUF delivery (ozone-drm + useSharedTexture)");
+step("5. Shared texture DMA-BUF delivery (ozone-wayland + useSharedTexture)");
 
 const sharedTexScript = `
 const { app, BrowserWindow } = require('electron');
@@ -400,6 +400,53 @@ app.on('gpu-info-update', () => {
 const sharedTexScriptPath = "/tmp/gpu-probe-shared-tex.js";
 writeFileSync(sharedTexScriptPath, sharedTexScript);
 
+// Start headless weston compositor for wayland platform support
+const XDG_RUNTIME_DIR = "/tmp/xdg-runtime";
+const WAYLAND_DISPLAY = "wayland-gpu-probe";
+run(`mkdir -p ${XDG_RUNTIME_DIR}`);
+const weston = spawn("weston", [
+  "--backend=headless",
+  `--socket=${WAYLAND_DISPLAY}`,
+  "--width=640",
+  "--height=480",
+  "--no-config",
+], {
+  stdio: ["ignore", "pipe", "pipe"],
+  env: {
+    ...process.env,
+    XDG_RUNTIME_DIR,
+    LD_PRELOAD: [
+      "/usr/lib/x86_64-linux-gnu/fake_drm.so",
+      "/usr/lib/x86_64-linux-gnu/fake_sysfs_access.so",
+    ].join(":"),
+  },
+});
+
+let westonStderr = "";
+weston.stderr.on("data", (d: Buffer) => { westonStderr += d.toString(); });
+weston.stdout.on("data", (d: Buffer) => { westonStderr += d.toString(); });
+
+// Give weston time to start and create the socket
+await new Promise<void>((resolve) => {
+  const check = () => {
+    if (existsSync(`${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}`)) {
+      resolve();
+    } else {
+      setTimeout(check, 100);
+    }
+  };
+  setTimeout(check, 200);
+  // Timeout after 5s
+  setTimeout(() => resolve(), 5000);
+});
+
+const westonReady = existsSync(`${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}`);
+process.stdout.write(`Weston headless: ${westonReady ? "ready" : "FAILED to start"}\n`);
+if (westonStderr) {
+  const lines = westonStderr.split("\n").slice(0, 20);
+  process.stdout.write(`Weston output (first 20 lines):\n${lines.join("\n")}\n`);
+}
+
 try {
   const sharedTexElectron = spawn("node_modules/.bin/electron", [
     "--no-sandbox",
@@ -409,7 +456,7 @@ try {
     "--ignore-gpu-blocklist",
     "--disable-gpu-sandbox",
     "--disable-vulkan-surface",
-    "--ozone-platform=drm",
+    "--ozone-platform=wayland",
     "--disable-setuid-sandbox",
     "--disable-seccomp-filter-sandbox",
     "--enable-logging",
@@ -420,6 +467,8 @@ try {
     env: {
       ...process.env,
       EF_GPU_RENDER: "1",
+      XDG_RUNTIME_DIR,
+      WAYLAND_DISPLAY,
       __GLX_VENDOR_LIBRARY_NAME: "nvidia",
       LIBGL_ALWAYS_SOFTWARE: "0",
       VK_ICD_FILENAMES: "/etc/vulkan/icd.d/nvidia_icd.json",
@@ -505,6 +554,7 @@ try {
 } catch (err) {
   fail(`Shared texture test threw: ${err instanceof Error ? err.stack ?? err.message : err}`);
 } finally {
+  try { weston.kill(); } catch {}
   try { unlinkSync(sharedTexScriptPath); } catch {}
 }
 

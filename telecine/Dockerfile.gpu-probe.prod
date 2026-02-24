@@ -157,6 +157,7 @@ RUN apt-get update \
   libgl1 \
   libgles2 \
   libvulkan1 \
+  weston \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
