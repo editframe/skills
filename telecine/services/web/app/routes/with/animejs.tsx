@@ -59,10 +59,10 @@ export default function AnimeJSPage() {
       )) as any;
 
       if (section1Ref.current) {
-        const h2 = section1Ref.current.querySelector("h2");
         const timegroup = section1Ref.current.querySelector(
           "ef-timegroup",
         ) as any;
+        const h2 = timegroup?.querySelector(".anim-text");
         if (h2 && timegroup) {
           timegroup.clearFrameTasks?.();
 
@@ -148,10 +148,10 @@ export default function AnimeJSPage() {
       )) as any;
 
       if (section3Ref.current) {
-        const h2 = section3Ref.current.querySelector("h2");
         const timegroup = section3Ref.current.querySelector(
           "ef-timegroup",
         ) as any;
+        const h2 = timegroup?.querySelector(".anim-text");
         if (h2 && timegroup) {
           timegroup.clearFrameTasks?.();
 
@@ -356,7 +356,7 @@ export default function AnimeJSPage() {
                         color: "white",
                       }}
                     >
-                      <h2 className="text-4xl font-bold"></h2>
+                      <h2 className="anim-text text-4xl font-bold"></h2>
                     </div>
                   </ef-timegroup>
                 </div>
@@ -553,7 +553,7 @@ timegroup.addFrameTask(({ ownCurrentTimeMs }) => {
                         color: "white",
                       }}
                     >
-                      <h2 className="text-4xl font-bold"></h2>
+                      <h2 className="anim-text text-4xl font-bold"></h2>
                     </div>
                   </ef-timegroup>
                 </div>
