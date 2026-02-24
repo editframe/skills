@@ -328,7 +328,7 @@ export default function AnimeJSPage() {
             </div>
 
             <div className="flex flex-col lg:flex-row gap-6">
-              <div className="flex-1 space-y-2">
+              <div className="flex-1">
                 <div className="w-full aspect-[16/9] overflow-hidden relative border-4 border-[var(--ink-black)] dark:border-white shadow-poster-hard">
                   <ef-timegroup
                     id="section1-timegroup"
@@ -406,7 +406,7 @@ timegroup.addFrameTask(({ ownCurrentTimeMs }) => {
             </div>
 
             <div className="flex flex-col lg:flex-row gap-6">
-              <div className="flex-1 space-y-2">
+              <div className="flex-1">
                 <div className="w-full aspect-[16/9] overflow-hidden relative border-4 border-[var(--ink-black)] dark:border-white shadow-poster-hard">
                   <ef-timegroup
                     id="section2-timegroup"
@@ -525,7 +525,7 @@ timegroup.addFrameTask(({ ownCurrentTimeMs }) => {
             </div>
 
             <div className="flex flex-col lg:flex-row gap-6">
-              <div className="flex-1 space-y-2">
+              <div className="flex-1">
                 <div className="w-full aspect-[16/9] overflow-hidden relative border-4 border-[var(--ink-black)] dark:border-white shadow-poster-hard">
                   <ef-timegroup
                     id="section3-timegroup"
@@ -599,7 +599,7 @@ waapi.animate(chars, {
             </div>
 
             <div className="flex flex-col lg:flex-row gap-6">
-              <div className="flex-1 space-y-2">
+              <div className="flex-1">
                 <div className="w-full aspect-[16/9] overflow-hidden relative border-4 border-[var(--ink-black)] dark:border-white shadow-poster-hard">
                   <ef-timegroup
                     id="section4-timegroup"
