@@ -19,6 +19,8 @@ const routes = [
   route("/skills/:skill/:reference", "routes/skills/reference-detail.tsx"),
   route("/demos/motion-designer", "routes/demos/motion-designer.tsx"),
   route("/with/animejs", "routes/with/animejs.tsx"),
+  route("/terms", "routes/terms.tsx"),
+  route("/privacy", "routes/privacy.tsx"),
   route("/docs", "routes/docs-redirect.ts"),
   route("/docs/*", "routes/docs-redirect.ts", { id: "routes/docs-redirect-wildcard" }),
   route("/guides/*", "routes/guides-redirect.ts"),

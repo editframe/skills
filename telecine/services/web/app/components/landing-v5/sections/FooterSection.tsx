@@ -35,7 +35,13 @@ export function FooterSection() {
               <li><Link to="/auth/register" className="text-sm text-white/60 hover:text-white transition-colors">Contact</Link></li>
             </ul>
           </div>
-          <div />
+          <div>
+            <h3 className="font-bold text-sm uppercase tracking-wider mb-4">Legal</h3>
+            <ul className="space-y-3">
+              <li><Link to="/terms" className="text-sm text-white/60 hover:text-white transition-colors">Terms of Service</Link></li>
+              <li><Link to="/privacy" className="text-sm text-white/60 hover:text-white transition-colors">Privacy Policy</Link></li>
+            </ul>
+          </div>
         </div>
         
         {/* Bottom bar */}

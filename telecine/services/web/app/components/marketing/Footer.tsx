@@ -15,8 +15,8 @@ export function Footer() {
       { name: "AnimeJS", href: "/with/animejs" },
     ],
     legal: [
-      { name: "Terms of Service", href: "#" },
-      { name: "Privacy Policy", href: "#" },
+      { name: "Terms of Service", href: "/terms" },
+      { name: "Privacy Policy", href: "/privacy" },
     ],
     social: [
       {
