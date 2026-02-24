@@ -242,9 +242,13 @@ export async function generateLocalJitManifest(
     ),
   );
 
-  // Find video track (track 1) and audio track (track 2) and scrub track (-1)
-  const videoTrack = fragmentIndex[1];
-  const audioTrack = fragmentIndex[2];
+  // Find tracks by type rather than by hardcoded index (audio-only files have audio at index 1)
+  const videoTrack = Object.values(fragmentIndex).find(
+    (t) => t.type === "video",
+  );
+  const audioTrack = Object.values(fragmentIndex).find(
+    (t) => t.type === "audio",
+  );
   const scrubTrack = fragmentIndex[-1];
 
   const hasVideo = videoTrack?.type === "video";

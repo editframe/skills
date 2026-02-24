@@ -18,9 +18,9 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
   class EFSourceElement extends superClass {
     get apiHost() {
       return (
-        (this.closest("ef-configuration") as any)?.apiHost ??
-        (this.closest("ef-workbench") as any)?.apiHost ??
-        (this.closest("ef-preview") as any)?.apiHost ??
+        (this.closest("ef-configuration") as any)?.apiHost ||
+        (this.closest("ef-workbench") as any)?.apiHost ||
+        (this.closest("ef-preview") as any)?.apiHost ||
         window.location.origin
       );
     }

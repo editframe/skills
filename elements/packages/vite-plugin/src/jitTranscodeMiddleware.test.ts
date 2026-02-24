@@ -78,6 +78,41 @@ describe("generateLocalJitManifest", () => {
     await rm(tmpDir, { recursive: true, force: true });
   });
 
+  it("generates audio rendition for audio-only files where audio track is at index 1", async () => {
+    const audioOnlyIndexPath = path.join(tmpDir, "audio-only-index.json");
+    const audioOnlyIndex = {
+      1: makeFragmentIndex({
+        type: "audio",
+        codec: "mp4a.40.2",
+        width: undefined,
+        height: undefined,
+      }),
+    };
+    await writeFile(audioOnlyIndexPath, JSON.stringify(audioOnlyIndex));
+
+    const mockAssetFunctions = {
+      generateTrack: vi.fn(),
+      generateScrubTrack: vi.fn(),
+      generateTrackFragmentIndex: vi.fn().mockResolvedValue({
+        cachePath: audioOnlyIndexPath,
+        md5Sum: "mock-md5-audio",
+      }),
+    };
+
+    const manifest = await generateLocalJitManifest(
+      "/local/audio.mp3",
+      "https://example.com/audio.mp3",
+      "http://localhost:4321",
+      tmpDir,
+      mockAssetFunctions,
+    );
+
+    expect(manifest.audioRenditions).toHaveLength(1);
+    expect(manifest.audioRenditions[0].codec).toBe("mp4a.40.2");
+    expect(manifest.videoRenditions).toHaveLength(0);
+    expect(manifest.durationMs).toBeGreaterThan(0);
+  });
+
   it("uses .m4s extensions in endpoint templates so MSE SourceBuffer receives only moof+mdat per append", async () => {
     const mockAssetFunctions = {
       generateTrack: vi.fn(),

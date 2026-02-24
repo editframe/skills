@@ -2,6 +2,7 @@ import { describe, test, vi } from "vitest";
 import "./EFAudio.js";
 import "./EFImage.js";
 import "./EFTimegroup.js";
+import "../gui/EFWorkbench.js";
 import type { EFAudio } from "./EFAudio.js";
 import type { EFImage } from "./EFImage.js";
 
@@ -19,6 +20,19 @@ describe("EFSourceMixin apiHost default", () => {
     document.body.appendChild(audio);
     expect(audio.apiHost).toBe(window.location.origin);
     audio.remove();
+  });
+
+  test("apiHost defaults to window.location.origin when inside ef-workbench with no ef-configuration", ({
+    expect,
+  }) => {
+    // ef-workbench.apiHost returns "" (empty string) when no ef-configuration is present.
+    // EFSourceMixin must use || (not ??) so that the empty string falls through to window.location.origin.
+    const workbench = document.createElement("ef-workbench");
+    const audio = document.createElement("ef-audio") as EFAudio;
+    workbench.appendChild(audio);
+    document.body.appendChild(workbench);
+    expect(audio.apiHost).toBe(window.location.origin);
+    workbench.remove();
   });
 
   test("ef-audio routes through /api/v1/transcode/manifest.json when no ef-configuration is present", async ({
