@@ -108,7 +108,7 @@ describe("generateLocalJitManifest", () => {
     );
 
     expect(manifest.audioRenditions).toHaveLength(1);
-    expect(manifest.audioRenditions[0].codec).toBe("mp4a.40.2");
+    expect(manifest.audioRenditions[0]!.codec).toBe("mp4a.40.2");
     expect(manifest.videoRenditions).toHaveLength(0);
     expect(manifest.durationMs).toBeGreaterThan(0);
   });
