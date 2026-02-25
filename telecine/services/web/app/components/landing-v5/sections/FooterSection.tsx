@@ -34,6 +34,7 @@ export function FooterSection() {
               <li><a href="https://discord.gg/editframe" target="_blank" rel="noopener noreferrer" className="text-sm text-white/60 hover:text-white transition-colors">Discord</a></li>
               <li><Link to="/blog" className="text-sm text-white/60 hover:text-white transition-colors">Blog</Link></li>
               <li><Link to="/auth/register" className="text-sm text-white/60 hover:text-white transition-colors">Contact</Link></li>
+              <li><Link to="/llms.txt" className="text-sm text-white/60 hover:text-white transition-colors">llms.txt</Link></li>
             </ul>
           </div>
           <div>

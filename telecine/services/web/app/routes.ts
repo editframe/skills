@@ -14,6 +14,7 @@ const routes = [
   index("routes/index.tsx"),
   route("/sitemap.xml", "routes/sitemap.tsx"),
   route("/robots.txt", "routes/robots.txt.ts"),
+  route("/llms.txt", "routes/llms.txt.ts"),
   route("/skills", "routes/skills/catalog.tsx"),
   route("/skills/:skill", "routes/skills/skill-detail.tsx"),
   route("/skills/:skill/:reference", "routes/skills/reference-detail.tsx"),
