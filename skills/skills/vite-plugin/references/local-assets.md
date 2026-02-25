@@ -7,10 +7,10 @@ nav:
   priority: 30
 api:
   endpoints:
-    - path: /api/v1/assets/local/image
+    - path: /api/v1/assets/image
       method: GET
-      description: Caches and serves a local image file
-    - path: /api/v1/assets/local/captions
+      description: Caches and serves a local or remote image file
+    - path: /api/v1/assets/captions
       method: GET
       description: Generates or retrieves cached captions for an audio/video file
 ---
@@ -21,42 +21,29 @@ The plugin serves local images and captions through endpoints that mirror the pr
 
 ## Image Caching
 
-The image endpoint caches a local image file and serves the cached copy with proper MIME types and ETags:
+The image endpoint caches and serves image files with proper MIME types and ETags:
 
 ```
-GET /api/v1/assets/local/image?src=assets/background.png
+GET /api/v1/assets/image?src=assets/background.png
 ```
 
-The `src` parameter is resolved relative to the plugin `root` directory. The plugin calls `cacheImage(cacheRoot, absolutePath)` which copies the file into the `.cache` directory and returns it with an MD5-based ETag for browser caching.
-
-Remote URLs are also supported -- if `src` starts with `http`, it is passed through directly without path resolution.
+The `src` parameter accepts both local paths (resolved relative to the plugin `root` directory) and remote `http`/`https` URLs. Remote images are fetched server-side and returned as same-origin responses, preventing canvas CORS taint when compositions serialize to image. Local files are processed through `cacheImage(cacheRoot, absolutePath)` and served with an MD5-based ETag.
 
 ## Caption Generation
 
 The captions endpoint generates or retrieves cached transcription data for audio and video files:
 
 ```
-GET /api/v1/assets/local/captions?src=assets/interview.mp4
+GET /api/v1/assets/captions?src=assets/interview.mp4
 ```
 
 This calls `findOrCreateCaptions(cacheRoot, absolutePath)` which either returns existing cached captions or generates new ones using the assets package transcription pipeline. The result is served as JSON with cache headers.
-
-## Legacy Endpoints
-
-The plugin also supports older `@ef-` prefixed routes that predate the REST API format:
-
-| Legacy Route | Equivalent API Route |
-|---|---|
-| `/@ef-image/{path}` | `/api/v1/assets/local/image?src={path}` |
-| `/@ef-captions/{path}` | `/api/v1/assets/local/captions?src={path}` |
-
-Both formats resolve paths the same way and share the underlying `cacheImage` and `findOrCreateCaptions` functions.
 
 ## Path Resolution
 
 All `src` parameters follow the same resolution logic:
 
-1. If `src` starts with `http`, it is treated as a remote URL
+1. If `src` starts with `http://` or `https://`, it is fetched server-side and proxied to the browser as same-origin
 2. Otherwise, `src` is joined with the plugin `root` option
 3. Any `dist/` prefix in the resolved path is replaced with `src/` to support source-mapped development
 

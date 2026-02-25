@@ -196,6 +196,10 @@ Forces all sources through JIT transcoding using `/api/v1/transcode/*` URLs:
 
 ## API Host Override
 
+When no `ef-configuration` ancestor is present, all source-based elements (`ef-video`, `ef-audio`, `ef-image`, `ef-captions`) fall back to `window.location.origin` as the API host. This means elements work without any configuration wrapper — API requests go to the same origin as the page, which is handled by the Vite plugin in development and by telecine in production.
+
+Use `ef-configuration` with `api-host` when you need to override that default:
+
 <!-- html-only -->
 Override the API host for asset resolution in production:
 
