@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Link } from "react-router";
+import { HeroDemoPoster } from "../HeroDemo";
 
 const HeroDemo = lazy(() => import("../HeroDemo").then((m) => ({ default: m.HeroDemo })));
 
@@ -37,28 +38,7 @@ export function HeroSection() {
           <div className="absolute -bottom-3 -right-3 md:-bottom-4 md:-right-4 w-full h-full bg-[var(--poster-blue)]" />
           <div className="absolute -bottom-1.5 -right-1.5 md:-bottom-2 md:-right-2 w-full h-full bg-[var(--poster-gold)]" />
           <div className="relative">
-            <Suspense fallback={
-              <div className="w-full">
-                <div className="bg-[#0a0a0a] border-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
-                  <div className="aspect-video flex items-center justify-center">
-                    <div className="text-white/30 text-xs uppercase tracking-widest">Loading</div>
-                  </div>
-                  <div className="border-t-4 border-[var(--ink-black)] dark:border-white bg-[#111] flex items-center h-12">
-                    <div className="w-12 h-12 flex items-center justify-center bg-[var(--poster-blue)]">
-                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    </div>
-                    <div className="flex-1 px-4 border-l-2 border-[var(--ink-black)] dark:border-white">
-                      <div className="w-full h-1.5 bg-white/20" />
-                    </div>
-                    <div className="px-4 border-l-2 border-[var(--ink-black)] dark:border-white h-12 flex items-center">
-                      <span className="text-xs text-white/50 font-mono">0:00</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            }>
+            <Suspense fallback={<HeroDemoPoster />}>
               <HeroDemo />
             </Suspense>
           </div>
