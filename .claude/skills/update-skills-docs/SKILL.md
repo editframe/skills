@@ -21,7 +21,15 @@ git tag -a skills-sync $BOOTSTRAP -m "skills synced $(date -I)"
 git push skills skills-sync
 ```
 
-## Step 2: Get commits since last sync
+## Step 2: Check if already synced
+
+```bash
+git log skills-sync..HEAD --oneline
+```
+
+If this produces no output, the tag is already at HEAD. Report "Skills docs are up to date." and stop — do not proceed.
+
+## Step 3: Get doc-relevant commits
 
 ```bash
 git log skills-sync..HEAD --name-only --oneline
@@ -48,7 +56,7 @@ Filter the changed files to doc-relevant paths only. Ignore all others.
 - Commit subjects matching `^Bump version`
 - Lock files, snapshot files, formatter-only commits (subject starts with `style:` or `format:`)
 
-## Step 3: Read the diffs
+## Step 4: Read the diffs
 
 For each matched file in a relevant commit:
 
@@ -65,11 +73,11 @@ Look specifically for:
 - New or removed API endpoint paths in the vite plugin
 - New fields on API payload types (`z.object(...)` in resources files)
 
-## Step 4: Read the corresponding skill doc
+## Step 5: Read the corresponding skill doc
 
 Match the changed file to a skill using the table above, then find the relevant reference file in `skills/skills/<skill>/references/`. Read it with the Read tool.
 
-## Step 5: Identify discrepancies
+## Step 6: Identify discrepancies
 
 For each matched commit + skill doc pair, identify:
 1. Facts in the doc that are now wrong (stale endpoint paths, removed attributes, changed event shapes)
@@ -78,11 +86,11 @@ For each matched commit + skill doc pair, identify:
 
 Present a numbered list of specific changes before implementing if there are more than 3 items. For 1-3 items, implement immediately.
 
-## Step 6: Implement updates
+## Step 7: Implement updates
 
 Edit the skill doc files directly. Keep changes minimal and factual — update the specific attribute, endpoint, type, or behavior description. Do not restructure docs.
 
-## Step 7: Advance the tag
+## Step 8: Advance the tag
 
 After all updates are complete:
 
