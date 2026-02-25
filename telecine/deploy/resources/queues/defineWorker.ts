@@ -45,7 +45,7 @@ export const defineWorker = (config: QueueConfig, gpu?: GpuConfig) => {
       template: {
         ...(gpu ? { gpuZonalRedundancyDisabled: gpu.zonalRedundancyDisabled } : {}),
         scaling: {
-          minInstanceCount: 0,
+          minInstanceCount: config.minWorkerCount,
           maxInstanceCount: config.maxWorkerCount,
         },
         serviceAccount: serviceAccount.email,
