@@ -1761,7 +1761,8 @@ export function HeroDemoPoster() {
   return (
     <div className="w-full">
       <div className="bg-[#0a0a0a] border-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
-        <div className="aspect-video relative flex flex-col items-center justify-center" style={{
+        <div className="relative flex flex-col items-center justify-center" style={{
+          aspectRatio: "16/9",
           background: "radial-gradient(ellipse 80% 60% at 50% 50%, rgba(21,101,192,0.08) 0%, transparent 70%)",
         }}>
           <span className="text-white text-5xl font-black tracking-tighter leading-[1.1] text-center select-none">
@@ -1806,7 +1807,7 @@ export function HeroDemo() {
   return (
     <div className="w-full relative">
       <div className="bg-[#0a0a0a] border-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
-        <div className="aspect-video relative">
+        <div className="relative" style={{ aspectRatio: "16/9" }}>
           {isClient ? (
             <div className="absolute inset-0">
               <Preview
