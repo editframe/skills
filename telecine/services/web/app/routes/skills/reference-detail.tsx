@@ -98,9 +98,7 @@ export const meta = ({ data }: Route.MetaArgs) => {
   }
 
   const { skillTitle, referenceTitle, description } = data;
-  const title = referenceTitle
-    ? `${referenceTitle} | ${skillTitle}`
-    : skillTitle;
+  const title = referenceTitle || skillTitle;
 
   const metaDescription = description
     ? description.length > 160
