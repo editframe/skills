@@ -4,11 +4,16 @@ const mocks = vi.hoisted(() => {
   const mockExecute = vi.fn();
   const mockValues = vi.fn(() => ({ execute: mockExecute }));
   const mockInsertInto = vi.fn(() => ({ values: mockValues }));
-  return { mockExecute, mockValues, mockInsertInto };
+  const mockLoggerError = vi.fn();
+  return { mockExecute, mockValues, mockInsertInto, mockLoggerError };
 });
 
 vi.mock("@/sql-client.server", () => ({
   db: { insertInto: mocks.mockInsertInto },
+}));
+
+vi.mock("@/logging", () => ({
+  logger: { error: mocks.mockLoggerError },
 }));
 
 vi.mock("~/middleware/context", () => ({
@@ -186,6 +191,16 @@ describe("POST /api/v1/telemetry", () => {
       } as any);
       expect(result).toEqual({ ok: true });
     });
+
+    test("logs db errors via logger.error", async () => {
+      const dbError = new Error("DB connection lost");
+      mocks.mockExecute.mockRejectedValue(dbError);
+      await action({
+        request: makeRequest({ render_path: "client" }),
+        context: makeContext(makeSession()),
+      } as any);
+      expect(mocks.mockLoggerError).toHaveBeenCalledWith(dbError, "telemetry insert failed");
+    });
   });
 
   describe("non-POST methods", () => {
@@ -195,6 +210,77 @@ describe("POST /api/v1/telemetry", () => {
       await expect(action({ request, context } as any)).rejects.toMatchObject({
         status: 405,
       });
+    });
+  });
+
+  describe("malformed input", () => {
+    test("rejects non-JSON body with 400", async () => {
+      const request = new Request("http://localhost/api/v1/telemetry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "not json",
+      });
+      await expect(
+        action({ request, context: makeContext(makeSession()) } as any),
+      ).rejects.toMatchObject({ status: 400 });
+    });
+
+    test("rejects empty body with 400", async () => {
+      const request = new Request("http://localhost/api/v1/telemetry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "",
+      });
+      await expect(
+        action({ request, context: makeContext(makeSession()) } as any),
+      ).rejects.toMatchObject({ status: 400 });
+    });
+
+    test("silently drops numeric fields sent as strings", async () => {
+      await action({
+        request: makeRequest({ render_path: "client", duration_ms: "5000", width: "1920" }),
+        context: makeContext(makeSession()),
+      } as any);
+      const row = mocks.mockValues.mock.calls[0][0];
+      expect(row.duration_ms).toBeNull();
+      expect(row.width).toBeNull();
+    });
+  });
+
+  describe("IP and origin edge cases", () => {
+    test("stores null ip_address when no IP headers present", async () => {
+      await action({
+        request: makeRequest({ render_path: "client" }),
+        context: makeContext(makeSession()),
+      } as any);
+      expect(mocks.mockValues.mock.calls[0][0].ip_address).toBeNull();
+    });
+
+    test("stores null origin when Origin header is absent", async () => {
+      await action({
+        request: makeRequest({ render_path: "client" }),
+        context: makeContext(makeSession()),
+      } as any);
+      expect(mocks.mockValues.mock.calls[0][0].origin).toBeNull();
+    });
+
+    test("x-forwarded-for takes precedence over x-real-ip", async () => {
+      await action({
+        request: makeRequest(
+          { render_path: "client" },
+          { "x-forwarded-for": "203.0.113.1", "x-real-ip": "198.51.100.5" },
+        ),
+        context: makeContext(makeSession()),
+      } as any);
+      expect(mocks.mockValues.mock.calls[0][0].ip_address).toBe("203.0.113.1");
+    });
+
+    test("handles single-IP x-forwarded-for without comma", async () => {
+      await action({
+        request: makeRequest({ render_path: "cli" }, { "x-forwarded-for": "10.0.0.1" }),
+        context: makeContext(makeSession()),
+      } as any);
+      expect(mocks.mockValues.mock.calls[0][0].ip_address).toBe("10.0.0.1");
     });
   });
 });

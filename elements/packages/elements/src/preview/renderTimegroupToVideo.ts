@@ -713,33 +713,28 @@ export async function renderTimegroupToVideo(
     if (options.telemetryToken) {
       const elapsedMs = Math.round(performance.now() - renderStartTime);
       const endpoint = options.telemetryEndpoint ?? "https://editframe.com";
-      const elementTypes: string[] = [];
-      document.querySelectorAll("ef-video,ef-audio,ef-image,ef-captions,ef-text").forEach((el) => {
-        const tag = el.tagName.toLowerCase();
-        if (!elementTypes.includes(tag)) elementTypes.push(tag);
-      });
-      try {
-        fetch(`${endpoint}/api/v1/telemetry`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${options.telemetryToken}`,
-          },
-          body: JSON.stringify({
-            render_path: "client",
-            duration_ms: elapsedMs,
-            width: config.videoWidth,
-            height: config.videoHeight,
-            fps: config.fps,
-            feature_usage: { elementTypes },
-          }),
-          keepalive: true,
-        }).catch(() => {
-          // Telemetry errors must never surface to users.
-        });
-      } catch {
+      const efMediaCount = timegroup.querySelectorAll("ef-video,ef-audio").length;
+      const efImageCount = timegroup.querySelectorAll("ef-image").length;
+      const efCaptionsCount = timegroup.querySelectorAll("ef-captions").length;
+      const efTextCount = timegroup.querySelectorAll("ef-text").length;
+      fetch(`${endpoint}/api/v1/telemetry`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${options.telemetryToken}`,
+        },
+        body: JSON.stringify({
+          render_path: "client",
+          duration_ms: elapsedMs,
+          width: config.videoWidth,
+          height: config.videoHeight,
+          fps: config.fps,
+          feature_usage: { efMediaCount, efImageCount, efCaptionsCount, efTextCount },
+        }),
+        keepalive: true,
+      }).catch(() => {
         // Telemetry errors must never surface to users.
-      }
+      });
     }
 
     if (useStreaming) {

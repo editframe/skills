@@ -302,16 +302,17 @@ program
                 void sendTelemetry(efRenderHost, token!, {
                   render_path: "cli",
                   duration_ms: renderDurationMs,
-                  width: renderInfo?.width ?? null,
-                  height: renderInfo?.height ?? null,
-                  fps: renderInfo?.fps ?? fps,
-                  feature_usage: renderInfo
-                    ? {
-                        efMediaCount: Object.keys(renderInfo.assets.efMedia).length,
-                        efImageCount: renderInfo.assets.efImage.length,
-                        efCaptionsCount: renderInfo.assets.efCaptions.length,
-                      }
-                    : {},
+                  ...(renderInfo?.width != null && { width: renderInfo.width }),
+                  ...(renderInfo?.height != null && { height: renderInfo.height }),
+                  ...(renderInfo?.fps != null && { fps: renderInfo.fps }),
+                  feature_usage: {
+                    efMediaCount: renderInfo
+                      ? Object.keys(renderInfo.assets.efMedia).length
+                      : 0,
+                    efImageCount: renderInfo?.assets.efImage.length ?? 0,
+                    efCaptionsCount: renderInfo?.assets.efCaptions.length ?? 0,
+                    efTextCount: 0,
+                  },
                   cli_version: VERSION,
                 });
               } catch (error) {

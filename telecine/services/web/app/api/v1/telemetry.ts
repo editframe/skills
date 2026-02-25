@@ -1,4 +1,5 @@
 import { db } from "@/sql-client.server";
+import { logger } from "@/logging";
 import { apiIdentityContext } from "~/middleware/context";
 import type { Route } from "./+types/telemetry";
 
@@ -88,8 +89,8 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         cli_version: payload.cli_version ?? null,
       })
       .execute();
-  } catch {
-    // Telemetry must never block the caller — swallow DB errors silently.
+  } catch (err) {
+    logger.error(err, "telemetry insert failed");
   }
 
   return { ok: true };
