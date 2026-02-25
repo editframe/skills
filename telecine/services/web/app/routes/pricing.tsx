@@ -80,7 +80,6 @@ const tiers = [
     features: [
       "Everything in Cloud",
       "Priority support",
-      "Dedicated infrastructure",
     ],
     cta: "Contact us",
     ctaHref: "mailto:hello@editframe.com",
@@ -91,14 +90,22 @@ const usageMetrics = [
   {
     name: "Render minute",
     description:
-      "One minute of Server-Side processing time, measured in 1-second increments, rounded up.",
+      "One minute of Server-Side processing time, measured in 1-second increments, rounded up. Rate is based on total pixel count (megapixels), not aspect ratio — a 1440×1440 square and a 1920×1080 widescreen are in the same tier.",
     color: "var(--poster-red)",
+    rates: [
+      { label: "≤2 MP", sublabel: "e.g. 1080p", rate: "$0.02 / min" },
+      { label: "≤4 MP", sublabel: "e.g. 2K", rate: "$0.04 / min" },
+      { label: "≤9 MP", sublabel: "e.g. 4K", rate: "$0.07 / min" },
+    ],
   },
   {
     name: "Delivery minute",
     description:
       "One minute of video streamed via Premium Player. Cache replays in the same session are not billed. Local playback via the Client-Side SDK is not billed.",
     color: "var(--poster-blue)",
+    rates: [
+      { label: "All resolutions", sublabel: undefined, rate: "$0.01 / min" },
+    ],
   },
 ];
 
@@ -131,13 +138,7 @@ const comparisonFeatures = [
     cloud: false,
     enterprise: true,
   },
-  {
-    name: "Dedicated infrastructure",
-    free: false,
-    team: false,
-    cloud: false,
-    enterprise: true,
-  },
+
 ];
 
 const tierColors = [
@@ -319,7 +320,7 @@ export default function PricingPage() {
             </div>
             <p className="text-lg text-white/60 max-w-2xl mx-auto leading-relaxed">
               Cloud Tier includes usage-based billing for rendering and
-              streaming. Contact us for current rates.
+              streaming.
             </p>
           </div>
 
@@ -337,9 +338,20 @@ export default function PricingPage() {
                   >
                     {metric.name}
                   </div>
-                  <p className="text-sm text-white/60 leading-relaxed">
+                  <p className="text-sm text-white/60 leading-relaxed mb-4">
                     {metric.description}
                   </p>
+                  <div className="space-y-1.5">
+                    {metric.rates.map(({ label, sublabel, rate }) => (
+                      <div key={label} className="flex justify-between items-baseline text-sm">
+                        <span className="flex items-baseline gap-1.5">
+                          <span className="text-white/80 font-black text-sm uppercase tracking-tight">{label}</span>
+                          {sublabel && <span className="text-white/35 text-xs">{sublabel}</span>}
+                        </span>
+                        <span className="font-black tabular-nums" style={{ color: metric.color }}>{rate}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}
