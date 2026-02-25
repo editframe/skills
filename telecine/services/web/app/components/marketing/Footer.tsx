@@ -10,7 +10,7 @@ export function Footer() {
       { name: "Guides", href: "/guides" },
       { name: "Tools", href: "/tools" },
       { name: "Pricing", href: "/pricing" },
-      { name: "llms.txt", href: "/llms.txt" },
+      { name: "llms.txt", href: "/llms.txt", reloadDocument: true },
     ],
     technologies: [
       { name: "React", href: "/react" },
@@ -126,6 +126,7 @@ export function Footer() {
                 <Link
                   key={index}
                   to={item.href}
+                  reloadDocument={item.reloadDocument}
                   className={clsx(
                     "cursor-pointer bg-transparent transition-colors",
                     themeClasses.pageTextSecondary,
