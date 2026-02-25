@@ -1812,7 +1812,7 @@ export function HeroDemo() {
               id={previewId}
               ref={previewRef as any}
               loop
-              className="block w-full h-full"
+              className="absolute inset-0 w-full h-full"
             >
               <TimelineRoot id={previewId} component={HeroDemoContent} />
             </Preview>
