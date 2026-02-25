@@ -51,33 +51,7 @@ import { Image } from "@editframe/react";
 
 ## Asset Paths
 
-`ef-image` and `<Image>` require `/assets/` path strings. The vite plugin intercepts these at `/@ef-image/` and resolves them relative to the plugin `root` directory.
-
-**Correct:**
-<!-- html-only -->
-```html
-<ef-image src="/assets/photo.jpg"></ef-image>
-```
-<!-- /html-only -->
-<!-- react-only -->
-```tsx
-<Image src="/assets/photo.jpg" />
-```
-<!-- /react-only -->
-
-**Wrong — do not use Vite module imports with `<Image>`:**
-<!-- react-only -->
-```tsx
-// This will not display in preview or render
-import photoUrl from "./assets/photo.jpg?url";
-<Image src={photoUrl} />
-
-// Use a plain <img> only for decorative/non-timeline images
-// ef-image / <Image> must use /assets/ paths
-```
-<!-- /react-only -->
-
-Place files in `src/assets/` and reference them as `/assets/filename`. The vite plugin serves them; Vite bundling is not involved.
+Place files in `src/assets/` and reference them as `/assets/filename`. The dev server serves these directly — do not use bundler imports (`import url from "./photo.jpg?url"`), which will not display in preview or render.
 
 ## Basic Usage
 
