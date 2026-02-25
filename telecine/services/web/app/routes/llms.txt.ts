@@ -18,13 +18,13 @@ export const loader: LoaderFunction = () => {
   for (const skill of skills) {
     lines.push(`## ${skill.title}`);
     lines.push("");
-    lines.push(`- [${skill.title}](${BASE_URL}/skills/${skill.name}): ${skill.description}`);
+    lines.push(`- [${skill.title}](${BASE_URL}/skills/${skill.name}.md): ${skill.description}`);
 
     const refs = getSkillReferencesMeta(skill.name).filter(
       (r) => !r.name.includes("~"),
     );
     for (const ref of refs) {
-      const url = `${BASE_URL}/skills/${skill.name}/${ref.name}`;
+      const url = `${BASE_URL}/skills/${skill.name}/${ref.name}.md`;
       const desc = ref.description ? `: ${ref.description}` : "";
       lines.push(`- [${ref.title}](${url})${desc}`);
     }

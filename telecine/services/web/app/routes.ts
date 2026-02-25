@@ -16,6 +16,8 @@ const routes = [
   route("/robots.txt", "routes/robots.txt.ts"),
   route("/llms.txt", "routes/llms.txt.ts"),
   route("/skills", "routes/skills/catalog.tsx"),
+  route("/skills/:skill.md", "routes/skills/skill-detail.md.ts"),
+  route("/skills/:skill/:reference.md", "routes/skills/reference-detail.md.ts"),
   route("/skills/:skill", "routes/skills/skill-detail.tsx"),
   route("/skills/:skill/:reference", "routes/skills/reference-detail.tsx"),
   route("/demos/motion-designer", "routes/demos/motion-designer.tsx"),
