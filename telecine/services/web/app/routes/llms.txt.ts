@@ -1,57 +1,38 @@
 import type { LoaderFunction } from "react-router";
-import {
-  getSkillCatalog,
-  getSkillContent,
-  getSkillReferencesMeta,
-  getSkillReference,
-} from "~/utils/skills.server";
+import { getSkillCatalog, getSkillReferencesMeta } from "~/utils/skills.server";
+
+const BASE_URL = "https://editframe.com";
 
 export const loader: LoaderFunction = () => {
   const skills = getSkillCatalog();
 
-  const sections: string[] = [
-    "# Editframe Developer Documentation",
+  const lines: string[] = [
+    "# Editframe",
     "",
-    "> Build video with code. HTML + CSS compositions with scripting and React support. Instant preview, hyperscale rendering.",
+    "> Build video with code. HTML + CSS compositions with scripting and React support. Instant preview, hyperscale cloud rendering.",
     "",
-    "Source: https://editframe.com/skills",
-    "",
-    "---",
+    "Editframe lets developers create and render videos programmatically using HTML, CSS, and JavaScript. Compositions are defined as web components or React components, previewed instantly in the browser, and rendered to MP4 in the cloud.",
     "",
   ];
 
   for (const skill of skills) {
-    const skillContent = getSkillContent(skill.name);
-    if (!skillContent) continue;
+    lines.push(`## ${skill.title}`);
+    lines.push("");
+    lines.push(`- [${skill.title}](${BASE_URL}/skills/${skill.name}): ${skill.description}`);
 
-    sections.push(`## ${skillContent.frontmatter.title || skill.title}`);
-    sections.push("");
-    sections.push(skillContent.content.trim());
-    sections.push("");
-
-    const refsMeta = getSkillReferencesMeta(skill.name);
-    // Only top-level refs (no section refs — those have ~ in name)
-    const topLevelRefs = refsMeta.filter((r) => !r.name.includes("~"));
-
-    for (const refMeta of topLevelRefs) {
-      const refContent = getSkillReference(skill.name, refMeta.name);
-      if (!refContent) continue;
-
-      // Strip frontmatter from reference content
-      const body = refContent.replace(/^---[\s\S]*?---\n+/, "").trim();
-      if (!body) continue;
-
-      sections.push(`### ${refMeta.title}`);
-      sections.push("");
-      sections.push(body);
-      sections.push("");
+    const refs = getSkillReferencesMeta(skill.name).filter(
+      (r) => !r.name.includes("~"),
+    );
+    for (const ref of refs) {
+      const url = `${BASE_URL}/skills/${skill.name}/${ref.name}`;
+      const desc = ref.description ? `: ${ref.description}` : "";
+      lines.push(`- [${ref.title}](${url})${desc}`);
     }
 
-    sections.push("---");
-    sections.push("");
+    lines.push("");
   }
 
-  const content = sections.join("\n");
+  const content = lines.join("\n");
 
   return new Response(content, {
     status: 200,
