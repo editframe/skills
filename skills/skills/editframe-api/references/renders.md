@@ -55,6 +55,7 @@ const render = await createRender(client, {
   width: 1920,      // Output width in pixels
   height: 1080,     // Output height in pixels
   fps: 30,          // Frames per second (default: 30)
+  backend: "cpu",   // Render backend: "cpu" (default) or "gpu"
   output: {         // Output format (default: MP4)
     container: "mp4",
     video: { codec: "h264" },
@@ -124,6 +125,21 @@ const render = await createRender(client, {
 ```
 
 This saves rendering time and costs when the same composition is rendered multiple times.
+
+**GPU rendering:**
+
+Pass `backend: "gpu"` to route the render to an NVIDIA L4 GPU worker. Useful for compositions with heavy WebGL or Three.js content.
+
+```typescript
+const render = await createRender(client, {
+  html: compositionHtml,
+  width: 1920,
+  height: 1080,
+  backend: "gpu",
+});
+```
+
+Defaults to `"cpu"` when omitted.
 
 ## getRenderProgress
 
