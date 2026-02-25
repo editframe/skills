@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Link } from "react-router";
-import { HeroDemoPoster } from "../HeroDemo";
+import { HeroDemoPoster } from "../HeroDemoPoster";
 
 const HeroDemo = lazy(() => import("../HeroDemo").then((m) => ({ default: m.HeroDemo })));
 

@@ -5,12 +5,23 @@ import { Navigation } from "~/components/landing-v5/Navigation";
 import "~/styles/landing.css";
 
 import { HeroSection } from "~/components/landing-v5/sections/HeroSection";
-import { CodeExamplesSection } from "~/components/landing-v5/sections/CodeExamplesSection";
-import { PromptToToolSection } from "~/components/landing-v5/sections/PromptToToolSection";
-import { RenderAnywhereSection } from "~/components/landing-v5/sections/RenderAnywhereSection";
-import { GettingStartedSection } from "~/components/landing-v5/sections/GettingStartedSection";
 import { FooterSection } from "~/components/landing-v5/sections/FooterSection";
 
+const CodeExamplesSection = lazy(() =>
+  import("~/components/landing-v5/sections/CodeExamplesSection").then((m) => ({
+    default: m.CodeExamplesSection,
+  }))
+);
+const PromptToToolSection = lazy(() =>
+  import("~/components/landing-v5/sections/PromptToToolSection").then((m) => ({
+    default: m.PromptToToolSection,
+  }))
+);
+const RenderAnywhereSection = lazy(() =>
+  import("~/components/landing-v5/sections/RenderAnywhereSection").then((m) => ({
+    default: m.RenderAnywhereSection,
+  }))
+);
 const ArchitectureSection = lazy(() =>
   import("~/components/landing-v5/sections/ArchitectureSection").then((m) => ({
     default: m.ArchitectureSection,
@@ -19,6 +30,11 @@ const ArchitectureSection = lazy(() =>
 const TemplatedRenderingSection = lazy(() =>
   import("~/components/landing-v5/sections/TemplatedRenderingSection").then((m) => ({
     default: m.TemplatedRenderingSection,
+  }))
+);
+const GettingStartedSection = lazy(() =>
+  import("~/components/landing-v5/sections/GettingStartedSection").then((m) => ({
+    default: m.GettingStartedSection,
   }))
 );
 import {
@@ -62,12 +78,12 @@ export default function IndexPage() {
 
         <main id="main-content">
           <HeroSection />
-          <CodeExamplesSection />
-          <PromptToToolSection />
-          <RenderAnywhereSection />
+          <Suspense><CodeExamplesSection /></Suspense>
+          <Suspense><PromptToToolSection /></Suspense>
+          <Suspense><RenderAnywhereSection /></Suspense>
           <Suspense><ArchitectureSection /></Suspense>
           <Suspense><TemplatedRenderingSection /></Suspense>
-          <GettingStartedSection />
+          <Suspense><GettingStartedSection /></Suspense>
         </main>
 
         <FooterSection />

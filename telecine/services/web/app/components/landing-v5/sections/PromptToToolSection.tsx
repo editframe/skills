@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useRef, useState, useEffect } from "react";
 import { Link } from "react-router";
 
 const TrimTool = lazy(() => import("../tools/TrimTool").then(m => ({ default: m.TrimTool })));
@@ -9,6 +9,34 @@ function ToolSkeleton() {
   return (
     <div className="flex items-center justify-center min-h-[300px]">
       <div className="text-white/40 dark:text-white/40 text-sm">Loading tool...</div>
+    </div>
+  );
+}
+
+function LazyTrimTool() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0]?.isIntersecting) { setVisible(true); observer.disconnect(); } },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref}>
+      {visible ? (
+        <Suspense fallback={<ToolSkeleton />}>
+          <TrimTool />
+        </Suspense>
+      ) : (
+        <ToolSkeleton />
+      )}
     </div>
   );
 }
@@ -75,9 +103,7 @@ export function PromptToToolSection() {
             <div className="relative">
               <div className="absolute -bottom-4 -right-4 w-full h-full bg-[var(--poster-blue)]" />
               <div className="relative bg-[var(--paper-cream)] dark:bg-[#1a1a1a] border-4 border-white p-4 md:p-6">
-                <Suspense fallback={<ToolSkeleton />}>
-                  <TrimTool />
-                </Suspense>
+                <LazyTrimTool />
               </div>
             </div>
           </div>
