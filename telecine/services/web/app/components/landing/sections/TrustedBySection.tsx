@@ -3,7 +3,6 @@ import type { TrustedBySectionProps } from "../types";
 
 /**
  * Trusted By Section - Logo bar of companies/users
- * Inspired by Remotion's "Trusted by" section
  */
 export function TrustedBySection({ logos }: TrustedBySectionProps) {
   return (

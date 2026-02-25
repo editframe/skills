@@ -5,7 +5,6 @@ import { CodeBlock } from "~/components/CodeBlock";
 
 /**
  * Feature Showcase - Side-by-side code + visual demonstration
- * Inspired by Remotion's "Compose with code", "Edit dynamically" sections
  */
 export function FeatureShowcase({
   eyebrow,

@@ -1,7 +1,6 @@
 /**
  * Landing page components - modular, reorderable sections
  * 
- * Inspired by Remotion, Hasura DDN, and MediaBunny landing pages.
  * All sections are independent and can be easily rearranged.
  */
 

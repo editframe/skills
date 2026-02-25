@@ -3,7 +3,6 @@ import type { DemoSectionProps } from "../types";
 
 /**
  * Demo Section - Interactive preview placeholder
- * Inspired by Remotion's live demo section
  */
 export function DemoSection({ headline, description }: DemoSectionProps) {
   return (

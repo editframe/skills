@@ -4,7 +4,6 @@ import type { UseCasesSectionProps } from "../types";
 
 /**
  * Use Cases Section - Showcase real-world examples
- * Inspired by Remotion's GitHub Unwrapped showcase
  */
 export function UseCasesSection({
   eyebrow,

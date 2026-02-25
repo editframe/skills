@@ -3,7 +3,6 @@ import type { StatsSectionProps } from "../types";
 
 /**
  * Stats Section - Key metrics display
- * Inspired by Remotion's stats section (400k+ installs, etc.)
  */
 export function StatsSection({ stats }: StatsSectionProps) {
   return (
