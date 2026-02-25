@@ -1,5 +1,5 @@
-import { type MetaFunction } from "react";
-import { type HeadersFunction } from "react-router";
+import { lazy, Suspense } from "react";
+import { type MetaFunction, type HeadersFunction } from "react-router";
 import { useTheme } from "~/hooks/useTheme";
 import { Navigation } from "~/components/landing-v5/Navigation";
 import "~/styles/landing.css";
@@ -8,10 +8,19 @@ import { HeroSection } from "~/components/landing-v5/sections/HeroSection";
 import { CodeExamplesSection } from "~/components/landing-v5/sections/CodeExamplesSection";
 import { PromptToToolSection } from "~/components/landing-v5/sections/PromptToToolSection";
 import { RenderAnywhereSection } from "~/components/landing-v5/sections/RenderAnywhereSection";
-import { ArchitectureSection } from "~/components/landing-v5/sections/ArchitectureSection";
-import { TemplatedRenderingSection } from "~/components/landing-v5/sections/TemplatedRenderingSection";
 import { GettingStartedSection } from "~/components/landing-v5/sections/GettingStartedSection";
 import { FooterSection } from "~/components/landing-v5/sections/FooterSection";
+
+const ArchitectureSection = lazy(() =>
+  import("~/components/landing-v5/sections/ArchitectureSection").then((m) => ({
+    default: m.ArchitectureSection,
+  }))
+);
+const TemplatedRenderingSection = lazy(() =>
+  import("~/components/landing-v5/sections/TemplatedRenderingSection").then((m) => ({
+    default: m.TemplatedRenderingSection,
+  }))
+);
 import {
   RenderQueueProvider,
   RenderQueuePanel,
@@ -56,8 +65,8 @@ export default function IndexPage() {
           <CodeExamplesSection />
           <PromptToToolSection />
           <RenderAnywhereSection />
-          <ArchitectureSection />
-          <TemplatedRenderingSection />
+          <Suspense><ArchitectureSection /></Suspense>
+          <Suspense><TemplatedRenderingSection /></Suspense>
           <GettingStartedSection />
         </main>
 

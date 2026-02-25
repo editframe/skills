@@ -125,6 +125,28 @@ export const buildViteConfig = () => {
         rollupOptions: {
           treeshake: "recommended",
           input: isSsrBuild ? "/app/services/web/server/app.ts" : undefined,
+          output: isSsrBuild
+            ? undefined
+            : {
+                manualChunks(id: string) {
+                  if (id.includes("vite/preload-helper")) {
+                    return "preload-helper";
+                  }
+                  if (
+                    id.includes("node_modules/three/") ||
+                    id.includes("node_modules/@react-three/")
+                  ) {
+                    return "vendor-threejs";
+                  }
+                  if (
+                    id.includes("node_modules/react/") ||
+                    id.includes("node_modules/react-dom/") ||
+                    id.includes("node_modules/scheduler/")
+                  ) {
+                    return "vendor-react";
+                  }
+                },
+              },
         },
       },
     };
