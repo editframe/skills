@@ -5,7 +5,7 @@ import "~/styles/docs.css";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Editframe | Blog" },
+    { title: "Blog | Editframe" },
     {
       name: "description",
       content: "Editframe blog posts.",
