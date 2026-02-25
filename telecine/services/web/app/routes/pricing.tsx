@@ -38,8 +38,8 @@ const tiers = [
   {
     name: "Team",
     employees: "4–10 employees",
-    price: "Contact us",
-    period: "",
+    price: "$49",
+    period: "/ mo",
     color: "var(--poster-blue)",
     description:
       "Growing teams that need full Client-Side SDK rights for production use.",
@@ -55,8 +55,8 @@ const tiers = [
   {
     name: "Cloud",
     employees: "11–20, or any size needing cloud",
-    price: "Contact us",
-    period: "+ usage",
+    price: "$99",
+    period: "/ mo + usage",
     color: "var(--poster-red)",
     description:
       "Server-Side Rendering and Premium Player for parallel rendering at scale.",
