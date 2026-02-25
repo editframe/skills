@@ -1808,14 +1808,16 @@ export function HeroDemo() {
       <div className="bg-[#0a0a0a] border-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
         <div className="aspect-video relative">
           {isClient ? (
-            <Preview
-              id={previewId}
-              ref={previewRef as any}
-              loop
-              className="absolute inset-0 w-full h-full"
-            >
-              <TimelineRoot id={previewId} component={HeroDemoContent} />
-            </Preview>
+            <div className="absolute inset-0">
+              <Preview
+                id={previewId}
+                ref={previewRef as any}
+                loop
+                className="block w-full h-full"
+              >
+                <TimelineRoot id={previewId} component={HeroDemoContent} />
+              </Preview>
+            </div>
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center" style={{
               background: "radial-gradient(ellipse 80% 60% at 50% 50%, rgba(21,101,192,0.08) 0%, transparent 70%)",
