@@ -71,31 +71,6 @@ export interface ApiWebhookTopics {
   name: string;
 }
 
-export interface HdbCatalogEventInvocationLogs {
-  created_at: Generated<Timestamp | null>;
-  event_id: string | null;
-  id: Generated<string>;
-  request: Json | null;
-  response: Json | null;
-  status: number | null;
-  trigger_name: string | null;
-}
-
-export interface HdbCatalogEventLog {
-  archived: Generated<boolean>;
-  created_at: Generated<Timestamp | null>;
-  delivered: Generated<boolean>;
-  error: Generated<boolean>;
-  id: Generated<string>;
-  locked: Timestamp | null;
-  next_retry_at: Timestamp | null;
-  payload: Json;
-  schema_name: string;
-  table_name: string;
-  tries: Generated<number>;
-  trigger_name: string;
-}
-
 export interface HdbCatalogHdbActionLog {
   action_name: string | null;
   created_at: Generated<Timestamp>;
@@ -125,15 +100,6 @@ export interface HdbCatalogHdbCronEvents {
   scheduled_time: Timestamp;
   status: Generated<string>;
   tries: Generated<number>;
-  trigger_name: string;
-}
-
-export interface HdbCatalogHdbEventLogCleanups {
-  deleted_event_invocation_logs: number | null;
-  deleted_event_logs: number | null;
-  id: Generated<string>;
-  scheduled_at: Timestamp;
-  status: string;
   trigger_name: string;
 }
 
@@ -172,11 +138,6 @@ export interface HdbCatalogHdbSchemaNotifications {
   notification: Json;
   resource_version: Generated<number>;
   updated_at: Generated<Timestamp | null>;
-}
-
-export interface HdbCatalogHdbSourceCatalogVersion {
-  upgraded_on: Timestamp;
-  version: string;
 }
 
 export interface HdbCatalogHdbVersion {
@@ -314,7 +275,20 @@ export interface IdentityValidEmailConfirmations {
   user_id: string | null;
 }
 
-export interface IdentityValidMagicLinksTokens {
+export interface IdentityValidInvites {
+  accepted_at: Timestamp | null;
+  created_at: Timestamp | null;
+  creator_id: string | null;
+  denied_at: Timestamp | null;
+  email_address: string | null;
+  id: string | null;
+  invite_token: string | null;
+  org_id: string | null;
+  role: string | null;
+  updated_at: Timestamp | null;
+}
+
+export interface IdentityValidMagicLinkTokens {
   claimed_at: Timestamp | null;
   created_at: Timestamp | null;
   email_address: string | null;
@@ -330,6 +304,23 @@ export interface IdentityValidPasswordResets {
   reset_token: string | null;
   updated_at: Timestamp | null;
   user_id: string | null;
+}
+
+export interface TelemetryEvents {
+  api_key_id: string;
+  cli_version: string | null;
+  created_at: Generated<Timestamp>;
+  duration_ms: number | null;
+  feature_usage: Generated<Json>;
+  fps: Numeric | null;
+  height: number | null;
+  id: Generated<string>;
+  ip_address: string | null;
+  org_id: string;
+  origin: string | null;
+  render_path: string;
+  sdk_version: string | null;
+  width: number | null;
 }
 
 export interface Video2CaptionFiles {
@@ -679,17 +670,13 @@ export interface DB {
   "api.webhook_events": ApiWebhookEvents;
   "api.webhook_topics": ApiWebhookTopics;
   "api.webhooks_requests": ApiWebhooksRequests;
-  "hdb_catalog.event_invocation_logs": HdbCatalogEventInvocationLogs;
-  "hdb_catalog.event_log": HdbCatalogEventLog;
   "hdb_catalog.hdb_action_log": HdbCatalogHdbActionLog;
   "hdb_catalog.hdb_cron_event_invocation_logs": HdbCatalogHdbCronEventInvocationLogs;
   "hdb_catalog.hdb_cron_events": HdbCatalogHdbCronEvents;
-  "hdb_catalog.hdb_event_log_cleanups": HdbCatalogHdbEventLogCleanups;
   "hdb_catalog.hdb_metadata": HdbCatalogHdbMetadata;
   "hdb_catalog.hdb_scheduled_event_invocation_logs": HdbCatalogHdbScheduledEventInvocationLogs;
   "hdb_catalog.hdb_scheduled_events": HdbCatalogHdbScheduledEvents;
   "hdb_catalog.hdb_schema_notifications": HdbCatalogHdbSchemaNotifications;
-  "hdb_catalog.hdb_source_catalog_version": HdbCatalogHdbSourceCatalogVersion;
   "hdb_catalog.hdb_version": HdbCatalogHdbVersion;
   "identity.api_keys": IdentityApiKeys;
   "identity.email_confirmations": IdentityEmailConfirmations;
@@ -703,8 +690,10 @@ export interface DB {
   "identity.roles": IdentityRoles;
   "identity.users": IdentityUsers;
   "identity.valid_email_confirmations": IdentityValidEmailConfirmations;
-  "identity.valid_magic_links_tokens": IdentityValidMagicLinksTokens;
+  "identity.valid_invites": IdentityValidInvites;
+  "identity.valid_magic_link_tokens": IdentityValidMagicLinkTokens;
   "identity.valid_password_resets": IdentityValidPasswordResets;
+  "telemetry.events": TelemetryEvents;
   "video.audio_tracks": VideoAudioTracks;
   "video.images": VideoImages;
   "video.project_updates": VideoProjectUpdates;

@@ -37,4 +37,8 @@ export interface RenderToVideoOptions {
   customWritableStream?: WritableStream<Uint8Array>;
   progressPreviewInterval?: number;
   canvasMode?: "native" | "foreignObject";
+  /** API token for telemetry reporting. Required for license compliance. */
+  telemetryToken?: string;
+  /** Override the telemetry endpoint (defaults to https://editframe.com). */
+  telemetryEndpoint?: string;
 }

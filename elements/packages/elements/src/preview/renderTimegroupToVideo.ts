@@ -709,6 +709,39 @@ export async function renderTimegroupToVideo(
 
     await output!.finalize();
 
+    // Report telemetry (fire-and-forget)
+    if (options.telemetryToken) {
+      const elapsedMs = Math.round(performance.now() - renderStartTime);
+      const endpoint = options.telemetryEndpoint ?? "https://editframe.com";
+      const elementTypes: string[] = [];
+      document.querySelectorAll("ef-video,ef-audio,ef-image,ef-captions,ef-text").forEach((el) => {
+        const tag = el.tagName.toLowerCase();
+        if (!elementTypes.includes(tag)) elementTypes.push(tag);
+      });
+      try {
+        fetch(`${endpoint}/api/v1/telemetry`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${options.telemetryToken}`,
+          },
+          body: JSON.stringify({
+            render_path: "client",
+            duration_ms: elapsedMs,
+            width: config.videoWidth,
+            height: config.videoHeight,
+            fps: config.fps,
+            feature_usage: { elementTypes },
+          }),
+          keepalive: true,
+        }).catch(() => {
+          // Telemetry errors must never surface to users.
+        });
+      } catch {
+        // Telemetry errors must never surface to users.
+      }
+    }
+
     if (useStreaming) {
       // Streaming mode: chunks already sent via customWritableStream or file stream
       return undefined;

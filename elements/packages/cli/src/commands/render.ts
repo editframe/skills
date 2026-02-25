@@ -11,6 +11,7 @@ import {
 } from "../utils/spawnViteServer.js";
 import { StreamTargetChunk } from "mediabunny";
 import { withProfiling } from "../utils/profileRender.js";
+import { VERSION } from "../VERSION.js";
 
 declare global {
   interface Window {
@@ -20,6 +21,25 @@ declare global {
 }
 
 const log = debug("ef:cli:render");
+
+async function sendTelemetry(
+  efRenderHost: string,
+  token: string,
+  payload: Record<string, unknown>,
+): Promise<void> {
+  try {
+    await fetch(`${efRenderHost}/api/v1/telemetry`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    // Telemetry must never fail the render — swallow all errors.
+  }
+}
 
 /**
  * Format milliseconds as MM:SS or HH:MM:SS
@@ -60,6 +80,17 @@ program
     "./render-profile.cpuprofile",
   )
   .action(async (directory = ".", options) => {
+    const programOpts = program.opts();
+    const token: string | undefined = programOpts.token || process.env.EF_TOKEN;
+    if (!token) {
+      process.stderr.write(
+        "Error: API token is required for rendering. Set EF_TOKEN or use --token.\n",
+      );
+      process.exit(1);
+    }
+    const efRenderHost: string =
+      programOpts.efRenderHost || process.env.EF_RENDER_HOST || "https://editframe.com";
+
     // If running from the dev script (via tsx), ORIGINAL_CWD contains the user's actual directory
     const baseCwd = process.env.ORIGINAL_CWD || process.cwd();
     const outputPath = path.resolve(baseCwd, options.output);
@@ -231,9 +262,20 @@ program
                   renderOptions.toMs = toMs;
                 }
 
+                const renderStartTime = Date.now();
                 await page.evaluate(async (opts) => {
                   await window.EF_RENDER!.renderStreaming(opts);
                 }, renderOptions);
+                const renderDurationMs = Date.now() - renderStartTime;
+
+                // Collect render info for telemetry
+                const renderInfo = await page.evaluate(async () => {
+                  try {
+                    return await window.EF_RENDER!.getRenderInfo();
+                  } catch {
+                    return null;
+                  }
+                });
 
                 // Build completion message with performance stats
                 if (lastProgress) {
@@ -255,6 +297,23 @@ program
                 } else {
                   progressSpinner.succeed("Render complete");
                 }
+
+                // Send telemetry (fire-and-forget)
+                void sendTelemetry(efRenderHost, token!, {
+                  render_path: "cli",
+                  duration_ms: renderDurationMs,
+                  width: renderInfo?.width ?? null,
+                  height: renderInfo?.height ?? null,
+                  fps: renderInfo?.fps ?? fps,
+                  feature_usage: renderInfo
+                    ? {
+                        efMediaCount: Object.keys(renderInfo.assets.efMedia).length,
+                        efImageCount: renderInfo.assets.efImage.length,
+                        efCaptionsCount: renderInfo.assets.efCaptions.length,
+                      }
+                    : {},
+                  cli_version: VERSION,
+                });
               } catch (error) {
                 progressSpinner.fail("Render failed");
                 throw error;
