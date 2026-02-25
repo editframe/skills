@@ -5,7 +5,12 @@ import { Navigation } from "~/components/landing-v5/Navigation";
 import "~/styles/landing.css";
 
 import { HeroSection } from "~/components/landing-v5/sections/HeroSection";
-import { FooterSection } from "~/components/landing-v5/sections/FooterSection";
+
+const FooterSection = lazy(() =>
+  import("~/components/landing-v5/sections/FooterSection").then((m) => ({
+    default: m.FooterSection,
+  }))
+);
 
 const CodeExamplesSection = lazy(() =>
   import("~/components/landing-v5/sections/CodeExamplesSection").then((m) => ({
@@ -39,8 +44,12 @@ const GettingStartedSection = lazy(() =>
 );
 import {
   RenderQueueProvider,
-  RenderQueuePanel,
 } from "~/components/landing-v5/RenderQueue";
+const RenderQueuePanel = lazy(() =>
+  import("~/components/landing-v5/RenderQueue").then((m) => ({
+    default: m.RenderQueuePanel,
+  }))
+);
 
 export const headers: HeadersFunction = () => ({
   "Cache-Control": "public, max-age=0, s-maxage=300, stale-while-revalidate=3600",
@@ -86,8 +95,8 @@ export default function IndexPage() {
           <Suspense><GettingStartedSection /></Suspense>
         </main>
 
-        <FooterSection />
-        <RenderQueuePanel />
+        <Suspense><FooterSection /></Suspense>
+        <Suspense><RenderQueuePanel /></Suspense>
       </div>
     </RenderQueueProvider>
   );
