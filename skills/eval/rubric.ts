@@ -215,12 +215,15 @@ export function buildGeneratePrompt(task: {
 Brand description: ${task.description}
 Platform: ${task.platform}
 
+Before writing any HTML, work through the brand-video-generator skill's Phase 0 questions. You know this brand from training — use that knowledge. Name specific products, features, pricing models, design philosophy, and founder decisions that are true about ${task.brand} and false about its competitors.
+
 Requirements:
 - Output only the HTML composition markup (the ef-timegroup structure + any script/style tags)
 - Use real Editframe web components (ef-timegroup, ef-video, ef-text, ef-audio, ef-image)
 - Include CSS animations — text should move, not just appear
-- The composition should be specific to this brand, not a generic template
-- Use https://assets.editframe.com/bars-n-tone.mp4 as a placeholder for any video src
+- Do NOT use bars-n-tone.mp4 — use brand-color backgrounds, canvas animations, or leave video src empty with a CSS background instead
+- The composition structure must visibly follow from the specific brand truth you identify in Phase 0 Q4
+- Any canvas animation must be semantically connected to what is specific about this brand
 
 Output only the HTML — no explanation, no markdown fences, just the raw HTML composition.`
 }

@@ -44,6 +44,7 @@ Provide a website URL and video objective. The skill will:
 - Assume design patterns based on industry
 - Use text content as substitute for visual analysis
 - Hallucinate brand colors, fonts, or design language
+- Use `bars-n-tone.mp4` or any placeholder media in the final composition — use brand-color backgrounds, canvas animations, or actual product footage URLs instead
 
 **If you cannot access the website with browser tools, STOP and report this.**
 
@@ -67,7 +68,19 @@ Yes: "Nobody would see the contrast between how chaotic their industry is and ho
 
 This is a feeling, not a fact. "Informed" is not a feeling. "Like this problem is finally solved" is a feeling.
 
-**If you cannot answer all three with specific, non-transferable answers, ask the user for more context before proceeding.**
+**4. What formal choice does answer #1 force on this video?**
+
+The brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.
+
+Not: "Linear is fast, so I'll use snappy cuts" (any brand could 'be fast').
+Yes: "Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains."
+
+Not: "Stripe handles money, so I'll show a payment form" (category imagery).
+Yes: "Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction."
+
+The answer to this question is your point of view. If you cannot identify a structural consequence of the brand truth, you have not found the real truth yet.
+
+**If you cannot answer all four with specific, non-transferable answers, ask the user for more context before proceeding.**
 
 The answers to Phase 0 determine the form of the video. Return to them at every subsequent phase.
 
@@ -86,8 +99,15 @@ Extract from the loaded website:
 **Voice & Messaging:**
 - Tone (friendly, authoritative, urgent, etc.)
 - Target audience signals
-- Core value propositions
+- Core value propositions — **strip category-level claims** (see below)
 - Emotional positioning
+
+**False differentiators — these describe every competitor too, ignore them:**
+- "Real-time collaboration", "easy to use", "powerful", "fast", "reliable", "all-in-one"
+- "Helps teams work better", "saves time", "increases productivity"
+- "Trusted by thousands of companies"
+
+A real differentiator is something that, if true about this brand, would be surprising or false about most competitors.
 
 **Content Hierarchy:**
 - Hero message (H1, above-fold)
@@ -107,6 +127,7 @@ Extract from the loaded website:
 - Opening hook (3 seconds) — what earns the next 3 seconds?
 - Core message (one sentence)
 - Emotional arc (start → middle → end feeling from Phase 0)
+- **Point of view** (Phase 0 answer #4): What structural/formal constraint does the brand truth impose? Name the constraint and explain how it will be visible in scene structure.
 - Call-to-action
 
 **Visual Treatment:**
@@ -128,15 +149,17 @@ Extract from the loaded website:
 
 **Visual Metaphor Quick Reference:**
 
-| Concept | Visual Approach | Motion Style |
-|---------|----------------|--------------|
-| Chaos/Complexity | Tangled lines, scattered elements | Chaotic bezier curves |
-| Order/Simplicity | Grid layouts, organized patterns | Smooth, organized appearance |
-| Scale | Grid multiplication, zooming out | Rapid appearance, growing |
-| Speed | Motion blur, streaking lines | Fast movements, trails |
-| Growth | Upward arrows, expanding circles | Upward/expanding animation |
-| Connection | Network nodes, linked elements | Lines connecting, coming together |
-| Transformation | Before/after, morphing shapes | Smooth morphing, chaos→order |
+These are starting points, not answers. The right-hand column is a generic default — replace it with something specific to this brand before using it.
+
+| Concept | Generic default (avoid) | What to find instead |
+|---------|------------------------|----------------------|
+| Chaos/Complexity | Tangled bezier curves | What does chaos *look like for this product's users specifically*? |
+| Order/Simplicity | Grid layouts, organized patterns | What does resolution look like *in this product's own UI or workflow*? |
+| Scale | Grid multiplication | What unit does this brand scale — requests, users, lines of code? Show that unit. |
+| Speed | Motion blur, streaking lines | What is the before/after latency that this brand eliminates? Show the gap. |
+| Growth | Upward arrows | What grows that is specific to this brand — is it a number, a graph, a team? |
+| Connection | Network nodes | What specific things connect through this product that didn't connect before? |
+| Transformation | Before/after morph | What is the named "before" state the brand's own users describe using? |
 
 **Canvas API Opportunities** (use `frameTask` for generative graphics):
 - Particle systems (energy, activity)
@@ -181,7 +204,9 @@ Scene 2: The Problem (4s-9s)
                  Static image cannot show accumulation. Text alone cannot show it.
 ```
 
-**Scene budget**: Before writing individual scenes, commit to a total scene count and justify it. More scenes is not more impact. The minimum number of scenes that achieves the viewer-state change from Phase 0 is the right number.
+**Scene budget**: `floor(duration_seconds / 10)` is your maximum scene count. A 30s video gets 3 scenes. A 60s video gets 6. Start at the minimum and add only if the viewer-state arc requires it — not because you have things to say.
+
+**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: "Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?" If the latter, rewrite the scene or cut it. The structural constraint is the whole point — if it's not visible in scene 2, it won't be visible in scene 5 either.
 
 ---
 
@@ -192,7 +217,7 @@ Scene 2: The Problem (4s-9s)
 
 **Motion Graphics:**
 - Text animations (style, timing, specific CSS animation or `split` attribute)
-- Canvas animations (particle systems, bezier curves, etc. — specify `frameTask` logic)
+- Canvas animations — **write the actual `addFrameTask` implementation**, not a description. A declared `<canvas>` element with no script is a broken composition. See `references/composition-patterns.md` for a complete example.
 - Transitions (type, duration, CSS keyframes)
 
 **Audio:**

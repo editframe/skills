@@ -130,6 +130,13 @@ Still photography becomes temporal through slow motion. A 0.8% scale change per 
 
 For concepts that can't be shown with video — data, systems, processes, abstractions — `addFrameTask` gives access to the canvas for per-frame generative graphics. The animation is a pure function of time, so it's fully scrubbable and renderable.
 
+**The motion must be semantically connected to the specific product.** Generic particles or bezier curves say nothing. The form of the animation should demonstrate what is true about this brand and false about others:
+- Stripe: money moving without friction → particles that pass through each other without collision
+- Linear: work resolved without ambiguity → a tangled graph that converges to a clean DAG
+- Vercel: deploys as instant as saving a file → a ripple that expands to the edges the moment it starts
+
+If you could swap the brand name and the canvas animation would still make sense, the animation is decoration.
+
 ```html
 <ef-timegroup mode="fixed" duration="6s" id="canvas-scene" class="w-[720px] h-[400px] bg-slate-900">
   <canvas id="particles" class="absolute inset-0 size-full"></canvas>
