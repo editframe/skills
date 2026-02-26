@@ -3,6 +3,7 @@ import { type MetaFunction, type HeadersFunction } from "react-router";
 import { useTheme } from "~/hooks/useTheme";
 import { Navigation } from "~/components/landing-v5/Navigation";
 import { ClientOnly } from "~/components/ClientOnly";
+import { RenderQueueProvider } from "~/components/landing-v5/RenderQueueContext";
 import "~/styles/landing.css";
 
 import { HeroSection } from "~/components/landing-v5/sections/HeroSection";
@@ -45,12 +46,14 @@ export default function IndexPage() {
       <Navigation />
 
       <main id="main-content">
-        <HeroSection />
-        <ClientOnly>
-          <Suspense>
-            <LandingSectionsRelay />
-          </Suspense>
-        </ClientOnly>
+        <RenderQueueProvider>
+          <HeroSection />
+          <ClientOnly>
+            <Suspense>
+              <LandingSectionsRelay />
+            </Suspense>
+          </ClientOnly>
+        </RenderQueueProvider>
       </main>
     </div>
   );

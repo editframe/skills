@@ -1,5 +1,4 @@
 import { lazy, Suspense } from "react";
-import { RenderQueueProvider } from "./RenderQueue";
 
 const CodeExamplesSection = lazy(() =>
   import("./sections/CodeExamplesSection").then((m) => ({ default: m.CodeExamplesSection }))
@@ -28,7 +27,7 @@ const RenderQueuePanel = lazy(() =>
 
 export default function LandingSectionsRelay() {
   return (
-    <RenderQueueProvider>
+    <>
       <Suspense>
         <CodeExamplesSection />
         <PromptToToolSection />
@@ -41,6 +40,6 @@ export default function LandingSectionsRelay() {
       <Suspense>
         <RenderQueuePanel />
       </Suspense>
-    </RenderQueueProvider>
+    </>
   );
 }
