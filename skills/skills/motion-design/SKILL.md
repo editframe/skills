@@ -2,7 +2,6 @@
 name: motion-design
 title: Motion Design
 description: Professional motion graphics for video content — animations, transitions, title sequences, and time-based visual design for video production.
-status: draft
 order: 40
 license: MIT
 metadata:
@@ -80,6 +79,7 @@ PROCESS: Iterate systematically
 ## Quick Reference
 
 For detailed tables and patterns, see:
+- **Editframe implementation** (start here): [0-editframe.md](references/0-editframe.md)
 - **Material properties & durations**: [2-physics-model.md](references/2-physics-model.md)
 - **Stagger delays & patterns**: [3-attention.md](references/3-attention.md)
 - **Common animation patterns**: [2-physics-model.md](references/2-physics-model.md)

@@ -47,7 +47,7 @@ Children play one after another. Duration is the sum of all children minus any o
 </ef-timegroup>
 ```
 
-Use `sequence` for cut-based editing, slideshows, multi-scene videos. See [sequencing.md](references/sequencing.md).
+Use `sequence` for cut-based editing, multi-scene videos, anything where children play in order. See [sequencing.md](references/sequencing.md).
 
 ## Contain
 

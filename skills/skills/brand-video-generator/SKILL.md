@@ -2,7 +2,6 @@
 name: brand-video-generator
 title: Brand Video Generator
 description: Generate video compositions from brand websites. Analyzes visual identity, messaging, and content hierarchy to create scene-by-scene video plans.
-status: draft
 order: 50
 license: MIT
 metadata:
@@ -17,12 +16,12 @@ Transform a brand's website into a strategic video composition plan.
 ## Quick Start
 
 Provide a website URL and video objective. The skill will:
-1. Analyze brand visual identity (colors, typography, design language)
-2. Analyze brand voice and messaging tone
-3. Extract content hierarchy and key messages
+1. Establish what makes this video specific and unrepeatable
+2. Analyze brand visual identity (colors, typography, design language)
+3. Analyze brand voice and messaging tone
 4. Synthesize a creative brief
-5. Plan scene-by-scene video structure
-6. Specify asset requirements
+5. Plan scene-by-scene video structure with viewer-state tracking
+6. Specify asset and motion requirements
 
 ## Input
 
@@ -50,6 +49,30 @@ Provide a website URL and video objective. The skill will:
 
 ## Process
 
+### Phase 0: Specificity Gate (MANDATORY — do this before touching the website)
+
+Before any analysis, answer these three questions. Generic answers are disqualifying — if you can substitute another brand's name and the answer still holds, your answer is not specific enough.
+
+**1. What is true about this brand that would be false about any competitor?**
+
+Not: "They focus on quality and customer service" (every brand claims this).
+Yes: "They were founded by two researchers who spent eight years on a single problem before launching."
+
+**2. What would be lost if this video never existed?**
+
+Not: "People wouldn't know about the product" (that's true of any video).
+Yes: "Nobody would see the contrast between how chaotic their industry is and how calm their workflow actually is."
+
+**3. What should the viewer feel at the last frame that they didn't feel at the first frame?**
+
+This is a feeling, not a fact. "Informed" is not a feeling. "Like this problem is finally solved" is a feeling.
+
+**If you cannot answer all three with specific, non-transferable answers, ask the user for more context before proceeding.**
+
+The answers to Phase 0 determine the form of the video. Return to them at every subsequent phase.
+
+---
+
 ### Phase 1: Brand Analysis
 
 Extract from the loaded website:
@@ -72,6 +95,8 @@ Extract from the loaded website:
 - Social proof (testimonials, metrics)
 - Primary CTA
 
+---
+
 ### Phase 2: Creative Brief
 
 **Video Objective:**
@@ -79,10 +104,9 @@ Extract from the loaded website:
 - Key takeaway for viewer
 
 **Message Structure:**
-- Opening hook (3 seconds)
+- Opening hook (3 seconds) — what earns the next 3 seconds?
 - Core message (one sentence)
-- Supporting points (2-3 benefits)
-- Emotional arc (start → middle → end feeling)
+- Emotional arc (start → middle → end feeling from Phase 0)
 - Call-to-action
 
 **Visual Treatment:**
@@ -90,6 +114,8 @@ Extract from the loaded website:
 - Motion style (snappy/smooth)
 - Color usage (how to apply brand palette)
 - Overall mood (match brand personality)
+
+---
 
 ### Phase 2.5: Video Worthiness Assessment (MANDATORY)
 
@@ -121,29 +147,43 @@ Extract from the loaded website:
 
 **Quality Gate**: If you cannot identify 5+ visual elements that justify video format, reconsider your approach.
 
+---
+
 ### Phase 3: Scene Planning
 
-For each scene:
+For each scene, use this template:
 
 ```
 Scene [N]: [Name] ([start]s-[end]s)
+- VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]
+- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]
 - PRIMARY VISUAL: [Main visual element - NOT just text]
-- MOTION/ANIMATION: [How it moves, what animates]
+- MOTION/ANIMATION: [How it moves, what animates, specific CSS or frameTask approach]
 - VISUAL METAPHOR: [What concept this shows visually]
 - Text: [Minimal - only if essential]
-- JUSTIFICATION: [Why video vs static image?]
+- JUSTIFICATION: [Why does this scene exist? What would be lost without it?]
 ```
+
+**The viewer-state test**: If VIEWER STATE AT START and VIEWER STATE AT END are the same, the scene is not doing work. Cut it or change it until it does.
 
 **Example:**
 
 ```
-Scene 2: Problem (4s-9s)
-- PRIMARY VISUAL: Canvas animation - 50 tangled bezier curves
-- MOTION/ANIMATION: Curves draw in real-time, increasing complexity
-- VISUAL METAPHOR: Chaos/complexity of current infrastructure
-- Text: "Managing infrastructure is chaos"
-- JUSTIFICATION: Animation shows chaos building, can't be static
+Scene 2: The Problem (4s-9s)
+- VIEWER STATE AT START: Curious but skeptical — another infrastructure tool?
+- VIEWER STATE AT END:   Recognized — this is the exact chaos they live with every day
+- PRIMARY VISUAL: Canvas animation — 50 tangled bezier curves accumulating in real-time
+- MOTION/ANIMATION: frameTask draws curves frame by frame, each adding complexity;
+                    speed increases toward the end to convey overwhelm
+- VISUAL METAPHOR: Infrastructure complexity made visible
+- Text: "Managing infrastructure is chaos" (appears after curves fill the screen)
+- JUSTIFICATION: The accumulating chaos is the exact feeling the product resolves.
+                 Static image cannot show accumulation. Text alone cannot show it.
 ```
+
+**Scene budget**: Before writing individual scenes, commit to a total scene count and justify it. More scenes is not more impact. The minimum number of scenes that achieves the viewer-state change from Phase 0 is the right number.
+
+---
 
 ### Phase 4: Asset Requirements
 
@@ -151,53 +191,61 @@ Scene 2: Problem (4s-9s)
 - List each asset: [name] - [type] - [source: website/Canvas API/generate]
 
 **Motion Graphics:**
-- Text animations (style, timing)
-- Canvas animations (particle systems, bezier curves, etc.)
-- Transitions (type, duration)
+- Text animations (style, timing, specific CSS animation or `split` attribute)
+- Canvas animations (particle systems, bezier curves, etc. — specify `frameTask` logic)
+- Transitions (type, duration, CSS keyframes)
 
 **Audio:**
 - Music mood/tempo
 - Voiceover tone (if needed)
 
+---
+
 ## Output Format
 
-### 1. Brand Analysis
+### 1. Specificity Answers (Phase 0)
+- What's unique: [non-transferable truth]
+- What would be lost: [specific absence]
+- Viewer feeling arc: [feeling at frame 1] → [feeling at last frame]
+
+### 2. Brand Analysis
 - Colors: [hex codes]
 - Typography: [fonts]
 - Design: [style]
 - Tone: [voice]
-- Key messages: [2-3 points]
 
-### 2. Creative Brief
+### 3. Creative Brief
 - Objective: [goal]
 - Duration: [length]
 - Core message: [one sentence]
-- Emotional arc: [start] → [end]
-- Pacing: [fast/medium/slow]
+- Scene count: [N scenes — justified]
 
-### 3. Video Worthiness
+### 4. Video Worthiness
 - Visual metaphors: [list 5+]
 - Motion justification: [why video?]
 - Text ratio: [%]
 
-### 4. Scene Breakdown
-[Use Phase 3 template for each scene]
+### 5. Scene Breakdown
+[Use Phase 3 template for each scene, including viewer-state fields]
 
-### 5. Assets
+### 6. Assets
 - Visual: [list with sources]
-- Motion: [animations/effects]
+- Motion: [animations/effects with implementation notes]
 - Audio: [music mood]
+
+---
 
 ## Key Principles
 
+- **Specificity over comprehensiveness**: One true thing beats five generic things
+- **Viewer state is the measure**: Each scene must change how the viewer feels or thinks
 - **Show, don't tell**: Use visual metaphors, not text slides
 - **Motion must add meaning**: Animation should enhance understanding, not just decorate
-- **Brand assets first**: Extract from website before creating new
-- **One focus per scene**: Don't cram multiple ideas
-- **Strong hook**: First 3 seconds must grab attention
+- **The minimum that works**: Cut any scene that doesn't change viewer state
 
 ## Reference Files (Optional)
 
 - [references/visual-metaphors.md](references/visual-metaphors.md) - Visual metaphor library
 - [references/video-archetypes.md](references/video-archetypes.md) - Industry patterns
 - [references/video-fundamentals.md](references/video-fundamentals.md) - Transitions, arcs, brand basics
+- [references/editing.md](references/editing.md) - What to cut and when to stop
