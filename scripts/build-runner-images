@@ -14,5 +14,9 @@ echo "Building elements-runner..."
 docker build -t elements-runner "$PROJECT_ROOT/elements"
 
 echo ""
+echo "Building scheduler-go..."
+docker build -f "$PROJECT_ROOT/telecine/services/scheduler-go/Dockerfile.dev" -t scheduler-go "$PROJECT_ROOT/telecine/services/scheduler-go"
+
+echo ""
 echo "Done. Images built:"
-docker images --format '  {{.Repository}}:{{.Tag}}  {{.Size}}  ({{.CreatedSince}})' telecine-runner elements-runner
+docker images --format '  {{.Repository}}:{{.Tag}}  {{.Size}}  ({{.CreatedSince}})' telecine-runner elements-runner scheduler-go
