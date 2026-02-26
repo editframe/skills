@@ -137,6 +137,8 @@ For concepts that can't be shown with video — data, systems, processes, abstra
 
 If you could swap the brand name and the canvas animation would still make sense, the animation is decoration.
 
+**When showing chaos or pain, make it viscerally uncomfortable — not aesthetically pleasing.** A beautiful tangle of purple bezier curves communicates "elegant complexity." To communicate "I live in this every day and it's exhausting," the visual needs to be overwhelming: too many elements, too fast, overlapping in a way that makes the eye unable to rest. Chaos animations that look designed signal that the problem is aesthetic, not real.
+
 ```html
 <ef-timegroup mode="fixed" duration="6s" id="canvas-scene" class="w-[720px] h-[400px] bg-slate-900">
   <canvas id="particles" class="absolute inset-0 size-full"></canvas>

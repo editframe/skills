@@ -106,8 +106,13 @@ Extract from the loaded website:
 - "Real-time collaboration", "easy to use", "powerful", "fast", "reliable", "all-in-one"
 - "Helps teams work better", "saves time", "increases productivity"
 - "Trusted by thousands of companies"
+- Developer/API brands: "instant deploys", "edge functions", "OAuth built in", "REST API", "100ms response times", "99.99% uptime"
+- Payment brands: "one platform", "payment chaos solved", "global payments", "secure transactions"
+- Design tools: "design and code together", "design faster", "real-time collaboration"
 
-A real differentiator is something that, if true about this brand, would be surprising or false about most competitors.
+A real differentiator is something that, if true about this brand, would be surprising or false about most competitors. For developer brands, look for: *what does this product ask developers to give up?* (conventions, configurations, frameworks) — that's usually the actual truth.
+
+**The brand's own marketing copy is not a differentiator.** The brand's website says what it wants you to believe. Your job is to find the structural truth underneath — the thing the brand *does* more than what it *says*.
 
 **Content Hierarchy:**
 - Hero message (H1, above-fold)
@@ -128,7 +133,7 @@ A real differentiator is something that, if true about this brand, would be surp
 - Core message (one sentence)
 - Emotional arc (start → middle → end feeling from Phase 0)
 - **Point of view** (Phase 0 answer #4): What structural/formal constraint does the brand truth impose? Name the constraint and explain how it will be visible in scene structure.
-- Call-to-action
+- Call-to-action — **must embody the PoV, not revert to generic marketing language.** "Try it free" abandons a perspective. A CTA that follows from the structural constraint ("Ship the thing you just built" for Vercel, "Close the issue" for Linear) maintains it.
 
 **Visual Treatment:**
 - Pacing (fast/medium/slow)
@@ -252,6 +257,9 @@ Scene 2: The Problem (4s-9s)
 
 ### 5. Scene Breakdown
 [Use Phase 3 template for each scene, including viewer-state fields]
+
+After all scenes, add:
+**PoV trace**: Restate Phase 0 answer #4 and show one sentence per scene explaining how each scene's structure follows from it. If any scene cannot be traced, rewrite or cut it.
 
 ### 6. Assets
 - Visual: [list with sources]
