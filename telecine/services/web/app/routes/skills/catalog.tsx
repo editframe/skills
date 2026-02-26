@@ -106,8 +106,11 @@ export default function SkillsCatalog({ loaderData }: Route.ComponentProps) {
               Installation
             </h2>
             <pre className="bg-[#1a1a1a] border border-black/10 dark:border-white/10 overflow-x-auto p-5 text-sm leading-relaxed rounded-md">
-              <code className="text-white">npx ai-agent-skills install editframe/skills --agent cursor</code>
+              <code className="text-white">npx ai-agent-skills install editframe/skills</code>
             </pre>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+              Installs to all detected agents — Claude, Cursor, Copilot, Amp, and more.
+            </p>
           </div>
         </main>
       </div>
