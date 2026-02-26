@@ -11,17 +11,9 @@ const v1 = relative("services/web/app/api/v1");
 const hdb = relative("services/web/app/hdb");
 
 const routes = [
-  index("routes/index.tsx"),
   route("/sitemap.xml", "routes/sitemap.tsx"),
   route("/robots.txt", "routes/robots.txt.ts"),
   route("/llms.txt", "routes/llms.txt.ts"),
-  route("/skills", "routes/skills/catalog.tsx"),
-  route("/skills/:skill.md", "routes/skills/skill-detail.md.ts"),
-  route("/skills/:skill/:reference.md", "routes/skills/reference-detail.md.ts"),
-  route("/skills/:skill", "routes/skills/skill-detail.tsx"),
-  route("/skills/:skill/:reference", "routes/skills/reference-detail.tsx"),
-  route("/demos/motion-designer", "routes/demos/motion-designer.tsx"),
-  route("/with/animejs", "routes/with/animejs.tsx"),
   route("/terms", "routes/terms.tsx"),
   route("/privacy", "routes/privacy.tsx"),
   route("/pricing", "routes/pricing.tsx"),
@@ -36,68 +28,80 @@ const routes = [
   // route("/jit-preview", "routes/jit-preview.tsx"),
   route("/ef-sign-url", "routes/ef-sign-url.ts"),
 
-  layout("routes/resource/Layout.tsx", [
-    route("/welcome", "routes/welcome.tsx"),
-    route("/org/new", "routes/org/new.tsx"),
-    route("/org/settings", "routes/org/settings.tsx"),
-    route("/org/default", "routes/org/default.tsx"),
+  index("routes/index.tsx"),
 
-    ...prefix("/organizations", [
-      ...prefix(":orgId", [
-        ...prefix("members/:id", [
-          route("revoke", "routes/org/members/revoke.ts"),
-          route("update-role", "routes/org/members/update-role.ts"),
-        ]),
-        ...prefix("invites", [
-          // route("new", "routes/org/invite-member.tsx"),
-          ...prefix(":id", [
-            route("cancel", "routes/org/invites/cancel.ts"),
-            route("resend", "routes/org/invites/resend.ts"),
+  layout("routes/WithConfiguration.tsx", [
+    route("/skills", "routes/skills/catalog.tsx"),
+    route("/skills/:skill.md", "routes/skills/skill-detail.md.ts"),
+    route("/skills/:skill/:reference.md", "routes/skills/reference-detail.md.ts"),
+    route("/skills/:skill", "routes/skills/skill-detail.tsx"),
+    route("/skills/:skill/:reference", "routes/skills/reference-detail.tsx"),
+    route("/demos/motion-designer", "routes/demos/motion-designer.tsx"),
+    route("/with/animejs", "routes/with/animejs.tsx"),
+
+    layout("routes/resource/Layout.tsx", [
+      route("/welcome", "routes/welcome.tsx"),
+      route("/org/new", "routes/org/new.tsx"),
+      route("/org/settings", "routes/org/settings.tsx"),
+      route("/org/default", "routes/org/default.tsx"),
+
+      ...prefix("/organizations", [
+        ...prefix(":orgId", [
+          ...prefix("members/:id", [
+            route("revoke", "routes/org/members/revoke.ts"),
+            route("update-role", "routes/org/members/update-role.ts"),
+          ]),
+          ...prefix("invites", [
+            // route("new", "routes/org/invite-member.tsx"),
+            ...prefix(":id", [
+              route("cancel", "routes/org/invites/cancel.ts"),
+              route("resend", "routes/org/invites/resend.ts"),
+            ]),
           ]),
         ]),
       ]),
-    ]),
-    ...prefix("/settings", [
-      index("routes/settings/index.tsx"),
-      route("/update-password", "routes/settings/update-password.tsx"),
-    ]),
-    ...prefix("/resource", [
-      // ApiKeys have special routes for non-typical forms.
-      ...prefix("/api_keys", [
-        route("new", "routes/resource/api_keys/new.tsx"),
-        ...prefix(":id", [
-          route("", "routes/resource/api_keys/detail.tsx"),
-          route("delete", "routes/resource/api_keys/delete.tsx"),
-          route("extend", "routes/resource/api_keys/extend.tsx"),
-          route("regenerate", "routes/resource/api_keys/regenerate.tsx"),
-          route(
-            "webhook_regenerate",
-            "routes/resource/api_keys/webhook_regenerate.tsx",
-          ),
+      ...prefix("/settings", [
+        index("routes/settings/index.tsx"),
+        route("/update-password", "routes/settings/update-password.tsx"),
+      ]),
+      ...prefix("/resource", [
+        // ApiKeys have special routes for non-typical forms.
+        ...prefix("/api_keys", [
+          route("new", "routes/resource/api_keys/new.tsx"),
+          ...prefix(":id", [
+            route("", "routes/resource/api_keys/detail.tsx"),
+            route("delete", "routes/resource/api_keys/delete.tsx"),
+            route("extend", "routes/resource/api_keys/extend.tsx"),
+            route("regenerate", "routes/resource/api_keys/regenerate.tsx"),
+            route(
+              "webhook_regenerate",
+              "routes/resource/api_keys/webhook_regenerate.tsx",
+            ),
+          ]),
         ]),
-      ]),
 
-      // Images have special routes for non-typical forms.
-      ...prefix("/images", [
-        route("upload", "routes/resource/images/upload.tsx"),
-      ]),
+        // Images have special routes for non-typical forms.
+        ...prefix("/images", [
+          route("upload", "routes/resource/images/upload.tsx"),
+        ]),
 
-      // IsobmffFiles have special routes for non - typical forms.
-      ...prefix("/isobmff_files", [
-        route("upload", "routes/resource/isobmff_files/upload.tsx"),
-        route("ingest", "routes/resource/isobmff_files/ingest.tsx"),
-      ]),
+        // IsobmffFiles have special routes for non - typical forms.
+        ...prefix("/isobmff_files", [
+          route("upload", "routes/resource/isobmff_files/upload.tsx"),
+          route("ingest", "routes/resource/isobmff_files/ingest.tsx"),
+        ]),
 
-      // Renders have special routes for non-typical forms.
-      ...prefix("/renders", [route("new", "routes/resource/renders/new.tsx")]),
+        // Renders have special routes for non-typical forms.
+        ...prefix("/renders", [route("new", "routes/resource/renders/new.tsx")]),
 
-      // Upload route under a non-conflicting prefix (can't be under /files
-      // because "files" is a resourceType and would collide with /:resourceType/:id)
-      route("/upload-file", "routes/resource/files/upload.tsx"),
+        // Upload route under a non-conflicting prefix (can't be under /files
+        // because "files" is a resourceType and would collide with /:resourceType/:id)
+        route("/upload-file", "routes/resource/files/upload.tsx"),
 
-      route("/:resourceType", "routes/resource/Listing.tsx", [
-        route(":id", "routes/resource/Detail.tsx", [
-          route(":relatedType/:relId", "routes/resource/Related.tsx"),
+        route("/:resourceType", "routes/resource/Listing.tsx", [
+          route(":id", "routes/resource/Detail.tsx", [
+            route(":relatedType/:relId", "routes/resource/Related.tsx"),
+          ]),
         ]),
       ]),
     ]),

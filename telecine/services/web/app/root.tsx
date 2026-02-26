@@ -11,7 +11,6 @@ import "./styles/global.css";
 import { FlashMessages } from "./components/flash/FlashMessage";
 
 import { commitSession } from "@/util/session";
-import { ClientConfiguration } from "./components/ClientConfiguration";
 import { sessionMiddleware } from "./middleware/session";
 import { sessionCookieContext } from "./middleware/context";
 
@@ -146,12 +145,7 @@ export default function App({
       </head>
       <body>
         <FlashMessages flashMessages={flashMessages} />
-        <ClientConfiguration
-          apiHost={WEB_HOST}
-          signingUrl={`${WEB_HOST}/ef-sign-url`}
-        >
-          <Outlet />
-        </ClientConfiguration>
+        <Outlet />
         <Scripts />
         <ScrollRestoration />
         <script

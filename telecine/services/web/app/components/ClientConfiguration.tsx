@@ -18,18 +18,9 @@ export function ClientConfiguration({
     useState<React.ComponentType<any> | null>(null);
 
   useEffect(() => {
-    const load = () => {
-      import("@editframe/react").then((mod) => {
-        setConfiguration(() => mod.Configuration);
-      });
-    };
-    if (typeof requestIdleCallback !== "undefined") {
-      const id = requestIdleCallback(load, { timeout: 3000 });
-      return () => cancelIdleCallback(id);
-    } else {
-      const id = setTimeout(load, 200);
-      return () => clearTimeout(id);
-    }
+    import("@editframe/react").then((mod) => {
+      setConfiguration(() => mod.Configuration);
+    });
   }, []);
 
   // During SSR or before client-side import, render children without Configuration wrapper
