@@ -154,16 +154,26 @@ export default function App({
           }}
         />
         <script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-6XC69KF8VD"
-        />
-        <script
           dangerouslySetInnerHTML={{
             __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-6XC69KF8VD');
+              (function() {
+                function loadGtag() {
+                  var s = document.createElement('script');
+                  s.src = 'https://www.googletagmanager.com/gtag/js?id=G-6XC69KF8VD';
+                  s.async = true;
+                  document.head.appendChild(s);
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  window.gtag = gtag;
+                  gtag('js', new Date());
+                  gtag('config', 'G-6XC69KF8VD');
+                }
+                if (typeof requestIdleCallback !== 'undefined') {
+                  requestIdleCallback(loadGtag, { timeout: 5000 });
+                } else {
+                  setTimeout(loadGtag, 3000);
+                }
+              })();
             `,
           }}
         />

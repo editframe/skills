@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { type MetaFunction, type HeadersFunction } from "react-router";
 import { useTheme } from "~/hooks/useTheme";
 import { Navigation } from "~/components/landing-v5/Navigation";
+import { ClientOnly } from "~/components/ClientOnly";
 import "~/styles/landing.css";
 
 import { HeroSection } from "~/components/landing-v5/sections/HeroSection";
@@ -87,16 +88,16 @@ export default function IndexPage() {
 
         <main id="main-content">
           <HeroSection />
-          <Suspense><CodeExamplesSection /></Suspense>
-          <Suspense><PromptToToolSection /></Suspense>
-          <Suspense><RenderAnywhereSection /></Suspense>
-          <Suspense><ArchitectureSection /></Suspense>
-          <Suspense><TemplatedRenderingSection /></Suspense>
-          <Suspense><GettingStartedSection /></Suspense>
+          <ClientOnly><Suspense><CodeExamplesSection /></Suspense></ClientOnly>
+          <ClientOnly><Suspense><PromptToToolSection /></Suspense></ClientOnly>
+          <ClientOnly><Suspense><RenderAnywhereSection /></Suspense></ClientOnly>
+          <ClientOnly><Suspense><ArchitectureSection /></Suspense></ClientOnly>
+          <ClientOnly><Suspense><TemplatedRenderingSection /></Suspense></ClientOnly>
+          <ClientOnly><Suspense><GettingStartedSection /></Suspense></ClientOnly>
         </main>
 
-        <Suspense><FooterSection /></Suspense>
-        <Suspense><RenderQueuePanel /></Suspense>
+        <ClientOnly><Suspense><FooterSection /></Suspense></ClientOnly>
+        <ClientOnly><Suspense><RenderQueuePanel /></Suspense></ClientOnly>
       </div>
     </RenderQueueProvider>
   );
