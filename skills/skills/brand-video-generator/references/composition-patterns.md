@@ -130,10 +130,14 @@ Still photography becomes temporal through slow motion. A 0.8% scale change per 
 
 For concepts that can't be shown with video — data, systems, processes, abstractions — `addFrameTask` gives access to the canvas for per-frame generative graphics. The animation is a pure function of time, so it's fully scrubbable and renderable.
 
-**The motion must be semantically connected to the specific product.** Generic particles or bezier curves say nothing. The form of the animation should demonstrate what is true about this brand and false about others:
-- Stripe: money moving without friction → particles that pass through each other without collision
-- Linear: work resolved without ambiguity → a tangled graph that converges to a clean DAG
-- Vercel: deploys as instant as saving a file → a ripple that expands to the edges the moment it starts
+**The motion must demonstrate something true about this product that is false about competitors.** Ask: what unit does this product operate on? Show that unit moving. These examples illustrate the thinking pattern — apply the same logic to the brand you're working with:
+
+- Stripe (API-first payments): money moving without friction → particles that pass through each other without collision; the absence of bouncing or delay *is* the product
+- Linear (opinionated project management): work resolved without ambiguity → a tangled issue graph that converges suddenly to a clean DAG; the convergence *is* what Linear does to your backlog
+- Vercel (deploy on git push): shipping as instant as saving → a ripple that reaches the edges the moment it starts; latency → instantaneous is the literal product promise
+- Supabase (Postgres + everything): raw query → instant REST API → auth → realtime → one stack → each capability materializing around a single Postgres icon
+
+The pattern: identify the brand's core mechanic (not its marketing position), then find the simplest motion that demonstrates that mechanic in action. The motion should be impossible to misattribute to a different brand.
 
 If you could swap the brand name and the canvas animation would still make sense, the animation is decoration.
 
@@ -182,6 +186,8 @@ If you could swap the brand name and the canvas animation would still make sense
 ```
 
 **What motion adds:** The particle system is the argument. The concept being communicated — energy, activity, distributed processing, whatever — is visible in the form of the animation, not just stated in text over a stock video.
+
+**A `<canvas>` element with no `<script>` is a broken composition.** If you include a canvas, you must include the `addFrameTask` implementation. If you are not going to write the script, use a CSS animation instead.
 
 ---
 

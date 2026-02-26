@@ -56,8 +56,15 @@ Before any analysis, answer these three questions. Generic answers are disqualif
 
 **1. What is true about this brand that would be false about any competitor?**
 
+Your answer must name a specific product, API, architectural decision, or design philosophy — not a marketing position. Marketing positions can be copied. Decisions cannot.
+
 Not: "They focus on quality and customer service" (every brand claims this).
+Not: "They pioneered multiplayer design" (competitors have since copied this — it no longer differentiates).
 Yes: "They were founded by two researchers who spent eight years on a single problem before launching."
+Yes: "Their entire product is built on a single unified API — Connect, Radar, Terminal, and Billing all share the same objects."
+Yes: "They removed the 'new file' concept entirely — there are no files, only URLs."
+
+**Temporal test**: Could a well-funded 2025 competitor truthfully claim the same thing? If yes, dig deeper. The answer you're looking for is structural — something that would take years to replicate, not months.
 
 **2. What would be lost if this video never existed?**
 
@@ -106,13 +113,19 @@ Extract from the loaded website:
 - "Real-time collaboration", "easy to use", "powerful", "fast", "reliable", "all-in-one"
 - "Helps teams work better", "saves time", "increases productivity"
 - "Trusted by thousands of companies"
-- Developer/API brands: "instant deploys", "edge functions", "OAuth built in", "REST API", "100ms response times", "99.99% uptime"
-- Payment brands: "one platform", "payment chaos solved", "global payments", "secure transactions"
-- Design tools: "design and code together", "design faster", "real-time collaboration"
+- Developer/API brands: "instant deploys", "edge functions", "OAuth built in", "REST API", "100ms response times", "99.99% uptime", "zero config", "batteries included"
+- Payment/fintech brands: "one platform", "payment chaos solved", "global payments", "secure transactions", "invisible infrastructure", "end-to-end payments"
+- Design tools: "design and code together", "design faster", "multiplayer design", "browser-based", "files keep you apart"
+- Workspace/productivity tools: "fragmented tools → unified workspace", "all-in-one", "where work happens", "write, plan, organize"
+- Deployment platforms: "deploy on every git push", "preview URLs", "instant deploys", "global CDN", "serverless"
 
-A real differentiator is something that, if true about this brand, would be surprising or false about most competitors. For developer brands, look for: *what does this product ask developers to give up?* (conventions, configurations, frameworks) — that's usually the actual truth.
+**The brand's marketing tagline is never the answer.** Your job is to find the structural truth underneath — what the brand *does architecturally* more than what it *claims in copy*.
 
-**The brand's own marketing copy is not a differentiator.** The brand's website says what it wants you to believe. Your job is to find the structural truth underneath — the thing the brand *does* more than what it *says*.
+For developer brands: what does this product ask developers to give up? (conventions, configurations, files) — that trade-off is usually the actual truth.
+For design tools: what workflow step did this product eliminate that all predecessors required?
+For workspace tools: what is the specific unit of information this product invented? (Notion's block, Coda's formula, Linear's issue)
+
+A real differentiator is something that, if true about this brand, would be surprising or false about most competitors.
 
 **Content Hierarchy:**
 - Hero message (H1, above-fold)
@@ -173,6 +186,11 @@ These are starting points, not answers. The right-hand column is a generic defau
 - Orbital motion (energy, dynamism)
 - Shape morphing (transformation)
 
+**Video type determines visual strategy:**
+- `product-demo`: Show the product in action — real UI screenshots if available, or styled HTML/CSS representations of the actual interface if not. Canvas animations for abstract mechanics only (data flow, request handling). Feature density: one demonstrable feature per scene — not a list.
+- `explainer`: Metaphor allowed, but must be product-specific (see false differentiators). Each scene explains one thing.
+- `brand-awareness` / `social` / `launch`: Metaphor and emotion over features. One image, one feeling, one motion.
+
 **Quality Gate**: If you cannot identify 5+ visual elements that justify video format, reconsider your approach.
 
 ---
@@ -210,6 +228,8 @@ Scene 2: The Problem (4s-9s)
 ```
 
 **Scene budget**: `floor(duration_seconds / 10)` is your maximum scene count. A 30s video gets 3 scenes. A 60s video gets 6. Start at the minimum and add only if the viewer-state arc requires it — not because you have things to say.
+
+**Scene form variation**: No two adjacent scenes may use the same structural form (e.g., two consecutive scenes that are both "canvas animation + text overlay" or both "bullet list + headline"). Each scene should make a different visual move.
 
 **Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: "Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?" If the latter, rewrite the scene or cut it. The structural constraint is the whole point — if it's not visible in scene 2, it won't be visible in scene 5 either.
 
@@ -265,6 +285,16 @@ After all scenes, add:
 - Visual: [list with sources]
 - Motion: [animations/effects with implementation notes]
 - Audio: [music mood]
+
+---
+
+## Completeness Check (before finalizing)
+
+- Every scene in the plan is represented in the HTML
+- No canvas element is present without a corresponding `addFrameTask` script
+- The last scene is fully written — it does not trail off mid-sentence
+- The PoV trace is complete — every scene can be traced to Phase 0 Q4
+- The CTA does not read as generic marketing ("Try it free", "Get started", "Learn more") — it follows from the structural constraint
 
 ---
 
