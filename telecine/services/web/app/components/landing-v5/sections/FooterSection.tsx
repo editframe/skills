@@ -32,7 +32,7 @@ export function FooterSection() {
           <div>
             <h3 className="font-bold text-sm uppercase tracking-wider mb-4">Resources</h3>
             <ul className="space-y-3">
-              <li><a href="https://discord.gg/editframe" target="_blank" rel="noopener noreferrer" className="text-sm text-white/60 hover:text-white transition-colors">Discord</a></li>
+              <li><a href="https://discord.gg/qCPvzbS2QF" target="_blank" rel="noopener noreferrer" className="text-sm text-white/60 hover:text-white transition-colors">Discord</a></li>
               <li><Link to="/blog" className="text-sm text-white/60 hover:text-white transition-colors">Blog</Link></li>
               <li><Link to="/auth/register" className="text-sm text-white/60 hover:text-white transition-colors">Contact</Link></li>
               <li><a href="https://github.com/editframe/" target="_blank" rel="noopener noreferrer" className="text-sm text-white/60 hover:text-white transition-colors">GitHub</a></li>
@@ -60,7 +60,7 @@ export function FooterSection() {
             <a href="https://github.com/editframe/" target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors" aria-label="GitHub">
               <GithubLogo className="w-5 h-5" weight="fill" />
             </a>
-            <a href="https://discord.gg/editframe" target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors" aria-label="Discord">
+            <a href="https://discord.gg/qCPvzbS2QF" target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors" aria-label="Discord">
               <DiscordLogo className="w-5 h-5" weight="fill" />
             </a>
           </div>
