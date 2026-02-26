@@ -104,7 +104,7 @@ const usageMetrics = [
       "One minute of video streamed via Premium Player. Cache replays in the same session are not billed. Local playback via the Client-Side SDK is not billed.",
     color: "var(--poster-blue)",
     rates: [
-      { label: "All resolutions", sublabel: undefined, rate: "$0.01 / min" },
+      { label: "All resolutions", sublabel: undefined, rate: "$0.0009 / min" },
     ],
   },
 ];
@@ -329,9 +329,9 @@ export default function PricingPage() {
               <div key={metric.name} className="relative">
                 <div
                   className="absolute -bottom-2 -right-2 w-full h-full"
-                  style={{ backgroundColor: metric.color, opacity: 0.3 }}
+                  style={{ backgroundColor: metric.color }}
                 />
-                <div className="relative bg-white/5 border-2 border-white/10 p-6">
+                <div className="relative bg-white/5 border-4 border-white/20 p-6">
                   <div
                     className="font-black text-lg uppercase tracking-tight mb-3"
                     style={{ color: metric.color }}
