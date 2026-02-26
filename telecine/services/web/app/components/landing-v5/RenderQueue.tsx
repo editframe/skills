@@ -7,6 +7,7 @@ import {
 } from "react";
 import {
   RenderQueueCtx,
+  useRenderQueue,
   type RenderJob,
   type EnqueueOpts,
   type RenderQueueContextValue,
