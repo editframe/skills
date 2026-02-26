@@ -26,7 +26,8 @@ scripts/pause-worktree <branch>                          # docker stop, ~1s
 scripts/resume-worktree <branch>                         # docker start, ~1-7s
 scripts/upgrade-worktree <branch> <new-scope>            # escalate scope
 scripts/remove-worktree [--force] <branch>               # full cleanup
-scripts/build-runner-images                              # rebuild shared Docker images
+scripts/smoke-test <branch>                              # one-shot render verification (see below)
+scripts/build-runner-images                              # rebuild shared Docker images (includes scheduler-go)
 scripts/update-template-db                               # refresh template from main DB
 ```
 
@@ -79,6 +80,21 @@ Never include `dev-projects/` in the URL path.
 `elements/dev-projects/` is gitignored. Worktrees would only have committed stubs without the full asset/src tree.
 
 `create-worktree` sets `DEV_PROJECTS_HOST` in the worktree's `elements/.env` to point at main's dev-projects. The `docker-compose.yaml` dev-projects service mounts this path over `/packages/dev-projects`, so the worktree's dev server always has the full file tree from main.
+
+## Smoke testing
+
+`scripts/smoke-test <branch>` is a one-shot render verification script, not a persistent scope. Use it as a pre-merge gate for render pipeline changes.
+
+1. Requires `web` or `render` scope (errors on `elements`)
+2. If scope is `web`: temporarily starts render-profile services, registers a cleanup trap to stop them on exit
+3. If scope is `render`: runs against already-running services, no lifecycle management
+4. Runs `telecine/scripts/smoke-test.ts` inside the runner container with `EF_HOST=http://web:3000` and the worktree's `EF_TOKEN`
+5. Prints the dashboard URL (`http://<branch>.localhost:3000`) for visual inspection of render outputs
+6. Prompts to press enter before stopping render services (if they were started)
+
+Render development workflow: stay at `web` scope, run unit tests directly, use `smoke-test` as the merge gate rather than keeping a full render stack running all day.
+
+`scheduler-go` is a pre-built Go image not managed by docker-compose. `smoke-test` builds it automatically on first run. `build-runner-images` also builds it.
 
 ## Troubleshooting
 
