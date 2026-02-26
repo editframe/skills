@@ -1,12 +1,18 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useRef,
   useState,
   type ReactNode,
 } from "react";
+import {
+  RenderQueueCtx,
+  type RenderJob,
+  type EnqueueOpts,
+  type RenderQueueContextValue,
+} from "./RenderQueueContext";
+
+export { useRenderQueue } from "./RenderQueueContext";
 
 /* ━━ Helpers ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
@@ -18,45 +24,6 @@ function formatTime(ms: number): string {
   return `${seconds}s`;
 }
 
-/* ━━ Types ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-
-interface RenderStats {
-  currentFrame: number;
-  totalFrames: number;
-  renderedMs: number;
-  totalDurationMs: number;
-  speedMultiplier: number;
-  estimatedRemainingMs: number;
-  elapsedMs: number;
-}
-
-interface RenderJob {
-  id: string;
-  name: string;
-  fileName: string;
-  status: "queued" | "rendering" | "complete" | "error";
-  progress: number;
-  stats: RenderStats | null;
-  previewFrame: string | null;
-  downloadUrl: string | null;
-  error: string | null;
-}
-
-interface EnqueueOpts {
-  name: string;
-  fileName: string;
-  target: HTMLElement & { renderToVideo?: (opts: Record<string, unknown>) => Promise<Uint8Array | null> };
-  renderOpts?: Record<string, unknown>;
-}
-
-interface RenderQueueContextValue {
-  jobs: RenderJob[];
-  enqueue(opts: EnqueueOpts): void;
-  cancel(id: string): void;
-  remove(id: string): void;
-  download(id: string): void;
-}
-
 /* ━━ Internal job state (not in React state — holds refs/fns) ━━━━━ */
 
 interface InternalJob {
@@ -65,16 +32,6 @@ interface InternalJob {
   target: HTMLElement & { renderToVideo?: (opts: Record<string, unknown>) => Promise<Uint8Array | null> };
   renderOpts: Record<string, unknown>;
   abortController: AbortController;
-}
-
-/* ━━ Context ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-
-const RenderQueueCtx = createContext<RenderQueueContextValue | null>(null);
-
-export function useRenderQueue(): RenderQueueContextValue {
-  const ctx = useContext(RenderQueueCtx);
-  if (!ctx) throw new Error("useRenderQueue must be used within RenderQueueProvider");
-  return ctx;
 }
 
 /* ━━ Provider ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */

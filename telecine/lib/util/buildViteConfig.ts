@@ -126,7 +126,6 @@ export const buildViteConfig = () => {
         rollupOptions: {
           treeshake: "recommended",
           input: isSsrBuild ? "/app/services/web/server/app.ts" : undefined,
-
         },
       },
     };

@@ -7,49 +7,8 @@ import "~/styles/landing.css";
 
 import { HeroSection } from "~/components/landing-v5/sections/HeroSection";
 
-const FooterSection = lazy(() =>
-  import("~/components/landing-v5/sections/FooterSection").then((m) => ({
-    default: m.FooterSection,
-  }))
-);
-
-const CodeExamplesSection = lazy(() =>
-  import("~/components/landing-v5/sections/CodeExamplesSection").then((m) => ({
-    default: m.CodeExamplesSection,
-  }))
-);
-const PromptToToolSection = lazy(() =>
-  import("~/components/landing-v5/sections/PromptToToolSection").then((m) => ({
-    default: m.PromptToToolSection,
-  }))
-);
-const RenderAnywhereSection = lazy(() =>
-  import("~/components/landing-v5/sections/RenderAnywhereSection").then((m) => ({
-    default: m.RenderAnywhereSection,
-  }))
-);
-const ArchitectureSection = lazy(() =>
-  import("~/components/landing-v5/sections/ArchitectureSection").then((m) => ({
-    default: m.ArchitectureSection,
-  }))
-);
-const TemplatedRenderingSection = lazy(() =>
-  import("~/components/landing-v5/sections/TemplatedRenderingSection").then((m) => ({
-    default: m.TemplatedRenderingSection,
-  }))
-);
-const GettingStartedSection = lazy(() =>
-  import("~/components/landing-v5/sections/GettingStartedSection").then((m) => ({
-    default: m.GettingStartedSection,
-  }))
-);
-import {
-  RenderQueueProvider,
-} from "~/components/landing-v5/RenderQueue";
-const RenderQueuePanel = lazy(() =>
-  import("~/components/landing-v5/RenderQueue").then((m) => ({
-    default: m.RenderQueuePanel,
-  }))
+const LandingSectionsRelay = lazy(() =>
+  import("~/components/landing-v5/LandingSectionsRelay")
 );
 
 export const headers: HeadersFunction = () => ({
@@ -79,26 +38,20 @@ export default function IndexPage() {
   useTheme();
 
   return (
-    <RenderQueueProvider>
-      <div className="min-h-screen bg-[var(--paper-cream)] text-[var(--ink-black)]">
-        <a href="#main-content" className="skip-to-content">
-          Skip to content
-        </a>
-        <Navigation />
+    <div className="min-h-screen bg-[var(--paper-cream)] text-[var(--ink-black)]">
+      <a href="#main-content" className="skip-to-content">
+        Skip to content
+      </a>
+      <Navigation />
 
-        <main id="main-content">
-          <HeroSection />
-          <ClientOnly><Suspense><CodeExamplesSection /></Suspense></ClientOnly>
-          <ClientOnly><Suspense><PromptToToolSection /></Suspense></ClientOnly>
-          <ClientOnly><Suspense><RenderAnywhereSection /></Suspense></ClientOnly>
-          <ClientOnly><Suspense><ArchitectureSection /></Suspense></ClientOnly>
-          <ClientOnly><Suspense><TemplatedRenderingSection /></Suspense></ClientOnly>
-          <ClientOnly><Suspense><GettingStartedSection /></Suspense></ClientOnly>
-        </main>
-
-        <ClientOnly><Suspense><FooterSection /></Suspense></ClientOnly>
-        <ClientOnly><Suspense><RenderQueuePanel /></Suspense></ClientOnly>
-      </div>
-    </RenderQueueProvider>
+      <main id="main-content">
+        <HeroSection />
+        <ClientOnly>
+          <Suspense>
+            <LandingSectionsRelay />
+          </Suspense>
+        </ClientOnly>
+      </main>
+    </div>
   );
 }
