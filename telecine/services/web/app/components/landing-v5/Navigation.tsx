@@ -1,7 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router";
 import { ThemeToggle } from "~/components/ThemeToggle";
 import { LandingNavLink } from "./LandingNavLink";
+
+const WITH_ROUTES = [
+  { name: "Anime.js", href: "/with/animejs" },
+  { name: "SVG SMIL", href: "/with/svg" },
+];
 
 function readLoggedInCookie(): boolean {
   return document.cookie.split(";").some((c) => c.trim().startsWith("_logged_in=1"));
@@ -10,10 +15,23 @@ function readLoggedInCookie(): boolean {
 export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [integrationsOpen, setIntegrationsOpen] = useState(false);
+  const integrationsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setIsLoggedIn(readLoggedInCookie());
   }, []);
+
+  useEffect(() => {
+    if (!integrationsOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (integrationsRef.current && !integrationsRef.current.contains(e.target as Node)) {
+        setIntegrationsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [integrationsOpen]);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[var(--paper-cream)] border-b-2 border-[var(--ink-black)] dark:border-white">
@@ -24,6 +42,29 @@ export function Navigation() {
         <div className="hidden md:flex items-center gap-1">
           <LandingNavLink to="/skills">Docs & Skills</LandingNavLink>
           <LandingNavLink to="/pricing">Pricing</LandingNavLink>
+          <div ref={integrationsRef} className="relative">
+            <button
+              onClick={() => setIntegrationsOpen((o) => !o)}
+              className="px-4 py-2 text-sm font-bold uppercase tracking-wider hover:bg-[var(--poster-gold)] transition-colors flex items-center gap-1"
+            >
+              Integrations
+              <span className="text-[10px] leading-none">{integrationsOpen ? "▲" : "▼"}</span>
+            </button>
+            {integrationsOpen && (
+              <div className="absolute top-full left-0 mt-0 bg-[var(--paper-cream)] border-2 border-t-0 border-[var(--ink-black)] dark:border-white min-w-[160px] z-50">
+                {WITH_ROUTES.map((route) => (
+                  <Link
+                    key={route.href}
+                    to={route.href}
+                    onClick={() => setIntegrationsOpen(false)}
+                    className="block px-4 py-2 text-sm font-bold uppercase tracking-wider hover:bg-[var(--poster-gold)] transition-colors"
+                  >
+                    {route.name}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <ThemeToggle />
@@ -67,6 +108,13 @@ export function Navigation() {
             <LandingNavLink to="/pricing" onClick={() => setMobileMenuOpen(false)}>
               Pricing
             </LandingNavLink>
+            <div className="border-t-2 border-[var(--ink-black)]/10 dark:border-white/10 mt-2 pt-2" />
+            <p className="px-4 text-xs font-bold uppercase tracking-widest text-[var(--warm-gray)]">Integrations</p>
+            {WITH_ROUTES.map((route) => (
+              <LandingNavLink key={route.href} to={route.href} onClick={() => setMobileMenuOpen(false)}>
+                {route.name}
+              </LandingNavLink>
+            ))}
             {!isLoggedIn && (
               <>
                 <div className="border-t-2 border-[var(--ink-black)]/10 dark:border-white/10 mt-2 pt-2" />
