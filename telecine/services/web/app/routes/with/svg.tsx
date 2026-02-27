@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import type { MetaFunction } from "react-router";
 import "@editframe/elements";
 import "@editframe/elements/styles.css";
@@ -37,10 +37,6 @@ export const meta: MetaFunction = () => {
 export default function SVGPage() {
   useTheme();
   const [mounted, setMounted] = useState(false);
-  const tg1Ref = useRef<any>(null);
-  const tg2Ref = useRef<any>(null);
-  const tg3Ref = useRef<any>(null);
-
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -52,23 +48,6 @@ export default function SVGPage() {
       Prism.highlightAll();
     };
     loadPrism();
-  }, [mounted]);
-
-  useLayoutEffect(() => {
-    if (!mounted) return;
-    for (const tg of [tg1Ref.current, tg2Ref.current, tg3Ref.current]) {
-      if (!tg) continue;
-      const svg = tg.querySelector("svg") as SVGSVGElement | null;
-      if (!svg) continue;
-      tg.clearFrameTasks?.();
-      svg.pauseAnimations();
-      svg.setCurrentTime((tg.ownCurrentTimeMs ?? 0) / 1000);
-      svg.pauseAnimations();
-      tg.addFrameTask(({ ownCurrentTimeMs }: { ownCurrentTimeMs: number }) => {
-        svg.setCurrentTime(ownCurrentTimeMs / 1000);
-        svg.pauseAnimations();
-      });
-    }
   }, [mounted]);
 
   if (!mounted) {
@@ -122,29 +101,29 @@ export default function SVGPage() {
               </span>
             </div>
             <p className="text-[var(--warm-gray)] mb-4">
-              SVG SMIL has its own internal clock that runs independently. A
-              single{" "}
+              SVG SMIL has its own internal clock that runs independently.{" "}
               <code className="font-mono bg-[var(--ink-black)]/10 dark:bg-white/10 px-1">
-                addFrameTask
+                ef-timegroup
               </code>{" "}
-              bridges it to the Editframe timeline —{" "}
+              takes it over automatically on every frame —{" "}
               <code className="font-mono bg-[var(--ink-black)]/10 dark:bg-white/10 px-1">
                 setCurrentTime
               </code>{" "}
-              positions the SVG, then{" "}
+              positions the SVG and{" "}
               <code className="font-mono bg-[var(--ink-black)]/10 dark:bg-white/10 px-1">
                 pauseAnimations
               </code>{" "}
-              prevents it from running ahead. The SMIL markup itself is entirely
-              declarative.
+              prevents it from running ahead. No JavaScript wiring required.
             </p>
             <pre className="!mt-0 bg-[var(--card-dark-bg)] text-white px-4 py-3 overflow-x-auto border-2 border-[var(--ink-black)] dark:border-white">
-              <code className="language-javascript">{`const svg = timegroup.querySelector("svg");
-
-timegroup.addFrameTask(({ ownCurrentTimeMs }) => {
-  svg.setCurrentTime(ownCurrentTimeMs / 1000);
-  svg.pauseAnimations(); // Chromium unpauses on setCurrentTime
-});`}</code>
+              <code className="language-xml">{`<ef-timegroup duration="4s" loop autoplay>
+  <svg viewBox="0 0 640 360" xmlns="http://www.w3.org/2000/svg">
+    <rect x="110" y="300" width="60" height="20" fill="#3B82F6">
+      <animate attributeName="height" values="20;260;20" dur="4s" repeatCount="indefinite"/>
+      <animate attributeName="y" values="300;60;300" dur="4s" repeatCount="indefinite"/>
+    </rect>
+  </svg>
+</ef-timegroup>`}</code>
             </pre>
           </div>
 
@@ -161,7 +140,6 @@ timegroup.addFrameTask(({ ownCurrentTimeMs }) => {
               <div className="flex-1">
                 <div className="w-full aspect-[16/9] overflow-hidden relative border-4 border-[var(--ink-black)] dark:border-white shadow-poster-hard">
                   <ef-timegroup
-                    ref={tg1Ref}
                     id="svg-section1"
                     mode="fixed"
                     duration="4s"
@@ -260,7 +238,6 @@ timegroup.addFrameTask(({ ownCurrentTimeMs }) => {
               <div className="flex-1">
                 <div className="w-full aspect-[16/9] overflow-hidden relative border-4 border-[var(--ink-black)] dark:border-white shadow-poster-hard">
                   <ef-timegroup
-                    ref={tg2Ref}
                     id="svg-section2"
                     mode="fixed"
                     duration="6s"
@@ -378,7 +355,6 @@ timegroup.addFrameTask(({ ownCurrentTimeMs }) => {
               <div className="flex-1">
                 <div className="w-full aspect-[16/9] overflow-hidden relative border-4 border-[var(--ink-black)] dark:border-white shadow-poster-hard">
                   <ef-timegroup
-                    ref={tg3Ref}
                     id="svg-section3"
                     mode="fixed"
                     duration="5s"
