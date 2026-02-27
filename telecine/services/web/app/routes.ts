@@ -38,6 +38,7 @@ const routes = [
     route("/skills/:skill/:reference", "routes/skills/reference-detail.tsx"),
     route("/demos/motion-designer", "routes/demos/motion-designer.tsx"),
     route("/with/animejs", "routes/with/animejs.tsx"),
+    route("/with/svg", "routes/with/svg.tsx"),
 
     layout("routes/resource/Layout.tsx", [
       route("/welcome", "routes/welcome.tsx"),
