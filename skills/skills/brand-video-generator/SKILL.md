@@ -61,8 +61,9 @@ Your answer must name a specific product, API, architectural decision, or design
 Not: "They focus on quality and customer service" (every brand claims this).
 Not: "They pioneered multiplayer design" (competitors have since copied this — it no longer differentiates).
 Yes: "They were founded by two researchers who spent eight years on a single problem before launching."
-Yes: "Their entire product is built on a single unified API — Connect, Radar, Terminal, and Billing all share the same objects."
-Yes: "They removed the 'new file' concept entirely — there are no files, only URLs."
+Yes: "Their entire product is built on a single unified object model — a Charge in Radar is the same Charge in Connect and Billing; no translation layer exists."
+Yes: "They removed the 'new file' concept entirely — there are no Figma files, only URLs. The URL *is* the design."
+Yes: "Their product is built around a build step that understands your framework — it's not just CDN, it's the framework knowing where to put the edge functions."
 
 **Temporal test**: Could a well-funded 2025 competitor truthfully claim the same thing? If yes, dig deeper. The answer you're looking for is structural — something that would take years to replicate, not months.
 
@@ -117,7 +118,8 @@ Extract from the loaded website:
 - Payment/fintech brands: "one platform", "payment chaos solved", "global payments", "secure transactions", "invisible infrastructure", "end-to-end payments"
 - Design tools: "design and code together", "design faster", "multiplayer design", "browser-based", "files keep you apart"
 - Workspace/productivity tools: "fragmented tools → unified workspace", "all-in-one", "where work happens", "write, plan, organize"
-- Deployment platforms: "deploy on every git push", "preview URLs", "instant deploys", "global CDN", "serverless"
+- Deployment platforms: "deploy on every git push", "preview URLs", "instant deploys", "global CDN", "serverless", "zero config deploys", "git push → live", "instant rollback", "edge network"
+- Backend-as-a-service: "fragmented backend → unified platform", "Firebase alternative", "open source", "integrated platform", "one backend for everything"
 
 **The brand's marketing tagline is never the answer.** Your job is to find the structural truth underneath — what the brand *does architecturally* more than what it *claims in copy*.
 

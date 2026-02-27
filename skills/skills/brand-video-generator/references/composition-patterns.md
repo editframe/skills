@@ -132,10 +132,10 @@ For concepts that can't be shown with video — data, systems, processes, abstra
 
 **The motion must demonstrate something true about this product that is false about competitors.** Ask: what unit does this product operate on? Show that unit moving. These examples illustrate the thinking pattern — apply the same logic to the brand you're working with:
 
-- Stripe (API-first payments): money moving without friction → particles that pass through each other without collision; the absence of bouncing or delay *is* the product
-- Linear (opinionated project management): work resolved without ambiguity → a tangled issue graph that converges suddenly to a clean DAG; the convergence *is* what Linear does to your backlog
-- Vercel (deploy on git push): shipping as instant as saving → a ripple that reaches the edges the moment it starts; latency → instantaneous is the literal product promise
-- Supabase (Postgres + everything): raw query → instant REST API → auth → realtime → one stack → each capability materializing around a single Postgres icon
+- Stripe (unified object model): the same `charge` object threads through Checkout, Radar, Connect, and Billing → show one object that every system touches simultaneously rather than a pipeline. Speed is generic; the shared object is Stripe's.
+- Linear (opinionated workflow): issues that enter triage exit resolved — no ambiguous state, no "in review forever" → a tangled graph that snaps to a clean DAG when Linear acts on it; the removal of ambiguity *is* the product
+- Vercel (frontend-to-edge): a Next.js component pushed to git → framework analyzed → edge functions distributed → build cached → each step shown as a separate materialization, not just a fast ripple. Vercel's differentiator is the build pipeline intelligence, not the speed.
+- Supabase (Postgres as the core): raw Postgres → instant REST → auth → realtime → storage → each capability materializing as a ring around a single database icon; the center never changes — the database stays the same
 
 The pattern: identify the brand's core mechanic (not its marketing position), then find the simplest motion that demonstrates that mechanic in action. The motion should be impossible to misattribute to a different brand.
 
