@@ -949,12 +949,14 @@ export class EFTimegroup
     if (this.#seekInProgress) {
       this.#pendingSeekTime = seekTarget;
       this.#currentTime = seekTarget;
+      this._setLocalTimeMs(seekTarget * 1000);
       this.#userTimeMs = seekTarget * 1000; // User-initiated time change
       return;
     }
 
     // Execute seek - update both source time and user time
     this.#currentTime = seekTarget;
+    this._setLocalTimeMs(seekTarget * 1000);
     this.#userTimeMs = seekTarget * 1000; // User-initiated time change
     this.#seekInProgress = true;
 
@@ -2619,6 +2621,7 @@ export class EFTimegroup
           }
 
           this.#currentTime = newTime;
+          this._setLocalTimeMs(newTime * 1000);
           this.requestUpdate("currentTime");
 
           await this.updateComplete;
