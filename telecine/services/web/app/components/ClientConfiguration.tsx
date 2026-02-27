@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import type { ReactNode } from "react";
 
 /**
- * Client-only wrapper for EFConfiguration to prevent SSR custom element registration
- * Custom elements should only be registered in the browser, not during SSR
+ * Wraps children in ef-configuration so Editframe elements can resolve the API host.
+ *
+ * Rendering ef-configuration synchronously (even during SSR) keeps the React tree
+ * structure stable. The custom element is registered via a client-side import, which
+ * upgrades the already-mounted DOM element in place — no remount of children occurs.
  */
 export function ClientConfiguration({
   children,
@@ -14,24 +17,13 @@ export function ClientConfiguration({
   apiHost: string;
   signingUrl: string;
 }) {
-  const [Configuration, setConfiguration] =
-    useState<React.ComponentType<any> | null>(null);
-
   useEffect(() => {
-    import("@editframe/react").then((mod) => {
-      setConfiguration(() => mod.Configuration);
-    });
+    import("@editframe/react");
   }, []);
 
-  // During SSR or before client-side import, render children without Configuration wrapper
-  // The Configuration component is only needed for client-side interactivity
-  if (!Configuration || typeof window === "undefined") {
-    return <>{children}</>;
-  }
-
-  return (
-    <Configuration api-host={apiHost} signing-url={signingUrl}>
-      {children}
-    </Configuration>
+  return React.createElement(
+    "ef-configuration",
+    { "api-host": apiHost, "signing-url": signingUrl },
+    children,
   );
 }

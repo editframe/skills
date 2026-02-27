@@ -30,6 +30,13 @@ export function FooterSection() {
             </ul>
           </div>
           <div>
+            <h3 className="font-bold text-sm uppercase tracking-wider mb-4">Integrations</h3>
+            <ul className="space-y-3">
+              <li><Link to="/with/animejs" className="text-sm text-white/60 hover:text-white transition-colors">Anime.js</Link></li>
+              <li><Link to="/with/svg" className="text-sm text-white/60 hover:text-white transition-colors">SVG SMIL</Link></li>
+            </ul>
+          </div>
+          <div>
             <h3 className="font-bold text-sm uppercase tracking-wider mb-4">Resources</h3>
             <ul className="space-y-3">
               <li><a href="https://discord.gg/qCPvzbS2QF" target="_blank" rel="noopener noreferrer" className="text-sm text-white/60 hover:text-white transition-colors">Discord</a></li>
