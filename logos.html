@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editframe — Logo Explorations · Round 3</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #080808;
+    color: #e0e0e0;
+    font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+    padding: 48px 32px;
+  }
+
+  h1 {
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #333;
+    margin-bottom: 6px;
+  }
+  .round-note {
+    font-size: 12px;
+    color: #2a2a2a;
+    margin-bottom: 56px;
+    border-bottom: 1px solid #141414;
+    padding-bottom: 20px;
+    font-style: italic;
+    line-height: 1.8;
+  }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #2a2a2a;
+    margin-bottom: 6px;
+    margin-top: 64px;
+  }
+  .section-thesis {
+    font-size: 11.5px;
+    color: #2e2e2e;
+    line-height: 1.7;
+    margin-bottom: 28px;
+    max-width: 680px;
+    font-style: italic;
+  }
+
+  .logo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 1px;
+    background: #111;
+  }
+  .logo-card {
+    background: #080808;
+    display: flex;
+    flex-direction: column;
+  }
+  .logo-canvas {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 52px 40px;
+    min-height: 220px;
+    flex-direction: column;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .logo-canvas.dark   { background: #080808; }
+  .logo-canvas.ink    { background: #05050a; }
+  .logo-canvas.white  { background: #ffffff; }
+  .logo-canvas.bone   { background: #f0ece4; }
+  .logo-canvas.slate  { background: #0e1117; }
+  .logo-canvas.warm   { background: #0c0a07; }
+
+  .row { display: flex; align-items: center; gap: 16px; }
+  .col { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+
+  .logo-meta {
+    padding: 20px 24px 24px;
+    border-top: 1px solid #111;
+  }
+  .logo-name {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #333;
+    margin-bottom: 6px;
+  }
+  .logo-concept {
+    font-size: 12px;
+    color: #333;
+    line-height: 1.7;
+  }
+  .logo-concept em { color: #555; font-style: normal; }
+</style>
+</head>
+<body>
+
+<h1>Editframe — Round 3</h1>
+<div class="round-note">
+  Back from the woods. No more grids of boxes. Time is not a rectangle. Video is not a database. Let's find what this thing actually wants to look like.
+</div>
+
+
+<!-- =====================================================
+     I. THE SPLICE — where time tears
+     ===================================================== -->
+<div class="section-label">I. The Splice</div>
+<div class="section-thesis">A cut isn't a button you press. It's the moment one reality ends and another begins. What does that look like as a mark?</div>
+<div class="logo-grid">
+
+  <!-- R3-01: Lightning splice — jagged vertical tear -->
+  <div class="logo-card">
+    <div class="logo-canvas dark">
+      <svg width="200" height="64" viewBox="0 0 200 64" fill="none">
+        <!-- Wordmark with a jagged lightning-bolt cut through it -->
+        <defs>
+          <clipPath id="left-clip">
+            <polygon points="0,0 96,0 88,64 0,64"/>
+          </clipPath>
+          <clipPath id="right-clip">
+            <polygon points="104,0 200,0 200,64 96,64"/>
+          </clipPath>
+        </defs>
+        <text x="0" y="48" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+              font-size="48" font-weight="800" letter-spacing="-2" fill="#ffffff"
+              clip-path="url(#left-clip)">edit</text>
+        <text x="0" y="48" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+              font-size="48" font-weight="800" letter-spacing="-2" fill="#ffffff"
+              clip-path="url(#right-clip)">edit</text>
+        <!-- The jagged cut line -->
+        <polyline points="96,0 104,16 88,32 100,48 96,64"
+                  stroke="#ff2d2d" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+        <text x="110" y="48" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+              font-size="48" font-weight="800" letter-spacing="-2" fill="#555">frame</text>
+      </svg>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-01 — Lightning Splice</div>
+      <div class="logo-concept">A jagged cut tears through the wordmark at the edit point. <em>"edit" is bright — present tense. "frame" is dim — already past.</em> The red lightning bolt is the knife. The cut is the product. Every time you read the name you perform the edit.</div>
+    </div>
+  </div>
+
+  <!-- R3-02: The "ef" ligature as a cut mark — two letters that share a blade -->
+  <div class="logo-card">
+    <div class="logo-canvas white">
+      <svg width="160" height="100" viewBox="0 0 160 100" fill="none">
+        <!-- "e" — open circle with a horizontal slash through it -->
+        <!-- The horizontal bar of the e IS the same bar that cuts through the f -->
+        <!-- e body -->
+        <path d="M10 54 A28 28 0 1 1 38 82" stroke="#111" stroke-width="5" fill="none" stroke-linecap="butt"/>
+        <!-- The shared horizontal blade — runs from e through f -->
+        <line x1="10" y1="54" x2="130" y2="54" stroke="#111" stroke-width="5" stroke-linecap="square"/>
+        <!-- f stem -->
+        <path d="M100 90 L100 30 Q100 10 118 10" stroke="#111" stroke-width="5" fill="none" stroke-linecap="butt"/>
+        <!-- edit frame beneath, small -->
+        <text x="0" y="98" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+              font-size="13" font-weight="400" letter-spacing="4" fill="#aaa">EDITFRAME</text>
+      </svg>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-02 — ef Ligature / Shared Bar</div>
+      <div class="logo-concept">The crossbar of the <em>f</em> and the midline of the <em>e</em> are the same stroke — a single horizontal blade that cuts through both letterforms simultaneously. The ligature is the edit. The two letters can't be separated from the cut that joins them.</div>
+    </div>
+  </div>
+
+  <!-- R3-03: The film gate — pure black rectangle with a slash of light -->
+  <div class="logo-card">
+    <div class="logo-canvas ink">
+      <div class="col">
+        <svg width="60" height="80" viewBox="0 0 60 80" fill="none">
+          <!-- Film gate: dark rect with a thin diagonal crack of light -->
+          <rect x="0" y="0" width="60" height="80" fill="#0f0f0f"/>
+          <!-- Thin diagonal crack — light leaking through -->
+          <line x1="28" y1="0" x2="32" y2="80" stroke="#ffffff" stroke-width="1.5" opacity="0.9"/>
+          <!-- Sprocket holes -->
+          <rect x="4"  y="8"  width="6" height="8" rx="1" fill="#1a1a1a"/>
+          <rect x="4"  y="24" width="6" height="8" rx="1" fill="#1a1a1a"/>
+          <rect x="4"  y="40" width="6" height="8" rx="1" fill="#1a1a1a"/>
+          <rect x="4"  y="56" width="6" height="8" rx="1" fill="#1a1a1a"/>
+          <rect x="50" y="8"  width="6" height="8" rx="1" fill="#1a1a1a"/>
+          <rect x="50" y="24" width="6" height="8" rx="1" fill="#1a1a1a"/>
+          <rect x="50" y="40" width="6" height="8" rx="1" fill="#1a1a1a"/>
+          <rect x="50" y="56" width="6" height="8" rx="1" fill="#1a1a1a"/>
+        </svg>
+        <svg width="130" height="20" viewBox="0 0 130 20" fill="none">
+          <text x="0" y="16" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+                font-size="16" font-weight="300" letter-spacing="5" fill="#444">EDITFRAME</text>
+        </svg>
+      </div>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-03 — Film Gate / Light Leak</div>
+      <div class="logo-concept">A film frame held up to light — <em>nearly black, with a single crack of white cutting through.</em> The light is what the camera captures. The darkness is the gate. The crack is where editing happens — the seam between two realities. Extremely minimal. The wordmark in thin-weight spaced capitals.</div>
+    </div>
+  </div>
+
+  <!-- R3-04: Two clocks, one hand shared — time composited -->
+  <div class="logo-card">
+    <div class="logo-canvas slate">
+      <div class="row">
+        <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+          <!-- Two overlapping clock faces, sharing one hand -->
+          <!-- Left clock face -->
+          <circle cx="20" cy="28" r="18" stroke="#333" stroke-width="1.5" fill="none"/>
+          <!-- Right clock face -->
+          <circle cx="36" cy="28" r="18" stroke="#333" stroke-width="1.5" fill="none"/>
+          <!-- Shared hand — points upward from the overlap center (x=28) -->
+          <line x1="28" y1="28" x2="28" y2="10" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+          <!-- Center dots -->
+          <circle cx="20" cy="28" r="2" fill="#555"/>
+          <circle cx="36" cy="28" r="2" fill="#555"/>
+          <!-- Shared center point -->
+          <circle cx="28" cy="28" r="2.5" fill="#ff2d2d"/>
+        </svg>
+        <svg width="130" height="24" viewBox="0 0 130 24" fill="none">
+          <text x="0" y="19" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+                font-size="19" font-weight="700" letter-spacing="-0.5" fill="#ffffff">editframe</text>
+        </svg>
+      </div>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-04 — Two Clocks, One Hand</div>
+      <div class="logo-concept">Two timelines overlap. They share an edit point — a single hand that belongs to both. <em>Source clip time and composition time are different. The red pivot is where they meet.</em> Deceptively simple. Also reads as a Venn with a clock — the intersection of two temporal contexts.</div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- =====================================================
+     II. THE FRAME AS PHENOMENOLOGY
+     ===================================================== -->
+<div class="section-label">II. The Frame as Phenomenology</div>
+<div class="section-thesis">Not a film frame. Not a code bracket. The frame as the philosophical act of selection — you frame something by deciding what's inside and what's outside.</div>
+<div class="logo-grid">
+
+  <!-- R3-05: Corner brackets but one is missing — incomplete frame, implying the edit hasn't happened yet -->
+  <div class="logo-card">
+    <div class="logo-canvas dark">
+      <div class="col">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+          <!-- Three corners of four — one missing (bottom right) -->
+          <!-- TL -->
+          <path d="M2 20 L2 2 L20 2" stroke="#ffffff" stroke-width="3" stroke-linecap="square" fill="none"/>
+          <!-- TR -->
+          <path d="M44 2 L62 2 L62 20" stroke="#ffffff" stroke-width="3" stroke-linecap="square" fill="none"/>
+          <!-- BL -->
+          <path d="M20 62 L2 62 L2 44" stroke="#ffffff" stroke-width="3" stroke-linecap="square" fill="none"/>
+          <!-- BR missing — replaced with a faint suggestion -->
+          <path d="M44 62 L62 62 L62 44" stroke="#333" stroke-width="3" stroke-linecap="square" fill="none" stroke-dasharray="3 3"/>
+        </svg>
+        <svg width="130" height="22" viewBox="0 0 130 22" fill="none">
+          <text x="0" y="18" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+                font-size="18" font-weight="700" letter-spacing="-0.3" fill="#ffffff">editframe</text>
+        </svg>
+      </div>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-05 — The Unfinished Frame</div>
+      <div class="logo-concept">Three corners solid, one ghosted — <em>the frame is still being composed.</em> The missing corner is the product's invitation: you complete it. It's also just visually interesting — the asymmetry creates tension and motion. The eye travels to the missing corner. That's where your content goes.</div>
+    </div>
+  </div>
+
+  <!-- R3-06: Zooming frames — infinite regress like a screen within a screen -->
+  <div class="logo-card">
+    <div class="logo-canvas dark">
+      <div class="col">
+        <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+          <!-- Concentric corner-brackets, 4 levels, getting brighter toward center -->
+          <!-- Outer -->
+          <path d="M2 18 L2 2 L18 2 M54 2 L70 2 L70 18 M70 54 L70 70 L54 70 M18 70 L2 70 L2 54"
+                stroke="#1e1e1e" stroke-width="2" stroke-linecap="square" fill="none"/>
+          <!-- 2nd -->
+          <path d="M10 24 L10 10 L24 10 M48 10 L62 10 L62 24 M62 48 L62 62 L48 62 M24 62 L10 62 L10 48"
+                stroke="#333" stroke-width="2" stroke-linecap="square" fill="none"/>
+          <!-- 3rd -->
+          <path d="M18 30 L18 18 L30 18 M42 18 L54 18 L54 30 M54 42 L54 54 L42 54 M30 54 L18 54 L18 42"
+                stroke="#666" stroke-width="2" stroke-linecap="square" fill="none"/>
+          <!-- Inner — brightest -->
+          <path d="M26 36 L26 26 L36 26 M46 26 L56 26 L56 36 M56 46 L56 56 L46 56 M36 56 L26 56 L26 46"
+                stroke="#ffffff" stroke-width="2" stroke-linecap="square" fill="none"/>
+          <!-- Center point -->
+          <circle cx="41" cy="41" r="3" fill="#ff2d2d"/>
+        </svg>
+        <svg width="130" height="22" viewBox="0 0 130 22" fill="none">
+          <text x="0" y="18" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+                font-size="18" font-weight="700" letter-spacing="-0.3" fill="#ffffff">editframe</text>
+        </svg>
+      </div>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-06 — Infinite Regress / Zoom</div>
+      <div class="logo-concept">Four nested corner-bracket frames, each one brighter, converging on a red point. <em>The zoom-in as the fundamental editing gesture.</em> Also: compositions inside compositions, timegroups inside timegroups. The red center is where you are right now. There's always another frame inside.</div>
+    </div>
+  </div>
+
+  <!-- R3-07: The Möbius strip frame — time that loops back on itself -->
+  <div class="logo-card">
+    <div class="logo-canvas white">
+      <svg width="120" height="80" viewBox="0 0 120 80" fill="none">
+        <!-- Möbius-like ribbon — a frame that folds through itself -->
+        <!-- Left loop -->
+        <path d="M60 40 C40 10, 5 10, 5 40 C5 70, 40 70, 60 40" 
+              stroke="#111" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <!-- Right loop, crossing over -->
+        <path d="M60 40 C80 10, 115 10, 115 40 C115 70, 80 70, 60 40" 
+              stroke="#111" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <!-- Crossing point mask (white gap to simulate over/under) -->
+        <line x1="55" y1="36" x2="65" y2="44" stroke="#ffffff" stroke-width="6"/>
+        <!-- Re-draw top portion -->
+        <path d="M58 38 C78 10, 113 10, 113 40" 
+              stroke="#111" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <!-- Center intersection dot -->
+        <circle cx="60" cy="40" r="4" fill="#ff2d2d"/>
+        <!-- Small wordmark -->
+        <text x="10" y="76" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+              font-size="11" font-weight="400" letter-spacing="4" fill="#aaa">EDITFRAME</text>
+      </svg>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-07 — The Loop / Infinite Timeline</div>
+      <div class="logo-concept">A figure-eight that passes through itself — <em>the looping composition, the render that feeds back into itself.</em> Time that has no end, only a current position (the red dot). The crossing point is where past and future share a frame. More mathematical than practical — but isn't that what render pipelines are?</div>
+    </div>
+  </div>
+
+  <!-- R3-08: A single pixel in a vast grid — the frame as location -->
+  <div class="logo-card">
+    <div class="logo-canvas dark">
+      <div class="col">
+        <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+          <!-- Sparse dot grid -->
+          <!-- Row 1 -->
+          <circle cx="10" cy="10" r="1.5" fill="#1e1e1e"/>
+          <circle cx="30" cy="10" r="1.5" fill="#1e1e1e"/>
+          <circle cx="50" cy="10" r="1.5" fill="#1e1e1e"/>
+          <circle cx="70" cy="10" r="1.5" fill="#1e1e1e"/>
+          <!-- Row 2 -->
+          <circle cx="10" cy="30" r="1.5" fill="#1e1e1e"/>
+          <circle cx="30" cy="30" r="1.5" fill="#1e1e1e"/>
+          <circle cx="50" cy="30" r="1.5" fill="#1e1e1e"/>
+          <circle cx="70" cy="30" r="1.5" fill="#1e1e1e"/>
+          <!-- Row 3 — one pixel is hot -->
+          <circle cx="10" cy="50" r="1.5" fill="#1e1e1e"/>
+          <circle cx="30" cy="50" r="1.5" fill="#1e1e1e"/>
+          <!-- THE pixel -->
+          <rect x="44" y="44" width="12" height="12" fill="#ff2d2d"/>
+          <circle cx="70" cy="50" r="1.5" fill="#1e1e1e"/>
+          <!-- Row 4 -->
+          <circle cx="10" cy="70" r="1.5" fill="#1e1e1e"/>
+          <circle cx="30" cy="70" r="1.5" fill="#1e1e1e"/>
+          <circle cx="50" cy="70" r="1.5" fill="#1e1e1e"/>
+          <circle cx="70" cy="70" r="1.5" fill="#1e1e1e"/>
+        </svg>
+        <svg width="130" height="18" viewBox="0 0 130 18" fill="none">
+          <text x="0" y="15" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+                font-size="15" font-weight="300" letter-spacing="5" fill="#333">EDITFRAME</text>
+        </svg>
+      </div>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-08 — The Frame as Coordinate</div>
+      <div class="logo-concept">An infinite grid of dormant points — one square blazes red. <em>Frame 47 of 240. The render cursor.</em> A pixel is just a location — it has no meaning until it's illuminated. The mark is the act of selection: saying "this frame, right here." Sparse. Contemplative. Unusual for a tech logo.</div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- =====================================================
+     III. TIME AS MATERIAL
+     ===================================================== -->
+<div class="section-label">III. Time as Material</div>
+<div class="section-thesis">What if time had texture? Weight? What if you could hold a second in your hands and it had grain, thickness, edge?</div>
+<div class="logo-grid">
+
+  <!-- R3-09: Stratum / geological layers — time as sediment -->
+  <div class="logo-card">
+    <div class="logo-canvas warm">
+      <div class="col">
+        <svg width="120" height="60" viewBox="0 0 120 60" fill="none">
+          <!-- Wavy horizontal strata — geological time layers -->
+          <!-- Bottom stratum — dark, old -->
+          <path d="M0 60 C20 55, 40 58, 60 54 C80 50, 100 56, 120 52 L120 60 L0 60 Z" fill="#1a1410"/>
+          <path d="M0 52 C20 48, 40 50, 60 46 C80 42, 100 48, 120 44 L120 52 C100 56, 80 50, 60 54 C40 58, 20 55, 0 60 Z" fill="#2a1e14"/>
+          <path d="M0 44 C20 40, 40 42, 60 38 C80 34, 100 40, 120 36 L120 44 C100 48, 80 42, 60 46 C40 50, 20 48, 0 52 Z" fill="#3d2c1a"/>
+          <!-- Middle — accent layer, the "present moment" -->
+          <path d="M0 36 C20 32, 40 34, 60 30 C80 26, 100 32, 120 28 L120 36 C100 40, 80 34, 60 38 C40 42, 20 40, 0 44 Z" fill="#8b4513" opacity="0.8"/>
+          <!-- Top strata — light, recent -->
+          <path d="M0 28 C20 24, 40 26, 60 22 C80 18, 100 24, 120 20 L120 28 C100 32, 80 26, 60 30 C40 34, 20 32, 0 36 Z" fill="#c8a87a" opacity="0.5"/>
+          <path d="M0 20 C20 16, 40 18, 60 14 C80 10, 100 16, 120 12 L120 20 C100 24, 80 18, 60 22 C40 26, 20 24, 0 28 Z" fill="#e8d4b0" opacity="0.3"/>
+          <path d="M0 0 L120 0 L120 12 C100 16, 80 10, 60 14 C40 18, 20 16, 0 20 Z" fill="#f5efe3" opacity="0.15"/>
+        </svg>
+        <svg width="130" height="18" viewBox="0 0 130 18" fill="none">
+          <text x="0" y="15" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+                font-size="15" font-weight="300" letter-spacing="5" fill="#4a3520">EDITFRAME</text>
+        </svg>
+      </div>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-09 — Geological Strata</div>
+      <div class="logo-concept">Time as sediment — each layer a track, each stratum a moment compressed into material. <em>The amber layer is where you're editing right now.</em> Video archaeology. Technically unrelated to the product, spiritually accurate about what a timeline is: a cross-section through accumulated time. An unusual, memorable mark.</div>
+    </div>
+  </div>
+
+  <!-- R3-10: Waveform as identity — the EF initials carved out of a waveform -->
+  <div class="logo-card">
+    <div class="logo-canvas dark">
+      <svg width="200" height="80" viewBox="0 0 200 80" fill="none">
+        <defs>
+          <!-- Clip to "EF" letterform -->
+          <clipPath id="ef-clip">
+            <!-- E glyph area -->
+            <rect x="0"  y="5"  width="10" height="70"/>
+            <rect x="0"  y="5"  width="50" height="14"/>
+            <rect x="0"  y="33" width="36" height="14"/>
+            <rect x="0"  y="61" width="50" height="14"/>
+            <!-- F glyph area -->
+            <rect x="66" y="5"  width="10" height="70"/>
+            <rect x="66" y="5"  width="50" height="14"/>
+            <rect x="66" y="33" width="36" height="14"/>
+          </clipPath>
+        </defs>
+        <!-- Waveform bars, clipped to EF shape -->
+        <g clip-path="url(#ef-clip)">
+          <!-- Dense vertical bars of varying height, all centered on midline -->
+          <rect x="0"   y="24" width="3" height="32" fill="#ffffff"/>
+          <rect x="4"   y="18" width="3" height="44" fill="#ffffff"/>
+          <rect x="8"   y="28" width="3" height="24" fill="#ffffff"/>
+          <rect x="12"  y="20" width="3" height="40" fill="#ffffff"/>
+          <rect x="16"  y="30" width="3" height="20" fill="#ffffff"/>
+          <rect x="20"  y="15" width="3" height="50" fill="#ffffff"/>
+          <rect x="24"  y="25" width="3" height="30" fill="#ffffff"/>
+          <rect x="28"  y="22" width="3" height="36" fill="#ffffff"/>
+          <rect x="32"  y="32" width="3" height="16" fill="#ffffff"/>
+          <rect x="36"  y="18" width="3" height="44" fill="#ffffff"/>
+          <rect x="40"  y="26" width="3" height="28" fill="#ffffff"/>
+          <rect x="44"  y="20" width="3" height="40" fill="#ffffff"/>
+          <rect x="48"  y="28" width="3" height="24" fill="#ffffff"/>
+          <!-- F bars -->
+          <rect x="66"  y="22" width="3" height="36" fill="#ffffff"/>
+          <rect x="70"  y="16" width="3" height="48" fill="#ffffff"/>
+          <rect x="74"  y="26" width="3" height="28" fill="#ffffff"/>
+          <rect x="78"  y="20" width="3" height="40" fill="#ffffff"/>
+          <rect x="82"  y="30" width="3" height="20" fill="#ffffff"/>
+          <rect x="86"  y="14" width="3" height="52" fill="#ff2d2d"/>
+          <rect x="90"  y="24" width="3" height="32" fill="#ffffff"/>
+          <rect x="94"  y="18" width="3" height="44" fill="#ffffff"/>
+          <rect x="98"  y="28" width="3" height="24" fill="#ffffff"/>
+          <rect x="102" y="22" width="3" height="36" fill="#ffffff"/>
+          <rect x="106" y="32" width="3" height="16" fill="#ffffff"/>
+          <rect x="110" y="20" width="3" height="40" fill="#ffffff"/>
+          <rect x="114" y="26" width="3" height="28" fill="#ffffff"/>
+        </g>
+        <!-- Wordmark small, below -->
+        <text x="0" y="78" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+              font-size="10" font-weight="400" letter-spacing="6" fill="#333">EDITFRAME</text>
+      </svg>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-10 — Waveform EF</div>
+      <div class="logo-concept">The initials "EF" filled with a waveform — <em>the audio fingerprint of the edit.</em> The letterforms are carved out of time-data rather than drawn. One bar in the F is red — the playhead crossing the waveform at this exact moment. Technical, dense, reveals itself slowly.</div>
+    </div>
+  </div>
+
+  <!-- R3-11: Folded ribbon — the film strip that became the timeline that became the API -->
+  <div class="logo-card">
+    <div class="logo-canvas slate">
+      <div class="col">
+        <svg width="100" height="80" viewBox="0 0 100 80" fill="none">
+          <!-- A ribbon that folds: starts horizontal (film), bends, becomes vertical (timeline), bends again, becomes a forward-facing rect (frame) -->
+          <!-- Horizontal section — film strip -->
+          <rect x="0" y="30" width="34" height="20" fill="none" stroke="#555" stroke-width="1.5"/>
+          <!-- Sprocket holes on horizontal section -->
+          <rect x="5"  y="33" width="5" height="6" rx="0.5" fill="#333"/>
+          <rect x="14" y="33" width="5" height="6" rx="0.5" fill="#333"/>
+          <rect x="23" y="33" width="5" height="6" rx="0.5" fill="#333"/>
+          <!-- Bend transition (top of curve) -->
+          <path d="M34 30 Q46 30, 46 20" stroke="#555" stroke-width="1.5" fill="none"/>
+          <path d="M34 50 Q52 50, 52 20" stroke="#555" stroke-width="1.5" fill="none"/>
+          <!-- Vertical section — timeline -->
+          <rect x="46" y="0" width="6" height="20" fill="none" stroke="#888" stroke-width="1.5"/>
+          <!-- Tick marks on vertical timeline -->
+          <line x1="46" y1="5"  x2="49" y2="5"  stroke="#666" stroke-width="1"/>
+          <line x1="46" y1="10" x2="51" y2="10" stroke="#ff2d2d" stroke-width="1"/>
+          <line x1="46" y1="15" x2="49" y2="15" stroke="#666" stroke-width="1"/>
+          <!-- Second bend -->
+          <path d="M46 0 Q46 -6 56 -6 Q66 -6 66 4" stroke="#888" stroke-width="1.5" fill="none"/>
+          <path d="M52 0 Q52 -12 62 -12 Q72 -12 72 4" stroke="#888" stroke-width="1.5" fill="none"/>
+          <!-- Final section — square frame facing us -->
+          <rect x="56" y="4" width="26" height="34" fill="none" stroke="#ffffff" stroke-width="2"/>
+          <!-- Inner glow -->
+          <rect x="62" y="10" width="14" height="20" fill="#ffffff" opacity="0.08"/>
+        </svg>
+        <svg width="130" height="18" viewBox="0 0 130 18" fill="none">
+          <text x="0" y="15" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+                font-size="15" font-weight="300" letter-spacing="5" fill="#444">EDITFRAME</text>
+        </svg>
+      </div>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-11 — The Ribbon / Evolution</div>
+      <div class="logo-concept">A single strip that transforms as it folds — <em>film strip → timeline → frame.</em> The history of video editing in one continuous material. The final face-on rectangle is what Editframe produces: a frame, rendered. The red tick mark is the playhead mid-journey. More illustrative than mark — but the idea of transformation is the product.</div>
+    </div>
+  </div>
+
+  <!-- R3-12: Gradient ramp — one frame dissolving into the next -->
+  <div class="logo-card">
+    <div class="logo-canvas dark">
+      <div class="col">
+        <svg width="160" height="56" viewBox="0 0 160 56" fill="none">
+          <defs>
+            <linearGradient id="dissolve" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%"   stop-color="#ffffff" stop-opacity="1"/>
+              <stop offset="35%"  stop-color="#ffffff" stop-opacity="1"/>
+              <stop offset="50%"  stop-color="#ff2d2d" stop-opacity="0.8"/>
+              <stop offset="65%"  stop-color="#000000" stop-opacity="1"/>
+              <stop offset="100%" stop-color="#000000" stop-opacity="1"/>
+            </linearGradient>
+          </defs>
+          <!-- The dissolve bar -->
+          <rect x="0" y="0" width="160" height="56" fill="url(#dissolve)"/>
+          <!-- Cut line at 50% -->
+          <line x1="80" y1="0" x2="80" y2="56" stroke="#ff2d2d" stroke-width="1" opacity="0.6"/>
+          <!-- Wordmark overlaid, readable on both sides -->
+          <text x="8" y="36" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+                font-size="28" font-weight="800" letter-spacing="-1" fill="#000000" opacity="0.5">edit</text>
+          <text x="84" y="36" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+                font-size="28" font-weight="800" letter-spacing="-1" fill="#ffffff" opacity="0.5">frame</text>
+        </svg>
+      </div>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-12 — The Dissolve</div>
+      <div class="logo-concept">The transition itself as a mark — <em>white to red to black, the cross-dissolve frozen at the 50% point.</em> "edit" almost invisible on the white side; "frame" almost invisible on the black side. The brand lives in the moment of maximum ambiguity — the instant that is both and neither. Not a scalable mark but a brand declaration.</div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- =====================================================
+     IV. SIGNALS IN THE NOISE
+     ===================================================== -->
+<div class="section-label">IV. Signals in the Noise</div>
+<div class="section-thesis">Code is signal. Distributed systems are noise becoming signal. What marks feel like finding the right frequency?</div>
+<div class="logo-grid">
+
+  <!-- R3-13: Barcode of frames — the film strip as barcode, readable by machine -->
+  <div class="logo-card">
+    <div class="logo-canvas white">
+      <div class="col">
+        <svg width="160" height="72" viewBox="0 0 160 72" fill="none">
+          <!-- Barcode-like vertical bars, varying widths — each is a "frame" -->
+          <rect x="0"   y="0" width="2"  height="56" fill="#111"/>
+          <rect x="4"   y="0" width="4"  height="56" fill="#111"/>
+          <rect x="10"  y="0" width="2"  height="56" fill="#111"/>
+          <rect x="14"  y="0" width="6"  height="56" fill="#111"/>
+          <rect x="22"  y="0" width="2"  height="56" fill="#111"/>
+          <rect x="26"  y="0" width="2"  height="56" fill="#111"/>
+          <rect x="30"  y="0" width="8"  height="56" fill="#111"/>
+          <rect x="40"  y="0" width="2"  height="56" fill="#111"/>
+          <rect x="44"  y="0" width="4"  height="56" fill="#111"/>
+          <!-- RED bar — the edit point -->
+          <rect x="50"  y="0" width="3"  height="56" fill="#ff2d2d"/>
+          <rect x="55"  y="0" width="6"  height="56" fill="#111"/>
+          <rect x="63"  y="0" width="2"  height="56" fill="#111"/>
+          <rect x="67"  y="0" width="4"  height="56" fill="#111"/>
+          <rect x="73"  y="0" width="2"  height="56" fill="#111"/>
+          <rect x="77"  y="0" width="8"  height="56" fill="#111"/>
+          <rect x="87"  y="0" width="2"  height="56" fill="#111"/>
+          <rect x="91"  y="0" width="2"  height="56" fill="#111"/>
+          <rect x="95"  y="0" width="4"  height="56" fill="#111"/>
+          <rect x="101" y="0" width="2"  height="56" fill="#111"/>
+          <rect x="105" y="0" width="6"  height="56" fill="#111"/>
+          <rect x="113" y="0" width="2"  height="56" fill="#111"/>
+          <rect x="117" y="0" width="4"  height="56" fill="#111"/>
+          <rect x="123" y="0" width="2"  height="56" fill="#111"/>
+          <rect x="127" y="0" width="8"  height="56" fill="#111"/>
+          <rect x="137" y="0" width="2"  height="56" fill="#111"/>
+          <rect x="141" y="0" width="4"  height="56" fill="#111"/>
+          <rect x="147" y="0" width="2"  height="56" fill="#111"/>
+          <rect x="151" y="0" width="6"  height="56" fill="#111"/>
+          <rect x="159" y="0" width="1"  height="56" fill="#111"/>
+          <!-- Wordmark below -->
+          <text x="0" y="70" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+                font-size="12" font-weight="400" letter-spacing="5.5" fill="#aaa">EDITFRAME</text>
+        </svg>
+      </div>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-13 — Frame Barcode</div>
+      <div class="logo-concept">Every frame in a video has a unique signature. <em>This is a barcode of frames — each bar a timestamp, the red bar the current edit point.</em> Also: barcodes are machine-readable. Editframe is an API — it's meant to be read by machines. The wordmark spaced beneath reads like a product number. Clean on white.</div>
+    </div>
+  </div>
+
+  <!-- R3-14: Signal pulse — a single pulse waveform on a flat line -->
+  <div class="logo-card">
+    <div class="logo-canvas dark">
+      <div class="col">
+        <svg width="180" height="60" viewBox="0 0 180 60" fill="none">
+          <!-- Flat line -->
+          <line x1="0" y1="30" x2="60" y2="30" stroke="#333" stroke-width="2" stroke-linecap="square"/>
+          <!-- The pulse — a square wave event in time -->
+          <polyline points="60,30 60,8 90,8 90,52 120,52 120,30"
+                    stroke="#ffffff" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" fill="none"/>
+          <!-- Red center of pulse — the peak frame -->
+          <line x1="90" y1="8" x2="90" y2="52" stroke="#ff2d2d" stroke-width="2" stroke-linecap="square"/>
+          <!-- Flat line continues -->
+          <line x1="120" y1="30" x2="180" y2="30" stroke="#333" stroke-width="2" stroke-linecap="square"/>
+          <!-- Wordmark -->
+          <text x="0" y="56" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+                font-size="11" font-weight="300" letter-spacing="6" fill="#2a2a2a">EDITFRAME</text>
+        </svg>
+      </div>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-14 — Signal Pulse</div>
+      <div class="logo-concept">Silence — then a single square-wave event — then silence. <em>The render job: nothing, then everything, then done.</em> The red line bisects the pulse at its axis — the edit point. Square wave rather than sine because <em>renders are not continuous; they're discrete events in time</em>. The flat lines are emptiness waiting.</div>
+    </div>
+  </div>
+
+  <!-- R3-15: Binary tree but made of the product name's letterforms -->
+  <div class="logo-card">
+    <div class="logo-canvas bone">
+      <svg width="180" height="90" viewBox="0 0 180 90" fill="none">
+        <!-- The word EDITFRAME split recursively — like a binary tree of the name itself -->
+        <!-- Root: full word, small -->
+        <text x="55" y="14" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+              font-size="13" font-weight="700" letter-spacing="-0.3" fill="#333">editframe</text>
+        <!-- Level 2: split into "edit" + "frame" -->
+        <line x1="90" y1="16" x2="40" y2="30" stroke="#ccc" stroke-width="1"/>
+        <line x1="90" y1="16" x2="140" y2="30" stroke="#ccc" stroke-width="1"/>
+        <text x="12" y="40" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+              font-size="12" font-weight="300" letter-spacing="-0.2" fill="#666">edit</text>
+        <text x="118" y="40" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+              font-size="12" font-weight="700" letter-spacing="-0.2" fill="#555">frame</text>
+        <!-- Level 3: split "edit" → "ed" + "it", "frame" → "fra" + "me" -->
+        <line x1="27" y1="42" x2="12" y2="56" stroke="#ddd" stroke-width="0.75"/>
+        <line x1="27" y1="42" x2="44" y2="56" stroke="#ddd" stroke-width="0.75"/>
+        <line x1="134" y1="42" x2="118" y2="56" stroke="#ddd" stroke-width="0.75"/>
+        <line x1="134" y1="42" x2="152" y2="56" stroke="#ddd" stroke-width="0.75"/>
+        <text x="4"   y="64" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif" font-size="10" font-weight="300" fill="#888">ed</text>
+        <text x="38"  y="64" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif" font-size="10" font-weight="300" fill="#888">it</text>
+        <text x="110" y="64" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif" font-size="10" font-weight="300" fill="#888">fra</text>
+        <text x="146" y="64" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif" font-size="10" font-weight="300" fill="#888">me</text>
+        <!-- Level 4: single characters -->
+        <line x1="10"  y1="66" x2="5"   y2="76" stroke="#eee" stroke-width="0.5"/>
+        <line x1="10"  y1="66" x2="16"  y2="76" stroke="#eee" stroke-width="0.5"/>
+        <text x="1"    y="84" font-family="'Courier New',monospace" font-size="8" fill="#bbb">e</text>
+        <text x="13"   y="84" font-family="'Courier New',monospace" font-size="8" fill="#bbb">d</text>
+        <line x1="42"  y1="66" x2="37"  y2="76" stroke="#eee" stroke-width="0.5"/>
+        <line x1="42"  y1="66" x2="48"  y2="76" stroke="#eee" stroke-width="0.5"/>
+        <text x="33"   y="84" font-family="'Courier New',monospace" font-size="8" fill="#bbb">i</text>
+        <text x="45"   y="84" font-family="'Courier New',monospace" font-size="8" fill="#bbb">t</text>
+      </svg>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-15 — Recursive Name Tree</div>
+      <div class="logo-concept">The product name split recursively into a binary tree — <em>editframe → edit + frame → ed + it + fra + me → e + d + i + t…</em> A composition is its own name decomposed. Every render is a parse tree. Typography as data structure. Works only at large sizes — this is a concept piece, not a scalable mark.</div>
+    </div>
+  </div>
+
+  <!-- R3-16: Clock with one hand removed — duration without start or end -->
+  <div class="logo-card">
+    <div class="logo-canvas dark">
+      <div class="row">
+        <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+          <!-- Clock face — minimal marks only, no numbers -->
+          <circle cx="26" cy="26" r="24" stroke="#2a2a2a" stroke-width="1.5" fill="none"/>
+          <!-- Hour markers — just 4 -->
+          <line x1="26" y1="3"  x2="26" y2="8"  stroke="#333" stroke-width="1.5" stroke-linecap="square"/>
+          <line x1="49" y1="26" x2="44" y2="26" stroke="#333" stroke-width="1.5" stroke-linecap="square"/>
+          <line x1="26" y1="49" x2="26" y2="44" stroke="#333" stroke-width="1.5" stroke-linecap="square"/>
+          <line x1="3"  y1="26" x2="8"  y2="26" stroke="#333" stroke-width="1.5" stroke-linecap="square"/>
+          <!-- Only the minute hand — no hour hand -->
+          <!-- Minute hand at ~10 past — points toward 10 -->
+          <line x1="26" y1="26" x2="14" y2="8"  stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+          <!-- Center -->
+          <circle cx="26" cy="26" r="3" fill="#ffffff"/>
+          <!-- Small red dot where hour hand would be — the missing hand -->
+          <circle cx="26" cy="10" r="2" fill="#ff2d2d"/>
+        </svg>
+        <svg width="130" height="22" viewBox="0 0 130 22" fill="none">
+          <text x="0" y="18" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+                font-size="18" font-weight="700" letter-spacing="-0.3" fill="#ffffff">editframe</text>
+        </svg>
+      </div>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-16 — The Missing Hand</div>
+      <div class="logo-concept">A clock with only one hand — the minute hand says where you are; the hour hand is gone, replaced by a red dot. <em>In video time, you know where you are in the clip but not where you are in the day.</em> The red dot is the edit cursor, floating free of the clock mechanism. A clock that measures something other than clock time.</div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- =====================================================
+     V. PURE MARK EXPERIMENTS
+     ===================================================== -->
+<div class="section-label">V. Pure Mark Experiments</div>
+<div class="section-thesis">Forget what it "means." What shape wants to exist? What form is inevitable?</div>
+<div class="logo-grid">
+
+  <!-- R3-17: The double slash — // comments in code, frame separators in film -->
+  <div class="logo-card">
+    <div class="logo-canvas dark">
+      <div class="row">
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+          <!-- Two diagonal slashes — // -->
+          <line x1="10" y1="44" x2="24" y2="0" stroke="#ffffff" stroke-width="6" stroke-linecap="square"/>
+          <line x1="22" y1="44" x2="36" y2="0" stroke="#ffffff" stroke-width="6" stroke-linecap="square"/>
+        </svg>
+        <svg width="130" height="22" viewBox="0 0 130 22" fill="none">
+          <text x="0" y="18" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+                font-size="18" font-weight="700" letter-spacing="-0.3" fill="#ffffff">editframe</text>
+        </svg>
+      </div>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-17 — Double Slash</div>
+      <div class="logo-concept">// is the comment. The aside. The cut that removes. In film, a diagonal slash marks a take to reject. In URLs, it follows the protocol. <em>Two slashes is the typographic gesture of both "dismissed" and "begin."</em> Bold, fast, directional. Extremely recognizable to developers. Zero ambiguity about audience.</div>
+    </div>
+  </div>
+
+  <!-- R3-18: The pipe character — Unix pipe, composition pipeline -->
+  <div class="logo-card">
+    <div class="logo-canvas white">
+      <div class="row">
+        <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+          <!-- Three vertical pipes with different weights — the pipeline -->
+          <rect x="6"  y="4" width="8" height="44" fill="#111"/>
+          <rect x="22" y="4" width="8" height="44" fill="#555"/>
+          <rect x="38" y="4" width="8" height="44" fill="#bbb"/>
+        </svg>
+        <svg width="130" height="22" viewBox="0 0 130 22" fill="none">
+          <text x="0" y="18" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+                font-size="18" font-weight="700" letter-spacing="-0.3" fill="#111">editframe</text>
+        </svg>
+      </div>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-18 — The Pipeline (Pipes)</div>
+      <div class="logo-concept">Three pipes | | | — <em>each is a stage in the render pipeline, each slightly lighter than the last, data flowing through.</em> The | is also the cursor. Also the Unix pipe operator: `input | process | output`. Three stages: ingest, compose, render. Bold on white. Extremely simple. Possibly too simple — or exactly right.</div>
+    </div>
+  </div>
+
+  <!-- R3-19: Hourglass reinterpreted — two triangles, time flowing between composition states -->
+  <div class="logo-card">
+    <div class="logo-canvas ink">
+      <div class="row">
+        <svg width="44" height="52" viewBox="0 0 44 52" fill="none">
+          <!-- Hourglass — but geometric/sharp, not organic -->
+          <!-- Top triangle (source/input) -->
+          <polygon points="0,0 44,0 22,24" fill="#ffffff"/>
+          <!-- Bottom triangle (output/render) -->
+          <polygon points="0,52 44,52 22,28" fill="#444"/>
+          <!-- Pinch point — the edit, the present frame -->
+          <!-- tiny gap at 24-28 is the waist -->
+          <!-- Accent dot at waist -->
+          <circle cx="22" cy="26" r="3" fill="#ff2d2d"/>
+        </svg>
+        <svg width="130" height="22" viewBox="0 0 130 22" fill="none">
+          <text x="0" y="18" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+                font-size="18" font-weight="700" letter-spacing="-0.3" fill="#ffffff">editframe</text>
+        </svg>
+      </div>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-19 — Hourglass / Render Funnel</div>
+      <div class="logo-concept">Source material (white, full) flowing through the pinch point (red — the edit) into the render output (dark, compressed). <em>The hourglass is the entire pipeline: everything you have becomes one frame at a time.</em> The pinch is where Editframe lives — between raw material and finished output.</div>
+    </div>
+  </div>
+
+  <!-- R3-20: Aperture — the iris, the frame opening -->
+  <div class="logo-card">
+    <div class="logo-canvas dark">
+      <div class="row">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+          <!-- Camera aperture: 6 blade iris shape, geometric/sharp -->
+          <!-- Constructed from 6 overlapping rotated rectangles -->
+          <!-- Each blade: a thin long rect rotated around center -->
+          <g transform="translate(24,24)">
+            <!-- 6 blades at 0°, 60°, 120°, 180°, 240°, 300° -->
+            <rect x="-3" y="-22" width="6" height="20" fill="#333" transform="rotate(0)"/>
+            <rect x="-3" y="-22" width="6" height="20" fill="#333" transform="rotate(60)"/>
+            <rect x="-3" y="-22" width="6" height="20" fill="#333" transform="rotate(120)"/>
+            <rect x="-3" y="-22" width="6" height="20" fill="#333" transform="rotate(180)"/>
+            <rect x="-3" y="-22" width="6" height="20" fill="#333" transform="rotate(240)"/>
+            <rect x="-3" y="-22" width="6" height="20" fill="#333" transform="rotate(300)"/>
+            <!-- The open center — light coming through -->
+            <polygon points="0,-10 8.6,-5 8.6,5 0,10 -8.6,5 -8.6,-5" fill="#ffffff"/>
+            <!-- Red dot — the sensor, the frame -->
+            <circle cx="0" cy="0" r="4" fill="#ff2d2d"/>
+          </g>
+        </svg>
+        <svg width="130" height="22" viewBox="0 0 130 22" fill="none">
+          <text x="0" y="18" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+                font-size="18" font-weight="700" letter-spacing="-0.3" fill="#ffffff">editframe</text>
+        </svg>
+      </div>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-20 — Aperture / Iris</div>
+      <div class="logo-concept">A camera iris — six blades converging on a bright center. <em>The aperture is literally how a frame is opened and closed.</em> The white hexagon is the gate — the frame itself. The red center is the sensor, the destination. Risk: camera/photography brands own this form. But the geometric abstraction is distinct — these are sharp rectangles, not organic blades.</div>
+    </div>
+  </div>
+
+  <!-- R3-21: The "ef" as a single continuous stroke — ligature drawn in one line -->
+  <div class="logo-card">
+    <div class="logo-canvas bone">
+      <div class="col">
+        <svg width="100" height="80" viewBox="0 0 100 80" fill="none">
+          <!-- "ef" as one continuous unbroken stroke — the edit path through the frame -->
+          <!-- Start at e bottom, go counterclockwise around e, cross over to f crossbar, up f stem, curve to top, back down -->
+          <path d="
+            M 10 52
+            A 22 22 0 1 1 32 74
+            L 10 74
+            M 10 52
+            L 42 52
+            M 46 52
+            L 88 52
+            L 88 20
+            Q 88 8 76 8
+            L 62 8
+          "
+          stroke="#222" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- Wordmark -->
+          <text x="0" y="78" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+                font-size="10" font-weight="300" letter-spacing="6" fill="#999">EDITFRAME</text>
+        </svg>
+      </div>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-21 — Single-Stroke EF</div>
+      <div class="logo-concept">Both letterforms drawn as a single unbroken path — <em>the edit is one continuous action from start to finish.</em> The stroke passes through both letters without lifting, the crossbar serving both e and f simultaneously. Handcrafted feeling despite geometric precision. More human than system, which may be exactly right for a tool that serves human creativity.</div>
+    </div>
+  </div>
+
+  <!-- R3-22: The "play head over a bracket" — cursor on a frame -->
+  <div class="logo-card">
+    <div class="logo-canvas dark">
+      <div class="row">
+        <svg width="48" height="52" viewBox="0 0 48 52" fill="none">
+          <!-- Large bracket -->
+          <path d="M32 4 L8 4 L8 48 L32 48" stroke="#333" stroke-width="3" stroke-linecap="square" fill="none"/>
+          <!-- Playhead triangle descending through the bracket, pointing down into it -->
+          <polygon points="20,0 36,0 28,18" fill="#ffffff"/>
+          <!-- Stem of playhead -->
+          <line x1="28" y1="18" x2="28" y2="52" stroke="#ffffff" stroke-width="2.5" stroke-linecap="square"/>
+          <!-- Where playhead meets bracket interior — a red intersection dot -->
+          <circle cx="28" cy="26" r="3.5" fill="#ff2d2d"/>
+        </svg>
+        <svg width="130" height="22" viewBox="0 0 130 22" fill="none">
+          <text x="0" y="18" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+                font-size="18" font-weight="700" letter-spacing="-0.3" fill="#ffffff">editframe</text>
+        </svg>
+      </div>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name">R3-22 — Playhead Entering the Frame</div>
+      <div class="logo-concept">A bracket (the frame, the API context) and a playhead (time, the edit cursor) in collision. <em>The moment the playhead enters the frame is where Editframe operates.</em> The red intersection dot is the product: the point where time meets structure. Two of the strongest shapes from earlier rounds, finally in direct relationship.</div>
+    </div>
+  </div>
+
+</div>
+
+<div style="height: 100px;"></div>
+</body>
+</html>
