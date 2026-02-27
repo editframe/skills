@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { MetaFunction } from "react-router";
 import "@editframe/elements";
 import "@editframe/elements/styles.css";
@@ -37,6 +37,9 @@ export const meta: MetaFunction = () => {
 export default function SVGPage() {
   useTheme();
   const [mounted, setMounted] = useState(false);
+  const tg1Ref = useRef<any>(null);
+  const tg2Ref = useRef<any>(null);
+  const tg3Ref = useRef<any>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -49,6 +52,23 @@ export default function SVGPage() {
       Prism.highlightAll();
     };
     loadPrism();
+  }, [mounted]);
+
+  useLayoutEffect(() => {
+    if (!mounted) return;
+    for (const tg of [tg1Ref.current, tg2Ref.current, tg3Ref.current]) {
+      if (!tg) continue;
+      const svg = tg.querySelector("svg") as SVGSVGElement | null;
+      if (!svg) continue;
+      tg.clearFrameTasks?.();
+      svg.pauseAnimations();
+      svg.setCurrentTime((tg.ownCurrentTimeMs ?? 0) / 1000);
+      svg.pauseAnimations();
+      tg.addFrameTask(({ ownCurrentTimeMs }: { ownCurrentTimeMs: number }) => {
+        svg.setCurrentTime(ownCurrentTimeMs / 1000);
+        svg.pauseAnimations();
+      });
+    }
   }, [mounted]);
 
   if (!mounted) {
@@ -102,31 +122,29 @@ export default function SVGPage() {
               </span>
             </div>
             <p className="text-[var(--warm-gray)] mb-4">
-              Editframe automatically synchronizes SVG SMIL animations to the
-              composition timeline. On each seek,{" "}
-              <code className="font-mono bg-[var(--ink-black)]/10 dark:bg-white/10 px-1">
-                svg.setCurrentTime(t)
-              </code>{" "}
-              is called on every{" "}
-              <code className="font-mono bg-[var(--ink-black)]/10 dark:bg-white/10 px-1">
-                {"<svg>"}
-              </code>{" "}
-              inside the timegroup, placing all animations at the exact
-              requested frame. No{" "}
+              SVG SMIL has its own internal clock that runs independently. A
+              single{" "}
               <code className="font-mono bg-[var(--ink-black)]/10 dark:bg-white/10 px-1">
                 addFrameTask
               </code>{" "}
-              wiring needed.
+              bridges it to the Editframe timeline —{" "}
+              <code className="font-mono bg-[var(--ink-black)]/10 dark:bg-white/10 px-1">
+                setCurrentTime
+              </code>{" "}
+              positions the SVG, then{" "}
+              <code className="font-mono bg-[var(--ink-black)]/10 dark:bg-white/10 px-1">
+                pauseAnimations
+              </code>{" "}
+              prevents it from running ahead. The SMIL markup itself is entirely
+              declarative.
             </p>
             <pre className="!mt-0 bg-[var(--card-dark-bg)] text-white px-4 py-3 overflow-x-auto border-2 border-[var(--ink-black)] dark:border-white">
-              <code className="language-xml">{`<ef-timegroup mode="fixed" duration="4s" loop autoplay>
-  <svg>
-    <!-- SMIL animations are positioned automatically -->
-    <circle cx="50" cy="50" r="20">
-      <animate attributeName="r" values="10;40;10" dur="4s" repeatCount="indefinite"/>
-    </circle>
-  </svg>
-</ef-timegroup>`}</code>
+              <code className="language-javascript">{`const svg = timegroup.querySelector("svg");
+
+timegroup.addFrameTask(({ ownCurrentTimeMs }) => {
+  svg.setCurrentTime(ownCurrentTimeMs / 1000);
+  svg.pauseAnimations(); // Chromium unpauses on setCurrentTime
+});`}</code>
             </pre>
           </div>
 
@@ -143,6 +161,7 @@ export default function SVGPage() {
               <div className="flex-1">
                 <div className="w-full aspect-[16/9] overflow-hidden relative border-4 border-[var(--ink-black)] dark:border-white shadow-poster-hard">
                   <ef-timegroup
+                    ref={tg1Ref}
                     id="svg-section1"
                     mode="fixed"
                     duration="4s"
@@ -241,6 +260,7 @@ export default function SVGPage() {
               <div className="flex-1">
                 <div className="w-full aspect-[16/9] overflow-hidden relative border-4 border-[var(--ink-black)] dark:border-white shadow-poster-hard">
                   <ef-timegroup
+                    ref={tg2Ref}
                     id="svg-section2"
                     mode="fixed"
                     duration="6s"
@@ -358,6 +378,7 @@ export default function SVGPage() {
               <div className="flex-1">
                 <div className="w-full aspect-[16/9] overflow-hidden relative border-4 border-[var(--ink-black)] dark:border-white shadow-poster-hard">
                   <ef-timegroup
+                    ref={tg3Ref}
                     id="svg-section3"
                     mode="fixed"
                     duration="5s"
