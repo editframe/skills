@@ -713,7 +713,8 @@ export async function renderTimegroupToVideo(
     if (options.telemetryToken) {
       const elapsedMs = Math.round(performance.now() - renderStartTime);
       const endpoint = options.telemetryEndpoint ?? "https://editframe.com";
-      const efMediaCount = timegroup.querySelectorAll("ef-video,ef-audio").length;
+      const efMediaCount =
+        timegroup.querySelectorAll("ef-video,ef-audio").length;
       const efImageCount = timegroup.querySelectorAll("ef-image").length;
       const efCaptionsCount = timegroup.querySelectorAll("ef-captions").length;
       const efTextCount = timegroup.querySelectorAll("ef-text").length;
@@ -729,7 +730,12 @@ export async function renderTimegroupToVideo(
           width: config.videoWidth,
           height: config.videoHeight,
           fps: config.fps,
-          feature_usage: { efMediaCount, efImageCount, efCaptionsCount, efTextCount },
+          feature_usage: {
+            efMediaCount,
+            efImageCount,
+            efCaptionsCount,
+            efTextCount,
+          },
         }),
         keepalive: true,
       }).catch(() => {

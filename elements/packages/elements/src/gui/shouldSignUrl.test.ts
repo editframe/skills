@@ -21,10 +21,14 @@ describe("shouldSignUrl", () => {
   });
 
   it("signs cross-origin editframe API URLs", () => {
-    expect(shouldSignUrl(`${remoteOrigin}/api/v1/render`, localOrigin)).toBe(true);
+    expect(shouldSignUrl(`${remoteOrigin}/api/v1/render`, localOrigin)).toBe(
+      true,
+    );
   });
 
   it("does not sign relative URLs (same-origin)", () => {
-    expect(shouldSignUrl("/api/v1/transcode/video/init.mp4", localOrigin)).toBe(false);
+    expect(shouldSignUrl("/api/v1/transcode/video/init.mp4", localOrigin)).toBe(
+      false,
+    );
   });
 });

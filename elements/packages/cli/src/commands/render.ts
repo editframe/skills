@@ -89,7 +89,9 @@ program
       process.exit(1);
     }
     const efRenderHost: string =
-      programOpts.efRenderHost || process.env.EF_RENDER_HOST || "https://editframe.com";
+      programOpts.efRenderHost ||
+      process.env.EF_RENDER_HOST ||
+      "https://editframe.com";
 
     // If running from the dev script (via tsx), ORIGINAL_CWD contains the user's actual directory
     const baseCwd = process.env.ORIGINAL_CWD || process.cwd();
@@ -303,7 +305,9 @@ program
                   render_path: "cli",
                   duration_ms: renderDurationMs,
                   ...(renderInfo?.width != null && { width: renderInfo.width }),
-                  ...(renderInfo?.height != null && { height: renderInfo.height }),
+                  ...(renderInfo?.height != null && {
+                    height: renderInfo.height,
+                  }),
                   ...(renderInfo?.fps != null && { fps: renderInfo.fps }),
                   feature_usage: {
                     efMediaCount: renderInfo

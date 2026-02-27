@@ -194,7 +194,11 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
         });
       }
 
-      if (!EF_RENDERING() && this.signingURL && shouldSignUrl(url, window.location.origin)) {
+      if (
+        !EF_RENDERING() &&
+        this.signingURL &&
+        shouldSignUrl(url, window.location.origin)
+      ) {
         const { cacheKey, signingPayload } = this.#getTokenCacheKey(url);
 
         // Use global token deduplicator to share tokens across all context providers
