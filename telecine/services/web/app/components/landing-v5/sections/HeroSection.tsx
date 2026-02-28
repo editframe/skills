@@ -46,8 +46,9 @@ export function HeroSection() {
               </Suspense>
             ) : (
               <button
+                type="button"
                 onClick={() => setDemoPending(true)}
-                className="relative block w-full text-left group"
+                className="relative block w-full text-left p-0 border-0 bg-transparent group"
                 aria-label="Play Editframe demo"
               >
                 <HeroDemoPoster />
