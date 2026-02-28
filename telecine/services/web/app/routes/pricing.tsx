@@ -49,8 +49,8 @@ const tiers = [
       "CLI rendering",
       "Commercial use permitted",
     ],
-    cta: "Contact sales",
-    ctaHref: "mailto:hello@editframe.com",
+    cta: "Get started",
+    ctaHref: "/auth/register",
   },
   {
     name: "Cloud",
@@ -66,8 +66,8 @@ const tiers = [
       "Streaming playback (CDN)",
       "Cloud rendering (parallel)",
     ],
-    cta: "Contact sales",
-    ctaHref: "mailto:hello@editframe.com",
+    cta: "Get started",
+    ctaHref: "/auth/register",
   },
   {
     name: "Enterprise",
@@ -81,8 +81,8 @@ const tiers = [
       "Everything in Cloud",
       "Priority support",
     ],
-    cta: "Contact us",
-    ctaHref: "mailto:hello@editframe.com",
+    cta: "Get started",
+    ctaHref: "/auth/register",
   },
 ];
 
