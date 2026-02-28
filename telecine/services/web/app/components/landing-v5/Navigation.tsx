@@ -34,7 +34,7 @@ export function Navigation() {
   }, [integrationsOpen]);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-[var(--paper-cream)] border-b-2 border-[var(--ink-black)] dark:border-white">
+    <nav aria-label="Main navigation" className="fixed top-0 left-0 right-0 z-50 bg-[var(--paper-cream)] border-b-2 border-[var(--ink-black)] dark:border-white">
       <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-6">
         <Link to="/" className="flex items-center">
           <span className="text-xl font-black tracking-tighter uppercase">editframe</span>
@@ -45,10 +45,12 @@ export function Navigation() {
           <div ref={integrationsRef} className="relative">
             <button
               onClick={() => setIntegrationsOpen((o) => !o)}
+              aria-haspopup="true"
+              aria-expanded={integrationsOpen}
               className="px-4 py-2 text-sm font-bold uppercase tracking-wider hover:bg-[var(--poster-gold)] transition-colors flex items-center gap-1"
             >
               Integrations
-              <span className="text-[10px] leading-none">{integrationsOpen ? "▲" : "▼"}</span>
+              <span className="text-[10px] leading-none" aria-hidden="true">{integrationsOpen ? "▲" : "▼"}</span>
             </button>
             {integrationsOpen && (
               <div className="absolute top-full left-0 mt-0 bg-[var(--paper-cream)] border-2 border-t-0 border-[var(--ink-black)] dark:border-white min-w-[160px] z-50">

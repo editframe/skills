@@ -5,7 +5,7 @@ export function TemplatedRenderingSection() {
   return (
     <section className="relative py-16 bg-[var(--poster-gold)] dark:bg-[#3a2e1a] overflow-hidden">
       {/* Multiplication/repeat pattern - one to many */}
-      <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 w-[500px] h-[500px] opacity-[0.08]">
+      <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 w-[500px] h-[500px] opacity-[0.08]" aria-hidden="true">
         <svg viewBox="0 0 100 100" className="w-full h-full">
           {/* One square becoming many */}
           <rect x="10" y="40" width="20" height="20" fill="currentColor" />

@@ -5,7 +5,7 @@ export function GettingStartedSection() {
   return (
     <section className="relative py-24 bg-[var(--card-bg)] border-t-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
       {/* Clock shape - it's about TIME, speed */}
-      <div className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/3 w-[400px] h-[400px] opacity-[0.05] dark:opacity-[0.03]">
+      <div className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/3 w-[400px] h-[400px] opacity-[0.05] dark:opacity-[0.03]" aria-hidden="true">
         <svg viewBox="0 0 100 100" className="w-full h-full">
           <circle cx="50" cy="50" r="45" fill="none" stroke="var(--poster-red)" strokeWidth="4" />
           {/* Clock hands pointing to 2 (minutes) */}
@@ -52,7 +52,7 @@ export function GettingStartedSection() {
               className="inline-flex items-center px-6 py-3 border-2 border-[var(--ink-black)] dark:border-white font-bold text-sm uppercase tracking-wider hover:bg-[var(--ink-black)] hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
             >
               Explore docs & skills
-              <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
             </Link>

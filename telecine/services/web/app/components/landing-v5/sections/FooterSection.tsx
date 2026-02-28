@@ -13,7 +13,7 @@ export function FooterSection() {
               Build video with code. HTML + CSS compositions with scripting and React support. Instant preview, hyperscale rendering.
             </p>
             {/* Color bar accent */}
-            <div className="flex gap-1 mt-6">
+            <div className="flex gap-1 mt-6" aria-hidden="true">
               <div className="w-8 h-2 bg-[var(--poster-red)]" />
               <div className="w-8 h-2 bg-[var(--poster-gold)]" />
               <div className="w-8 h-2 bg-[var(--poster-blue)]" />
