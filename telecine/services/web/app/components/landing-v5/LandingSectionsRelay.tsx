@@ -1,31 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
-
-function LazySection({ children, minHeight = "600px" }: { children: ReactNode; minHeight?: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          setVisible(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "200px" },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div ref={ref} style={visible ? undefined : { minHeight }}>
-      {visible && children}
-    </div>
-  );
-}
+import { lazy, Suspense, useEffect, useState } from "react";
 
 const CodeExamplesSection = lazy(() =>
   import("./sections/CodeExamplesSection").then((m) => ({ default: m.CodeExamplesSection }))
@@ -52,44 +25,39 @@ const RenderQueuePanel = lazy(() =>
   import("./RenderQueue").then((m) => ({ default: m.RenderQueuePanel }))
 );
 
+// Wait for the browser to go idle after the above-fold content settles before
+// starting to load below-fold sections. This keeps section chunks out of the
+// critical path without hiding them behind scroll events.
+function useIdleReady(timeoutMs = 300) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    if (typeof requestIdleCallback !== "undefined") {
+      const id = requestIdleCallback(() => setReady(true), { timeout: timeoutMs });
+      return () => cancelIdleCallback(id);
+    } else {
+      const id = setTimeout(() => setReady(true), 0);
+      return () => clearTimeout(id);
+    }
+  }, [timeoutMs]);
+  return ready;
+}
+
 export default function LandingSectionsRelay() {
+  const ready = useIdleReady(300);
+
+  if (!ready) return null;
+
   return (
     <>
-      <LazySection>
-        <Suspense>
-          <CodeExamplesSection />
-        </Suspense>
-      </LazySection>
-      <LazySection>
-        <Suspense>
-          <PromptToToolSection />
-        </Suspense>
-      </LazySection>
-      <LazySection>
-        <Suspense>
-          <RenderAnywhereSection />
-        </Suspense>
-      </LazySection>
-      <LazySection>
-        <Suspense>
-          <ArchitectureSection />
-        </Suspense>
-      </LazySection>
-      <LazySection>
-        <Suspense>
-          <TemplatedRenderingSection />
-        </Suspense>
-      </LazySection>
-      <LazySection>
-        <Suspense>
-          <GettingStartedSection />
-        </Suspense>
-      </LazySection>
-      <LazySection minHeight="300px">
-        <Suspense>
-          <FooterSection />
-        </Suspense>
-      </LazySection>
+      <Suspense>
+        <CodeExamplesSection />
+        <PromptToToolSection />
+        <RenderAnywhereSection />
+        <ArchitectureSection />
+        <TemplatedRenderingSection />
+        <GettingStartedSection />
+        <FooterSection />
+      </Suspense>
       <Suspense>
         <RenderQueuePanel />
       </Suspense>
