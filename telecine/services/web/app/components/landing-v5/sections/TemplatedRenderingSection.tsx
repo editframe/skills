@@ -1,5 +1,53 @@
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
-import { TemplatedRenderingDemo } from "../TemplatedRenderingDemo";
+
+const TemplatedRenderingDemo = lazy(() =>
+  import("../TemplatedRenderingDemo").then((m) => ({ default: m.TemplatedRenderingDemo }))
+);
+
+function DemoPlaceholder() {
+  return (
+    <div
+      className="w-full flex items-center justify-center border-4 border-black dark:border-white"
+      style={{ aspectRatio: "16/9", background: "#1a1a1a" }}
+    >
+      <span className="text-xs text-white/40">Loading…</span>
+    </div>
+  );
+}
+
+function LazyTemplatedDemo() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setVisible(true);
+          obs.disconnect();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref}>
+      {visible ? (
+        <Suspense fallback={<DemoPlaceholder />}>
+          <TemplatedRenderingDemo />
+        </Suspense>
+      ) : (
+        <DemoPlaceholder />
+      )}
+    </div>
+  );
+}
 
 export function TemplatedRenderingSection() {
   return (
@@ -40,7 +88,7 @@ export function TemplatedRenderingSection() {
         </div>
 
         {/* Demo */}
-        <TemplatedRenderingDemo />
+        <LazyTemplatedDemo />
 
         {/* CTA */}
         <div className="mt-8 text-center">

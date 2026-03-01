@@ -481,24 +481,26 @@ export function TemplatedRenderingDemo() {
                 {isClient ? (
                   <div className="flex items-center">
                     <TogglePlay target={previewId}>
-                      <button
-                        slot="pause"
-                        className="w-10 h-10 flex items-center justify-center hover:brightness-110 transition-all"
-                        style={{ backgroundColor: selectedData.color }}
-                      >
-                        <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                        </svg>
-                      </button>
-                      <button
-                        slot="play"
-                        className="w-10 h-10 flex items-center justify-center hover:brightness-110 transition-all"
-                        style={{ backgroundColor: selectedData.color }}
-                      >
-                        <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z" />
-                        </svg>
-                      </button>
+                       <button
+                         slot="pause"
+                         aria-label="Pause video"
+                         className="w-10 h-10 flex items-center justify-center hover:brightness-110 transition-all"
+                         style={{ backgroundColor: selectedData.color }}
+                       >
+                         <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                           <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                         </svg>
+                       </button>
+                       <button
+                         slot="play"
+                         aria-label="Play video"
+                         className="w-10 h-10 flex items-center justify-center hover:brightness-110 transition-all"
+                         style={{ backgroundColor: selectedData.color }}
+                       >
+                         <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                           <path d="M8 5v14l11-7z" />
+                         </svg>
+                       </button>
                     </TogglePlay>
 
                     <div className="flex-1 px-3 h-10 flex items-center border-l border-white/10">
