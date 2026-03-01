@@ -72,6 +72,7 @@ export function HeroSection() {
               <span className="text-white ml-2">npm create @editframe@latest</span>
             </span>
             <button
+              type="button"
               onClick={() => navigator.clipboard?.writeText("npm create @editframe@latest")}
               className="text-white/40 hover:text-white transition-colors flex-shrink-0"
               aria-label="Copy npm create @editframe@latest command"

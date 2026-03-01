@@ -101,6 +101,7 @@ export default function App({
           as="font"
           type="font/woff2"
           crossOrigin="anonymous"
+          fetchPriority="high"
         />
         <script
           dangerouslySetInnerHTML={{
