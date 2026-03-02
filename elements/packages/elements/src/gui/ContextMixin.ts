@@ -18,6 +18,7 @@ import { fetchContext } from "./fetchContext.js";
 import { type FocusContext, focusContext } from "./focusContext.js";
 import { focusedElementContext } from "./focusedElementContext.js";
 import { loopContext, playingContext } from "./playingContext.js";
+import { shouldSignUrl } from "./shouldSignUrl.js";
 
 export const targetTemporalContext =
   createContext<TemporalMixinInterface | null>(Symbol("target-temporal"));
@@ -193,11 +194,11 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
         });
       }
 
-      // Check if this is a local @ef-* endpoint that doesn't need authentication
-      // These endpoints are handled by the Vite plugin locally and don't require signing
-      const isLocalEndpoint = url.startsWith("/@ef-");
-
-      if (!EF_RENDERING() && this.signingURL && !isLocalEndpoint) {
+      if (
+        !EF_RENDERING() &&
+        this.signingURL &&
+        shouldSignUrl(url, window.location.origin)
+      ) {
         const { cacheKey, signingPayload } = this.#getTokenCacheKey(url);
 
         // Use global token deduplicator to share tokens across all context providers
@@ -233,7 +234,7 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
         // Only include credentials for same-origin requests where session cookies
         // are relevant. For cross-origin requests without a signing URL, credentials
         // cause CORS failures when the server responds with Access-Control-Allow-Origin: *
-        if (!this.#isCrossOrigin(url)) {
+        if (!shouldSignUrl(url, window.location.origin)) {
           init.credentials = "include";
         }
 
@@ -287,27 +288,6 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
         throw error;
       }
     };
-
-    // Note: URL token caching is now handled globally via URLTokenDeduplicator
-    // Keeping these for any potential backwards compatibility, but they're no longer used
-
-    /**
-     * Generate a cache key for URL token based on signing strategy
-     *
-     * Uses unified prefix + parameter matching approach:
-     * - For transcode URLs: signs base "/api/v1/transcode" + params like {url: "source.mp4"}
-     * - For regular URLs: signs full URL with empty params {}
-     * - All validation uses prefix matching + exhaustive parameter matching
-     * - Multiple transcode segments with same source share one token (reduces round-trips)
-     */
-    #isCrossOrigin(url: string): boolean {
-      try {
-        const targetUrl = new URL(url, window.location.origin);
-        return targetUrl.origin !== window.location.origin;
-      } catch {
-        return false;
-      }
-    }
 
     #isEditframeDomain(url: string): boolean {
       try {

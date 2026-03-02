@@ -4,7 +4,7 @@ export function RenderAnywhereSection() {
   return (
     <section className="relative py-24 bg-[var(--poster-red)] dark:bg-[#3a1a1a] text-white overflow-hidden">
       {/* Three-way split pattern - three equal paths */}
-      <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 w-[500px] h-[500px] opacity-[0.08]">
+      <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 w-[500px] h-[500px] opacity-[0.08]" aria-hidden="true">
         <svg viewBox="0 0 100 100" className="w-full h-full">
           <circle cx="20" cy="50" r="8" fill="white" />
           <line x1="28" y1="50" x2="45" y2="30" stroke="white" strokeWidth="4" />

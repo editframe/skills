@@ -38,6 +38,7 @@ const routes = [
     route("/skills/:skill/:reference", "routes/skills/reference-detail.tsx"),
     route("/demos/motion-designer", "routes/demos/motion-designer.tsx"),
     route("/with/animejs", "routes/with/animejs.tsx"),
+    route("/with/svg", "routes/with/svg.tsx"),
 
     layout("routes/resource/Layout.tsx", [
       route("/welcome", "routes/welcome.tsx"),
@@ -170,10 +171,11 @@ const routes = [
     ]),
   ]),
 
+  v1.route("/api/v1/telemetry", "telemetry.ts"),
+
   layout("api/v1/layout.ts", [
     ...v1.prefix("/api/v1", [
     v1.route("/organization", "organization.ts"),
-    v1.route("/telemetry", "telemetry.ts"),
     v1.route("/test_webhook", "test_webhook.ts"),
 
     ...v1.prefix("/image_files", [

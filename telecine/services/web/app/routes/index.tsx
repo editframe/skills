@@ -3,7 +3,7 @@ import { type MetaFunction, type HeadersFunction } from "react-router";
 import { useTheme } from "~/hooks/useTheme";
 import { Navigation } from "~/components/landing-v5/Navigation";
 import { ClientOnly } from "~/components/ClientOnly";
-import { RenderQueueProvider } from "~/components/landing-v5/RenderQueueContext";
+import { RenderQueueProvider } from "~/components/landing-v5/RenderQueue";
 import "~/styles/landing.css";
 
 import { HeroSection } from "~/components/landing-v5/sections/HeroSection";

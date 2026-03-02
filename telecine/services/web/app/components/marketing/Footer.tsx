@@ -15,6 +15,7 @@ export function Footer() {
     technologies: [
       { name: "React", href: "/react" },
       { name: "AnimeJS", href: "/with/animejs" },
+      { name: "SVG SMIL", href: "/with/svg" },
     ],
     legal: [
       { name: "Terms of Service", href: "/terms" },

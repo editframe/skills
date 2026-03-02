@@ -307,18 +307,19 @@ export interface IdentityValidPasswordResets {
 }
 
 export interface TelemetryEvents {
-  api_key_id: string;
+  api_key_id: string | null;
   cli_version: string | null;
   created_at: Generated<Timestamp>;
   duration_ms: number | null;
+  event_type: Generated<string>;
   feature_usage: Generated<Json>;
   fps: Numeric | null;
   height: number | null;
   id: Generated<string>;
   ip_address: string | null;
-  org_id: string;
+  org_id: string | null;
   origin: string | null;
-  render_path: string;
+  render_path: string | null;
   sdk_version: string | null;
   width: number | null;
 }

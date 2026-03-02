@@ -5,10 +5,10 @@ export function CodeExamplesSection() {
   return (
     <section className="relative py-24 bg-[var(--card-dark-bg)] text-white overflow-hidden">
       {/* Giant curly braces - THE code symbol */}
-      <div className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/4 text-[400px] font-black text-white/[0.03] leading-none select-none pointer-events-none">
+      <div className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/4 text-[400px] font-black text-white/[0.03] leading-none select-none pointer-events-none" aria-hidden="true">
         {'{'}
       </div>
-      <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 text-[400px] font-black text-white/[0.03] leading-none select-none pointer-events-none">
+      <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 text-[400px] font-black text-white/[0.03] leading-none select-none pointer-events-none" aria-hidden="true">
         {'}'}
       </div>
 

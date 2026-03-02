@@ -17,19 +17,19 @@ vi.mock("@/logging", () => ({
 }));
 
 vi.mock("~/middleware/context", () => ({
-  apiIdentityContext: "apiIdentityContext",
+  maybeIdentityContext: "maybeIdentityContext",
 }));
 
 import { action } from "../api/v1/telemetry";
-import { apiIdentityContext } from "~/middleware/context";
+import { maybeIdentityContext } from "~/middleware/context";
 
 function makeSession(overrides: Record<string, unknown> = {}) {
   return { oid: "org-123", cid: "key-456", uid: "user-789", ...overrides };
 }
 
-function makeContext(session: ReturnType<typeof makeSession>) {
+function makeContext(session: ReturnType<typeof makeSession> | null) {
   const store = new Map<unknown, unknown>();
-  store.set(apiIdentityContext, session);
+  if (session) store.set(maybeIdentityContext, session);
   return { get: (key: unknown) => store.get(key) };
 }
 
@@ -47,8 +47,82 @@ beforeEach(() => {
 });
 
 describe("POST /api/v1/telemetry", () => {
-  describe("required fields", () => {
-    test("accepts a minimal valid event with render_path only", async () => {
+  describe("event_type", () => {
+    test("defaults event_type to 'render' when not provided", async () => {
+      await action({
+        request: makeRequest({ render_path: "client" }),
+        context: makeContext(makeSession()),
+      } as any);
+      expect(mocks.mockValues.mock.calls[0][0].event_type).toBe("render");
+    });
+
+    test("accepts event_type='load'", async () => {
+      const result = await action({
+        request: makeRequest({ event_type: "load" }),
+        context: makeContext(makeSession()),
+      } as any);
+      expect(result.ok).toBe(true);
+      expect(mocks.mockValues.mock.calls[0][0].event_type).toBe("load");
+    });
+
+    test("accepts event_type='render' with render_path", async () => {
+      await action({
+        request: makeRequest({ event_type: "render", render_path: "client" }),
+        context: makeContext(makeSession()),
+      } as any);
+      expect(mocks.mockValues.mock.calls[0][0].event_type).toBe("render");
+    });
+
+    test("rejects unknown event_type values with 400", async () => {
+      await expect(
+        action({
+          request: makeRequest({ event_type: "unknown" }),
+          context: makeContext(makeSession()),
+        } as any),
+      ).rejects.toMatchObject({ status: 400 });
+    });
+  });
+
+  describe("anonymous events (no auth token)", () => {
+    test("accepts load event without authentication", async () => {
+      const result = await action({
+        request: makeRequest({ event_type: "load" }),
+        context: makeContext(null),
+      } as any);
+      expect(result.ok).toBe(true);
+    });
+
+    test("accepts render event without authentication", async () => {
+      const result = await action({
+        request: makeRequest({ event_type: "render", render_path: "client" }),
+        context: makeContext(null),
+      } as any);
+      expect(result.ok).toBe(true);
+    });
+
+    test("stores null org_id and api_key_id for anonymous events", async () => {
+      await action({
+        request: makeRequest({ event_type: "load" }),
+        context: makeContext(null),
+      } as any);
+      const row = mocks.mockValues.mock.calls[0][0];
+      expect(row.org_id).toBeNull();
+      expect(row.api_key_id).toBeNull();
+    });
+
+    test("stores org_id and api_key_id when session is present", async () => {
+      await action({
+        request: makeRequest({ event_type: "load" }),
+        context: makeContext(makeSession({ oid: "org-abc", cid: "key-def" })),
+      } as any);
+      const row = mocks.mockValues.mock.calls[0][0];
+      expect(row.org_id).toBe("org-abc");
+      expect(row.api_key_id).toBe("key-def");
+    });
+  });
+
+  describe("render events", () => {
+    test("accepts render event with render_path only", async () => {
       const result = await action({
         request: makeRequest({ render_path: "client" }),
         context: makeContext(makeSession()),
@@ -56,26 +130,15 @@ describe("POST /api/v1/telemetry", () => {
       expect(result.ok).toBe(true);
     });
 
-    test("rejects missing render_path", async () => {
-      await expect(
-        action({
-          request: makeRequest({}),
-          context: makeContext(makeSession()),
-        } as any),
-      ).rejects.toThrow();
-    });
-
-    test("rejects invalid render_path value", async () => {
+    test("rejects invalid render_path value with 400", async () => {
       await expect(
         action({
           request: makeRequest({ render_path: "unknown-path" }),
           context: makeContext(makeSession()),
         } as any),
-      ).rejects.toThrow();
+      ).rejects.toMatchObject({ status: 400 });
     });
-  });
 
-  describe("valid render_path values", () => {
     test.each(["client", "cli", "server"])(
       "accepts render_path=%s",
       async (render_path) => {
@@ -86,6 +149,14 @@ describe("POST /api/v1/telemetry", () => {
         expect(result.ok).toBe(true);
       },
     );
+
+    test("stores render_path=null for load events", async () => {
+      await action({
+        request: makeRequest({ event_type: "load" }),
+        context: makeContext(makeSession()),
+      } as any);
+      expect(mocks.mockValues.mock.calls[0][0].render_path).toBeNull();
+    });
   });
 
   describe("optional fields", () => {
@@ -132,17 +203,7 @@ describe("POST /api/v1/telemetry", () => {
     });
   });
 
-  describe("identity and IP extraction", () => {
-    test("always records org_id and api_key_id from session", async () => {
-      await action({
-        request: makeRequest({ render_path: "client" }),
-        context: makeContext(makeSession({ oid: "org-abc", cid: "key-def" })),
-      } as any);
-      const row = mocks.mockValues.mock.calls[0][0];
-      expect(row.org_id).toBe("org-abc");
-      expect(row.api_key_id).toBe("key-def");
-    });
-
+  describe("IP extraction", () => {
     test("records first IP from x-forwarded-for header", async () => {
       await action({
         request: makeRequest(
@@ -244,6 +305,15 @@ describe("POST /api/v1/telemetry", () => {
       const row = mocks.mockValues.mock.calls[0][0];
       expect(row.duration_ms).toBeNull();
       expect(row.width).toBeNull();
+    });
+
+    test("rejects payload with neither event_type nor render_path with 400", async () => {
+      await expect(
+        action({
+          request: makeRequest({}),
+          context: makeContext(makeSession()),
+        } as any),
+      ).rejects.toMatchObject({ status: 400 });
     });
   });
 

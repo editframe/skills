@@ -1182,6 +1182,70 @@ const applyAnimationCoordination = (
 };
 
 // ============================================================================
+// SVG SMIL Synchronization
+// ============================================================================
+
+/**
+ * Finds the nearest temporal ancestor (or self) for a given element.
+ * Returns the element itself if it is a temporal element, otherwise walks up.
+ * Falls back to the provided root element.
+ */
+const findNearestTemporalAncestor = (
+  element: Element,
+  root: AnimatableElement,
+): AnimatableElement => {
+  let node: Element | null = element;
+  while (node) {
+    if (isEFTemporal(node)) {
+      return node as AnimatableElement;
+    }
+    node = node.parentElement;
+  }
+  return root;
+};
+
+/**
+ * Synchronizes all SVG SMIL animations in the subtree with the timeline.
+ *
+ * SVG has its own animation clock on each SVGSVGElement. We pause it and
+ * seek it to the owning temporal element's current time (converted to seconds).
+ */
+const synchronizeSvgAnimations = (root: AnimatableElement): void => {
+  const svgElements = (root as HTMLElement).querySelectorAll("svg");
+  for (const svg of svgElements) {
+    const owner = findNearestTemporalAncestor(svg, root);
+    const timeMs = owner.currentTimeMs ?? 0;
+    svg.setCurrentTime(timeMs / 1000);
+    svg.pauseAnimations();
+  }
+};
+
+// ============================================================================
+// Media Element Synchronization
+// ============================================================================
+
+/**
+ * Synchronizes all <video> and <audio> elements in the subtree with the timeline.
+ *
+ * Sets currentTime (in seconds) to match the owning temporal element's position
+ * and ensures the elements are paused (playback is controlled by the timeline).
+ */
+const synchronizeMediaElements = (root: AnimatableElement): void => {
+  const mediaElements = (root as HTMLElement).querySelectorAll("video, audio");
+  for (const media of mediaElements as NodeListOf<HTMLMediaElement>) {
+    const owner = findNearestTemporalAncestor(media, root);
+    const timeMs = owner.currentTimeMs ?? 0;
+    const timeSec = timeMs / 1000;
+    if (media.currentTime !== timeSec) {
+      media.currentTime = timeSec;
+    }
+    if (!media.paused) {
+      media.pause();
+    }
+  }
+};
+
+// ============================================================================
 // Main Function
 // ============================================================================
 
@@ -1296,4 +1360,8 @@ export const updateAnimations = (element: AnimatableElement): void => {
   for (const context of childContexts) {
     applyVisualState(context.element, context.state);
   }
+
+  // Synchronize non-CSS animation systems
+  synchronizeSvgAnimations(element);
+  synchronizeMediaElements(element);
 };

@@ -949,12 +949,14 @@ export class EFTimegroup
     if (this.#seekInProgress) {
       this.#pendingSeekTime = seekTarget;
       this.#currentTime = seekTarget;
+      this._setLocalTimeMs(seekTarget * 1000);
       this.#userTimeMs = seekTarget * 1000; // User-initiated time change
       return;
     }
 
     // Execute seek - update both source time and user time
     this.#currentTime = seekTarget;
+    this._setLocalTimeMs(seekTarget * 1000);
     this.#userTimeMs = seekTarget * 1000; // User-initiated time change
     this.#seekInProgress = true;
 
@@ -1337,6 +1339,14 @@ export class EFTimegroup
     // and PlaybackController.hostConnected tried to initialize, causing concurrent seeks.
     super.connectedCallback();
 
+    // Immediately pause all SVG SMIL clocks in the subtree.
+    // The SMIL clock starts as soon as an SVG enters a document, before any
+    // frame loop fires. Pausing here prevents visible autoplay between
+    // connectedCallback and the first updateAnimations call.
+    for (const svg of this.querySelectorAll("svg")) {
+      svg.pauseAnimations();
+    }
+
     // Skip re-initialization when being moved for canvas preview capture.
     // EFTemporal.connectedCallback (super) already guards its own logic;
     // we guard the EFTimegroup-specific parts here (initializer, child
@@ -1375,6 +1385,14 @@ export class EFTimegroup
   didBecomeRoot() {
     super.didBecomeRoot();
     this.#setupPlaybackListener();
+    if (this.playbackController) {
+      fetch("https://editframe.com/api/v1/telemetry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event_type: "load" }),
+        keepalive: true,
+      }).catch(() => {});
+    }
   }
 
   /**
@@ -2619,6 +2637,7 @@ export class EFTimegroup
           }
 
           this.#currentTime = newTime;
+          this._setLocalTimeMs(newTime * 1000);
           this.requestUpdate("currentTime");
 
           await this.updateComplete;

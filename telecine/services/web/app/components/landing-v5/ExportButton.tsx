@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useRenderQueue } from "./RenderQueueContext";
+import { useRenderQueue } from "./RenderQueue";
 
 interface ExportButtonProps {
   getTarget: () => HTMLElement | null;

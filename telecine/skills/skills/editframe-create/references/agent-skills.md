@@ -19,10 +19,8 @@ When running `npm create @editframe`, you'll be prompted to install agent skills
 ## Manual Installation
 
 ```bash
-npx ai-agent-skills install editframe/skills --agent cursor
+npx ai-agent-skills install editframe/skills
 ```
-
-Replace `cursor` with your agent: `cursor`, `claude`, `vscode`, `windsurf`, or `all`.
 
 ## Installed Skills
 

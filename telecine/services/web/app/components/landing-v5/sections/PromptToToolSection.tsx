@@ -45,7 +45,7 @@ export function PromptToToolSection() {
   return (
     <section className="relative py-24 bg-[var(--poster-green)] dark:bg-[#1a3a1a] text-white overflow-hidden">
       {/* Stacked blocks pattern - composable, modular, building */}
-      <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 w-[500px] h-[500px] opacity-[0.08]">
+      <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 w-[500px] h-[500px] opacity-[0.08]" aria-hidden="true">
         <svg viewBox="0 0 100 100" className="w-full h-full">
           <rect x="10" y="70" width="80" height="15" fill="white" />
           <rect x="20" y="55" width="60" height="15" fill="white" />

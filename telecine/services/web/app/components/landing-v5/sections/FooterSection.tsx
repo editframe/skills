@@ -13,7 +13,7 @@ export function FooterSection() {
               Build video with code. HTML + CSS compositions with scripting and React support. Instant preview, hyperscale rendering.
             </p>
             {/* Color bar accent */}
-            <div className="flex gap-1 mt-6">
+            <div className="flex gap-1 mt-6" aria-hidden="true">
               <div className="w-8 h-2 bg-[var(--poster-red)]" />
               <div className="w-8 h-2 bg-[var(--poster-gold)]" />
               <div className="w-8 h-2 bg-[var(--poster-blue)]" />
@@ -27,6 +27,13 @@ export function FooterSection() {
             <ul className="space-y-3">
               <li><Link to="/skills" className="text-sm text-white/60 hover:text-white transition-colors">Docs & Skills</Link></li>
               <li><Link to="/pricing" className="text-sm text-white/60 hover:text-white transition-colors">Pricing</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-bold text-sm uppercase tracking-wider mb-4">Integrations</h3>
+            <ul className="space-y-3">
+              <li><Link to="/with/animejs" className="text-sm text-white/60 hover:text-white transition-colors">Anime.js</Link></li>
+              <li><Link to="/with/svg" className="text-sm text-white/60 hover:text-white transition-colors">SVG SMIL</Link></li>
             </ul>
           </div>
           <div>

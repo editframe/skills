@@ -5,7 +5,7 @@ Agent skills for building video with Editframe.
 ## Installation
 
 ```bash
-npx ai-agent-skills install editframe/skills --agent cursor
+npx ai-agent-skills install editframe/skills
 ```
 
 ## Available Skills

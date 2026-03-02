@@ -1,11 +1,59 @@
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
-import { TemplatedRenderingDemo } from "../TemplatedRenderingDemo";
+
+const TemplatedRenderingDemo = lazy(() =>
+  import("../TemplatedRenderingDemo").then((m) => ({ default: m.TemplatedRenderingDemo }))
+);
+
+function DemoPlaceholder() {
+  return (
+    <div
+      className="w-full flex items-center justify-center border-4 border-black dark:border-white"
+      style={{ aspectRatio: "16/9", background: "#1a1a1a" }}
+    >
+      <span className="text-xs text-white/40">Loading…</span>
+    </div>
+  );
+}
+
+function LazyTemplatedDemo() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setVisible(true);
+          obs.disconnect();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref}>
+      {visible ? (
+        <Suspense fallback={<DemoPlaceholder />}>
+          <TemplatedRenderingDemo />
+        </Suspense>
+      ) : (
+        <DemoPlaceholder />
+      )}
+    </div>
+  );
+}
 
 export function TemplatedRenderingSection() {
   return (
     <section className="relative py-16 bg-[var(--poster-gold)] dark:bg-[#3a2e1a] overflow-hidden">
       {/* Multiplication/repeat pattern - one to many */}
-      <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 w-[500px] h-[500px] opacity-[0.08]">
+      <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 w-[500px] h-[500px] opacity-[0.08]" aria-hidden="true">
         <svg viewBox="0 0 100 100" className="w-full h-full">
           {/* One square becoming many */}
           <rect x="10" y="40" width="20" height="20" fill="currentColor" />
@@ -40,7 +88,7 @@ export function TemplatedRenderingSection() {
         </div>
 
         {/* Demo */}
-        <TemplatedRenderingDemo />
+        <LazyTemplatedDemo />
 
         {/* CTA */}
         <div className="mt-8 text-center">

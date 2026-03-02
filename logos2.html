@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editframe — Unfiltered</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #080808;
+    padding: 32px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1px;
+    background-color: #111;
+  }
+  .c {
+    background: #080808;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    padding: 40px 32px;
+  }
+  .c.w { background: #ffffff; }
+  .c.b { background: #f0ece4; }
+  .c.s { background: #0b0e14; }
+</style>
+</head>
+<body>
+
+<!-- 1 -->
+<div class="c">
+  <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+    <text x="0" y="90" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+          font-size="90" font-weight="900" letter-spacing="-4" fill="#ffffff">ef</text>
+    <line x1="0" y1="60" x2="120" y2="60" stroke="#ff2d2d" stroke-width="3"/>
+  </svg>
+</div>
+
+<!-- 2 -->
+<div class="c w">
+  <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+    <!-- A circle with one quadrant removed — the missing frame -->
+    <path d="M 60 60 L 60 4 A 56 56 0 1 0 116 60 Z" fill="#111"/>
+    <line x1="60" y1="4" x2="60" y2="60" stroke="#ff2d2d" stroke-width="2"/>
+    <line x1="60" y1="60" x2="116" y2="60" stroke="#ff2d2d" stroke-width="2"/>
+  </svg>
+</div>
+
+<!-- 3 -->
+<div class="c">
+  <svg width="120" height="80" viewBox="0 0 120 80" fill="none">
+    <!-- Stacked lines that breathe — inhale/exhale widths -->
+    <rect x="0"  y="0"  width="120" height="10" fill="#ffffff"/>
+    <rect x="10" y="16" width="100" height="10" fill="#cccccc"/>
+    <rect x="20" y="32" width="80"  height="10" fill="#888888"/>
+    <rect x="30" y="48" width="60"  height="10" fill="#444444"/>
+    <rect x="40" y="64" width="40"  height="10" fill="#ff2d2d"/>
+  </svg>
+</div>
+
+<!-- 4 -->
+<div class="c s">
+  <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
+    <!-- Square rotated 45° with a vertical cut -->
+    <rect x="29" y="29" width="42" height="42" fill="#ffffff" transform="rotate(45 50 50)"/>
+    <line x1="50" y1="0" x2="50" y2="100" stroke="#0b0e14" stroke-width="4"/>
+    <line x1="50" y1="0" x2="50" y2="100" stroke="#ff2d2d" stroke-width="1.5"/>
+  </svg>
+</div>
+
+<!-- 5 -->
+<div class="c b">
+  <svg width="140" height="60" viewBox="0 0 140 60" fill="none">
+    <!-- The word "edit" written backwards/mirrored then "frame" normal — reflection in time -->
+    <text x="0" y="46" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+          font-size="40" font-weight="800" letter-spacing="-1.5" fill="#ccbbaa"
+          transform="scale(-1,1) translate(-68,0)">edit</text>
+    <text x="70" y="46" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+          font-size="40" font-weight="800" letter-spacing="-1.5" fill="#111111">frame</text>
+    <line x1="68" y1="0" x2="68" y2="60" stroke="#888" stroke-width="1" stroke-dasharray="3 3"/>
+  </svg>
+</div>
+
+<!-- 6 -->
+<div class="c">
+  <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
+    <!-- Crosshair — precision, the frame as targeting -->
+    <line x1="50" y1="0"   x2="50" y2="40"  stroke="#444" stroke-width="1.5"/>
+    <line x1="50" y1="60"  x2="50" y2="100" stroke="#444" stroke-width="1.5"/>
+    <line x1="0"  y1="50"  x2="40" y2="50"  stroke="#444" stroke-width="1.5"/>
+    <line x1="60" y1="50"  x2="100" y2="50" stroke="#444" stroke-width="1.5"/>
+    <circle cx="50" cy="50" r="18" stroke="#ffffff" stroke-width="2" fill="none"/>
+    <circle cx="50" cy="50" r="3"  fill="#ff2d2d"/>
+  </svg>
+</div>
+
+<!-- 7 -->
+<div class="c">
+  <svg width="120" height="100" viewBox="0 0 120 100" fill="none">
+    <!-- Ruled notebook lines with one red line — the frame being written -->
+    <line x1="0" y1="12"  x2="120" y2="12"  stroke="#1e1e1e" stroke-width="1"/>
+    <line x1="0" y1="26"  x2="120" y2="26"  stroke="#1e1e1e" stroke-width="1"/>
+    <line x1="0" y1="40"  x2="120" y2="40"  stroke="#1e1e1e" stroke-width="1"/>
+    <line x1="0" y1="54"  x2="120" y2="54"  stroke="#ff2d2d" stroke-width="2"/>
+    <line x1="0" y1="68"  x2="120" y2="68"  stroke="#1e1e1e" stroke-width="1"/>
+    <line x1="0" y1="82"  x2="120" y2="82"  stroke="#1e1e1e" stroke-width="1"/>
+    <line x1="0" y1="96"  x2="120" y2="96"  stroke="#1e1e1e" stroke-width="1"/>
+    <!-- Vertical margin line -->
+    <line x1="20" y1="0" x2="20" y2="100" stroke="#1a1a3a" stroke-width="1.5"/>
+  </svg>
+</div>
+
+<!-- 8 -->
+<div class="c w">
+  <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
+    <!-- Two arrows pointing toward each other — the in-point and out-point -->
+    <polygon points="0,44 32,44 32,32 56,50 32,68 32,56 0,56" fill="#111"/>
+    <polygon points="100,44 68,44 68,32 44,50 68,68 68,56 100,56" fill="#333"/>
+    <!-- Gap between them — the selected region -->
+    <rect x="56" y="38" width="0" height="24" fill="#ff2d2d"/>
+    <line x1="56" y1="32" x2="56" y2="68" stroke="#ff2d2d" stroke-width="2"/>
+    <line x1="44" y1="32" x2="44" y2="68" stroke="#ff2d2d" stroke-width="2"/>
+    <rect x="44" y="44" width="12" height="12" fill="#ff2d2d" opacity="0.2"/>
+  </svg>
+</div>
+
+<!-- 9 -->
+<div class="c">
+  <svg width="80" height="120" viewBox="0 0 80 120" fill="none">
+    <!-- Vertical text — rotated wordmark, typographic experiment -->
+    <text x="0" y="0" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+          font-size="22" font-weight="700" letter-spacing="2" fill="#ffffff"
+          transform="rotate(90) translate(6,-62)">editframe</text>
+    <line x1="30" y1="0" x2="30" y2="120" stroke="#ff2d2d" stroke-width="2"/>
+  </svg>
+</div>
+
+<!-- 10 -->
+<div class="c s">
+  <svg width="110" height="110" viewBox="0 0 110 110" fill="none">
+    <!-- A spiral — time coiling inward toward the current frame -->
+    <path d="
+      M 55 55
+      m 0 -48
+      a 48 48 0 1 1 -0.1 0
+      M 55 7
+      a 40 40 0 1 0 40 40
+      M 95 55
+      a 32 32 0 1 1 -32 -32
+      M 55 23
+      a 24 24 0 1 0 24 24
+      M 79 55
+      a 16 16 0 1 1 -16 -16
+    "
+    stroke="#2a2a2a" stroke-width="1.5" fill="none"/>
+    <circle cx="55" cy="55" r="5" fill="#ff2d2d"/>
+  </svg>
+</div>
+
+<!-- 11 -->
+<div class="c">
+  <svg width="120" height="80" viewBox="0 0 120 80" fill="none">
+    <!-- ">" operator — the shell prompt, the play button, the pipeline operator -->
+    <text x="0" y="72" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+          font-size="80" font-weight="900" fill="#ffffff">›</text>
+    <text x="46" y="72" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+          font-size="80" font-weight="200" fill="#333">›</text>
+    <text x="76" y="72" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+          font-size="80" font-weight="100" fill="#1a1a1a">›</text>
+  </svg>
+</div>
+
+<!-- 12 -->
+<div class="c b">
+  <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
+    <!-- Letterpress / stamp: EF bold, slightly off-register (second copy offset in red) -->
+    <text x="3" y="74" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+          font-size="72" font-weight="900" letter-spacing="-4" fill="#cc3333" opacity="0.6">ef</text>
+    <text x="0" y="72" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+          font-size="72" font-weight="900" letter-spacing="-4" fill="#111111">ef</text>
+  </svg>
+</div>
+
+<!-- 13 -->
+<div class="c">
+  <svg width="110" height="110" viewBox="0 0 110 110" fill="none">
+    <!-- Concentric circles with one gap — like a vinyl record with a cut -->
+    <circle cx="55" cy="55" r="52" stroke="#222" stroke-width="1.5" fill="none"/>
+    <circle cx="55" cy="55" r="42" stroke="#2a2a2a" stroke-width="1.5" fill="none"/>
+    <circle cx="55" cy="55" r="32" stroke="#333" stroke-width="1.5" fill="none"/>
+    <circle cx="55" cy="55" r="22" stroke="#444" stroke-width="1.5" fill="none"/>
+    <circle cx="55" cy="55" r="12" stroke="#666" stroke-width="1.5" fill="none"/>
+    <circle cx="55" cy="55" r="4"  fill="#ff2d2d"/>
+    <!-- Cut line through all rings -->
+    <line x1="55" y1="3" x2="55" y2="107" stroke="#080808" stroke-width="3"/>
+    <line x1="55" y1="3" x2="55" y2="107" stroke="#ff2d2d" stroke-width="1"/>
+  </svg>
+</div>
+
+<!-- 14 -->
+<div class="c w">
+  <svg width="130" height="90" viewBox="0 0 130 90" fill="none">
+    <!-- EF as negative space cut from a solid black rectangle -->
+    <rect x="0" y="0" width="130" height="90" fill="#111"/>
+    <!-- Cut out E -->
+    <rect x="8"  y="10" width="7"  height="70" fill="#ffffff"/>
+    <rect x="8"  y="10" width="42" height="12" fill="#ffffff"/>
+    <rect x="8"  y="39" width="30" height="12" fill="#ffffff"/>
+    <rect x="8"  y="68" width="42" height="12" fill="#ffffff"/>
+    <!-- Cut out F -->
+    <rect x="66" y="10" width="7"  height="70" fill="#ffffff"/>
+    <rect x="66" y="10" width="42" height="12" fill="#ffffff"/>
+    <rect x="66" y="39" width="30" height="12" fill="#ffffff"/>
+  </svg>
+</div>
+
+<!-- 15 -->
+<div class="c">
+  <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
+    <!-- Three overlapping translucent squares, offset — RGB separation, chroma glitch -->
+    <rect x="0"  y="10" width="60" height="60" fill="#ff0000" opacity="0.5"/>
+    <rect x="20" y="20" width="60" height="60" fill="#00ff00" opacity="0.3"/>
+    <rect x="10" y="30" width="60" height="60" fill="#0000ff" opacity="0.4"/>
+  </svg>
+</div>
+
+<!-- 16 -->
+<div class="c s">
+  <svg width="120" height="80" viewBox="0 0 120 80" fill="none">
+    <!-- A colon — the timecode separator — huge, typographic -->
+    <circle cx="40" cy="24" r="14" fill="#ffffff"/>
+    <circle cx="40" cy="56" r="14" fill="#ffffff"/>
+    <text x="60" y="62" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+          font-size="52" font-weight="300" fill="#222" letter-spacing="-2">00</text>
+  </svg>
+</div>
+
+<!-- 17 -->
+<div class="c">
+  <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
+    <!-- Two parallel diagonal lines with a rectangle bridging them — like a film clapper -->
+    <!-- Bottom board -->
+    <rect x="5" y="52" width="90" height="40" rx="2" fill="#222"/>
+    <!-- Top board, angled -->
+    <rect x="5" y="8" width="90" height="20" rx="2" fill="#ffffff"
+          transform="rotate(-12 50 18)"/>
+    <!-- Diagonal stripes on top board -->
+    <line x1="20" y1="5"  x2="8"  y2="25" stroke="#111" stroke-width="6"/>
+    <line x1="38" y1="5"  x2="26" y2="25" stroke="#111" stroke-width="6"/>
+    <line x1="56" y1="5"  x2="44" y2="25" stroke="#111" stroke-width="6"/>
+    <line x1="74" y1="5"  x2="62" y2="25" stroke="#111" stroke-width="6"/>
+    <line x1="92" y1="5"  x2="80" y2="25" stroke="#111" stroke-width="6"/>
+    <!-- Hinge -->
+    <circle cx="12" cy="18" r="4" fill="#ff2d2d"/>
+  </svg>
+</div>
+
+<!-- 18 -->
+<div class="c w">
+  <svg width="120" height="60" viewBox="0 0 120 60" fill="none">
+    <!-- The wordmark but "edit" is upside-down — disoriented, questioning what a frame is -->
+    <text x="0" y="46" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+          font-size="38" font-weight="800" letter-spacing="-1" fill="#cccccc"
+          transform="rotate(180 37 28)">edit</text>
+    <text x="76" y="46" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+          font-size="38" font-weight="800" letter-spacing="-1" fill="#111">frame</text>
+    <line x1="72" y1="0" x2="72" y2="60" stroke="#ddd" stroke-width="1"/>
+  </svg>
+</div>
+
+<!-- 19 -->
+<div class="c">
+  <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
+    <!-- A square bracket containing nothing — the empty composition -->
+    <path d="M30 8 L10 8 L10 92 L30 92" stroke="#ffffff" stroke-width="4" stroke-linecap="square" fill="none"/>
+    <path d="M70 8 L90 8 L90 92 L70 92" stroke="#ffffff" stroke-width="4" stroke-linecap="square" fill="none"/>
+    <!-- Nothing inside — pure void -->
+    <!-- one dot, center, faint -->
+    <circle cx="50" cy="50" r="2" fill="#222"/>
+  </svg>
+</div>
+
+<!-- 20 -->
+<div class="c s">
+  <svg width="110" height="110" viewBox="0 0 110 110" fill="none">
+    <!-- Penrose triangle-ish impossible loop — time that can't exist but does -->
+    <!-- Three thick bars forming an impossible triangle -->
+    <polygon points="55,8 102,88 8,88" stroke="#ffffff" stroke-width="8" fill="none" stroke-linejoin="miter"/>
+    <!-- Knock out the corners to create depth illusion -->
+    <polygon points="55,8 66,28 44,28" fill="#0b0e14"/>
+    <polygon points="102,88 80,88 91,68" fill="#0b0e14"/>
+    <polygon points="8,88 30,68 19,88" fill="#0b0e14"/>
+    <!-- Center — the render target -->
+    <circle cx="55" cy="62" r="8" fill="none" stroke="#ff2d2d" stroke-width="2"/>
+    <circle cx="55" cy="62" r="2" fill="#ff2d2d"/>
+  </svg>
+</div>
+
+<!-- 21 -->
+<div class="c">
+  <svg width="130" height="60" viewBox="0 0 130 60" fill="none">
+    <!-- Braille-like dots arranged as "EF" — coded, tactile, non-visual communication -->
+    <!-- E in braille: dots 1,2,3,4,5 -->
+    <circle cx="12" cy="12" r="5" fill="#ffffff"/>
+    <circle cx="12" cy="30" r="5" fill="#ffffff"/>
+    <circle cx="12" cy="48" r="5" fill="#ffffff"/>
+    <circle cx="28" cy="12" r="5" fill="#ffffff"/>
+    <circle cx="28" cy="30" r="5" fill="#ffffff"/>
+    <circle cx="28" cy="48" r="5" fill="#111"/>
+    <!-- F in braille: dots 1,2,4,5 -->
+    <circle cx="52" cy="12" r="5" fill="#ffffff"/>
+    <circle cx="52" cy="30" r="5" fill="#ffffff"/>
+    <circle cx="52" cy="48" r="5" fill="#111"/>
+    <circle cx="68" cy="12" r="5" fill="#ffffff"/>
+    <circle cx="68" cy="30" r="5" fill="#ffffff"/>
+    <circle cx="68" cy="48" r="5" fill="#111"/>
+    <!-- Red highlight on one dot — the active frame -->
+    <circle cx="28" cy="12" r="5" fill="#ff2d2d"/>
+    <!-- Wordmark -->
+    <text x="90" y="36" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+          font-size="14" font-weight="300" letter-spacing="3" fill="#333">EDITFRAME</text>
+  </svg>
+</div>
+
+<!-- 22 -->
+<div class="c b">
+  <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
+    <!-- A single diagonal — the simplest edit mark -->
+    <!-- With weight — thick at base, thin at tip -->
+    <line x1="10" y1="90" x2="90" y2="10" stroke="#111" stroke-width="12" stroke-linecap="round"/>
+    <line x1="10" y1="90" x2="90" y2="10" stroke="#f0ece4" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+</div>
+
+<!-- 23 -->
+<div class="c">
+  <svg width="110" height="80" viewBox="0 0 110 80" fill="none">
+    <!-- The number 24 — as in 24fps — but the 2 and 4 are made of timeline bars -->
+    <!-- Stylized 24 using rectangles -->
+    <!-- "2" shape -->
+    <rect x="0"  y="0"  width="34" height="10" fill="#ffffff"/>
+    <rect x="24" y="0"  width="10" height="36" fill="#ffffff"/>
+    <rect x="0"  y="30" width="34" height="10" fill="#ff2d2d"/>
+    <rect x="0"  y="30" width="10" height="42" fill="#ffffff"/>
+    <rect x="0"  y="62" width="34" height="10" fill="#ffffff"/>
+    <!-- "4" shape -->
+    <rect x="50" y="0"  width="10" height="42" fill="#ffffff"/>
+    <rect x="50" y="30" width="44" height="10" fill="#ffffff"/>
+    <rect x="74" y="0"  width="10" height="72" fill="#ffffff"/>
+  </svg>
+</div>
+
+<!-- 24 -->
+<div class="c w">
+  <svg width="110" height="110" viewBox="0 0 110 110" fill="none">
+    <!-- The product name as a QR-code-like grid — data as identity -->
+    <!-- Hand-drawn QR-like pattern (not scannable, just the gestalt) -->
+    <!-- Top-left finder pattern -->
+    <rect x="4"  y="4"  width="28" height="28" stroke="#111" stroke-width="3" fill="none"/>
+    <rect x="12" y="12" width="12" height="12" fill="#111"/>
+    <!-- Top-right finder pattern -->
+    <rect x="78" y="4"  width="28" height="28" stroke="#111" stroke-width="3" fill="none"/>
+    <rect x="86" y="12" width="12" height="12" fill="#111"/>
+    <!-- Bottom-left finder pattern -->
+    <rect x="4"  y="78" width="28" height="28" stroke="#111" stroke-width="3" fill="none"/>
+    <rect x="12" y="86" width="12" height="12" fill="#111"/>
+    <!-- Data dots — random-looking but deliberate -->
+    <rect x="38" y="4"  width="8" height="8" fill="#111"/>
+    <rect x="50" y="4"  width="8" height="8" fill="#111"/>
+    <rect x="62" y="4"  width="8" height="8" fill="#111"/>
+    <rect x="38" y="16" width="8" height="8" fill="#111"/>
+    <rect x="62" y="16" width="8" height="8" fill="#111"/>
+    <rect x="38" y="28" width="8" height="8" fill="#111"/>
+    <rect x="50" y="28" width="8" height="8" fill="#111"/>
+    <rect x="4"  y="38" width="8" height="8" fill="#111"/>
+    <rect x="16" y="38" width="8" height="8" fill="#111"/>
+    <rect x="38" y="38" width="8" height="8" fill="#ff2d2d"/>
+    <rect x="62" y="38" width="8" height="8" fill="#111"/>
+    <rect x="86" y="38" width="8" height="8" fill="#111"/>
+    <rect x="4"  y="50" width="8" height="8" fill="#111"/>
+    <rect x="28" y="50" width="8" height="8" fill="#111"/>
+    <rect x="50" y="50" width="8" height="8" fill="#111"/>
+    <rect x="74" y="50" width="8" height="8" fill="#111"/>
+    <rect x="98" y="50" width="8" height="8" fill="#111"/>
+    <rect x="16" y="62" width="8" height="8" fill="#111"/>
+    <rect x="38" y="62" width="8" height="8" fill="#111"/>
+    <rect x="62" y="62" width="8" height="8" fill="#111"/>
+    <rect x="86" y="62" width="8" height="8" fill="#111"/>
+    <rect x="38" y="86" width="8" height="8" fill="#111"/>
+    <rect x="62" y="86" width="8" height="8" fill="#111"/>
+    <rect x="86" y="86" width="8" height="8" fill="#111"/>
+    <rect x="50" y="98" width="8" height="8" fill="#111"/>
+  </svg>
+</div>
+
+<!-- 25 -->
+<div class="c">
+  <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
+    <!-- Lightning bolt — the render as an electrical event -->
+    <polygon points="58,0 28,56 52,56 42,100 72,44 48,44" fill="#ffffff"/>
+    <polygon points="58,0 28,56 52,56 42,100 72,44 48,44" fill="none" stroke="#ff2d2d" stroke-width="1" opacity="0.5"/>
+  </svg>
+</div>
+
+<!-- 26 -->
+<div class="c s">
+  <svg width="120" height="60" viewBox="0 0 120 60" fill="none">
+    <!-- Ultra-condensed wordmark, characters almost touching, no letter-spacing -->
+    <text x="0" y="52" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+          font-size="52" font-weight="900" letter-spacing="-4" fill="#ffffff"
+          textLength="120" lengthAdjust="spacingAndGlyphs">EF</text>
+    <rect x="0" y="0" width="120" height="3" fill="#ff2d2d"/>
+    <rect x="0" y="57" width="120" height="3" fill="#ff2d2d"/>
+  </svg>
+</div>
+
+<!-- 27 -->
+<div class="c w">
+  <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
+    <!-- A film leader countdown circle — the 3, 2, 1 before the film starts -->
+    <circle cx="50" cy="50" r="46" stroke="#111" stroke-width="3" fill="none"/>
+    <!-- Cross hairs on the circle -->
+    <line x1="50" y1="4"  x2="50" y2="18" stroke="#111" stroke-width="2"/>
+    <line x1="50" y1="82" x2="50" y2="96" stroke="#111" stroke-width="2"/>
+    <line x1="4"  y1="50" x2="18" y2="50" stroke="#111" stroke-width="2"/>
+    <line x1="82" y1="50" x2="96" y2="50" stroke="#111" stroke-width="2"/>
+    <!-- Diagonal registration marks -->
+    <line x1="17" y1="17" x2="27" y2="27" stroke="#111" stroke-width="2"/>
+    <line x1="83" y1="17" x2="73" y2="27" stroke="#111" stroke-width="2"/>
+    <line x1="17" y1="83" x2="27" y2="73" stroke="#111" stroke-width="2"/>
+    <line x1="83" y1="83" x2="73" y2="73" stroke="#111" stroke-width="2"/>
+    <!-- Big number in center -->
+    <text x="50" y="66" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+          font-size="48" font-weight="900" fill="#111" text-anchor="middle">2</text>
+    <!-- Blip dot top right -->
+    <circle cx="78" cy="22" r="6" fill="#ff2d2d"/>
+  </svg>
+</div>
+
+<!-- 28 -->
+<div class="c">
+  <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
+    <!-- Three lines that converge to a single point — the render output -->
+    <line x1="0"  y1="0"   x2="50" y2="50" stroke="#555" stroke-width="3" stroke-linecap="square"/>
+    <line x1="100" y1="0"  x2="50" y2="50" stroke="#888" stroke-width="3" stroke-linecap="square"/>
+    <line x1="0"  y1="100" x2="50" y2="50" stroke="#333" stroke-width="3" stroke-linecap="square"/>
+    <line x1="100" y1="100" x2="50" y2="50" stroke="#444" stroke-width="3" stroke-linecap="square"/>
+    <!-- The point -->
+    <rect x="44" y="44" width="12" height="12" fill="#ffffff"/>
+    <rect x="47" y="47" width="6"  height="6"  fill="#ff2d2d"/>
+  </svg>
+</div>
+
+<!-- 29 -->
+<div class="c b">
+  <svg width="130" height="70" viewBox="0 0 130 70" fill="none">
+    <!-- Torn paper — the cut as a physical act, revealing white beneath -->
+    <rect x="0" y="0" width="130" height="70" fill="#e8e0d4"/>
+    <!-- Torn left half — jagged edge in the middle -->
+    <clipPath id="torn-left">
+      <polygon points="0,0 64,0 60,10 67,20 58,30 65,40 60,50 66,60 64,70 0,70"/>
+    </clipPath>
+    <rect x="0" y="0" width="130" height="70" fill="#111" clip-path="url(#torn-left)"/>
+    <!-- Torn edge highlight -->
+    <polyline points="64,0 60,10 67,20 58,30 65,40 60,50 66,60 64,70"
+              stroke="#ffffff" stroke-width="1.5" fill="none"/>
+    <!-- Text on right side -->
+    <text x="72" y="44" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+          font-size="22" font-weight="800" fill="#111">frame</text>
+    <!-- Text on left side (reversed out) -->
+    <text x="4" y="44" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+          font-size="22" font-weight="800" fill="#ffffff">edit</text>
+  </svg>
+</div>
+
+<!-- 30 -->
+<div class="c">
+  <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
+    <!-- Just a rectangle. Perfect proportions: 16:9 aspect ratio. The frame itself. -->
+    <!-- Nothing else. -->
+    <rect x="6" y="22" width="88" height="56" stroke="#ffffff" stroke-width="2.5" fill="none"/>
+    <!-- One red pixel, top right corner of the frame -->
+    <rect x="90" y="22" width="4" height="4" fill="#ff2d2d"/>
+  </svg>
+</div>
+
+</body>
+</html>

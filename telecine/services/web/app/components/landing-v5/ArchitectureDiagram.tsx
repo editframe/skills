@@ -1,14 +1,11 @@
-import React, { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import {
-  Preview,
-  TimelineRoot,
-  Scrubber,
-  TogglePlay,
-  TimeDisplay,
-} from "@editframe/react";
-import { ExportButton } from "./ExportButton";
-import { ParallelFragmentsCanvas } from "./parallel-fragments-r3f";
-import { JITStreamingTimeline } from "./JITStreamingTimeline";
+import React, { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+
+const LazyFanOutDiagram = lazy(() =>
+  import("./ArchitectureDiagramR3F").then((m) => ({ default: m.FanOutDiagram }))
+);
+const LazyJITStreamingDiagram = lazy(() =>
+  import("./ArchitectureDiagramR3F").then((m) => ({ default: m.JITStreamingDiagram }))
+);
 
 /* ━━ Shared animation CSS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 const STYLES = `
@@ -83,7 +80,7 @@ function DiagramCard({
             >
               {title}
             </h3>
-            <p className="text-[10px] text-[var(--warm-gray)] uppercase tracking-wide mt-1">
+            <p className="text-xs text-[var(--warm-gray)] uppercase tracking-wide mt-1">
               {subtitle}
             </p>
           </div>
@@ -331,147 +328,62 @@ function JitDiagram() {
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   5. PARALLEL FRAGMENTS — Three.js 3D visualization driven by an
-   Editframe composition via addFrameTask.  Film strip fractures
-   into illuminated blocks, parallel particle processing, reassembly,
-   and a time-comparison punchline.  Fully scrubable.
+   Viewport-triggered lazy wrapper — mounts the R3F component only
+   when the placeholder scrolls into view (rootMargin 200px).
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function LazyDiagramWrapper({ children, placeholder }: { children: React.ReactNode; placeholder: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
 
-/**
- * Self-contained timeline content for the parallel fragments scene.
- * Rendered by TimelineRoot on both the prime instance and render clones.
- * ParallelFragmentsCanvas includes its own Timegroup and manages time
- * via addFrameTask + flushSync.
- */
-function FanOutContent() {
-  return <ParallelFragmentsCanvas />;
-}
-
-function FanOutDiagram() {
-  const uid = useId();
-  const rootId = `fanout-${uid}`;
-  const [isClient, setIsClient] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => { setIsClient(true); }, []);
-
-  if (!isClient) {
-    return (
-      <div
-        className="w-full flex items-center justify-center"
-        style={{ aspectRatio: "16/10", background: "#1e2233" }}
-      >
-        <span className="text-xs text-[var(--warm-gray)]">Loading{"\u2026"}</span>
-      </div>
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setVisible(true);
+          obs.disconnect();
+        }
+      },
+      { rootMargin: "200px" }
     );
-  }
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   return (
-    <div ref={containerRef}>
-      <Preview id={rootId} loop>
-        {/* TimelineRoot re-renders FanOutContent via React on render clones,
-            so the R3F scene works natively — no vanilla fallback needed. */}
-        <TimelineRoot id={rootId} component={FanOutContent} />
-      </Preview>
-
-      {/* ── Playback + render controls ────────────────────────── */}
-      <div className="flex items-center gap-0 bg-[#111] overflow-hidden" style={{ borderRadius: "0 0 3px 3px" }}>
-        <TogglePlay target={rootId}>
-          <button
-            slot="play"
-            className="w-9 h-9 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-          >
-            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-          </button>
-          <button
-            slot="pause"
-            className="w-9 h-9 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-          >
-            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" /></svg>
-          </button>
-        </TogglePlay>
-
-        <div className="flex-1 px-3 h-9 flex items-center border-l border-white/10">
-          <Scrubber
-            target={rootId}
-            className="w-full h-1 bg-white/20 rounded-full cursor-pointer [&::part(progress)]:bg-[var(--poster-blue)] [&::part(progress)]:rounded-full [&::part(handle)]:bg-white [&::part(handle)]:w-2.5 [&::part(handle)]:h-2.5 [&::part(handle)]:rounded-full"
-          />
-        </div>
-
-        <div className="px-3 border-l border-white/10 h-9 flex items-center">
-          <TimeDisplay
-            target={rootId}
-            className="text-[10px] text-white/60 font-mono tabular-nums"
-          />
-        </div>
-
-        <ExportButton
-          compact
-          getTarget={() => containerRef.current?.querySelector("ef-timegroup") as HTMLElement}
-          name="Parallel Rendering"
-          fileName="editframe-parallel-rendering.mp4"
-          className="border-l border-white/10"
-        />
-      </div>
+    <div ref={ref}>
+      {visible ? (
+        <Suspense fallback={placeholder}>{children}</Suspense>
+      ) : (
+        placeholder
+      )}
     </div>
   );
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   6. JIT STREAMING PLAYBACK — React Three Fiber visualization showing
-   on-demand transcoding with zero ingestion delay
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-function JITStreamingDiagram() {
-  const uid = useId();
-  const rootId = `jit-streaming-${uid}`;
-  const containerRef = useRef<HTMLDivElement>(null);
+const R3F_PLACEHOLDER = (
+  <div
+    className="w-full flex items-center justify-center"
+    style={{ aspectRatio: "16/10", background: "#1e2233" }}
+  >
+    <span className="text-xs text-[var(--warm-gray)]">Loading…</span>
+  </div>
+);
 
+function FanOutDiagram() {
   return (
-    <div ref={containerRef}>
-      <Preview id={rootId} loop>
-        <TimelineRoot id={rootId} component={JITStreamingTimeline} />
-      </Preview>
+    <LazyDiagramWrapper placeholder={R3F_PLACEHOLDER}>
+      <LazyFanOutDiagram />
+    </LazyDiagramWrapper>
+  );
+}
 
-      {/* ── Playback + render controls ────────────────────────── */}
-      <div className="flex items-center gap-0 bg-[#111] overflow-hidden" style={{ borderRadius: "0 0 3px 3px" }}>
-        <TogglePlay target={rootId}>
-          <button
-            slot="play"
-            className="w-9 h-9 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-          >
-            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-          </button>
-          <button
-            slot="pause"
-            className="w-9 h-9 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-          >
-            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" /></svg>
-          </button>
-        </TogglePlay>
-
-        <div className="flex-1 px-3 h-9 flex items-center border-l border-white/10">
-          <Scrubber
-            target={rootId}
-            className="w-full h-1 bg-white/20 rounded-full cursor-pointer [&::part(progress)]:bg-[var(--poster-red)] [&::part(progress)]:rounded-full [&::part(handle)]:bg-white [&::part(handle)]:w-2.5 [&::part(handle)]:h-2.5 [&::part(handle)]:rounded-full"
-          />
-        </div>
-
-        <div className="px-3 border-l border-white/10 h-9 flex items-center">
-          <TimeDisplay
-            target={rootId}
-            className="text-[10px] text-white/60 font-mono tabular-nums"
-          />
-        </div>
-
-        <ExportButton
-          compact
-          getTarget={() => containerRef.current?.querySelector("ef-timegroup") as HTMLElement}
-          name="JIT Streaming"
-          fileName="editframe-jit-streaming.mp4"
-          className="border-l border-white/10"
-        />
-      </div>
-    </div>
+function JITStreamingDiagram() {
+  return (
+    <LazyDiagramWrapper placeholder={R3F_PLACEHOLDER}>
+      <LazyJITStreamingDiagram />
+    </LazyDiagramWrapper>
   );
 }
 
