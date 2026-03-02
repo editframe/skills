@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "glossier-social",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition uses Glossier's general brand philosophy but no specific product references, user testimonials, or distinctive brand moments that competitors couldn't claim.",
+      "improvement": "Include at least one specific Glossier product (Cloud Paint, Boy Brow, Balm Dotcom), reference their Into The Gloss origin, or use actual user-submitted imagery placeholders with attribution. The 'real skin, real stories' claim needs real evidence."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Visual Assets:**\n- List each asset: [name] - [type] - [source: website/Canvas API/generate]",
+    "cause": "missing",
+    "proposedChange": "**Visual Assets:**\n- List each asset: [name] - [type] - [source: website/Canvas API/generate]\n\n**Specificity requirement for assets:**\n- At least one named product must appear (not category — the actual product name from the website)\n- At least one specific brand origin element (founding story detail, named community platform, specific location)\n- User/community content must reference real sources (e.g., \"placeholder for @username submission\" or \"Into The Gloss reader photo\") — not generic \"real people\" claims\n- If the brand has a known origin story (blog, founder story, community), it must be referenced visually, not just philosophically",
+    "rationale": "The Phase 4 asset requirements lacked any specificity mandate, allowing the model to list generic assets without requiring named products, specific brand moments, or traceable community references that distinguish the brand from competitors."
+  },
+  {
+    "taskId": "glossier-social",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition uses Glossier's general brand philosophy but no specific product references, user testimonials, or distinctive brand moments that competitors couldn't claim.",
+      "improvement": "Include at least one specific Glossier product (Cloud Paint, Boy Brow, Balm Dotcom), reference their Into The Gloss origin, or use actual user-submitted imagery placeholders with attribution. The 'real skin, real stories' claim needs real evidence."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**1. What is true about this brand that would be false about any competitor?**",
+    "cause": "wrong_priority",
+    "proposedChange": "**1. What is true about this brand that would be false about any competitor?**\n\nThe answer must be something structural or foundational — a decision, a relationship, a material fact about how the brand works or what it is. Not a marketing position (which can be copied) but a truth (which cannot).\n\n**This answer must directly appear in the composition.** If your answer is \"Glossier launched from Into The Gloss blog and user submissions,\" then Into The Gloss must be named or shown. If your answer is \"they use real customer photos,\" specific customer attributions must appear. A philosophical reference to the truth without visual evidence is not specific enough.",
+    "rationale": "Phase 0 establishes brand truth but doesn't require that truth to manifest visually in the final composition — adding an explicit mandate that the structural truth must appear as a named/shown element would prevent philosophical-only references."
+  }
+]

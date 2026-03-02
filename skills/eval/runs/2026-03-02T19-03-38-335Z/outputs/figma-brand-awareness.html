@@ -1,0 +1,248 @@
+<ef-timegroup mode="sequence" class="w-screen h-screen bg-black" style="width: 1080px; height: 1920px;">
+    
+    <!-- SCENE 1: The Problem (File-based isolation) - 0-8s -->
+    <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full bg-gradient-to-br from-slate-950 via-black to-slate-900">
+      
+      <!-- Canvas: Isolated cursors approaching each other but not connecting -->
+      <canvas id="isolation-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      
+      <!-- Text overlay -->
+      <ef-text
+        split="word"
+        class="absolute bottom-1/4 left-1/2 -translate-x-1/2 text-white text-5xl font-bold text-center max-w-2xl"
+        style="animation: 0.5s word-in both; animation-delay: calc(2s + var(--ef-word-index) * 120ms)"
+      >Design alone in files</ef-text>
+      
+      <!-- Subtext -->
+      <ef-text
+        class="absolute bottom-1/3 left-1/2 -translate-x-1/2 text-white/50 text-xl text-center max-w-xl"
+        style="animation: 0.4s fade-in both 4s"
+      >Your team waits for your exports</ef-text>
+
+      <script>
+        const isolationCanvas = document.getElementById('isolation-canvas');
+        const ctx = isolationCanvas.getContext('2d');
+        let isolationScene = document.querySelector('ef-timegroup:nth-child(1)');
+        
+        if (isolationScene && isolationCanvas) {
+          isolationScene.addFrameTask((ownCurrentTimeMs) => {
+            isolationCanvas.width = isolationCanvas.offsetWidth;
+            isolationCanvas.height = isolationCanvas.offsetHeight;
+            
+            ctx.clearRect(0, 0, isolationCanvas.width, isolationCanvas.height);
+            
+            const progress = ownCurrentTimeMs / 8000;
+            const centerX = isolationCanvas.width / 2;
+            const centerY = isolationCanvas.height / 2;
+            
+            // Left cursor (moving right but never reaching center)
+            const leftX = centerX * 0.3 + Math.sin(progress * Math.PI) * (centerX * 0.15);
+            ctx.beginPath();
+            ctx.arc(leftX, centerY - 80, 6, 0, Math.PI * 2);
+            ctx.fillStyle = '#ef4444';
+            ctx.fill();
+            
+            // Right cursor (moving left but never reaching center)
+            const rightX = centerX * 1.7 - Math.sin(progress * Math.PI) * (centerX * 0.15);
+            ctx.beginPath();
+            ctx.arc(rightX, centerY + 80, 6, 0, Math.PI * 2);
+            ctx.fillStyle = '#3b82f6';
+            ctx.fill();
+            
+            // Text labels
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.font = '12px system-ui';
+            ctx.textAlign = 'center';
+            ctx.fillText('Designer 1', leftX, centerY - 110);
+            ctx.fillText('Designer 2', rightX, centerY + 110);
+            
+            // Gap between them emphasized
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.2)';
+            ctx.setLineDash([5, 5]);
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(leftX + 30, centerY - 80);
+            ctx.lineTo(rightX - 30, centerY + 80);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          });
+        }
+      </script>
+    </ef-timegroup>
+
+    <!-- SCENE 2: The Moment (Figma's URL-first model) - 8-16s -->
+    <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full bg-gradient-to-br from-black via-purple-950 to-black"
+      style="animation: 0.8s fade-in both, 0.8s fade-out var(--ef-transition-out-start) both">
+      
+      <!-- Canvas: Single URL becoming the entire workspace -->
+      <canvas id="url-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      
+      <!-- Text: The URL -->
+      <ef-text
+        class="absolute top-1/3 left-1/2 -translate-x-1/2 text-white/80 text-sm font-mono text-center"
+        style="animation: 0.6s slide-in-left 1s both"
+      >figma.com/design/abc123</ef-text>
+      
+      <!-- Arrow pointing down -->
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 text-white/60 text-4xl"
+        style="animation: 0.4s fade-in both 1.8s">↓</div>
+      
+      <!-- Text: The revelation -->
+      <ef-text
+        split="word"
+        class="absolute bottom-1/4 left-1/2 -translate-x-1/2 text-white text-5xl font-bold text-center max-w-2xl"
+        style="animation: 0.5s word-in both; animation-delay: calc(3s + var(--ef-word-index) * 120ms)"
+      >One URL, everyone inside</ef-text>
+
+      <script>
+        const urlCanvas = document.getElementById('url-canvas');
+        const urlCtx = urlCanvas.getContext('2d');
+        let urlScene = document.querySelector('ef-timegroup:nth-child(2)');
+        
+        if (urlScene && urlCanvas) {
+          urlScene.addFrameTask((ownCurrentTimeMs) => {
+            urlCanvas.width = urlCanvas.offsetWidth;
+            urlCanvas.height = urlCanvas.offsetHeight;
+            
+            urlCtx.clearRect(0, 0, urlCanvas.width, urlCanvas.height);
+            
+            const progress = ownCurrentTimeMs / 8000;
+            const centerX = urlCanvas.width / 2;
+            const centerY = urlCanvas.height / 2;
+            
+            // Draw expanding circle from URL point
+            const maxRadius = Math.min(urlCanvas.width, urlCanvas.height) * 0.35;
+            const radius = maxRadius * Math.max(0, progress - 0.25);
+            
+            urlCtx.strokeStyle = `rgba(162, 89, 255, ${Math.max(0, 0.5 - progress * 0.5)})`;
+            urlCtx.lineWidth = 2;
+            urlCtx.beginPath();
+            urlCtx.arc(centerX, centerY * 0.5, radius, 0, Math.PI * 2);
+            urlCtx.stroke();
+            
+            // Cursors entering the circle
+            if (progress > 0.35) {
+              const entryProgress = (progress - 0.35) / 0.65;
+              
+              // Cursor 1
+              const angle1 = Math.PI * 0.3;
+              const dist1 = maxRadius * (1 - entryProgress * 0.7);
+              const x1 = centerX + Math.cos(angle1) * dist1;
+              const y1 = centerY * 0.5 + Math.sin(angle1) * dist1;
+              
+              urlCtx.beginPath();
+              urlCtx.arc(x1, y1, 5, 0, Math.PI * 2);
+              urlCtx.fillStyle = '#ef4444';
+              urlCtx.fill();
+              
+              // Cursor 2
+              const angle2 = Math.PI * 0.7;
+              const dist2 = maxRadius * (1 - entryProgress * 0.7);
+              const x2 = centerX + Math.cos(angle2) * dist2;
+              const y2 = centerY * 0.5 + Math.sin(angle2) * dist2;
+              
+              urlCtx.beginPath();
+              urlCtx.arc(x2, y2, 5, 0, Math.PI * 2);
+              urlCtx.fillStyle = '#3b82f6';
+              urlCtx.fill();
+              
+              // Cursor 3
+              const angle3 = Math.PI * 1.3;
+              const dist3 = maxRadius * (1 - entryProgress * 0.7);
+              const x3 = centerX + Math.cos(angle3) * dist3;
+              const y3 = centerY * 0.5 + Math.sin(angle3) * dist3;
+              
+              urlCtx.beginPath();
+              urlCtx.arc(x3, y3, 5, 0, Math.PI * 2);
+              urlCtx.fillStyle = '#8b5cf6';
+              urlCtx.fill();
+            }
+          });
+        }
+      </script>
+    </ef-timegroup>
+
+    <!-- SCENE 3: The Reality (Real-time collaboration) - 16-24s -->
+    <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full bg-gradient-to-br from-slate-900 via-purple-900/20 to-black"
+      style="animation: 0.8s fade-in both, 0.8s fade-out var(--ef-transition-out-start) both">
+      
+      <!-- Canvas: Multiple cursors in real-time sync -->
+      <canvas id="collaboration-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      
+      <!-- Floating text: Real-time -->
+      <ef-text
+        class="absolute top-1/4 left-1/2 -translate-x-1/2 text-white/60 text-xs uppercase tracking-widest"
+        style="animation: 0.4s fade-in both 0.5s"
+      >Real-time, always</ef-text>
+      
+      <!-- Main message -->
+      <ef-text
+        split="word"
+        class="absolute bottom-1/3 left-1/2 -translate-x-1/2 text-white text-5xl font-bold text-center max-w-2xl"
+        style="animation: 0.5s word-in both; animation-delay: calc(1s + var(--ef-word-index) * 120ms)"
+      >See everyone moving</ef-text>
+
+      <script>
+        const collabCanvas = document.getElementById('collaboration-canvas');
+        const collabCtx = collabCanvas.getContext('2d');
+        let collabScene = document.querySelector('ef-timegroup:nth-child(3)');
+        
+        if (collabScene && collabCanvas) {
+          collabScene.addFrameTask((ownCurrentTimeMs) => {
+            collabCanvas.width = collabCanvas.offsetWidth;
+            collabCanvas.height = collabCanvas.offsetHeight;
+            
+            collabCtx.clearRect(0, 0, collabCanvas.width, collabCanvas.height);
+            
+            const progress = ownCurrentTimeMs / 8000;
+            const centerX = collabCanvas.width / 2;
+            const centerY = collabCanvas.height / 2;
+            
+            // Multiple cursors moving in sync, visible
+            const cursors = [
+              { color: '#ef4444', angle: 0, name: 'Alex' },
+              { color: '#3b82f6', angle: Math.PI * 0.66, name: 'Jordan' },
+              { color: '#8b5cf6', angle: Math.PI * 1.33, name: 'Casey' },
+              { color: '#10b981', angle: Math.PI * 2, name: 'Riley' }
+            ];
+            
+            cursors.forEach((cursor, idx) => {
+              const radiusBase = 120;
+              const orbitProgress = (progress + idx * 0.25) % 1;
+              const orbitAngle = cursor.angle + orbitProgress * Math.PI * 2;
+              
+              const x = centerX + Math.cos(orbitAngle) * radiusBase;
+              const y = centerY + Math.sin(orbitAngle) * radiusBase;
+              
+              // Cursor dot
+              collabCtx.beginPath();
+              collabCtx.arc(x, y, 6, 0, Math.PI * 2);
+              collabCtx.fillStyle = cursor.color;
+              collabCtx.fill();
+              
+              // Name label
+              collabCtx.fillStyle = cursor.color;
+              collabCtx.font = 'bold 10px system-ui';
+              collabCtx.textAlign = 'center';
+              collabCtx.fillText(cursor.name, x, y - 16);
+              
+              // Trail line to center
+              collabCtx.strokeStyle = `${cursor.color}40`;
+              collabCtx.lineWidth = 1;
+              collabCtx.setLineDash([2, 2]);
+              collabCtx.beginPath();
+              collabCtx.moveTo(x, y);
+              collabCtx.lineTo(centerX, centerY);
+              collabCtx.stroke();
+              collabCtx.setLineDash([]);
+            });
+            
+            // Center indicator
+            collabCtx.beginPath();
+            collabCtx.arc(centerX, centerY, 8, 0, Math.PI * 2);
+            collabCtx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            collabCtx.fill();
+          });
+        }
+      </script>
+    </ef

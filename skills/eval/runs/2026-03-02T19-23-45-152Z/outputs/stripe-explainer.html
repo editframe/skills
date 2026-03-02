@@ -1,0 +1,245 @@
+<ef-timegroup mode="sequence" class="w-full h-screen bg-white" style="width: 1920px; height: 1080px;">
+
+    <!-- SCENE 1: The Problem (Invisible Complexity) - 0-12s -->
+    <ef-timegroup mode="fixed" duration="12s" class="absolute w-full h-full stripe-dark">
+      <canvas id="chaos-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      <div class="overlay-gradient"></div>
+      <div class="scene-container">
+        <div class="text-container">
+          <ef-text 
+            split="word"
+            class="text-white text-6xl font-bold text-center"
+            style="animation: 0.6s slide-up both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+          >Payments infrastructure is invisible</ef-text>
+          <ef-text 
+            class="text-white/60 text-2xl mt-6 text-center"
+            style="animation: 0.5s slide-up 0.8s both"
+          >But building it shouldn't be</ef-text>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- SCENE 2: What Makes Stripe Different (The Unified Object) - 12-26s -->
+    <ef-timegroup mode="fixed" duration="14s" class="absolute w-full h-full stripe-blue">
+      <canvas id="unified-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      <div class="scene-container">
+        <div class="text-container">
+          <ef-text 
+            class="text-white text-5xl font-bold text-center mb-8"
+            style="animation: 0.6s scale-in both 0.3s"
+          >One unified object model</ef-text>
+          <ef-text 
+            split="word"
+            class="text-white/90 text-2xl text-center"
+            style="animation: 0.5s slide-up both; animation-delay: calc(0.6s + var(--ef-word-index) * 80ms)"
+          >A Charge in Payments is the same Charge in Connect and Billing</ef-text>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- SCENE 3: The Consequence (Things Just Work) - 26-40s -->
+    <ef-timegroup mode="fixed" duration="14s" class="absolute w-full h-full stripe-light">
+      <canvas id="flow-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      <div class="scene-container">
+        <div class="text-container">
+          <ef-text 
+            class="text-dark text-5xl font-bold text-center mb-4"
+            style="animation: 0.6s scale-in both 0.3s"
+          >No translation layer</ef-text>
+          <ef-text 
+            split="word"
+            class="text-dark/70 text-2xl text-center"
+            style="animation: 0.5s slide-up both; animation-delay: calc(0.6s + var(--ef-word-index) * 80ms)"
+          >Your business logic flows directly. Data stays consistent. Errors are impossible at the boundary.</ef-text>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- SCENE 4: What This Enables (Speed) - 40-52s -->
+    <ef-timegroup mode="fixed" duration="12s" class="absolute w-full h-full stripe-dark">
+      <canvas id="speed-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      <div class="overlay-gradient"></div>
+      <div class="scene-container">
+        <div class="text-container">
+          <ef-text 
+            split="word"
+            class="text-white text-5xl font-bold text-center"
+            style="animation: 0.5s slide-up both; animation-delay: calc(var(--ef-word-index) * 90ms)"
+          >Ship faster. Fewer bugs. Scale without fear.</ef-text>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- SCENE 5: CTA (The Point) - 52-60s -->
+    <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full stripe-blue flex items-center justify-center">
+      <div class="scene-container">
+        <div class="text-container">
+          <ef-text 
+            class="text-white text-6xl font-bold text-center mb-4"
+            style="animation: 0.7s scale-in both 0.2s"
+          >Stripe</ef-text>
+          <ef-text 
+            class="text-white/80 text-2xl text-center"
+            style="animation: 0.6s slide-up 0.5s both"
+          >Invisible infrastructure. Visible results.</ef-text>
+          <ef-text 
+            class="text-white/60 text-xl mt-8 text-center"
+            style="animation: 0.5s fade-in 1s both"
+          >stripe.com</ef-text>
+        </div>
+      </div>
+    </ef-timegroup>
+
+  </ef-timegroup>
+
+  <script>
+    // SCENE 1: Chaos Canvas - Many systems, no integration
+    const chaosCanvas = document.getElementById('chaos-canvas');
+    const chaosTg = chaosCanvas.closest('ef-timegroup');
+    
+    chaosTg.addFrameTask((ownCurrentTimeMs, durationMs) => {
+      const ctx = chaosCanvas.getContext('2d');
+      chaosCanvas.width = chaosCanvas.offsetWidth;
+      chaosCanvas.height = chaosCanvas.offsetHeight;
+      
+      const progress = ownCurrentTimeMs / durationMs;
+      ctx.clearRect(0, 0, chaosCanvas.width, chaosCanvas.height);
+      
+      // Create accumulating tangled lines representing disconnected payment systems
+      ctx.lineWidth = 2;
+      const lineCount = Math.floor(progress * 40);
+      
+      for (let i = 0; i < lineCount; i++) {
+        const seed = i * 73.3;
+        const startX = (Math.sin(seed) * 0.4 + 0.5) * chaosCanvas.width;
+        const startY = (Math.cos(seed * 0.7) * 0.4 + 0.5) * chaosCanvas.height;
+        
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        
+        // Multiple tangled segments per line
+        for (let j = 0; j < 3; j++) {
+          const nextX = startX + Math.sin(seed + j * 50) * 150;
+          const nextY = startY + Math.cos(seed + j * 50) * 150;
+          ctx.lineTo(nextX, nextY);
+        }
+        
+        const hue = (i * 8 + ownCurrentTimeMs * 0.05) % 360;
+        ctx.strokeStyle = `hsla(${hue}, 70%, 50%, ${0.2 + progress * 0.3})`;
+        ctx.stroke();
+      }
+      
+      // Add labels for disconnected systems
+      if (progress > 0.5) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${(progress - 0.5) * 2})`;
+        ctx.font = '14px sans-serif';
+        ctx.fillText('Payments', 100, 100);
+        ctx.fillText('Billing', chaosCanvas.width - 150, 150);
+        ctx.fillText('Payouts', 100, chaosCanvas.height - 100);
+        ctx.fillText('Connect', chaosCanvas.width - 150, chaosCanvas.height - 100);
+      }
+    });
+
+    // SCENE 2: Unified Object Canvas - One object threading through all systems
+    const unifiedCanvas = document.getElementById('unified-canvas');
+    const unifiedTg = unifiedCanvas.closest('ef-timegroup');
+    
+    unifiedTg.addFrameTask((ownCurrentTimeMs, durationMs) => {
+      const ctx = unifiedCanvas.getContext('2d');
+      unifiedCanvas.width = unifiedCanvas.offsetWidth;
+      unifiedCanvas.height = unifiedCanvas.offsetHeight;
+      
+      const progress = ownCurrentTimeMs / durationMs;
+      ctx.clearRect(0, 0, unifiedCanvas.width, unifiedCanvas.height);
+      
+      const cx = unifiedCanvas.width / 2;
+      const cy = unifiedCanvas.height / 2;
+      
+      // Central unified object (charge)
+      const objRadius = 40 + Math.sin(ownCurrentTimeMs * 0.003) * 8;
+      ctx.beginPath();
+      ctx.arc(cx, cy, objRadius, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      // Four systems orbiting the unified object
+      const systemCount = 4;
+      const systemNames = ['Payments', 'Billing', 'Connect', 'Radar'];
+      
+      for (let i = 0; i < systemCount; i++) {
+        const angle = (i / systemCount) * Math.PI * 2 + (ownCurrentTimeMs * 0.001);
+        const orbitRadius = 200 + Math.sin(ownCurrentTimeMs * 0.002 + i) * 30;
+        
+        const x = cx + Math.cos(angle) * orbitRadius;
+        const y = cy + Math.sin(angle) * orbitRadius;
+        
+        // System node
+        ctx.beginPath();
+        ctx.arc(x, y, 30, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${0.1 + progress * 0.2})`;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Connection line from system to center
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(cx, cy);
+        ctx.strokeStyle = `rgba(255, 255, 255, ${0.2 + progress * 0.3})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Label
+        if (progress > 0.3) {
+          ctx.fillStyle = `rgba(255, 255, 255, ${(progress - 0.3) * 2.5})`;
+          ctx.font = 'bold 12px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(systemNames[i], x, y);
+        }
+      }
+      
+      // Center label
+      if (progress > 0.5) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${(progress - 0.5) * 2})`;
+        ctx.font = 'bold 14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Charge', cx, cy);
+      }
+    });
+
+    // SCENE 3: Clean Flow Canvas - Data flowing without translation layers
+    const flowCanvas = document.getElementById('flow-canvas');
+    const flowTg = flowCanvas.closest('ef-timegroup');
+    
+    flowTg.addFrameTask((ownCurrentTimeMs, durationMs) => {
+      const ctx = flowCanvas.getContext('2d');
+      flowCanvas.width = flowCanvas.offsetWidth;
+      flowCanvas.height = flowCanvas.offsetHeight;
+      
+      const progress = ownCurrentTimeMs / durationMs;
+      ctx.clearRect(0, 0, flowCanvas.width, flowCanvas.height);
+      
+      // Horizontal flow from left to right
+      const startX = flowCanvas.width * 0.1;
+      const endX = flowCanvas.width * 0.9;
+      const y = flowCanvas.height / 2;
+      
+      // Main flow line
+      ctx.beginPath();
+      ctx.moveTo(startX, y);
+      ctx.lineTo(endX, y);
+      ctx.strokeStyle = 'rgba(0, 102, 255, 0.3)';
+      ctx.lineWidth = 60;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      
+      // Data particles flowing along the line
+      const particleCount = 8;
+      for (let i = 0; i < particleCount; i++) {
+        const offset = (progress + i / particleCount) %

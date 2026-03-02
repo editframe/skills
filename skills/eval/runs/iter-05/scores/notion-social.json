@@ -1,0 +1,53 @@
+{
+  "taskId": "notion-social",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:49:48.919Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is the argument. Each scene uses procedural canvas animation via addFrameTask to visualize the core concept: Scene 1's chaos canvas shows fragmented documents scattered chaotically; Scene 2's unify canvas shows 16 elements converging to center with trailing lines; Scene 3's database canvas reveals a growing relational network; Scene 4's pages canvas reveals nested document hierarchy progressively. The motion carries meaning that text cannot—fragmentation literally becomes unification.",
+      "evidence": "chaosScene.initializer with 'const docCount = Math.floor(progress * 12)' showing progressive chaos; unifyScene with 'const currentRadius = startRadius - progress * (startRadius - endRadius)' showing convergence; dbScene with 'const nodeCount = Math.floor(progress * 8) + 3' showing growing connections; word-split stagger animations using 'animation-delay: calc(var(--ef-word-index) * 100ms)'"
+    },
+    "specificity": {
+      "score": 3,
+      "rationale": "The composition reflects Notion's core value propositions (databases, connected pages, unified workspace) and uses language aligned with Notion's brand ('One workspace', 'Pages that connect', 'relational power'). However, these features could apply to competitors like Coda or Airtable. The database and pages visualizations are generic rather than showing Notion's specific UI or interaction patterns.",
+      "evidence": "Text: 'Databases that think', 'Not spreadsheets. Real relational power', 'Pages that connect', 'One workspace. Infinite possibility.' Feature names are Notion-accurate but the visual representations (generic nodes, rectangles) don't show Notion's distinctive block-based interface."
+    },
+    "viewer_state": {
+      "score": 4,
+      "rationale": "Clear emotional arc: Scene 1 creates anxiety (chaos, 'Your work lives everywhere'); Scene 2 provides relief (convergence, 'brings it all together'); Scenes 3-4 build confidence through capability demonstration; Scene 5 delivers aspiration ('Infinite possibility'). Each scene builds on the previous state—you couldn't reorder without breaking the logic.",
+      "evidence": "Scene 1 chaos animation + 'Your work lives everywhere' → anxiety; Scene 2 convergence animation + 'brings it all together' → relief; Scene 3-4 feature reveals → confidence; Scene 5 'Infinite possibility' + constellation → aspiration"
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "The composition takes a clear position: the problem isn't missing features, it's fragmentation, and unification is the solution. The chaos-to-order narrative structure reflects this perspective. However, this is a common productivity tool framing—'your tools are scattered, we unify them'—rather than a distinctive insight about Notion specifically.",
+      "evidence": "Scene structure moves from chaos (Scene 1) to order (Scene 2-5); tagline 'One workspace. Infinite possibility' emphasizes unification; database/pages scenes position these as solutions to fragmentation rather than standalone features"
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Five scenes in 15 seconds is appropriate. Scenes 3 and 4 (databases, pages) both serve the same narrative function—'look at specific features'—and could potentially be combined. The overlap transitions (1.5s) create efficiency but the two feature scenes feel like padding the middle rather than deepening the argument.",
+      "evidence": "Scene 3 'Databases that think' and Scene 4 'Pages that connect' are structurally identical (feature name + canvas visualization + supporting text). Both exist to demonstrate capability without distinct emotional or logical contributions beyond 'here's another feature.'"
+    }
+  },
+  "overall": 3.6,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The canvas visualizations show generic representations (rectangles for documents, circles for database nodes) rather than anything recognizable as Notion's distinctive interface—no block handles, no sidebar, no page icons, no actual Notion UI elements.",
+      "improvement": "Use Notion's actual visual language: render recognizable Notion page icons, show the sidebar structure, display actual block types (toggles, callouts, databases), or use Notion's specific color palette and iconography from their brand."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The 'fragmented tools → unified workspace' narrative is the default positioning for every productivity tool. Notion, Coda, Monday, Airtable all claim this same territory.",
+      "improvement": "Find Notion's specific angle—perhaps emphasize that it's built on blocks (composability), or that it enables custom systems without code, or that it's wiki-first (institutional memory). The form should reflect something only true of Notion."
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "Scenes 3 and 4 both demonstrate features using the same visual structure (title + canvas + optional subtitle). They serve the same narrative purpose: 'here are capabilities.'",
+      "improvement": "Either combine databases and pages into one 'power' scene, or differentiate them structurally—perhaps one shows creation, the other shows connection. Give each scene a distinct job beyond 'feature showcase.'"
+    }
+  ]
+}

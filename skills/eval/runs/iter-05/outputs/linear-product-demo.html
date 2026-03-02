@@ -1,0 +1,220 @@
+<ef-configuration api-host="https://api.editframe.com" media-engine="local">
+    <ef-timegroup mode="sequence" overlap="0.8s" class="w-[1920px] h-[1080px]">
+      <!-- Scene 1: The Chaos (0-6s) -->
+      <!-- VIEWER STATE AT START: Unaware they have a problem
+           VIEWER STATE AT END: Viscerally recognizes unresolved issue chaos
+           PoV: Linear removes decisions by enforcing workflow. Show the opposite - too many choices, states, ambiguity. -->
+      <ef-timegroup mode="fixed" duration="6s" class="absolute w-full h-full bg-black flex items-center justify-center overflow-hidden"
+        style="animation: 6s fadeIn both">
+        <canvas id="chaos-canvas" class="absolute inset-0 size-full"></canvas>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        <ef-text
+          split="word"
+          class="absolute bottom-16 left-16 text-white text-5xl font-bold mono-font max-w-2xl"
+          style="animation: 0.8s slideUp 2.5s both; animation-delay: calc(2.5s + var(--ef-word-index) * 100ms)">Issues scattered everywhere</ef-text>
+      </ef-timegroup>
+
+      <!-- Scene 2: The Resolution (6-12s) -->
+      <!-- VIEWER STATE AT START: Overwhelmed by chaos
+           VIEWER STATE AT END: Clarity - one resolved issue, visible workflow
+           PoV: Linear's power is visible as the absence of complexity. Show it by removing visual noise. -->
+      <ef-timegroup mode="fixed" duration="6s" class="absolute w-full h-full issue-resolved-bg flex flex-col items-center justify-center"
+        style="animation: 0.8s fadeOut calc(var(--ef-transition-out-start) + 0.2s) both">
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="w-[600px] h-[200px] border-2 border-white/30 rounded-lg p-8 bg-black/40 backdrop-blur-sm flex flex-col justify-center">
+            <ef-text
+              class="text-lime-400 text-3xl font-bold mono-font mb-4"
+              style="animation: 0.6s slideDown 0.5s both">
+              LIN-1
+            </ef-text>
+            <ef-text
+              class="text-white text-2xl font-semibold mb-6"
+              style="animation: 0.6s slideUp 1s both">
+              Ship the thing you built
+            </ef-text>
+            <div class="flex gap-3" style="animation: 0.6s slideUp 1.5s both">
+              <span class="px-4 py-1 bg-lime-500/30 text-lime-400 text-sm rounded font-mono border border-lime-500/50">DONE</span>
+              <span class="px-4 py-1 bg-white/10 text-white/70 text-sm rounded font-mono">5 days</span>
+            </div>
+          </div>
+        </div>
+        <ef-text
+          class="absolute top-16 left-16 text-white text-4xl font-bold mono-font"
+          style="animation: 0.7s slideUp 0.3s both">One workflow.</ef-text>
+      </ef-timegroup>
+
+      <!-- Scene 3: The Speed (12-18s) -->
+      <!-- VIEWER STATE AT START: Issue is resolved, but how fast is it?
+           VIEWER STATE AT END: Shock at the speed - keyboard-first means no UI delay
+           PoV: Keyboard shortcuts = no mouse movement = no latency = just thought→action. Show the keystroke→result instantaneously. -->
+      <ef-timegroup mode="fixed" duration="6s" class="absolute w-full h-full linear-gradient-bg flex items-center justify-center"
+        style="animation: 0.8s fadeOut calc(var(--ef-transition-out-start) + 0.2s) both">
+        <div class="absolute inset-0 flex flex-col items-center justify-center gap-12">
+          <div class="relative w-[800px] h-[120px]">
+            <ef-text
+              class="absolute left-0 text-white/50 text-2xl mono-font"
+              style="animation: 0.3s fadeIn 0.5s both; animation-fill-mode: forwards">cmd+k</ef-text>
+            <div class="absolute right-0 w-[500px] h-full border border-white/20 rounded-lg bg-white/5 flex items-center px-8"
+              style="animation: 0.5s scaleIn 1s both">
+              <ef-text
+                class="text-white text-2xl mono-font"
+                style="animation: 0.4s slideUp 1.3s both">Update status to Done</ef-text>
+            </div>
+          </div>
+          <ef-text
+            split="word"
+            class="text-white/70 text-lg mono-font"
+            style="animation: 0.6s slideUp 2.2s both; animation-delay: calc(2.2s + var(--ef-word-index) * 80ms)">Keyboard-first means instant</ef-text>
+        </div>
+      </ef-timegroup>
+
+      <!-- Scene 4: The Team (18-24s) -->
+      <!-- VIEWER STATE AT START: Individual workflow is fast
+           VIEWER STATE AT END: Scaled to team - alignment without friction
+           PoV: Linear's strength is architectural - one unified data model means no sync/merge chaos. Show multiple users, same issue, instant alignment. -->
+      <ef-timegroup mode="fixed" duration="6s" class="absolute w-full h-full bg-gradient-to-br from-[#000] via-[#0a2f4f] to-[#000] flex items-center justify-center"
+        style="animation: 0.8s fadeOut calc(var(--ef-transition-out-start) + 0.2s) both">
+        <canvas id="team-canvas" class="absolute inset-0 size-full"></canvas>
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black"></div>
+        <ef-text
+          class="absolute bottom-16 left-16 text-white text-4xl font-bold mono-font"
+          style="animation: 0.7s slideUp 2s both">Your whole team. One source of truth.</ef-text>
+      </ef-timegroup>
+
+      <!-- Scene 5: CTA (24-30s) -->
+      <!-- VIEWER STATE AT START: Convinced workflow is unified
+           VIEWER STATE AT END: Ready to use it - CTA follows from PoV (actually build, not just try)
+           PoV: Don't "try it free" - the PoV is that you just build. The try is incidental. -->
+      <ef-timegroup mode="fixed" duration="6s" class="absolute w-full h-full bg-black flex flex-col items-center justify-center gap-12"
+        style="animation: 0.8s fadeOut calc(var(--ef-transition-out-start) + 0.2s) both">
+        <div class="absolute inset-0" style="animation: 6s fadeIn both"></div>
+        <ef-text
+          split="word"
+          class="text-white text-6xl font-bold mono-font text-center max-w-3xl"
+          style="animation: 0.8s slideUp 0.5s both; animation-delay: calc(0.5s + var(--ef-word-index) * 100ms)">Build without the chaos</ef-text>
+        <div class="flex flex-col items-center gap-4" style="animation: 0.6s slideUp 2.2s both">
+          <ef-text class="text-white/70 text-xl mono-font">linear.app</ef-text>
+          <div class="h-1 w-24 bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
+        </div>
+      </ef-timegroup>
+    </ef-timegroup>
+  </ef-configuration>
+
+  <script>
+    // Canvas animation for Scene 1: Chaotic issue states
+    const chaosCanvas = document.getElementById('chaos-canvas');
+    if (chaosCanvas && chaosCanvas.parentElement) {
+      const tg1 = chaosCanvas.closest('ef-timegroup');
+      if (tg1) {
+        tg1.initializer = (instance) => {
+          return instance.addFrameTask((info) => {
+            chaosCanvas.width = chaosCanvas.offsetWidth;
+            chaosCanvas.height = chaosCanvas.offsetHeight;
+            
+            const ctx = chaosCanvas.getContext('2d');
+            ctx.clearRect(0, 0, chaosCanvas.width, chaosCanvas.height);
+            
+            const progress = info.ownCurrentTimeMs / info.durationMs;
+            const count = Math.floor(progress * 120);
+            
+            // Draw tangled issue nodes - many states, no clear flow
+            for (let i = 0; i < count; i++) {
+              const angle = (i / 120) * Math.PI * 2;
+              const radius = 150 + Math.sin(i * 0.3 + info.ownCurrentTimeMs * 0.0005) * 100;
+              const x = chaosCanvas.width / 2 + Math.cos(angle) * radius;
+              const y = chaosCanvas.height / 2 + Math.sin(angle) * radius;
+              
+              // Different "states" - colors for unresolved statuses
+              const stateColors = ['#ff4444', '#ffaa00', '#4488ff', '#ff44ff', '#44ffff'];
+              const color = stateColors[i % stateColors.length];
+              
+              ctx.beginPath();
+              ctx.arc(x, y, 4, 0, Math.PI * 2);
+              ctx.fillStyle = color;
+              ctx.globalAlpha = 0.3 + progress * 0.4;
+              ctx.fill();
+              
+              // Draw lines between random nodes (tangled connections)
+              if (i % 5 === 0 && i > 0) {
+                const prevAngle = ((i - 5) / 120) * Math.PI * 2;
+                const prevRadius = 150 + Math.sin((i - 5) * 0.3 + info.ownCurrentTimeMs * 0.0005) * 100;
+                const prevX = chaosCanvas.width / 2 + Math.cos(prevAngle) * prevRadius;
+                const prevY = chaosCanvas.height / 2 + Math.sin(prevAngle) * prevRadius;
+                
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(prevX, prevY);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1;
+                ctx.globalAlpha = 0.2 + progress * 0.2;
+                ctx.stroke();
+              }
+            }
+            ctx.globalAlpha = 1;
+          });
+        };
+      }
+    }
+
+    // Canvas animation for Scene 4: Team alignment
+    const teamCanvas = document.getElementById('team-canvas');
+    if (teamCanvas && teamCanvas.parentElement) {
+      const tg4 = teamCanvas.closest('ef-timegroup');
+      if (tg4) {
+        tg4.initializer = (instance) => {
+          return instance.addFrameTask((info) => {
+            teamCanvas.width = teamCanvas.offsetWidth;
+            teamCanvas.height = teamCanvas.offsetHeight;
+            
+            const ctx = teamCanvas.getContext('2d');
+            ctx.clearRect(0, 0, teamCanvas.width, teamCanvas.height);
+            
+            const progress = info.ownCurrentTimeMs / info.durationMs;
+            
+            // Central issue point
+            const cx = teamCanvas.width / 2;
+            const cy = teamCanvas.height / 2;
+            
+            // Three team members converging on one issue
+            const userCount = 3;
+            for (let u = 0; u < userCount; u++) {
+              const angle = (u / userCount) * Math.PI * 2;
+              const startDist = 400;
+              const endDist = 120;
+              const currentDist = startDist + (endDist - startDist) * progress;
+              
+              const x = cx + Math.cos(angle) * currentDist;
+              const y = cy + Math.sin(angle) * currentDist;
+              
+              // User circle
+              ctx.beginPath();
+              ctx.arc(x, y, 20, 0, Math.PI * 2);
+              ctx.fillStyle = '#63b3ed';
+              ctx.globalAlpha = 0.6 + progress * 0.4;
+              ctx.fill();
+              
+              // Connection line to center
+              ctx.beginPath();
+              ctx.moveTo(x, y);
+              ctx.lineTo(cx, cy);
+              ctx.strokeStyle = '#63b3ed';
+              ctx.lineWidth = 2;
+              ctx.globalAlpha = 0.3 + progress * 0.4;
+              ctx.stroke();
+            }
+            
+            // Central resolved issue
+            ctx.beginPath();
+            ctx.arc(cx, cy, 30, 0, Math.PI * 2);
+            ctx.fillStyle = '#00ff00';
+            ctx.globalAlpha = 0.8;
+            ctx.fill();
+            
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 16px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.globalAlpha = 1;
+            ctx.fillText('✓', cx, cy);
+            
+            ctx.globalAlpha = 1;

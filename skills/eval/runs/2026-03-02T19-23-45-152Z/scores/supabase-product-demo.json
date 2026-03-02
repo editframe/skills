@@ -1,0 +1,59 @@
+{
+  "taskId": "supabase-product-demo",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-03-02T19:24:40.802Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural and purposeful. The composition uses addFrameTask for procedural canvas animations, text splitting with staggered word-index delays, and time-based progress variables. The chaos canvas visualizes the 'problem' while the rings canvas reinforces the 'unified database' message.",
+      "evidence": "Scene 1 uses `split=\"word\"` with `animation-delay: calc(var(--ef-word-index) * 100ms)`. Both canvas elements use `addFrameTask((ownCurrentTimeMs, durationMs) => {...})` with progress-driven rendering. The chaos canvas draws tangled system lines that grow with progress: `const numSystems = Math.floor(progress * 12)`."
+    },
+    "specificity": {
+      "score": 3,
+      "rationale": "Several Supabase-specific truths are present: the PostgreSQL foundation, the unified database philosophy, specific SDK syntax, and the combination of Auth+APIs+Edge+Storage. However, the core message about 'one database powering everything' could apply to other integrated backend platforms.",
+      "evidence": "Code block shows actual Supabase SDK: `const { data } = await supabase.from('users').select().eq('id', 123)`. The differentiator scene states: 'Auth uses the same tables as your APIs. Realtime reads from the same database.' Brand colors (#3ECF8E primary) are used throughout."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc is traceable: frustration (chaos) → relief (solution revealed) → understanding (how it works) → conviction (differentiator) → action (CTA). However, the emotional beats are formulaic and the transitions between states aren't fully earned—Scene 3's code example is informative but doesn't deepen the feeling of simplicity.",
+      "evidence": "Scene 1: 'Building backends is chaos' (frustration). Scene 2: 'One platform' (relief). Scene 4: 'This is the real difference' (conviction attempt). The progression exists but Scene 3 interrupts momentum with technical detail rather than building emotional stakes."
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "A clear perspective is present: 'the unified database is the real differentiator, not the feature list.' This is expressed through the chaos-to-order visual arc and the explicit callout 'This is the real difference.' However, the execution hedges by still listing features in Scene 2 rather than committing fully to the singular thesis.",
+      "evidence": "Scene 4 commits to the POV: 'No replication. No sync delays. No \"eventually consistent\" problems.' But Scene 2 contradicts this focus by listing 'Postgres + Auth + APIs + Edge + Storage' and showing four feature pills—reverting to feature-dump format."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Five scenes for 45 seconds is reasonable, but Scene 2 and Scene 4 overlap thematically—both argue 'one unified platform.' The feature pills in Scene 2 are partially redundant with Scene 3's code demonstration. Scene 3 could be tighter.",
+      "evidence": "Scene 2: 'Everything built on your database' + feature cards. Scene 4: 'One Postgres database' with same philosophical point. The code example in Scene 3 ('Query your database. Get REST APIs.') restates what Scene 2 already implied with 'Instant REST' in the feature pills."
+    }
+  },
+  "overall": 3.2,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The unified database message is generic to any integrated BaaS. The composition doesn't surface what makes Supabase's Postgres implementation specifically different from competitors like PlanetScale, Neon, or even Firebase's integrated approach.",
+      "improvement": "Include Supabase-specific details: Row Level Security policies, realtime subscriptions via Postgres replication, or the fact that you can query Supabase with any Postgres client. Show the actual dashboard or reference specific features like pg_graphql."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "Scene 3's code example is purely informational. The viewer learns syntax but doesn't feel anything new—no surprise, no deepening conviction, no 'aha' moment.",
+      "improvement": "Make Scene 3 demonstrate something unexpected: show the same query working in three contexts (browser, mobile, edge function) simultaneously, or reveal that this single line replaces 50 lines of traditional backend code. Create contrast, not just demonstration."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "minor",
+      "observation": "The composition tries to argue 'unified database is the differentiator' but Scene 2 reverts to feature-list format with Auth/APIs/Edge/Storage pills, undermining the singular thesis.",
+      "improvement": "Either commit fully to the 'one database' argument by removing the feature pills and showing them as manifestations of the same Postgres core, or restructure so Scene 2 doesn't compete with Scene 4's message."
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "Scenes 2 and 4 both make the 'unified platform' argument. This creates thematic redundancy even if the specific content differs.",
+      "improvement": "Merge the philosophical argument into one scene. Use the freed time for a more concrete proof point—perhaps a split-screen showing Supabase simplicity vs. multi-vendor complexity, or a speed demonstration."
+    }
+  ]
+}

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Linear 30s Demo</title>
+  <script src="https://cdn.jsdelivr.net/npm/@editframe/elements"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@editframe/elements/styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: #000;
+    }
+
+    @keyframes issue-slide-in {
+      from { transform: translateX(-100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes issue-complete {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+
+    @keyframes text-appear {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes command-pulse {
+      0% { opacity: 0.5; }
+      50% { opacity: 1; }
+      100% { opacity: 0.5; }
+    }
+
+    @keyframes text-fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .issue-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border-left: 3px solid #5e56e9;
+      margin: 8px 0;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 13px;
+      color: #e0e0e0;
+      animation: issue-slide-in 0.4s ease-out forwards;
+    }
+
+    .issue-item.complete {
+      animation: issue-complete 0.3s ease-in forwards;
+      border-left-color: #10b981;
+    }
+
+    .issue-id {
+      color: #5e56e9;
+      margin-right: 8px;
+      font-weight: 600;
+    }
+
+    .issue-text {
+      flex: 1;
+      color: #b0b0b0;
+      text-decoration: line-through;
+    }
+
+    .issue-checkbox {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #5e56e9;
+      border-radius: 3px;
+      margin-left: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .issue-checkbox.checked {
+      background: #10b981;
+      border-color: #10b981;
+      color: #000;
+      font-size: 12px;
+    }
+
+    .keyboard-hint {
+      color: #666;
+      font-size: 11px;
+      font-family: monospace;
+      margin-top: 8px;
+      animation: command-pulse 2s ease-in-out infinite;
+    }
+
+    .chaos-canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    @keyframes headline-enter {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes subhead-enter {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes cta-pulse {
+      from { opacity: 1; }
+      to { opacity: 0.7; }
+    }
+  </style>
+</head>
+<body>
+  <ef-timegroup mode="sequence" class="w-[1280px] h-[720px] bg-black">
+    <!-- Scene 1: The Chaos (0-8s) -->
+    <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full flex items-center justify-center bg-gradient-to-b from-slate-950 to-black">
+      <canvas id="chaos-canvas" class="chaos-canvas"></canvas>
+      <ef-text class="absolute bottom-16 text-white text-4xl font-bold text-center" style="animation: text-appear 0.8s ease-out 1.5s both">
+        Issue tracking is chaos
+      </ef-text>
+    </ef-timegroup>
+
+    <!-- Scene 2: Issues Appearing (8-16s) -->
+    <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full bg-slate-950 flex flex-col items-center justify-center px-16" style="animation: 0.5s fade-in both">
+      <div class="w-full max-w-2xl">
+        <div class="issue-item" style="animation-delay: 0.2s">
+          <span class="issue-id">LIN-451</span>
+          <span class="issue-text">Fix auth token expiry bug</span>
+        </div>
+        <div class="issue-item" style="animation-delay: 0.5s">
+          <span class="issue-id">LIN-452</span>
+          <span class="issue-text">Implement webhook retry logic</span>
+        </div>
+        <div class="issue-item" style="animation-delay: 0.8s">
+          <span class="issue-id">LIN-453</span>
+          <span class="issue-text">Update billing documentation</span>
+        </div>
+        <div class="keyboard-hint" style="animation-delay: 1.1s">Press Cmd+K to close them all</div>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 3: Issues Closing (16-22s) -->
+    <ef-timegroup mode="fixed" duration="6s" class="absolute w-full h-full bg-slate-950 flex flex-col items-center justify-center px-16">
+      <div class="w-full max-w-2xl" id="issues-closing">
+        <div class="issue-item complete" style="animation-delay: 0s">
+          <span class="issue-id">LIN-451</span>
+          <span class="issue-text">Fix auth token expiry bug</span>
+          <div class="issue-checkbox checked">✓</div>
+        </div>
+        <div class="issue-item complete" style="animation-delay: 0.3s">
+          <span class="issue-id">LIN-452</span>
+          <span class="issue-text">Implement webhook retry logic</span>
+          <div class="issue-checkbox checked">✓</div>
+        </div>
+        <div class="issue-item complete" style="animation-delay: 0.6s">
+          <span class="issue-id">LIN-453</span>
+          <span class="issue-text">Update billing documentation</span>
+          <div class="issue-checkbox checked">✓</div>
+        </div>
+        <ef-text class="block mt-6 text-center text-2xl font-bold text-emerald-400" style="animation: text-appear 0.6s ease-out 1.2s both">
+          Resolved in seconds
+        </ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 4: Clarity State (22-30s) -->
+    <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full bg-gradient-to-br from-slate-900 to-black flex flex-col items-center justify-center">
+      <ef-text class="text-white text-5xl font-bold text-center mb-4" style="animation: headline-enter 0.7s ease-out both">
+        Linear
+      </ef-text>
+      <ef-text class="text-gray-400 text-xl text-center mb-8 max-w-md" style="animation: subhead-enter 0.6s ease-out 0.3s both">
+        The clarity software teams deserve
+      </ef-text>
+      <ef-text class="text-indigo-500 font-semibold text-lg cursor-pointer" style="animation: cta-pulse 1.5s ease-in-out 0.8s infinite">
+        Ship your work today
+      </ef-text>
+    </ef-timegroup>
+  </ef-timegroup>
+
+  <script>
+    // Chaos canvas animation for Scene 1
+    const chaosCanvas = document.getElementById('chaos-canvas');
+    if (chaosCanvas) {
+      const ctx = chaosCanvas.getContext('2d');
+      const scene1 = document.querySelector('ef-timegroup');
+      
+      scene1.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        chaosCanvas.width = chaosCanvas.offsetWidth;
+        chaosCanvas.height = chaosCanvas.offsetHeight;
+        
+        const progress = ownCurrentTimeMs / durationMs;
+        ctx.clearRect(0, 0, chaosCanvas.width, chaosCanvas.height);
+        
+        // Draw accumulating tangled lines (the chaos)
+        // More lines appear as time progresses
+        const lineCount = Math.floor(progress * 40);
+        
+        ctx.strokeStyle = 'rgba(94, 86, 233, 0.15)';
+        ctx.lineWidth = 2;
+        
+        for (let i = 0; i < lineCount; i++) {
+          const seed = i * 137.5;
+          const startX = (Math.sin(seed) * 0.4 + 0.5) * chaosCanvas.width;
+          const startY = (Math.cos(seed * 0.7) * 0.4 + 0.5) * chaosCanvas.height;
+          
+          const endX = (Math.sin(seed + ownCurrentTimeMs * 0.002) * 0.5 + 0.5) * chaosCanvas.width;
+          const endY = (Math.cos(seed * 0.7 + ownCurrentTimeMs * 0.0015) * 0.5 + 0.5) * chaosCanvas.height;
+          
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(endX, endY);
+          ctx.stroke();
+          
+          // Draw wandering points on the lines
+          const pointCount = 3;
+          for (let p = 0; p < pointCount; p++) {
+            const t = p / pointCount;
+            const px = startX + (endX - startX) * t;
+            const py = startY + (endY - startY) * t;
+            const radius = 1 + Math.sin(seed + ownCurrentTimeMs * 0.003 + p) * 0.8;
+            
+            ctx.fillStyle = `rgba(94, 86, 233, ${0.2 + progress * 0.3})`;
+            ctx.beginPath();
+            ctx.arc(px, py, radius, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        
+        // Speed increases toward the end to convey overwhelm
+        if (progress > 0.5) {
+          const chaosIntensity = (progress - 0.5) * 2;
+          ctx.fillStyle = `rgba(94, 86, 233, ${chaosIntensity * 0.08})`;
+          ctx.fillRect(0, 0, chaosCanvas.width, chaosCanvas.height);
+        }
+      });
+    }
+
+    // Add fade-in/fade-out keyframes
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes fade-out {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+  </script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+[
+  {
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "changes": [
+      {
+        "taskId": "stripe-explainer",
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nYour answer must name a specific product, API, architectural decision, or design philosophy — not a marketing position.",
+        "proposedChange": "**1. What is true about this brand that would be false about any competitor?**\n\nYour answer must name a specific product, API, architectural decision, or design philosophy — not a marketing position.\n\n**For developer/API brands specifically**: The differentiator is almost never a feature list (competitors copy features). Look for: the exact developer experience (show a real code snippet from their docs), the architectural bet they made (REST vs GraphQL, client vs server-side), the specific companies that chose them and why, or the philosophical stance that shapes their product decisions. For payment brands: '195 countries', 'fraud detection', 'PCI compliance' are table stakes — every processor claims these. Find the thing that would require a competitor to rebuild their entire product to match.",
+        "rationale": "The model listed generic fintech features because the skill didn't explicitly warn that capability lists are false differentiators for developer/API brands, nor did it require showing actual code or specific customer examples."
+      },
+      {
+        "taskId": "stripe-explainer",
+        "dimension": "omission",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**The viewer-state test**: If VIEWER STATE AT START and VIEWER STATE AT END are the same, the scene is not doing work. Cut it or change it until it does.",
+        "proposedChange": "After the viewer-state test paragraph, add:\n\n**The structural redundancy test**: If two adjacent scenes have the same format (e.g., both are feature lists, both are text-over-video, both enumerate capabilities), they are structurally redundant even if the content differs. Consolidate them or give each a distinct emotional/structural purpose. A scene showing 'what you'd have to build yourself' and a scene showing 'what the product handles' are structurally distinct; two scenes that both list product features are not.",
+        "rationale": "The model created two consecutive scenes that were both feature lists with emoji bullet points; a test specifically flagging structural redundancy between adjacent scenes would have caught this."
+      },
+      {
+        "taskId": "figma-brand-awareness",
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "missing",
+        "currentText": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)",
+        "proposedChange": "**Visual Identity:**\n- Color palette with exact hex codes — **these MUST appear in the final composition's CSS/Tailwind classes**\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)\n- Logo and brand marks — **must be downloaded and used, not replaced with generic shapes**\n\n**Enforcement:** If Phase 1 extracts hex codes #F24E1E, #A259FF, etc., the Phase 3 scenes MUST reference those exact values in `bg-[#F24E1E]`, `stroke: '#A259FF'`, etc. Generic blues/grays are a composition failure.",
+        "rationale": "The model extracted brand identity but never enforced its use in the actual composition—adding explicit enforcement language would prevent substitution with generic colors."
+      },
+      {
+        "taskId": "figma-brand-awareness",
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\"\n- Payment brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\"\n- Design tools: \"design and code together\", \"design faster\", \"real-time collaboration\"",
+        "proposedChange": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\"\n- Payment brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\"\n- Design tools: \"design and code together\", \"design faster\", \"real-time collaboration\", \"one place to design\", \"files keep you apart\"\n\n**Finding the real differentiator for design tools:** Ask: what architectural decision did this brand make that competitors avoided? For Figma: browser-native (no desktop app required), multiplayer as core architecture (not bolted on), Dev Mode as first-class feature. For Sketch: macOS-native, plugin ecosystem. The differentiator is in the *how*, not the *what*.",
+        "rationale": "The model used 'files keep you apart' which is category-level messaging—adding this exact phrase to the false differentiators list and providing architectural guidance would force deeper specificity."
+      },
+      {
+        "taskId": "figma-brand-awareness",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"",
+        "proposedChange": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"\n\nNot: \"Figma enables collaboration, so I'll show people working together\" (category stance).\nYes: \"Figma is browser-native multiplayer — the URL bar IS the product. So I'll show the browser chrome, the shareable URL, multiple named cursors designing simultaneously in one viewport.\"\n\n**The PoV must be visible in the actual composition.** If your structural constraint is 'multiplayer as architecture', the canvas must show multiple cursors with names. If it's 'browser-native', show the URL bar. Abstract geometric shapes do not embody a point of view.",
+        "rationale": "Adding a Figma-specific example and the enforcement clause 'visible in the actual composition' would prevent the model from claiming a PoV but then rendering generic abstractions."
+      },
+      {
+        "taskId": "vercel-launch",
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nYour answer must name a specific product, API, architectural decision, or design philosophy — not a marketing position. Marketing positions can be copied. Decisions cannot.\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nNot: \"They pioneered multiplayer design\" (competitors have since copied this — it no longer differentiates).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"\nYes: \"Their entire product is built on a single unified API — Connect, Radar, Terminal, and Billing all share the same objects.\"\nYes: \"They removed the 'new file' concept entirely — there are no files, only URLs.\"",
+        "proposedChange": "Add after the existing examples:\n\n**Platform/infrastructure brands require extra scrutiny.** If the differentiator is a capability (edge functions, instant deploys, preview URLs), ask: could a well-funded competitor ship this in 6 months? If yes, it's not structural. For Vercel specifically, the structural truths are: (1) they own Next.js and optimize the platform for it — no competitor can claim native framework integration at this level, (2) the Vercel triangle is a visual identity that appears in their CLI, dashboard, and brand — it's an ownable motif, (3) their specific edge network topology (name the regions, the latency numbers). Generic 'edge deployment' is not differentiating.",
+        "rationale": "The model found features (preview URLs, edge deployment) that are industry-standard rather than Vercel-specific; explicit guidance on platform brands and Vercel-specific examples would have forced deeper digging."
+      },
+      {
+        "taskId": "vercel-launch",
+        "dimension": "viewer_state",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "- VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]\n- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]",
+        "proposedChange": "Replace with:\n\n- VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]\n- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]\n- EMOTIONAL VALENCE: [Is this a positive, negative, or neutral beat? Mark P/N/X]\n\n**Emotional arc requirement**: A video must have at least one valence shift (N→P or P→N→P). If all scenes are positive (P→P→P→P), the arc is flat — there's no tension to resolve. Problem→Solution is the minimum viable arc, but predictable. Better: start in an unexpected emotional state (calm acceptance of a bad status quo, or already-deployed success) and reveal the contrast.",
+        "rationale": "The model produced a predictable Problem→Solution→Feature→CTA arc because nothing required valence tracking or non-obvious emotional structure."
+      },
+      {
+        "taskId": "vercel-launch",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "wrong_priority",
+        "currentText": "**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it.",
+        "proposedChange": "Replace with:\n\n**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it.\n\n**Single-claim rule**: A video argues ONE thing. Count the distinct claims in your scene plan. If you have more than one (e.g., 'fast' AND 'preview URLs' AND 'global edge' AND 'ship more'), you are making a brochure, not an argument. Choose the claim that only this brand can make, and make every scene serve that single claim. The other claims can appear as evidence for the main claim, but not as separate points.\n\n**Motion-text unity test**: For each scene, the canvas/animation concept and the text must argue the same thing. If the animation shows 'energy spreading' but the text says 'preview URLs for every PR,' they are not unified. Rewrite until motion and text are saying the same thing in different languages.",
+        "rationale": "The model's composition had strong motion concepts ('energy spreading') that didn't unify with the text claims because nothing enforced single-claim discipline or motion-text alignment."
+      },
+      {
+        "taskId": "notion-social",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\"\n- Payment brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\"\n- Design tools: \"design and code together\", \"design faster\", \"real-time collaboration\"",
+        "proposedChange": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\"\n- Payment brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\"\n- Design tools: \"design and code together\", \"design faster\", \"real-time collaboration\"\n- Productivity/workspace tools: \"unified workspace\", \"all your tools in one place\", \"replaces scattered tools\", \"single source of truth\", \"fragmented → unified\"\n\n**Productivity tool specifics to look for instead:**\n- Notion: blocks as primitive (composability), wiki-first (institutional memory), templates as culture\n- Coda: docs that act like apps, formulas everywhere\n- Linear: opinionated workflow, keyboard-first, zero configuration\n- Monday/Asana: workflow automation, status-board visualization",
+        "rationale": "The false differentiators list omits productivity tools entirely, so the model treats 'fragmented tools → unified workspace' as a valid differentiator when it's actually the category default shared by Notion, Coda, Monday, and Airtable."
+      },
+      {
+        "taskId": "supabase-product-demo",
+        "dimension": "omission",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "For each scene, use this template:\n\n```\nScene [N]: [Name] ([start]s-[end]s)\n- VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]\n- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]\n- PRIMARY VISUAL: [Main visual element - NOT just text]\n- MOTION/ANIMATION: [How it moves, what animates, specific CSS or frameTask approach]\n- VISUAL METAPHOR: [What concept this shows visually]\n- Text: [Minimal - only if essential]\n- JUSTIFICATION: [Why does this scene exist? What would be lost without it?]\n```",
+        "proposedChange": "For each scene, use this template:\n\n```\nScene [N]: [Name] ([start]s-[end]s)\n- VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]\n- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]\n- FORM: [Structural approach - must differ from adjacent scenes. Options: rapid sequence, code reveal, single hero image, split-screen comparison, canvas animation, UI walkthrough, text-only moment, etc.]\n- PRIMARY VISUAL: [Main visual element - NOT just text]\n- MOTION/ANIMATION: [How it moves, what animates, specific CSS or frameTask approach]\n- VISUAL METAPHOR: [What concept this shows visually]\n- Text: [Minimal - only if essential]\n- JUSTIFICATION: [Why does this scene exist? What would be lost without it?]\n```\n\n**Form variation rule**: No two adjacent scenes may share the same structural form. If Scene 2 uses a canvas animation, Scene 3 must use a different approach (code reveal, UI screenshot sequence, split-screen, etc.). Repeating the same form signals that the content could have been consolidated.",
+        "rationale": "Adding an explicit FORM field with a rule against repeating adjacent forms would force the model to vary scene structures rather than defaulting to the same label→headline→text→canvas template for every scene."
+      }
+    ]
+  },
+  {
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "changes": [
+      {
+        "taskId": "stripe-explainer",
+        "dimension": "motion",
+        "severity": "major",
+        "cause": "wrong_priority",
+        "currentText": "**A `<canvas>` element with no `<script>` is a broken composition.** If you include a canvas, you must include the `addFrameTask` implementation. If you are not going to write the script, use a CSS animation instead.",
+        "proposedChange": "In Phase 4 (Asset Requirements) of SKILL.md, add as the first bullet under **Motion Graphics:**:\n\n- **Canvas completeness check (MANDATORY)**: Every `<canvas>` element in your output MUST have a complete, working `addFrameTask` script immediately following it. A canvas without its script is a broken composition that will render as a blank rectangle. If you cannot write the full implementation, use CSS animations instead. Before finalizing, verify: count your `<canvas>` elements, count your `addFrameTask` calls — they must match.",
+        "rationale": "The warning exists in composition-patterns.md but the model truncated the script anyway; moving this to a mandatory checklist in the main SKILL.md output phase would force verification before completion."
+      },
+      {
+        "taskId": "notion-social",
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "**Canvas API Opportunities** (use `frameTask` for generative graphics):\n- Particle systems (energy, activity)\n- Bezier curves (chaos, complexity, connections)\n- Grid multiplication (scale, quantity)\n- Orbital motion (energy, dynamism)\n- Shape morphing (transformation)",
+        "proposedChange": "**Canvas API Opportunities** (use `frameTask` for generative graphics):\n- Particle systems (energy, activity)\n- Bezier curves (chaos, complexity, connections)\n- Grid multiplication (scale, quantity)\n- Orbital motion (energy, dynamism)\n- Shape morphing (transformation)\n\n**CRITICAL: Product-demo and brand videos must use recognizable product visuals.**\nGeneric shapes (rectangles for documents, circles for nodes) are not product visuals—they're clip art. Before drawing anything:\n1. Identify the product's signature UI elements (e.g., Notion's block handles, sidebar, page icons; Linear's issue cards; Figma's canvas with multiplayer cursors)\n2. Render those specific elements, not abstract representations\n3. If you cannot identify distinctive UI, use styled HTML/CSS mockups of the actual interface instead of canvas\n\nA canvas animation of \"rectangles representing documents\" is decoration. A canvas animation of Notion's actual page tree with toggle blocks expanding is product visualization.",
+        "rationale": "The current guidance lists abstract canvas patterns without requiring the model to use the actual product's visual language, leading to generic rectangles/circles instead of Notion's distinctive UI elements."
+      }
+    ]
+  }
+]

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vercel Launch Video</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@editframe/elements/dist/styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+      background: #000;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(24px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+      }
+    }
+
+    @keyframes slideDown {
+      from {
+        transform: translateY(-24px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes scaleIn {
+      from {
+        transform: scale(0.92);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .vercel-black {
+      background: #000;
+    }
+
+    .vercel-white {
+      color: #fff;
+    }
+
+    .accent-cyan {
+      color: #0ea5e9;
+    }
+
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <ef-timegroup mode="sequence" overlap="0.8s" class="w-[1024px] h-[576px] bg-black">
+    <!-- Scene 1: The Problem - Deployment Friction (0-4s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 0.8s fadeOut var(--ef-transition-out-start) both">
+      <canvas id="deployment-canvas" class="absolute inset-0 w-full h-full bg-black"></canvas>
+      <ef-text class="absolute bottom-12 left-8 text-white text-2xl font-bold"
+        style="animation: 0.5s slideUp both 0.8s">
+        Deployment takes minutes
+      </ef-text>
+    </ef-timegroup>
+
+    <!-- Scene 2: The Solution Revealed - Instant Deploy (4-8s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 0.8s fadeIn both">
+      <div class="absolute inset-0 bg-gradient-to-br from-black via-slate-900 to-black"></div>
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+        <ef-text class="text-white text-6xl font-black"
+          style="animation: 0.6s scaleIn both">
+          <span class="accent-cyan">→</span>
+        </ef-text>
+        <ef-text class="text-white text-4xl font-bold mt-6"
+          style="animation: 0.6s slideUp both 0.3s">
+          <span class="accent-cyan">0</span>ms
+        </ef-text>
+      </div>
+      <ef-text class="absolute bottom-12 left-8 text-white text-xl"
+        style="animation: 0.5s slideUp both 0.6s">
+        Ship instantly from git
+      </ef-text>
+    </ef-timegroup>
+
+    <!-- Scene 3: Preview URLs - Every Push (8-12s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 0.8s fadeIn both">
+      <div class="absolute inset-0 bg-gradient-to-br from-slate-900 via-black to-black"></div>
+      <canvas id="preview-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      <ef-text class="absolute bottom-12 left-8 text-white text-2xl font-bold"
+        style="animation: 0.5s slideUp both 0.8s">
+        Preview on every push
+      </ef-text>
+    </ef-timegroup>
+
+    <!-- Scene 4: The Vercel Advantage - Zero Config (12-15s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 0.8s fadeIn both, 0.8s fadeOut calc(var(--ef-duration) - 0.8s) both">
+      <div class="absolute inset-0 bg-black"></div>
+      <div class="absolute inset-0 flex flex-col items-center justify-center">
+        <ef-text class="text-white text-5xl font-black text-center"
+          style="animation: 0.6s slideUp both 0.2s">
+          No config. No friction.
+        </ef-text>
+        <ef-text class="text-cyan-500 text-lg mt-4"
+          style="animation: 0.5s slideUp both 0.5s">
+          Just ship.
+        </ef-text>
+      </div>
+    </ef-timegroup>
+  </ef-timegroup>
+
+  <script>
+    // Scene 1: Deployment Friction Canvas
+    const deploymentCanvas = document.getElementById('deployment-canvas');
+    if (deploymentCanvas) {
+      const scene1Tg = deploymentCanvas.closest('ef-timegroup');
+      
+      scene1Tg.initializer = (instance) => {
+        return instance.addFrameTask((info) => {
+          const canvas = instance.querySelector('#deployment-canvas');
+          if (!canvas) return;
+          
+          const ctx = canvas.getContext('2d');
+          canvas.width = canvas.offsetWidth;
+          canvas.height = canvas.offsetHeight;
+          
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          const progress = info.ownCurrentTimeMs / info.durationMs;
+          const cx = canvas.width / 2;
+          const cy = canvas.height / 2;
+          
+          // Draw accumulating rectangles representing deployment steps
+          const stepCount = Math.floor(progress * 8);
+          
+          for (let i = 0; i < stepCount; i++) {
+            const delay = i * 0.12;
+            const stepProgress = Math.max(0, Math.min(1, progress - delay));
+            
+            const y = cy - 100 + (i * 35);
+            const width = stepProgress * 300;
+            const opacity = Math.max(0.2, 1 - stepProgress * 0.3);
+            
+            ctx.fillStyle = `rgba(148, 163, 184, ${opacity})`;
+            ctx.fillRect(cx - 150, y, width, 24);
+            
+            // Add step labels
+            ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.7})`;
+            ctx.font = '12px system-ui';
+            ctx.fillText(['Build', 'Test', 'Bundle', 'Upload', 'Configure', 'Deploy', 'Verify', 'Monitor'][i], cx - 140, y + 16);
+          }
+          
+          // Add "minutes" text that grows
+          const minutesOpacity = Math.max(0, progress - 0.7);
+          ctx.fillStyle = `rgba(255, 255, 255, ${minutesOpacity})`;
+          ctx.font = 'bold 24px system-ui';
+          ctx.textAlign = 'center';
+          ctx.fillText('Takes minutes...', cx, cy + 150);
+        });
+      };
+    }
+
+    // Scene 3: Preview URLs Canvas - showing distributed URLs
+    const previewCanvas = document.getElementById('preview-canvas');
+    if (previewCanvas) {
+      const scene3Tg = previewCanvas.closest('ef-timegroup');
+      
+      scene3Tg.initializer = (instance) => {
+        return instance.addFrameTask((info) => {
+          const canvas = instance.querySelector('#preview-canvas');
+          if (!canvas) return;
+          
+          const ctx = canvas.getContext('2d');
+          canvas.width = canvas.offsetWidth;
+          canvas.height = canvas.offsetHeight;
+          
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          const progress = info.ownCurrentTimeMs / info.durationMs;
+          const cx = canvas.width / 2;
+          const cy = canvas.height / 2;
+          
+          // Draw branching URLs - each git push creates a new branch
+          const branches = Math.floor(progress * 12);
+          
+          for (let i = 0; i < branches; i++) {
+            const angle = (i / 12) * Math.PI * 2;
+            const distance = 80 + Math.sin(i + progress * Math.PI) * 40;
+            
+            const x = cx + Math.cos(angle) * distance;
+            const y = cy + Math.sin(angle) * distance;
+            
+            // Draw connecting line
+            ctx.strokeStyle = `rgba(14, 165, 233, ${0.3 + progress * 0.4})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            
+            // Draw URL node
+            const nodeRadius = 8 + Math.sin(i * 0.7 + progress * Math.PI) * 4;
+            ctx.fillStyle = `rgba(14, 165, 233, ${0.5 + progress * 0.5})`;
+            ctx.beginPath();
+            ctx.arc(x, y, nodeRadius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add URL label for active nodes
+            if (i < branches * 0.7) {
+              ctx.fillStyle = `rgba(255, 255, 255, ${(progress - 0.3) * 0.5})`;
+              ctx.font = '10px monospace';
+              ctx.textAlign = 'center';
+              ctx.fillText(`v-${String(i + 1).padStart(3, '0')}.vercel.app`, x, y + 24);
+            }
+          }
+          
+          // Central deployment indicator
+          ctx.fillStyle = `rgba(14, 165, 233, ${progress * 0.8})`;
+          ctx.beginPath();
+          ctx.arc(cx, cy, 12, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Pulse ring
+          ctx.strokeStyle = `rgba(14, 165, 233, ${Math.max(0, 0.6 - progress * 0.6)})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          const pulseRadius = 20 + progress * 60;
+          ctx.arc(cx, cy, pulseRadius, 0, Math.PI * 2);
+          ctx.stroke();
+        });
+      };
+    }
+  </script>
+</body>
+</html>

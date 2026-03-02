@@ -1,0 +1,53 @@
+{
+  "taskId": "figma-brand-awareness",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:15:15.842Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is the primary vehicle for meaning. Each scene uses addFrameTask with procedural canvas animations that directly illustrate the conceptual arc: isolated circles with broken connections → converging nodes → multiplayer cursors. The animation IS the argument about collaboration.",
+      "evidence": "Scene 1: 'Draw failed connection lines that never meet' with `ctx.setLineDash([4, 4])`. Scene 2: `nodes.push({ x, y })` converging with `(1 - progress * 0.4)`. Scene 3: Cursors moving in synchronized orbits. Text uses `split='word'` with staggered delays: `animation-delay: calc(var(--ef-word-index) * 100ms)`"
+    },
+    "specificity": {
+      "score": 3,
+      "rationale": "The composition captures Figma's core proposition (real-time collaboration, browser-based) and uses appropriate visual metaphors for multiplayer design. However, the actual Figma UI, specific features (FigJam, Dev Mode, Components), or distinctive visual identity are absent.",
+      "evidence": "Specific truths present: 'Live. Real. In the browser.', 'No plugins. No file syncing.' Generic elements: no Figma logo rendered, no purple/blue brand colors in canvas animations, no representation of actual Figma interface patterns. Competitor like Miro or Canva could claim similar collaboration benefits."
+    },
+    "viewer_state": {
+      "score": 4,
+      "rationale": "Clear emotional arc: frustration (isolation) → hope (connection forming) → excitement (real-time magic) → confidence (this is the future) → action (CTA). Each scene builds on the previous state, and the canvas animations reinforce the emotional progression.",
+      "evidence": "Scene 1: 'Waiting. Rework. Friction.' (pain). Scene 2: 'All at once. All together.' (relief). Scene 3: dark bg with glowing cursors creates energy shift. Scene 4: gradient bg signals transformation. However, the final CTA scene reverts to static white without carrying the momentum forward."
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "The POV is clear: 'design isolation is the enemy, collaboration is the solution.' The composition commits to showing the problem before the solution. However, this perspective is standard Figma marketing messaging rather than a fresh authorial take.",
+      "evidence": "Opening with 'Design alone is over' establishes a firm stance. The canvas animations showing disconnected → connected nodes embody this view. But the structure (problem → solution → features → CTA) is conventional. No surprising juxtaposition or unexpected angle."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Five scenes for 30 seconds is reasonable, but Scene 4 ('This is how teams design now') feels redundant after Scene 3's 'Live. Real. In the browser.' Both communicate 'this is modern/real-time.' Scene 4's canvas is set to opacity-30, suggesting even the author wasn't sure what it should contribute.",
+      "evidence": "Scene 3 text: 'Live. Real. In the browser.' Scene 4 text: 'This is how teams design now' — both make the same claim about modernity/presence. The future-canvas uses `opacity-30` and the scene lacks a supporting subtitle, unlike others. Cutting Scene 4 and extending Scene 3 or the CTA would tighten the arc."
+    }
+  },
+  "overall": 3.6,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "Canvas animations use generic circles and nodes rather than anything visually tied to Figma's identity. No Figma logo, no signature purple, no representation of actual UI elements like frames, components, or the distinctive cursor avatars.",
+      "improvement": "Render stylized Figma frames or component symbols in the canvas. Use Figma's actual cursor avatar shapes (rounded rectangles with names). Incorporate the Figma purple (#A259FF) or orange (#FF7262) in the multiplayer scene. Reference specific features like 'Prototype. Inspect. Dev Mode.'"
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "minor",
+      "observation": "The composition faithfully reproduces Figma's standard marketing narrative (isolation bad, collaboration good) without adding an authorial perspective that makes this video uniquely valuable.",
+      "improvement": "Take a more specific stance: perhaps show how Figma changes the designer-developer relationship specifically, or focus on a moment of creative breakthrough that only happens in real-time. Make the viewer see something true they hadn't articulated before."
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "Scene 4 ('This is how teams design now') is thematically redundant with Scene 3 and lacks visual substance — the canvas is at 30% opacity with no described animation completing.",
+      "improvement": "Merge Scenes 3 and 4 into a single 8-second scene, or give Scene 4 a distinct purpose: perhaps showing the output (shipped products, design systems) rather than restating the 'real-time' message. Alternatively, use Scene 4 to acknowledge skeptics before the CTA."
+    }
+  ]
+}

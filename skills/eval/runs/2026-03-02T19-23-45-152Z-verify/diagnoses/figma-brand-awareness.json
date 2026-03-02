@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The logo is fabricated colored circles rather than Figma's actual distinctive logo. The tagline 'The collaborative design platform' and 'Design • Prototype • Build' are generic enough for Sketch, Adobe XD, or Framer.",
+      "improvement": "Use Figma's actual logo or a more accurate representation of its four-node structure. Reference specific Figma features like Dev Mode, Variables, or FigJam. Include Figma's actual brand colors (#F24E1E, #FF7262, #A259FF, #1ABCFE, #0ACF83) rather than approximations."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Brand-Specific Visual Assets (MANDATORY):**\nBefore proceeding to creative brief, identify and note:\n- The brand's logo form and any signature visual element\n- 3-5 product shots or hero images from the website\n- Any proprietary visual elements (icons, patterns, illustrations unique to this brand)\n\nThese must appear in the final composition.",
+    "cause": "present_wrong",
+    "proposedChange": "**Brand-Specific Visual Assets (MANDATORY):**\nBefore proceeding to creative brief, identify and note:\n- The brand's **exact logo** — download or screenshot it from the website. Do NOT recreate, approximate, or stylize logos with generic shapes (circles, squares, abstract marks). If you cannot obtain the actual logo asset, use a text-only treatment of the brand name in their exact typography.\n- The brand's **exact hex color codes** extracted from CSS inspection — do not approximate colors visually\n- 3-5 product shots or hero images from the website\n- Any proprietary visual elements (icons, patterns, illustrations unique to this brand)\n\nThese must appear in the final composition. **Fabricated or approximated logos are prohibited** — a generic shape arrangement that 'represents' a logo is not the logo.",
+    "rationale": "The model created colored circles instead of Figma's actual logo because the guidance says to identify 'the brand's logo form' without explicitly prohibiting fabrication or approximation of logos."
+  },
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The logo is fabricated colored circles rather than Figma's actual distinctive logo. The tagline 'The collaborative design platform' and 'Design • Prototype • Build' are generic enough for Sketch, Adobe XD, or Framer.",
+      "improvement": "Use Figma's actual logo or a more accurate representation of its four-node structure. Reference specific Figma features like Dev Mode, Variables, or FigJam. Include Figma's actual brand colors (#F24E1E, #FF7262, #A259FF, #1ABCFE, #0ACF83) rather than approximations."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n...\n- Design tools: \"design and code together\", \"design faster\", \"multiplayer design\", \"browser-based\", \"files keep you apart\"",
+    "cause": "missing",
+    "proposedChange": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n...\n- Design tools: \"design and code together\", \"design faster\", \"multiplayer design\", \"browser-based\", \"files keep you apart\", \"collaborative design platform\", \"design • prototype • build\", \"design to development\"\n\n**Taglines that are category descriptions, not brand truths:**\nPhrases like \"The collaborative design platform\" or \"Design • Prototype • Build\" describe the category, not the brand. These could appear on any competitor's homepage. Do not use category-level taglines in compositions — find the specific claim only this brand makes.",
+    "rationale": "The model used 'The collaborative design platform' and 'Design • Prototype • Build' because while the skill lists false differentiators, it doesn't explicitly flag that generic category taglines should be rejected even when they appear on the brand's own website."
+  },
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The logo is fabricated colored circles rather than Figma's actual distinctive logo. The tagline 'The collaborative design platform' and 'Design • Prototype • Build' are generic enough for Sketch, Adobe XD, or Framer.",
+      "improvement": "Use Figma's actual logo or a more accurate representation of its four-node structure. Reference specific Figma features like Dev Mode, Variables, or FigJam. Include Figma's actual brand colors (#F24E1E, #FF7262, #A259FF, #1ABCFE, #0ACF83) rather than approximations."
+    },
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "currentText": "- Figma (URL-as-file, multiplayer cursors): There are no files — just URLs. The canvas shows multiple named cursors (with real names like 'Sarah', 'Marcus') moving simultaneously on the same frame. The visual metaphor is the cursor cluster, not abstract collaboration dots. Show the actual Figma component structure: frames nested in frames, the layers panel hierarchy, the distinctive component instance diamond icon. Generic rectangles could be any design tool; the nested frame structure with component instances is Figma's.",
+    "cause": "wrong_priority",
+    "proposedChange": "- Figma (URL-as-file, multiplayer cursors): There are no files — just URLs. The canvas shows multiple named cursors (with real names like 'Sarah', 'Marcus') moving simultaneously on the same frame. The visual metaphor is the cursor cluster, not abstract collaboration dots. Show the actual Figma component structure: frames nested in frames, the layers panel hierarchy, the distinctive component instance diamond icon. Generic rectangles could be any design tool; the nested frame structure with component instances is Figma's. **Figma's brand colors are #F24E1E (red-orange), #FF7262 (coral), #A259FF (purple), #1ABCFE (cyan), #0ACF83 (green) — use these exact hex codes, not approximations. The Figma logo is four overlapping nodes forming a specific geometric pattern — do not substitute colored circles or abstract shapes.**",
+    "rationale": "The model used approximated colors because the Figma-specific guidance in composition-patterns.md discusses visual metaphors but doesn't specify the exact brand colors or warn against logo approximation."
+  }
+]

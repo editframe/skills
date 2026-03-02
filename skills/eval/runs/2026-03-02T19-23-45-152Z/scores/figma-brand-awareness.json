@@ -1,0 +1,47 @@
+{
+  "taskId": "figma-brand-awareness",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-03-02T19:24:37.300Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural with addFrameTask driving procedural canvas animations, text splitting with word-level stagger, and time-synchronized animations. The fragmentation and multiplayer canvases use progress-based rendering that communicates meaning.",
+      "evidence": "addFrameTask with `const progress = Math.min(info.ownCurrentTimeMs / 8000, 1)` drives fragmentation visualization. Multiplayer scene uses `const sceneProgress = (info.ownCurrentTimeMs - 15000) / 9000` for converging cursors. Text uses `animation-delay: calc(var(--ef-word-index) * 100ms)` for word-level stagger."
+    },
+    "specificity": {
+      "score": 3,
+      "rationale": "Several Figma-specific truths are present: the URL-based collaboration model, real-time multiplayer editing, and the 'no merge conflicts' value proposition. However, the execution could apply to any collaborative design tool without major changes.",
+      "evidence": "Scene 2 shows 'figma.com/file/xyz' URL pattern. Scene 3 mentions 'Real-time. Same URL. No merge conflicts.' which is specifically Figma's pitch. Blue color palette aligns with Figma brand. However, 'Files. Sync. Versions. Confusion.' is generic to any collaboration problem."
+    },
+    "viewer_state": {
+      "score": 4,
+      "rationale": "Clear emotional arc: frustration (fragmented chaos) → revelation (one URL simplicity) → belonging (multiplayer collaboration) → action (CTA). Each scene builds on the previous state change.",
+      "evidence": "Scene 1 creates anxiety with 'Designing alone, together' and chaotic canvas fragments. Scene 2 resolves with 'One URL' revelation in calm blue. Scene 3 builds community with converging cursors and emoji avatars. Scene 4 delivers confident CTA 'Design together. No friction.'"
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "The composition commits to the perspective that collaboration friction is the core problem and URL-sharing is the elegant solution. This is a clear point of view, but it's essentially Figma's own marketing message rather than an author's unique interpretation.",
+      "evidence": "The problem-solution arc (fragmentation → URL → multiplayer → CTA) is the standard Figma pitch. The choice to visualize chaos with scattered version labels ('v' + Math.floor(Math.random() * 5)) shows perspective on the problem, but doesn't reveal deeper authorial insight."
+    },
+    "omission": {
+      "score": 4,
+      "rationale": "Four scenes, each with a distinct purpose in the arc. No padding detected. Scene durations are proportionate to their narrative weight (longer for the core multiplayer truth, shorter for CTA).",
+      "evidence": "Scene 1 (8s): Problem setup. Scene 2 (7s): Solution reveal. Scene 3 (9s): Core value demonstration. Scene 4 (6s): CTA. Total 30s with no redundant messaging. Each scene introduces new information or emotional state."
+    }
+  },
+  "overall": 3.6,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition uses Figma's URL and brand colors but the visual metaphors (scattered rectangles, converging dots) could represent any collaborative tool. The 'fragmentation' canvas shows generic version labels, not Figma-specific design artifacts.",
+      "improvement": "Show Figma-specific elements: actual component instances, vector shapes, the distinctive pink/purple/blue/green/orange Figma logo colors in the fragments, or simulate the actual Figma cursor with name labels. Make the URL scene show the actual Figma file browser interface patterns."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "minor",
+      "observation": "The composition recites Figma's marketing positioning faithfully but doesn't reveal why this matters beyond convenience. It's Figma's POV, not an author's interpretation of Figma.",
+      "improvement": "Take a stance on what Figma enables that matters: creative intimacy, democratized design, the death of the designer-as-gatekeeper. Show a specific moment of collaboration that couldn't happen without real-time editing, not just abstract convergence."
+    }
+  ]
+}

@@ -1,0 +1,216 @@
+<ef-timegroup mode="sequence" overlap="0.8s" class="w-[1920px] h-[1080px]">
+    <!-- SCENE 1: Hook - The Problem (0s-10s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full dark-bg flex flex-col items-center justify-center" style="animation: 0.8s fadeOut var(--ef-transition-out-start) both">
+      <canvas id="chaos-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80"></div>
+      <ef-text split="word" class="relative text-white-primary text-7xl font-bold text-center max-w-4xl z-10"
+        style="animation: 0.6s slideUp both; animation-delay: calc(var(--ef-word-index) * 100ms)">
+        Payment infrastructure is fragmented
+      </ef-text>
+      <ef-text class="relative text-white-secondary text-2xl mt-8 z-10"
+        style="animation: 0.5s slideUp 1.2s both">
+        Multiple integrations. Multiple providers. One headache.
+      </ef-text>
+    </ef-timegroup>
+
+    <!-- SCENE 2: The Unified Platform (10s-25s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full stripe-dark-blue flex flex-col items-center justify-center" style="animation: 0.8s fadeIn both; animation: 0.8s fadeOut var(--ef-transition-out-start) both">
+      <canvas id="unified-canvas" class="absolute inset-0 w-full h-full opacity-30"></canvas>
+      <div class="relative z-10 w-full h-full flex flex-col items-center justify-center">
+        <ef-text split="word" class="text-white-primary text-6xl font-bold text-center mb-12"
+          style="animation: 0.6s slideUp both; animation-delay: calc(var(--ef-word-index) * 100ms)">
+          One unified API
+        </ef-text>
+        
+        <div class="grid grid-cols-3 gap-16 w-full px-32">
+          <div class="flex flex-col items-center"
+            style="animation: 0.7s slideInLeft 1.5s both">
+            <div class="w-24 h-24 rounded-2xl bg-blue-500/30 border-2 border-blue-400 flex items-center justify-center mb-6">
+              <span class="text-white-primary text-3xl">→</span>
+            </div>
+            <ef-text class="text-white-primary text-2xl font-semibold text-center">Payments</ef-text>
+            <p class="text-white-secondary text-lg mt-3 text-center">Accept from anywhere</p>
+          </div>
+          
+          <div class="flex flex-col items-center"
+            style="animation: 0.7s slideInLeft 1.7s both">
+            <div class="w-24 h-24 rounded-2xl bg-blue-500/30 border-2 border-blue-400 flex items-center justify-center mb-6">
+              <span class="text-white-primary text-3xl">⇄</span>
+            </div>
+            <ef-text class="text-white-primary text-2xl font-semibold text-center">Payouts</ef-text>
+            <p class="text-white-secondary text-lg mt-3 text-center">Send money globally</p>
+          </div>
+          
+          <div class="flex flex-col items-center"
+            style="animation: 0.7s slideInLeft 1.9s both">
+            <div class="w-24 h-24 rounded-2xl bg-blue-500/30 border-2 border-blue-400 flex items-center justify-center mb-6">
+              <span class="text-white-primary text-3xl">⚙</span>
+            </div>
+            <ef-text class="text-white-primary text-2xl font-semibold text-center">Billing</ef-text>
+            <p class="text-white-secondary text-lg mt-3 text-center">Recurring at scale</p>
+          </div>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- SCENE 3: How It Works - Data Flow (25s-40s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full dark-bg flex flex-col items-center justify-center" style="animation: 0.8s fadeIn both; animation: 0.8s fadeOut var(--ef-transition-out-start) both">
+      <canvas id="flow-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+      <div class="relative z-10 text-center">
+        <ef-text class="text-white-primary text-5xl font-bold mb-6"
+          style="animation: 0.6s slideUp both">
+          Infrastructure that scales invisibly
+        </ef-text>
+        <ef-text class="text-white-secondary text-xl max-w-2xl mx-auto"
+          style="animation: 0.5s slideUp 0.4s both">
+          Stripe handles the complexity so your business doesn't have to. From the first transaction to millions.
+        </ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- SCENE 4: Trust & Scale (40s-50s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full stripe-blue flex flex-col items-center justify-center relative overflow-hidden" style="animation: 0.8s fadeIn both; animation: 0.8s fadeOut var(--ef-transition-out-start) both">
+      <div class="absolute inset-0 opacity-10">
+        <canvas id="trust-canvas" class="w-full h-full"></canvas>
+      </div>
+      
+      <div class="relative z-10 text-center">
+        <ef-text class="text-white-primary text-6xl font-bold mb-8"
+          style="animation: 0.6s slideUp both">
+          Trusted by millions
+        </ef-text>
+        
+        <div class="flex gap-12 justify-center mb-12"
+          style="animation: 0.5s slideUp 0.8s both">
+          <div class="text-center">
+            <div class="text-5xl font-bold text-white-primary mb-2">$2T+</div>
+            <p class="text-white-secondary text-lg">Volume processed</p>
+          </div>
+          <div class="w-px bg-white-secondary/30"></div>
+          <div class="text-center">
+            <div class="text-5xl font-bold text-white-primary mb-2">250+</div>
+            <p class="text-white-secondary text-lg">Countries supported</p>
+          </div>
+          <div class="w-px bg-white-secondary/30"></div>
+          <div class="text-center">
+            <div class="text-5xl font-bold text-white-primary mb-2">99.99%</div>
+            <p class="text-white-secondary text-lg">Platform uptime</p>
+          </div>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- SCENE 5: CTA (50s-60s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full dark-bg flex flex-col items-center justify-center relative" style="animation: 0.8s fadeIn both">
+      <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent"></div>
+      <div class="relative z-10 text-center">
+        <ef-text class="text-white-primary text-6xl font-bold mb-6"
+          style="animation: 0.7s scaleIn both">
+          Build your payments system
+        </ef-text>
+        <ef-text class="text-white-secondary text-2xl mb-12"
+          style="animation: 0.5s slideUp 0.5s both">
+          with Stripe's unified platform
+        </ef-text>
+        
+        <div class="flex gap-6 justify-center"
+          style="animation: 0.5s slideUp 0.8s both">
+          <div class="px-8 py-4 bg-blue-600 text-white-primary rounded-lg font-semibold text-lg hover:bg-blue-700 cursor-pointer">
+            Start for free
+          </div>
+          <div class="px-8 py-4 border-2 border-white-primary text-white-primary rounded-lg font-semibold text-lg hover:bg-white-primary/10 cursor-pointer">
+            View docs
+          </div>
+        </div>
+
+        <ef-text class="text-white-secondary text-sm mt-8"
+          style="animation: 0.4s fadeIn 1.2s both">
+          No credit card required
+        </ef-text>
+      </div>
+    </ef-timegroup>
+  </ef-timegroup>
+
+  <script>
+    // Scene 1: Chaos canvas - fragmented payment systems
+    function drawChaosCanvas() {
+      const canvas = document.getElementById('chaos-canvas');
+      const ctx = canvas.getContext('2d');
+      const container = canvas.parentElement;
+      
+      canvas.width = container.offsetWidth;
+      canvas.height = container.offsetHeight;
+
+      const scene1 = document.querySelector('ef-timegroup');
+      const baseTimegroup = scene1.querySelector('ef-timegroup');
+      
+      if (baseTimegroup && baseTimegroup.initializer === undefined) {
+        baseTimegroup.initializer = (instance) => {
+          return instance.addFrameTask((info) => {
+            canvas.width = container.offsetWidth;
+            canvas.height = container.offsetHeight;
+            const progress = info.ownCurrentTimeMs / info.durationMs;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw tangled payment connections - chaotic, overlapping
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const connCount = Math.floor(progress * 40) + 15;
+            
+            for (let i = 0; i < connCount; i++) {
+              const seed = i * 137.5;
+              const startAngle = (i / connCount) * Math.PI * 2;
+              const endAngle = (i / connCount) * Math.PI * 2 + Math.sin(seed) * Math.PI;
+              
+              const startRadius = 150 + Math.sin(seed + info.ownCurrentTimeMs * 0.0005) * 60;
+              const endRadius = 200 + Math.cos(seed + info.ownCurrentTimeMs * 0.0005) * 80;
+              
+              const x1 = centerX + Math.cos(startAngle) * startRadius;
+              const y1 = centerY + Math.sin(startAngle) * startRadius;
+              const x2 = centerX + Math.cos(endAngle) * endRadius;
+              const y2 = centerY + Math.sin(endAngle) * endRadius;
+              
+              ctx.beginPath();
+              ctx.moveTo(x1, y1);
+              ctx.lineTo(x2, y2);
+              ctx.strokeStyle = `rgba(0, 102, 255, ${0.1 + progress * 0.3})`;
+              ctx.lineWidth = 1.5;
+              ctx.stroke();
+            }
+            
+            // Draw nodes
+            for (let i = 0; i < connCount / 3; i++) {
+              const seed = i * 137.5;
+              const angle = (i / (connCount / 3)) * Math.PI * 2;
+              const radius = 150 + Math.sin(seed + info.ownCurrentTimeMs * 0.0005) * 60;
+              const x = centerX + Math.cos(angle) * radius;
+              const y = centerY + Math.sin(angle) * radius;
+              
+              ctx.beginPath();
+              ctx.arc(x, y, 4 + Math.sin(seed) * 2, 0, Math.PI * 2);
+              ctx.fillStyle = `rgba(0, 102, 255, ${0.3 + progress * 0.5})`;
+              ctx.fill();
+            }
+          });
+        };
+      }
+    }
+
+    // Scene 2: Unified platform canvas - converging to center
+    function drawUnifiedCanvas() {
+      const canvas = document.getElementById('unified-canvas');
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d');
+      const container = canvas.parentElement;
+      
+      canvas.width = container.offsetWidth;
+      canvas.height = container.offsetHeight;
+
+      const allTimegroups = document.querySelectorAll('ef-timegroup');
+      let sceneIndex = 0;
+      for (let i = 0; i < allTimegroups.length; i++) {
+        if (allTimegroups[i].querySelector('#unified-canvas')) {
+          const tg = allTimegroups[i].querySelector('ef-timegroup

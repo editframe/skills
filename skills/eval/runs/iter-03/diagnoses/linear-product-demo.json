@@ -1,0 +1,58 @@
+[
+  {
+    "taskId": "linear-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic 'chaos to order' visuals and claims that any PM tool could make. The canvas animations show abstract tangles and DAGs rather than anything recognizably Linear.",
+      "improvement": "Show Linear's actual UI elements: the issue sidebar, the keyboard command palette opening, the specific way issues flow through statuses. Use Linear's purple (#5E6AD2) not generic blue. Reference specific Linear features like Cycles, Roadmaps, or GitHub sync."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)",
+    "cause": "missing",
+    "proposedChange": "**Visual Identity:**\n- Color palette with exact hex codes — **use these exact colors in the composition, not approximations**\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)\n- **Product UI elements**: Screenshot or describe 3-5 distinctive UI patterns from the actual product (sidebars, command palettes, specific workflows). These must appear in the composition — abstract representations of 'the product' are not acceptable.",
+    "rationale": "The model used generic blue and abstract DAGs because the skill never required extracting and using actual product UI elements and exact brand colors in the composition."
+  },
+  {
+    "taskId": "linear-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic 'chaos to order' visuals and claims that any PM tool could make. The canvas animations show abstract tangles and DAGs rather than anything recognizably Linear.",
+      "improvement": "Show Linear's actual UI elements: the issue sidebar, the keyboard command palette opening, the specific way issues flow through statuses. Use Linear's purple (#5E6AD2) not generic blue. Reference specific Linear features like Cycles, Roadmaps, or GitHub sync."
+    },
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "currentText": "**The motion must be semantically connected to the specific product.** Generic particles or bezier curves say nothing. The form of the animation should demonstrate what is true about this brand and false about others:\n- Stripe: money moving without friction → particles that pass through each other without collision\n- Linear: work resolved without ambiguity → a tangled graph that converges to a clean DAG\n- Vercel: deploys as instant as saving a file → a ripple that expands to the edges the moment it starts",
+    "cause": "present_wrong",
+    "proposedChange": "**The motion must be semantically connected to the specific product.** Generic particles or bezier curves say nothing. The form of the animation should demonstrate what is true about this brand and false about others.\n\n**Bad examples (too abstract):**\n- Linear: a tangled graph that converges to a clean DAG — this is a visual metaphor anyone could use for 'order from chaos'\n- Stripe: particles that pass through each other — this could represent any frictionless system\n\n**Good examples (product-specific):**\n- Linear: Animate the actual Linear issue card with its status dot changing from yellow to green, the keyboard shortcut 'Cmd+K' appearing and resolving an action\n- Stripe: Show a Stripe Dashboard payment row appearing with the green 'Succeeded' badge, the actual checkout form completing\n- Vercel: The actual deployment progress bar filling, the preview URL appearing letter by letter\n\n**The test:** Could you swap the brand name and the animation would still make sense? If yes, it's too abstract. Show the product's actual interface elements, not metaphors for what the product does.",
+    "rationale": "The current examples actually encourage abstract metaphors ('tangled graph → DAG') rather than requiring actual product UI, which led the model to create generic visualizations."
+  },
+  {
+    "taskId": "linear-product-demo",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition adopts Linear's marketing language ('Ship faster', 'removes friction') without interpreting it. The form doesn't argue anything the words don't already say.",
+      "improvement": "Commit to a perspective: Is Linear about aesthetic discipline? Developer respect? The violence of speed? Let the visual choices argue something specific—e.g., if Linear is about calm focus, the composition should embody calm even while showing speed, not just claim it reduces chaos."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"",
+    "cause": "missing",
+    "proposedChange": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\n**The form must argue, not illustrate.** If your composition shows chaos then shows order, you've illustrated the marketing copy. If your composition *embodies* the brand's stance — e.g., remaining visually calm and minimal even while depicting speed, because Linear believes speed comes from focus not frenzy — then the form itself is making an argument the words don't make.\n\n**Test your PoV:** Write one sentence completing: \"This video argues that [brand] is right about [specific claim] by [formal choice that embodies it].\" If you can't complete this sentence, you don't have a point of view yet.",
+    "rationale": "The model adopted Linear's marketing language without interpreting it because the skill didn't explicitly require the form to argue something beyond illustrating the copy — the test for whether form is arguing vs illustrating was missing."
+  },
+  {
+    "taskId": "linear-product-demo",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition adopts Linear's marketing language ('Ship faster', 'removes friction') without interpreting it. The form doesn't argue anything the words don't already say.",
+      "improvement": "Commit to a perspective: Is Linear about aesthetic discipline? Developer respect? The violence of speed? Let the visual choices argue something specific—e.g., if Linear is about calm focus, the composition should embody calm even while showing speed, not just claim it reduces chaos."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it.",
+    "cause": "wrong_priority",
+    "proposedChange": "**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it.\n\n**Anti-pattern: Marketing ventriloquism.** If your scene's text says \"Ship faster\" and your visuals show \"fast things,\" you are illustrating copy, not arguing a perspective. The visual treatment must add meaning the words don't contain. Example failure: showing chaotic lines becoming ordered while text says \"Linear brings order to chaos\" — the visuals just repeat the text. Example success: showing calm, sparse, slow visuals while text says \"Ship faster\" — the form argues that Linear's speed comes from reduction, not acceleration.",
+    "rationale": "The PoV check existed but didn't explicitly call out the failure mode of visuals that merely illustrate the marketing copy, which is exactly what the model produced."
+  }
+]

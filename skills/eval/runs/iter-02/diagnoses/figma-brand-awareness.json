@@ -1,0 +1,16 @@
+[
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "Canvas animations use generic circles and nodes rather than anything visually tied to Figma's identity. No Figma logo, no signature purple, no representation of actual UI elements like frames, components, or the distinctive cursor avatars.",
+      "improvement": "Render stylized Figma frames or component symbols in the canvas. Use Figma's actual cursor avatar shapes (rounded rectangles with names). Incorporate the Figma purple (#A259FF) or orange (#FF7262) in the multiplayer scene. Reference specific features like 'Prototype. Inspect. Dev Mode.'"
+    },
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "currentText": "**The motion must be semantically connected to the specific product.** Generic particles or bezier curves say nothing. The form of the animation should demonstrate what is true about this brand and false about others:\n- Stripe: money moving without friction → particles that pass through each other without collision\n- Linear: work resolved without ambiguity → a tangled graph that converges to a clean DAG\n- Vercel: deploys as instant as saving a file → a ripple that expands to the edges the moment it starts",
+    "cause": "missing",
+    "proposedChange": "After the existing examples, add:\n\n**Visual identity must be embedded in the canvas, not just the concept.**\n\nBrand colors, logo shapes, and product-specific UI elements must appear in the canvas animation itself — not just the surrounding HTML. If the brand has a signature color (Figma's purple #A259FF, Stripe's purple #635BFF), that color should dominate the canvas. If the product has distinctive visual elements (Figma's cursor avatars, Slack's hashtag channels, Linear's issue icons), render stylized versions of those shapes.\n\n- Figma: multiplayer cursors as rounded rectangles with names, frames-within-frames, the purple/orange palette\n- Notion: nested blocks, the tan/warm white palette, page icons\n- Discord: chat bubbles, server icons, the blurple #5865F2\n\nA canvas animation that could belong to any brand belongs to no brand.",
+    "rationale": "The existing guidance requires semantic connection but doesn't explicitly require visual brand elements (colors, logo shapes, UI patterns) to appear in the canvas itself, leading to generic circles/nodes instead of Figma-specific cursors and purple."
+  }
+]

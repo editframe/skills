@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The unified database message is generic to any integrated BaaS. The composition doesn't surface what makes Supabase's Postgres implementation specifically different from competitors like PlanetScale, Neon, or even Firebase's integrated approach.",
+      "improvement": "Include Supabase-specific details: Row Level Security policies, realtime subscriptions via Postgres replication, or the fact that you can query Supabase with any Postgres client. Show the actual dashboard or reference specific features like pg_graphql."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "- Supabase (Postgres as the core): raw Postgres → instant REST → auth → realtime → storage → each capability materializing as a ring around a single database icon; the center never changes — the database stays the same",
+    "cause": "present_wrong",
+    "proposedChange": "- Supabase (Postgres as the core): The differentiator is not 'unified platform' (every BaaS claims this) but that you retain full Postgres access — Row Level Security policies written in SQL, realtime via Postgres replication (not a proprietary protocol), queryable with any Postgres client (psql, Prisma, any ORM). Show: a single RLS policy that replaces 200 lines of middleware, or the same table queried from browser JS, a mobile app, and psql simultaneously. The visual must be impossible to attribute to Firebase or PlanetScale.",
+    "rationale": "The original example was generic 'capabilities as rings' which doesn't surface Supabase's actual differentiator (full Postgres access with RLS, standard clients) — the revised text forces the model to identify features unique to Supabase."
+  },
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "Scene 3's code example is purely informational. The viewer learns syntax but doesn't feel anything new—no surprise, no deepening conviction, no 'aha' moment.",
+      "improvement": "Make Scene 3 demonstrate something unexpected: show the same query working in three contexts (browser, mobile, edge function) simultaneously, or reveal that this single line replaces 50 lines of traditional backend code. Create contrast, not just demonstration."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]",
+    "cause": "missing",
+    "proposedChange": "- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]\n- STATE CHANGE MECHANISM: [What specific technique creates the shift? Options: contrast (before/after, with/without), surprise (expectation subverted), scale revelation (one thing revealed as many), effort elimination (50 lines → 1 line). If the mechanism is 'demonstration' or 'showing how it works', the scene is informational, not transformational — rewrite it.]",
+    "rationale": "The model wrote a code example scene that was purely informational because nothing in the template forced it to specify HOW the viewer state changes — adding a required 'mechanism' field would have flagged that mere demonstration doesn't create emotional shift."
+  }
+]

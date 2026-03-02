@@ -1,0 +1,16 @@
+Eval Run: held-out-01
+Generator: anthropic/claude-haiku-4-5
+Evaluator: anthropic/claude-opus-4-5
+Date: 2/26/2026, 5:54:04 PM
+
+─── Scores ────────────────────────────────────────
+Task                          Motion  Spec  ViewerΔ  PoV  Omit  Overall
+─────────────────────────────────────────────────────────────────────────
+Loom (explainer)                4/5    2/5   3/5      2/5   3/5    2.8/5
+Raycast (brand-awareness)       5/5    3/5   4/5      3/5   3/5    3.6/5
+─────────────────────────────────────────────────────────────────────────
+Average overall: 3.2/5
+
+─── Proposed Skill Changes ─────────────────────────────────────────────
+
+To apply: npx tsx scripts/eval-skills-apply.ts --run-id held-out-01

@@ -1,0 +1,149 @@
+<ef-timegroup mode="sequence" overlap="1.2s" class="w-[1920px] h-[1080px] bg-black">
+    
+    <!-- Scene 1: Hero - The Problem (0s-8s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full scene-bg-dark flex items-center justify-center fade-transition">
+      <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-16">
+        <ef-text
+          split="word"
+          class="hero-text text-7xl mb-6"
+          style="animation: 0.6s text-slide-up both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+        >Building takes infrastructure</ef-text>
+        
+        <ef-text
+          split="word"
+          class="subtext max-w-2xl"
+          style="animation: 0.6s text-slide-up 0.4s both; animation-delay: calc(0.4s + var(--ef-word-index) * 80ms)"
+        >Most platforms abstract it away. Supabase reveals what's underneath.</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 2: The Stack - Layers Being Removed (8s-16s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full scene-bg-dark-blue flex items-center justify-center fade-in-transition" style="animation: 1s layer-fade-out var(--ef-transition-out-start) both">
+      <div class="absolute inset-0 flex flex-col items-center justify-center">
+        <div class="relative w-full h-full flex items-center justify-center">
+          <!-- Layer 1: Auth Layer (fades out first) -->
+          <div class="absolute w-96 h-24 bg-gradient-to-r from-blue-500/20 to-blue-600/20 rounded-lg border border-blue-500/40 flex items-center justify-center text-white font-mono text-lg"
+            style="animation: 1s layer-fade-out 0.8s both; top: 20%">
+            <span>Authentication Layer</span>
+          </div>
+
+          <!-- Layer 2: API Layer (fades out second) -->
+          <div class="absolute w-96 h-24 bg-gradient-to-r from-purple-500/20 to-purple-600/20 rounded-lg border border-purple-500/40 flex items-center justify-center text-white font-mono text-lg"
+            style="animation: 1s layer-fade-out 1.4s both; top: 45%">
+            <span>Instant REST APIs</span>
+          </div>
+
+          <!-- Layer 3: Postgres (stays visible) -->
+          <div class="absolute w-96 h-24 bg-gradient-to-r from-green-500/30 to-green-600/30 rounded-lg border border-green-500/50 border-2 flex items-center justify-center text-white font-bold text-2xl"
+            style="animation: 0.6s text-slide-down both; top: 70%">
+            <span class="postgres-accent">PostgreSQL</span>
+          </div>
+        </div>
+
+        <ef-text
+          split="word"
+          class="subtext absolute bottom-16 text-center max-w-2xl"
+          style="animation: 0.6s text-slide-up 1.2s both; animation-delay: calc(1.2s + var(--ef-word-index) * 80ms)"
+        >Strip away the abstraction. Here's what's real.</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 3: Open Source Foundation (16s-24s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full scene-bg-dark flex items-center justify-center fade-in-transition" style="animation: 1s layer-fade-out var(--ef-transition-out-start) both">
+      <div class="absolute inset-0 flex flex-col items-center justify-center px-12">
+        <div class="mb-8 w-full">
+          <ef-text
+            split="word"
+            class="hero-text text-6xl text-center"
+            style="animation: 0.6s text-slide-up both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+          >Open source by default</ef-text>
+        </div>
+
+        <div class="w-full max-w-3xl bg-slate-900/50 rounded-xl p-8 border border-slate-700 mb-8"
+          style="animation: 0.7s layer-fade-in 0.5s both">
+          <div class="code-text mb-4">$ npm install @supabase/supabase-js</div>
+          <div class="code-text mb-4">const { data } = await supabase</div>
+          <div class="code-text">&nbsp;&nbsp;.from('users')</div>
+          <div class="code-text">&nbsp;&nbsp;.select()</div>
+        </div>
+
+        <ef-text
+          class="subtext text-center"
+          style="animation: 0.6s text-slide-up 1s both"
+        >No vendor lock-in. Your database. Your code. Your rules.</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 4: What You Get (24s-34s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full scene-bg-green flex items-center justify-center fade-in-transition" style="animation: 1s layer-fade-out var(--ef-transition-out-start) both">
+      <div class="absolute inset-0 flex flex-col items-center justify-center px-12">
+        <ef-text
+          split="word"
+          class="hero-text text-5xl text-center mb-12"
+          style="animation: 0.6s text-slide-down both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+        >Everything you need</ef-text>
+
+        <div class="grid grid-cols-2 gap-6 max-w-2xl w-full mb-8">
+          <div class="api-item" style="animation: 0.5s layer-fade-in 0.3s both">
+            <div class="font-bold text-green-400 mb-2">PostgreSQL</div>
+            <div class="text-sm">Full relational database</div>
+          </div>
+          <div class="api-item" style="animation: 0.5s layer-fade-in 0.5s both">
+            <div class="font-bold text-green-400 mb-2">Auth</div>
+            <div class="text-sm">Row-level security built in</div>
+          </div>
+          <div class="api-item" style="animation: 0.5s layer-fade-in 0.7s both">
+            <div class="font-bold text-green-400 mb-2">APIs</div>
+            <div class="text-sm">Instant REST + GraphQL</div>
+          </div>
+          <div class="api-item" style="animation: 0.5s layer-fade-in 0.9s both">
+            <div class="font-bold text-green-400 mb-2">Storage</div>
+            <div class="text-sm">S3-compatible file storage</div>
+          </div>
+          <div class="api-item" style="animation: 0.5s layer-fade-in 1.1s both">
+            <div class="font-bold text-green-400 mb-2">Functions</div>
+            <div class="text-sm">Serverless edge functions</div>
+          </div>
+          <div class="api-item" style="animation: 0.5s layer-fade-in 1.3s both">
+            <div class="font-bold text-green-400 mb-2">Realtime</div>
+            <div class="text-sm">WebSocket subscriptions</div>
+          </div>
+        </div>
+
+        <ef-text
+          class="subtext text-center"
+          style="animation: 0.6s text-slide-up 1.6s both"
+        >Built on Postgres. Designed for developers who understand databases.</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 5: Data Integrity - Canvas Animation (34s-42s) -->
+    <ef-timegroup mode="contain" id="canvas-scene" class="absolute w-full h-full scene-bg-dark flex items-center justify-center fade-in-transition" style="animation: 1s layer-fade-out var(--ef-transition-out-start) both">
+      <div class="absolute inset-0 flex flex-col items-center justify-center">
+        <canvas id="postgres-canvas" class="absolute inset-0"></canvas>
+        
+        <div class="absolute top-12 text-center z-10">
+          <ef-text
+            split="word"
+            class="hero-text text-5xl"
+            style="animation: 0.6s text-slide-down both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+          >Constraints that protect</ef-text>
+        </div>
+
+        <ef-text
+          class="subtext absolute bottom-16 text-center max-w-2xl z-10"
+          style="animation: 0.6s text-slide-up 1s both"
+        >Row-level security. Foreign keys. Type safety. Database-enforced rules.</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 6: CTA (42s-45s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full scene-bg-dark-blue flex items-center justify-center fade-in-transition">
+      <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+        <ef-text
+          split="word"
+          class="hero-text text-6xl mb-8"
+          style="animation: 0.6s text-slide-up both; animation-delay: calc(var(--ef-word-index) * 80ms)"
+        >Start building with Supabase</ef-text>
+
+        <div class="cta-button" style="animation: 0.6s layer-fade-in 0.

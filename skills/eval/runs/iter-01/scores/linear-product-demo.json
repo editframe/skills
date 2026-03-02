@@ -1,0 +1,59 @@
+{
+  "taskId": "linear-product-demo",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:04:26.471Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is genuinely structural and meaning-carrying. Each scene uses addFrameTask with canvas animations that metaphorically represent the scene's concept—chaos lines for 'Without Linear,' an ordered grid for 'With Linear,' keyboard keys lighting sequentially for speed, and an expanding ripple for shipping.",
+      "evidence": "Scene 1: `const lineCount = Math.floor(progress * 40)` creates accumulating tangled lines representing chaos. Scene 2: `gridCtx.strokeRect(x, y, cellSize, cellSize)` builds a clean grid. Scene 3: `let keyProgress = progress * keys.length` sequences keyboard illumination. Scene 4: `const rippleRadius = progress * maxRadius` creates deployment metaphor. Text also uses split='word' with staggered delays: `animation-delay: calc(1s + var(--ef-word-index) * 100ms)`"
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "The composition uses Linear's brand name and references 'keyboard-first' as a known feature, plus the color palette (blue/slate). However, the actual product is never shown—all videos are placeholder bars-n-tone. The claims ('Issues flow,' 'keyboard-first,' 'ship faster') could apply to Jira, Asana, Height, or any project management tool.",
+      "evidence": "All ef-video elements use `src='https://assets.editframe.com/bars-n-tone.mp4'`—a placeholder, not actual Linear UI. Text like 'Work is chaos. Decisions are unclear' and 'The fastest issue tracking for software teams' is category-generic. The keyboard shortcut shown `['⌘', 'K', 'N', 'E', 'W']` doesn't correspond to actual Linear shortcuts."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc is traceable: frustration (chaos) → relief (structure) → empowerment (speed) → accomplishment (shipping) → action (CTA). Each scene attempts a distinct emotional shift. However, the shifts feel formulaic and the placeholder video undermines the emotional payoff.",
+      "evidence": "Scene 1 builds anxiety with red tangled lines and 'chaos' language. Scene 2 shifts to blue ordered grid with 'clarity' messaging. Scene 3 positions speed/mastery. Scene 4 uses green (success color) with 'Ship faster.' The progression is intentional but the execution relies on the standard problem→solution→benefit→CTA template."
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "There is a discernible perspective: software should feel like a precision instrument, not a burden. The keyboard-first emphasis and the chaos-to-order visual metaphor reflect a real Linear philosophy. However, this perspective could have been derived from reading Linear's marketing page rather than understanding the product.",
+      "evidence": "The chaos canvas vs. grid canvas juxtaposition commits to a 'order from chaos' argument. The 'Every action three keystrokes away' text and keyboard animation emphasize craft and speed. The perspective is 'Linear is for people who care about tools' but it's stated rather than demonstrated through specific product truth."
+    },
+    "omission": {
+      "score": 4,
+      "rationale": "Five scenes for 30 seconds is disciplined. Each scene has a distinct job: establish problem, show solution, demonstrate mechanism (keyboard), show outcome, CTA. No scene directly repeats another's function.",
+      "evidence": "Scene 1 (problem), Scene 2 (solution introduction), Scene 3 (how—keyboard), Scene 4 (result—shipping), Scene 5 (CTA). The only potential redundancy is that Scene 4's 'Ship faster' message is somewhat implicit in Scene 3's speed emphasis, but the visual metaphor (ripple/deployment) earns its place."
+    }
+  },
+  "overall": 3.4,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "All video sources are placeholder bars-n-tone.mp4 rather than actual Linear product footage. The keyboard shortcut sequence shown (⌘KNEW) doesn't correspond to real Linear commands.",
+      "improvement": "Use actual Linear screen recordings showing the command palette (⌘K), issue creation workflow, and the distinctive Linear UI. Show real shortcuts like ⌘K for command menu, C for create issue, or the actual cycle/project views."
+    },
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "Claims like 'Issues flow. Work resolves. Decisions stick.' and 'fastest issue tracking' are category-generic and could describe any modern project tool.",
+      "improvement": "Reference Linear-specific concepts: Cycles (their sprint alternative), Triage, the specific way issues auto-close, their roadmap visualization, or their 'built for keyboard' design philosophy with actual feature demonstrations."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "The emotional arc follows the standard problem→solution→benefit→CTA template. The placeholder video prevents genuine product revelation moments.",
+      "improvement": "Create a specific 'aha' moment showing Linear's actual speed—perhaps a real-time demonstration of creating an issue, assigning it, and moving it through states in under 5 seconds, making the speed claim viscerally felt rather than stated."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "minor",
+      "observation": "The 'precision tool' perspective is present but expressed through generic visual metaphors (chaos vs. order) rather than through specific product truth.",
+      "improvement": "Show what makes Linear's perspective unique—their opinionated design choices, their refusal to add certain features, or their specific aesthetic philosophy. The form should reveal why Linear built things differently, not just that they did."
+    }
+  ]
+}

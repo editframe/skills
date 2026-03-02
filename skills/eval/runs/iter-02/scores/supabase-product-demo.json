@@ -1,0 +1,41 @@
+{
+  "taskId": "supabase-product-demo",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:18:34.722Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is central and meaning-bearing. The composition uses addFrameTask with procedural canvas rendering where the visual form directly embodies the argument—chaos accumulating into tangled bezier curves represents the problem, while a unified graph converging represents the solution.",
+      "evidence": "Canvas 1 uses `addFrameTask` with `const count = Math.floor(progress * 120)` to accumulate tangled curves that 'become more tangled as progress increases.' Canvas 2 shows components connecting to a central node with `const radius = 280 * Math.min(progress * 1.5, 1)`. Text uses `split='word'` with staggered delays: `animation-delay: calc(var(--ef-word-index) * 100ms)`. The chaos-to-clarity visual transformation IS the argument."
+    },
+    "specificity": {
+      "score": 4,
+      "rationale": "The composition reflects structural truths about Supabase that differentiate it from competitors. The Postgres-centric architecture, the specific feature set (auth, real-time, edge functions), and the open-source/self-hostable positioning are distinctly Supabase.",
+      "evidence": "Scene 2 lists 'SQL database built in, Auth in minutes, Instant REST APIs, Edge functions' — Supabase's actual feature hierarchy. Scene 4 shows actual Supabase client syntax: `supabase.from('users').select()` and `.on('*', message => {}).subscribe()`. The tagline 'No vendor lock-in — it's Postgres' and 'Open source. Self-hostable.' are Supabase's specific market positioning versus Firebase."
+    },
+    "viewer_state": {
+      "score": 4,
+      "rationale": "Clear emotional arc: overwhelm (chaos) → relief (unified solution) → clarity (mental model) → competence (code is simple) → activation (CTA). Each scene changes state and builds on the previous.",
+      "evidence": "Scene 1 induces frustration via 'chaotic' visual + 'disconnected tools, endless glue code.' Scene 2 shifts to relief with converging graph + 'Postgres + everything you need.' Scene 3 delivers clarity: 'One platform. Clear mental model.' Scene 4 builds confidence with actual code snippets. Scene 5 activates with 'Start building today' + concrete CTA."
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "The composition commits to a clear perspective: backend complexity is the enemy, Postgres as foundation is the answer, simplicity is freedom. However, this is a relatively expected angle for Supabase marketing, not a surprising or challenging perspective.",
+      "evidence": "The chaos-to-unity visual metaphor and the emphasis on 'Clear mental model' and 'The API is your database' show a consistent philosophy. But these are essentially Supabase's official talking points presented competently, not a fresh angle that reveals deeper understanding."
+    },
+    "omission": {
+      "score": 4,
+      "rationale": "Five scenes for 45 seconds is economical. Each scene has a distinct function: problem, solution overview, philosophy, proof (code), and CTA. No obvious redundancy.",
+      "evidence": "Scene 1 (8s): establishes pain. Scene 2 (10s): introduces solution features. Scene 3 (10s): articulates value proposition. Scene 4 (10s): demonstrates developer experience. Scene 5 (7s): call to action. Each scene does one job. The only potential trim would be merging scenes 2 and 3, but they serve different emotional functions."
+    }
+  },
+  "overall": 4,
+  "feedback": [
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition presents Supabase's official marketing narrative faithfully but doesn't offer a distinctive editorial perspective. The chaos-to-clarity arc and 'Postgres + everything' message are essentially Supabase's homepage copy in video form.",
+      "improvement": "Take a bolder stance—perhaps emphasize what Supabase asks you to give up (the 'freedom' of choosing best-of-breed tools), or position against a specific competitor ideology (Firebase's proprietary lock-in, or the Jamstack complexity explosion). Make the viewer think something they didn't already know about the category."
+    }
+  ]
+}

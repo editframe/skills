@@ -1,0 +1,41 @@
+{
+  "taskId": "linear-product-demo",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:55:01.431Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is the argument itself. The composition uses procedural canvas animations via addFrameTask to literally visualize the product's core value proposition—chaos becoming order. The form of animation carries meaning that text alone cannot.",
+      "evidence": "Scene 1's addFrameTask creates '40 issue cards moving chaotically' with overlapping trajectories. Scene 2's addFrameTask shows nodes converging from scatter to 'a vertical line (the linear path)' with eased interpolation. The transformation from chaos to linearity IS Linear's pitch, expressed through motion rather than stated."
+    },
+    "specificity": {
+      "score": 4,
+      "rationale": "The composition's structure reflects Linear's actual brand positioning: keyboard-first design, opinionated workflows, and speed. The convergence metaphor maps directly to Linear's core differentiator against Jira/Asana's flexibility-as-feature approach.",
+      "evidence": "Scene 2 text: 'Linear removes the decisions'—this is Linear's specific philosophy. Scene 3 shows '/issue create' command syntax reflecting Linear's actual keyboard-first interface. The visual metaphor of 50 scattered nodes converging to 'the linear path' (a single vertical line) embodies the brand name itself. However, the blue color palette and general aesthetic could apply to many tech products."
+    },
+    "viewer_state": {
+      "score": 4,
+      "rationale": "Clear emotional arc: frustration (chaos) → relief (convergence) → appreciation (speed demo) → aspiration (clean resolution). Each scene builds on the previous state change.",
+      "evidence": "Scene 1 induces overwhelm ('Issues scattered everywhere' + chaotic visual). Scene 2 provides relief through visual convergence + 'Linear removes the decisions'. Scene 3 shifts to empowerment (keyboard demo, 'Ship faster'). Scene 4 delivers resolution ('One workflow / Fewer distractions'). The final state (clarity, focus) is the inverse of the opening state (chaos)."
+    },
+    "point_of_view": {
+      "score": 4,
+      "rationale": "The composition commits to a clear perspective: the problem isn't features, it's decisions. This is an argument about software design philosophy, not just a product demo. The POV is that constraint liberates.",
+      "evidence": "The composition never mentions features, integrations, or technical capabilities. Instead it argues visually that Linear's value is removal: 'Linear removes the decisions', 'Fewer distractions'. The convergence animation making scattered nodes into a single path is a visual argument that opinionation beats flexibility."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Four scenes is lean, but Scene 3 (keyboard demo) feels slightly disconnected from the visual metaphor established in Scenes 1-2. It's a feature callout that breaks the abstract visual language, though it earns some place as concrete proof.",
+      "evidence": "Scenes 1-2 establish an abstract visual language (particles, convergence). Scene 3 suddenly shows a literal UI mockup ('w-96 h-64 bg-slate-800/50 border border-blue-500/30 rounded-lg'). Scene 4 returns to abstract typography. The keyboard demo could potentially be cut—the chaos→order arc would still complete without it."
+    }
+  },
+  "overall": 4,
+  "feedback": [
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "Scene 3's concrete UI mockup breaks the visual abstraction established by the canvas-based metaphors in Scenes 1-2, creating a tonal shift that slightly disrupts the composition's cohesion.",
+      "improvement": "Either commit fully to the abstract visual metaphor (perhaps showing the keyboard commands as part of the convergence animation) or introduce the concrete UI earlier to establish it as part of the visual language."
+    }
+  ]
+}

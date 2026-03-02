@@ -1,0 +1,233 @@
+<ef-timegroup mode="sequence" class="w-full" style="aspect-ratio: 16/9; max-width: 1920px; margin: 0 auto;">
+    
+    <!-- Scene 1: Hook - The Problem (0-6s) -->
+    <ef-timegroup mode="contain" class="relative w-full h-full bg-supabase flex items-center justify-center">
+      <canvas id="chaos-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+      <div class="relative z-10 text-center px-12">
+        <ef-text
+          split="word"
+          class="text-white text-6xl font-bold mb-4"
+          style="animation: 0.6s enter-up both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+        >Building backends is chaos</ef-text>
+        <ef-text
+          class="text-secondary text-xl"
+          style="animation: 0.5s enter-up both 0.8s"
+        >Multiple services. Multiple vendors. No unified truth.</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 2: Reveal the Solution (6-18s) -->
+    <ef-timegroup mode="contain" class="relative w-full h-full bg-supabase flex flex-col items-center justify-center overflow-hidden">
+      <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent via-black/40 to-black/80"></div>
+      
+      <div class="relative z-10 text-center max-w-3xl px-12">
+        <ef-text
+          class="text-primary text-5xl font-bold mb-8"
+          style="animation: 0.6s enter-up both"
+        >One platform.</ef-text>
+        
+        <div style="animation: 0.5s enter-up both 0.3s">
+          <ef-text class="text-white text-3xl font-semibold mb-6">Postgres + Auth + APIs + Edge + Storage</ef-text>
+          <ef-text class="text-secondary text-lg">Everything built on your database. No translation layers. No vendor lock-in.</ef-text>
+        </div>
+      </div>
+
+      <!-- Feature pills emerging -->
+      <div class="absolute bottom-24 left-0 right-0 flex justify-center gap-3 flex-wrap px-8" style="animation: 0.6s enter-up both 0.8s">
+        <div class="feature-card">
+          <div class="text-primary font-bold text-sm">PostgreSQL</div>
+          <div class="text-xs text-secondary mt-1">Real database</div>
+        </div>
+        <div class="feature-card">
+          <div class="text-primary font-bold text-sm">Auth</div>
+          <div class="text-xs text-secondary mt-1">Users built-in</div>
+        </div>
+        <div class="feature-card">
+          <div class="text-primary font-bold text-sm">APIs</div>
+          <div class="text-xs text-secondary mt-1">Instant REST</div>
+        </div>
+        <div class="feature-card">
+          <div class="text-primary font-bold text-sm">Edge</div>
+          <div class="text-xs text-secondary mt-1">Functions</div>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 3: How It Works - Code Example (18-33s) -->
+    <ef-timegroup mode="contain" class="relative w-full h-full bg-supabase flex items-center justify-center">
+      <div class="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60"></div>
+      
+      <div class="relative z-10 max-w-2xl px-12">
+        <ef-text
+          class="text-white text-4xl font-bold mb-8"
+          style="animation: 0.5s enter-up both"
+        >Query your database. Get REST APIs. Instantly.</ef-text>
+        
+        <div class="code-block" style="animation: 0.6s enter-down both 0.4s">
+          <div class="mb-2">// Your Postgres table</div>
+          <div class="mb-4 text-green-400">const { data } = await supabase</div>
+          <div class="mb-2">&nbsp;&nbsp;.from('users')</div>
+          <div class="mb-2">&nbsp;&nbsp;.select()</div>
+          <div class="text-green-400">&nbsp;&nbsp;.eq('id', 123)</div>
+        </div>
+        
+        <ef-text
+          class="text-secondary text-sm mt-6"
+          style="animation: 0.5s enter-up both 0.8s"
+        >One query. One SDK. Works everywhere — browser, mobile, server.</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 4: The Differentiator - One Database (33-40s) -->
+    <ef-timegroup mode="contain" class="relative w-full h-full bg-supabase flex items-center justify-center">
+      <canvas id="rings-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-black/90"></div>
+      
+      <div class="relative z-10 text-center px-12 max-w-2xl">
+        <ef-text
+          class="text-primary text-5xl font-bold mb-6"
+          style="animation: 0.6s enter-up both"
+        >One Postgres database.</ef-text>
+        
+        <ef-text
+          class="text-white text-lg leading-relaxed"
+          style="animation: 0.5s enter-up both 0.3s"
+        >Auth uses the same tables as your APIs. Realtime reads from the same database. Edge functions query the same schema. No replication. No sync delays. No "eventually consistent" problems.</ef-text>
+        
+        <ef-text
+          class="text-primary text-sm mt-6 font-semibold"
+          style="animation: 0.5s enter-up both 0.6s"
+        >This is the real difference.</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 5: CTA (40-45s) -->
+    <ef-timegroup mode="contain" class="relative w-full h-full bg-gradient-to-b from-supabase to-black flex flex-col items-center justify-center">
+      <div class="absolute inset-0" style="background: radial-gradient(circle at 50% 50%, rgba(62, 207, 142, 0.1) 0%, transparent 70%);"></div>
+      
+      <div class="relative z-10 text-center px-12">
+        <ef-text
+          class="text-primary text-6xl font-bold mb-6"
+          style="animation: 0.6s scale-pop both"
+        >Start building.</ef-text>
+        
+        <ef-text
+          class="text-white text-xl mb-8"
+          style="animation: 0.5s enter-up both 0.3s"
+        >Postgres backend. All the APIs you need. Open source.</ef-text>
+        
+        <div class="inline-block px-8 py-4 border-2 border-primary rounded-lg" style="animation: 0.5s enter-up both 0.6s">
+          <ef-text class="text-primary font-bold text-lg">supabase.com</ef-text>
+        </div>
+      </div>
+    </ef-timegroup>
+
+  </ef-timegroup>
+
+  <script>
+    // Scene 1: Chaos canvas - tangled system connections showing the problem
+    const chaosCanvas = document.getElementById('chaos-canvas');
+    if (chaosCanvas) {
+      const chaosScene = document.querySelector('ef-timegroup');
+      const scenes = chaosScene.querySelectorAll('ef-timegroup');
+      const scene1 = scenes[0];
+      
+      scene1.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        const ctx = chaosCanvas.getContext('2d');
+        chaosCanvas.width = chaosCanvas.offsetWidth;
+        chaosCanvas.height = chaosCanvas.offsetHeight;
+        const progress = ownCurrentTimeMs / durationMs;
+        
+        ctx.clearRect(0, 0, chaosCanvas.width, chaosCanvas.height);
+        
+        // Draw tangled system lines representing chaos
+        const centerX = chaosCanvas.width / 2;
+        const centerY = chaosCanvas.height / 2;
+        const numSystems = Math.floor(progress * 12);
+        
+        ctx.strokeStyle = `rgba(62, 207, 142, ${0.3 + progress * 0.3})`;
+        ctx.lineWidth = 2;
+        
+        for (let i = 0; i < numSystems; i++) {
+          const angle = (i / 12) * Math.PI * 2;
+          const offset = 150 + Math.sin(ownCurrentTimeMs * 0.002 + i) * 30;
+          
+          ctx.beginPath();
+          ctx.moveTo(centerX, centerY);
+          ctx.lineTo(
+            centerX + Math.cos(angle) * offset,
+            centerY + Math.sin(angle) * offset
+          );
+          ctx.stroke();
+          
+          // Draw nodes
+          ctx.fillStyle = `rgba(62, 207, 142, ${0.5 + progress * 0.5})`;
+          ctx.beginPath();
+          ctx.arc(
+            centerX + Math.cos(angle) * offset,
+            centerY + Math.sin(angle) * offset,
+            6 + Math.sin(ownCurrentTimeMs * 0.003) * 2,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+        }
+      });
+    }
+
+    // Scene 4: Rings canvas - unified system showing Supabase's single database approach
+    const ringsCanvas = document.getElementById('rings-canvas');
+    if (ringsCanvas) {
+      const root = document.querySelector('ef-timegroup');
+      const scenes = root.querySelectorAll('ef-timegroup');
+      const scene4 = scenes[3];
+      
+      scene4.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        const ctx = ringsCanvas.getContext('2d');
+        ringsCanvas.width = ringsCanvas.offsetWidth;
+        ringsCanvas.height = ringsCanvas.offsetHeight;
+        const progress = ownCurrentTimeMs / durationMs;
+        
+        ctx.clearRect(0, 0, ringsCanvas.width, ringsCanvas.height);
+        
+        const centerX = ringsCanvas.width / 2;
+        const centerY = ringsCanvas.height / 2;
+        
+        // Central unified database circle
+        ctx.fillStyle = `rgba(62, 207, 142, ${0.2 + progress * 0.3})`;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 60, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.strokeStyle = `rgba(62, 207, 142, ${0.6 + progress * 0.4})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 60, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Rings representing Auth, APIs, Edge, Storage all connected to same center
+        const rings = [
+          { radius: 140, label: 'Auth' },
+          { radius: 200, label: 'APIs' },
+          { radius: 260, label: 'Edge' }
+        ];
+        
+        rings.forEach((ring, idx) => {
+          const ringProgress = Math.max(0, progress - (idx * 0.15));
+          const radius = ring.radius * ringProgress;
+          
+          ctx.strokeStyle = `rgba(62, 207, 142, ${0.4 * ringProgress})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+          ctx.stroke();
+          
+          // Nodes on rings
+          const nodeCount = 3;
+          for (let i = 0; i < nodeCount; i++) {
+            const angle = (i / nodeCount) * Math.PI * 2 + ownCurrentTimeMs * 0.001;
+            const x = centerX + Math.cos(angle) * radius;
+            const y = centerY + Math.sin(angle) * radius;
+            
+            ctx.fillStyle = `rgba(62, 207,

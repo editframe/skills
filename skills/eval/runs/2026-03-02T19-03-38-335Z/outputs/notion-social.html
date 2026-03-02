@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notion 15s Social Video</title>
+  <link rel="stylesheet" href="https://cdn.tailwindcss.com">
+  <style>
+    @keyframes block-emerge {
+      from {
+        transform: translateY(40px) scale(0.85);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slide-up {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes text-reveal {
+      from {
+        transform: translateY(24px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .block {
+      border-radius: 8px;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body class="m-0 p-0 overflow-hidden">
+  <ef-timegroup mode="sequence" class="w-[1080px] h-[1920px] bg-gradient-to-b from-slate-50 to-white">
+    
+    <!-- Scene 1: The Fragmentation (0-5s) -->
+    <ef-timegroup mode="fixed" duration="5s" class="absolute w-full h-full">
+      <!-- Background -->
+      <div class="absolute inset-0 bg-slate-50"></div>
+      
+      <!-- Canvas for scattered blocks animation -->
+      <canvas id="canvas-scattered" class="absolute inset-0 w-full h-full"></canvas>
+      
+      <!-- Text overlay -->
+      <div class="absolute inset-0 flex flex-col items-center justify-center p-8">
+        <ef-text
+          split="word"
+          class="text-slate-900 text-6xl font-black text-center max-w-2xl"
+          style="animation: 0.6s text-reveal both; animation-delay: calc(var(--ef-word-index) * 140ms)"
+        >Everything scattered</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 2: The Collapse (5-10s) -->
+    <ef-timegroup mode="fixed" duration="5s" class="absolute w-full h-full">
+      <!-- Background -->
+      <div class="absolute inset-0 bg-white"></div>
+      
+      <!-- Canvas for blocks coalescing -->
+      <canvas id="canvas-coalesce" class="absolute inset-0 w-full h-full"></canvas>
+      
+      <!-- Text overlay -->
+      <div class="absolute inset-0 flex flex-col items-center justify-center p-8">
+        <ef-text
+          split="word"
+          class="text-slate-900 text-6xl font-black text-center max-w-2xl"
+          style="animation: 0.6s text-reveal both; animation-delay: calc(var(--ef-word-index) * 140ms)"
+        >One place for all</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 3: The Unified State (10-15s) -->
+    <ef-timegroup mode="fixed" duration="5s" class="absolute w-full h-full">
+      <!-- Background -->
+      <div class="absolute inset-0 bg-gradient-to-br from-slate-900 to-slate-800"></div>
+      
+      <!-- Notion logo/blocks in unified state -->
+      <canvas id="canvas-unified" class="absolute inset-0 w-full h-full"></canvas>
+      
+      <!-- CTA text -->
+      <div class="absolute inset-0 flex flex-col items-center justify-end p-12 gap-6">
+        <ef-text
+          class="text-white text-4xl font-black text-center"
+          style="animation: 0.5s fade-in both 0.5s"
+        >Get organized in Notion</ef-text>
+        <ef-text
+          class="text-white/80 text-lg"
+          style="animation: 0.5s fade-in both 0.8s"
+        >notion.so</ef-text>
+      </div>
+    </ef-timegroup>
+  </ef-timegroup>
+
+  <script>
+    // Scene 1: Scattered blocks
+    const canvasScattered = document.getElementById('canvas-scattered');
+    if (canvasScattered) {
+      const tg1 = canvasScattered.closest('ef-timegroup');
+      tg1.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        const ctx = canvasScattered.getContext('2d');
+        canvasScattered.width = canvasScattered.offsetWidth;
+        canvasScattered.height = canvasScattered.offsetHeight;
+        
+        const progress = ownCurrentTimeMs / durationMs;
+        const centerX = canvasScattered.width / 2;
+        const centerY = canvasScattered.height / 2;
+        
+        ctx.clearRect(0, 0, canvasScattered.width, canvasScattered.height);
+        
+        // Draw 12 blocks in increasingly chaotic positions
+        const blockSize = 80;
+        const blocks = [];
+        for (let i = 0; i < 12; i++) {
+          const angle = (i / 12) * Math.PI * 2;
+          const distance = 200 + Math.sin(i * 0.5 + progress * Math.PI) * 150;
+          const x = centerX + Math.cos(angle) * distance - blockSize / 2;
+          const y = centerY + Math.sin(angle) * distance - blockSize / 2;
+          const rotation = (i * 30 + progress * 360) * (Math.PI / 180);
+          
+          ctx.save();
+          ctx.translate(x + blockSize / 2, y + blockSize / 2);
+          ctx.rotate(rotation);
+          ctx.fillStyle = `hsl(${200 + i * 20}, 70%, ${50 + progress * 10}%)`;
+          ctx.fillRect(-blockSize / 2, -blockSize / 2, blockSize, blockSize);
+          ctx.restore();
+        }
+      });
+    }
+
+    // Scene 2: Blocks coalescing into Notion-like grid
+    const canvasCoalesce = document.getElementById('canvas-coalesce');
+    if (canvasCoalesce) {
+      const tg2 = canvasCoalesce.closest('ef-timegroup');
+      tg2.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        const ctx = canvasCoalesce.getContext('2d');
+        canvasCoalesce.width = canvasCoalesce.offsetWidth;
+        canvasCoalesce.height = canvasCoalesce.offsetHeight;
+        
+        const progress = ownCurrentTimeMs / durationMs;
+        const centerX = canvasCoalesce.width / 2;
+        const centerY = canvasCoalesce.height / 2;
+        
+        ctx.clearRect(0, 0, canvasCoalesce.width, canvasCoalesce.height);
+        
+        // Grid of blocks that snap into place
+        const gridSize = 4;
+        const blockSize = 100;
+        const gap = 12;
+        const totalWidth = gridSize * blockSize + (gridSize - 1) * gap;
+        const startX = centerX - totalWidth / 2;
+        const startY = centerY - totalWidth / 2;
+        
+        for (let row = 0; row < gridSize; row++) {
+          for (let col = 0; col < gridSize; col++) {
+            const gridX = startX + col * (blockSize + gap);
+            const gridY = startY + row * (blockSize + gap);
+            
+            // Ease-out: blocks snap into grid
+            const easeProgress = progress < 0.7 ? Math.pow(progress / 0.7, 0.5) : 1;
+            const scale = 0.3 + easeProgress * 0.7;
+            const opacity = easeProgress;
+            
+            ctx.save();
+            ctx.globalAlpha = opacity;
+            ctx.translate(gridX + blockSize / 2, gridY + blockSize / 2);
+            ctx.scale(scale, scale);
+            ctx.fillStyle = `hsl(${210 + (row + col) * 15}, 65%, 55%)`;
+            ctx.fillRect(-blockSize / 2, -blockSize / 2, blockSize, blockSize);
+            ctx.restore();
+          }
+        }
+      });
+    }
+
+    // Scene 3: Unified Notion state
+    const canvasUnified = document.getElementById('canvas-unified');
+    if (canvasUnified) {
+      const tg3 = canvasUnified.closest('ef-timegroup');
+      tg3.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        const ctx = canvasUnified.getContext('2d');
+        canvasUnified.width = canvasUnified.offsetWidth;
+        canvasUnified.height = canvasUnified.offsetHeight;
+        
+        const progress = ownCurrentTimeMs / durationMs;
+        const centerX = canvasUnified.width / 2;
+        const centerY = canvasUnified.height / 2.5;
+        
+        ctx.clearRect(0, 0, canvasUnified.width, canvasUnified.height);
+        
+        // Perfect grid of unified blocks — the Notion workspace
+        const gridSize = 3;
+        const blockSize = 120;
+        const gap = 16;
+        const totalWidth = gridSize * blockSize + (gridSize - 1) * gap;
+        const startX = centerX - totalWidth / 2;
+        const startY = centerY - totalWidth / 2;
+        
+        for (let row = 0; row < gridSize; row++) {
+          for (let col = 0; col < gridSize; col++) {
+            const gridX = startX + col * (blockSize + gap);
+            const gridY = startY + row * (blockSize + gap);
+            
+            // Subtle pulse
+            const pulse = 0.95 + Math.sin(progress * Math.PI * 2 + (row + col) * 0.3) * 0.05;
+            
+            ctx.save();
+            ctx.translate(gridX + blockSize / 2, gridY + blockSize / 2);
+            ctx.scale(pulse, pulse);
+            
+            // Alternating colors for visual interest
+            const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#6366f1', '#d946ef', '#f43f5e'];
+            const colorIdx = (row * gridSize + col) % colors.length;
+            ctx.fillStyle = colors[colorIdx];
+            
+            ctx.fillRect(-blockSize / 2, -blockSize / 2, blockSize, blockSize);
+            ctx.globalAlpha = 0.15;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-blockSize / 2 + 12, -blockSize / 2 + 12, blockSize - 24, 20);
+            
+            ctx.restore();
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

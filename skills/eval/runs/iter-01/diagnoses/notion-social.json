@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition relies on generic productivity tool language and visuals. Features are represented by emoji icons (📝📋📊✅) with single-word labels that could describe any workspace tool.",
+      "improvement": "Show Notion's distinctive elements: the slash command interface, the blocks system, a database toggle, or the sidebar organization. Use Notion's actual UI patterns rather than abstract icons. Reference specific use cases Notion owns (team wikis, project databases with views)."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)",
+    "cause": "missing",
+    "proposedChange": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)\n- **Product UI patterns**: Capture distinctive interface elements (command palettes, sidebars, specific interaction patterns) that are visually recognizable and cannot be confused with competitors. These are more specific than icons or abstract shapes.\n\n**Product-Specific Visuals (MANDATORY)**:\nGeneric icons (📝📋📊✅) and single-word labels are prohibited. Instead, reference or recreate:\n- Actual UI screenshots or simplified recreations of the product's interface\n- Distinctive interaction patterns (e.g., slash commands, drag-and-drop blocks, specific menu structures)\n- The product's own visual vocabulary, not category-level imagery",
+    "rationale": "The skill instructs extraction of generic visual motifs but never requires capturing product-specific UI patterns that distinguish one tool from competitors, leading to emoji icons instead of Notion's actual blocks/slash commands."
+  },
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The chaos-to-order metaphor is a SaaS advertising cliché. The converging grid lines don't reflect how Notion actually organizes information (it's not about spatial grids but about linked, flexible blocks).",
+      "improvement": "Build the visual metaphor around Notion's actual paradigm: scattered pieces becoming interconnected blocks, or isolated documents gaining relational links. The solution canvas could show blocks snapping together rather than generic grid convergence."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "| Chaos/Complexity | Tangled lines, scattered elements | Chaotic bezier curves |\n| Order/Simplicity | Grid layouts, organized patterns | Smooth, organized appearance |",
+    "cause": "present_wrong",
+    "proposedChange": "| Chaos/Complexity | Tangled lines, scattered elements | Chaotic bezier curves |\n| Order/Simplicity | Grid layouts, organized patterns | Smooth, organized appearance |\n\n**WARNING: The chaos-to-order arc is the most overused SaaS video cliché.** If using this arc, the visual metaphor must reflect *how this specific product* creates order, not generic convergence. Ask: \"What does 'order' look like in this product's paradigm?\"\n- Notion: scattered blocks becoming interconnected/linked, not grid alignment\n- Linear: issues resolving through a pipeline, not chaos clearing\n- Figma: isolated frames gaining shared components, not spatial organization\n\nIf your chaos-to-order visual could work for any competitor, you have not found the specific metaphor.",
+    "rationale": "The Visual Metaphor Quick Reference table actively suggests 'grid layouts' and 'organized patterns' for order/simplicity without warning that this is a cliché or requiring product-specific interpretation, causing the generic converging grid approach."
+  }
+]

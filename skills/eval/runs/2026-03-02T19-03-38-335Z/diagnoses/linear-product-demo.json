@@ -1,0 +1,16 @@
+[
+  {
+    "taskId": "linear-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition uses generic issue titles ('Fix auth token expiry bug') and standard project management language. The only Linear-specific elements are the color and a keyboard shortcut hint.",
+      "improvement": "Include Linear's actual differentiators: cycles (not sprints), roadmaps, the specific issue state workflow, or real visual elements from Linear's UI. Show something only Linear does—like automatic issue prioritization or the specific way Linear handles project updates."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nYour answer must name a specific product, API, architectural decision, or design philosophy — not a marketing position. Marketing positions can be copied. Decisions cannot.\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nNot: \"They pioneered multiplayer design\" (competitors have since copied this — it no longer differentiates).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"\nYes: \"Their entire product is built on a single unified object model — a Charge in Radar is the same Charge in Connect and Billing; no translation layer exists.\"\nYes: \"They removed the 'new file' concept entirely — there are no Figma files, only URLs. The URL *is* the design.\"\nYes: \"Their product is built around a build step that understands your framework — it's not just CDN, it's the framework knowing where to put the edge functions.\"",
+    "cause": "missing",
+    "proposedChange": "Add after the existing 'Yes' examples:\n\nYes: \"Linear replaced sprints with cycles, removed story points entirely, and auto-closes stale issues — the product has opinions that eliminate decisions other tools force you to make.\"\n\n**For product-demo videos specifically:** The Phase 0 answer must appear in the demo itself. If the differentiator is 'cycles not sprints,' the demo must show a cycle, not a generic issue board. If the differentiator is 'opinionated workflow,' show a decision the product makes for you that competitors leave to the user. Generic issue titles like 'Fix auth bug' can appear in any tool — replace them with content that could only exist in this product's model.",
+    "rationale": "The model identified Linear's opinionated nature in Phase 0 but created a demo with generic issue content; explicit guidance that product-demo videos must manifest the Phase 0 answer in visible UI content would have forced Linear-specific issues, cycles, or workflow states into the composition."
+  }
+]

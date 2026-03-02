@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vercel Launch Video</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@editframe/elements/styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(24px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideDown {
+      from {
+        transform: translateY(-24px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes scaleIn {
+      from {
+        transform: scale(0.95);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .vercel-black {
+      background: #000000;
+    }
+
+    .vercel-white {
+      color: #ffffff;
+    }
+
+    .canvas-container {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <ef-timegroup mode="sequence" overlap="0.8s" class="w-[1080px] h-[1920px] vercel-black">
+    <!-- Scene 1: The Problem (0s-4s) - Git Push as Invisible Moment -->
+    <ef-timegroup mode="fixed" duration="4s" class="absolute w-full h-full vercel-black flex items-center justify-center">
+      <canvas id="gitPushCanvas" class="canvas-container"></canvas>
+      <ef-text
+        split="word"
+        class="absolute bottom-24 text-white text-center text-4xl font-bold max-w-[900px] px-8 vercel-white"
+        style="animation: 0.6s slideUp both; animation-delay: calc(var(--ef-word-index) * 80ms)"
+      >You just pushed code</ef-text>
+      <ef-text
+        class="absolute bottom-12 text-white/60 text-center text-2xl max-w-[900px] px-8"
+        style="animation: 0.5s slideUp 0.8s both"
+      >Everything else should disappear</ef-text>
+    </ef-timegroup>
+
+    <!-- Scene 2: The Moment (4s-9s) - Deployment Happens Invisibly -->
+    <ef-timegroup mode="fixed" duration="5s" class="absolute w-full h-full vercel-black flex flex-col items-center justify-center"
+      style="animation: 0.8s fadeOut var(--ef-transition-out-start) both">
+      <canvas id="deployCanvas" class="canvas-container"></canvas>
+      <ef-text
+        class="absolute text-white/40 text-center text-5xl font-bold tracking-wider"
+        style="animation: 0.4s scaleIn 1.2s both"
+      >LIVE</ef-text>
+      <ef-text
+        class="absolute top-1/3 text-white text-center text-3xl max-w-[900px] px-8"
+        style="animation: 0.5s slideUp 1.8s both"
+      >Your preview is already live</ef-text>
+    </ef-timegroup>
+
+    <!-- Scene 3: The Outcome (9s-15s) - Global Scale Made Visible -->
+    <ef-timegroup mode="fixed" duration="6s" class="absolute w-full h-full vercel-black flex flex-col items-center justify-center"
+      style="animation: 0.8s fadeIn both">
+      <canvas id="globalCanvas" class="canvas-container"></canvas>
+      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/40"></div>
+      <ef-text
+        split="word"
+        class="absolute bottom-32 text-white text-center text-5xl font-bold max-w-[900px] px-8 vercel-white"
+        style="animation: 0.6s slideUp both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+      >Deployed everywhere instantly</ef-text>
+      <ef-text
+        class="absolute bottom-16 text-white/70 text-center text-xl max-w-[900px] px-8"
+        style="animation: 0.5s slideUp 0.8s both"
+      >No config. No waiting. Just code.</ef-text>
+    </ef-timegroup>
+  </ef-timegroup>
+
+  <script>
+    // Phase 0 Analysis:
+    // 1. What's unique about Vercel that's false about competitors:
+    //    Vercel made deployment a non-event. Netlify, AWS, Heroku all require waiting, config, or human action.
+    //    Vercel's insight: if deploy happens automatically on git push with zero config, developers stop thinking about deployment.
+    //    This is invisible infrastructure — the absence of friction is the product.
+    //
+    // 2. What would be lost if this video didn't exist:
+    //    Nobody would see that Vercel has fundamentally changed what "deployment" means.
+    //    It's not "fast deployment" (Netlify can claim that). It's "deploy as a side effect of pushing code."
+    //    The moment you push is the same moment it's live everywhere. No intermediate step. No config screen.
+    //
+    // 3. Viewer feeling arc:
+    //    Start: I just pushed code (routine, familiar, done with my work)
+    //    End: My code is live globally, for preview or production (impossible speed, frictionless)
+    //
+    // 4. Structural constraint (the video's point of view):
+    //    Because deployment is invisible, the video cannot show a deployment process.
+    //    The form must be: push → nothing visible happens → suddenly it's everywhere.
+    //    Each scene removes complexity until only the git push remains. Then the result (global availability) appears.
+    //    This structure proves the truth — if you could see the deployment, it wouldn't be Vercel.
+
+    customElements.whenDefined('ef-timegroup').then(() => {
+      // Scene 1: Git push moment - show the code flowing invisibly
+      const gitScene = document.querySelector('ef-timegroup');
+      const gitCanvas = document.getElementById('gitPushCanvas');
+      const gitCtx = gitCanvas.getContext('2d');
+
+      function initGitPush() {
+        const tg = gitScene.querySelector('ef-timegroup');
+        if (!tg) return;
+
+        tg.addFrameTask((timeMs, durationMs) => {
+          gitCanvas.width = gitCanvas.offsetWidth;
+          gitCanvas.height = gitCanvas.offsetHeight;
+          const progress = timeMs / durationMs;
+
+          gitCtx.clearRect(0, 0, gitCanvas.width, gitCanvas.height);
+          gitCtx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+
+          // Invisible lines of code flowing downward as push happens
+          const lineCount = Math.floor(progress * 40);
+          for (let i = 0; i < lineCount; i++) {
+            const x = (Math.random() * 0.6 + 0.2) * gitCanvas.width;
+            const y = ((i / 40) * 0.8 + 0.1) * gitCanvas.height;
+            const alpha = Math.max(0, 1 - (progress - i / 40) * 3);
+            gitCtx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.1})`;
+            gitCtx.fillRect(x, y, 120, 2);
+          }
+
+          // Pulse effect at bottom showing push moment
+          if (progress > 0.6) {
+            const pulseAlpha = Math.sin((progress - 0.6) * Math.PI) * 0.3;
+            gitCtx.strokeStyle = `rgba(255, 255, 255, ${pulseAlpha})`;
+            gitCtx.lineWidth = 2;
+            gitCtx.beginPath();
+            gitCtx.arc(gitCanvas.width / 2, gitCanvas.height * 0.85, 40 + (progress - 0.6) * 100, 0, Math.PI * 2);
+            gitCtx.stroke();
+          }
+        });
+      }
+
+      initGitPush();
+
+      // Scene 2: Deploy happens invisibly - show particles converging
+      const allTimegroups = document.querySelectorAll('ef-timegroup');
+      const deployScene = allTimegroups[1];
+      const deployCanvas = document.getElementById('deployCanvas');
+      const deployCtx = deployCanvas.getContext('2d');
+
+      function initDeploy() {
+        if (!deployScene) return;
+        deployScene.addFrameTask((timeMs, durationMs) => {
+          deployCanvas.width = deployCanvas.offsetWidth;
+          deployCanvas.height = deployCanvas.offsetHeight;
+          const progress = timeMs / durationMs;
+
+          deployCtx.clearRect(0, 0, deployCanvas.width, deployCanvas.height);
+
+          // Particles that converge toward center (deploy happening in silence)
+          const particleCount = 120;
+          for (let i = 0; i < particleCount; i++) {
+            const angle = (i / particleCount) * Math.PI * 2;
+            const distance = 300 * (1 - progress);
+            const x = deployCanvas.width / 2 + Math.cos(angle) * distance;
+            const y = deployCanvas.height / 2 + Math.sin(angle) * distance;
+            const size = 2 + Math.sin(progress * Math.PI * 2) * 1;
+            const alpha = 0.4 + Math.sin(progress * Math.PI) * 0.3;
+
+            deployCtx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+            deployCtx.beginPath();
+            deployCtx.arc(x, y, size, 0, Math.PI * 2);
+            deployCtx.fill();
+          }
+
+          // Central glow when complete
+          if (progress > 0.8) {
+            const glowAlpha = (progress - 0.8) * 5 * 0.3;
+            deployCtx.fillStyle = `rgba(255, 255, 255, ${glowAlpha})`;
+            deployCtx.beginPath();
+            deployCtx.arc(deployCanvas.width / 2, deployCanvas.height / 2, 60, 0, Math.PI * 2);
+            deployCtx.fill();
+          }
+        });
+      }
+
+      initDeploy();
+
+      // Scene 3: Global distribution - show ripple expanding globally
+      const globalScene = allTimegroups[2];
+      const globalCanvas = document.getElementById('globalCanvas');
+      const globalCtx = globalCanvas.getContext('2d');
+
+      function initGlobal() {
+        if (!globalScene) return;
+        globalScene.addFrameTask((timeMs, durationMs) => {
+          globalCanvas.width = globalCanvas.offsetWidth;
+          globalCanvas.height = globalCanvas.offsetHeight;
+          const progress = timeMs / durationMs;
+
+          globalCtx.clearRect(0, 0, globalCanvas.width, globalCanvas.height);
+
+          // Grid of deployment points across the world
+          const cols = 8;
+          const rows = 6;
+          const cellW = globalCanvas.width / cols;
+          const cellH = globalCanvas.height / rows;
+
+          for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+              const x = (col + 0.5) * cellW;
+              const y = (row + 0.5) * cellH;
+
+              // Stagger activation based on position
+              const delay = (col + row) / (cols + rows) * 0.7;
+              const localProgress = Math.max(0, progress - delay);
+
+              if (localProgress > 0) {
+                // Point appears and pulses
+                const pointAlpha = Math.sin(localProgress * Math.PI * 2) * 0.4 + 0.4;
+                globalCtx.fillStyle = `rgba(255, 255, 255, ${pointAlpha})`;
+                globalCtx.beginPath();
+                globalCtx.arc(x, y, 4, 0, Math.PI * 2);
+                globalCtx.fill();
+
+                // Connection lines to neighbors
+                if (localProgress > 0.3) {
+                  globalCtx.strokeStyle = `rgba(255, 255, 255, ${Math.max(0, localProgress - 0.3) * 0.15})`;
+                  globalCtx.lineWidth = 1;
+                  if (col < cols - 1) {
+                    globalCtx.beginPath();
+                    globalCtx.moveTo(x, y);
+                    globalCtx.lineTo(x + cellW, y);
+                    globalCtx.stroke();
+                  }
+                  if (row < rows - 1) {
+                    globalCtx.beginPath();
+                    globalCtx.moveTo(x, y);
+                    globalCtx.lineTo(x, y + cellH);
+                    globalCtx.stroke();
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      initGlobal();
+    });
+  </script>
+</body>
+</html>

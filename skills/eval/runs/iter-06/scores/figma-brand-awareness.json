@@ -1,0 +1,53 @@
+{
+  "taskId": "figma-brand-awareness",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:57:16.011Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is structural and carries meaning. The canvas animations use addFrameTask to create procedural animations that directly illustrate the narrative: isolation in Scene 1, separation in Scene 2, and convergence in Scene 3. The cursors moving apart and together ARE the argument about collaboration.",
+      "evidence": "Scene 1: `const cursorX = fileX + fileW + 20 + Math.sin(progress * Math.PI * 2) * 10` shows isolated cursor movement. Scene 2: `const separation = progress * 200` drives files apart visually. Scene 3: `const distance = 80 * (1 - progress * 0.5)` brings cursors together. Text uses `split=\"word\"` with staggered delays: `animation-delay: calc(var(--ef-word-index) * 100ms)`"
+    },
+    "specificity": {
+      "score": 4,
+      "rationale": "The composition's structure reflects Figma's core differentiator: browser-based real-time collaboration. The three-scene arc (isolated design → file separation → browser collaboration) maps directly to Figma's value proposition against traditional desktop tools. The cursor metaphor is specific to Figma's multiplayer feature.",
+      "evidence": "Scene 3 shows `figma.com/design` in browser chrome, multiple colored cursors converging (Figma's signature multiplayer cursors), and the tagline 'Design in the browser together' addresses Figma's specific positioning. Color palette uses Figma's purple (#a255ff)."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc is traceable: isolation → frustration → solution. Scene 1 establishes loneliness, Scene 2 shows the problem of separation, Scene 3 provides relief. However, the emotional shifts are formulaic (problem → solution) rather than building genuine tension or surprise.",
+      "evidence": "Scene 1: 'Design used to be alone' with isolated cursor. Scene 2: 'Files kept you apart' with separating files. Scene 3: 'Figma' with converging cursors. The composition is truncated (cuts off mid-Scene 3), so the full arc isn't visible."
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "There's a clear perspective: design collaboration was broken, Figma fixed it. The visual metaphor of cursors and file separation commits to showing rather than telling. However, this is essentially Figma's standard marketing narrative, not an authorial interpretation.",
+      "evidence": "The POV could be stated as 'Figma transformed design from solitary to social.' The cursor choreography demonstrates this, but the structure (problem → problem → solution reveal) is conventional brand video format."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Three scenes for a 30s video is economical. Each scene has a distinct purpose. However, Scenes 1 and 2 are variations on the same theme (isolation/separation) and could potentially be combined. The composition is also incomplete, making full evaluation difficult.",
+      "evidence": "Scene 1 shows one isolated designer, Scene 2 shows two designers separated by files. These are similar emotional beats. Scene 3 is truncated at `ctx3.fillStyle = 'rgba(162, 85, 255` suggesting more content that can't be evaluated."
+    }
+  },
+  "overall": 3.6,
+  "feedback": [
+    {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "The problem-problem-solution arc is predictable. Scenes 1 and 2 both create the same emotional state (recognition of isolation) without building tension between them.",
+      "improvement": "Scene 2 could escalate the stakes—show what happens when collaboration fails (version conflicts, miscommunication, wasted work) rather than just visually representing separation. Create genuine frustration before relief."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition recites Figma's marketing position rather than offering a distinct perspective. 'Design used to be alone, now it's together' is the expected message.",
+      "improvement": "Take a stance: What did we lose when design became collaborative? What's the cost of never being alone with an idea? A more interesting POV might acknowledge trade-offs or celebrate something unexpected about Figma's impact."
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "Scenes 1 and 2 both illustrate isolation/separation. The isolated designer and the separated files are conceptually redundant.",
+      "improvement": "Combine into one scene that shows isolation transforming into separation as more designers try to work—a single visual that escalates the problem. Use the saved time to show what collaboration enables (the outcome, not just the mechanism)."
+    }
+  ]
+}

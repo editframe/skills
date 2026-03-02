@@ -1,0 +1,34 @@
+{
+  "taskId": "patagonia-brand-awareness",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-03-02T19:45:29.063Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is structural and carries meaning. The addFrameTask-driven canvas animations aren't decorative—they embody the conceptual argument. Scene 1's accumulating garment outlines visualize consumption as overwhelming accumulation. Scene 2's repair patches appearing progressively show restoration. Scene 3's orbiting particles represent the collective impact of repairs.",
+      "evidence": "Three separate addFrameTask implementations: consumption-canvas draws garments proportional to progress (`const garmentCount = Math.floor(progress * 40)`), worn-wear-canvas reveals repair patches over time (`const patchCount = Math.floor(progress * 5)`), repair-count-canvas creates particle system with time-based oscillation (`Math.sin(ownCurrentTimeMs * 0.001 + i)`). Text uses split='word' with staggered animation-delay."
+    },
+    "specificity": {
+      "score": 4,
+      "rationale": "The composition is built around Patagonia's specific Worn Wear program—a differentiating initiative that competitors don't have. The '1M+ jackets repaired' claim and the entire conceptual frame of repair-over-replacement reflects Patagonia's unique market position as an anti-consumption outdoor brand.",
+      "evidence": "Scene 2 explicitly names 'Patagonia Worn Wear: buy used, repair instead'. The repair patch visualization, the specific stat '1M+ jackets repaired instead of replaced', and the closing CTA 'Wear it longer. Repair it. Own your impact' all reference Patagonia's actual program and ethos."
+    },
+    "viewer_state": {
+      "score": 4,
+      "rationale": "Clear emotional arc: guilt/overwhelm (consumption problem) → hope/solution (Worn Wear exists) → confidence/scale (proof of impact) → empowerment (call to action). Each scene builds on the previous state rather than repeating.",
+      "evidence": "Scene 1: 'The problem: endless consumption' with visually accumulating garments creates discomfort. Scene 2 introduces solution with repair patches appearing. Scene 3 provides scale ('1M+') as validation. Scene 4's 2-second CTA converts viewer energy to action. The short duration forces momentum."
+    },
+    "point_of_view": {
+      "score": 4,
+      "rationale": "The composition takes a clear position: consumption is the enemy, repair is resistance. This isn't hedged brand-speak. The dark, minimal aesthetic with worn textures and organic greens reflects an anti-corporate stance. The form (accumulation → single repaired item) embodies the argument.",
+      "evidence": "Opening with 'The problem' is confrontational. The visual shift from 40 garment outlines to one repaired jacket is a deliberate formal argument. The color palette (dark greens, teal accents, no bright commercial colors) and 'worn-texture' overlay communicate authenticity over polish."
+    },
+    "omission": {
+      "score": 4,
+      "rationale": "Four scenes, each with a distinct function: problem, solution, proof, call. No scene repeats another's work. Scene 4 is notably brief (2s) because the argument is already made—it doesn't pad to fill time.",
+      "evidence": "Scene durations are 8s, 10s, 10s, 2s—weighted toward the middle where meaning is built. Scene 4's brevity (`duration='2s'`) shows discipline; a lesser composition would stretch the CTA. Each scene has unique canvas animation serving its specific purpose."
+    }
+  },
+  "overall": 4.2,
+  "feedback": []
+}

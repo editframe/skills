@@ -1,0 +1,38 @@
+Eval Run: iter-03
+Generator: anthropic/claude-haiku-4-5
+Evaluator: anthropic/claude-opus-4-5
+Date: 2/26/2026, 5:26:08 PM
+
+─── Scores ────────────────────────────────────────
+Task                          Motion  Spec  ViewerΔ  PoV  Omit  Overall
+─────────────────────────────────────────────────────────────────────────
+Linear (product-demo)           4/5    2/5   3/5      2/5   3/5    2.8/5
+Stripe (explainer)              5/5    3/5   4/5      4/5   3/5    3.8/5
+Figma (brand-awareness)         5/5    4/5   4/5      4/5   5/5    4.4/5
+Vercel (launch)                 5/5    4/5   4/5      5/5   5/5    4.6/5
+Notion (social)                 5/5    3/5   4/5      3/5   5/5    4/5
+Supabase (product-demo)         5/5    4/5   3/5      4/5   2/5    3.6/5
+─────────────────────────────────────────────────────────────────────────
+Average overall: 3.9/5
+
+─── Proposed Skill Changes ─────────────────────────────────────────────
+
+skills/skills/brand-video-generator/SKILL.md (11 changes)
+  [CRITICAL specificity] The model used generic blue and abstract DAGs because the skill never required extracting and using actual product UI elements and exact brand colors in the composition.
+  [MAJOR point_of_view] The model adopted Linear's marketing language without interpreting it because the skill didn't explicitly require the form to argue something beyond illustrating the copy — the test for whether form is arguing vs illustrating was missing.
+  [MAJOR point_of_view] The PoV check existed but didn't explicitly call out the failure mode of visuals that merely illustrate the marketing copy, which is exactly what the model produced.
+  [MAJOR specificity] The table provides a generic prompt to 'find what chaos looks like' but doesn't enforce that payment/infrastructure brands must show literal vendor sprawl rather than abstract curves, which led directly to the non-specific bezier animation.
+  [MAJOR specificity] The skill lists false differentiators to avoid but doesn't provide the concrete replacement — what TO show instead — which left the model defaulting to abstract bezier curves rather than specific competitive displacement.
+  [MAJOR specificity] The model used rotating rectangles converging, which is exactly the abstract shape pattern the table should warn against — adding explicit guidance that workspace tools must show actual fragmented UIs would have prevented this.
+  [MAJOR point_of_view] The model adopted 'fragmentation is the enemy' as its POV — explicitly listing consolidation/fragmentation language as a false differentiator for workspace tools would have forced the model to find Notion's specific approach.
+  [MAJOR point_of_view] The model's POV was about the category problem (fragmentation) rather than Notion's specific approach — adding an explicit example distinguishing category POV from brand-specific POV would have prevented this.
+  [MAJOR omission] The model crammed six features into one scene because there was no guidance limiting feature density or requiring distinct visual treatments per feature.
+  [MAJOR viewer_state] The model achieved 'understanding' but not 'desire to use' because the template didn't distinguish between cognitive comprehension and emotional activation as distinct targets.
+  [MAJOR viewer_state] The DAG visualization that could have delivered emotional payoff was truncated because there was no guidance about protecting 'aha' moments from time pressure.
+
+skills/skills/brand-video-generator/references/composition-patterns.md (3 changes)
+  [CRITICAL specificity] The current examples actually encourage abstract metaphors ('tangled graph → DAG') rather than requiring actual product UI, which led the model to create generic visualizations.
+  [MAJOR specificity] The Stripe example in composition-patterns suggests 'particles that pass through each other' which is still abstract — replacing it with concrete guidance to show actual vendor logos and real code would have forced the model toward specific rather than metaphorical visuals.
+  [MAJOR specificity] The model created abstract rectangles converging — this explicit warning against geometric abstractions for products with distinctive UI would have forced use of Notion's block structure.
+
+To apply: npx tsx scripts/eval-skills-apply.ts --run-id iter-03

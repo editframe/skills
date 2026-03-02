@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "linear-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "All video sources are placeholder bars-and-tone content. No actual Linear UI, workflows, or product footage is shown. The '1.2s average issue resolution time' appears to be invented.",
+      "improvement": "Include actual Linear interface footage showing the CMD+K command palette, issue creation flow, and real-time collaboration. Use verifiable metrics from Linear's marketing or leave the metric symbolic without false precision."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**You MUST use browser tools to load the actual website before any analysis.**\n\n1. Navigate to the URL with your available browser tools\n2. Take screenshots of homepage and key pages\n3. Inspect CSS to extract exact color hex codes\n4. Download logo and brand assets (3-5 minimum)",
+    "cause": "missing",
+    "proposedChange": "Add after the existing browser tool requirements:\n\n**Asset Sourcing Requirements:**\n\n1. **Product footage**: Capture actual product UI through screenshots or screen recordings. Never use placeholder/test pattern video for product demos.\n2. **Metrics and claims**: Only use statistics that appear on the actual website or are verifiable. If a metric cannot be sourced, either omit it or frame it symbolically (e.g., 'faster resolution' not '1.2s average').\n3. **If product footage is unavailable**: State this limitation explicitly and propose alternatives (stylized mockups, abstract representations clearly labeled as conceptual) rather than substituting placeholder content.",
+    "rationale": "The model used bars-and-tone placeholders because there was no explicit prohibition against placeholder content for product demos, and no requirement to source or verify metrics from the actual website."
+  },
+  {
+    "taskId": "linear-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The features highlighted (keyboard shortcuts, real-time sync, speed) are generic productivity tool claims. Linear's actual differentiators—cycles, project updates, automatic issue grouping, GitHub integration—are absent.",
+      "improvement": "Research Linear's specific positioning: focus on their unique workflow concepts like Cycles, their opinionated approach to issue hierarchy, or their specific developer tool integrations that competitors lack."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+    "cause": "missing",
+    "proposedChange": "Add after the Phase 1 Brand Analysis section, before Phase 2:\n\n### Phase 1.5: Competitive Differentiation (MANDATORY for product-demo videos)\n\nFor product demos, generic feature claims fail the specificity test. Before proceeding:\n\n**1. List the product's unique concepts or terminology** (not features every competitor has):\n- What named workflows, features, or concepts does this product introduce that competitors don't have?\n- Example: Linear has \"Cycles\" (time-boxed work periods), \"Triage\" (inbox for new issues), automatic issue grouping\n\n**2. Identify the opinionated stance:**\n- What does this product refuse to do that competitors do?\n- What workflow does it enforce that others leave optional?\n\n**3. Name specific integrations or technical differentiators:**\n- Not \"integrates with tools\" but \"bi-directional GitHub sync that auto-closes issues from PRs\"\n\n**If you can only list features that any competitor also claims (speed, ease of use, collaboration), you have not done enough research. Return to the website and look for their 'Why [Product]' or comparison pages.**",
+    "rationale": "The skill required specificity but didn't provide guidance on HOW to find product-specific differentiators, leading to generic claims that could apply to any productivity tool."
+  },
+  {
+    "taskId": "linear-product-demo",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The chaos visualization (random lines) and performance visualization (orbital rings) are decorative rather than meaningful. They don't communicate anything specific about issue tracking or Linear's approach.",
+      "improvement": "Design canvas animations that visualize the actual concept: chaos could show scattered, unconnected task cards that organize into Linear's board view. Performance could show a timeline of issue states resolving quickly."
+    },
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "currentText": "For concepts that can't be shown with video — data, systems, processes, abstractions — `addFrameTask` gives access to the canvas for per-frame generative graphics.",
+    "cause": "missing",
+    "proposedChange": "Add after the Procedural Canvas section:\n\n---\n\n## Canvas Animation Must Be Literal, Not Decorative\n\nCanvas animations should visualize the actual concept, not create abstract atmosphere.\n\n**Wrong approach:**\n- \"Chaos\" = random lines moving chaotically\n- \"Speed\" = particles moving fast\n- \"Organization\" = geometric patterns\n\n**Right approach:**\n- \"Issue tracking chaos\" = scattered rectangles (representing issues) with disconnected lines, then animating into organized columns (representing a board view)\n- \"Fast resolution\" = timeline showing issue cards moving from 'open' to 'closed' states rapidly\n- \"Real-time sync\" = two cursor icons moving on the same card simultaneously\n\n**The test:** Can a viewer who doesn't read the text understand what product category this is from the animation alone? If the same animation could represent \"email productivity\" or \"file management\" or \"project tracking\" equally well, it's decorative, not communicative.",
+    "rationale": "The skill showed canvas animation examples but didn't require that animations be semantically connected to the specific product concept, allowing decorative abstractions that communicate nothing specific about the product."
+  }
+]

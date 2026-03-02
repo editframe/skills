@@ -1,0 +1,242 @@
+<ef-timegroup mode="sequence" overlap="0.8s" class="w-[1920px] h-[1080px] bg-black">
+    
+    <!-- Scene 1: The Spotlight Problem (0s-8s) -->
+    <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full bg-gradient-to-br from-slate-900 via-black to-black flex flex-col items-center justify-center">
+      <canvas id="spotlight-canvas" class="absolute inset-0 size-full"></canvas>
+      
+      <ef-text
+        split="word"
+        class="relative z-10 text-white text-7xl font-bold text-center max-w-4xl"
+        style="animation: 0.6s word-in both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+      >You're still using Spotlight</ef-text>
+      
+      <ef-text
+        class="relative z-10 text-white/50 text-2xl mt-8"
+        style="animation: 0.5s enter-up 2.5s both"
+      >same search. same limits. same friction.</ef-text>
+
+      <script>
+        const canvas = document.getElementById('spotlight-canvas');
+        const ctx = canvas.getContext('2d');
+        const tg = canvas.closest('ef-timegroup');
+
+        tg.initializer = (instance) => {
+          return instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            const progress = ownCurrentTimeMs / durationMs;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw frustrating search results — slow, scattered, growing disorder
+            const centerX = canvas.width * 0.5;
+            const centerY = canvas.height * 0.35;
+            const resultCount = Math.floor(progress * 40);
+
+            // Light background glow (fading Spotlight feeling)
+            ctx.fillStyle = `rgba(100, 116, 139, ${0.05 + progress * 0.1})`;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 150 + progress * 80, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Random scattered results (chaos increasing)
+            for (let i = 0; i < resultCount; i++) {
+              const angle = (i / 40) * Math.PI * 2 + Math.sin(i * 0.3 + progress) * 0.5;
+              const distance = 200 + Math.sin(i * 0.1) * 100;
+              const x = centerX + Math.cos(angle) * distance;
+              const y = centerY + Math.sin(angle) * distance * 0.6;
+
+              // Item circles
+              ctx.fillStyle = `rgba(148, 163, 184, ${0.2 + (progress * 0.3)})`;
+              ctx.beginPath();
+              ctx.arc(x, y, 8, 0, Math.PI * 2);
+              ctx.fill();
+
+              // Connecting lines (tangled web)
+              if (i % 3 === 0) {
+                ctx.strokeStyle = `rgba(71, 85, 105, ${0.1 + progress * 0.15})`;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+              }
+            }
+          });
+        };
+      </script>
+    </ef-timegroup>
+
+    <!-- Scene 2: Raycast Appears (8s-16s) -->
+    <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full bg-gradient-to-br from-slate-950 via-black to-black flex flex-col items-center justify-center"
+      style="animation: 0.8s fade-in both, 0.8s fade-out var(--ef-transition-out-start) both">
+      
+      <canvas id="clarity-canvas" class="absolute inset-0 size-full"></canvas>
+
+      <ef-text
+        split="word"
+        class="relative z-10 text-white text-7xl font-bold text-center max-w-4xl"
+        style="animation: 0.6s word-in both; animation-delay: calc(var(--ef-word-index) * 100ms + 1s)"
+      >What if your launcher was<span class="raycast-orange"> instant</span></ef-text>
+      
+      <div class="relative z-10 flex items-center gap-3 mt-8" style="animation: 0.5s enter-up 3s both">
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+      </div>
+
+      <script>
+        const clarityCanvas = document.getElementById('clarity-canvas');
+        const clarityCtx = clarityCanvas.getContext('2d');
+        const clarityTg = clarityCanvas.closest('ef-timegroup');
+
+        clarityTg.initializer = (instance) => {
+          return instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+            clarityCanvas.width = clarityCanvas.offsetWidth;
+            clarityCanvas.height = clarityCanvas.offsetHeight;
+            const progress = ownCurrentTimeMs / durationMs;
+
+            clarityCtx.clearRect(0, 0, clarityCanvas.width, clarityCanvas.height);
+
+            const centerX = clarityCanvas.width * 0.5;
+            const centerY = clarityCanvas.height * 0.35;
+
+            // Clean search field emerging (Raycast orange border)
+            const searchWidth = 400 * Math.min(progress * 1.5, 1);
+            const searchHeight = 56;
+            clarityCtx.strokeStyle = `rgba(255, 107, 53, ${Math.min(progress * 2, 1)})`;
+            clarityCtx.lineWidth = 2;
+            clarityCtx.beginPath();
+            clarityCtx.roundRect(
+              centerX - searchWidth / 2,
+              centerY - searchHeight / 2,
+              searchWidth,
+              searchHeight,
+              8
+            );
+            clarityCtx.stroke();
+
+            // Cursor blinking inside
+            if (progress > 0.3) {
+              const cursorX = centerX - searchWidth / 2 + 20;
+              const cursorAlpha = 0.5 + Math.sin(progress * Math.PI * 6) * 0.5;
+              clarityCtx.strokeStyle = `rgba(255, 107, 53, ${cursorAlpha})`;
+              clarityCtx.lineWidth = 2;
+              clarityCtx.beginPath();
+              clarityCtx.moveTo(cursorX, centerY - 12);
+              clarityCtx.lineTo(cursorX, centerY + 12);
+              clarityCtx.stroke();
+            }
+
+            // Clean result items appearing (ordered, aligned, decisive)
+            const resultCount = Math.floor(Math.max(progress - 0.4, 0) * 6);
+            for (let i = 0; i < resultCount; i++) {
+              const resultY = centerY + 80 + i * 50;
+              const resultAlpha = Math.min((progress - 0.4 - i * 0.08) * 3, 1);
+
+              // Result item
+              clarityCtx.fillStyle = `rgba(255, 107, 53, ${0.1 * resultAlpha})`;
+              clarityCtx.beginPath();
+              clarityCtx.roundRect(centerX - 180, resultY - 20, 360, 40, 4);
+              clarityCtx.fill();
+
+              // Result icon
+              clarityCtx.fillStyle = `rgba(255, 107, 53, ${resultAlpha})`;
+              clarityCtx.beginPath();
+              clarityCtx.arc(centerX - 150, resultY, 6, 0, Math.PI * 2);
+              clarityCtx.fill();
+            }
+          });
+        };
+      </script>
+    </ef-timegroup>
+
+    <!-- Scene 3: Extensibility (16s-24s) -->
+    <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full bg-gradient-to-br from-black via-slate-950 to-black flex flex-col items-center justify-center"
+      style="animation: 0.8s fade-in both, 0.8s fade-out var(--ef-transition-out-start) both">
+      
+      <canvas id="extension-canvas" class="absolute inset-0 size-full"></canvas>
+
+      <ef-text
+        split="word"
+        class="relative z-10 text-white text-6xl font-bold text-center max-w-4xl leading-tight"
+        style="animation: 0.6s word-in both; animation-delay: calc(var(--ef-word-index) * 100ms + 1s)"
+      >Build your own commands. <span class="raycast-orange">Your workflows. Not theirs.</span></ef-text>
+
+      <script>
+        const extCanvas = document.getElementById('extension-canvas');
+        const extCtx = extCanvas.getContext('2d');
+        const extTg = extCanvas.closest('ef-timegroup');
+
+        extTg.initializer = (instance) => {
+          return instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+            extCanvas.width = extCanvas.offsetWidth;
+            extCanvas.height = extCanvas.offsetHeight;
+            const progress = ownCurrentTimeMs / durationMs;
+
+            extCtx.clearRect(0, 0, extCanvas.width, extCanvas.height);
+
+            const centerX = extCanvas.width * 0.5;
+            const centerY = extCanvas.height * 0.35;
+
+            // Central core (Raycast launcher)
+            extCtx.fillStyle = `rgba(255, 107, 53, 0.3)`;
+            extCtx.beginPath();
+            extCtx.arc(centerX, centerY, 40, 0, Math.PI * 2);
+            extCtx.fill();
+
+            extCtx.strokeStyle = `rgba(255, 107, 53, 1)`;
+            extCtx.lineWidth = 2;
+            extCtx.beginPath();
+            extCtx.arc(centerX, centerY, 40, 0, Math.PI * 2);
+            extCtx.stroke();
+
+            // Extensions orbiting and radiating outward
+            const extensionCount = Math.floor(progress * 12);
+            for (let i = 0; i < extensionCount; i++) {
+              const angle = (i / 12) * Math.PI * 2;
+              const maxDistance = 300 + progress * 100;
+              const distance = 100 + (progress * (maxDistance - 100));
+              const x = centerX + Math.cos(angle) * distance;
+              const y = centerY + Math.sin(angle) * distance;
+
+              // Extension node
+              extCtx.fillStyle = `rgba(255, 107, 53, ${0.2 + progress * 0.4})`;
+              extCtx.beginPath();
+              extCtx.arc(x, y, 12, 0, Math.PI * 2);
+              extCtx.fill();
+
+              // Connection line
+              extCtx.strokeStyle = `rgba(255, 107, 53, ${0.15 + progress * 0.25})`;
+              extCtx.lineWidth = 1.5;
+              extCtx.beginPath();
+              extCtx.moveTo(centerX, centerY);
+              extCtx.lineTo(x, y);
+              extCtx.stroke();
+
+              // Node border
+              extCtx.strokeStyle = `rgba(255, 107, 53, ${0.6})`;
+              extCtx.lineWidth = 1;
+              extCtx.beginPath();
+              extCtx.arc(x, y, 12, 0, Math.PI * 2);
+              extCtx.stroke();
+            }
+
+            // Radiating waves from center (extensibility spreading)
+            for (let wave = 0; wave < 3; wave++) {
+              const waveProgress = (progress + wave * 0.15) % 1;
+              const waveRadius = 40 + waveProgress * 280;
+              extCtx.strokeStyle = `rgba(255, 107, 53, ${Math.max(0.3 - waveProgress, 0)})`;
+              extCtx.lineWidth = 2;
+              extCtx.beginPath();
+              extCtx.arc(centerX, centerY, waveRadius, 0, Math.PI * 2);
+              extCtx.stroke();
+            }
+          });
+        };
+      </script>
+    </ef-timegroup>
+
+    <!-- Scene 4: CTA - Speed Defines Everything (24s-30s) -->
+    <ef-timegroup mode="fixed" duration="6s" class="absolute w-full h-full bg-black flex flex-col items-center justify-center"
+      style="animation:

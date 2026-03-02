@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "omission",
+      "severity": "major",
+      "observation": "Scene 3 attempts to showcase all six Supabase features with equal weight, creating a list-reading effect rather than memorable demonstration.",
+      "improvement": "Choose 2-3 features that best support the unified-platform thesis. Show them with distinct visual treatments or micro-interactions rather than uniform grid items. The 'open source' feature could have been a separate scene given its competitive importance."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Scene budget**: `floor(duration_seconds / 10)` is your maximum scene count. A 30s video gets 3 scenes. A 60s video gets 6. Start at the minimum and add only if the viewer-state arc requires it — not because you have things to say.",
+    "cause": "missing",
+    "proposedChange": "**Scene budget**: `floor(duration_seconds / 10)` is your maximum scene count. A 30s video gets 3 scenes. A 60s video gets 6. Start at the minimum and add only if the viewer-state arc requires it — not because you have things to say.\n\n**Feature budget**: If a scene introduces product features, show a maximum of 2-3. Each feature needs distinct visual treatment or micro-interaction to be memorable. A grid of 6 identical items is a list, not a demonstration. If a feature has competitive importance (e.g., 'open source'), it may deserve its own scene rather than sharing space.",
+    "rationale": "The model crammed six features into one scene because there was no guidance limiting feature density or requiring distinct visual treatments per feature."
+  },
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "The frustration → relief → understanding arc is competent but follows a predictable SaaS formula. The emotional payoff doesn't quite match the sophistication of the visual motion.",
+      "improvement": "Scene 4's DAG visualization could have been the 'aha' moment—showing how these tools work together in a real workflow—but it's truncated. Complete this to give viewers an 'I want to build with this' state rather than just 'I understand what this is.'"
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]",
+    "cause": "missing",
+    "proposedChange": "- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]\n- EMOTIONAL TARGET: [Name the specific feeling — 'I understand this' is not enough. Target 'I want to use this' or 'I see myself in this workflow' for product demos.]",
+    "rationale": "The model achieved 'understanding' but not 'desire to use' because the template didn't distinguish between cognitive comprehension and emotional activation as distinct targets."
+  },
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "The frustration → relief → understanding arc is competent but follows a predictable SaaS formula. The emotional payoff doesn't quite match the sophistication of the visual motion.",
+      "improvement": "Scene 4's DAG visualization could have been the 'aha' moment—showing how these tools work together in a real workflow—but it's truncated. Complete this to give viewers an 'I want to build with this' state rather than just 'I understand what this is.'"
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it. The structural constraint is the whole point — if it's not visible in scene 2, it won't be visible in scene 5 either.",
+    "cause": "missing",
+    "proposedChange": "**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it. The structural constraint is the whole point — if it's not visible in scene 2, it won't be visible in scene 5 either.\n\n**Payoff scene check**: For product demos, identify which scene delivers the 'aha' moment — where the viewer shifts from understanding features to wanting to build. This scene needs full duration to land. If your most compelling visual (e.g., a workflow diagram, a real-time demo) is compressed into a transition or truncated, restructure to give it space.",
+    "rationale": "The DAG visualization that could have delivered emotional payoff was truncated because there was no guidance about protecting 'aha' moments from time pressure."
+  }
+]

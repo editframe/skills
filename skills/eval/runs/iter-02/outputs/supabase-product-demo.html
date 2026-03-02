@@ -1,0 +1,288 @@
+<ef-configuration api-host="https://api.editframe.com" media-engine="local">
+  <ef-timegroup mode="sequence" overlap="0.8s" class="w-[1920px] h-[1080px] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <!-- SCENE 1: The Problem - Database Complexity (0-8s) -->
+    <ef-timegroup mode="contain" duration="8s" class="absolute w-full h-full" style="animation: 0.8s fade-out var(--ef-transition-out-start) both">
+      <canvas id="schema-chaos" class="absolute inset-0 size-full"></canvas>
+      <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent"></div>
+      <ef-text
+        split="word"
+        class="absolute bottom-20 left-16 text-white text-6xl font-bold max-w-3xl"
+        style="animation: 0.6s word-in both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+      >Building backend infrastructure is chaotic</ef-text>
+      <ef-text
+        class="absolute bottom-4 left-16 text-emerald-400/70 text-xl"
+        style="animation: 0.5s fade-in 1.2s both"
+      >Databases, auth, APIs, storage — disconnected tools, endless glue code</ef-text>
+    </ef-timegroup>
+
+    <!-- SCENE 2: The Unified Solution (8-18s) -->
+    <ef-timegroup mode="contain" duration="10s" class="absolute w-full h-full" style="animation: 0.8s fade-in both">
+      <div class="absolute inset-0 bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-950"></div>
+      <canvas id="unified-graph" class="absolute inset-0 size-full"></canvas>
+      
+      <ef-text
+        class="absolute top-16 left-16 text-emerald-400 text-sm font-mono tracking-widest"
+        style="animation: 0.4s fade-in 0.5s both"
+      >SUPABASE</ef-text>
+      
+      <ef-text
+        split="word"
+        class="absolute top-32 left-16 text-white text-5xl font-bold max-w-2xl"
+        style="animation: 0.5s word-in both; animation-delay: calc(0.8s + var(--ef-word-index) * 90ms)"
+      >Postgres + everything you need</ef-text>
+
+      <div class="absolute bottom-24 left-16 flex flex-col gap-6">
+        <div class="flex items-center gap-4" style="animation: 0.5s enter-left 1.8s both">
+          <div class="w-3 h-3 bg-emerald-400 rounded-full"></div>
+          <span class="text-white text-lg">SQL database built in</span>
+        </div>
+        <div class="flex items-center gap-4" style="animation: 0.5s enter-left 2.1s both">
+          <div class="w-3 h-3 bg-emerald-400 rounded-full"></div>
+          <span class="text-white text-lg">Auth in minutes, not weeks</span>
+        </div>
+        <div class="flex items-center gap-4" style="animation: 0.5s enter-left 2.4s both">
+          <div class="w-3 h-3 bg-emerald-400 rounded-full"></div>
+          <span class="text-white text-lg">Instant REST APIs, no code</span>
+        </div>
+        <div class="flex items-center gap-4" style="animation: 0.5s enter-left 2.7s both">
+          <div class="w-3 h-3 bg-emerald-400 rounded-full"></div>
+          <span class="text-white text-lg">Edge functions for logic</span>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- SCENE 3: From Complexity to Clarity (18-28s) -->
+    <ef-timegroup mode="contain" duration="10s" class="absolute w-full h-full" style="animation: 0.8s fade-out var(--ef-transition-out-start) both">
+      <div class="absolute inset-0 bg-slate-950"></div>
+      <canvas id="convergence" class="absolute inset-0 size-full"></canvas>
+      
+      <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+        <ef-text
+          split="word"
+          class="text-white text-5xl font-bold mb-8"
+          style="animation: 0.6s word-in both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+        >One platform. Clear mental model.</ef-text>
+        
+        <ef-text
+          class="text-emerald-400/80 text-xl max-w-2xl mx-auto"
+          style="animation: 0.5s fade-in 1.2s both"
+        >Write once. Deploy anywhere. No vendor lock-in — it's Postgres.</ef-text>
+      </div>
+
+      <ef-text
+        class="absolute bottom-12 left-1/2 transform -translate-x-1/2 text-emerald-400 text-sm"
+        style="animation: 0.4s fade-in 1.5s both"
+      >Open source. Self-hostable. Enterprise-grade.</ef-text>
+    </ef-timegroup>
+
+    <!-- SCENE 4: The Developer Experience (28-38s) -->
+    <ef-timegroup mode="contain" duration="10s" class="absolute w-full h-full" style="animation: 0.8s fade-in both">
+      <div class="absolute inset-0 bg-gradient-to-br from-slate-900 via-emerald-900/20 to-slate-950"></div>
+      
+      <div class="absolute top-20 left-20 bg-slate-800/60 backdrop-blur-sm border border-emerald-500/30 rounded-lg p-8 w-96" style="animation: 0.6s slide-in-left both">
+        <div class="text-emerald-400 text-sm font-mono mb-4">// Query your data</div>
+        <div class="text-white text-sm font-mono leading-relaxed">
+          <div>const { data } = await</div>
+          <div class="ml-4 text-emerald-300">supabase</div>
+          <div class="ml-4">.from('users')</div>
+          <div class="ml-4">.select()</div>
+        </div>
+      </div>
+
+      <div class="absolute top-1/3 right-20 bg-slate-800/60 backdrop-blur-sm border border-emerald-500/30 rounded-lg p-8 w-96" style="animation: 0.6s slide-in-right 0.3s both">
+        <div class="text-emerald-400 text-sm font-mono mb-4">// Real-time updates</div>
+        <div class="text-white text-sm font-mono leading-relaxed">
+          <div>supabase</div>
+          <div class="ml-4">.on('*', message => {</div>
+          <div class="ml-8">updateUI(message)</div>
+          <div class="ml-4">})</div>
+          <div class="ml-4">.subscribe()</div>
+        </div>
+      </div>
+
+      <ef-text
+        class="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-white text-2xl font-bold"
+        style="animation: 0.5s fade-in 0.8s both"
+      >The API is your database.</ef-text>
+    </ef-timegroup>
+
+    <!-- SCENE 5: Call to Action (38-45s) -->
+    <ef-timegroup mode="contain" duration="7s" class="absolute w-full h-full" style="animation: 0.8s fade-in both">
+      <canvas id="particles-cta" class="absolute inset-0 size-full"></canvas>
+      <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent"></div>
+      
+      <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+        <ef-text
+          split="word"
+          class="text-white text-6xl font-bold mb-6"
+          style="animation: 0.6s word-in both; animation-delay: calc(var(--ef-word-index) * 110ms)"
+        >Start building today</ef-text>
+
+        <ef-text
+          class="text-emerald-400 text-xl mb-8"
+          style="animation: 0.5s fade-in 1.2s both"
+        >Supabase.com — Free tier. Full features.</ef-text>
+
+        <div
+          class="px-8 py-4 bg-emerald-500 text-slate-950 font-bold text-lg rounded-lg hover:bg-emerald-400 transition-colors"
+          style="animation: 0.5s scale-in 1.5s both"
+        >Get Started</div>
+      </div>
+    </ef-timegroup>
+  </ef-timegroup>
+
+  <style>
+    /* Text animations */
+    @keyframes word-in {
+      from {
+        transform: translateY(24px) scale(0.94);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes fade-out {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    @keyframes enter-left {
+      from {
+        transform: translateX(-24px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slide-in-left {
+      from {
+        transform: translateX(-32px) scale(0.96);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slide-in-right {
+      from {
+        transform: translateX(32px) scale(0.96);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes scale-in {
+      from {
+        transform: scale(0.88);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+  </style>
+
+  <script>
+    // Canvas 1: Schema chaos visualization
+    const schemaChaosCanvas = document.getElementById('schema-chaos');
+    const schemaChaosGroup = schemaChaosCanvas.closest('ef-timegroup');
+    
+    if (schemaChaosGroup) {
+      schemaChaosGroup.initializer = (instance) => {
+        return instance.addFrameTask((info) => {
+          const ctx = schemaChaosCanvas.getContext('2d');
+          schemaChaosCanvas.width = schemaChaosCanvas.offsetWidth;
+          schemaChaosCanvas.height = schemaChaosCanvas.offsetHeight;
+          
+          const progress = info.percentComplete;
+          const cx = schemaChaosCanvas.width / 2;
+          const cy = schemaChaosCanvas.height / 2;
+          
+          // Accumulating tangled bezier curves
+          const count = Math.floor(progress * 120);
+          
+          ctx.clearRect(0, 0, schemaChaosCanvas.width, schemaChaosCanvas.height);
+          
+          for (let i = 0; i < count; i++) {
+            const angle = (i / 120) * Math.PI * 2;
+            const seed = i * 137.5;
+            
+            ctx.beginPath();
+            ctx.moveTo(
+              cx + Math.cos(angle) * 100,
+              cy + Math.sin(angle) * 100
+            );
+            
+            // Bezier curves that become more tangled as progress increases
+            const ctrl1x = cx + Math.cos(angle + 0.5) * (150 + Math.sin(seed + progress * 4) * 100);
+            const ctrl1y = cy + Math.sin(angle + 0.5) * (150 + Math.cos(seed + progress * 4) * 100);
+            const ctrl2x = cx + Math.cos(angle + 1) * (200 + Math.sin(seed * 0.7 + progress * 3) * 80);
+            const ctrl2y = cy + Math.sin(angle + 1) * (200 + Math.cos(seed * 0.7 + progress * 3) * 80);
+            const endx = cx + Math.cos(angle + 1.5) * 300;
+            const endy = cy + Math.sin(angle + 1.5) * 300;
+            
+            ctx.bezierCurveTo(ctrl1x, ctrl1y, ctrl2x, ctrl2y, endx, endy);
+            
+            const hue = (i / 120 * 180 + progress * 100) % 360;
+            ctx.strokeStyle = `hsl(${hue}, 60%, 50%)`;
+            ctx.lineWidth = 1.5 + Math.sin(seed + progress * Math.PI) * 0.8;
+            ctx.globalAlpha = 0.3 + progress * 0.3;
+            ctx.stroke();
+          }
+          
+          ctx.globalAlpha = 1;
+        });
+      };
+    }
+
+    // Canvas 2: Unified graph visualization
+    const unifiedCanvas = document.getElementById('unified-graph');
+    const unifiedGroup = unifiedCanvas.closest('ef-timegroup');
+    
+    if (unifiedGroup) {
+      unifiedGroup.initializer = (instance) => {
+        return instance.addFrameTask((info) => {
+          const ctx = unifiedCanvas.getContext('2d');
+          unifiedCanvas.width = unifiedCanvas.offsetWidth;
+          unifiedCanvas.height = unifiedCanvas.offsetHeight;
+          
+          const progress = info.percentComplete;
+          const cx = unifiedCanvas.width / 2;
+          const cy = unifiedCanvas.height / 2;
+          
+          ctx.clearRect(0, 0, unifiedCanvas.width, unifiedCanvas.height);
+          
+          // Central node grows and connects components
+          const coreRadius = 40 + progress * 20;
+          ctx.beginPath();
+          ctx.arc(cx, cy, coreRadius, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(16, 185, 129, ${0.4 + progress * 0.4})`;
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(16, 185, 129, 0.8)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          
+          // Five connected components: postgres, auth, api, functions, storage
+          const components = ['Postgres', 'Auth', 'API', 'Functions', 'Storage'];
+          const radius = 280 * Math.min(progress * 1.5, 1);
+          
+          components.forEach((name, i) => {
+            const angle = (i / components.length) * Math.PI * 2 - Math.PI / 2;
+            const x = cx + Math.cos(angle) * radius;

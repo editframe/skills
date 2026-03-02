@@ -1,0 +1,59 @@
+{
+  "taskId": "stripe-explainer",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:13:56.965Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural with addFrameTask canvas animations, word splitting with stagger delays, and coordinated scene transitions. The chaos canvas procedurally generates bezier curves tied to progress, making motion meaningful to the narrative.",
+      "evidence": "Scene 1 uses `addFrameTask((ownCurrentTimeMs, durationMs) => {...})` with `const curveCount = Math.floor(progress * 60)` to accumulate chaos. Text uses `split=\"word\"` with `animation-delay: calc(1.5s + var(--ef-word-index) * 100ms)`. Multiple canvases referenced (chaos-canvas, convergence-canvas, network-canvas) suggest procedural animation throughout."
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "Brand name and color present, plus some Stripe-specific stats, but the narrative arc (chaos → solution → features → CTA) is generic fintech template. The founding story mention is specific but underdeveloped.",
+      "evidence": "Uses `text-stripe-blue` color class. Stats like '135+ Payment methods' and '195 Countries' are Stripe-specific. However, 'Payment chaos slows you down' → 'One platform solves it' could apply to any payment processor. 'Built by engineers for engineers' is a weak differentiator."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "There's a traceable arc from frustration (chaos) to relief (solution) to confidence (stats) to action (CTA). The shifts are formulaic but present. Scene 4's 'founders were payment systems engineers' attempts depth but doesn't earn the emotional shift.",
+      "evidence": "Scene 1: 'Payment chaos slows you down' (problem awareness). Scene 2: 'Stripe solves it' (relief). Scene 3: Stats grid (confidence building). Scene 4: Engineer origin story (trust). Scene 5: CTA. The progression exists but follows predictable explainer formula."
+    },
+    "point_of_view": {
+      "score": 2,
+      "rationale": "There's an implied perspective that Stripe is 'invisible infrastructure' and engineer-built, but the composition hedges by also including generic benefit claims. The visual metaphor of chaos-to-convergence shows some authorial intent but doesn't commit fully.",
+      "evidence": "The chaos canvas accumulating curves is a genuine creative choice. 'Invisible to your users' and 'Built by engineers for engineers' hint at a perspective (infrastructure as craft). But 'Accept payments in minutes. Scale globally instantly.' is pure template copy that undermines the perspective."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Five scenes for 60s is reasonable density. Scene 3 (stats) and Scene 4 (engineer story) feel like they could be combined without loss. The stats scene is the weakest—it's a list, not a scene.",
+      "evidence": "Scene 3 is essentially a stat grid with boilerplate ('Built for scale. Built for trust. Built for your growth.'). Scene 4's 'Built by engineers for engineers' could absorb the credibility function of the stats. Both scenes aim to build trust through different mechanisms but feel redundant."
+    }
+  },
+  "overall": 2.8,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition uses generic fintech messaging ('Payment chaos', 'One platform') that could apply to Square, Adyen, or PayPal. Stats are swappable numbers without context.",
+      "improvement": "Anchor to Stripe-specific truths: the API-first philosophy, the 7-line integration, specific companies that scaled on Stripe (Shopify, Lyft). Show code or the actual developer experience—Stripe's differentiation is developer experience, not feature count."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition hedges between 'invisible infrastructure' and 'scale platform' without committing. The CTA scene reverts to generic marketing language, abandoning any developed perspective.",
+      "improvement": "Commit to one lens: if Stripe is 'infrastructure that disappears,' the CTA should reflect that ('Build your product. We'll handle the rest.'). If it's 'engineer-built for engineers,' show that in the visual language throughout, not just one mention."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "Scene 4 claims emotional weight ('founders were payment systems engineers') but doesn't earn it—there's no story, just assertion. The viewer is told to feel trust rather than led there.",
+      "improvement": "Show the origin concretely: 'Patrick and John Collison spent years watching developers struggle with payment APIs. In 2010, they built the one they wished existed.' Give the viewer a reason to care about the founding story."
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "Scene 3's stat grid is padding dressed as content. Four numbers with generic labels don't advance the argument—they're filler.",
+      "improvement": "Either make stats narrative ('When Lyft went from 10 rides to 10 million, Stripe scaled with them') or cut the scene and redistribute time to scenes that earn their place."
+    }
+  ]
+}

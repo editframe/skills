@@ -1,0 +1,138 @@
+[
+  {
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "changes": [
+      {
+        "taskId": "stripe-explainer",
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "present_wrong",
+        "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\", \"zero config\", \"batteries included\"\n- Payment/fintech brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\", \"invisible infrastructure\", \"end-to-end payments\"",
+        "proposedChange": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\", \"zero config\", \"batteries included\"\n- Payment/fintech brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\", \"invisible infrastructure\", \"end-to-end payments\", \"unified API\", \"$X processed\"\n\n**What to show instead for payment/API brands:**\n- The actual API syntax or code snippet (curl commands, SDK calls)\n- The specific visual design language (Stripe's gradient-mesh, not generic fintech blue)\n- Named products unique to this brand (Stripe Radar, Atlas, Connect — not generic \"fraud protection\")\n- The company's stated mission if distinctive (\"increase the GDP of the internet\")",
+        "rationale": "The model used 'unified API' and processed volume stats because these weren't explicitly flagged as false differentiators, and no guidance existed for what Stripe-specific elements to show instead."
+      },
+      {
+        "taskId": "stripe-explainer",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "wrong_priority",
+        "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"",
+        "proposedChange": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"\n\n**Competitor test for explainer videos**: Name 2-3 direct competitors. If your scene structure would work unchanged for their explainer video, you have not found a point of view. For Stripe: would this structure work for Adyen? Square? PayPal? If yes, the angle is not specific enough. Choose: Stripe as developer infrastructure (show DX/code), Stripe as startup enabler (founder journey), or Stripe as invisible complexity absorber (visualize what they handle). Let that single angle determine every scene.",
+        "rationale": "The existing Stripe example was correct but too brief; adding an explicit competitor test and concrete angle options forces the model to commit to a distinctive perspective rather than defaulting to generic SaaS template."
+      },
+      {
+        "taskId": "figma-brand-awareness",
+        "dimension": "viewer_state",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "- VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]\n- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]",
+        "proposedChange": "Add after the viewer-state template fields:\n\n**Escalation test for multi-scene arcs**: If two consecutive scenes create the same emotional category (e.g., both create 'recognition' or both create 'frustration'), the second scene must intensify or complicate—not merely illustrate the same idea with different visuals. Ask: 'What's worse now than before?' If nothing is worse, the scenes are redundant. Options:\n- Escalate stakes: show consequences of the problem, not just another view of it\n- Introduce a complication: the obvious solution doesn't work\n- Narrow focus: zoom in on the most painful specific detail\n\nTwo 'problem' scenes in a row without escalation is a pacing failure.",
+        "rationale": "The model created two problem scenes with identical viewer states because the skill only checks that viewer state changes between scenes, not that consecutive scenes of the same type must escalate."
+      },
+      {
+        "taskId": "figma-brand-awareness",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.",
+        "proposedChange": "Add after the existing Q4 guidance:\n\n**5. What would a critic say about this brand's impact?**\n\nEvery brand position has a cost. Name it. This is not devil's advocacy—it's the source of an interesting POV.\n- Figma made design collaborative → but constant visibility means you can never be wrong in private\n- Linear made project management opinionated → but opinions are constraints, and some teams need flexibility\n- Notion made everything a block → but infinite flexibility is infinite decisions\n\nYour video can celebrate the brand's choice while acknowledging the trade-off. A POV that ignores costs reads as marketing. A POV that names the cost and argues it's worth it reads as conviction.\n\n**If your answer to Q5 is 'there is no downside,' you haven't found the real trade-off yet.**",
+        "rationale": "The model produced a predictable marketing message because Phase 0 only asks what's unique and what formal choice follows, without requiring the model to identify trade-offs that would generate a distinctive perspective."
+      },
+      {
+        "taskId": "vercel-launch",
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "missing",
+        "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nYour answer must name a specific product, API, architectural decision, or design philosophy — not a marketing position. Marketing positions can be copied. Decisions cannot.\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nNot: \"They pioneered multiplayer design\" (competitors have since copied this — it no longer differentiates).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"\nYes: \"Their entire product is built on a single unified API — Connect, Radar, Terminal, and Billing all share the same objects.\"\nYes: \"They removed the 'new file' concept entirely — there are no files, only URLs.\"",
+        "proposedChange": "Add after the existing examples in Phase 0 Question 1:\n\n**Deployment/infrastructure brands specifically:**\nNot: \"Git push → instant deploy\" (Vercel, Netlify, Railway, Render all do this).\nNot: \"Preview URLs for every PR\" (now table stakes).\nYes: \"Edge Runtime runs code in 30+ regions with zero config — competitors require explicit region selection.\"\nYes: \"Framework-defined infrastructure: Next.js routing conventions automatically provision edge functions, ISR, and caching.\"\nYes: \"v0 generates full React components from prompts, deployed instantly — no other platform has AI-to-deploy.\"\n\nFor deployment platforms, the differentiator is rarely the deploy itself — it's what happens *around* the deploy: the DX integrations, the framework coupling, the edge architecture, or the AI tooling.",
+        "rationale": "The model treated 'instant deployment' as Vercel-specific because the skill's false-differentiator list for deployment platforms only covers basic features, not the core 'git push → deploy' pattern that all competitors share."
+      },
+      {
+        "taskId": "vercel-launch",
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "present_wrong",
+        "currentText": "- Deployment platforms: \"deploy on every git push\", \"preview URLs\", \"instant deploys\", \"global CDN\", \"serverless\"",
+        "proposedChange": "- Deployment platforms: \"deploy on every git push\", \"preview URLs\", \"instant deploys\", \"global CDN\", \"serverless\", \"git push → live\", \"zero config deploys\", \"framework support\", \"developer experience\"",
+        "rationale": "The false differentiators list for deployment platforms was too narrow; adding 'git push → live' and 'zero config deploys' explicitly would have flagged the model's chosen angle as generic."
+      },
+      {
+        "taskId": "vercel-launch",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"",
+        "proposedChange": "Add a Vercel/deployment example after the existing examples:\n\nNot: \"Vercel deploys instantly, so I'll show fast animations\" (speed is the category promise).\nYes: \"Vercel's POV is 'framework-defined infrastructure' — the code *is* the config. So each scene shows infrastructure appearing *as a consequence of* writing code, never as a separate step.\"\nYes: \"Vercel's edge-first architecture means code runs everywhere simultaneously. So the composition shows one action rippling to multiple locations in the same frame — not sequentially.\"",
+        "rationale": "The model defaulted to 'deployment should be instant' because the skill's POV examples didn't include a deployment-platform case showing how to move beyond speed-as-differentiator to architectural or workflow-level POV."
+      },
+      {
+        "taskId": "supabase-product-demo",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"",
+        "proposedChange": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\n**Template rejection test**: After answering, check: does your scene plan follow problem → solution → features → CTA? If yes, your formal choice is not constraining anything. The structure must be *different* because of the brand truth. Examples:\n- Open source brand → video structure could mirror contribution/fork/merge cycle, or show the 'escape hatch' moment of data export\n- API-first brand → structure could be request/response rhythm, or show the developer's terminal as the primary visual\n- Opinionated tool → structure removes elements scene by scene rather than adding them",
+        "rationale": "The existing guidance shows good vs bad examples but doesn't explicitly reject the generic template structure; adding a 'template rejection test' would force the model to verify its structure actually departs from the default."
+      },
+      {
+        "taskId": "supabase-product-demo",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "wrong_priority",
+        "currentText": "**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it.",
+        "proposedChange": "**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it.\n\n**Structural manifestation examples**:\n- If the brand truth is 'open source / own your data': one scene must literally show data leaving or being exported — not just mention ownership\n- If the brand truth is 'unified API surface': visual elements must share a single origin point or converge to one\n- If the brand truth is 'removes a workflow step': a scene must show absence/removal, not just speed",
+        "rationale": "The per-scene check exists but is abstract; concrete examples of how structural truths must manifest visually would force the model to actually change scene design rather than just checking a box."
+      },
+      {
+        "taskId": "supabase-product-demo",
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "- `product-demo`: Show the product in action — real UI screenshots if available, or styled HTML/CSS representations of the actual interface if not. Canvas animations for abstract mechanics only (data flow, request handling). Feature density: one demonstrable feature per scene — not a list.",
+        "proposedChange": "- `product-demo`: Show the product in action — real UI screenshots if available, or styled HTML/CSS representations of the actual interface if not. Canvas animations for abstract mechanics only (data flow, request handling). Feature density: one demonstrable feature per scene — not a list.\n  \n  **Code specificity requirement**: Any code shown must be product-specific syntax that would not work in a competing product. Generic SQL, generic REST calls, or generic authentication flows fail this test. Good examples: Supabase's `supabase.from().select().subscribe()` (realtime), Stripe's `stripe.customers.create()`, Vercel's `vercel.json` edge config. If you cannot identify product-specific syntax, do not show code — show the UI instead.",
+        "rationale": "The guidance says to show the product but doesn't prohibit generic code examples; requiring product-specific syntax that wouldn't work elsewhere would have prevented the generic SQL block."
+      },
+      {
+        "taskId": "supabase-product-demo",
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\", \"zero config\", \"batteries included\"\n- Payment/fintech brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\", \"invisible infrastructure\", \"end-to-end payments\"\n- Design tools: \"design and code together\", \"design faster\", \"multiplayer design\", \"browser-based\", \"files keep you apart\"\n- Workspace/productivity tools: \"fragmented tools → unified workspace\", \"all-in-one\", \"where work happens\", \"write, plan, organize\"\n- Deployment platforms: \"deploy on every git push\", \"preview URLs\", \"instant deploys\", \"global CDN\", \"serverless\"",
+        "proposedChange": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\", \"zero config\", \"batteries included\"\n- Payment/fintech brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\", \"invisible infrastructure\", \"end-to-end payments\"\n- Design tools: \"design and code together\", \"design faster\", \"multiplayer design\", \"browser-based\", \"files keep you apart\"\n- Workspace/productivity tools: \"fragmented tools → unified workspace\", \"all-in-one\", \"where work happens\", \"write, plan, organize\"\n- Deployment platforms: \"deploy on every git push\", \"preview URLs\", \"instant deploys\", \"global CDN\", \"serverless\"\n- Backend/database platforms: \"fragmented backend services\", \"Firebase alternative\", \"Postgres + auth + storage\", \"one platform for backend\", \"realtime database\", \"integrated backend\"",
+        "rationale": "The false differentiators list covers many categories but omits backend-as-a-service platforms; adding this category would have flagged 'fragmented backend → unified platform' as a generic claim requiring deeper specificity."
+      }
+    ]
+  },
+  {
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "changes": [
+      {
+        "taskId": "stripe-explainer",
+        "dimension": "viewer_state",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**When showing chaos or pain, make it viscerally uncomfortable — not aesthetically pleasing.** A beautiful tangle of purple bezier curves communicates \"elegant complexity.\" To communicate \"I live in this every day and it's exhausting,\" the visual needs to be overwhelming: too many elements, too fast, overlapping in a way that makes the eye unable to rest. Chaos animations that look designed signal that the problem is aesthetic, not real.",
+        "proposedChange": "**When showing chaos or pain, make it viscerally uncomfortable — not aesthetically pleasing.** A beautiful tangle of purple bezier curves communicates \"elegant complexity.\" To communicate \"I live in this every day and it's exhausting,\" the visual needs to be overwhelming: too many elements, too fast, overlapping in a way that makes the eye unable to rest. Chaos animations that look designed signal that the problem is aesthetic, not real.\n\n**Chaos must use domain-specific pain signals.** For payment brands: show failed transaction warnings, currency conversion errors, compliance alerts, chargeback notifications — the actual text and icons users dread. For dev tools: show stack traces, 500 errors, merge conflicts. Abstract shapes cannot convey pain the viewer has actually felt.\n\n**Resolution must visually transform the chaos.** The order scene should animate the chaos elements converging, simplifying, or disappearing — not cut to a separate \"clean\" visual. The viewer must see the transformation happen, not infer it from juxtaposition. If Scene 1 shows fragmented elements, Scene 2 should show those same elements unifying through motion.",
+        "rationale": "The guidance warned against aesthetic chaos but didn't specify that chaos needs domain-specific pain signals or that resolution must visually transform (not replace) the chaos elements, which would have prevented the generic shapes and the lack of convergence animation."
+      },
+      {
+        "taskId": "vercel-launch",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "- Vercel (deploy on git push): shipping as instant as saving → a ripple that reaches the edges the moment it starts; latency → instantaneous is the literal product promise",
+        "proposedChange": "- Vercel (framework-defined infrastructure): code conventions *become* infrastructure → a Next.js route file appearing, then edge functions, caching rules, and regional deployments materializing around it without any config step; the absence of configuration *is* the product\n- Vercel (edge-first): one deploy, everywhere simultaneously → a single commit rippling outward to 30+ nodes in parallel, not sequentially; simultaneity (not just speed) is the differentiator",
+        "rationale": "The existing Vercel example in composition-patterns.md reinforced the generic 'instant deploy' framing; replacing it with framework-coupling and edge-simultaneity examples would have guided the model toward Vercel's actual differentiators."
+      },
+      {
+        "taskId": "notion-social",
+        "dimension": "motion",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "## Progress-Driven Animation\n\n`--ef-progress` is a CSS variable that holds the current playback progress (0–1) for any timegroup. It updates every frame. This makes it possible to drive any CSS property as a pure function of time — without keyframes.\n\n```html live\n<ef-timegroup mode=\"fixed\" duration=\"5s\" class=\"w-[720px] h-[200px] bg-slate-900 flex flex-col items-center justify-center gap-4 p-8\">\n  <div class=\"w-full bg-slate-700 rounded-full h-3 overflow-hidden\">\n    <div class=\"h-full bg-blue-400 rounded-full transition-none\"\n      style=\"width: calc(var(--ef-progress) * 100%)\"></div>\n  </div>\n  <ef-text class=\"text-white text-2xl\">Processing your request</ef-text>\n</ef-timegroup>\n```\n\n**What motion adds:** The progress bar is not decorating a static message — it is the message. The viewer watches time pass as a spatial event. Any numeric or proportional concept can be represented this way.",
+        "proposedChange": "Add after the existing Progress-Driven Animation section:\n\n---\n\n## Position Interpolation (Convergence/Divergence)\n\nWhen elements must move from scattered positions to unified positions (or vice versa), use `--ef-progress` to interpolate between start and end coordinates. This creates continuous motion rather than a scene cut.\n\n```html live\n<ef-timegroup mode=\"fixed\" duration=\"3s\" class=\"w-[720px] h-[400px] bg-slate-900 relative\">\n  <!-- Each block interpolates from scattered start to grid end -->\n  <div class=\"absolute w-16 h-16 bg-blue-400 rounded\"\n    style=\"\n      --start-x: 50px; --start-y: 300px;\n      --end-x: 200px; --end-y: 150px;\n      left: calc(var(--start-x) + (var(--end-x) - var(--start-x)) * var(--ef-progress));\n      top: calc(var(--start-y) + (var(--end-y) - var(--start-y)) * var(--ef-progress));\n    \"></div>\n  <div class=\"absolute w-16 h-16 bg-blue-400 rounded\"\n    style=\"\n      --start-x: 600px; --start-y: 50px;\n      --end-x: 300px; --end-y: 150px;\n      left: calc(var(--start-x) + (var(--end-x) - var(--start-x)) * var(--ef-progress));\n      top: calc(var(--start-y) + (var(--end-y) - var(--start-y)) * var(--ef-progress));\n    \"></div>\n</ef-timegroup>\n```\n\n**What motion adds:** The convergence itself is the message — scattered things becoming unified. A keyframe animation with fixed durations cannot express this; the interpolation must be continuous and driven by progress. For more complex paths (curves, varied timing per element), use `addFrameTask`.\n\n**When to use this pattern:**\n- \"Chaos to order\" concepts (scattered → grid)\n- \"Unification\" concepts (fragments → whole)\n- Any motion where the *path* between states matters, not just the start and end",
+        "rationale": "The model used fixed keyframe animations for 'collapse-blocks' because the documentation only showed --ef-progress for simple width/color changes, not for interpolating element positions between scattered and unified states."
+      }
+    ]
+  }
+]

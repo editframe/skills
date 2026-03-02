@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition describes generic collaborative design rather than Figma specifically. 'Design in the browser. Together. Real-time.' could describe Canva, Miro, or dozens of competitors.",
+      "improvement": "Ground the video in specific Figma truths: show Auto Layout responding to content, Components propagating changes across files, Dev Mode translating designs to code, or multiplayer cursors with real names. The collaboration scene could show the distinctive Figma cursor avatars."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+    "cause": "present_wrong",
+    "proposedChange": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nNot: \"Real-time collaboration\" or \"work together seamlessly\" (every SaaS tool claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"\nYes: \"Their multiplayer cursors show real names and faces, making collaboration feel like being in the same room.\"\n\n**For software products specifically**: Name the unique UI elements, specific features, or distinctive interactions. If the feature description could appear on a competitor's marketing page, it's not specific enough.",
+    "rationale": "The existing example doesn't warn against generic feature claims like 'real-time collaboration' which are commodity descriptions across SaaS—adding explicit software-specific guidance would force the model to identify Figma-specific elements like Auto Layout, Components, or the distinctive cursor avatars."
+  },
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition adopts the default SaaS 'old way vs. new way' template without revealing why Figma's approach to collaboration is philosophically distinct from competitors.",
+      "improvement": "Commit to a specific perspective: Is Figma about democratizing design? About treating design as infrastructure? About eliminating the gap between design and implementation? The form should reflect that stance—if Figma is about 'design as shared language,' the video's structure should make viewers experience that rather than assert it."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**2. What would be lost if this video never existed?**\n\nNot: \"People wouldn't know about the product\" (that's true of any video).\nYes: \"Nobody would see the contrast between how chaotic their industry is and how calm their workflow actually is.\"",
+    "cause": "missing",
+    "proposedChange": "**2. What would be lost if this video never existed?**\n\nNot: \"People wouldn't know about the product\" (that's true of any video).\nNot: \"People wouldn't see how it improves collaboration\" (that's a category claim, not a perspective).\nYes: \"Nobody would see the contrast between how chaotic their industry is and how calm their workflow actually is.\"\n\n**3. What is this brand's philosophical stance that competitors reject?**\n\nEvery strong brand has an opinion that others in their space would disagree with. Find it.\n\nNot: \"Design should be easy\" (no one argues against this).\nYes: \"Design is not a handoff—it's a continuous conversation between designers and developers.\"\nYes: \"The file should be the single source of truth, not a snapshot to be exported.\"\n\nThis stance determines the video's structure. If the stance is \"design as shared language,\" the video must make viewers *experience* shared understanding, not just assert that collaboration is good.",
+    "rationale": "The Phase 0 questions don't force identification of a philosophical stance that differentiates the brand—adding this question would prevent the model from defaulting to generic 'old way vs new way' templates and instead commit to Figma's specific worldview about design as infrastructure or shared language."
+  }
+]

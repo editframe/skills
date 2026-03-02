@@ -1,0 +1,16 @@
+[
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "omission",
+      "severity": "major",
+      "observation": "Scenes 2, 3, and 4 follow identical structural templates (green label → big headline → supporting text → canvas animation) with 10 seconds each. This creates redundancy in form even when content differs.",
+      "improvement": "Vary the scene structures to match their content. Auth could be demonstrated through a rapid visual sequence rather than another canvas animation. APIs could show actual code syntax appearing. Different forms would make each scene feel necessary rather than templated."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "For each scene, use this template:\n\n```\nScene [N]: [Name] ([start]s-[end]s)\n- VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]\n- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]\n- PRIMARY VISUAL: [Main visual element - NOT just text]\n- MOTION/ANIMATION: [How it moves, what animates, specific CSS or frameTask approach]\n- VISUAL METAPHOR: [What concept this shows visually]\n- Text: [Minimal - only if essential]\n- JUSTIFICATION: [Why does this scene exist? What would be lost without it?]\n```",
+    "cause": "missing",
+    "proposedChange": "For each scene, use this template:\n\n```\nScene [N]: [Name] ([start]s-[end]s)\n- VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]\n- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]\n- FORM: [Structural approach - must differ from adjacent scenes. Options: rapid sequence, code reveal, single hero image, split-screen comparison, canvas animation, UI walkthrough, text-only moment, etc.]\n- PRIMARY VISUAL: [Main visual element - NOT just text]\n- MOTION/ANIMATION: [How it moves, what animates, specific CSS or frameTask approach]\n- VISUAL METAPHOR: [What concept this shows visually]\n- Text: [Minimal - only if essential]\n- JUSTIFICATION: [Why does this scene exist? What would be lost without it?]\n```\n\n**Form variation rule**: No two adjacent scenes may share the same structural form. If Scene 2 uses a canvas animation, Scene 3 must use a different approach (code reveal, UI screenshot sequence, split-screen, etc.). Repeating the same form signals that the content could have been consolidated.",
+    "rationale": "Adding an explicit FORM field with a rule against repeating adjacent forms would force the model to vary scene structures rather than defaulting to the same label→headline→text→canvas template for every scene."
+  }
+]

@@ -1,0 +1,47 @@
+{
+  "taskId": "notion-social",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:24:36.314Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is the argument. The chaos-to-integration visual metaphor is carried entirely by procedural canvas animation using addFrameTask. The scattered rectangles in Scene 1 and their convergence in Scene 2 physically embody the brand promise that text alone cannot convey.",
+      "evidence": "Scene 1 uses `instance.addFrameTask((timeMs, durationMs) => {...})` to draw increasingly chaotic rotating rectangles. Scene 2 uses the same technique to animate boxes converging from scattered positions to center: `const x = startX + (endX - startX) * progress; const y = startY + (endY - startY) * progress;`. The motion IS the meaning — fragmentation becoming unity."
+    },
+    "specificity": {
+      "score": 3,
+      "rationale": "Several Notion-specific truths are present: the all-in-one workspace positioning, the 'Write • Plan • Organize' feature trio, the characteristic blue (#0a7ea4), and notion.so CTA. However, the 'scattered notes becoming unified' concept applies equally to Coda, Craft, or any workspace competitor.",
+      "evidence": "Brand color `#0a7ea4` used in `notion-blue` class and canvas strokes. Feature words 'Write • Plan • Organize' match Notion's positioning. But the chaos-to-order visual metaphor is category-generic — Coda could use identical imagery with different colors."
+    },
+    "viewer_state": {
+      "score": 4,
+      "rationale": "Clear three-act emotional arc with documented state transitions. Each scene's purpose is explicitly stated and the composition delivers on those transitions. The final state ('feel possibility and know where to go next') is distinctly different from the opening state of recognized chaos.",
+      "evidence": "Scene 1 comments: 'Viewer State Start: I have notes scattered everywhere... Viewer State End: Recognition that this scattered state is the problem'. Scene 2: 'See that one space can hold everything'. Scene 3: 'Feel possibility and know where to go next'. The motion reinforces each shift."
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "A clear perspective is present: productivity fragmentation is the real problem, not individual tool quality. The composition commits to showing chaos as viscerally uncomfortable rather than just describing it. However, this is a common category POV, not a Notion-specific insight.",
+      "evidence": "The choice to open with rotating, multiplying rectangles creating visual anxiety shows commitment to the 'chaos is the enemy' perspective. The phrase 'Your brain. All in one place.' in Scene 3 articulates the POV. But any productivity tool could make this exact argument."
+    },
+    "omission": {
+      "score": 5,
+      "rationale": "Three scenes, each with distinct purpose. No redundancy. Scene 1 establishes problem, Scene 2 shows solution mechanism, Scene 3 delivers emotional payoff and CTA. The 0.8s overlap transitions maintain pace without adding scenes.",
+      "evidence": "Scene durations are 3.5s, 5.5s, 6s totaling 15s with overlaps. Each scene has unique visual treatment (black/chaos, white/convergence, blue/resolution). No repeated messaging — 'juggling' appears once, 'workspace' once, 'one place' once."
+    }
+  },
+  "overall": 4,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The chaos-to-unity visual metaphor could apply to any all-in-one workspace tool. The rotating rectangles and convergence animation are category-generic.",
+      "improvement": "Use Notion-specific visual language: the distinctive block structure, the emoji usage, the database views, or the slash-command interaction. Show recognizable Notion UI elements fragmenting and unifying rather than abstract shapes."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The 'fragmentation is the enemy' POV is the default category perspective shared by every productivity consolidation tool.",
+      "improvement": "Find a Notion-specific truth: perhaps that blocks are thoughts, that structure emerges rather than being imposed, or that personal and team knowledge belong together. The composition should express why Notion's approach to unity differs from competitors."
+    }
+  ]
+}

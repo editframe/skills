@@ -1,0 +1,53 @@
+{
+  "taskId": "notion-social",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:32:32.581Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is structural and carries meaning. The scattered canvas animation visualizes fragmentation (the problem), while the organized grid canvas visualizes order emerging (the solution). Text splitting with staggered word-level animations reinforces the messaging rhythm.",
+      "evidence": "Two `addFrameTask` implementations: scatter-canvas shows 'Rectangles move erratically - chaos motion' with `wobbleX = Math.sin(seed + timeMs * 0.003) * 30`, while grid-canvas shows 'order emerging from chaos' with staggered cell reveals `const stagger = (row + col) * 0.05`. Text uses `split=\"word\"` with `animation-delay: calc(var(--ef-word-index) * 120ms)`."
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "The composition uses Notion's brand colors and mentions its core features (Notes, Docs, Database, Tasks), but these are generic productivity categories. The 'everything in one place' concept applies equally to Coda, Confluence, or ClickUp.",
+      "evidence": "Features shown are generic emoji icons: '📝 Notes', '📋 Docs', '📊 Database', '✅ Tasks'. The tagline 'Make it happen together' and 'One workspace. All your work' could be any collaboration tool's messaging. The ⊞ symbol is not Notion's actual logo."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "There's a traceable arc: chaos/frustration (scattered tools) → relief/clarity (one place) → confidence (teams organized) → action (CTA). The state changes exist but feel formulaic rather than earned.",
+      "evidence": "Scene 1 'Tools scattered everywhere' with chaotic canvas creates tension. Scene 2 shifts to white background with 'Everything in one place'. Scene 3 promises outcome 'Teams finally organized'. Scene 4 is standard CTA. The transitions follow expected advertising structure."
+    },
+    "point_of_view": {
+      "score": 2,
+      "rationale": "The composition implies a perspective (chaos vs. order) but doesn't commit to anything distinctive about Notion specifically. The visual metaphor of scattered-to-organized could apply to any productivity tool.",
+      "evidence": "The chaos→order narrative is a standard productivity tool trope. Nothing in the composition reflects Notion's distinctive philosophy (blocks as building units, wikis-as-databases thinking, the specific way Notion conceptualizes information architecture)."
+    },
+    "omission": {
+      "score": 4,
+      "rationale": "Each of the four scenes serves a distinct purpose in the narrative arc. No scene repeats another's function. The timing is tight for 15 seconds.",
+      "evidence": "Scene 1 (3.5s): Problem. Scene 2 (4s): Solution + features. Scene 3 (4s): Benefit. Scene 4 (3.5s): CTA. Each scene has unique visual treatment and messaging. Could potentially compress Scenes 2-3, but both earn their presence."
+    }
+  },
+  "overall": 3.2,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic productivity features (Notes, Docs, Database, Tasks) and could describe any workspace tool. The visual symbol ⊞ is not Notion's actual logo.",
+      "improvement": "Reference Notion-specific concepts: blocks as the fundamental unit, slash commands, the wiki-database hybrid model, specific templates (roadmaps, team wikis). Use Notion's actual logo and visual language (the clean sans-serif aesthetic, the specific way pages nest)."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The chaos-to-order narrative is standard productivity advertising. The composition doesn't express what makes Notion's approach to organization different.",
+      "improvement": "Build the composition around Notion's actual philosophy: information as interconnected blocks, not siloed apps. Show the same piece of information appearing in multiple contexts (a database row becoming a page, a mention linking to a doc). The form should demonstrate Notion's 'everything is a block' mental model."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "The state changes follow a predictable advertising formula (problem → solution → benefit → CTA) without surprising the viewer or earning the emotional shifts.",
+      "improvement": "Make the transitions feel necessary rather than formulaic. Scene 2's relief would be stronger if Scene 1's chaos felt more specific to real pain (tab overload, context-switching exhaustion). The 'teams finally organized' claim needs visual proof, not just assertion."
+    }
+  ]
+}

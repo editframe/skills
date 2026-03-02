@@ -1,0 +1,235 @@
+<ef-timegroup mode="sequence" overlap="0.8s" class="w-[1080px] h-[1920px] bg-white">
+    <!-- Scene 1: Single Player Problem (0s - 8s) -->
+    <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full gradient-bg-1 flex flex-col items-center justify-center p-8">
+      <ef-text
+        split="word"
+        class="text-figma-dark text-6xl font-bold text-center mb-8 leading-tight"
+        style="animation: 0.6s word-in-up both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+      >Design used to be alone</ef-text>
+      
+      <div class="w-full h-64 relative mt-8" id="scene1-canvas-container">
+        <canvas id="scene1-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      </div>
+      
+      <script>
+        const container = document.getElementById('scene1-canvas-container');
+        const canvas = document.getElementById('scene1-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const parent = container.parentElement;
+        parent.initializer = (instance) => {
+          return instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            
+            const progress = ownCurrentTimeMs / durationMs;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            // Draw a single isolated file/artboard
+            const fileX = centerX - 60;
+            const fileY = centerY - 40;
+            const fileW = 120;
+            const fileH = 80;
+            
+            ctx.fillStyle = '#a255ff';
+            ctx.fillRect(fileX, fileY, fileW, fileH);
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Design File', centerX, centerY + 5);
+            
+            // Draw a single cursor that appears isolated
+            const cursorX = fileX + fileW + 20 + Math.sin(progress * Math.PI * 2) * 10;
+            const cursorY = fileY + Math.cos(progress * Math.PI * 2) * 10;
+            
+            ctx.fillStyle = 'rgba(162, 85, 255, 0.6)';
+            ctx.beginPath();
+            ctx.moveTo(cursorX, cursorY);
+            ctx.lineTo(cursorX + 8, cursorY + 12);
+            ctx.lineTo(cursorX + 4, cursorY + 14);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Pulse opacity to show isolation
+            const pulse = 0.4 + Math.sin(progress * Math.PI * 4) * 0.3;
+            ctx.fillStyle = `rgba(162, 85, 255, ${pulse * 0.3})`;
+            ctx.fillRect(fileX - 40, fileY - 40, fileW + 80, fileH + 80);
+          });
+        };
+      </script>
+    </ef-timegroup>
+
+    <!-- Scene 2: The Collaboration Problem (8s - 16s) -->
+    <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full gradient-bg-2 flex flex-col items-center justify-center p-8"
+      style="animation: 0.8s fade-out-scene var(--ef-transition-out-start) both">
+      
+      <ef-text
+        split="word"
+        class="text-figma-dark text-6xl font-bold text-center mb-8 leading-tight"
+        style="animation: 0.6s word-in-up 0.4s both; animation-delay: calc(0.4s + var(--ef-word-index) * 100ms)"
+      >Files kept you apart</ef-text>
+      
+      <div class="w-full h-64 relative mt-8" id="scene2-canvas-container">
+        <canvas id="scene2-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      </div>
+      
+      <script>
+        const container2 = document.getElementById('scene2-canvas-container');
+        const canvas2 = document.getElementById('scene2-canvas');
+        const ctx2 = canvas2.getContext('2d');
+        
+        const parent2 = container2.parentElement;
+        parent2.initializer = (instance) => {
+          return instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+            canvas2.width = canvas2.offsetWidth;
+            canvas2.height = canvas2.offsetHeight;
+            
+            const progress = ownCurrentTimeMs / durationMs;
+            ctx2.clearRect(0, 0, canvas2.width, canvas2.height);
+            
+            const centerX = canvas2.width / 2;
+            const centerY = canvas2.height / 2;
+            
+            // Draw multiple separate files, spreading apart
+            const fileW = 80;
+            const fileH = 60;
+            const separation = progress * 200;
+            
+            // File 1 - moving left
+            const file1X = centerX - fileW / 2 - separation / 2 - 20;
+            const file1Y = centerY - fileH / 2;
+            ctx2.fillStyle = '#a255ff';
+            ctx2.fillRect(file1X, file1Y, fileW, fileH);
+            ctx2.fillStyle = '#ffffff';
+            ctx2.font = 'bold 12px sans-serif';
+            ctx2.textAlign = 'center';
+            ctx2.fillText('Design', centerX - separation / 2 - 20, centerY + 5);
+            
+            // Cursor 1
+            const cursor1X = file1X + fileW + 15;
+            const cursor1Y = file1Y + 10;
+            ctx2.fillStyle = '#a255ff';
+            ctx2.beginPath();
+            ctx2.moveTo(cursor1X, cursor1Y);
+            ctx2.lineTo(cursor1X + 6, cursor1Y + 10);
+            ctx2.lineTo(cursor1X + 3, cursor1Y + 11);
+            ctx2.closePath();
+            ctx2.fill();
+            
+            // File 2 - moving right
+            const file2X = centerX - fileW / 2 + separation / 2 + 20;
+            const file2Y = centerY - fileH / 2;
+            ctx2.fillStyle = '#9f7aea';
+            ctx2.fillRect(file2X, file2Y, fileW, fileH);
+            ctx2.fillStyle = '#ffffff';
+            ctx2.textAlign = 'center';
+            ctx2.fillText('Design', centerX + separation / 2 + 20, centerY + 5);
+            
+            // Cursor 2
+            const cursor2X = file2X - 15;
+            const cursor2Y = file2Y + 10;
+            ctx2.fillStyle = '#9f7aea';
+            ctx2.beginPath();
+            ctx2.moveTo(cursor2X, cursor2Y);
+            ctx2.lineTo(cursor2X + 6, cursor2Y + 10);
+            ctx2.lineTo(cursor2X + 3, cursor2Y + 11);
+            ctx2.closePath();
+            ctx2.fill();
+            
+            // Draw disconnect lines that fade
+            const lineAlpha = Math.max(0, 1 - progress);
+            ctx2.strokeStyle = `rgba(162, 85, 255, ${lineAlpha * 0.3})`;
+            ctx2.lineWidth = 2;
+            ctx2.setLineDash([4, 4]);
+            ctx2.beginPath();
+            ctx2.moveTo(file1X + fileW, centerY);
+            ctx2.lineTo(file2X, centerY);
+            ctx2.stroke();
+            ctx2.setLineDash([]);
+          });
+        };
+      </script>
+    </ef-timegroup>
+
+    <!-- Scene 3: Enter Figma - Browser (16s - 24s) -->
+    <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full gradient-bg-3 flex flex-col items-center justify-center p-8"
+      style="animation: 0.8s fade-in-scene both">
+      
+      <ef-text
+        split="char"
+        class="text-white text-7xl font-black text-center mb-12 tracking-tight"
+        style="animation: 0.3s char-in-stagger both; animation-delay: calc(var(--ef-index) * 40ms)"
+      >Figma</ef-text>
+      
+      <ef-text
+        split="word"
+        class="text-white/80 text-2xl text-center max-w-xl"
+        style="animation: 0.5s word-in-up 1.2s both; animation-delay: calc(1.2s + var(--ef-word-index) * 80ms)"
+      >Design in the browser together</ef-text>
+      
+      <div class="w-full h-48 relative mt-12" id="scene3-canvas-container">
+        <canvas id="scene3-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      </div>
+      
+      <script>
+        const container3 = document.getElementById('scene3-canvas-container');
+        const canvas3 = document.getElementById('scene3-canvas');
+        const ctx3 = canvas3.getContext('2d');
+        
+        const parent3 = container3.parentElement;
+        parent3.initializer = (instance) => {
+          return instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+            canvas3.width = canvas3.offsetWidth;
+            canvas3.height = canvas3.offsetHeight;
+            
+            const progress = ownCurrentTimeMs / durationMs;
+            ctx3.clearRect(0, 0, canvas3.width, canvas3.height);
+            
+            const centerX = canvas3.width / 2;
+            const centerY = canvas3.height / 2;
+            
+            // Draw browser window frame
+            ctx3.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx3.lineWidth = 2;
+            const browserW = 240;
+            const browserH = 160;
+            ctx3.strokeRect(centerX - browserW / 2, centerY - browserH / 2, browserW, browserH);
+            
+            // Browser chrome
+            ctx3.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx3.fillRect(centerX - browserW / 2, centerY - browserH / 2, browserW, 20);
+            ctx3.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx3.font = '10px monospace';
+            ctx3.textAlign = 'left';
+            ctx3.fillText('figma.com/design', centerX - browserW / 2 + 8, centerY - browserH / 2 + 14);
+            
+            // Draw multiple cursors converging
+            const cursorCount = 3;
+            for (let i = 0; i < cursorCount; i++) {
+              const angle = (i / cursorCount) * Math.PI * 2 - progress * Math.PI * 2;
+              const distance = 80 * (1 - progress * 0.5);
+              const cursorX = centerX + Math.cos(angle) * distance;
+              const cursorY = centerY + Math.sin(angle) * distance;
+              
+              // Fade in cursors as they approach
+              const alpha = Math.min(1, progress * 2);
+              
+              // Color variation for each cursor
+              const colors = ['#a255ff', '#d99fff', '#7d4fb8'];
+              ctx3.fillStyle = colors[i];
+              ctx3.globalAlpha = alpha * 0.8;
+              ctx3.beginPath();
+              ctx3.moveTo(cursorX, cursorY);
+              ctx3.lineTo(cursorX + 7, cursorY + 9);
+              ctx3.lineTo(cursorX + 4, cursorY + 10);
+              ctx3.closePath();
+              ctx3.fill();
+              ctx3.globalAlpha = 1;
+            }
+            
+            // Draw a canvas/artboard in center that shows activity
+            ctx3.fillStyle = 'rgba(162, 85, 255

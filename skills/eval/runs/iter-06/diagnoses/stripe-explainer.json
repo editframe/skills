@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic payment processor messaging ('unified API', '$2T+ processed') without Stripe's distinctive developer identity, visual language, or specific product differentiators.",
+      "improvement": "Include Stripe-specific elements: a glimpse of their actual API syntax, the distinctive gradient-mesh aesthetic, references to Stripe-only products (Radar, Atlas, Connect), or their 'increase the GDP of the internet' mission. Show code, not just icons."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\", \"zero config\", \"batteries included\"\n- Payment/fintech brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\", \"invisible infrastructure\", \"end-to-end payments\"",
+    "cause": "present_wrong",
+    "proposedChange": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\", \"zero config\", \"batteries included\"\n- Payment/fintech brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\", \"invisible infrastructure\", \"end-to-end payments\", \"unified API\", \"$X processed\"\n\n**What to show instead for payment/API brands:**\n- The actual API syntax or code snippet (curl commands, SDK calls)\n- The specific visual design language (Stripe's gradient-mesh, not generic fintech blue)\n- Named products unique to this brand (Stripe Radar, Atlas, Connect — not generic \"fraud protection\")\n- The company's stated mission if distinctive (\"increase the GDP of the internet\")",
+    "rationale": "The model used 'unified API' and processed volume stats because these weren't explicitly flagged as false differentiators, and no guidance existed for what Stripe-specific elements to show instead."
+  },
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition follows the standard SaaS explainer template without committing to a distinctive perspective on what makes Stripe different from Adyen, Square, or PayPal.",
+      "improvement": "Choose a specific angle: Stripe as developer infrastructure (show the DX), Stripe as startup enabler (founder journey), or Stripe as invisible complexity absorber (visualize what they handle vs. what you don't). Let that angle determine scene structure."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"",
+    "cause": "wrong_priority",
+    "proposedChange": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"\n\n**Competitor test for explainer videos**: Name 2-3 direct competitors. If your scene structure would work unchanged for their explainer video, you have not found a point of view. For Stripe: would this structure work for Adyen? Square? PayPal? If yes, the angle is not specific enough. Choose: Stripe as developer infrastructure (show DX/code), Stripe as startup enabler (founder journey), or Stripe as invisible complexity absorber (visualize what they handle). Let that single angle determine every scene.",
+    "rationale": "The existing Stripe example was correct but too brief; adding an explicit competitor test and concrete angle options forces the model to commit to a distinctive perspective rather than defaulting to generic SaaS template."
+  },
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "The chaos-to-order arc is stated but not felt. Scene 1's 'fragmented' chaos canvas doesn't create visceral frustration, and Scene 2's 'unified' doesn't provide visual relief through convergence.",
+      "improvement": "Make the chaos canvas show actual pain: failed transactions, currency confusion, compliance warnings. Then have Scene 2 literally show those elements converging and simplifying through animation—let the viewer feel the relief through visual transformation."
+    },
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "currentText": "**When showing chaos or pain, make it viscerally uncomfortable — not aesthetically pleasing.** A beautiful tangle of purple bezier curves communicates \"elegant complexity.\" To communicate \"I live in this every day and it's exhausting,\" the visual needs to be overwhelming: too many elements, too fast, overlapping in a way that makes the eye unable to rest. Chaos animations that look designed signal that the problem is aesthetic, not real.",
+    "cause": "missing",
+    "proposedChange": "**When showing chaos or pain, make it viscerally uncomfortable — not aesthetically pleasing.** A beautiful tangle of purple bezier curves communicates \"elegant complexity.\" To communicate \"I live in this every day and it's exhausting,\" the visual needs to be overwhelming: too many elements, too fast, overlapping in a way that makes the eye unable to rest. Chaos animations that look designed signal that the problem is aesthetic, not real.\n\n**Chaos must use domain-specific pain signals.** For payment brands: show failed transaction warnings, currency conversion errors, compliance alerts, chargeback notifications — the actual text and icons users dread. For dev tools: show stack traces, 500 errors, merge conflicts. Abstract shapes cannot convey pain the viewer has actually felt.\n\n**Resolution must visually transform the chaos.** The order scene should animate the chaos elements converging, simplifying, or disappearing — not cut to a separate \"clean\" visual. The viewer must see the transformation happen, not infer it from juxtaposition. If Scene 1 shows fragmented elements, Scene 2 should show those same elements unifying through motion.",
+    "rationale": "The guidance warned against aesthetic chaos but didn't specify that chaos needs domain-specific pain signals or that resolution must visually transform (not replace) the chaos elements, which would have prevented the generic shapes and the lack of convergence animation."
+  }
+]

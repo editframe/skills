@@ -1,0 +1,59 @@
+{
+  "taskId": "figma-brand-awareness",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:47:02.934Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is structural and carries meaning. Each scene uses addFrameTask with procedural canvas animations that directly illustrate the narrative: scattered files → convergence → connected flow. The canvas animations aren't decorative—they are the argument.",
+      "evidence": "Three distinct canvas-based addFrameTask implementations: canvas-files shows files appearing in isolation (for (let i = 0; i < fileCount; i++)), canvas-convergence shows particles converging to center (const distance = (1 - progress) * 200 + progress * 40), canvas-flow shows nodes connecting with animated lines. Text uses split='word' with stagger: animation-delay: calc(var(--ef-word-index) * 120ms)"
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "The composition uses Figma's core value proposition (collaborative design, no handoff) but nothing visually or structurally specific to Figma. No Figma logo, colors (#A259FF, #F24E1E, etc.), cursor collaboration visuals, or component/frame metaphors. Any design tool (Canva, Sketch, Adobe XD) could claim this narrative.",
+      "evidence": "Color palette is generic blue (rgba(99, 179, 237)), rgba(100, 150, 255)). Text claims like 'Files keep you apart' and 'One place everyone meets' describe collaborative tools generically. The 'Design, prototype, ship' tagline isn't Figma-specific. CTA is just 'Open Figma' with no brand visual treatment."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc is traceable: frustration with files → relief of convergence → empowerment with unified workflow. However, the emotional shifts are formulaic and the visuals don't fully earn the state changes—they illustrate rather than evoke.",
+      "evidence": "Scene 1: 'Files keep you apart' (problem). Scene 2: 'One place everyone meets' (shift). Scene 3: 'Design, prototype, ship' (resolution). The progression follows standard problem-solution-outcome, which is competent but predictable."
+    },
+    "point_of_view": {
+      "score": 2,
+      "rationale": "The composition implies a perspective (collaboration > file-based workflows) but doesn't commit to anything distinctive. It's a category-level argument, not a Figma-specific one. The choice to visualize abstract particles rather than actual design workflows hedges the perspective.",
+      "evidence": "The visual metaphors are abstract (particles, geometric shapes, generic 'files') rather than showing actual design work. The structure is standard three-act (problem → shift → solution). Nothing in the form reveals why Figma specifically, versus 'why collaborative design tools generally.'"
+    },
+    "omission": {
+      "score": 4,
+      "rationale": "Three scenes with clear distinct purposes, no padding. Each scene advances the narrative. The 14-second final scene is perhaps slightly long, but it contains three distinct content elements (title, subtitle, CTA) that need time to land.",
+      "evidence": "Scene 1 (0-8s): establishes problem. Scene 2 (8-16s): introduces shift. Scene 3 (16-30s): delivers outcome and CTA. overlap='0.8s' creates tight transitions. No redundant scenes or repeated information."
+    }
+  },
+  "overall": 3.2,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic blue colors and abstract geometric shapes that could represent any collaborative software. No Figma brand colors, logo, or distinctive visual elements appear.",
+      "improvement": "Use Figma's actual brand colors (#F24E1E, #FF7262, #A259FF, #1ABCFE, #0ACF83). Show recognizable Figma UI elements—cursors with names, frames/components, the collaboration indicators. The canvas animations should draw Figma-specific metaphors."
+    },
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The narrative ('files keep you apart', 'one place everyone meets') describes the collaborative design category, not Figma specifically. Sketch, Canva, or Adobe XD could make identical claims.",
+      "improvement": "Reference Figma-specific truths: real-time multiplayer as core architecture (not added feature), browser-native access, Dev Mode, FigJam integration. Show what's true about Figma that's false about competitors."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition takes a safe category-level stance (collaboration good, files bad) without revealing a distinctive perspective on design itself.",
+      "improvement": "Commit to a specific angle: Figma believes design is a team sport, not a solo art. Or: Figma treats the browser as native, not the desktop. Let that perspective shape visual choices—show the browser URL bar, show multiple cursors actively designing together."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "The emotional arc follows a predictable problem-solution formula. The abstract visuals illustrate rather than evoke the feelings of isolation and collaboration.",
+      "improvement": "Make the 'files' in Scene 1 feel more frustrating—show version conflicts, email threads, confusion. Make Scene 2's convergence feel like relief by showing recognizable design elements coming together, not just particles."
+    }
+  ]
+}

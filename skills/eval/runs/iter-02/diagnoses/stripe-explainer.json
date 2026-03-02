@@ -1,0 +1,58 @@
+[
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition uses generic fintech messaging ('Payment chaos', 'One platform') that could apply to Square, Adyen, or PayPal. Stats are swappable numbers without context.",
+      "improvement": "Anchor to Stripe-specific truths: the API-first philosophy, the 7-line integration, specific companies that scaled on Stripe (Shopify, Lyft). Show code or the actual developer experience—Stripe's differentiation is developer experience, not feature count."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+    "cause": "missing",
+    "proposedChange": "Add after the Yes example:\n\n**For API/developer tools specifically:**\nNot: \"They have a powerful API\" or \"They handle payments\" (category descriptor).\nYes: \"A working integration is 7 lines of code. Competitors require SDKs, callbacks, and webhook handlers before you can charge a card.\"\n\nThe truth must be *demonstrable in the video*—if you can't show it visually or structurally, you haven't found it yet.",
+    "rationale": "The model defaulted to category-level claims ('Payment chaos', 'One platform') because the skill's examples don't address API/developer products where the differentiation is often in implementation details that need explicit guidance to surface."
+  },
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition uses generic fintech messaging ('Payment chaos', 'One platform') that could apply to Square, Adyen, or PayPal. Stats are swappable numbers without context.",
+      "improvement": "Anchor to Stripe-specific truths: the API-first philosophy, the 7-line integration, specific companies that scaled on Stripe (Shopify, Lyft). Show code or the actual developer experience—Stripe's differentiation is developer experience, not feature count."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"",
+    "cause": "missing",
+    "proposedChange": "Expand the list to include fintech/infrastructure patterns:\n\n**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- \"One platform\", \"unified solution\", \"handles complexity\", \"scales with you\"\n- For payments: \"secure\", \"global\", \"fraud protection\", \"multiple payment methods\"\n- Generic stats without attribution: \"$X processed\", \"Y% uptime\", \"Z countries\" (unless you explain *why* these numbers matter for this specific brand)",
+    "rationale": "The model used 'One platform' and generic stats because the false differentiators list didn't include payment/infrastructure clichés, so the model didn't recognize them as generic."
+  },
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition hedges between 'invisible infrastructure' and 'scale platform' without committing. The CTA scene reverts to generic marketing language, abandoning any developed perspective.",
+      "improvement": "Commit to one lens: if Stripe is 'infrastructure that disappears,' the CTA should reflect that ('Build your product. We'll handle the rest.'). If it's 'engineer-built for engineers,' show that in the visual language throughout, not just one mention."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.",
+    "cause": "missing",
+    "proposedChange": "Add after the existing examples:\n\n**The CTA must follow from the PoV, not revert to generic marketing.**\n\nIf your PoV is \"infrastructure that disappears,\" your CTA cannot be \"Start your free trial\" or \"Learn more.\" It must reflect the PoV: \"Build your product. We handle the rest.\"\n\nIf your PoV is \"built by engineers for engineers,\" your CTA should speak that language: \"Read the docs\" or \"Deploy in 5 minutes.\"\n\n**Test:** Read your CTA aloud. Could it appear in any competitor's video? If yes, it contradicts your PoV.",
+    "rationale": "The model abandoned its perspective at the CTA because the skill doesn't explicitly require the CTA to embody the PoV—models default to safe marketing language unless instructed otherwise."
+  },
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition hedges between 'invisible infrastructure' and 'scale platform' without committing. The CTA scene reverts to generic marketing language, abandoning any developed perspective.",
+      "improvement": "Commit to one lens: if Stripe is 'infrastructure that disappears,' the CTA should reflect that ('Build your product. We'll handle the rest.'). If it's 'engineer-built for engineers,' show that in the visual language throughout, not just one mention."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it.",
+    "cause": "wrong_priority",
+    "proposedChange": "Replace with:\n\n**Per-scene PoV check (MANDATORY for every scene including CTA)**: After writing each scene, answer in one sentence: \"This scene's [specific structural element] exists because [Phase 0 answer #4].\" If you cannot complete this sentence, the scene violates the PoV. The CTA scene is not exempt—generic CTAs prove the PoV was abandoned.\n\nInclude this check in your output for each scene.",
+    "rationale": "The instruction was present but not enforced as a visible output requirement; making it mandatory in the output format forces the model to explicitly verify PoV consistency for every scene including the CTA."
+  }
+]

@@ -1,0 +1,128 @@
+[
+  {
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "changes": [
+      {
+        "taskIds": [
+          "linear-product-demo"
+        ],
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "- Linear (opinionated workflow): issues that enter triage exit resolved — no ambiguous state, no \"in review forever\" → a tangled graph that snaps to a clean DAG when Linear acts on it; the removal of ambiguity *is* the product",
+        "proposedChange": "- Linear (opinionated workflow): issues that enter triage exit resolved — no ambiguous state, no \"in review forever\" → a tangled graph that snaps to a clean DAG when Linear acts on it; the removal of ambiguity *is* the product. **UI specificity requirement**: Issue cards must use Linear's actual visual vocabulary: cycle indicators (e.g., 'Cycle 14'), their exact priority icons (Urgent/High/Medium/Low/No priority), status pills with Linear's color coding, project icons, and keyboard shortcut overlays in their distinctive style. Generic PM tool chrome (e.g., 'FEAT-421', plain text priorities) fails the brand-specificity test.",
+        "rationale": "The existing guidance identifies Linear's conceptual differentiator but doesn't mandate that UI mockups use Linear's specific visual vocabulary, allowing generic issue card designs that could appear in any PM tool."
+      },
+      {
+        "taskIds": [
+          "stripe-explainer"
+        ],
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "**Visual specificity requirement:** The canvas animation must depict elements that are visually identifiable as belonging to this specific brand. For Patagonia, this means the Fitz Roy mountain silhouette from their logo, their specific product shapes, or their Worn Wear repair iconography — not generic mountain outlines that could belong to REI, North Face, or any outdoor brand. For Stripe, this means their specific dashboard UI patterns or their actual API response format — not generic code blocks.",
+        "proposedChange": "**Visual specificity requirement:** The canvas animation must depict elements that are visually identifiable as belonging to this specific brand. For Patagonia, this means the Fitz Roy mountain silhouette from their logo, their specific product shapes, or their Worn Wear repair iconography — not generic mountain outlines that could belong to REI, North Face, or any outdoor brand. For Stripe, this means their specific dashboard UI patterns, their actual API response JSON structure (showing real field names like `payment_intent`, `customer`, `metadata`), or their distinctive documentation code-block styling with the purple/blue syntax highlighting — not generic code snippets or abstract fintech visuals like expanding circles or node networks. Blue gradients and payment-themed abstractions are category-generic; Stripe's visual identity is defined by their documentation aesthetic, their specific object model nomenclature, and their minimalist illustration style with precise line weights.",
+        "rationale": "The existing Stripe example was too vague ('dashboard UI patterns or actual API response format') and didn't explicitly prohibit the generic fintech visuals (blue gradients, expanding circles) that the model actually used."
+      },
+      {
+        "taskIds": [
+          "figma-brand-awareness"
+        ],
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "wrong_priority",
+        "currentText": "- Figma (URL-as-file, multiplayer cursors): There are no files — just URLs. The canvas shows multiple named cursors (with real names like 'Sarah', 'Marcus') moving simultaneously on the same frame. The visual metaphor is the cursor cluster, not abstract collaboration dots. Show the actual Figma component structure: frames nested in frames, the layers panel hierarchy, the distinctive component instance diamond icon. Generic rectangles could be any design tool; the nested frame structure with component instances is Figma's.",
+        "proposedChange": "- Figma (URL-as-file, multiplayer cursors): There are no files — just URLs. The canvas shows multiple named cursors (with real names like 'Sarah', 'Marcus') moving simultaneously on the same frame. The visual metaphor is the cursor cluster, not abstract collaboration dots. Show the actual Figma component structure: frames nested in frames, the layers panel hierarchy, the distinctive component instance diamond icon. Generic rectangles could be any design tool; the nested frame structure with component instances is Figma's. **Figma's brand colors are #F24E1E (red-orange), #FF7262 (coral), #A259FF (purple), #1ABCFE (cyan), #0ACF83 (green) — use these exact hex codes, not approximations. The Figma logo is four overlapping nodes forming a specific geometric pattern — do not substitute colored circles or abstract shapes.**",
+        "rationale": "The model used approximated colors because the Figma-specific guidance in composition-patterns.md discusses visual metaphors but doesn't specify the exact brand colors or warn against logo approximation."
+      }
+    ]
+  },
+  {
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "changes": [
+      {
+        "taskIds": [
+          "stripe-explainer"
+        ],
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "- Stripe (unified object model): the same `charge` object threads through Checkout, Radar, Connect, and Billing → show one object that every system touches simultaneously rather than a pipeline. Speed is generic; the shared object is Stripe's.",
+        "proposedChange": "- Stripe (unified object model): the same `charge` object threads through Checkout, Radar, Connect, and Billing → show one object that every system touches simultaneously rather than a pipeline. Speed is generic; the shared object is Stripe's. **Anti-pattern for Stripe specifically:** Blue gradients, expanding payment circles, abstract node networks, and generic code blocks are category-generic fintech visuals — they could appear in any competitor's video. Stripe's visual identity comes from their documentation aesthetic: precise monospace typography, their specific JSON field names (`payment_intent.id`, `customer.metadata`), their purple/blue syntax highlighting, and their signature minimalist illustrations with consistent line weights. If the visual could appear in a Square, Adyen, or Braintree video unchanged, it fails.",
+        "rationale": "The existing guidance described what to show but didn't explicitly list what NOT to show for Stripe, allowing the model to fall back on generic fintech aesthetics."
+      },
+      {
+        "taskIds": [
+          "figma-brand-awareness",
+          "glossier-social"
+        ],
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "present_wrong",
+        "currentText": "**Brand-Specific Visual Assets (MANDATORY):**\nBefore proceeding to creative brief, identify and note:\n- The brand's logo form and any signature visual element\n- 3-5 product shots or hero images from the website\n- Any proprietary visual elements (icons, patterns, illustrations unique to this brand)\n\nThese must appear in the final composition.",
+        "proposedChange": "**Brand-Specific Visual Assets (MANDATORY):**\nBefore proceeding to creative brief, identify and note:\n- The brand's logo form and any signature visual element\n- 3-5 product shots or hero images from the website (with actual URLs)\n- Any proprietary visual elements (icons, patterns, illustrations unique to this brand)\n- The brand's actual typography (font names extracted from CSS)\n\nThese must appear in the final composition. **In the HTML output, reference actual product image URLs from the brand's website or CDN — do not substitute SVG placeholders, colored circles, or generic shapes. If an image URL cannot be obtained, use a detailed CSS/HTML representation that names the specific product (e.g., 'Boy Brow' not 'brow product') and replicates brand typography.**",
+        "rationale": "The model created colored circles instead of Figma's actual logo because the guidance says to identify 'the brand's logo form' without explicitly prohibiting fabrication or approximation of logos. Also: The guidance says assets 'must appear' but doesn't prohibit placeholder substitution or require actual URLs, allowing the model to use abstract SVG circles instead of real Glossier imagery."
+      },
+      {
+        "taskIds": [
+          "figma-brand-awareness"
+        ],
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n...\n- Design tools: \"design and code together\", \"design faster\", \"multiplayer design\", \"browser-based\", \"files keep you apart\"",
+        "proposedChange": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n...\n- Design tools: \"design and code together\", \"design faster\", \"multiplayer design\", \"browser-based\", \"files keep you apart\", \"collaborative design platform\", \"design • prototype • build\", \"design to development\"\n\n**Taglines that are category descriptions, not brand truths:**\nPhrases like \"The collaborative design platform\" or \"Design • Prototype • Build\" describe the category, not the brand. These could appear on any competitor's homepage. Do not use category-level taglines in compositions — find the specific claim only this brand makes.",
+        "rationale": "The model used 'The collaborative design platform' and 'Design • Prototype • Build' because while the skill lists false differentiators, it doesn't explicitly flag that generic category taglines should be rejected even when they appear on the brand's own website."
+      },
+      {
+        "taskIds": [
+          "glossier-social"
+        ],
+        "dimension": "viewer_state",
+        "severity": "critical",
+        "cause": "present_wrong",
+        "currentText": "```\nScene [N]: [Name] ([start]s-[end]s)\n- VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]\n- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]\n- STATE CHANGE MECHANISM: [What specific technique creates the shift? Options: contrast (before/after, with/without), surprise (expectation subverted), scale revelation (one thing revealed as many), effort elimination (50 lines → 1 line). If the mechanism is 'demonstration' or 'showing how it works', the scene is informational, not transformational — rewrite it.]\n```",
+        "proposedChange": "```\nScene [N]: [Name] ([start]s-[end]s)\n- VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]\n- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]\n- STATE CHANGE MECHANISM: [What specific technique creates the shift? Options: contrast (before/after, with/without), surprise (expectation subverted), scale revelation (one thing revealed as many), effort elimination (50 lines → 1 line). If the mechanism is 'demonstration' or 'showing how it works', the scene is informational, not transformational — rewrite it.]\n- VISUAL DIFFERENTIATION: [How does this scene look visibly different from the previous scene? If consecutive scenes use the same visual structure (e.g., 'face with product'), describe the specific visual change — different framing, different lighting, different product, different skin state.]\n```\n\n**Adjacent scene differentiation rule:** If two or more consecutive scenes share a structural concept (e.g., 'community faces'), each must have a visually distinct treatment. Identical-looking scenes with different labels ('Face 1', 'Face 2', 'Face 3') fail this test. Differentiate by: transformation stage (bare → applied → glowing), context (morning/evening/workout), product featured, or framing (extreme close-up → medium → wide).",
+        "rationale": "The template tracks viewer state change but doesn't enforce visual differentiation between scenes, allowing three nearly identical 'face' scenes that produce no emotional progression."
+      },
+      {
+        "taskIds": [
+          "glossier-social"
+        ],
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "wrong_priority",
+        "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's **structure** — not just its content. If the truth could be dropped into any template without changing the template, it isn't constraining anything.",
+        "proposedChange": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's **structure** — not just its content. If the truth could be dropped into any template without changing the template, it isn't constraining anything.\n\n**Composition verification:** Before writing HTML, answer: 'If I replaced the brand colors with a competitor's colors, would this composition still work for that competitor?' If yes, the POV has not been expressed in the composition. For Glossier specifically: the 'real faces, user-submitted' truth requires un-retouched imagery, visible skin texture, and the 'no-makeup makeup' aesthetic — not abstract shapes that could represent any beauty brand. The POV must be visible in the actual visual treatment, not just stated in planning documents.",
+        "rationale": "The POV guidance exists but is only enforced during planning (Phase 0) — there's no checkpoint requiring the HTML composition itself to express the POV, allowing a generic pink-circle composition that could be any beauty brand."
+      },
+      {
+        "taskIds": [
+          "supabase-product-demo"
+        ],
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "**Scene 1 specificity gate**: The opening scene is most vulnerable to category-generic visuals. Before writing Scene 1, answer: \"What would a competitor's video show for this same concept?\" If your planned visual could appear in that competitor's video unchanged, it is not specific enough.",
+        "proposedChange": "Replace the Scene 1 specificity gate with an expanded version that covers both visuals AND problem framing:\n\n**Scene 1-2 specificity gate (opening scenes):** The opening scenes are most vulnerable to category-generic content—both visually AND narratively. Before writing Scenes 1-2, answer:\n\n1. **Visual test**: \"What would a competitor's video show for this same concept?\" If your planned visual could appear in that competitor's video unchanged, it is not specific enough.\n\n2. **Problem statement test**: \"Could this problem description appear on a competitor's homepage?\" Generic pain points like 'spinning up servers, managing databases, writing authentication' describe the entire BaaS category. Instead, ground the problem in:\n   - This brand's specific origin story or founding insight\n   - A named competitor being replaced (e.g., 'Firebase alternative' positioning)\n   - A specific user persona's workflow with named tools (e.g., 'the Postgres → Prisma → Vercel → Auth0 stack')\n   - The exact moment of frustration this product was created to eliminate\n\nThe problem must be as specific as the solution. If the problem is generic, the solution will feel interchangeable.",
+        "rationale": "The existing specificity gate only addresses visuals, not narrative problem framing; expanding it to explicitly require specific problem statements would have prevented the generic 'spinning up servers' pain points that apply to any BaaS."
+      }
+    ]
+  },
+  {
+    "skillFile": "skills/skills/brand-video-generator/references/editing.md",
+    "changes": [
+      {
+        "taskIds": [
+          "supabase-product-demo"
+        ],
+        "dimension": "omission",
+        "severity": "major",
+        "cause": "wrong_priority",
+        "currentText": "**It restates what the previous scene already established.** Two scenes that leave the viewer in the same emotional state are one scene too many. The second one is emphasizing, not progressing.",
+        "proposedChange": "Add to Phase 3: Scene Planning in SKILL.md, immediately after the scene template, a new enforcement rule:\n\n**Redundancy gate (run after completing all scenes):** For each scene after Scene 2, complete this sentence: 'This scene adds _______ that no previous scene contained.' If the answer is a restatement of an earlier scene's value proposition (e.g., 'unified platform,' 'all-in-one,' 'everything you need'), the scene is redundant. Either merge it into the earlier scene or replace it with a concrete demonstration (real UI, live deployment, measurable outcome). Feature checklists that restate benefits already communicated are the most common form of redundancy—cut them or convert them to demonstrations.",
+        "rationale": "The editing guidance exists but is in a separate reference file; placing an explicit redundancy check directly in the scene planning phase would have caught Scene 5 restating Scene 3's value proposition before the composition was finalized."
+      }
+    ]
+  }
+]

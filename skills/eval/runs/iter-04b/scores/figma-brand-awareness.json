@@ -1,0 +1,53 @@
+{
+  "taskId": "figma-brand-awareness",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:38:42.866Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is structural and carries meaning the text cannot convey alone. The canvas animations directly embody the narrative: fragmented boxes drifting apart visualize isolation, converging cursors represent collaboration, and accumulating layers show simultaneity of edits.",
+      "evidence": "Three procedural canvas animations using addFrameTask: Scene 1 shows 'boxes drifting apart' with `const drift = progress * 80; const offsetX = Math.sin(idx * 0.8) * drift;`. Scene 2 animates cursors converging: `const currentDist = startDist - (startDist - endDist) * progress;`. Scene 3 layers accumulate: `const layerCount = Math.floor(progress * 8) + 1;`. Text uses split='word' with staggered delays: `animation-delay: calc(1.5s + var(--ef-word-index) * 100ms);`"
+    },
+    "specificity": {
+      "score": 3,
+      "rationale": "Several Figma-specific truths are visible: browser-based collaboration, real-time multiplayer editing, design-to-code handoff. However, the visual language and narrative could apply to any collaborative design tool (Canva, Framer, etc.).",
+      "evidence": "Figma-specific: 'In the browser. In real time.' and 'Handoff happens automatically' reference actual features. Color variables like 'bg-figma-purple' and 'text-figma-dark' suggest brand colors. But the converging cursors metaphor could apply to any multiplayer tool, and 'Design together' is generic collaborative messaging."
+    },
+    "viewer_state": {
+      "score": 4,
+      "rationale": "Clear emotional arc: isolation/frustration (fragmented boxes) → possibility/connection (converging) → abundance/power (accumulating layers) → clarity/resolution (seamless handoff) → aspiration (CTA). Each scene builds on the previous state.",
+      "evidence": "Scene 1 'Design alone in files' with drifting boxes creates tension. Scene 2 'Design together' with converging cursors releases that tension. Scene 3 'Same design, infinite voices' expands the possibility. Scene 4 resolves the practical concern of handoff. Scene 5 closes with brand identity. The progression is cumulative."
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "A clear perspective is present: the problem is isolation, and the solution is simultaneity/multiplicity. The composition commits to showing collaboration as spatial convergence. However, this perspective feels like category-standard messaging rather than a unique insight about Figma.",
+      "evidence": "The consistent metaphor of spatial arrangement (drifting apart → converging → layering) shows intentional authorial choice. The visual vocabulary is coherent. But 'collaborative design platform' as the closing line is generic—the perspective is clear but not distinctive to Figma versus competitors."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Most scenes earn their place in the narrative arc, but Scene 4 (design-to-code) feels like a feature bullet point inserted into an otherwise cohesive collaboration story. It interrupts the spatial/multiplicity metaphor without a canvas animation to continue it.",
+      "evidence": "Scenes 1-3 all have procedural canvas animations driving the spatial metaphor. Scene 4 drops to static gradient background with text: 'Design to code, seamless' and 'Handoff happens automatically'—no canvas, no visual continuation of the convergence/accumulation concept. This scene could be cut or integrated differently."
+    }
+  },
+  "overall": 3.6,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The visual metaphors (converging cursors, layered edits) are generic collaboration imagery that could represent Miro, Notion, or any multiplayer tool. The Figma-specific details are in text only, not in form.",
+      "improvement": "Embed Figma-specific visual language: the distinctive Figma cursor shape, the component/variant relationship, the specific purple-blue-pink gradient palette as interactive elements, or the 'vector network' innovation that distinguishes Figma's approach to paths."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition adopts the standard 'single-player vs. multiplayer' narrative that Figma pioneered but competitors have since copied. The perspective is category-defining but no longer brand-defining.",
+      "improvement": "Take a stance on what Figma specifically enables that others don't: the blurring of designer/developer roles, the democratization of design beyond specialists, or Figma's position as infrastructure (design as shared space) rather than tool. Let form follow that specific insight."
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "Scene 4 (design-to-code) lacks the procedural canvas animation that unifies Scenes 1-3, making it feel like a product-marketing insertion rather than part of the organic arc.",
+      "improvement": "Either cut Scene 4 and extend the 'infinite voices' concept to include developers as participants in the canvas visualization, or add a canvas animation showing visual elements transforming into code syntax to maintain the visual language."
+    }
+  ]
+}

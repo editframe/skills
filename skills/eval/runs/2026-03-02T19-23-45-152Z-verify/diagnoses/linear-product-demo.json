@@ -1,0 +1,16 @@
+[
+  {
+    "taskId": "linear-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "Issue card examples use generic identifiers ('FEAT-421', 'Alex', 'Implement WebSocket reconnection logic') that could appear in any PM tool demo.",
+      "improvement": "Use Linear-specific visual elements: their actual keyboard shortcut overlay style, the cycle number system, priority indicators with their exact iconography, or reference real Linear customer workflows (e.g., Vercel, Ramp)."
+    },
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "currentText": "- Linear (opinionated workflow): issues that enter triage exit resolved — no ambiguous state, no \"in review forever\" → a tangled graph that snaps to a clean DAG when Linear acts on it; the removal of ambiguity *is* the product",
+    "cause": "present_wrong",
+    "proposedChange": "- Linear (opinionated workflow): issues that enter triage exit resolved — no ambiguous state, no \"in review forever\" → a tangled graph that snaps to a clean DAG when Linear acts on it; the removal of ambiguity *is* the product. **UI specificity requirement**: Issue cards must use Linear's actual visual vocabulary: cycle indicators (e.g., 'Cycle 14'), their exact priority icons (Urgent/High/Medium/Low/No priority), status pills with Linear's color coding, project icons, and keyboard shortcut overlays in their distinctive style. Generic PM tool chrome (e.g., 'FEAT-421', plain text priorities) fails the brand-specificity test.",
+    "rationale": "The existing guidance identifies Linear's conceptual differentiator but doesn't mandate that UI mockups use Linear's specific visual vocabulary, allowing generic issue card designs that could appear in any PM tool."
+  }
+]

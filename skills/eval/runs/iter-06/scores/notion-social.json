@@ -1,0 +1,47 @@
+{
+  "taskId": "notion-social",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:59:32.869Z",
+  "scores": {
+    "motion": {
+      "score": 3,
+      "rationale": "CSS animations are present and intentional throughout scenes, but motion is decorative rather than structural. The animations use basic keyframes (fade-in, block-rise, block-fall) without leveraging --ef-progress, addFrameTask, or meaningful stagger sequences.",
+      "evidence": "@keyframes block-rise { from { transform: translateY(24px) scale(0.92); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } } — Standard CSS keyframes with fixed timing. The split=\"word\" on ef-text suggests stagger intent but uses calc(0.7s + var(--ef-word-index) * 100ms) which is basic. No procedural motion or time-driven properties."
+    },
+    "specificity": {
+      "score": 4,
+      "rationale": "The composition's structure directly reflects Notion's core value proposition: unifying fragmented tools. The four blocks (notes, docs, databases, tasks) map to Notion's actual product categories. The visual metaphor of scattered-to-unified is specific to Notion's market positioning against specialized tools.",
+      "evidence": "Script comment: 'it took separate categories of tools (notes, docs, databases, tasks) and unified them into one platform' — The four colored blocks with 📝📄🗂️✓ represent Notion's actual feature categories. A competitor like Coda or Airtable would need different metaphors."
+    },
+    "viewer_state": {
+      "score": 4,
+      "rationale": "Each scene produces a distinct viewer state shift with clear documentation of intent. The arc moves from unaware → recognizes friction → sees solution → ready to act. Transitions are designed around these psychological shifts.",
+      "evidence": "Comments explicitly track state: 'VIEWER STATE AT START: Unaware of a problem / VIEWER STATE AT END: Recognizes scattered tools as friction' (Scene 1) → 'Saw the scattered pieces merge into one' (Scene 2) → 'Ready to act, knows where to go' (Scene 3). The visual progression supports these shifts."
+    },
+    "point_of_view": {
+      "score": 4,
+      "rationale": "Clear authorial perspective: Notion's truth is unification of the fragmentary. This perspective determines every structural choice — the scattered blocks, the convergence animation, the 'one workspace / one tool' language. The composition commits to this angle.",
+      "evidence": "PoV Structural Constraint documented: 'Show information scattered, then unified — because Notion's core truth is that it unified what was fragmentary.' The entire visual grammar follows this perspective rather than defaulting to feature lists or generic benefits."
+    },
+    "omission": {
+      "score": 4,
+      "rationale": "Three scenes, each with a distinct purpose: establish problem, show solution, deliver CTA. No scene repeats information. The 15-second constraint is used efficiently with appropriate overlap settings.",
+      "evidence": "Scene 1 (4s): fragmentation problem. Scene 2 (5s): unification demonstration. Scene 3 (6s): resolution and CTA. overlap=\"0.8s\" creates smooth transitions without padding. Nothing feels redundant or filler."
+    }
+  },
+  "overall": 3.8,
+  "feedback": [
+    {
+      "dimension": "motion",
+      "severity": "major",
+      "observation": "Motion uses standard CSS keyframes with fixed durations. The 'collapse-blocks' and 'expand-blocks' animations don't actually create the visual unification promised — blocks appear in a grid but don't visibly converge from scattered positions.",
+      "improvement": "Use --ef-progress to drive the actual position interpolation of blocks from their scattered Scene 1 positions to the unified grid. The convergence should be continuous, not a scene cut. Consider addFrameTask for procedural block movement paths."
+    },
+    {
+      "dimension": "motion",
+      "severity": "minor",
+      "observation": "The split=\"word\" stagger on 'One tool' text is minimal (only 2 words) and the stagger timing is basic.",
+      "improvement": "Apply meaningful stagger to the block icons themselves during the convergence, where the timing of each block joining the unified grid carries meaning about integration sequence."
+    }
+  ]
+}

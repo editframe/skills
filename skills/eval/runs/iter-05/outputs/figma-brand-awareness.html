@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Figma Brand Video</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@editframe/elements/styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #fff;
+    }
+
+    @keyframes word-slide-up {
+      from {
+        transform: translateY(24px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes fade-out {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    @keyframes slide-in-left {
+      from {
+        transform: translateX(-40px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes expand-width {
+      from {
+        width: 0;
+      }
+      to {
+        width: 100%;
+      }
+    }
+
+    .scene-bg {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    }
+
+    .canvas-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .overlay-gradient {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0.4) 100%);
+    }
+
+    .title-text {
+      color: #fff;
+      font-weight: 700;
+      font-size: 48px;
+      line-height: 1.1;
+      text-align: center;
+    }
+
+    .subtitle-text {
+      color: rgba(255,255,255,0.7);
+      font-size: 18px;
+      line-height: 1.5;
+      text-align: center;
+      font-weight: 400;
+    }
+
+    .cta-text {
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      padding: 12px 32px;
+      border: 2px solid #fff;
+      border-radius: 8px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <ef-timegroup mode="sequence" overlap="0.8s" class="w-[1080px] h-[1920px] bg-white">
+    
+    <!-- SCENE 1: The Problem (Files are isolated) - 0-8s -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full scene-bg" style="animation: fade-in 0.8s both, fade-out 0.8s var(--ef-transition-out-start) both">
+      <canvas id="canvas-files" class="absolute inset-0 w-full h-full"></canvas>
+      <div class="overlay-gradient"></div>
+      
+      <ef-text
+        split="word"
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 title-text max-w-[900px]"
+        style="animation: 0.7s word-slide-up both; animation-delay: calc(var(--ef-word-index) * 120ms)"
+      >Files keep you apart</ef-text>
+
+      <script>
+        const canvasFiles = document.getElementById('canvas-files');
+        if (canvasFiles && canvasFiles.closest('ef-timegroup')) {
+          const tg = canvasFiles.closest('ef-timegroup');
+          tg.initializer = (instance) => {
+            return instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+              const ctx = canvasFiles.getContext('2d');
+              canvasFiles.width = canvasFiles.offsetWidth;
+              canvasFiles.height = canvasFiles.offsetHeight;
+              const progress = ownCurrentTimeMs / durationMs;
+
+              ctx.clearRect(0, 0, canvasFiles.width, canvasFiles.height);
+
+              const cx = canvasFiles.width / 2;
+              const cy = canvasFiles.height / 2;
+              const fileCount = Math.floor(progress * 12) + 1;
+
+              for (let i = 0; i < fileCount; i++) {
+                const angle = (i / 12) * Math.PI * 2;
+                const baseRadius = 120 + i * 15;
+                const x = cx + Math.cos(angle) * baseRadius;
+                const y = cy + Math.sin(angle) * baseRadius;
+
+                ctx.fillStyle = `rgba(100, 150, 255, ${0.3 + progress * 0.4})`;
+                ctx.fillRect(x - 30, y - 40, 60, 80);
+
+                ctx.strokeStyle = `rgba(100, 150, 255, ${0.5 + progress * 0.3})`;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x - 30, y - 40, 60, 80);
+
+                ctx.fillStyle = `rgba(150, 180, 255, ${0.4 + progress * 0.3})`;
+                ctx.fillRect(x - 20, y - 30, 40, 20);
+              }
+            });
+          };
+        }
+      </script>
+    </ef-timegroup>
+
+    <!-- SCENE 2: The Shift (Single source of truth) - 8-16s -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full scene-bg" style="animation: fade-in 0.8s both, fade-out 0.8s var(--ef-transition-out-start) both">
+      <canvas id="canvas-convergence" class="absolute inset-0 w-full h-full"></canvas>
+      <div class="overlay-gradient"></div>
+
+      <ef-text
+        split="word"
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 title-text max-w-[900px]"
+        style="animation: 0.7s word-slide-up 0.4s both; animation-delay: calc(0.4s + var(--ef-word-index) * 120ms)"
+      >One place everyone meets</ef-text>
+
+      <script>
+        const canvasConvergence = document.getElementById('canvas-convergence');
+        if (canvasConvergence && canvasConvergence.closest('ef-timegroup')) {
+          const tg = canvasConvergence.closest('ef-timegroup');
+          tg.initializer = (instance) => {
+            return instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+              const ctx = canvasConvergence.getContext('2d');
+              canvasConvergence.width = canvasConvergence.offsetWidth;
+              canvasConvergence.height = canvasConvergence.offsetHeight;
+              const progress = ownCurrentTimeMs / durationMs;
+
+              ctx.clearRect(0, 0, canvasConvergence.width, canvasConvergence.height);
+
+              const cx = canvasConvergence.width / 2;
+              const cy = canvasConvergence.height / 2;
+              const particleCount = 60;
+
+              for (let i = 0; i < particleCount; i++) {
+                const angle = (i / particleCount) * Math.PI * 2;
+                const distance = (1 - progress) * 200 + progress * 40;
+                const x = cx + Math.cos(angle) * distance;
+                const y = cy + Math.sin(angle) * distance;
+
+                const alpha = 0.2 + (1 - Math.abs(progress * 2 - 1)) * 0.5;
+                ctx.fillStyle = `rgba(99, 179, 237, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(x, y, 3 + progress * 2, 0, Math.PI * 2);
+                ctx.fill();
+              }
+
+              ctx.strokeStyle = `rgba(99, 179, 237, ${0.4 + progress * 0.3})`;
+              ctx.lineWidth = 2;
+              ctx.beginPath();
+              ctx.arc(cx, cy, 40 + progress * 10, 0, Math.PI * 2);
+              ctx.stroke();
+            });
+          };
+        }
+      </script>
+    </ef-timegroup>
+
+    <!-- SCENE 3: The Outcome (Design + prototype + code in one flow) - 16-30s -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full scene-bg" style="animation: fade-in 0.8s both">
+      <canvas id="canvas-flow" class="absolute inset-0 w-full h-full"></canvas>
+      <div class="overlay-gradient"></div>
+
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full flex flex-col items-center gap-12 px-8">
+        <ef-text
+          split="word"
+          class="title-text max-w-[900px]"
+          style="animation: 0.7s word-slide-up both; animation-delay: calc(var(--ef-word-index) * 120ms)"
+        >Design, prototype, ship</ef-text>
+
+        <ef-text
+          class="subtitle-text max-w-[700px]"
+          style="animation: 0.6s slide-in-left 0.8s both"
+        >One tool. One team. No handoff.</ef-text>
+
+        <ef-text
+          class="cta-text"
+          style="animation: 0.6s fade-in 1.2s both"
+        >Open Figma</ef-text>
+      </div>
+
+      <script>
+        const canvasFlow = document.getElementById('canvas-flow');
+        if (canvasFlow && canvasFlow.closest('ef-timegroup')) {
+          const tg = canvasFlow.closest('ef-timegroup');
+          tg.initializer = (instance) => {
+            return instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+              const ctx = canvasFlow.getContext('2d');
+              canvasFlow.width = canvasFlow.offsetWidth;
+              canvasFlow.height = canvasFlow.offsetHeight;
+              const progress = ownCurrentTimeMs / durationMs;
+
+              ctx.clearRect(0, 0, canvasFlow.width, canvasFlow.height);
+
+              const cx = canvasFlow.width / 2;
+              const cy = canvasFlow.height / 2 - 200;
+              const nodeRadius = 60;
+              const nodeDistance = 200;
+
+              const nodes = [
+                { label: 'Design', x: -nodeDistance, color: 'rgba(99, 179, 237, 0.8)' },
+                { label: 'Prototype', x: 0, color: 'rgba(99, 179, 237, 0.9)' },
+                { label: 'Ship', x: nodeDistance, color: 'rgba(99, 179, 237, 0.8)' }
+              ];
+
+              nodes.forEach((node, idx) => {
+                const x = cx + node.x;
+                const y = cy;
+                const revealProgress = Math.max(0, Math.min(1, progress * 1.5 - idx * 0.15));
+
+                ctx.fillStyle = node.color;
+                ctx.beginPath();
+                ctx.arc(x, y, nodeRadius * revealProgress, 0, Math.PI * 2);
+                ctx.fill();
+
+                if (revealProgress > 0.7) {
+                  ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                  ctx.font = 'bold 14px sans-serif';
+                  ctx.textAlign = 'center';
+                  ctx.textBaseline = 'middle';
+                  ctx.fillText(node.label, x, y);
+                }
+              });
+
+              const connectionProgress = Math.max(0, progress - 0.2);
+              if (connectionProgress > 0) {
+                ctx.strokeStyle = `rgba(99, 179, 237, ${connectionProgress * 0.6})`;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(cx - nodeDistance + nodeRadius, cy);
+                ctx.lineTo(cx - nodeDistance + nodeRadius + (nodeDistance - nodeRadius * 2) * connectionProgress, cy);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(cx + nodeRadius, cy);
+                ctx.lineTo(cx + nodeRadius + (nodeDistance - nodeRadius * 2) * Math.max(0, connectionProgress - 0.25), cy);
+                ctx.stroke();
+              }
+            });
+          };
+        }
+      </script>
+    </ef-timegroup>
+
+  </ef-timegroup>
+
+  <script src="https://cdn.jsdelivr.net/npm/@editframe/elements"></script>
+</body>
+</html>

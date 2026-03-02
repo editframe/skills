@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "omission",
+      "severity": "major",
+      "observation": "The composition is incomplete—it cuts off mid-Scene 3 with no closing beat, brand mark, or CTA. The `</ef-timegroup>` for Scene 3 is truncated.",
+      "improvement": "Complete Scene 3 and add a Scene 4 that resolves the arc—likely the Figma logo emerging from the collaboration pattern, or a simple 'Figma. Design together.' No padding, just closure."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "## Completeness Check (before finalizing)\n\n- Every scene in the plan is represented in the HTML\n- No canvas element is present without a corresponding `addFrameTask` script\n- The last scene is fully written — it does not trail off mid-sentence\n- The PoV trace is complete — every scene can be traced to Phase 0 Q4\n- The CTA does not read as generic marketing (\"Try it free\", \"Get started\", \"Learn more\") — it follows from the structural constraint",
+    "cause": "wrong_priority",
+    "proposedChange": "Move the Completeness Check section to immediately after Phase 3: Scene Planning, and add this as the FIRST item in bold:\n\n## Completeness Check (MANDATORY — verify before outputting any code)\n\n**- The final scene closes the arc with brand resolution (logo, tagline, or CTA) — never end mid-content**\n- Every scene in the plan is represented in the HTML\n- All `</ef-timegroup>` tags are closed — count opening and closing tags to verify\n- No canvas element is present without a corresponding `addFrameTask` script\n- The last scene is fully written — it does not trail off mid-sentence\n- The PoV trace is complete — every scene can be traced to Phase 0 Q4\n- The CTA does not read as generic marketing (\"Try it free\", \"Get started\", \"Learn more\") — it follows from the structural constraint",
+    "rationale": "The completeness check exists but is buried at the end and lacks explicit guidance about closing the arc with a final brand beat; elevating it and adding explicit tag-counting and arc-closure requirements would have prevented truncation."
+  },
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "omission",
+      "severity": "major",
+      "observation": "The composition is incomplete—it cuts off mid-Scene 3 with no closing beat, brand mark, or CTA. The `</ef-timegroup>` for Scene 3 is truncated.",
+      "improvement": "Complete Scene 3 and add a Scene 4 that resolves the arc—likely the Figma logo emerging from the collaboration pattern, or a simple 'Figma. Design together.' No padding, just closure."
+    },
+    "skillFile": "skills/skills/brand-video-generator/references/editing.md",
+    "currentText": "",
+    "cause": "missing",
+    "proposedChange": "Add a new section at the end of the file:\n\n## Structural Completeness\n\nBefore declaring a composition complete, verify:\n\n1. **The arc closes.** The final scene must resolve the emotional journey established in Scene 1. For brand videos, this typically means: logo, tagline, or CTA that crystallizes the viewer's transformed state.\n\n2. **All tags close.** Count `<ef-timegroup>` openings and `</ef-timegroup>` closings. They must match. A truncated composition is not a draft—it's broken.\n\n3. **The last frame is intentional.** Ask: if I freeze on the final frame, does it communicate completion? If it looks like the video stopped mid-thought, add a closing beat.",
+    "rationale": "The editing guide discusses what to cut but never addresses structural completeness or the requirement to close the arc with a final brand beat, leaving no guidance to prevent truncated outputs."
+  }
+]

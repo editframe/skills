@@ -1,0 +1,249 @@
+<ef-timegroup mode="sequence" class="w-[1920px] h-[1080px] bg-black">
+  
+  <!-- SCENE 1: The Problem — Firebase Lock-in (0-8s) -->
+  <ef-timegroup mode="contain" duration="8s" class="absolute w-full h-full hero-bg">
+    <canvas id="canvas-firebase-trap" class="absolute inset-0 w-full h-full"></canvas>
+    
+    <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+    
+    <ef-text 
+      class="absolute top-16 left-16 text-white text-6xl font-bold"
+      style="animation: 0.8s slide-up both 0.5s"
+    >Firebase Lock-in</ef-text>
+    
+    <ef-text 
+      class="absolute top-64 left-16 text-white text-2xl max-w-2xl"
+      style="animation: 0.7s slide-up both 1.2s; color: rgba(255,255,255,0.8)"
+    >Expensive pricing. Proprietary database. No escape route.</ef-text>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const canvas = document.getElementById('canvas-firebase-trap');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        
+        // Store reference for cleanup
+        const tg = canvas.closest('ef-timegroup');
+        if (!tg) return;
+
+        const cleanup = tg.addFrameTask((ownCurrentTimeMs, durationMs) => {
+          canvas.width = canvas.offsetWidth;
+          canvas.height = canvas.offsetHeight;
+          const progress = ownCurrentTimeMs / durationMs;
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = 'rgba(30, 30, 30, 0.1)';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          // Draw firebase lock icon growing and multiplying (trap effect)
+          const cx = canvas.width / 2;
+          const cy = canvas.height / 2;
+          const count = Math.floor(progress * 40);
+
+          for (let i = 0; i < count; i++) {
+            const angle = (i / 40) * Math.PI * 2 + progress * Math.PI;
+            const distance = 100 + Math.sin(i * 0.3 + progress * 3) * 80;
+            const x = cx + Math.cos(angle) * distance;
+            const y = cy + Math.sin(angle) * distance;
+            const size = 20 + Math.sin(i * 0.5) * 8;
+            const alpha = Math.max(0, 1 - (progress - 0.3));
+
+            // Draw lock shapes
+            ctx.strokeStyle = `rgba(239, 68, 68, ${alpha * 0.8})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Draw smaller circles representing constraint
+            ctx.fillStyle = `rgba(239, 68, 68, ${alpha * 0.4})`;
+            ctx.beginPath();
+            ctx.arc(x, y, size * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        });
+
+        return cleanup;
+      });
+    </script>
+  </ef-timegroup>
+
+  <!-- SCENE 2: The Truth — Supabase as Postgres Gateway (8-20s) -->
+  <ef-timegroup mode="contain" duration="12s" class="absolute w-full h-full"
+    style="background: linear-gradient(135deg, #0f172a 0%, #1a202c 100%); animation: 0.8s fade-in both">
+    
+    <canvas id="canvas-postgres-gateway" class="absolute inset-0 w-full h-full"></canvas>
+    
+    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+
+    <ef-text 
+      class="absolute bottom-24 left-16 text-white text-5xl font-bold max-w-3xl"
+      split="word"
+      style="animation: 0.6s slide-up both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+    >One Postgres database. Infinite surfaces.</ef-text>
+
+    <ef-text 
+      class="absolute bottom-8 left-16 text-sm max-w-2xl"
+      style="animation: 0.6s slide-up both 1.2s; color: rgba(62, 207, 142, 0.9)"
+    >REST API • GraphQL • Realtime • Auth • Edge Functions • Storage — all from the same Postgres</ef-text>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const canvas = document.getElementById('canvas-postgres-gateway');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        const tg = canvas.closest('ef-timegroup');
+        if (!tg) return;
+
+        const cleanup = tg.addFrameTask((ownCurrentTimeMs, durationMs) => {
+          canvas.width = canvas.offsetWidth;
+          canvas.height = canvas.offsetHeight;
+          const progress = ownCurrentTimeMs / durationMs;
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          // Central Postgres database
+          const cx = canvas.width / 2;
+          const cy = canvas.height / 2;
+          const dbSize = 60;
+
+          // Draw central database
+          ctx.fillStyle = 'rgba(62, 207, 142, 0.15)';
+          ctx.beginPath();
+          ctx.arc(cx, cy, dbSize, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = 'rgba(62, 207, 142, 0.6)';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(cx, cy, dbSize, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Draw "Postgres" text in center
+          ctx.fillStyle = 'rgba(62, 207, 142, 0.8)';
+          ctx.font = 'bold 16px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('Postgres', cx, cy);
+
+          // Draw expanding surfaces/APIs around it
+          const surfaceCount = 6;
+          for (let i = 0; i < surfaceCount; i++) {
+            const angle = (i / surfaceCount) * Math.PI * 2 + progress * Math.PI * 0.5;
+            const distance = 200 + Math.sin(progress * 2 + i) * 40;
+            const x = cx + Math.cos(angle) * distance;
+            const y = cy + Math.sin(angle) * distance;
+            const size = 25;
+            const alpha = Math.min(1, progress * 2);
+
+            // Draw API surface node
+            ctx.fillStyle = `rgba(62, 207, 142, ${alpha * 0.3})`;
+            ctx.beginPath();
+            ctx.rect(x - size/2, y - size/2, size, size);
+            ctx.fill();
+
+            ctx.strokeStyle = `rgba(62, 207, 142, ${alpha * 0.7})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.rect(x - size/2, y - size/2, size, size);
+            ctx.stroke();
+
+            // Draw line from center to surface
+            ctx.strokeStyle = `rgba(62, 207, 142, ${alpha * 0.4})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+          }
+        });
+
+        return cleanup;
+      });
+    </script>
+  </ef-timegroup>
+
+  <!-- SCENE 3: The Features — Auth, APIs, Realtime (20-34s) -->
+  <ef-timegroup mode="contain" duration="14s" class="absolute w-full h-full"
+    style="background: linear-gradient(135deg, #1f2937 0%, #0f172a 100%); animation: 0.8s fade-in 0.2s both">
+    
+    <div class="grid-layout absolute inset-0 top-32">
+      <!-- Auth Card -->
+      <div class="postgres-card" style="animation: 0.7s scale-in both 0.3s">
+        <div class="accent-green text-sm font-bold mb-2">AUTHENTICATION</div>
+        <div class="feature-text mb-2">Row Level Security</div>
+        <div class="text-subtle text-sm">Postgres policies. Not vendor lock-in.</div>
+      </div>
+
+      <!-- Instant APIs Card -->
+      <div class="postgres-card" style="animation: 0.7s scale-in both 0.5s">
+        <div class="accent-green text-sm font-bold mb-2">INSTANT APIs</div>
+        <div class="feature-text mb-2">REST + GraphQL</div>
+        <div class="text-subtle text-sm">Generated from your schema. Changes instantly.</div>
+      </div>
+
+      <!-- Realtime Card -->
+      <div class="postgres-card" style="animation: 0.7s scale-in both 0.7s">
+        <div class="accent-green text-sm font-bold mb-2">REALTIME</div>
+        <div class="feature-text mb-2">Listen to changes</div>
+        <div class="text-subtle text-sm">Broadcast your database events to clients.</div>
+      </div>
+
+      <!-- Edge Functions Card -->
+      <div class="postgres-card" style="animation: 0.7s scale-in both 0.9s">
+        <div class="accent-green text-sm font-bold mb-2">EDGE FUNCTIONS</div>
+        <div class="feature-text mb-2">Deploy serverless code</div>
+        <div class="text-subtle text-sm">Close to users. Written in TypeScript or Python.</div>
+      </div>
+    </div>
+
+    <ef-text 
+      class="absolute top-8 left-16 text-white text-4xl font-bold"
+      style="animation: 0.7s slide-down both 0.2s"
+    >Everything scales from Postgres</ef-text>
+  </ef-timegroup>
+
+  <!-- SCENE 4: Open Source — Freedom (34-40s) -->
+  <ef-timegroup mode="contain" duration="6s" class="absolute w-full h-full"
+    style="background: linear-gradient(135deg, #0f172a 0%, #1a202c 100%); animation: 0.8s fade-in 0.4s both">
+    
+    <canvas id="canvas-open-source" class="absolute inset-0 w-full h-full"></canvas>
+    
+    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
+
+    <ef-text 
+      class="absolute bottom-32 left-16 text-white text-5xl font-bold"
+      style="animation: 0.7s slide-up both 0.3s"
+    >100% Open Source</ef-text>
+
+    <ef-text 
+      class="absolute bottom-8 left-16 text-lg max-w-2xl"
+      style="animation: 0.6s slide-up both 0.7s; color: rgba(255,255,255,0.8)"
+    >Self-host or use the platform. Your choice. Your data.</ef-text>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const canvas = document.getElementById('canvas-open-source');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        const tg = canvas.closest('ef-timegroup');
+        if (!tg) return;
+
+        const cleanup = tg.addFrameTask((ownCurrentTimeMs, durationMs) => {
+          canvas.width = canvas.offsetWidth;
+          canvas.height = canvas.offsetHeight;
+          const progress = ownCurrentTimeMs / durationMs;
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          // Draw unlocking chain breaking animation
+          const cx = canvas.width / 2;
+          const cy = canvas.height / 2;
+          const chainLength = 80;
+          const linkSize = 15;
+
+          // Chain before breaking
+          for (let i = 0; i < 6; i++) {
+            const x = cx - 150 +

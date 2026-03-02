@@ -1,0 +1,59 @@
+{
+  "taskId": "loom-explainer",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:53:13.019Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural, not decorative. The composition uses addFrameTask for procedural canvas animation, split='word' with staggered delays, and the chaos-to-order visual metaphor directly mirrors the product's value proposition.",
+      "evidence": "Scene 1 uses `addFrameTask((ownCurrentTimeMs, durationMs) => {...})` to draw accumulating chaos particles with `const progress = ownCurrentTimeMs / durationMs`. Text splitting with `split='word'` and `animation-delay: calc(var(--ef-word-index) * 100ms)` appears in multiple scenes. Scene 2's resolve animation shrinks particles to center."
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "The composition uses Loom's purple color palette and references async video messaging, but the specific details are generic to any screen recording tool. No mention of actual Loom features like AI summaries, transcription, or the specific UI.",
+      "evidence": "Colors like `#5d3fd3` align with Loom's purple branding. The integrations shown (Slack, Email, Teams, Browser) are standard for any collaboration tool. Phrases like 'Record instead of write' and 'Face to face, remotely' could apply to Vidyard, Wistia, or any competitor."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc moves from overwhelm (chaos visual) → relief (resolution) → understanding (features) → confidence (integrations) → action (CTA). The shifts are traceable but follow a predictable explainer formula without surprising depth.",
+      "evidence": "Scene 1: 'Work drowns in async noise' + chaos particles = anxiety. Scene 2: '▶ One click. One message. Done.' + shrinking particles = relief. Scene 3: bullet points = comprehension. Scene 5: CTA = motivation. The states change but the trajectory is standard."
+    },
+    "point_of_view": {
+      "score": 2,
+      "rationale": "There's an implied perspective that async video is superior to meetings and text, but this is the default Loom marketing position, not an original authorial stance. The chaos-to-order metaphor is a perspective, but hedged by generic benefit statements.",
+      "evidence": "The perspective 'meetings bad, video good' is stated directly: 'No meeting required, no timezone conflict.' The chaos animation is a committed visual metaphor, but Scene 3's bullet points ('Tone and clarity at scale') retreat to safe marketing copy."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Most scenes earn their place in the narrative arc, but Scene 4 (integrations) feels like padding. The information could be absorbed into another scene or communicated more efficiently.",
+      "evidence": "Scene 4 ('Loom works where you work') with four emoji icons adds little that couldn't be a 3-second overlay on Scene 3. The integration list (Slack, Email, Teams, Browser) is generic and doesn't advance the emotional arc from Scene 3 to the CTA."
+    }
+  },
+  "overall": 2.8,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition relies on generic async video benefits that apply to any screen recording competitor. No mention of Loom-specific features like AI-generated summaries, automatic transcription, viewer engagement analytics, or the specific recording interface.",
+      "improvement": "Include at least one Loom-only capability as a visual scene element. Show the actual Loom player interface, reference specific features like 'Loom AI writes your summary' or 'See exactly when they watched.' Use Loom's actual logo and product UI rather than abstract representations."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition adopts Loom's marketing position verbatim ('async by design') rather than expressing a distinct authorial perspective on why video communication matters or what makes Loom's approach different.",
+      "improvement": "Commit to a specific angle: is this about emotional connection in remote work? About respecting people's time? About replacing the performance of live meetings with the authenticity of recorded thought? Pick one truth and let it shape every scene, rather than covering all benefits equally."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "The emotional arc follows a predictable problem-solution-CTA structure. Scene 3's bullet point format breaks the visual language established in Scenes 1-2, flattening the emotional momentum into information delivery.",
+      "improvement": "Maintain visual storytelling through Scene 3. Instead of bullet points, show the transformation in action—perhaps a single recorded message replacing a chain of confused emails, keeping the viewer in an experiential rather than informational state."
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "Scene 4's integration showcase (Slack, Email, Teams, Browser) is standard SaaS feature-listing that interrupts the emotional arc without adding distinct value.",
+      "improvement": "Cut Scene 4 entirely and redistribute its 12 seconds to deepen Scenes 1-3, or integrate the 'works where you work' concept as a 3-second visual badge within the CTA scene."
+    }
+  ]
+}

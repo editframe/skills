@@ -1,0 +1,47 @@
+{
+  "taskId": "linear-product-demo",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-03-02T19:24:35.480Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is the argument itself. The chaos canvas in Scene 1 literally embodies workflow fragmentation through accumulating tangled bezier curves that intensify over time. The procedural canvas animations are structurally tied to the narrative—chaos builds, then resolves into order.",
+      "evidence": "Scene 1 uses `addFrameTask` with progress-driven chaos: `const curveCount = Math.floor(progress * 60)` creating accumulating complexity. Scene 3 has `drawKeyboardParticles(progress)` with orbital motion. Scene 4 uses expanding energy rings: `const ringCount = Math.floor(progress * 8)`. Text uses `split=\"word\"` with calculated delays: `animation-delay: calc(0.8s + var(--ef-word-index) * 80ms)`."
+    },
+    "specificity": {
+      "score": 3,
+      "rationale": "Several Linear-specific elements are present—the opinionated platform philosophy, keyboard-first interaction, and issue card format. However, much could apply to any project management tool claiming to reduce complexity.",
+      "evidence": "Linear-specific: issue ID format `LIN-2847`, keyboard shortcut `cmd + shift + c`, tagline 'One opinionated platform', Linear's blue brand color (#3B82F6). Generic elements: 'Every platform fragments your workflow' could describe any competitor's pitch against Jira/Asana. The chaos-to-order visual metaphor is universal."
+    },
+    "viewer_state": {
+      "score": 4,
+      "rationale": "Clear emotional arc: overwhelm (chaos accumulates) → relief (clean grid appears) → empowerment (keyboard speed) → alignment (workflow matches thinking). Each scene builds on the previous state change.",
+      "evidence": "Scene 1 creates anxiety with accelerating chaos: `if (progress > 0.6)` adds red overwhelm lines. Scene 2 provides visual relief with `bg-gradient-to-br from-black to-slate-900` and clean grid. Scene 3 shifts to competence with 'No mouse. No menus. Pure intention.' Scene 4 culminates in alignment: 'Your workflow finally matches how you think'."
+    },
+    "point_of_view": {
+      "score": 4,
+      "rationale": "The composition commits to a specific perspective: that fragmentation is the problem, and opinionated constraints are the solution. This reflects Linear's actual philosophy of removing decisions rather than adding features.",
+      "evidence": "The POV is 'freedom through constraint': Scene 1 shows chaos from too many choices, Scene 2 explicitly states 'One opinionated platform', Scene 3 celebrates a single keyboard shortcut rather than feature breadth. The visual form (chaos → grid → single command) embodies this argument."
+    },
+    "omission": {
+      "score": 4,
+      "rationale": "Four scenes for a 30s video is disciplined. Each scene serves a distinct function in the problem-solution-proof-resolution arc. No scene repeats another's work.",
+      "evidence": "Scene 1 (10s): establishes problem visually. Scene 2 (8s): shows solution concept. Scene 3 (6s): demonstrates specific capability. Scene 4 (6s): delivers emotional resolution. The code is truncated mid-Scene 4, but the structure is tight—no filler animations or repeated messaging."
+    }
+  },
+  "overall": 4,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The opening scene's 'Every platform fragments your workflow' and chaos visualization could apply to any productivity tool's marketing. The visual metaphor of tangled lines becoming order is category-generic.",
+      "improvement": "Ground the chaos in Linear-specific pain points—show actual UI mockups of competing tools' notification overload, or visualize the specific friction Linear eliminates (status meetings, duplicate work, context switching between Slack/Jira/Notion). The issue card in Scene 2 is good; Scene 1 needs similar specificity."
+    },
+    {
+      "dimension": "specificity",
+      "severity": "minor",
+      "observation": "Scene 3 shows 'cmd + shift + c' but doesn't demonstrate what actually happens—the speed advantage is claimed rather than shown.",
+      "improvement": "Show the actual Linear command palette appearing, or animate an issue being created in real-time as keys are pressed. Make the keyboard-first advantage visible rather than asserted."
+    }
+  ]
+}

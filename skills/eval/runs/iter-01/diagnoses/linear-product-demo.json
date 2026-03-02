@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "linear-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "All video sources are placeholder bars-n-tone.mp4 rather than actual Linear product footage. The keyboard shortcut sequence shown (⌘KNEW) doesn't correspond to real Linear commands.",
+      "improvement": "Use actual Linear screen recordings showing the command palette (⌘K), issue creation workflow, and the distinctive Linear UI. Show real shortcuts like ⌘K for command menu, C for create issue, or the actual cycle/project views."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "- Use `bars-n-tone.mp4` or any placeholder media in the final composition — use brand-color backgrounds, canvas animations, or actual product footage URLs instead",
+    "cause": "wrong_priority",
+    "proposedChange": "Move this bullet from the 'Do NOT' list into a new prominent section immediately after 'CRITICAL: Tool Usage Requirements':\n\n## CRITICAL: No Placeholder Media in Final Output\n\n**The final composition MUST NOT contain placeholder videos like `bars-n-tone.mp4` or `assets.editframe.com` URLs.**\n\nFor product demos specifically:\n- Use browser tools to capture actual screenshots/screen recordings of the product\n- Reference real product URLs if available (e.g., `https://linear.app/...`)\n- If no real footage is available, use Canvas API (`addFrameTask`) to recreate the product UI with actual feature names, real keyboard shortcuts, and authentic interactions\n- Verify all keyboard shortcuts and UI elements match the actual product documentation",
+    "rationale": "The placeholder warning was buried in a 'Do NOT' list; elevating it to a critical section with specific guidance for product demos would have forced the model to seek real Linear footage or recreate authentic UI."
+  },
+  {
+    "taskId": "linear-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "Claims like 'Issues flow. Work resolves. Decisions stick.' and 'fastest issue tracking' are category-generic and could describe any modern project tool.",
+      "improvement": "Reference Linear-specific concepts: Cycles (their sprint alternative), Triage, the specific way issues auto-close, their roadmap visualization, or their 'built for keyboard' design philosophy with actual feature demonstrations."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"",
+    "cause": "missing",
+    "proposedChange": "Expand this section to add after the existing bullets:\n\n- \"Fastest\", \"streamlined\", \"modern\", \"intuitive workflow\"\n- Vague outcome claims like \"issues flow\", \"work resolves\", \"decisions stick\"\n\n**For product demos, require named features:**\nDo not describe what the product does in abstract terms. Name the specific features, views, or mechanisms:\n- Wrong: \"Issues automatically resolve\" (any tool could claim this)\n- Right: \"Linear's Triage inbox auto-archives stale issues after 14 days of inactivity\"\n- Wrong: \"Built for speed\" (category claim)\n- Right: \"The ⌘K command palette surfaces any issue, project, or action in under 200ms\"",
+    "rationale": "The skill warned against generic claims but didn't explicitly flag abstract outcome language or require named features; adding concrete examples of wrong vs. right would have prevented vague claims like 'Issues flow. Work resolves.'"
+  }
+]

@@ -1,0 +1,198 @@
+<ef-configuration api-host="https://api.editframe.com" media-engine="local">
+    <ef-timegroup mode="sequence" overlap="0.8s" class="stripe-dark flex items-center justify-center" style="width: 1920px; height: 1080px;">
+
+      <!-- SCENE 1: The Problem - Payment Chaos (0s-10s) -->
+      <ef-timegroup mode="fixed" duration="10s" class="absolute w-full h-full stripe-dark flex items-center justify-center" style="animation: 0.8s fadeOut var(--ef-transition-out-start) both;">
+        <canvas id="chaos-canvas" class="absolute inset-0"></canvas>
+        <ef-text class="absolute bottom-24 text-white text-6xl font-bold text-center max-w-3xl"
+          style="animation: 0.8s slideUpFade both 2s; z-index: 10;">
+          Every payment is a negotiation
+        </ef-text>
+        <ef-text class="absolute bottom-8 text-gray text-2xl text-center max-w-2xl"
+          style="animation: 0.6s slideUpFade both 3s; z-index: 10;">
+          PCI compliance, currency conversion, fraud detection—woven together in expensive, fragile ways
+        </ef-text>
+      </ef-timegroup>
+
+      <!-- SCENE 2: The Insight - Stripe's Approach (10s-25s) -->
+      <ef-timegroup mode="fixed" duration="15s" class="absolute w-full h-full stripe-blue flex items-center justify-center" style="animation: 0.8s fadeIn both, 0.8s fadeOut var(--ef-transition-out-start) both;">
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="text-center max-w-3xl">
+            <ef-text class="text-white text-7xl font-bold"
+              style="animation: 0.7s slideDownFade both 0.2s;">
+              Stripe removes the binding
+            </ef-text>
+            <ef-text class="text-white/80 text-3xl mt-8"
+              style="animation: 0.7s slideUpFade both 1s; display: block;">
+              One API. All the infrastructure. Zero integration work.
+            </ef-text>
+          </div>
+        </div>
+      </ef-timegroup>
+
+      <!-- SCENE 3: What Stripe Handles - Building Block Pattern (25s-40s) -->
+      <ef-timegroup mode="fixed" duration="15s" class="absolute w-full h-full stripe-dark flex items-center justify-center" style="animation: 0.8s fadeIn both, 0.8s fadeOut var(--ef-transition-out-start) both;">
+        <canvas id="blocks-canvas" class="absolute inset-0"></canvas>
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <ef-text class="text-white text-5xl font-bold text-center mb-16"
+            style="animation: 0.6s slideDownFade both 0.3s; z-index: 10;">
+            Payments
+          </ef-text>
+          <ef-text class="text-gray text-xl text-center max-w-2xl"
+            style="animation: 0.6s slideUpFade both 1.5s; z-index: 10; line-height: 1.8;">
+            Charges, refunds, disputes—handled. Connect via Cards, Apple Pay, Google Pay, ACH, SEPA, iDEAL, Alipay—handled.
+          </ef-text>
+        </div>
+      </ef-timegroup>
+
+      <!-- SCENE 4: Scale - The Competitive Moat (40s-52s) -->
+      <ef-timegroup mode="fixed" duration="12s" class="absolute w-full h-full stripe-dark flex items-center justify-center" style="animation: 0.8s fadeIn both, 0.8s fadeOut var(--ef-transition-out-start) both;">
+        <div class="absolute inset-0 flex items-center justify-center">
+          <canvas id="scale-canvas" class="absolute inset-0"></canvas>
+          <div class="absolute text-center" style="z-index: 10;">
+            <ef-text class="text-white text-6xl font-bold"
+              style="animation: 0.7s scaleIn both 0.5s;">
+              <span id="scale-number">$50B</span>
+            </ef-text>
+            <ef-text class="text-gray text-2xl mt-4"
+              style="animation: 0.6s slideUpFade both 1.5s; display: block;">
+              volume processed annually. Every transaction teaches the system.
+            </ef-text>
+            <ef-text class="text-gray text-lg mt-8 max-w-2xl"
+              style="animation: 0.6s slideUpFade both 2s; display: block;">
+              Fraud detection improves. Latency decreases. Conversion rates rise. The bigger Stripe gets, the better it works.
+            </ef-text>
+          </div>
+        </div>
+      </ef-timegroup>
+
+      <!-- SCENE 5: For Developers - The Constraint (52s-60s) -->
+      <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full stripe-blue flex items-center justify-center" style="animation: 0.8s fadeIn both;">
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <ef-text class="text-white text-6xl font-bold text-center mb-8"
+            style="animation: 0.7s slideDownFade both 0.3s;">
+            Ship payments, not payment systems
+          </ef-text>
+          <ef-text class="text-white/90 text-2xl text-center max-w-3xl"
+            style="animation: 0.6s slideUpFade both 1.2s;">
+            Go live in minutes. Let Stripe handle the infrastructure. You build the business.
+          </ef-text>
+          <a href="https://stripe.com" class="mt-12 px-8 py-4 bg-white text-stripe-blue font-bold rounded text-lg"
+            style="animation: 0.5s scaleIn both 2s; text-decoration: none; display: inline-block; cursor: pointer;">
+            Start for free
+          </a>
+        </div>
+      </ef-timegroup>
+
+    </ef-timegroup>
+  </ef-configuration>
+
+  <script>
+    // SCENE 1: Chaos Canvas - Payment integration tangles
+    function initChaosCanvas() {
+      const canvas = document.getElementById('chaos-canvas');
+      if (!canvas) return;
+
+      const tg = canvas.closest('ef-timegroup');
+      tg.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        const ctx = canvas.getContext('2d');
+        const progress = ownCurrentTimeMs / durationMs;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw 25 tangled bezier curves representing payment integrations
+        // Each curve represents a different provider/integration path
+        const curves = 25;
+        const startX = canvas.width * 0.2;
+        const endX = canvas.width * 0.8;
+        const topY = canvas.height * 0.15;
+        const bottomY = canvas.height * 0.85;
+
+        for (let i = 0; i < curves; i++) {
+          const seed = i * 137.508;
+          const startTime = (i / curves) * 0.6;
+          const endTime = startTime + 0.4;
+
+          // Only draw if within current progress
+          if (progress < startTime) continue;
+
+          const drawProgress = Math.min(1, (progress - startTime) / (endTime - startTime));
+
+          // Random tangled control points that make the curve chaotic
+          const cp1x = startX + (Math.sin(seed) * 0.3 + 0.3) * (endX - startX) + Math.sin(seed * 0.7 + progress * Math.PI) * 150;
+          const cp1y = topY + Math.sin(seed * 1.3) * (bottomY - topY) * 0.8;
+          const cp2x = startX + (Math.cos(seed * 1.2) * 0.3 + 0.7) * (endX - startX) + Math.cos(seed * 0.9 + progress * Math.PI) * 150;
+          const cp2y = bottomY - Math.sin(seed * 1.7) * (bottomY - topY) * 0.8;
+
+          ctx.beginPath();
+          ctx.moveTo(startX, topY + i * ((bottomY - topY) / curves));
+
+          // Draw only the portion up to drawProgress
+          for (let t = 0; t <= drawProgress; t += 0.02) {
+            const mt = t;
+            const x = Math.pow(1 - mt, 3) * startX +
+                      3 * Math.pow(1 - mt, 2) * mt * cp1x +
+                      3 * (1 - mt) * Math.pow(mt, 2) * cp2x +
+                      Math.pow(mt, 3) * endX;
+            const y = Math.pow(1 - mt, 3) * (topY + i * ((bottomY - topY) / curves)) +
+                      3 * Math.pow(1 - mt, 2) * mt * cp1y +
+                      3 * (1 - mt) * Math.pow(mt, 2) * cp2y +
+                      Math.pow(mt, 3) * (bottomY - i * ((bottomY - topY) / curves));
+            if (t === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+
+          // Overwhelm with color intensity as it progresses
+          const hue = (i * 360 / curves + progress * 50) % 360;
+          const saturation = 60 + progress * 30;
+          const lightness = 50 - progress * 15; // Gets darker
+          ctx.strokeStyle = `hsla(${hue}, ${saturation}%, ${lightness}%, ${0.4 + progress * 0.4})`;
+          ctx.lineWidth = 1.5 + progress * 0.5;
+          ctx.stroke();
+        }
+      });
+    }
+
+    // SCENE 3: Building Blocks - What Stripe provides
+    function initBlocksCanvas() {
+      const canvas = document.getElementById('blocks-canvas');
+      if (!canvas) return;
+
+      const tg = canvas.closest('ef-timegroup');
+      tg.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        const ctx = canvas.getContext('2d');
+        const progress = ownCurrentTimeMs / durationMs;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw stacking blocks that build upward - representing capabilities added layer by layer
+        const blockWidth = 200;
+        const blockHeight = 60;
+        const centerX = canvas.width / 2;
+        const blockCount = 8;
+        const maxBlocksShown = Math.floor(progress * blockCount);
+
+        for (let i = 0; i < maxBlocksShown; i++) {
+          const blockProgress = Math.min(1, (progress * blockCount - i) / 1);
+          const baseY = canvas.height / 2 + (blockCount / 2) * blockHeight;
+          const y = baseY - (i + 1) * blockHeight - blockProgress * 20;
+          const x = centerX - blockWidth / 2;
+
+          ctx.globalAlpha = 0.6 + blockProgress * 0.4;
+          ctx.fillStyle = `hsl(${255 + i * 5}, 100%, ${50 + i * 4}%)`;
+          ctx.fillRect(x, y, blockWidth, blockHeight);
+
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(x, y, blockWidth, blockHeight);
+
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = 'white';
+          ctx.font = 'bold 14px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          const labels = ['Cards', 'ACH',

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Linear - 30s Product Demo</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@editframe/elements/styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: #000;
+    }
+
+    @keyframes slide-in-right {
+      from {
+        transform: translateX(40px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slide-in-left {
+      from {
+        transform: translateX(-40px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fade-in {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes fade-out {
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+      }
+    }
+
+    @keyframes scale-up {
+      from {
+        transform: scale(0.95);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes char-pop {
+      from {
+        transform: scale(0.8) translateY(8px);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .scene-background {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .gradient-dark {
+      background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+    }
+
+    .grid-pattern {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(99, 102, 241, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99, 102, 241, 0.1) 1px, transparent 1px);
+      background-size: 40px 40px;
+      background-position: 0 0;
+    }
+
+    .content-container {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 60px;
+    }
+
+    .keyboard-icon {
+      position: absolute;
+      bottom: 40px;
+      right: 60px;
+      font-size: 32px;
+      opacity: 0.4;
+    }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <ef-timegroup mode="sequence" overlap="0.8s" class="w-[1920px] h-[1080px]">
+    
+    <!-- Scene 1: The Problem - Chaotic workflow (0s-8s) -->
+    <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full">
+      <div class="scene-background gradient-dark"></div>
+      <div class="grid-pattern"></div>
+      <canvas id="chaos-canvas" class="absolute inset-0"></canvas>
+      
+      <div class="content-container">
+        <ef-text
+          split="char"
+          class="text-white text-6xl font-bold tracking-tight"
+          style="animation: 0.4s char-pop both; animation-delay: calc(var(--ef-index) * 40ms)"
+        >Work without friction</ef-text>
+        
+        <ef-text
+          class="text-slate-400 text-xl mt-6"
+          style="animation: 0.6s slide-in-left 0.8s both"
+        >Most tools add process. Linear removes it.</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 2: Keyboard-first speeds work up (8s-18s) -->
+    <ef-timegroup mode="fixed" duration="10s" class="absolute w-full h-full">
+      <div class="scene-background" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)"></div>
+      
+      <div class="content-container">
+        <ef-text
+          split="word"
+          class="text-white text-5xl font-bold"
+          style="animation: 0.5s slide-in-right both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+        >Keyboard commands that think for you</ef-text>
+        
+        <div class="mt-8 text-slate-300 text-lg" style="animation: 0.6s slide-in-left 0.8s both; max-width: 800px">
+          <div class="mb-4">⌘K to search anything. Tab to assign. Enter to move. No mouse required.</div>
+        </div>
+
+        <div class="absolute bottom-16 right-20 text-slate-500 text-sm" style="animation: 0.5s fade-in 1.5s both">
+          <div class="border border-slate-600 rounded px-4 py-2 text-center">⌘K</div>
+          <div class="text-xs mt-2 text-center">Speed is intention</div>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 3: From chaos to clarity (18s-26s) -->
+    <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full">
+      <div class="scene-background" style="background: linear-gradient(135deg, #0f3460 0%, #533483 100%)"></div>
+      <canvas id="clarity-canvas" class="absolute inset-0"></canvas>
+      
+      <div class="content-container">
+        <ef-text
+          split="word"
+          class="text-white text-5xl font-bold"
+          style="animation: 0.5s slide-in-right both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+        >Issues solved, not deferred</ef-text>
+        
+        <ef-text
+          class="text-indigo-300 text-lg mt-6"
+          style="animation: 0.6s fade-in 1s both"
+        >Linear makes resolution the path, not the exception.</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 4: CTA - Join the movement (26s-30s) -->
+    <ef-timegroup mode="fixed" duration="4s" class="absolute w-full h-full">
+      <div class="scene-background" style="background: linear-gradient(135deg, #0f0f0f 0%, #1a0033 100%)"></div>
+      
+      <div class="content-container flex flex-col items-center justify-center">
+        <ef-text
+          split="char"
+          class="text-white text-5xl font-bold text-center"
+          style="animation: 0.4s char-pop both; animation-delay: calc(var(--ef-index) * 40ms)"
+        >Linear</ef-text>
+        
+        <ef-text
+          class="text-indigo-400 text-xl mt-4 text-center"
+          style="animation: 0.6s fade-in 0.6s both"
+        >linear.app</ef-text>
+      </div>
+    </ef-timegroup>
+
+  </ef-timegroup>
+
+  <script>
+    // Scene 1: Chaos animation - tangled connections showing workflow complexity
+    const chaosCanvas = document.getElementById('chaos-canvas');
+    const scene1 = chaosCanvas.parentElement.parentElement;
+    
+    scene1.initializer = (instance) => {
+      return instance.addFrameTask((timeMs, durationMs) => {
+        if (!chaosCanvas) return;
+        
+        const ctx = chaosCanvas.getContext('2d');
+        chaosCanvas.width = chaosCanvas.offsetWidth;
+        chaosCanvas.height = chaosCanvas.offsetHeight;
+        
+        const progress = timeMs / durationMs;
+        const centerX = chaosCanvas.width * 0.65;
+        const centerY = chaosCanvas.height * 0.5;
+        
+        ctx.clearRect(0, 0, chaosCanvas.width, chaosCanvas.height);
+        
+        // Draw accumulating tangled nodes to show chaos/complexity
+        const nodeCount = Math.floor(progress * 60);
+        const nodes = [];
+        
+        for (let i = 0; i < nodeCount; i++) {
+          const angle = (i / 60) * Math.PI * 2;
+          const distance = 80 + Math.sin(i * 0.3 + progress * 3) * 120;
+          const x = centerX + Math.cos(angle) * distance;
+          const y = centerY + Math.sin(angle) * distance;
+          nodes.push({ x, y });
+          
+          // Draw connections - more tangled as progress increases
+          if (i > 0) {
+            const prevIdx = Math.max(0, i - Math.floor(Math.random() * 8));
+            const prev = nodes[prevIdx];
+            
+            ctx.beginPath();
+            ctx.moveTo(prev.x, prev.y);
+            
+            // Quadratic curve for tangled appearance
+            const controlX = centerX + (Math.random() - 0.5) * 400;
+            const controlY = centerY + (Math.random() - 0.5) * 300;
+            ctx.quadraticCurveTo(controlX, controlY, x, y);
+            
+            ctx.strokeStyle = `rgba(99, 102, 241, ${0.1 + progress * 0.3})`;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+          }
+          
+          // Draw nodes
+          ctx.beginPath();
+          ctx.arc(x, y, 3 + Math.sin(i + progress * Math.PI) * 2, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(99, 102, 241, ${0.4 + progress * 0.4})`;
+          ctx.fill();
+        }
+      });
+    };
+
+    // Scene 3: Clarity animation - nodes converging to a single point
+    const clarityCanvas = document.getElementById('clarity-canvas');
+    const scene3 = clarityCanvas.parentElement.parentElement;
+    
+    scene3.initializer = (instance) => {
+      return instance.addFrameTask((timeMs, durationMs) => {
+        if (!clarityCanvas) return;
+        
+        const ctx = clarityCanvas.getContext('2d');
+        clarityCanvas.width = clarityCanvas.offsetWidth;
+        clarityCanvas.height = clarityCanvas.offsetHeight;
+        
+        const progress = timeMs / durationMs;
+        const centerX = clarityCanvas.width * 0.5;
+        const centerY = clarityCanvas.height * 0.5;
+        
+        ctx.clearRect(0, 0, clarityCanvas.width, clarityCanvas.height);
+        
+        // Show nodes converging from chaos to single resolved state
+        const startNodeCount = 60;
+        const endNodeCount = 1;
+        const currentNodeCount = Math.floor(startNodeCount - progress * (startNodeCount - endNodeCount));
+        
+        for (let i = 0; i < currentNodeCount; i++) {
+          const angle = (i / 60) * Math.PI * 2;
+          const startDistance = 150 + Math.sin(i * 0.3) * 100;
+          const endDistance = 0;
+          const distance = startDistance + (endDistance - startDistance) * progress;
+          
+          const x = centerX + Math.cos(angle) * distance;
+          const y = centerY + Math.sin(angle) * distance;
+          
+          // Draw converging node
+          const nodeSize = 2 + (1 - progress) * 3;
+          ctx.beginPath();
+          ctx.arc(x, y, nodeSize, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(139, 92, 246, ${(1 - progress * 0.5)})`;
+          ctx.fill();
+          
+          // Trail lines showing convergence
+          if (progress > 0.2) {
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(x, y);
+            ctx.strokeStyle = `rgba(139, 92, 246, ${0.2 * (1 - progress)})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+        
+        // Center resolved node
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 6 + progress * 4, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(139, 92, 246, ${0.3 + progress * 0.7})`;
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 6 + progress * 4, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(139, 92, 246, ${1})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      });
+    };
+  </script>
+</body>
+</html>

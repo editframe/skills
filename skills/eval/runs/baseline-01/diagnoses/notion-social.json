@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses only category-generic language ('one workspace,' 'docs, notes, wikis') that any productivity tool could claim. No Notion-specific concepts appear.",
+      "improvement": "Reference Notion's actual differentiators: the block-based system, linked databases, or the specific way templates and views work. Show a recognizable Notion UI pattern or mention a specific use case that only Notion enables."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+    "cause": "wrong_priority",
+    "proposedChange": "Add immediately after the Phase 0 example:\n\n**CRITICAL: Product Mechanics Test**\nFor software/product brands, your specificity answer MUST include a concrete product mechanic. Ask: \"What does the user literally do in this product that they cannot do elsewhere?\"\n\nNot: \"They help teams collaborate\" (every tool claims this).\nNot: \"One workspace for everything\" (category-level positioning).\nYes: \"Everything is a block that can be nested, linked, or transformed into a database view.\"\n\nIf your answer could appear on a competitor's homepage, it is not specific enough.",
+    "rationale": "The model fell back to category-level positioning ('one workspace') because Phase 0 examples focused on origin stories rather than requiring identification of specific product mechanics that differentiate the brand."
+  },
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "critical",
+      "observation": "The video follows a predictable problem-solution-features-CTA template with no authorial perspective. The 'chaos to order' concept hinted in the first animation isn't developed.",
+      "improvement": "Commit to a specific angle: Is Notion about building a 'second brain'? About making teams think in systems? Choose one truth about Notion and let it shape every scene's structure and visual language."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**3. What should the viewer feel at the last frame that they didn't feel at the first frame?**\n\nThis is a feeling, not a fact. \"Informed\" is not a feeling. \"Like this problem is finally solved\" is a feeling.",
+    "cause": "missing",
+    "proposedChange": "Add after the Phase 0 section, before Phase 1:\n\n**Phase 0.5: Authorial Angle (MANDATORY)**\n\nYour video must have a point of view—a specific claim about why this product matters that shapes every creative decision.\n\nAnswer: \"This video argues that [brand] is really about ____________.\"\n\nNot: \"Notion is really about productivity\" (too broad).\nNot: \"Notion is really about organizing your work\" (what the product does, not a perspective).\nYes: \"Notion is really about giving everyone the power to build their own tools.\"\nYes: \"Notion is really about making structure feel like freedom.\"\n\nThis angle becomes your filter: every scene must either establish, develop, or pay off this argument. If a scene doesn't serve the angle, cut it.\n\n**The angle test**: If your video could work equally well for a competitor by changing the logo, you don't have an angle.",
+    "rationale": "The model produced a generic problem-solution-CTA template because no phase required committing to an authorial perspective that would constrain and unify the creative approach."
+  },
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "motion",
+      "severity": "major",
+      "observation": "Animations are decorative entrances (fade-in, slide-in, float-in) rather than structural. Motion doesn't reinforce the message about organization and connection.",
+      "improvement": "Use motion to demonstrate the concept: scattered elements that literally organize themselves into a Notion-style hierarchy. Use --ef-progress to show continuous connection between ideas. Make the animation itself demonstrate what Notion does."
+    },
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "currentText": "## Word-by-Word Title Reveal\n\nText that builds itself word by word focuses attention on the message as it forms.",
+    "cause": "missing",
+    "proposedChange": "Add a new section after \"## Word-by-Word Title Reveal\" section:\n\n---\n\n## Concept-as-Motion (Structural Animation)\n\nThe most powerful motion doesn't decorate—it demonstrates. Instead of animating text onto screen, animate the concept the text describes.\n\n**Pattern**: If the message is about transformation, organization, or connection, the animation itself should perform that transformation.\n\n```html live\n<ef-timegroup mode=\"fixed\" duration=\"6s\" class=\"w-[720px] h-[400px] bg-slate-900 overflow-hidden\">\n  <!-- Scattered elements that organize themselves -->\n  <div class=\"item absolute text-white text-lg bg-slate-700 px-3 py-1 rounded\"\n    style=\"top: 20%; left: 10%; animation: 3s organize both; --target-x: 50px; --target-y: 100px\">Notes</div>\n  <div class=\"item absolute text-white text-lg bg-slate-700 px-3 py-1 rounded\"\n    style=\"top: 60%; left: 70%; animation: 3s organize 0.2s both; --target-x: 50px; --target-y: 140px\">Tasks</div>\n  <div class=\"item absolute text-white text-lg bg-slate-700 px-3 py-1 rounded\"\n    style=\"top: 40%; left: 40%; animation: 3s organize 0.4s both; --target-x: 50px; --target-y: 180px\">Docs</div>\n  <!-- Container that fades in as destination -->\n  <div class=\"absolute left-[40px] top-[80px] w-48 h-36 border-2 border-white/30 rounded-lg\"\n    style=\"animation: 1s fade-in 1.5s both\"></div>\n</ef-timegroup>\n<style>\n  @keyframes organize {\n    0%   { transform: translate(0, 0) rotate(calc(var(--ef-seed) * 20deg - 10deg)); }\n    100% { transform: translate(var(--target-x), var(--target-y)) rotate(0deg); left: 0; top: 0; }\n  }\n  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }\n</style>\n```\n\n**What motion adds:** The animation IS the argument. Viewers see chaos become order, not just read about it. Use `--ef-progress` to drive continuous transformations that demonstrate your concept over time.\n\n**When to use:** Whenever your message involves transformation, connection, organization, or process. The motion should be what you'd show if you couldn't use any words.",
+    "rationale": "The model used generic entrance animations because composition-patterns.md only showed decorative patterns (fade-in, slide-up) without a pattern for making motion demonstrate the product concept itself."
+  }
+]

@@ -1,0 +1,59 @@
+{
+  "taskId": "supabase-product-demo",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-03-02T19:45:41.350Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural, with addFrameTask driving procedural canvas animations and CSS animations with staggered delays. The chaos canvas uses progress-based rendering where complexity builds over time, making motion carry meaning about backend fragmentation.",
+      "evidence": "Scene 1 uses `instance.addFrameTask((info) => {...})` with `const progress = info.ownCurrentTimeMs / info.durationMs` to drive procedural bezier curves that multiply over time. CSS animations use staggered delays: `animation: slide-up 0.6s ease-out both 0.2s` and `animation: scale-in 0.6s ease-out both 0.3s`. Two canvases planned (chaos-canvas, unified-canvas)."
+    },
+    "specificity": {
+      "score": 3,
+      "rationale": "Several Supabase-specific truths are present: the unified Postgres model, Row Level Security (RLS), the specific client API syntax, and the 'everything from one source of truth' philosophy. However, core messaging ('one database, everything built in') could apply to other BaaS platforms.",
+      "evidence": "Code block shows actual Supabase client syntax: `await supabase.from('users').select('*')`. Mentions 'Auth + RLS', 'Edge Functions', and 'real-time subscriptions — all from one source of truth'. But features like 'Postgres DB', 'Auth layer', 'API gateway' are category-generic."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc is traceable: overwhelm (chaos) → recognition of pain points → relief at solution → understanding of mechanism → confidence → action. However, the transitions between states are formulaic and the emotional beats don't fully land—Scene 4's code example is more explanatory than revelatory.",
+      "evidence": "Scene 1-2: Problem/pain ('Spinning up servers, managing databases...All things that can break'). Scene 3: 'Meet Supabase' reveal. Scene 4: Technical explanation. Scene 5: Feature list. Scene 6: CTA. The arc exists but follows standard problem-solution template without surprising shifts."
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "A clear perspective exists: 'backend complexity is the enemy, and unification around Postgres is the answer.' The chaos-to-unified visual metaphor commits to this view. However, this is also Supabase's own marketing position, not a distinctive authorial take.",
+      "evidence": "The chaos canvas building tangled connections vs. the promised 'unified-canvas' embodies a perspective. 'The middleware explosion' and 'All separate. All talking to each other. All things that can break' shows commitment to the fragmentation critique. But this mirrors standard Supabase positioning."
+    },
+    "omission": {
+      "score": 2,
+      "rationale": "Scene 5 ('Everything built in') largely repeats Scene 3's promise without adding substance—it's a feature checklist that could merge with the reveal. Scene 4 and Scene 5 both serve 'what you get' and create redundancy.",
+      "evidence": "Scene 3: 'One Postgres database. Everything else comes from it.' Scene 5: 'Everything built in' with icons for Postgres DB, Auth + RLS, Edge Functions. Scene 4's code example already demonstrates the unified model. Scene 5 adds a 6-second feature grid that doesn't advance understanding."
+    }
+  },
+  "overall": 3,
+  "feedback": [
+    {
+      "dimension": "omission",
+      "severity": "major",
+      "observation": "Scene 5 is a feature checklist that restates Scene 3's value proposition without advancing the viewer's understanding. Both scenes communicate 'Supabase gives you everything in one place.'",
+      "improvement": "Merge Scene 5 content into Scene 3 or Scene 4, or replace Scene 5 with a concrete demonstration—show a real product being built, a dashboard view, or deployment in action. Use the 6 seconds to deepen rather than repeat."
+    },
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The 'problem' scenes (1-2) describe generic backend pain points that apply to any BaaS competitor. 'Spinning up servers, managing databases, writing authentication' is the pitch for Firebase, PlanetScale, Neon, etc.",
+      "improvement": "Ground the problem in Supabase's specific origin story or target user. Reference the 'Firebase alternative' positioning directly, or show migration pain from a specific legacy stack. Make the problem statement as specific as the solution."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "Scene 4's code block is explanatory but doesn't create an emotional shift. The viewer learns syntax but doesn't feel the 'aha' of how simple this makes their life.",
+      "improvement": "Contrast the Supabase code with the equivalent boilerplate it replaces—show 50 lines collapsing into 3, or animate the elimination of middleware layers. Make simplification visceral, not just stated."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "minor",
+      "observation": "The perspective ('unification beats fragmentation') is Supabase's official marketing position rather than a distinctive authorial interpretation. The video feels like well-executed brand messaging rather than a point of view about the brand.",
+      "improvement": "Take a stance that Supabase itself might not explicitly claim—perhaps 'Supabase trusts developers more than other platforms' or 'Postgres was always the answer, we just forgot.' Find an angle that reveals insight beyond the homepage."
+    }
+  ]
+}

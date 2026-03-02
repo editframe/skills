@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Linear - 30s Product Demo</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@editframe/elements/styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #000;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(24px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes slideDown {
+      from { transform: translateY(-24px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes slideLeft {
+      from { transform: translateX(40px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes scaleDown {
+      from { transform: scale(1.08); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    /* Scene 1: Chaos dissolves to clarity */
+    .chaos-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .clarity-text {
+      animation: slideUp 0.6s ease-out forwards;
+      animation-delay: 0.2s;
+    }
+
+    /* Scene 2: The workflow */
+    .workflow-container {
+      background: #0a0a0a;
+      position: relative;
+    }
+
+    .issue-item {
+      animation: slideLeft 0.5s ease-out forwards;
+      animation-delay: calc(var(--index) * 0.15s);
+    }
+
+    .workflow-label {
+      animation: slideDown 0.6s ease-out 0.3s forwards;
+      opacity: 0;
+    }
+
+    /* Scene 3: Speed */
+    .speed-metric {
+      animation: scaleDown 0.5s ease-out forwards;
+      animation-delay: calc(var(--index) * 0.1s);
+    }
+
+    .cta-button {
+      animation: slideUp 0.6s ease-out 1.2s forwards;
+      opacity: 0;
+    }
+
+    /* Dark mode with Linear's signature gray and purple accents */
+    .linear-bg {
+      background: #0a0a0a;
+    }
+
+    .linear-primary {
+      color: #fff;
+    }
+
+    .linear-secondary {
+      color: #999;
+    }
+
+    .linear-accent {
+      color: #5e56e9;
+    }
+
+    .divider {
+      opacity: 0.2;
+    }
+  </style>
+</head>
+<body>
+
+<ef-configuration api-host="https://api.editframe.com" media-engine="local">
+  <ef-timegroup mode="sequence" overlap="0.8s" class="w-[1920px] h-[1080px]">
+    
+    <!-- SCENE 1: Chaos to Clarity (0s-8s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full linear-bg flex flex-col items-center justify-center"
+      style="animation: fadeOut 0.8s var(--ef-transition-out-start) forwards">
+      
+      <canvas id="chaos-canvas" class="chaos-canvas absolute inset-0"></canvas>
+      
+      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a0a0a]/40 to-[#0a0a0a]"></div>
+      
+      <ef-text class="relative z-10 text-center clarity-text"
+        style="max-width: 800px;">
+        <span class="linear-primary text-6xl font-bold block mb-4">Issues everywhere.</span>
+        <span class="linear-secondary text-2xl block">No clarity.</span>
+      </ef-text>
+    </ef-timegroup>
+
+    <!-- SCENE 2: Linear Solves It (8s-20s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full linear-bg flex flex-col"
+      style="animation: fadeIn 0.8s both, fadeOut 0.8s var(--ef-transition-out-start) forwards">
+      
+      <div class="flex-1 flex items-center justify-center">
+        <div class="w-full max-w-3xl px-12">
+          
+          <ef-text class="workflow-label linear-accent text-sm font-semibold uppercase tracking-widest mb-8">
+            Linear transforms chaos
+          </ef-text>
+          
+          <!-- Three workflow states -->
+          <div class="space-y-6">
+            <div class="issue-item" style="--index: 0">
+              <div class="bg-[#1a1a1a] border border-[#333] rounded-lg p-6">
+                <div class="flex items-start gap-4">
+                  <div class="w-2 h-2 bg-[#5e56e9] rounded-full mt-2 flex-shrink-0"></div>
+                  <div>
+                    <div class="linear-primary text-lg font-medium">API Rate Limiting</div>
+                    <div class="linear-secondary text-sm mt-1">Blocked by database scaling</div>
+                  </div>
+                  <div class="linear-secondary text-xs ml-auto">@sarah</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="issue-item" style="--index: 1">
+              <div class="bg-[#1a1a1a] border border-[#333] rounded-lg p-6">
+                <div class="flex items-start gap-4">
+                  <div class="w-2 h-2 bg-[#5e56e9] rounded-full mt-2 flex-shrink-0"></div>
+                  <div>
+                    <div class="linear-primary text-lg font-medium">Webhook Delivery Failure</div>
+                    <div class="linear-secondary text-sm mt-1">Related to API Rate Limiting</div>
+                  </div>
+                  <div class="linear-secondary text-xs ml-auto">@dev-team</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="issue-item" style="--index: 2">
+              <div class="bg-[#1a1a1a] border border-[#333] rounded-lg p-6">
+                <div class="flex items-start gap-4">
+                  <div class="w-2 h-2 bg-[#5e56e9] rounded-full mt-2 flex-shrink-0"></div>
+                  <div>
+                    <div class="linear-primary text-lg font-medium">Performance Regression</div>
+                    <div class="linear-secondary text-sm mt-1">Caused by last deploy</div>
+                  </div>
+                  <div class="linear-secondary text-xs ml-auto">@engineering</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ef-text class="linear-secondary text-center pb-12 text-sm"
+        style="animation: slideUp 0.6s ease-out 1.5s forwards; opacity: 0;">
+        Clarity. Hierarchy. Connection.
+      </ef-text>
+    </ef-timegroup>
+
+    <!-- SCENE 3: Speed & CTA (20s-30s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full linear-bg flex flex-col items-center justify-center"
+      style="animation: fadeIn 0.8s both">
+      
+      <canvas id="speed-canvas" class="absolute inset-0"></canvas>
+      
+      <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent"></div>
+      
+      <div class="relative z-10 text-center">
+        <ef-text class="linear-primary text-7xl font-bold mb-6"
+          style="animation: scaleDown 0.7s cubic-bezier(0, 0.55, 0.45, 1) forwards">
+          <span class="linear-accent">Keyboard</span>. Built in.
+        </ef-text>
+        
+        <ef-text class="linear-secondary text-xl mt-8"
+          style="animation: slideUp 0.6s ease-out 0.4s forwards; opacity: 0;">
+          Move faster than your ideas.
+        </ef-text>
+
+        <div class="cta-button mt-12">
+          <div class="inline-block bg-[#5e56e9] hover:bg-[#6b61ff] text-white px-8 py-4 rounded-lg font-semibold transition-colors">
+            Start free →
+          </div>
+        </div>
+      </div>
+    </ef-timegroup>
+
+  </ef-timegroup>
+</ef-configuration>
+
+<script>
+  // Scene 1: Chaos canvas - issues accumulating, visually overwhelming
+  const chaosCanvas = document.getElementById('chaos-canvas');
+  if (chaosCanvas) {
+    const chaosScene = chaosCanvas.parentElement.parentElement;
+    
+    chaosScene.addFrameTask = chaosScene.addFrameTask || function(callback) {
+      this.initializer = (instance) => {
+        return instance.addFrameTask(callback);
+      };
+    };
+    
+    chaosScene.initializer = (instance) => {
+      return instance.addFrameTask((timeMs, durationMs) => {
+        const ctx = chaosCanvas.getContext('2d');
+        const progress = timeMs / durationMs;
+        
+        chaosCanvas.width = chaosCanvas.offsetWidth;
+        chaosCanvas.height = chaosCanvas.offsetHeight;
+        
+        ctx.clearRect(0, 0, chaosCanvas.width, chaosCanvas.height);
+        
+        // 120 chaotic nodes that grow and overlap as time progresses
+        const nodeCount = Math.floor(progress * 120);
+        
+        for (let i = 0; i < nodeCount; i++) {
+          const seed = i * 137.5;
+          const angle = (i / 120) * Math.PI * 2;
+          const distance = Math.sin(seed * 0.3 + progress * Math.PI) * chaosCanvas.width * 0.4;
+          
+          const x = chaosCanvas.width / 2 + Math.cos(angle) * distance;
+          const y = chaosCanvas.height / 2 + Math.sin(angle) * distance;
+          
+          const speedFactor = 0.5 + progress * 1.5;
+          const jitter = Math.sin(seed + timeMs * 0.005) * 20;
+          
+          const radius = 3 + Math.sin(seed + progress * Math.PI * 2) * 4;
+          const opacity = 0.3 + (i / nodeCount) * 0.4;
+          
+          ctx.beginPath();
+          ctx.arc(x + jitter, y + jitter, radius, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(94, 86, 233, ${opacity * (1 - progress * 0.3)})`;
+          ctx.fill();
+          
+          // Connecting lines increase as chaos intensifies
+          if (i % 8 === 0 && i > 0) {
+            const prevSeed = (i - 8) * 137.5;
+            const prevAngle = ((i - 8) / 120) * Math.PI * 2;
+            const prevDistance = Math.sin(prevSeed * 0.3 + progress * Math.PI) * chaosCanvas.width * 0.4;
+            const prevX = chaosCanvas.width / 2 + Math.cos(prevAngle) * prevDistance;
+            const prevY = chaosCanvas.height / 2 + Math.sin(prevAngle) * prevDistance;
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(prevX, prevY);
+            ctx.strokeStyle = `rgba(94, 86, 233, ${0.1 + progress * 0.15})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      });
+    };
+  }
+
+  // Scene 3: Speed canvas - smooth orbital motion representing velocity
+  const speedCanvas = document.getElementById('speed-canvas');
+  if (speedCanvas) {
+    const speedScene = speedCanvas.parentElement.parentElement;
+    
+    speedScene.initializer = (instance) => {
+      return instance.addFrameTask((timeMs, durationMs) => {
+        const ctx = speedCanvas.getContext('2d');
+        const progress = timeMs / durationMs;
+        
+        speedCanvas.width = speedCanvas.offsetWidth;
+        speedCanvas.height = speedCanvas.offsetHeight;
+        
+        ctx.clearRect(0, 0, speedCanvas.width, speedCanvas.height);
+        
+        const cx = speedCanvas.width / 2;
+        const cy = speedCanvas.height / 2;
+        
+        // Orbital rings representing keyboard command flow
+        for (let ring = 0; ring < 4; ring++) {
+          const baseRadius = 100 + ring * 80;
+          const speed = 0.002 + ring * 0.0005;
+          const rotation = timeMs * speed;
+          
+          const nodeCountRing = 8 + ring * 2;
+          
+          for (let i = 0; i < nodeCountRing; i++) {
+            const angle = (i / nodeCountRing) * Math.PI * 2 + rotation;
+            const x = cx + Math.cos(angle) * baseRadius;
+            const y = cy + Math.sin(angle) * baseRadius;
+            
+            const size = 2 + ring * 0.8;
+            const alpha = 0.3 + (1 - ring / 4) * 0.4;
+            
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(94, 86, 233, ${alpha})`;
+            ctx.fill();
+          }
+          
+          // Orbital ring lines
+          ctx.beginPath();
+          ctx.arc(cx, cy, baseRadius, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(94, 86, 233, ${0.1 + progress * 0.1})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+        
+        // Central pulse
+        const pulseSize = 8 + Math.sin(timeMs * 0.008) * 3;
+        const pulseAlpha = 0.6 + Math.sin(timeMs * 0.008) * 0.2;
+        
+        ctx.beginPath();
+        ctx.arc(cx, cy, pulseSize, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(94, 86, 233, ${pulseAlpha})`;
+        ctx.fill();
+      });
+    };
+  }
+</script>
+
+</body>
+</html>

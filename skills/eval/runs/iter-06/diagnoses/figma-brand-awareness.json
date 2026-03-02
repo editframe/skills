@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "The problem-problem-solution arc is predictable. Scenes 1 and 2 both create the same emotional state (recognition of isolation) without building tension between them.",
+      "improvement": "Scene 2 could escalate the stakes—show what happens when collaboration fails (version conflicts, miscommunication, wasted work) rather than just visually representing separation. Create genuine frustration before relief."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "- VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]\n- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]",
+    "cause": "missing",
+    "proposedChange": "Add after the viewer-state template fields:\n\n**Escalation test for multi-scene arcs**: If two consecutive scenes create the same emotional category (e.g., both create 'recognition' or both create 'frustration'), the second scene must intensify or complicate—not merely illustrate the same idea with different visuals. Ask: 'What's worse now than before?' If nothing is worse, the scenes are redundant. Options:\n- Escalate stakes: show consequences of the problem, not just another view of it\n- Introduce a complication: the obvious solution doesn't work\n- Narrow focus: zoom in on the most painful specific detail\n\nTwo 'problem' scenes in a row without escalation is a pacing failure.",
+    "rationale": "The model created two problem scenes with identical viewer states because the skill only checks that viewer state changes between scenes, not that consecutive scenes of the same type must escalate."
+  },
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition recites Figma's marketing position rather than offering a distinct perspective. 'Design used to be alone, now it's together' is the expected message.",
+      "improvement": "Take a stance: What did we lose when design became collaborative? What's the cost of never being alone with an idea? A more interesting POV might acknowledge trade-offs or celebrate something unexpected about Figma's impact."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.",
+    "cause": "missing",
+    "proposedChange": "Add after the existing Q4 guidance:\n\n**5. What would a critic say about this brand's impact?**\n\nEvery brand position has a cost. Name it. This is not devil's advocacy—it's the source of an interesting POV.\n- Figma made design collaborative → but constant visibility means you can never be wrong in private\n- Linear made project management opinionated → but opinions are constraints, and some teams need flexibility\n- Notion made everything a block → but infinite flexibility is infinite decisions\n\nYour video can celebrate the brand's choice while acknowledging the trade-off. A POV that ignores costs reads as marketing. A POV that names the cost and argues it's worth it reads as conviction.\n\n**If your answer to Q5 is 'there is no downside,' you haven't found the real trade-off yet.**",
+    "rationale": "The model produced a predictable marketing message because Phase 0 only asks what's unique and what formal choice follows, without requiring the model to identify trade-offs that would generate a distinctive perspective."
+  }
+]

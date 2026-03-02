@@ -1,0 +1,58 @@
+[
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "Uses placeholder video (bars-n-tone.mp4) and generic tech visual language. The features mentioned (preview URLs, instant deploys) are table stakes for modern deployment platforms.",
+      "improvement": "Reference Vercel-specific differentiators: Edge Functions, v0, the specific DX of the dashboard, Next.js integration, or the ISR/SSR distinction. Use Vercel's actual black/white/minimal brand language rather than generic dark gradients with blue accents."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**You MUST use browser tools to load the actual website before any analysis.**\n\n1. Navigate to the URL with your available browser tools\n2. Take screenshots of homepage and key pages\n3. Inspect CSS to extract exact color hex codes\n4. Download logo and brand assets (3-5 minimum)",
+    "cause": "wrong_priority",
+    "proposedChange": "Add immediately after the existing browser tools section:\n\n**Asset Replacement is Mandatory**\n\nPlaceholder assets (bars-n-tone.mp4, stock footage, generic gradients) are NEVER acceptable in final compositions. For every visual element:\n1. Use actual brand assets downloaded from the website\n2. If video footage unavailable, use Canvas API to generate brand-specific visuals\n3. Match exact brand colors (hex codes from CSS inspection), not approximate alternatives\n4. If you cannot source or generate brand-appropriate assets, STOP and report what's missing.\n\n**Common violation:** Using blue accent colors for brands that use different palettes. Using dark gradients for brands with minimal/white aesthetics.",
+    "rationale": "The model used placeholder video and generic blue/dark styling instead of Vercel's black/white minimal brand because the skill emphasizes extracting brand assets but doesn't explicitly forbid placeholder substitution in the final output."
+  },
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "Uses placeholder video (bars-n-tone.mp4) and generic tech visual language. The features mentioned (preview URLs, instant deploys) are table stakes for modern deployment platforms.",
+      "improvement": "Reference Vercel-specific differentiators: Edge Functions, v0, the specific DX of the dashboard, Next.js integration, or the ISR/SSR distinction. Use Vercel's actual black/white/minimal brand language rather than generic dark gradients with blue accents."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+    "cause": "present_wrong",
+    "proposedChange": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nNot: \"They have fast deploys and preview URLs\" (table stakes for the category).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"\nYes: \"They invented ISR and own the Next.js framework that defines React deployment.\"\n\n**Table stakes test:** If every serious competitor in the category also offers this feature, it's not a differentiator. Name what they invented, own, or do philosophically differently.",
+    "rationale": "The example shows generic vs specific origin stories but doesn't warn against citing category-standard features as differentiators, which led the model to treat 'preview URLs, instant deploys' as unique to Vercel."
+  },
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The chaos-to-order narrative is generic 'old way bad, new way good' without naming what specifically is being rejected or why Vercel's approach is philosophically different.",
+      "improvement": "Take a stance. Is this about DX mattering more than ops? About the edge being the future? About git being the source of truth? The chaos canvas could show specific pain (config files, CI pipelines, cold starts) rather than abstract red lines."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**2. What would be lost if this video never existed?**\n\nNot: \"People wouldn't know about the product\" (that's true of any video).\nYes: \"Nobody would see the contrast between how chaotic their industry is and how calm their workflow actually is.\"",
+    "cause": "present_wrong",
+    "proposedChange": "**2. What would be lost if this video never existed?**\n\nNot: \"People wouldn't know about the product\" (that's true of any video).\nNot: \"Nobody would see the chaos-to-order transformation\" (this is a generic narrative template).\nYes: \"Nobody would see the contrast between how chaotic their industry is and how calm their workflow actually is.\"\n\n**Narrative template test:** If your answer is a common video structure (problem→solution, old→new, chaos→order), you haven't found specificity yet. What SPECIFIC chaos? What SPECIFIC order? Name the actual artifacts: config files, CI pipelines, cold starts, dashboard screens.",
+    "rationale": "The 'Yes' example in the current text actually uses the same chaos-to-order template the model used; adding an explicit warning against generic narrative structures would force concrete specificity."
+  },
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The chaos-to-order narrative is generic 'old way bad, new way good' without naming what specifically is being rejected or why Vercel's approach is philosophically different.",
+      "improvement": "Take a stance. Is this about DX mattering more than ops? About the edge being the future? About git being the source of truth? The chaos canvas could show specific pain (config files, CI pipelines, cold starts) rather than abstract red lines."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Visual Metaphor Quick Reference:**\n\n| Concept | Visual Approach | Motion Style |\n|---------|----------------|--------------|\n| Chaos/Complexity | Tangled lines, scattered elements | Chaotic bezier curves |",
+    "cause": "missing",
+    "proposedChange": "Add a new row and note after the table:\n\n| Concept | Visual Approach | Motion Style |\n|---------|----------------|--------------|\n| Chaos/Complexity | Tangled lines, scattered elements | Chaotic bezier curves |\n| **Specific Chaos** | Named artifacts: config files, error logs, CLI output, actual UI screenshots | Elements should be recognizable to the target audience |\n\n**Abstraction warning:** Generic 'chaos' (red lines, random shapes) communicates nothing. Show the ACTUAL pain: a real YAML file, a real error message, a real slow-loading dashboard. If viewers can't name what they're seeing, it's not specific enough.",
+    "rationale": "The visual metaphor table offers 'tangled lines' for chaos without requiring domain-specific imagery, which led to abstract red bezier curves instead of recognizable developer pain points like config files or CI pipelines."
+  }
+]

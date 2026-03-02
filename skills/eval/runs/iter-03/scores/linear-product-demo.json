@@ -1,0 +1,59 @@
+{
+  "taskId": "linear-product-demo",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:20:38.229Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural and purposeful. Canvas-based procedural animation drives two scenes with addFrameTask, text splitting with staggered delays is used throughout, and animations serve the narrative arc from chaos to clarity.",
+      "evidence": "Scene 1 uses `chaosTg.addFrameTask((t, d) => {...})` to draw accumulating tangled paths representing chaos. Scene 2 uses `resTg.addFrameTask` to animate nodes converging from scattered to aligned. Text uses `split='word'` with `animation-delay: calc(var(--ef-word-index) * 100ms)` for staggered reveals. However, the canvas code references undefined `ownCurrentTimeMs` which suggests incomplete implementation."
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "The composition references Linear's keyboard-centric workflow and command palette, but these are surface-level brand markers. The visual language (chaos-to-order, speed demos) could apply to any project management tool claiming to reduce friction.",
+      "evidence": "Linear-specific: `Cmd+K → Type → Done`, `$ linear create \"Fix auth bug\"`. Generic: 'Too many tools. Too much friction.', 'Everyone sees the same truth', 'The entire team moves together.' The DAG visualization doesn't reflect Linear's actual issue hierarchy or cycles feature. Color palette (slate/blue) is generic tech, not Linear's distinctive purple."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc from frustration (chaos) → relief (Linear arrives) → impressed (speed) → alignment → action is traceable. However, the emotional transitions are formulaic SaaS demo beats rather than earned through specific demonstration.",
+      "evidence": "Scene 1 creates anxiety ('40 issues • 12 tools • Searching...'). Scene 2 promises resolution. Scene 3 shows speed. Scene 4 claims team alignment without showing it. Scene 5 is a generic CTA. The viewer moves through expected states but isn't surprised or deeply shifted."
+    },
+    "point_of_view": {
+      "score": 2,
+      "rationale": "There's an implied perspective that friction is the enemy and keyboard flow is the solution, but this is Linear's marketing position, not an authorial interpretation. The composition fulfills the template of 'problem → solution → benefits → CTA' without revealing a distinctive take.",
+      "evidence": "The chaos/order visual metaphor is the strongest choice, but it's a standard 'before/after' pattern. 'Built for keyboard flow' and 'One keyboard. One workflow.' suggest a POV but don't commit to showing why keyboard-centricity matters beyond speed. No surprising structural choices."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Five scenes in 30 seconds is reasonable. Scene 4 (Team Alignment) feels the weakest—it makes claims ('Everyone sees the same truth') without visual evidence and repeats the resolution theme from Scene 2.",
+      "evidence": "Scene 4 contains only text: 'Everyone sees the same truth. No sync debates. No lost context.' This could be cut or merged with Scene 2's 'Linear removes friction' without loss. Scene 5's 2-second CTA is appropriately brief. The overlap transitions (0.8s) are efficient."
+    }
+  },
+  "overall": 2.8,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic 'chaos to order' visuals and claims that any PM tool could make. The canvas animations show abstract tangles and DAGs rather than anything recognizably Linear.",
+      "improvement": "Show Linear's actual UI elements: the issue sidebar, the keyboard command palette opening, the specific way issues flow through statuses. Use Linear's purple (#5E6AD2) not generic blue. Reference specific Linear features like Cycles, Roadmaps, or GitHub sync."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition adopts Linear's marketing language ('Ship faster', 'removes friction') without interpreting it. The form doesn't argue anything the words don't already say.",
+      "improvement": "Commit to a perspective: Is Linear about aesthetic discipline? Developer respect? The violence of speed? Let the visual choices argue something specific—e.g., if Linear is about calm focus, the composition should embody calm even while showing speed, not just claim it reduces chaos."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "Scene 4's 'team alignment' claim is stated but not demonstrated. The viewer is told teams align rather than experiencing the shift from fragmentation to coherence.",
+      "improvement": "Show alignment visually: multiple user cursors converging, a timeline view where disconnected work snaps into sequence, or a conversation collapsing into a resolved issue. Let the viewer feel the alignment rather than read about it."
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "Scene 4 (Team Alignment) makes claims that overlap with Scene 2's promise and adds no new visual information.",
+      "improvement": "Either cut Scene 4 and extend the speed demo, or give Scene 4 unique visual content that demonstrates alignment (not just asserts it). Consider whether 4 scenes plus CTA would be tighter."
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "taskId": "stripe-explainer",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T22:56:40.302Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural and purposeful throughout. Text splitting with staggered delays, addFrameTask for procedural canvas animation, and coordinated entrance animations create a cohesive motion language.",
+      "evidence": "Scene 2 uses `addFrameTask` for procedural canvas: `tg.addFrameTask((t, d) => { ... const progress = t / d; ... })`. Text splitting throughout: `split=\"word\"` with `animation-delay: calc(var(--ef-word-index) * 100ms)`. Features in Scene 4 have sequenced entrances: `animation: 0.8s feature-in both 1s`, `4.5s`, `8s`."
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "Brand name and general category facts are present, but the composition could easily be adapted for any payment processor. The statistics cited are Stripe-specific, but the structure and narrative are generic fintech explainer patterns.",
+      "evidence": "Specific facts: `$11 trillion in payments`, `8+ million businesses`, `45+ countries`. However, features like 'Accept payments from anywhere', 'Send payouts instantly', 'Manage your entire business' describe any payment platform. The blue/indigo color scheme vaguely references Stripe's brand but isn't distinctive. No mention of Stripe-specific products like Stripe Atlas, Radar, or Terminal."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc from problem to solution to trust to CTA is traceable. Each scene attempts a shift, but the changes feel formulaic rather than earned. The 'chaos' visualization is abstract rather than emotionally resonant.",
+      "evidence": "Scene 1 establishes frustration ('Payments are broken'), Scene 2 visualizes chaos (procedural dots), Scene 3 introduces hope ('Stripe'), Scene 4 delivers features, Scene 5 builds trust ('$11 trillion'), Scene 6 calls to action. The progression exists but follows a template. The chaos visualization doesn't create visceral frustration—it's decorative geometry."
+    },
+    "point_of_view": {
+      "score": 1,
+      "rationale": "The composition follows a standard explainer template: problem → solution → features → social proof → CTA. There's no authorial perspective on what makes Stripe different or why someone should care beyond generic benefits.",
+      "evidence": "Structure is: Scene 1 (Problem Hook) → Scene 2 (Visualize Problem) → Scene 3 (Brand Intro) → Scene 4 (Features) → Scene 5 (Trust Metrics) → Scene 6 (CTA). This is the default explainer format. No unusual choices, juxtapositions, or structural decisions that reveal a perspective on Stripe's actual philosophy (developer-first, infrastructure as product, etc.)."
+    },
+    "omission": {
+      "score": 2,
+      "rationale": "Scene 2 (chaos canvas) is largely decorative and could be merged with Scene 1. Scene 4's three features feel padded—14 seconds for three bullet points. Scene 6 at 17 seconds is excessive for a CTA.",
+      "evidence": "Scene 2 (7s) adds visual complexity but the text 'Multiple platforms, multiple logins, multiple problems' could be in Scene 1. Scene 4 (14s) has 3.5s gaps between feature reveals with static waiting. Scene 6 (17s) holds on a static CTA far longer than needed—the essential content could be delivered in 8-10 seconds."
+    }
+  },
+  "overall": 2.4,
+  "feedback": [
+    {
+      "dimension": "point_of_view",
+      "severity": "critical",
+      "observation": "The composition follows a generic explainer template with no perspective on what makes Stripe distinct. Features listed apply to any payment processor.",
+      "improvement": "Commit to Stripe's actual point of view: developer-first infrastructure, the idea that financial infrastructure should be as programmable as software. Structure the video around code snippets, API elegance, or the philosophy that payments are a solved problem that shouldn't require thought. Let form reflect Stripe's minimalism."
+    },
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "Beyond statistics, no Stripe-specific products, visual language, or brand truths are present. The features are category-generic.",
+      "improvement": "Reference specific Stripe products (Radar for fraud, Atlas for incorporation, Connect for marketplaces). Use Stripe's actual design language—the purple gradients, the terminal aesthetic, the code-forward identity. Show what Stripe does that competitors don't: instant payouts, one-line integration, global tax compliance."
+    },
+    {
+      "dimension": "omission",
+      "severity": "major",
+      "observation": "Scene 2's chaos visualization (7s) is decorative. Scene 4 has dead time between feature reveals. Scene 6's CTA (17s) is excessive.",
+      "improvement": "Merge Scene 1 and 2 into a tighter 6-8 second problem statement. Compress Scene 4's features or make the animation continuous rather than waiting. Cut Scene 6 to 10 seconds—the call to action doesn't need repetition."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "The chaos visualization (procedural dots and lines) is abstract and doesn't create the frustration the narrative claims. It's pretty, not painful.",
+      "improvement": "Make the chaos feel like actual frustration: error messages, declined transactions, reconciliation spreadsheets, multiple login screens. The visual should make the viewer feel the problem, not just see geometric complexity."
+    }
+  ]
+}

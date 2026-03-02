@@ -1,0 +1,245 @@
+<ef-timegroup mode="sequence" overlap="0.8s" class="w-screen h-screen">
+    
+    <!-- Scene 1: The Problem (0-10s) -->
+    <ef-timegroup mode="fixed" duration="10s" class="absolute w-full h-full stripe-blue flex items-center justify-center">
+      <canvas id="chaos-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/30"></div>
+      
+      <div class="relative z-10 max-w-2xl text-center px-8">
+        <ef-text 
+          split="word"
+          class="text-white text-5xl md:text-6xl"
+          style="animation: 0.6s slide-up both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+        >Payment chaos everywhere</ef-text>
+      </div>
+    </ef-timegroup>
+    
+    <!-- Scene 2: The Unified Object (10-25s) -->
+    <ef-timegroup mode="fixed" duration="15s" class="absolute w-full h-full" style="animation: 0.8s fade-in both, 0.8s fade-out var(--ef-transition-out-start) both">
+      <div class="stripe-light absolute inset-0"></div>
+      
+      <canvas id="charge-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      
+      <div class="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent"></div>
+      
+      <div class="relative z-10 flex flex-col items-center justify-center h-full px-8">
+        <ef-text 
+          class="text-dark text-3xl font-bold mb-6"
+          style="animation: 0.5s scale-in 1s both"
+        >One unified object</ef-text>
+        
+        <ef-text 
+          split="word"
+          class="text-dark text-xl max-w-xl text-center"
+          style="animation: 0.5s slide-up 1.5s both; animation-delay: calc(1.5s + var(--ef-word-index) * 80ms)"
+        >A Charge in Payments flows through Connect, Radar, Billing—no translation, no friction</ef-text>
+      </div>
+    </ef-timegroup>
+    
+    <!-- Scene 3: The Result (25-40s) -->
+    <ef-timegroup mode="fixed" duration="15s" class="absolute w-full h-full" style="animation: 0.8s fade-in both, 0.8s fade-out var(--ef-transition-out-start) both">
+      <div class="stripe-blue absolute inset-0"></div>
+      
+      <canvas id="result-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      
+      <div class="relative z-10 max-w-2xl text-center px-8">
+        <div style="animation: 0.5s scale-in 1s both">
+          <div class="text-6xl mb-4">✓</div>
+          <ef-text class="text-white text-4xl font-bold">It just works</ef-text>
+        </div>
+        
+        <ef-text 
+          split="word"
+          class="text-white/80 text-lg mt-6"
+          style="animation: 0.5s slide-up 1.5s both; animation-delay: calc(1.5s + var(--ef-word-index) * 80ms)"
+        >Millions of businesses live here. So do you.</ef-text>
+      </div>
+    </ef-timegroup>
+    
+    <!-- Scene 4: CTA (40-60s) -->
+    <ef-timegroup mode="fixed" duration="20s" class="absolute w-full h-full" style="animation: 0.5s fade-in both">
+      <div class="stripe-light absolute inset-0"></div>
+      
+      <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-slate-100"></div>
+      
+      <div class="relative z-10 flex flex-col items-center justify-center h-full px-8 gap-8">
+        <div style="animation: 0.5s scale-in both">
+          <ef-text class="text-dark text-5xl font-bold">Start building</ef-text>
+        </div>
+        
+        <div style="animation: 0.5s scale-in 0.3s both">
+          <button style="
+            background: #0A2540;
+            color: white;
+            padding: 16px 32px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+          " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            Create account
+          </button>
+        </div>
+        
+        <ef-text class="text-dark/60 text-sm">stripe.com</ef-text>
+      </div>
+    </ef-timegroup>
+    
+  </ef-timegroup>
+
+  <script>
+    // Scene 1: Chaos visualization
+    const chaosCanvas = document.getElementById('chaos-canvas');
+    const chaosCtx = chaosCanvas.getContext('2d');
+    
+    function drawChaosScene(tg) {
+      tg.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        chaosCanvas.width = chaosCanvas.offsetWidth;
+        chaosCanvas.height = chaosCanvas.offsetHeight;
+        const progress = ownCurrentTimeMs / durationMs;
+        
+        chaosCtx.clearRect(0, 0, chaosCanvas.width, chaosCanvas.height);
+        
+        // Draw accumulating tangled lines showing payment chaos
+        const numLines = Math.floor(progress * 40);
+        chaosCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        chaosCtx.lineWidth = 2;
+        
+        for (let i = 0; i < numLines; i++) {
+          const seed = i * 73.2;
+          const x1 = Math.sin(seed) * chaosCanvas.width * 0.4 + chaosCanvas.width * 0.5;
+          const y1 = Math.cos(seed * 0.7) * chaosCanvas.height * 0.3 + chaosCanvas.height * 0.5;
+          const x2 = Math.sin(seed + ownCurrentTimeMs * 0.002) * chaosCanvas.width * 0.35 + chaosCanvas.width * 0.5;
+          const y2 = Math.cos(seed * 0.8 + ownCurrentTimeMs * 0.0015) * chaosCanvas.height * 0.35 + chaosCanvas.height * 0.5;
+          
+          chaosCtx.beginPath();
+          chaosCtx.moveTo(x1, y1);
+          chaosCtx.lineTo(x2, y2);
+          chaosCtx.stroke();
+        }
+        
+        // Accelerate toward the end
+        if (progress > 0.7) {
+          const speedMultiplier = 1 + (progress - 0.7) * 3;
+          chaosCtx.globalAlpha = Math.min(1, speedMultiplier * 0.3);
+          for (let i = numLines; i < Math.floor(progress * 60 * speedMultiplier); i++) {
+            const seed = i * 73.2;
+            const x1 = Math.sin(seed) * chaosCanvas.width * 0.4 + chaosCanvas.width * 0.5;
+            const y1 = Math.cos(seed * 0.7) * chaosCanvas.height * 0.3 + chaosCanvas.height * 0.5;
+            const x2 = Math.sin(seed + ownCurrentTimeMs * 0.003) * chaosCanvas.width * 0.35 + chaosCanvas.width * 0.5;
+            const y2 = Math.cos(seed * 0.8 + ownCurrentTimeMs * 0.0025) * chaosCanvas.height * 0.35 + chaosCanvas.height * 0.5;
+            
+            chaosCtx.beginPath();
+            chaosCtx.moveTo(x1, y1);
+            chaosCtx.lineTo(x2, y2);
+            chaosCtx.stroke();
+          }
+          chaosCtx.globalAlpha = 1;
+        }
+      });
+    }
+    
+    const scene1 = document.querySelector('ef-timegroup').children[0];
+    scene1.initializer = drawChaosScene;
+    
+    // Scene 2: Unified charge object
+    const chargeCanvas = document.getElementById('charge-canvas');
+    const chargeCtx = chargeCanvas.getContext('2d');
+    
+    function drawChargeScene(tg) {
+      tg.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        chargeCanvas.width = chargeCanvas.offsetWidth;
+        chargeCanvas.height = chargeCanvas.offsetHeight;
+        const progress = ownCurrentTimeMs / durationMs;
+        
+        chargeCtx.clearRect(0, 0, chargeCanvas.width, chargeCanvas.height);
+        
+        const cx = chargeCanvas.width / 2;
+        const cy = chargeCanvas.height / 2;
+        const centerRadius = 30 + progress * 10;
+        
+        // Central charge object
+        chargeCtx.beginPath();
+        chargeCtx.arc(cx, cy, centerRadius, 0, Math.PI * 2);
+        chargeCtx.fillStyle = `rgba(10, 37, 64, ${0.3 + progress * 0.4})`;
+        chargeCtx.fill();
+        chargeCtx.strokeStyle = `rgba(10, 37, 64, ${0.6 + progress * 0.3})`;
+        chargeCtx.lineWidth = 2;
+        chargeCtx.stroke();
+        
+        // Four systems connecting to it
+        const systems = ['Payments', 'Connect', 'Radar', 'Billing'];
+        const systemAngles = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2];
+        const connectionStartTime = durationMs * 0.3;
+        
+        systems.forEach((system, i) => {
+          const angle = systemAngles[i];
+          const distance = 180 + progress * 20;
+          
+          const x = cx + Math.cos(angle) * distance;
+          const y = cy + Math.sin(angle) * distance;
+          
+          // Connection line
+          const lineProgress = Math.max(0, Math.min(1, (ownCurrentTimeMs - connectionStartTime) / (durationMs * 0.4)));
+          const lineEndX = cx + Math.cos(angle) * (centerRadius + (distance - centerRadius) * lineProgress);
+          const lineEndY = cy + Math.sin(angle) * (centerRadius + (distance - centerRadius) * lineProgress);
+          
+          chargeCtx.beginPath();
+          chargeCtx.moveTo(cx, cy);
+          chargeCtx.lineTo(lineEndX, lineEndY);
+          chargeCtx.strokeStyle = `rgba(10, 37, 64, ${0.2 + lineProgress * 0.3})`;
+          chargeCtx.lineWidth = 2;
+          chargeCtx.stroke();
+          
+          // System node
+          if (lineProgress > 0) {
+            const nodeRadius = 20 * Math.min(1, lineProgress * 2);
+            chargeCtx.beginPath();
+            chargeCtx.arc(x, y, nodeRadius, 0, Math.PI * 2);
+            chargeCtx.fillStyle = `rgba(10, 37, 64, ${0.2 + lineProgress * 0.5})`;
+            chargeCtx.fill();
+            chargeCtx.strokeStyle = `rgba(10, 37, 64, ${0.4 + lineProgress * 0.4})`;
+            chargeCtx.lineWidth = 2;
+            chargeCtx.stroke();
+          }
+        });
+      });
+    }
+    
+    const scene2 = document.querySelector('ef-timegroup').children[1];
+    scene2.initializer = drawChargeScene;
+    
+    // Scene 3: Result visualization
+    const resultCanvas = document.getElementById('result-canvas');
+    const resultCtx = resultCanvas.getContext('2d');
+    
+    function drawResultScene(tg) {
+      tg.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        resultCanvas.width = resultCanvas.offsetWidth;
+        resultCanvas.height = resultCanvas.offsetHeight;
+        const progress = ownCurrentTimeMs / durationMs;
+        
+        resultCtx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
+        
+        const cx = resultCanvas.width / 2;
+        const cy = resultCanvas.height / 2;
+        
+        // Radiating circles showing smooth flow
+        const numCircles = Math.floor(progress * 6);
+        for (let i = 0; i < numCircles; i++) {
+          const age = progress - (i / 6) * 0.2;
+          if (age > 0) {
+            const radius = 100 + age * 150;
+            const alpha = Math.max(0, 1 - age);
+            
+            resultCtx.beginPath();
+            resultCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+            resultCtx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.3})`;
+            resultCtx.lineWidth = 2;
+            resultCtx.stroke();
+          }
+        }
+        
+        // Flowing particles

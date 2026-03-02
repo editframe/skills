@@ -1,0 +1,171 @@
+<ef-timegroup mode="sequence" overlap="0.8s" class="w-[1920px] h-[1080px] bg-slate-950">
+  <!-- Scene 1: The Problem - Chaos of Traditional Issue Tracking (0s-6s) -->
+  <ef-timegroup mode="fixed" duration="6s" class="absolute w-full h-full bg-slate-950">
+    <canvas id="chaos-canvas" class="absolute inset-0 size-full"></canvas>
+    <ef-text class="absolute bottom-16 left-16 text-white text-5xl font-bold"
+      style="animation: 0.8s enter-up both 2s">Issues scattered everywhere</ef-text>
+  </ef-timegroup>
+
+  <!-- Scene 2: Linear's Opinionated Path - Convergence (6.4s-12.4s) -->
+  <ef-timegroup mode="fixed" duration="6s" class="absolute w-full h-full bg-slate-950"
+    style="animation: 0.8s fade-in both">
+    <canvas id="convergence-canvas" class="absolute inset-0 size-full"></canvas>
+    <ef-text class="absolute bottom-16 left-16 text-white text-5xl font-bold"
+      style="animation: 0.8s enter-up both 1.2s">Linear removes the decisions</ef-text>
+  </ef-timegroup>
+
+  <!-- Scene 3: Speed + Keyboard - The Workflow (12.8s-20s) -->
+  <ef-timegroup mode="fixed" duration="7.2s" class="absolute w-full h-full bg-gradient-to-b from-slate-950 to-blue-950"
+    style="animation: 0.8s fade-in both">
+    <div class="absolute inset-0 flex flex-col items-center justify-center">
+      <div class="w-96 h-64 bg-slate-800/50 border border-blue-500/30 rounded-lg p-8 backdrop-blur">
+        <div class="text-white/60 text-sm font-mono mb-4">/issue create</div>
+        <ef-text split="char" class="text-blue-400 font-mono text-lg"
+          style="animation: 0.1s char-type both; animation-delay: calc(var(--ef-word-index) * 30ms)">Create issue instantly</ef-text>
+      </div>
+    </div>
+    <ef-text class="absolute bottom-16 left-16 text-white text-4xl font-bold max-w-2xl"
+      style="animation: 0.6s enter-up both 1s">Ship faster with keyboard-first design</ef-text>
+  </ef-timegroup>
+
+  <!-- Scene 4: The Payoff - Clean Resolution (20.8s-30s) -->
+  <ef-timegroup mode="fixed" duration="9.2s" class="absolute w-full h-full bg-blue-600"
+    style="animation: 0.8s fade-in both">
+    <div class="absolute inset-0 flex items-center justify-center">
+      <div class="text-center">
+        <ef-text split="word" class="text-white text-6xl font-bold mb-8"
+          style="animation: 0.5s word-scale both; animation-delay: calc(var(--ef-word-index) * 150ms)">
+          One workflow
+        </ef-text>
+        <ef-text split="word" class="text-white/80 text-3xl"
+          style="animation: 0.5s word-scale 1.5s both; animation-delay: calc(1.5s + var(--ef-word-index) * 150ms)">
+          Fewer distractions
+        </ef-text>
+      </div>
+    </div>
+    <ef-text class="absolute bottom-12 left-1/2 -translate-x-1/2 text-white text-xl"
+      style="animation: 0.8s enter-up both 3.5s">linear.app</ef-text>
+  </ef-timegroup>
+
+  <style>
+    @keyframes enter-up {
+      from { transform: translateY(24px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes char-type {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes word-scale {
+      from { transform: scale(0.8); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+  </style>
+
+  <script>
+    // Scene 1: Chaos canvas - issues flying in tangled directions
+    const chaosCanvas = document.getElementById('chaos-canvas');
+    const chaosTg = chaosCanvas.closest('ef-timegroup');
+    
+    chaosTg.addFrameTask((ownCurrentTimeMs, durationMs) => {
+      chaosCanvas.width = chaosCanvas.offsetWidth;
+      chaosCanvas.height = chaosCanvas.offsetHeight;
+      const ctx = chaosCanvas.getContext('2d');
+      const progress = ownCurrentTimeMs / durationMs;
+      
+      ctx.clearRect(0, 0, chaosCanvas.width, chaosCanvas.height);
+      ctx.fillStyle = 'rgba(15, 23, 42, 1)';
+      ctx.fillRect(0, 0, chaosCanvas.width, chaosCanvas.height);
+      
+      // 40 issue cards moving chaotically
+      for (let i = 0; i < 40; i++) {
+        const seed = i * 89.7;
+        const baseX = Math.sin(seed) * chaosCanvas.width * 0.4 + chaosCanvas.width * 0.5;
+        const baseY = Math.cos(seed * 0.6) * chaosCanvas.height * 0.35 + chaosCanvas.height * 0.5;
+        
+        // Each issue moves in a different direction, overlapping and colliding
+        const angle = seed + ownCurrentTimeMs * 0.003;
+        const speed = 0.5 + (i % 3) * 0.3;
+        const x = baseX + Math.cos(angle) * speed * ownCurrentTimeMs * 0.1;
+        const y = baseY + Math.sin(angle * 1.3) * speed * ownCurrentTimeMs * 0.1;
+        
+        // Cards get smaller and more transparent as they recede
+        const opacity = 0.2 + Math.sin(seed + progress * Math.PI) * 0.3;
+        const size = 40 + Math.cos(angle) * 15;
+        
+        // Draw issue card
+        ctx.fillStyle = `rgba(59, 130, 246, ${opacity * 0.6})`;
+        ctx.fillRect(x - size / 2, y - size / 3, size, size / 1.5);
+        
+        // Draw borders to emphasize individual cards in chaos
+        ctx.strokeStyle = `rgba(96, 165, 250, ${opacity})`;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x - size / 2, y - size / 3, size, size / 1.5);
+      }
+    });
+    
+    // Scene 2: Convergence canvas - tangled graph becomes clean DAG
+    const convergenceCanvas = document.getElementById('convergence-canvas');
+    const convergenceTg = convergenceCanvas.closest('ef-timegroup');
+    
+    convergenceTg.addFrameTask((ownCurrentTimeMs, durationMs) => {
+      convergenceCanvas.width = convergenceCanvas.offsetWidth;
+      convergenceCanvas.height = convergenceCanvas.offsetHeight;
+      const ctx = convergenceCanvas.getContext('2d');
+      const progress = ownCurrentTimeMs / durationMs;
+      
+      ctx.clearRect(0, 0, convergenceCanvas.width, convergenceCanvas.height);
+      ctx.fillStyle = 'rgba(15, 23, 42, 1)';
+      ctx.fillRect(0, 0, convergenceCanvas.width, convergenceCanvas.height);
+      
+      const cx = convergenceCanvas.width / 2;
+      const cy = convergenceCanvas.height / 2;
+      
+      // 50 nodes start scattered, converge to a vertical stack (Linear's opinionated flow)
+      for (let i = 0; i < 50; i++) {
+        const seed = i * 79.3;
+        
+        // Start position: random scatter
+        const startX = Math.sin(seed) * convergenceCanvas.width * 0.35 + cx;
+        const startY = Math.cos(seed * 0.8) * convergenceCanvas.height * 0.35 + cy;
+        
+        // End position: vertical line (the linear path)
+        const endX = cx;
+        const endY = (i - 25) * 25 + cy;
+        
+        // Interpolate with easing
+        const easeProgress = Math.min(1, progress * 1.3); // Faster convergence
+        const easedProgress = easeProgress < 0.5 
+          ? 2 * easeProgress * easeProgress 
+          : -1 + (4 - 2 * easeProgress) * easeProgress; // ease-in-out-quad
+        
+        const x = startX + (endX - startX) * easedProgress;
+        const y = startY + (endY - startY) * easedProgress;
+        
+        // Nodes become more visible and solid as they converge
+        const nodeOpacity = 0.3 + easedProgress * 0.7;
+        const nodeSize = 4 + easedProgress * 3;
+        
+        ctx.beginPath();
+        ctx.arc(x, y, nodeSize, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(59, 130, 246, ${nodeOpacity})`;
+        ctx.fill();
+      }
+      
+      // Draw the final vertical line (solution) when converged
+      if (progress > 0.6) {
+        const lineOpacity = (progress - 0.6) / 0.4;
+        ctx.strokeStyle = `rgba(34, 197, 94, ${lineOpacity})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 300);
+        ctx.lineTo(cx, cy + 300);
+        ctx.stroke();
+      }
+    });
+  </script>
+</ef-timegroup>

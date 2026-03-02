@@ -1,0 +1,38 @@
+Eval Run: iter-01
+Generator: anthropic/claude-haiku-4-5
+Evaluator: anthropic/claude-opus-4-5
+Date: 2/26/2026, 5:10:49 PM
+
+─── Scores ────────────────────────────────────────
+Task                          Motion  Spec  ViewerΔ  PoV  Omit  Overall
+─────────────────────────────────────────────────────────────────────────
+Linear (product-demo)           5/5    2/5   3/5      3/5   4/5    3.4/5
+Stripe (explainer)              4/5    2/5   3/5      2/5   2/5    2.6/5
+Figma (brand-awareness)         4/5    2/5   3/5      2/5   3/5    2.8/5
+Vercel (launch)                 4/5    2/5   3/5      2/5   4/5    3/5
+Notion (social)                 4/5    2/5   3/5      2/5   3/5    2.8/5
+Supabase (product-demo)         4/5    2/5   3/5      2/5   3/5    2.8/5
+─────────────────────────────────────────────────────────────────────────
+Average overall: 2.9/5
+
+─── Proposed Skill Changes ─────────────────────────────────────────────
+
+skills/skills/brand-video-generator/SKILL.md (16 changes)
+  [CRITICAL specificity] The placeholder warning was buried in a 'Do NOT' list; elevating it to a critical section with specific guidance for product demos would have forced the model to seek real Linear footage or recreate authentic UI.
+  [MAJOR specificity] The skill warned against generic claims but didn't explicitly flag abstract outcome language or require named features; adding concrete examples of wrong vs. right would have prevented vague claims like 'Issues flow. Work resolves.'
+  [CRITICAL specificity] The model used generic fintech language because the false differentiators list didn't include payment-industry clichés, and there was no explicit instruction to replace category claims with brand-specific facts.
+  [MAJOR point_of_view] The model followed a standard explainer template because the guidance about formal constraints lacked concrete anti-patterns and didn't explicitly reject generic structural choices like 'clean animations.'
+  [MAJOR omission] The model created 7 scenes for a 60s video with redundant beats because the scene budget guidance lacked concrete limits and didn't include a merge test for similar scenes.
+  [CRITICAL specificity] The model used emoji icons and generic collaboration nodes instead of Figma's distinctive multiplayer cursors and UI patterns because the skill only warned against placeholder video, not placeholder iconography or generic visual metaphors.
+  [MAJOR point_of_view] The model followed a generic problem-solution-features-CTA template because Phase 0 #4's guidance wasn't enforced during scene planning; adding a template rejection test and requiring POV justification per-scene would force structural distinctiveness.
+  [MAJOR viewer_state] The model listed pain points abstractly ('File-based, Single player, Bottlenecked') because the scene template required viewer state but didn't require demonstrating how that state would be viscerally felt rather than textually stated.
+  [CRITICAL specificity] The model treated 'fast deployment' as a differentiator because the skill's example of specificity was about founding story, not product-specific UI/workflow elements — adding DevTools-specific examples would have forced identification of Vercel's actual unique features.
+  [MAJOR point_of_view] The existing guidance about structural consequence was buried in the middle of Phase 0 and lacked a concrete validation mechanism — adding an explicit substitution test with a deployment-platform example would have caught the generic 'fast deployment' structure.
+  [CRITICAL specificity] The skill instructs extraction of generic visual motifs but never requires capturing product-specific UI patterns that distinguish one tool from competitors, leading to emoji icons instead of Notion's actual blocks/slash commands.
+  [MAJOR point_of_view] The Visual Metaphor Quick Reference table actively suggests 'grid layouts' and 'organized patterns' for order/simplicity without warning that this is a cliché or requiring product-specific interpretation, causing the generic converging grid approach.
+  [CRITICAL specificity] The skill mentions downloading brand assets but doesn't require product-specific visuals like dashboards or interfaces, allowing the model to proceed with generic placeholders.
+  [CRITICAL specificity] The prohibition against placeholder media is buried in a 'Do NOT' list at the top; adding a mandatory checklist in Phase 4 forces verification at the point where assets are specified.
+  [MAJOR specificity] The skill filters generic marketing claims but doesn't require that feature claims be demonstrated with actual code or interface details, allowing vague statements like 'OAuth built in' to pass.
+  [MAJOR point_of_view] The skill requires identifying a structural constraint but doesn't mandate checking each scene against it, allowing the model to establish a thesis in Phase 0 and then abandon it during scene planning.
+
+To apply: npx tsx scripts/eval-skills-apply.ts --run-id iter-01

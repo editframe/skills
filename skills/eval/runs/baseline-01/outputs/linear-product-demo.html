@@ -1,0 +1,251 @@
+<ef-configuration api-host="https://api.editframe.com" media-engine="local">
+  <ef-timegroup mode="sequence" overlap="0.8s" class="w-[1920px] h-[1080px] bg-slate-950">
+    <!-- Scene 1: Hook - Speed (0-4s) -->
+    <ef-timegroup mode="contain" duration="4s" class="absolute w-full h-full flex items-center justify-center" style="animation: 0.8s fade-out var(--ef-transition-out-start) both">
+      <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="0s" sourceout="4s" class="absolute inset-0 size-full object-cover opacity-40"></ef-video>
+      <div class="absolute inset-0 bg-gradient-to-b from-slate-950/50 to-slate-950"></div>
+      <div class="relative z-10 text-center">
+        <ef-text split="word" class="text-white text-7xl font-bold mb-6" style="animation: 0.6s word-scale-in both; animation-delay: calc(var(--ef-word-index) * 100ms)">
+          Issues move fast
+        </ef-text>
+        <ef-text class="text-blue-400 text-2xl" style="animation: 0.5s fade-in 1.2s both">
+          So should your workflow
+        </ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 2: The Problem - Chaos (4-9s) -->
+    <ef-timegroup mode="contain" duration="5s" class="absolute w-full h-full" style="animation: 0.8s fade-in both, 0.8s fade-out var(--ef-transition-out-start) both">
+      <canvas id="chaos-canvas" class="absolute inset-0 size-full"></canvas>
+      <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950"></div>
+      <ef-text class="absolute top-24 left-12 text-white text-5xl font-bold max-w-2xl" style="animation: 0.7s enter-left 0.5s both">
+        Most tools are built for the 1990s
+      </ef-text>
+      <ef-text class="absolute bottom-20 left-12 text-slate-400 text-xl max-w-xl" style="animation: 0.6s fade-in 1.5s both">
+        Clicking, dragging, waiting. Linear is different.
+      </ef-text>
+    </ef-timegroup>
+
+    <!-- Scene 3: Keyboard First (9-15s) -->
+    <ef-timegroup mode="contain" duration="6s" class="absolute w-full h-full flex items-center justify-center" style="animation: 0.8s fade-in both, 0.8s fade-out var(--ef-transition-out-start) both">
+      <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="5s" sourceout="11s" class="absolute inset-0 size-full object-cover opacity-30"></ef-video>
+      <div class="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-slate-950/60 to-slate-950"></div>
+      <div class="relative z-10 text-center">
+        <div class="mb-12 inline-block px-4 py-2 border border-blue-500/30 rounded-lg" style="animation: 0.6s fade-in both">
+          <div class="text-blue-400 text-sm font-mono tracking-wider">CMD + K</div>
+        </div>
+        <ef-text split="word" class="text-white text-6xl font-bold mb-8" style="animation: 0.5s word-rise-in both; animation-delay: calc(var(--ef-word-index) * 80ms)">
+          Everything via keyboard
+        </ef-text>
+        <ef-text class="text-slate-300 text-xl max-w-2xl mx-auto" style="animation: 0.5s fade-in 1.2s both">
+          Create, assign, update issues without leaving your hands from the keyboard
+        </ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 4: Real-time Sync (15-21s) -->
+    <ef-timegroup mode="contain" duration="6s" class="absolute w-full h-full" style="animation: 0.8s fade-in both, 0.8s fade-out var(--ef-transition-out-start) both">
+      <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="0s" sourceout="6s" class="absolute inset-0 size-full object-cover opacity-25"></ef-video>
+      <div class="absolute inset-0 bg-gradient-to-r from-slate-950 to-slate-950/40"></div>
+      
+      <div class="absolute left-12 top-1/2 -translate-y-1/2 z-10">
+        <ef-text class="text-white text-5xl font-bold mb-8" style="animation: 0.6s enter-left both">
+          Your team moves together
+        </ef-text>
+        <div class="space-y-4">
+          <div class="flex items-center gap-4" style="animation: 0.5s slide-right 0.4s both">
+            <div class="w-3 h-3 rounded-full bg-green-400"></div>
+            <span class="text-slate-300 text-lg">Real-time updates</span>
+          </div>
+          <div class="flex items-center gap-4" style="animation: 0.5s slide-right 0.7s both">
+            <div class="w-3 h-3 rounded-full bg-green-400"></div>
+            <span class="text-slate-300 text-lg">Instant notifications</span>
+          </div>
+          <div class="flex items-center gap-4" style="animation: 0.5s slide-right 1s both">
+            <div class="w-3 h-3 rounded-full bg-green-400"></div>
+            <span class="text-slate-300 text-lg">Zero friction collaboration</span>
+          </div>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 5: Built for Performance (21-27s) -->
+    <ef-timegroup mode="contain" duration="6s" class="absolute w-full h-full flex items-center justify-center" style="animation: 0.8s fade-in both, 0.8s fade-out var(--ef-transition-out-start) both">
+      <div class="absolute inset-0 bg-gradient-to-b from-blue-950/20 to-slate-950"></div>
+      <canvas id="performance-canvas" class="absolute inset-0 size-full"></canvas>
+      <div class="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-transparent to-slate-950"></div>
+      
+      <div class="relative z-10 text-center">
+        <div class="mb-12" style="animation: 0.8s scale-up both">
+          <div class="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600">
+            <span style="animation: 0.5s count-up 0.3s both" id="perf-metric">1.2s</span>
+          </div>
+          <div class="text-slate-400 text-lg mt-2">Average issue resolution time</div>
+        </div>
+        
+        <ef-text split="word" class="text-white text-5xl font-bold" style="animation: 0.6s word-fade-in both; animation-delay: calc(0.8s + var(--ef-word-index) * 90ms)">
+          Built for high-performance teams
+        </ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 6: CTA (27-30s) -->
+    <ef-timegroup mode="contain" duration="3s" class="absolute w-full h-full flex items-center justify-center" style="animation: 0.5s fade-in both">
+      <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="0s" sourceout="3s" class="absolute inset-0 size-full object-cover opacity-20"></ef-video>
+      <div class="absolute inset-0 bg-gradient-to-b from-slate-950/40 to-slate-950"></div>
+      
+      <div class="relative z-10 text-center">
+        <ef-text class="text-white text-6xl font-bold mb-6" style="animation: 0.6s scale-fade-in both">
+          Linear
+        </ef-text>
+        <div class="flex items-center justify-center gap-8 flex-wrap">
+          <div class="px-6 py-3 border border-blue-500 rounded text-blue-400 font-semibold" style="animation: 0.5s fade-in 0.4s both">
+            linear.app
+          </div>
+          <ef-text class="text-slate-400" style="animation: 0.5s fade-in 0.6s both">
+            Fast issue tracking for developers
+          </ef-text>
+        </div>
+      </div>
+    </ef-timegroup>
+  </ef-timegroup>
+</ef-configuration>
+
+<style>
+  /* Text animations */
+  @keyframes word-scale-in {
+    from { transform: scale(0.8) translateY(20px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+  }
+
+  @keyframes word-rise-in {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes word-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+
+  @keyframes enter-left {
+    from { transform: translateX(-60px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  @keyframes slide-right {
+    from { transform: translateX(-40px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  @keyframes scale-up {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes scale-fade-in {
+    from { transform: scale(1.1); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes count-up {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+</style>
+
+<script>
+  // Scene 2: Chaos canvas animation
+  const chaosCanvas = document.getElementById('chaos-canvas');
+  if (chaosCanvas) {
+    const scenes = document.querySelectorAll('ef-timegroup');
+    const chaosScene = scenes[1];
+    
+    if (chaosScene) {
+      chaosScene.initializer = (instance) => {
+        return instance.addFrameTask((info) => {
+          const ctx = chaosCanvas.getContext('2d');
+          chaosCanvas.width = chaosCanvas.offsetWidth;
+          chaosCanvas.height = chaosCanvas.offsetHeight;
+          
+          const progress = info.ownCurrentTimeMs / info.durationMs;
+          const lineCount = Math.floor(progress * 80);
+          
+          ctx.clearRect(0, 0, chaosCanvas.width, chaosCanvas.height);
+          ctx.globalAlpha = 0.4;
+          
+          for (let i = 0; i < lineCount; i++) {
+            const seed = i * 137.5;
+            const x1 = Math.sin(seed) * chaosCanvas.width * 0.4 + chaosCanvas.width * 0.5;
+            const y1 = Math.cos(seed * 0.7) * chaosCanvas.height * 0.4 + chaosCanvas.height * 0.5;
+            const x2 = Math.sin(seed + progress * Math.PI * 2) * chaosCanvas.width * 0.6 + chaosCanvas.width * 0.5;
+            const y2 = Math.cos(seed * 0.9 + progress * Math.PI) * chaosCanvas.height * 0.6 + chaosCanvas.height * 0.5;
+            
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = `hsl(220, 80%, ${40 + progress * 20}%)`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+          
+          ctx.globalAlpha = 1;
+        });
+      };
+    }
+  }
+
+  // Scene 5: Performance visualization canvas
+  const perfCanvas = document.getElementById('performance-canvas');
+  if (perfCanvas) {
+    const scenes = document.querySelectorAll('ef-timegroup');
+    const perfScene = scenes[4];
+    
+    if (perfScene) {
+      perfScene.initializer = (instance) => {
+        return instance.addFrameTask((info) => {
+          const ctx = perfCanvas.getContext('2d');
+          perfCanvas.width = perfCanvas.offsetWidth;
+          perfCanvas.height = perfCanvas.offsetHeight;
+          
+          const progress = info.ownCurrentTimeMs / info.durationMs;
+          
+          ctx.clearRect(0, 0, perfCanvas.width, perfCanvas.height);
+          ctx.globalAlpha = 0.1;
+          
+          // Orbital rings
+          for (let ring = 1; ring <= 4; ring++) {
+            const radius = (perfCanvas.width * 0.15) * ring;
+            const rotation = (progress * Math.PI * 2 * ring) % (Math.PI * 2);
+            
+            ctx.beginPath();
+            ctx.arc(perfCanvas.width * 0.5, perfCanvas.height * 0.5, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = `hsl(220, 100%, 50%)`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Dots on rings
+            const dotX = perfCanvas.width * 0.5 + Math.cos(rotation) * radius;
+            const dotY = perfCanvas.height * 0.5 + Math.sin(rotation) * radius;
+            ctx.beginPath();
+            ctx.arc(dotX, dotY, 6, 0, Math.PI * 2);
+            ctx.fillStyle = `hsl(220, 100%, 60%)`;
+            ctx.fill();
+          }
+          
+          ctx.globalAlpha = 1;
+        });
+      };
+    }
+  }
+</script>

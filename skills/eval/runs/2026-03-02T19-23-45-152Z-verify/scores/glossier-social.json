@@ -1,0 +1,65 @@
+{
+  "taskId": "glossier-social",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-03-02T19:45:38.763Z",
+  "scores": {
+    "motion": {
+      "score": 3,
+      "rationale": "CSS animations are present and intentional - slide transitions for faces, float-in for product, text emergence for CTA. However, motion is decorative rather than structural. No use of --ef-progress, no staggered sequences, no time-based CSS variables driving properties.",
+      "evidence": "@keyframes face-slide-in-right, @keyframes product-float-in with 0.6s cubic-bezier, @keyframes text-emerge. Animations use fixed delays like 'animation-delay: 9.5s' rather than timeline-driven coordination."
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "The pink color palette (#ffc0cb, #ffb6c1) references Glossier's signature pink, and the 'G' product overlay gestures at the brand. But these are surface-level. The composition uses generic SVG circles as face placeholders, generic CTA ('You're next'), and nothing specific to Glossier's actual products, aesthetic philosophy, or brand voice.",
+      "evidence": "Product overlay shows only 'G' with no actual product imagery. SVG faces are abstract circles with dots for eyes. CTA 'You're next @glossier' could apply to any beauty brand."
+    },
+    "viewer_state": {
+      "score": 1,
+      "rationale": "The three face transitions create minimal state change - they're essentially the same visual (pink circle with dots) repeated. The only detectable shift is the CTA appearing at the end, moving viewer from 'watching' to 'being addressed.'",
+      "evidence": "Face 1, Face 2, Face 3 are nearly identical SVG structures with slightly different gradient colors (#fdd7e4 vs #f5d0de vs #ffb6c1). No narrative progression, no building tension or revelation."
+    },
+    "point_of_view": {
+      "score": 1,
+      "rationale": "One non-obvious choice exists: the sliding face montage suggests inclusivity/diversity, but it's not committed to - the faces are abstract shapes, not actual diverse representations. The composition follows a template pattern (faces → product → CTA) without revealing any perspective on what Glossier means.",
+      "evidence": "Structure is purely formulaic: 3 face slides at 3.5s each, product overlay persistent, CTA at end. No unusual juxtaposition, no surprising element that reveals authorial intent."
+    },
+    "omission": {
+      "score": 2,
+      "rationale": "Three nearly identical face scenes feel redundant. The same effect could be achieved with two faces, or the three could differentiate meaningfully. The product overlay is static throughout 15s when it could appear strategically.",
+      "evidence": "Face 1, 2, 3 all use identical animation patterns, similar SVG structures, only gradient color varies slightly. Product overlay has animation-delay: 0.2s but stays visible entire duration without purpose evolution."
+    }
+  },
+  "overall": 1.8,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses placeholder SVG circles instead of actual Glossier product imagery or real faces, and the only brand identifier is a 'G' in a pink box.",
+      "improvement": "Use actual Glossier product images (Boy Brow, Cloud Paint, Balm Dotcom), reference specific product names, incorporate their actual typography (GT Haptik), and show real skin/beauty imagery that reflects their 'skin first, makeup second' philosophy."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "critical",
+      "observation": "Three face scenes create no emotional progression - each is an abstract pink circle that looks nearly identical to the others.",
+      "improvement": "Design each face scene to produce a distinct feeling: perhaps bare skin → one product applied → glowing result. Or show transformation, or different contexts (morning, date, workout) that build toward the CTA."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition doesn't express any perspective on Glossier - it could be any beauty brand's video with a color swap.",
+      "improvement": "Commit to Glossier's actual POV: 'beauty in real life,' minimal enhancement, celebrating imperfection. Show un-retouched skin, the 'no-makeup makeup' aesthetic, or their community-driven ethos rather than generic beauty tropes."
+    },
+    {
+      "dimension": "motion",
+      "severity": "minor",
+      "observation": "Animations are present but use fixed delays rather than timeline-driven coordination, making timing brittle and disconnected.",
+      "improvement": "Use --ef-progress or ef-timegroup's timing features to coordinate the face transitions, product reveal, and CTA emergence as a unified choreography rather than independent animation islands."
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "Three face scenes are nearly identical, creating padding rather than progression.",
+      "improvement": "Either reduce to two faces with more visual impact, or differentiate each face scene meaningfully (different angle, different product application, different emotional expression)."
+    }
+  ]
+}

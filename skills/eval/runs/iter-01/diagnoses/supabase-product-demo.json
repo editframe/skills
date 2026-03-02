@@ -1,0 +1,58 @@
+[
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic placeholder videos (bars-n-tone.mp4) throughout and contains no actual Supabase visual assets, logo, dashboard screenshots, or distinctive brand elements.",
+      "improvement": "Include actual Supabase dashboard footage, the distinctive green Supabase logo, real code snippets showing the supabase-js client, or screen recordings of the table editor. Show what makes Supabase visually distinctive from competitors."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "- Download logo and brand assets (3-5 minimum)",
+    "cause": "present_wrong",
+    "proposedChange": "- Download logo and brand assets (3-5 minimum)\n- Capture screenshots or screen recordings of the actual product interface\n- For SaaS/developer tools: record the dashboard, code editor, or distinctive UI patterns\n\n**Asset quality gate**: If you cannot obtain at least one distinctive product visual (logo, interface screenshot, or product footage), STOP and request assets from the user before proceeding.",
+    "rationale": "The skill mentions downloading brand assets but doesn't require product-specific visuals like dashboards or interfaces, allowing the model to proceed with generic placeholders."
+  },
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic placeholder videos (bars-n-tone.mp4) throughout and contains no actual Supabase visual assets, logo, dashboard screenshots, or distinctive brand elements.",
+      "improvement": "Include actual Supabase dashboard footage, the distinctive green Supabase logo, real code snippets showing the supabase-js client, or screen recordings of the table editor. Show what makes Supabase visually distinctive from competitors."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "- Use `bars-n-tone.mp4` or any placeholder media in the final composition — use brand-color backgrounds, canvas animations, or actual product footage URLs instead",
+    "cause": "wrong_priority",
+    "proposedChange": "In Phase 4: Asset Requirements, add at the top:\n\n**MANDATORY ASSET CHECK**\nBefore proceeding, verify you have:\n- [ ] Actual product footage or screenshots (not placeholders)\n- [ ] Brand logo file\n- [ ] At least one distinctive visual that could not belong to a competitor\n\nIf any checkbox is empty, either obtain the asset via browser tools or create a brand-specific canvas animation. Never use `bars-n-tone.mp4` or generic stock footage.",
+    "rationale": "The prohibition against placeholder media is buried in a 'Do NOT' list at the top; adding a mandatory checklist in Phase 4 forces verification at the point where assets are specified."
+  },
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "Feature claims like 'Production-ready Postgres in seconds' and 'OAuth built in' are generic statements that could describe Neon, PlanetScale, Auth0, or Firebase.",
+      "improvement": "Demonstrate Supabase-specific advantages: show the auto-generated REST/GraphQL APIs, the real-time subscription syntax `supabase.from('table').on('INSERT', callback)`, or the unique row-level security policy syntax that distinguishes Supabase's approach."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"",
+    "cause": "missing",
+    "proposedChange": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Generic feature names without implementation details (\"Auth\", \"Database\", \"Storage\")\n\n**True differentiators must be demonstrable:**\nFor developer tools, show the actual syntax or API that is unique. \"OAuth built in\" is generic; `supabase.auth.signInWithOAuth({ provider: 'github' })` is specific. If you cannot write the code snippet that proves the claim, the claim is not specific enough.",
+    "rationale": "The skill filters generic marketing claims but doesn't require that feature claims be demonstrated with actual code or interface details, allowing vague statements like 'OAuth built in' to pass."
+  },
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition hedges between 'simplicity through consolidation' and 'feature checklist.' The complexity visualization suggests a perspective but the middle scenes retreat to standard feature enumeration.",
+      "improvement": "Commit to the consolidation thesis throughout. Instead of listing features separately, show them working together - a single code example that touches database, auth, and storage simultaneously. Make the 'one platform' claim structural, not just verbal."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.",
+    "cause": "missing",
+    "proposedChange": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\n**Structural commitment test**: Write one sentence describing your formal constraint. Then check every scene in Phase 3 against it. If any scene could exist unchanged in a video without that constraint, either cut the scene or redesign it to embody the constraint.\n\nExample failure: \"Supabase consolidates tools\" → but Scene 3 lists features separately.\nExample success: \"Supabase consolidates tools\" → Scene 3 shows a single code block that touches database, auth, and storage simultaneously, making consolidation visible in the form.",
+    "rationale": "The skill requires identifying a structural constraint but doesn't mandate checking each scene against it, allowing the model to establish a thesis in Phase 0 and then abandon it during scene planning."
+  }
+]

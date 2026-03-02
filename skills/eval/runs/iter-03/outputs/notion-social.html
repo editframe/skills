@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notion - 15s Social Video</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@editframe/elements/styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #000;
+    }
+
+    /* TikTok aspect ratio: 9:16 */
+    ef-configuration {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(24px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideDown {
+      from {
+        transform: translateY(-24px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes scaleIn {
+      from {
+        transform: scale(0.92);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    /* TikTok vertical video dimensions */
+    .video-container {
+      width: 100%;
+      height: 100%;
+      max-width: 405px;
+      max-height: 720px;
+      aspect-ratio: 9 / 16;
+      margin: 0 auto;
+    }
+
+    .gradient-notion {
+      background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+    }
+
+    .notion-black {
+      background: #000;
+    }
+
+    .notion-blue {
+      background: #0a7ea4;
+    }
+  </style>
+</head>
+<body>
+  <ef-configuration api-host="http://localhost:3000">
+    <ef-timegroup mode="sequence" overlap="0.8s" class="video-container">
+
+      <!-- Scene 1: The Chaos (0-3.5s) -->
+      <!-- Viewer State Start: I have notes scattered everywhere, lists in different apps, chaos -->
+      <!-- Viewer State End: Recognition that this scattered state is the problem -->
+      <ef-timegroup mode="fixed" duration="3.5s" class="absolute w-full h-full notion-black flex flex-col items-center justify-center p-6"
+        style="animation: 0.8s fadeOut var(--ef-transition-out-start) both">
+        
+        <canvas id="chaos-canvas" class="absolute inset-0 size-full"></canvas>
+        
+        <ef-text class="absolute top-12 left-6 text-white text-2xl font-bold z-10"
+          style="animation: 0.5s slideDown both">
+          You're juggling
+        </ef-text>
+        
+        <ef-text class="absolute bottom-20 left-6 right-6 text-white/70 text-sm z-10"
+          style="animation: 0.4s slideUp both 0.6s">
+          Notes scattered. Lists everywhere. Context lost.
+        </ef-text>
+
+        <script>
+          const chaosScene = document.querySelector('ef-timegroup:nth-of-type(1)');
+          const chaosCanvas = document.getElementById('chaos-canvas');
+          const chaosCtx = chaosCanvas.getContext('2d');
+
+          chaosScene.initializer = (instance) => {
+            return instance.addFrameTask((timeMs, durationMs) => {
+              chaosCanvas.width = chaosCanvas.offsetWidth;
+              chaosCanvas.height = chaosCanvas.offsetHeight;
+              const progress = timeMs / durationMs;
+
+              chaosCtx.clearRect(0, 0, chaosCanvas.width, chaosCanvas.height);
+
+              // Draw increasingly chaotic rectangles (representing scattered apps/notes)
+              const boxCount = Math.floor(progress * 15);
+              for (let i = 0; i < boxCount; i++) {
+                const seed = i * 73.3;
+                const x = (Math.sin(seed) * 0.4 + 0.5) * chaosCanvas.width;
+                const y = (Math.cos(seed * 0.8) * 0.4 + 0.5) * chaosCanvas.height;
+                const size = 40 + Math.sin(seed + progress * Math.PI) * 15;
+                const rotation = seed + progress * Math.PI * 2;
+
+                chaosCtx.save();
+                chaosCtx.translate(x, y);
+                chaosCtx.rotate(rotation);
+                chaosCtx.strokeStyle = `rgba(255, 255, 255, ${0.2 + progress * 0.3})`;
+                chaosCtx.lineWidth = 2;
+                chaosCtx.strokeRect(-size / 2, -size / 2, size, size);
+                chaosCtx.restore();
+              }
+            });
+          };
+        </script>
+      </ef-timegroup>
+
+      <!-- Scene 2: The Shift (3.5-9s) -->
+      <!-- Viewer State Start: Recognize the fragmentation -->
+      <!-- Viewer State End: See that one space can hold everything -->
+      <ef-timegroup mode="fixed" duration="5.5s" class="absolute w-full h-full gradient-notion flex flex-col items-center justify-center p-6"
+        style="animation: 0.8s fadeIn both">
+
+        <canvas id="integration-canvas" class="absolute inset-0 size-full"></canvas>
+
+        <ef-text class="absolute top-16 left-6 right-6 text-black text-3xl font-bold text-center z-10"
+          style="animation: 0.6s scaleIn both 0.3s">
+          One workspace.
+        </ef-text>
+
+        <ef-text split="word" class="absolute top-1/2 left-6 right-6 text-black text-xl text-center z-10"
+          style="animation: 0.4s slideUp both; animation-delay: calc(1s + var(--ef-word-index) * 80ms)">
+          <span>Write</span>
+          <span>•</span>
+          <span>Plan</span>
+          <span>•</span>
+          <span>Organize</span>
+        </ef-text>
+
+        <script>
+          const integrationScene = document.querySelector('ef-timegroup:nth-of-type(2)');
+          const integrationCanvas = document.getElementById('integration-canvas');
+          const integrationCtx = integrationCanvas.getContext('2d');
+
+          integrationScene.initializer = (instance) => {
+            return instance.addFrameTask((timeMs, durationMs) => {
+              integrationCanvas.width = integrationCanvas.offsetWidth;
+              integrationCanvas.height = integrationCanvas.offsetHeight;
+              const progress = timeMs / durationMs;
+
+              integrationCtx.clearRect(0, 0, integrationCanvas.width, integrationCanvas.height);
+
+              // Draw converging rectangles flowing into center (everything unifying)
+              const boxCount = 15;
+              for (let i = 0; i < boxCount; i++) {
+                const seed = i * 73.3;
+                // Start scattered, converge to center
+                const startX = (Math.sin(seed) * 0.5 + 0.5) * integrationCanvas.width;
+                const startY = (Math.cos(seed * 0.8) * 0.5 + 0.5) * integrationCanvas.height;
+                const endX = integrationCanvas.width / 2;
+                const endY = integrationCanvas.height / 2;
+
+                const x = startX + (endX - startX) * progress;
+                const y = startY + (endY - startY) * progress;
+                const size = 45 - progress * 20;
+                const alpha = 0.3 + (1 - progress) * 0.4;
+
+                integrationCtx.save();
+                integrationCtx.translate(x, y);
+                integrationCtx.strokeStyle = `rgba(10, 126, 164, ${alpha})`;
+                integrationCtx.lineWidth = 2;
+                integrationCtx.strokeRect(-size / 2, -size / 2, size, size);
+                integrationCtx.restore();
+              }
+
+              // Draw center circle that grows
+              const centerRadius = 30 + progress * 40;
+              integrationCtx.beginPath();
+              integrationCtx.arc(integrationCanvas.width / 2, integrationCanvas.height / 2, centerRadius, 0, Math.PI * 2);
+              integrationCtx.strokeStyle = `rgba(10, 126, 164, ${0.4 + progress * 0.3})`;
+              integrationCtx.lineWidth = 3;
+              integrationCtx.stroke();
+            });
+          };
+        </script>
+      </ef-timegroup>
+
+      <!-- Scene 3: The Offer (9-15s) -->
+      <!-- Viewer State Start: Understand that one space solves fragmentation -->
+      <!-- Viewer State End: Feel possibility and know where to go next -->
+      <ef-timegroup mode="fixed" duration="6s" class="absolute w-full h-full notion-blue flex flex-col items-center justify-center p-6"
+        style="animation: 0.8s fadeIn both">
+
+        <ef-text class="absolute top-20 left-6 right-6 text-white text-4xl font-bold text-center"
+          style="animation: 0.6s slideDown both">
+          Your brain.
+        </ef-text>
+
+        <ef-text class="absolute top-1/2 -translate-y-1/2 left-6 right-6 text-white/90 text-lg text-center"
+          style="animation: 0.5s fadeIn both 0.4s">
+          All in one place.
+        </ef-text>
+
+        <ef-text class="absolute bottom-12 left-6 right-6 text-white text-sm font-semibold text-center"
+          style="animation: 0.4s slideUp both 0.8s">
+          Start free at notion.so
+        </ef-text>
+      </ef-timegroup>
+
+    </ef-timegroup>
+  </ef-configuration>
+</body>
+</html>

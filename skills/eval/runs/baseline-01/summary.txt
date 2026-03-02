@@ -1,0 +1,45 @@
+Eval Run: baseline-01
+Generator: anthropic/claude-haiku-4-5
+Evaluator: anthropic/claude-opus-4-5
+Date: 2/26/2026, 5:02:01 PM
+
+─── Scores ────────────────────────────────────────
+Task                          Motion  Spec  ViewerΔ  PoV  Omit  Overall
+─────────────────────────────────────────────────────────────────────────
+Linear (product-demo)           4/5    2/5   3/5      2/5   3/5    2.8/5
+Stripe (explainer)              4/5    2/5   3/5      1/5   2/5    2.4/5
+Figma (brand-awareness)         4/5    2/5   3/5      2/5   3/5    2.8/5
+Vercel (launch)                 4/5    2/5   3/5      2/5   3/5    2.8/5
+Notion (social)                 3/5    2/5   3/5      1/5   3/5    2.4/5
+Supabase (product-demo)         3/5    2/5   3/5      1/5   2/5    2.2/5
+─────────────────────────────────────────────────────────────────────────
+Average overall: 2.6/5
+
+─── Proposed Skill Changes ─────────────────────────────────────────────
+
+skills/skills/brand-video-generator/SKILL.md (16 changes)
+  [CRITICAL specificity] The model used bars-and-tone placeholders because there was no explicit prohibition against placeholder content for product demos, and no requirement to source or verify metrics from the actual website.
+  [MAJOR specificity] The skill required specificity but didn't provide guidance on HOW to find product-specific differentiators, leading to generic claims that could apply to any productivity tool.
+  [CRITICAL point_of_view] The current Phase 0 asks about brand truths but doesn't require translating those truths into formal/structural video decisions, allowing generic templates to persist.
+  [MAJOR specificity] The skill asks for visual identity but not product-specific inventory, allowing the model to describe generic category features rather than the brand's actual named offerings.
+  [MAJOR omission] The skill mentions scene budgeting abstractly but provides no concrete duration guidance, allowing excessive CTA scenes and dead time between animations.
+  [CRITICAL specificity] The existing example doesn't warn against generic feature claims like 'real-time collaboration' which are commodity descriptions across SaaS—adding explicit software-specific guidance would force the model to identify Figma-specific elements like Auto Layout, Components, or the distinctive cursor avatars.
+  [MAJOR point_of_view] The Phase 0 questions don't force identification of a philosophical stance that differentiates the brand—adding this question would prevent the model from defaulting to generic 'old way vs new way' templates and instead commit to Figma's specific worldview about design as infrastructure or shared language.
+  [CRITICAL specificity] The model used placeholder video and generic blue/dark styling instead of Vercel's black/white minimal brand because the skill emphasizes extracting brand assets but doesn't explicitly forbid placeholder substitution in the final output.
+  [CRITICAL specificity] The example shows generic vs specific origin stories but doesn't warn against citing category-standard features as differentiators, which led the model to treat 'preview URLs, instant deploys' as unique to Vercel.
+  [MAJOR point_of_view] The 'Yes' example in the current text actually uses the same chaos-to-order template the model used; adding an explicit warning against generic narrative structures would force concrete specificity.
+  [MAJOR point_of_view] The visual metaphor table offers 'tangled lines' for chaos without requiring domain-specific imagery, which led to abstract red bezier curves instead of recognizable developer pain points like config files or CI pipelines.
+  [CRITICAL specificity] The model fell back to category-level positioning ('one workspace') because Phase 0 examples focused on origin stories rather than requiring identification of specific product mechanics that differentiate the brand.
+  [CRITICAL point_of_view] The model produced a generic problem-solution-CTA template because no phase required committing to an authorial perspective that would constrain and unify the creative approach.
+  [CRITICAL specificity] The skill never explicitly prohibited placeholder media, so the model defaulted to bars-n-tone throughout instead of specifying actual product footage requirements.
+  [CRITICAL point_of_view] Phase 0 asks for specificity but doesn't require the unique positioning to manifest in visual form; adding this instruction would force the model to show Postgres-first philosophy rather than just stating it.
+  [MAJOR motion] The model declared a #chaos-canvas element but left it empty because the skill only says to 'specify frameTask logic' without requiring the actual implementation code be provided.
+
+skills/skills/brand-video-generator/references/composition-patterns.md (2 changes)
+  [MAJOR point_of_view] The skill showed canvas animation examples but didn't require that animations be semantically connected to the specific product concept, allowing decorative abstractions that communicate nothing specific about the product.
+  [MAJOR motion] The model used generic entrance animations because composition-patterns.md only showed decorative patterns (fade-in, slide-up) without a pattern for making motion demonstrate the product concept itself.
+
+skills/skills/brand-video-generator/references/editing.md (1 change)
+  [MAJOR omission] The SKILL.md references 'references/editing.md' for 'what to cut' but the file doesn't exist; creating it with specific guidance on repetition and weak trust signals would have flagged Scene 5 for removal.
+
+To apply: npx tsx scripts/eval-skills-apply.ts --run-id baseline-01

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Figma 30s Brand Video</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@editframe/elements/styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #fff;
+    }
+
+    @keyframes cursor-enter {
+      from {
+        opacity: 0;
+        transform: scale(0.8) translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    @keyframes cursor-float {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-4px);
+      }
+    }
+
+    @keyframes text-reveal {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes line-draw {
+      from {
+        stroke-dashoffset: 1000;
+      }
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+
+    @keyframes fade-in {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes fade-out {
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+      }
+    }
+
+    .cursor-icon {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      pointer-events: none;
+    }
+
+    .cursor-dot {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: #0d99ff;
+      border-radius: 50%;
+      top: 0;
+      left: 0;
+    }
+
+    .cursor-ring {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #0d99ff;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      opacity: 0.4;
+    }
+
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <ef-configuration api-host="https://api.editframe.com" media-engine="local">
+    <ef-timegroup mode="sequence" class="w-[1080px] h-[1920px] bg-white">
+
+      <!-- SCENE 1: The Problem (Single Player Design) - 0s-8s -->
+      <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full bg-gradient-to-b from-slate-50 to-slate-100">
+        <!-- Canvas: Solo designer, separate cursors, friction -->
+        <canvas id="scene1-canvas" class="absolute inset-0 w-full h-full"></canvas>
+        
+        <!-- Text overlay: The problem state -->
+        <ef-text 
+          class="absolute bottom-24 left-8 right-8 text-center text-slate-900 text-2xl font-bold"
+          style="animation: 0.6s text-reveal 2s both"
+        >Design alone</ef-text>
+        
+        <ef-text 
+          class="absolute bottom-12 left-8 right-8 text-center text-slate-600 text-sm"
+          style="animation: 0.5s text-reveal 2.5s both"
+        >Files. Downloads. Versions.</ef-text>
+      </ef-timegroup>
+
+      <!-- SCENE 2: The Figma Truth (Multiplayer, Same Canvas) - 8s-18s -->
+      <ef-timegroup mode="fixed" duration="10s" class="absolute w-full h-full bg-gradient-to-b from-blue-50 to-slate-50">
+        <!-- Canvas: Multiple named cursors on same canvas, real-time presence -->
+        <canvas id="scene2-canvas" class="absolute inset-0 w-full h-full"></canvas>
+        
+        <!-- Text reveals the solution -->
+        <ef-text 
+          class="absolute top-32 left-8 right-8 text-center text-slate-900 text-3xl font-bold"
+          style="animation: 0.6s text-reveal 1s both"
+        >Everyone together.</ef-text>
+        
+        <ef-text 
+          class="absolute top-48 left-8 right-8 text-center text-blue-600 text-sm font-semibold"
+          style="animation: 0.5s text-reveal 1.6s both"
+        >Real-time collaboration in the browser</ef-text>
+      </ef-timegroup>
+
+      <!-- SCENE 3: What This Changes (URL, No Files) - 18s-26s -->
+      <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full bg-white">
+        <!-- Browser URL bar showing the Figma URL -->
+        <div class="absolute top-16 left-6 right-6 bg-slate-100 rounded-lg p-4 flex items-center gap-2"
+          style="animation: 0.5s text-reveal 0.5s both">
+          <div class="w-4 h-4 rounded-full bg-blue-500"></div>
+          <ef-text class="text-xs text-slate-600 flex-1" style="font-family: monospace;">figma.com/@team/design-system</ef-text>
+        </div>
+        
+        <!-- The insight -->
+        <ef-text 
+          class="absolute top-1/2 left-8 right-8 text-center text-slate-900 text-2xl font-bold"
+          style="animation: 0.6s text-reveal 1.2s both"
+        >Share a link, not a file</ef-text>
+
+        <!-- Figma value prop -->
+        <ef-text 
+          class="absolute bottom-20 left-8 right-8 text-center text-slate-600 text-sm"
+          style="animation: 0.5s text-reveal 1.8s both"
+        >Design • Prototype • Build<br/>in the same place</ef-text>
+      </ef-timegroup>
+
+      <!-- SCENE 4: CTA / Brand Close - 26s-30s -->
+      <ef-timegroup mode="fixed" duration="4s" class="absolute w-full h-full bg-gradient-to-b from-slate-900 to-slate-950 flex flex-col items-center justify-center">
+        <!-- Figma logo concept -->
+        <svg class="w-20 h-20 mb-6" viewBox="0 0 100 100" style="animation: 0.6s text-reveal 0.3s both">
+          <circle cx="30" cy="30" r="18" fill="#0d99ff" />
+          <circle cx="70" cy="30" r="18" fill="#ff6b6b" />
+          <circle cx="70" cy="70" r="18" fill="#ffd93d" />
+          <circle cx="30" cy="70" r="18" fill="#6bcf7f" />
+          <circle cx="50" cy="50" r="12" fill="#1a1a2e" />
+        </svg>
+        
+        <!-- CTA text -->
+        <ef-text 
+          class="text-white text-lg font-bold text-center"
+          style="animation: 0.5s text-reveal 0.8s both"
+        >Figma</ef-text>
+        
+        <ef-text 
+          class="text-white/70 text-xs text-center mt-2"
+          style="animation: 0.5s text-reveal 1.2s both"
+        >The collaborative design platform</ef-text>
+      </ef-timegroup>
+
+    </ef-timegroup>
+  </ef-configuration>
+
+  <script>
+    // Scene 1: Solo designer friction
+    function drawScene1() {
+      const canvas = document.getElementById('scene1-canvas');
+      if (!canvas.offsetParent === null) return;
+      
+      const ctx = canvas.getContext('2d');
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw 3 separate frames (isolated working states)
+      const frameWidth = canvas.width / 3 - 20;
+      const frameHeight = canvas.height * 0.6;
+
+      for (let i = 0; i < 3; i++) {
+        const x = 10 + i * (frameWidth + 20);
+        const y = canvas.height * 0.15;
+
+        // Frame border
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, frameWidth, frameHeight);
+
+        // Isolated cursor (different color per frame, not interacting)
+        ctx.fillStyle = ['#ef4444', '#8b5cf6', '#06b6d4'][i];
+        ctx.beginPath();
+        ctx.arc(x + frameWidth * 0.3, y + frameHeight * 0.4, 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Small design content
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        for (let j = 0; j < 3; j++) {
+          ctx.strokeRect(x + 20, y + 30 + j * 30, frameWidth - 40, 20);
+        }
+      }
+
+      // Draw "X" between frames to show separation
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = 'bold 32px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('✕', frameWidth + 20, canvas.height * 0.45);
+      ctx.fillText('✕', frameWidth * 2 + 40, canvas.height * 0.45);
+    }
+
+    // Scene 2: Multiplayer on same canvas
+    function drawScene2(progress) {
+      const canvas = document.getElementById('scene2-canvas');
+      if (canvas.offsetParent === null) return;
+      
+      const ctx = canvas.getContext('2d');
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Single large canvas
+      const canvasX = canvas.width * 0.1;
+      const canvasY = canvas.height * 0.15;
+      const canvasW = canvas.width * 0.8;
+      const canvasH = canvas.height * 0.6;
+
+      // Canvas background
+      ctx.fillStyle = '#f8fafc';
+      ctx.strokeStyle = '#0d99ff';
+      ctx.lineWidth = 3;
+      ctx.fillRect(canvasX, canvasY, canvasW, canvasH);
+      ctx.strokeRect(canvasX, canvasY, canvasW, canvasH);
+
+      // Multiple named cursors entering and moving together
+      const cursors = [
+        { name: 'Sarah', color: '#0d99ff', startX: 0.2, startY: 0.3 },
+        { name: 'Marcus', color: '#ff6b6b', startX: 0.5, startY: 0.4 },
+        { name: 'Alex', color: '#ffd93d', startX: 0.7, startY: 0.5 }
+      ];
+
+      cursors.forEach((cursor, i) => {
+        const delay = i * 0.15;
+        const adjustedProgress = Math.max(0, progress - delay);
+        
+        if (adjustedProgress > 0) {
+          const x = canvasX + cursor.startX * canvasW + Math.sin(adjustedProgress * 2) * 20;
+          const y = canvasY + cursor.startY * canvasH + Math.cos(adjustedProgress * 1.5) * 20;
+
+          // Cursor dot
+          ctx.fillStyle = cursor.color;
+          ctx.beginPath();
+          ctx.arc(x, y, 7, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Cursor ring
+          ctx.strokeStyle = cursor.color;
+          ctx.lineWidth = 2;
+          ctx.globalAlpha = 0.4;
+          ctx.beginPath();
+          ctx.arc(x, y, 18, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+
+          // Name label
+          ctx.fillStyle = cursor.color;
+          ctx.font = 'bold 11px sans-serif';
+          ctx.textAlign = 'left';
+          ctx.fillText(cursor.name, x + 12, y - 8);
+        }
+      });
+
+      // Design elements in center (being edited together)
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.6;
+      for (let j = 0; j < 4; j++) {
+        ctx.strokeRect(canvasX + canvasW * 0.25, canvasY + canvasH * 0.2 + j * 40, canvasW * 0.5, 30);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // Initialize and animate
+    const tg = document.querySelector('ef-timegroup');
+    let animationId = null;
+
+    function animate() {
+      drawScene1();
+      animationId = requestAnimationFrame(animate);
+    }
+
+    // Scene 1 animation
+    const scene1 = document.querySelector('ef-timegroup > ef-timegroup:nth-child(1)');
+    scene1.initializer = (instance) => {
+      animate();
+      return () => cancelAnimationFrame(animationId);
+    };
+
+    // Scene 2 animation with progress
+    const scene2 = document.querySelector('ef-timegroup > ef-timegroup:nth-child(2)');
+    scene2.initializer = (instance) => {
+      return instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        const progress = ownCurrentTimeMs / durationMs;
+        drawScene2(progress);
+      });
+    };
+  </script>
+</body>
+</html>

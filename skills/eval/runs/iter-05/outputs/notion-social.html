@@ -1,0 +1,270 @@
+<ef-timegroup mode="sequence" overlap="1.5s" class="w-[1080px] h-[1920px] bg-white">
+  <!-- Scene 1: The Problem - Information Fragmentation (0s-4s) -->
+  <ef-timegroup mode="fixed" duration="4s" class="absolute w-full h-full bg-gradient-to-b from-slate-50 to-slate-100">
+    <canvas id="chaos-canvas" class="absolute inset-0 size-full"></canvas>
+    <ef-text class="absolute bottom-16 left-8 right-8 text-slate-900 text-3xl font-bold text-center"
+      style="animation: 0.6s enter-up both 1.2s">Your work lives everywhere</ef-text>
+  </ef-timegroup>
+
+  <!-- Scene 2: One Workspace - Unification (2.5s-7s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full bg-white flex flex-col items-center justify-center p-8"
+    style="animation: 1.5s fade-in both">
+    <div class="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50"></div>
+    <div class="relative w-full h-full flex items-center justify-center">
+      <canvas id="unify-canvas" class="absolute inset-0 size-full"></canvas>
+      <ef-text split="word" class="relative text-slate-900 text-5xl font-bold text-center max-w-md"
+        style="animation: 0.5s word-in both; animation-delay: calc(var(--ef-word-index) * 100ms); z-index: 10">Notion brings it all together</ef-text>
+    </div>
+  </ef-timegroup>
+
+  <!-- Scene 3: Feature Stack - Databases (5.5s-9.5s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full bg-white flex flex-col items-center justify-center p-12"
+    style="animation: 1.5s fade-in both">
+    <div class="absolute inset-0 bg-slate-900"></div>
+    <ef-text class="relative text-white text-4xl font-bold mb-8" style="animation: 0.6s enter-up both 0.5s">Databases that think</ef-text>
+    <canvas id="database-canvas" class="relative w-full h-64"></canvas>
+    <ef-text class="relative text-white/70 text-lg mt-8 text-center max-w-sm" style="animation: 0.6s enter-up both 1s">Not spreadsheets. Real relational power.</ef-text>
+  </ef-timegroup>
+
+  <!-- Scene 4: Feature Stack - Connected Docs (8s-12s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full bg-white flex flex-col items-center justify-center p-12"
+    style="animation: 1.5s fade-in both">
+    <div class="absolute inset-0 bg-gradient-to-br from-amber-50 to-orange-50"></div>
+    <ef-text split="word" class="relative text-slate-900 text-4xl font-bold mb-8" style="animation: 0.5s word-in both; animation-delay: calc(var(--ef-word-index) * 100ms)">Pages that connect</ef-text>
+    <canvas id="pages-canvas" class="relative w-full h-64"></canvas>
+  </ef-timegroup>
+
+  <!-- Scene 5: The CTA - One Source of Truth (10.5s-15s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full bg-black flex flex-col items-center justify-center p-8"
+    style="animation: 1.5s fade-in both">
+    <canvas id="constellation-canvas" class="absolute inset-0 size-full opacity-40"></canvas>
+    <ef-text split="word" class="relative text-white text-5xl font-bold text-center mb-12" style="animation: 0.6s word-in both; animation-delay: calc(var(--ef-word-index) * 120ms); z-index: 10">One workspace. Infinite possibility.</ef-text>
+    <ef-text class="relative text-white/80 text-xl" style="animation: 0.6s enter-up both 2s">Start building your system</ef-text>
+  </ef-timegroup>
+</ef-timegroup>
+
+<style>
+  @keyframes enter-up {
+    from { transform: translateY(24px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes word-in {
+    from { transform: translateY(20px) scale(0.95); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+</style>
+
+<script>
+  // Scene 1: Chaos canvas - fragmented information everywhere
+  const chaosCanvas = document.getElementById('chaos-canvas');
+  const chaosCtx = chaosCanvas.getContext('2d');
+  const chaosScene = chaosCanvas.parentElement.parentElement;
+
+  chaosScene.initializer = (instance) => {
+    return instance.addFrameTask((timeMs, durationMs) => {
+      chaosCanvas.width = chaosCanvas.offsetWidth;
+      chaosCanvas.height = chaosCanvas.offsetHeight;
+      const progress = timeMs / durationMs;
+
+      chaosCtx.clearRect(0, 0, chaosCanvas.width, chaosCanvas.height);
+      chaosCtx.fillStyle = 'rgba(15, 23, 42, 0.08)';
+
+      // 12 document icons scattered chaotically, opacity increasing
+      const docCount = Math.floor(progress * 12);
+      for (let i = 0; i < docCount; i++) {
+        const seed = i * 73.5;
+        const x = (Math.sin(seed) * 0.4 + 0.5) * chaosCanvas.width;
+        const y = (Math.cos(seed * 0.8) * 0.4 + 0.5) * chaosCanvas.height;
+        const rotation = (seed + progress * 360) % 360;
+        const opacity = Math.min(1, progress * 2);
+
+        chaosCtx.save();
+        chaosCtx.translate(x, y);
+        chaosCtx.rotate((rotation * Math.PI) / 180);
+        chaosCtx.fillStyle = `rgba(51, 65, 85, ${opacity * 0.6})`;
+        chaosCtx.fillRect(-20, -28, 40, 56);
+        chaosCtx.fillStyle = `rgba(100, 116, 139, ${opacity * 0.8})`;
+        chaosCtx.fillRect(-16, -24, 32, 12);
+        chaosCtx.restore();
+      }
+
+      // Tangled lines representing disconnection
+      chaosCtx.strokeStyle = `rgba(71, 85, 105, ${progress * 0.3})`;
+      chaosCtx.lineWidth = 2;
+      for (let i = 0; i < 8; i++) {
+        const seed = i * 47;
+        const x1 = (Math.sin(seed) * 0.4 + 0.5) * chaosCanvas.width;
+        const y1 = (Math.cos(seed * 1.3) * 0.4 + 0.5) * chaosCanvas.height;
+        const x2 = (Math.sin(seed + progress * 180) * 0.4 + 0.5) * chaosCanvas.width;
+        const y2 = (Math.cos(seed * 0.9 + progress * 180) * 0.4 + 0.5) * chaosCanvas.height;
+        chaosCtx.beginPath();
+        chaosCtx.moveTo(x1, y1);
+        chaosCtx.lineTo(x2, y2);
+        chaosCtx.stroke();
+      }
+    });
+  };
+
+  // Scene 2: Unification canvas - elements converging to center
+  const unifyCanvas = document.getElementById('unify-canvas');
+  const unifyCtx = unifyCanvas.getContext('2d');
+  const unifyScene = unifyCanvas.closest('ef-timegroup');
+
+  unifyScene.initializer = (instance) => {
+    return instance.addFrameTask((timeMs, durationMs) => {
+      unifyCanvas.width = unifyCanvas.offsetWidth;
+      unifyCanvas.height = unifyCanvas.offsetHeight;
+      const progress = timeMs / durationMs;
+
+      unifyCtx.clearRect(0, 0, unifyCanvas.width, unifyCanvas.height);
+
+      const cx = unifyCanvas.width / 2;
+      const cy = unifyCanvas.height / 2;
+
+      // 16 elements converging toward center
+      for (let i = 0; i < 16; i++) {
+        const angle = (i / 16) * Math.PI * 2;
+        const startRadius = Math.max(unifyCanvas.width, unifyCanvas.height) / 2;
+        const endRadius = 80;
+        const currentRadius = startRadius - progress * (startRadius - endRadius);
+
+        const x = cx + Math.cos(angle) * currentRadius;
+        const y = cy + Math.sin(angle) * currentRadius;
+
+        // Draw converging blocks
+        unifyCtx.fillStyle = `hsl(${220 + i * 15}, ${60 + progress * 20}%, ${50 + progress * 10}%)`;
+        unifyCtx.globalAlpha = 0.8 - progress * 0.3;
+        unifyCtx.fillRect(x - 16, y - 16, 32, 32);
+
+        // Trail lines showing convergence
+        unifyCtx.strokeStyle = `hsl(${220 + i * 15}, ${60 + progress * 20}%, ${50 + progress * 10}%)`;
+        unifyCtx.lineWidth = 1;
+        unifyCtx.globalAlpha = progress * 0.4;
+        unifyCtx.beginPath();
+        unifyCtx.moveTo(cx, cy);
+        unifyCtx.lineTo(x, y);
+        unifyCtx.stroke();
+      }
+
+      // Center circle grows as convergence completes
+      unifyCtx.fillStyle = `hsl(220, 80%, ${50 + progress * 10}%)`;
+      unifyCtx.globalAlpha = progress;
+      unifyCtx.beginPath();
+      unifyCtx.arc(cx, cy, 40 * progress, 0, Math.PI * 2);
+      unifyCtx.fill();
+
+      unifyCtx.globalAlpha = 1;
+    });
+  };
+
+  // Scene 3: Database canvas - relational network visualization
+  const dbCanvas = document.getElementById('database-canvas');
+  const dbCtx = dbCanvas.getContext('2d');
+  const dbScene = dbCanvas.closest('ef-timegroup');
+
+  dbScene.initializer = (instance) => {
+    return instance.addFrameTask((timeMs, durationMs) => {
+      dbCanvas.width = dbCanvas.offsetWidth;
+      dbCanvas.height = dbCanvas.offsetHeight;
+      const progress = timeMs / durationMs;
+
+      dbCtx.clearRect(0, 0, dbCanvas.width, dbCanvas.height);
+
+      const nodeCount = Math.floor(progress * 8) + 3;
+      const nodes = [];
+
+      // Generate nodes in a grid
+      for (let i = 0; i < nodeCount; i++) {
+        const col = i % 4;
+        const row = Math.floor(i / 4);
+        nodes.push({
+          x: (col + 1) * (dbCanvas.width / 5),
+          y: (row + 1) * (dbCanvas.height / 3),
+          label: ['Users', 'Projects', 'Tasks', 'Teams', 'Docs', 'Pages', 'Properties', 'Relations'][i]
+        });
+      }
+
+      // Draw connections first
+      dbCtx.strokeStyle = `rgba(59, 130, 246, ${progress * 0.4})`;
+      dbCtx.lineWidth = 2;
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          if (Math.random() > 0.6) {
+            dbCtx.beginPath();
+            dbCtx.moveTo(nodes[i].x, nodes[i].y);
+            dbCtx.lineTo(nodes[j].x, nodes[j].y);
+            dbCtx.stroke();
+          }
+        }
+      }
+
+      // Draw nodes
+      nodes.forEach((node) => {
+        dbCtx.fillStyle = 'rgba(59, 130, 246, 0.9)';
+        dbCtx.beginPath();
+        dbCtx.arc(node.x, node.y, 24, 0, Math.PI * 2);
+        dbCtx.fill();
+
+        dbCtx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        dbCtx.font = 'bold 10px system-ui';
+        dbCtx.textAlign = 'center';
+        dbCtx.textBaseline = 'middle';
+        dbCtx.fillText(node.label.substring(0, 3), node.x, node.y);
+      });
+    });
+  };
+
+  // Scene 4: Pages canvas - nested document structure
+  const pagesCanvas = document.getElementById('pages-canvas');
+  const pagesCtx = pagesCanvas.getContext('2d');
+  const pagesScene = pagesCanvas.closest('ef-timegroup');
+
+  pagesScene.initializer = (instance) => {
+    return instance.addFrameTask((timeMs, durationMs) => {
+      pagesCanvas.width = pagesCanvas.offsetWidth;
+      pagesCanvas.height = pagesCanvas.offsetHeight;
+      const progress = timeMs / durationMs;
+
+      pagesCtx.clearRect(0, 0, pagesCanvas.width, pagesCanvas.height);
+
+      // Nested pages hierarchy revealing
+      const pageWidth = 180;
+      const pageHeight = 100;
+      const spacing = 40;
+
+      for (let depth = 0; depth < 4; depth++) {
+        if (progress < depth * 0.25) continue;
+
+        const depthProgress = Math.min(1, (progress - depth * 0.25) / 0.25);
+        const x = 60 + depth * spacing;
+        const y = pagesCanvas.height / 2 - pageHeight / 2 + depth * 20;
+        const opacity = depthProgress * 0.9;
+
+        // Page background
+        pagesCtx.fillStyle = `rgba(251, 191, 36, ${opacity * (1 - depth * 0.15)})`;
+        pagesCtx.fillRect(x, y, pageWidth * depthProgress, pageHeight);
+
+        // Page lines (text representation)
+        pagesCtx.strokeStyle = `rgba(0, 0, 0, ${opacity * 0.3})`;
+        pagesCtx.lineWidth = 2;
+        for (let line = 0; line < 3; line++) {
+          const lineWidth = pageWidth * depthProgress * (1 - line * 0.1);
+          pagesCtx.beginPath();
+          pagesCtx.moveTo(x + 8, y + 16 + line * 20);
+          pagesCtx.lineTo(x + 8 + lineWidth - 16, y + 16 + line * 20);
+          pagesCtx.stroke();
+        }
+
+        // Connector line to next page
+        if (depth <

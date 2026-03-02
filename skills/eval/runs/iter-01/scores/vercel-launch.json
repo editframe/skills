@@ -1,0 +1,53 @@
+{
+  "taskId": "vercel-launch",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:08:01.836Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural and purposeful. The composition uses addFrameTask with procedural canvas rendering across three scenes, plus CSS animations with stagger on text splitting. Each scene's motion carries distinct meaning.",
+      "evidence": "Scene 1 uses `addFrameTask` for blinking cursor (`Math.sin(time * 0.01) > 0`), Scene 2 has procedural expanding ripples with staggered delays (`const delay = i * 0.25`), Scene 3 renders animated globe nodes with orbital motion (`const angle = (i / nodeCount) * Math.PI * 2 + time * 0.0005`). Text uses `split=\"word\"` with stagger: `animation-delay: calc(var(--ef-word-index) * 100ms)`."
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "The composition captures generic deployment platform messaging rather than what makes Vercel specifically Vercel. The 'git push' → 'live in seconds' → 'global' narrative applies equally to Netlify, Railway, or any modern deployment platform.",
+      "evidence": "Scene 1 shows 'git push' (universal), Scene 2 says 'Live in seconds' (generic speed claim), Scene 3 mentions 'Deployed globally' (every CDN-backed platform). No mention of Edge Functions, Next.js integration, preview deployments, or the specific Vercel triangle logo treatment. Colors use generic greens (#10b981) and blues (#3b82f6) rather than Vercel's actual black/white minimal aesthetic."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "There's a traceable arc: anticipation (git push) → satisfaction (ripple/live) → expansion (global) → action (CTA). However, the shifts are formulaic and don't build emotional momentum specific to Vercel's value proposition.",
+      "evidence": "Scene transitions follow predictable pattern: action → confirmation → scale → brand. The ripple metaphor in Scene 2 provides the strongest state change (deploy complete feeling), but Scene 3's globe visualization doesn't meaningfully advance the viewer's understanding beyond 'it's fast everywhere.'"
+    },
+    "point_of_view": {
+      "score": 2,
+      "rationale": "The composition takes the safe 'developer deployment is magical' angle without committing to what makes Vercel's approach distinct. It could be any platform's launch video with a logo swap.",
+      "evidence": "The perspective implied is 'deployment should be instant and global' — true but generic. No authorial choice reveals why Vercel specifically. The white CTA scene (`bg-white` with black text) hints at Vercel's minimal aesthetic but isn't developed. Missing: Vercel's obsession with DX, the preview URL workflow, the Next.js relationship."
+    },
+    "omission": {
+      "score": 4,
+      "rationale": "Four scenes in 15 seconds is appropriately tight. Each scene has a distinct function in the arc: trigger → feedback → scale → convert. No obvious padding.",
+      "evidence": "Scene 1 (0-4s): action initiation. Scene 2 (4-8s): immediate feedback. Scene 3 (8-12s): scope expansion. Scene 4 (12-15s): CTA. The 1s overlaps (`overlap=\"1s\"`) create smooth transitions without wasting time. No redundant messaging."
+    }
+  },
+  "overall": 3,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition describes any deployment platform, not Vercel specifically. 'Git push → live in seconds → global' is the category promise, not Vercel's unique position.",
+      "improvement": "Include Vercel-specific elements: the triangle logo as a visual motif, preview deployment URLs appearing, the 'Promoted to Production' moment, Edge Function cold start speed, or the Next.js framework lock-in advantage. Show the actual Vercel dashboard deployment animation."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition takes no stance on what makes Vercel's approach philosophically different. It's a template 'fast deployment' video.",
+      "improvement": "Commit to Vercel's specific worldview: 'The best DX creates the best UX' or 'Framework-aware deployment changes everything.' Structure scenes around what Vercel does that others can't — instant rollback, preview URLs for every branch, zero-config Next.js optimization."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "The state changes are predictable (anticipation → satisfaction → scale). The globe scene doesn't earn its emotional weight — 'global' is expected, not surprising.",
+      "improvement": "Make Scene 3 about something competitors can't claim: instant cache invalidation, or show the speed differential visually. Create genuine surprise rather than confirmation of expectations."
+    }
+  ]
+}

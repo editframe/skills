@@ -1,0 +1,47 @@
+{
+  "taskId": "figma-brand-awareness",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-03-02T19:04:28.448Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is the argument. The addFrameTask canvas animations don't just decorate—they embody the conceptual shift from isolation to collaboration. The cursors' behavior IS the message.",
+      "evidence": "Scene 1: cursors approach but never connect (`leftX = centerX * 0.3 + Math.sin(progress * Math.PI) * (centerX * 0.15)` - oscillating but bounded). Scene 2: cursors converge into a single URL space (`dist1 = maxRadius * (1 - entryProgress * 0.7)`). Scene 3: cursors orbit in visible sync with names attached. The form of motion changes to match each conceptual state."
+    },
+    "specificity": {
+      "score": 4,
+      "rationale": "The composition's structure reflects Figma's specific architectural truth: URL-first browser-native design enabling real-time multiplayer. This is false about Sketch, Adobe XD, or Photoshop. The cursor metaphor directly maps to Figma's visible collaboration.",
+      "evidence": "Scene 2 text: `figma.com/design/abc123` - the URL IS the workspace. The entire three-act structure (file isolation → URL as portal → real-time cursors) maps to Figma's specific technical differentiation. However, no specific product features (components, dev mode, FigJam) are named—it stays at the platform level."
+    },
+    "viewer_state": {
+      "score": 4,
+      "rationale": "Clear emotional arc: frustration (isolation) → revelation (the URL moment) → wonder (seeing collaboration). Each scene prepares the next psychologically.",
+      "evidence": "Scene 1: 'Design alone in files / Your team waits for your exports' (induces recognition of pain). Scene 2: 'One URL, everyone inside' with cursors entering circle (the 'aha'). Scene 3: 'See everyone moving' with named cursors orbiting (belonging/possibility). The composition is incomplete (cuts at Scene 3) but arc is clear."
+    },
+    "point_of_view": {
+      "score": 4,
+      "rationale": "The POV is: 'The file was the problem, not the solution. Figma's genius was making the URL the workspace.' This is a specific, defensible take on why Figma matters—not feature recitation.",
+      "evidence": "The choice to open with isolation rather than Figma's features shows perspective. The phrase 'Your team waits for your exports' frames the old world as broken. Scene 2's arrow pointing from URL to 'everyone inside' visualizes the architectural insight. This is opinionated, not template."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Three scenes shown, each earning its place in the problem→solution→proof arc. However, the composition appears truncated (cuts mid-Scene 3, no CTA or brand resolve). We can only judge what's present.",
+      "evidence": "Scene 1 (problem) is necessary. Scene 2 (mechanism) is necessary. Scene 3 (proof/feeling) is necessary. No redundancy in what exists. The concern is the missing 6+ seconds—does the full 30s have padding? Cannot fully assess."
+    }
+  },
+  "overall": 4,
+  "feedback": [
+    {
+      "dimension": "omission",
+      "severity": "major",
+      "observation": "The composition is incomplete—it cuts off mid-Scene 3 with no closing beat, brand mark, or CTA. The `</ef-timegroup>` for Scene 3 is truncated.",
+      "improvement": "Complete Scene 3 and add a Scene 4 that resolves the arc—likely the Figma logo emerging from the collaboration pattern, or a simple 'Figma. Design together.' No padding, just closure."
+    },
+    {
+      "dimension": "specificity",
+      "severity": "minor",
+      "observation": "While the URL-first architecture is Figma-specific, no concrete product features appear (Components, Auto Layout, Dev Mode, FigJam). The video is about the *platform thesis* not the *product*.",
+      "improvement": "Consider one brief visual moment showing a specific Figma capability—e.g., one cursor selecting while another sees the selection update. This would ground the abstract collaboration concept in product reality."
+    }
+  ]
+}

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patagonia - Worn Wear</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@editframe/elements/styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #000;
+    }
+
+    @keyframes fabric-fade-in {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fabric-fade-out {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(-12px);
+      }
+    }
+
+    @keyframes text-reveal {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes wear-marks {
+      0% {
+        opacity: 0;
+      }
+      50% {
+        opacity: 0.6;
+      }
+      100% {
+        opacity: 0.3;
+      }
+    }
+
+    @keyframes value-pulse {
+      from {
+        opacity: 0.3;
+      }
+      to {
+        opacity: 0.8;
+      }
+    }
+
+    .container {
+      width: 100%;
+      height: 100vh;
+      max-width: 1920px;
+      max-height: 1080px;
+      margin: 0 auto;
+      aspect-ratio: 16 / 9;
+    }
+
+    .scene-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .worn-texture {
+      position: absolute;
+      inset: 0;
+      opacity: 0.04;
+      mix-blend-mode: overlay;
+      background-image: 
+        repeating-linear-gradient(
+          45deg,
+          transparent,
+          transparent 2px,
+          rgba(255,255,255,0.1) 2px,
+          rgba(255,255,255,0.1) 4px
+        );
+    }
+
+    .fabric-scrap {
+      position: absolute;
+      font-size: 3rem;
+    }
+  </style>
+</head>
+<body>
+  <ef-configuration api-host="https://api.editframe.com" media-engine="local">
+    <ef-timegroup mode="sequence" class="container">
+      
+      <!-- Scene 1: The Problem - Consumption (0-8s) -->
+      <ef-timegroup mode="fixed" duration="8s" class="scene-bg">
+        <div class="scene-bg" style="background: linear-gradient(135deg, #2c3e1f 0%, #1a2814 100%);"></div>
+        <div class="worn-texture"></div>
+        <canvas id="consumption-canvas" class="absolute inset-0 size-full"></canvas>
+        
+        <ef-text
+          split="word"
+          class="absolute bottom-12 left-12 text-white text-4xl font-bold max-w-md"
+          style="animation: 0.6s text-reveal both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+        >The problem: endless consumption</ef-text>
+      </ef-timegroup>
+
+      <!-- Scene 2: The Truth - Worn Wear Exists (8-18s) -->
+      <ef-timegroup mode="fixed" duration="10s" class="scene-bg">
+        <div class="scene-bg" style="background: linear-gradient(135deg, #1a2814 0%, #0d1508 100%);"></div>
+        <div class="worn-texture"></div>
+        
+        <!-- Center worn jacket silhouette with repair lines -->
+        <canvas id="worn-wear-canvas" class="absolute inset-0 size-full"></canvas>
+        
+        <ef-text
+          split="word"
+          class="absolute bottom-12 left-12 text-white text-4xl font-bold max-w-lg"
+          style="animation: 0.6s text-reveal both; animation-delay: calc(1s + var(--ef-word-index) * 100ms)"
+        >Patagonia Worn Wear: buy used, repair instead</ef-text>
+        
+        <ef-text
+          class="absolute bottom-4 left-12 text-teal-300 text-sm opacity-80"
+          style="animation: 0.5s text-reveal 2.2s both"
+        >Every jacket repaired is consumption prevented</ef-text>
+      </ef-timegroup>
+
+      <!-- Scene 3: The Proof - Specificity (18-28s) -->
+      <ef-timegroup mode="fixed" duration="10s" class="scene-bg">
+        <div class="scene-bg" style="background: linear-gradient(135deg, #0d1508 0%, #081003 100%);"></div>
+        <div class="worn-texture"></div>
+        
+        <canvas id="repair-count-canvas" class="absolute inset-0 size-full"></canvas>
+        
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <div class="text-center">
+            <ef-text
+              class="text-teal-300 text-6xl font-bold"
+              style="animation: 0.8s text-reveal 0.5s both"
+            >1M+</ef-text>
+            <ef-text
+              class="text-white text-xl mt-4 max-w-xs"
+              style="animation: 0.6s text-reveal 1.2s both"
+            >jackets repaired instead of replaced</ef-text>
+          </div>
+        </div>
+      </ef-timegroup>
+
+      <!-- Scene 4: The Call (28-30s) -->
+      <ef-timegroup mode="fixed" duration="2s" class="scene-bg">
+        <div class="scene-bg" style="background: linear-gradient(135deg, #081003 0%, #000 100%);"></div>
+        <ef-text
+          class="absolute inset-0 flex items-center justify-center text-white text-2xl font-bold text-center px-8"
+          style="animation: 0.4s text-reveal both"
+        >Wear it longer. Repair it. Own your impact.</ef-text>
+      </ef-timegroup>
+
+    </ef-timegroup>
+  </ef-configuration>
+
+  <script>
+    // Scene 1: Consumption - accumulating garment outlines
+    const consumptionCanvas = document.getElementById('consumption-canvas');
+    if (consumptionCanvas) {
+      const tg1 = consumptionCanvas.closest('ef-timegroup');
+      tg1.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        const ctx = consumptionCanvas.getContext('2d');
+        consumptionCanvas.width = consumptionCanvas.offsetWidth;
+        consumptionCanvas.height = consumptionCanvas.offsetHeight;
+        
+        const progress = ownCurrentTimeMs / durationMs;
+        const garmentCount = Math.floor(progress * 40);
+        
+        ctx.clearRect(0, 0, consumptionCanvas.width, consumptionCanvas.height);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.lineWidth = 1;
+        
+        for (let i = 0; i < garmentCount; i++) {
+          const x = (i % 8) * (consumptionCanvas.width / 8) + 40;
+          const y = Math.floor(i / 8) * 120 + 60;
+          
+          // Simple jacket outline
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + 30, y);
+          ctx.lineTo(x + 35, y + 20);
+          ctx.lineTo(x + 35, y + 60);
+          ctx.lineTo(x + 20, y + 60);
+          ctx.lineTo(x + 15, y + 40);
+          ctx.lineTo(x + 10, y + 40);
+          ctx.lineTo(x + 5, y + 60);
+          ctx.lineTo(x - 5, y + 60);
+          ctx.lineTo(x - 5, y + 20);
+          ctx.closePath();
+          ctx.stroke();
+        }
+      });
+    }
+
+    // Scene 2: Worn Wear - single jacket with repair patches
+    const wornWearCanvas = document.getElementById('worn-wear-canvas');
+    if (wornWearCanvas) {
+      const tg2 = wornWearCanvas.closest('ef-timegroup');
+      tg2.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        const ctx = wornWearCanvas.getContext('2d');
+        wornWearCanvas.width = wornWearCanvas.offsetWidth;
+        wornWearCanvas.height = wornWearCanvas.offsetHeight;
+        
+        ctx.clearRect(0, 0, wornWearCanvas.width, wornWearCanvas.height);
+        
+        const cx = wornWearCanvas.width / 2;
+        const cy = wornWearCanvas.height / 2;
+        const progress = ownCurrentTimeMs / durationMs;
+        
+        // Main jacket body
+        ctx.strokeStyle = 'rgba(255, 200, 0, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cx - 60, cy - 100);
+        ctx.lineTo(cx + 60, cy - 100);
+        ctx.lineTo(cx + 70, cy - 60);
+        ctx.lineTo(cx + 70, cy + 80);
+        ctx.lineTo(cx + 40, cy + 100);
+        ctx.lineTo(cx + 30, cy + 60);
+        ctx.lineTo(cx - 30, cy + 60);
+        ctx.lineTo(cx - 40, cy + 100);
+        ctx.lineTo(cx - 70, cy + 80);
+        ctx.lineTo(cx - 70, cy - 60);
+        ctx.closePath();
+        ctx.stroke();
+        
+        // Repair patches appear as progress increases
+        const patchCount = Math.floor(progress * 5);
+        ctx.fillStyle = 'rgba(100, 200, 100, 0.2)';
+        
+        const patchPositions = [
+          { x: cx - 40, y: cy - 20 },
+          { x: cx + 50, y: cy },
+          { x: cx - 50, y: cy + 30 },
+          { x: cx + 20, y: cy + 50 },
+          { x: cx - 20, y: cy - 60 }
+        ];
+        
+        for (let i = 0; i < patchCount; i++) {
+          const pos = patchPositions[i];
+          ctx.fillRect(pos.x - 15, pos.y - 15, 30, 30);
+          ctx.strokeStyle = 'rgba(100, 200, 100, 0.4)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(pos.x - 15, pos.y - 15, 30, 30);
+        }
+      });
+    }
+
+    // Scene 3: Repair count - flowing particle system
+    const repairCountCanvas = document.getElementById('repair-count-canvas');
+    if (repairCountCanvas) {
+      const tg3 = repairCountCanvas.closest('ef-timegroup');
+      tg3.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        const ctx = repairCountCanvas.getContext('2d');
+        repairCountCanvas.width = repairCountCanvas.offsetWidth;
+        repairCountCanvas.height = repairCountCanvas.offsetHeight;
+        
+        ctx.clearRect(0, 0, repairCountCanvas.width, repairCountCanvas.height);
+        
+        const progress = ownCurrentTimeMs / durationMs;
+        const particleCount = Math.floor(progress * 80);
+        
+        for (let i = 0; i < particleCount; i++) {
+          const angle = (i / particleCount) * Math.PI * 2;
+          const speed = 0.5 + (i % 3) * 0.3;
+          const distance = 150 + Math.sin(ownCurrentTimeMs * 0.001 + i) * 30;
+          
+          const x = repairCountCanvas.width / 2 + Math.cos(angle) * distance;
+          const y = repairCountCanvas.height / 2 + Math.sin(angle) * distance;
+          
+          const size = 2 + Math.sin(ownCurrentTimeMs * 0.005 + i * 0.5) * 1.5;
+          const opacity = 0.3 + Math.sin(progress * Math.PI + i * 0.2) * 0.4;
+          
+          ctx.fillStyle = `rgba(16, 185, 129, ${opacity})`;
+          ctx.beginPath();
+          ctx.arc(x, y, size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+    }
+  </script>
+</body>
+</html>

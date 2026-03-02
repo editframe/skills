@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "glossier-social",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses placeholder SVG circles instead of actual Glossier product imagery or real faces, and the only brand identifier is a 'G' in a pink box.",
+      "improvement": "Use actual Glossier product images (Boy Brow, Cloud Paint, Balm Dotcom), reference specific product names, incorporate their actual typography (GT Haptik), and show real skin/beauty imagery that reflects their 'skin first, makeup second' philosophy."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Brand-Specific Visual Assets (MANDATORY):**\nBefore proceeding to creative brief, identify and note:\n- The brand's logo form and any signature visual element\n- 3-5 product shots or hero images from the website\n- Any proprietary visual elements (icons, patterns, illustrations unique to this brand)\n\nThese must appear in the final composition.",
+    "cause": "present_wrong",
+    "proposedChange": "**Brand-Specific Visual Assets (MANDATORY):**\nBefore proceeding to creative brief, identify and note:\n- The brand's logo form and any signature visual element\n- 3-5 product shots or hero images from the website (with actual URLs)\n- Any proprietary visual elements (icons, patterns, illustrations unique to this brand)\n- The brand's actual typography (font names extracted from CSS)\n\nThese must appear in the final composition. **In the HTML output, reference actual product image URLs from the brand's website or CDN — do not substitute SVG placeholders, colored circles, or generic shapes. If an image URL cannot be obtained, use a detailed CSS/HTML representation that names the specific product (e.g., 'Boy Brow' not 'brow product') and replicates brand typography.**",
+    "rationale": "The guidance says assets 'must appear' but doesn't prohibit placeholder substitution or require actual URLs, allowing the model to use abstract SVG circles instead of real Glossier imagery."
+  },
+  {
+    "taskId": "glossier-social",
+    "feedbackItem": {
+      "dimension": "viewer_state",
+      "severity": "critical",
+      "observation": "Three face scenes create no emotional progression - each is an abstract pink circle that looks nearly identical to the others.",
+      "improvement": "Design each face scene to produce a distinct feeling: perhaps bare skin → one product applied → glowing result. Or show transformation, or different contexts (morning, date, workout) that build toward the CTA."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "```\nScene [N]: [Name] ([start]s-[end]s)\n- VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]\n- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]\n- STATE CHANGE MECHANISM: [What specific technique creates the shift? Options: contrast (before/after, with/without), surprise (expectation subverted), scale revelation (one thing revealed as many), effort elimination (50 lines → 1 line). If the mechanism is 'demonstration' or 'showing how it works', the scene is informational, not transformational — rewrite it.]\n```",
+    "cause": "present_wrong",
+    "proposedChange": "```\nScene [N]: [Name] ([start]s-[end]s)\n- VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]\n- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]\n- STATE CHANGE MECHANISM: [What specific technique creates the shift? Options: contrast (before/after, with/without), surprise (expectation subverted), scale revelation (one thing revealed as many), effort elimination (50 lines → 1 line). If the mechanism is 'demonstration' or 'showing how it works', the scene is informational, not transformational — rewrite it.]\n- VISUAL DIFFERENTIATION: [How does this scene look visibly different from the previous scene? If consecutive scenes use the same visual structure (e.g., 'face with product'), describe the specific visual change — different framing, different lighting, different product, different skin state.]\n```\n\n**Adjacent scene differentiation rule:** If two or more consecutive scenes share a structural concept (e.g., 'community faces'), each must have a visually distinct treatment. Identical-looking scenes with different labels ('Face 1', 'Face 2', 'Face 3') fail this test. Differentiate by: transformation stage (bare → applied → glowing), context (morning/evening/workout), product featured, or framing (extreme close-up → medium → wide).",
+    "rationale": "The template tracks viewer state change but doesn't enforce visual differentiation between scenes, allowing three nearly identical 'face' scenes that produce no emotional progression."
+  },
+  {
+    "taskId": "glossier-social",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition doesn't express any perspective on Glossier - it could be any beauty brand's video with a color swap.",
+      "improvement": "Commit to Glossier's actual POV: 'beauty in real life,' minimal enhancement, celebrating imperfection. Show un-retouched skin, the 'no-makeup makeup' aesthetic, or their community-driven ethos rather than generic beauty tropes."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's **structure** — not just its content. If the truth could be dropped into any template without changing the template, it isn't constraining anything.",
+    "cause": "wrong_priority",
+    "proposedChange": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's **structure** — not just its content. If the truth could be dropped into any template without changing the template, it isn't constraining anything.\n\n**Composition verification:** Before writing HTML, answer: 'If I replaced the brand colors with a competitor's colors, would this composition still work for that competitor?' If yes, the POV has not been expressed in the composition. For Glossier specifically: the 'real faces, user-submitted' truth requires un-retouched imagery, visible skin texture, and the 'no-makeup makeup' aesthetic — not abstract shapes that could represent any beauty brand. The POV must be visible in the actual visual treatment, not just stated in planning documents.",
+    "rationale": "The POV guidance exists but is only enforced during planning (Phase 0) — there's no checkpoint requiring the HTML composition itself to express the POV, allowing a generic pink-circle composition that could be any beauty brand."
+  }
+]

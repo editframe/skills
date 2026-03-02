@@ -1,0 +1,53 @@
+{
+  "taskId": "notion-social",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-03-02T19:04:22.245Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is the argument itself. The composition uses addFrameTask with procedural canvas animation across all three scenes to visualize the core concept: scattered chaos → coalescence → unified order. The animation IS the message about Notion organizing fragmented work.",
+      "evidence": "Three canvas elements each with addFrameTask: Scene 1 draws 12 blocks in 'increasingly chaotic positions' with rotation and sinusoidal distance; Scene 2 shows blocks 'snap into grid' with easeProgress; Scene 3 shows 'subtle pulse' in unified state. Text also uses split='word' with staggered animation: 'animation-delay: calc(var(--ef-word-index) * 140ms)'"
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "The composition uses Notion's core metaphor (blocks) and the organizing principle, but these are generic productivity tool concepts. No Notion-specific features, visual identity (black/white brand palette), or unique product truths are present.",
+      "evidence": "Color choices are arbitrary HSL values and vibrant colors (#3b82f6, #8b5cf6, etc.) rather than Notion's signature black, white, and minimal aesthetic. The 'blocks' concept could apply to Airtable, Coda, or any modular workspace. Text 'Get organized in Notion' and 'notion.so' are the only brand identifiers."
+    },
+    "viewer_state": {
+      "score": 4,
+      "rationale": "Clear emotional arc: overwhelm (scattered) → relief (coalescing) → confidence (unified). Each scene produces a distinct feeling, and the progression is intentional. The final state is earned by experiencing the transformation.",
+      "evidence": "Scene 1: 'Everything scattered' with chaotic rotating blocks creates anxiety. Scene 2: 'One place for all' with blocks snapping into grid creates resolution. Scene 3: Dark background with 'Perfect grid of unified blocks' and CTA creates aspiration. The visual transformation mirrors the emotional journey."
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "There is a clear perspective: organization emerges from chaos through a single unifying tool. The three-act structure (problem → solution → result) embodies this view consistently. However, this is a common productivity software narrative.",
+      "evidence": "The composition's POV can be stated: 'Your work is scattered until you bring it together in one place.' This is visible in the canvas progression and text pairing. But this perspective could apply to any 'all-in-one workspace' product."
+    },
+    "omission": {
+      "score": 5,
+      "rationale": "Three scenes, 5 seconds each, each doing exactly one thing. No redundancy. Scene 1 establishes problem, Scene 2 shows transformation, Scene 3 delivers resolution and CTA. Removing any scene breaks the arc.",
+      "evidence": "Scene 1: problem state + text. Scene 2: transition state + text. Scene 3: resolved state + CTA. No filler animations, no repeated messaging, no padding. The 15-second constraint is fully utilized with no waste."
+    }
+  },
+  "overall": 3.8,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic colorful blocks and standard productivity messaging. Notion's actual visual identity (monochromatic, minimalist, the specific Notion logo, the sidebar, the slash command, the specific block types) is absent.",
+      "improvement": "Incorporate Notion's actual brand elements: black/white/gray palette, the iconic Notion logo blocks, recognizable UI elements like the sidebar or page structure, or reference specific features like databases, toggles, or linked pages that distinguish Notion from competitors."
+    },
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The tagline 'Everything scattered' → 'One place for all' → 'Get organized' is generic workspace copy that could be used by Coda, Monday, Airtable, or Asana without modification.",
+      "improvement": "Use Notion-specific language or concepts: 'Wikis, docs, and projects' or 'Build any workflow' or reference the 'connected workspace' positioning. The text should contain at least one Notion-specific truth."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "minor",
+      "observation": "The chaos-to-order narrative is a safe, expected choice for productivity software. It doesn't reveal a unique understanding of why Notion specifically solves this problem differently.",
+      "improvement": "Consider a perspective that reflects Notion's actual differentiator: flexibility and building your own systems. The transformation could show blocks reconfiguring into different structures, emphasizing customization rather than just organization."
+    }
+  ]
+}

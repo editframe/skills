@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patagonia 30s Brand Video</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@editframe/elements/styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #000;
+    }
+
+    @keyframes slide-up {
+      from {
+        transform: translateY(24px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes scale-in {
+      from {
+        transform: scale(0.95);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes mountain-shift {
+      from {
+        transform: translateX(-40px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    ef-text-segment {
+      display: inline-block;
+    }
+
+    .mountain-canvas {
+      display: block;
+    }
+
+    .cta-button {
+      display: inline-block;
+      padding: 12px 32px;
+      background: #003d2e;
+      color: white;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      animation: scale-in 0.6s ease-out 0.8s both;
+    }
+  </style>
+</head>
+<body>
+  <ef-timegroup mode="sequence" class="w-[1920px] h-[1080px] bg-black">
+    
+    <!-- Scene 1: The Problem (0-10s) -->
+    <!-- Viewer state: "I know the planet is in trouble" → "I feel the weight of it" -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full bg-gradient-to-b from-slate-900 to-slate-800 flex flex-col items-center justify-center">
+      <canvas id="damage-canvas" class="mountain-canvas absolute inset-0 w-full h-full"></canvas>
+      <ef-text class="relative text-white text-6xl font-bold text-center max-w-3xl z-10"
+        style="animation: fade-in 0.8s ease-out both; animation-delay: 1s">
+        Everything we own is taken from the mountain.
+      </ef-text>
+    </ef-timegroup>
+
+    <!-- Scene 2: The Worn Wear Truth (10-20s) -->
+    <!-- Viewer state: "I feel the problem" → "I see there's another way" -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full bg-gradient-to-b from-stone-700 to-amber-900 flex flex-col items-center justify-center p-16">
+      <div class="absolute inset-0 flex items-center justify-center">
+        <div class="relative w-80 h-96 bg-white/10 backdrop-blur rounded-lg flex items-center justify-center"
+          style="animation: scale-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both; animation-delay: 0.3s">
+          <div class="text-center">
+            <ef-text class="text-amber-100 text-5xl font-bold block mb-4"
+              style="animation: slide-up 0.6s ease-out 0.5s both">Used.</ef-text>
+            <ef-text class="text-amber-100/70 text-xl block"
+              style="animation: slide-up 0.6s ease-out 0.7s both">Repaired.</ef-text>
+            <ef-text class="text-amber-100/70 text-xl block"
+              style="animation: slide-up 0.6s ease-out 0.9s both">Reworn.</ef-text>
+          </div>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 3: The Structural Truth (20-28s) -->
+    <!-- Viewer state: "I see an alternative" → "I understand this is how they operate" -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full bg-black flex flex-col items-center justify-center">
+      <div class="text-center">
+        <ef-text class="text-green-600 text-4xl font-bold mb-6"
+          style="animation: fade-in 0.5s ease-out both">
+          Profits → Earth
+        </ef-text>
+        <ef-text class="text-white/80 text-2xl max-w-2xl"
+          style="animation: fade-in 0.6s ease-out 0.3s both">
+          Not a company that gives to the planet.
+        </ef-text>
+        <ef-text class="text-white/80 text-2xl max-w-2xl"
+          style="animation: fade-in 0.6s ease-out 0.6s both">
+          A company born to save it.
+        </ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 4: CTA (28-30s) -->
+    <!-- Viewer state: "I understand" → "I'm ready to act" -->
+    <ef-timegroup mode="fixed" duration="2s" class="absolute w-full h-full bg-black flex flex-col items-center justify-center">
+      <a href="#" class="cta-button">Join the Fight</a>
+    </ef-timegroup>
+
+  </ef-timegroup>
+
+  <script>
+    // Canvas animation for Scene 1: Mountain erosion / damage visualization
+    const damageCanvas = document.getElementById('damage-canvas');
+    if (damageCanvas) {
+      const scene1 = damageCanvas.closest('ef-timegroup');
+      
+      scene1.initializer = (instance) => {
+        instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+          const ctx = damageCanvas.getContext('2d');
+          const w = damageCanvas.offsetWidth;
+          const h = damageCanvas.offsetHeight;
+          const progress = ownCurrentTimeMs / durationMs;
+
+          damageCanvas.width = w;
+          damageCanvas.height = h;
+
+          // Draw mountain silhouette with erosion/damage accumulating
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.4)';
+          ctx.fillRect(0, 0, w, h);
+
+          // Base mountain shape
+          ctx.beginPath();
+          ctx.moveTo(0, h * 0.6);
+          ctx.lineTo(w * 0.3, h * 0.2);
+          ctx.lineTo(w * 0.7, h * 0.35);
+          ctx.lineTo(w, h * 0.4);
+          ctx.lineTo(w, h);
+          ctx.lineTo(0, h);
+          ctx.closePath();
+          ctx.fillStyle = 'rgba(64, 74, 80, 0.3)';
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(168, 162, 142, 0.5)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          // Accumulating damage lines (cracks) that grow with progress
+          const damageCount = Math.floor(progress * 40);
+          for (let i = 0; i < damageCount; i++) {
+            const x = (Math.sin(i * 0.3) * 0.4 + 0.5) * w;
+            const y = h * 0.2 + i * (h * 0.02);
+            const length = 60 + Math.sin(i) * 40;
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + length * Math.cos(i * 0.5), y + length * Math.sin(i * 0.3));
+            ctx.strokeStyle = `rgba(200, 120, 80, ${0.3 + progress * 0.4})`;
+            ctx.lineWidth = 1 + progress;
+            ctx.stroke();
+          }
+        });
+      };
+    }
+  </script>
+</body>
+</html>

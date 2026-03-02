@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic collaborative design claims and emoji icons rather than Figma's actual brand assets, visual language, or distinctive features like multiplayer cursors, components, or Dev Mode.",
+      "improvement": "Use Figma's actual brand purple (#A259FF), show multiplayer cursor animations, reference specific features ('Inspect code in Dev Mode'), or demonstrate Figma's actual UI patterns. The collaboration canvas should show Figma's distinctive cursor labels, not generic nodes."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Do NOT:**\n- Infer visual identity from text descriptions\n- Assume design patterns based on industry\n- Use text content as substitute for visual analysis\n- Hallucinate brand colors, fonts, or design language\n- Use `bars-n-tone.mp4` or any placeholder media in the final composition — use brand-color backgrounds, canvas animations, or actual product footage URLs instead",
+    "cause": "missing",
+    "proposedChange": "**Do NOT:**\n- Infer visual identity from text descriptions\n- Assume design patterns based on industry\n- Use text content as substitute for visual analysis\n- Hallucinate brand colors, fonts, or design language\n- Use `bars-n-tone.mp4` or any placeholder media in the final composition — use brand-color backgrounds, canvas animations, or actual product footage URLs instead\n- Use generic icons (emojis, abstract shapes) when the brand has distinctive UI patterns or product visuals\n- Show abstract representations of features when you can show the actual product interface patterns (e.g., for a design tool, show cursor movements and component interactions, not nodes and lines)",
+    "rationale": "The model used emoji icons and generic collaboration nodes instead of Figma's distinctive multiplayer cursors and UI patterns because the skill only warned against placeholder video, not placeholder iconography or generic visual metaphors."
+  },
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition follows a generic problem-solution-features-CTA template without expressing a distinctive perspective on why Figma matters or what makes its approach to collaboration different.",
+      "improvement": "Take a stance: Is Figma about democratizing design? About design-engineering convergence? About killing the handoff? Choose one perspective and let it shape every scene. For example, if the POV is 'design is a team sport,' show designers and engineers literally in the same space, not just connected nodes."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"",
+    "cause": "wrong_priority",
+    "proposedChange": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"\n\n**Template rejection test**: Write down the scene structure you're planning. Now substitute a direct competitor's name. If the structure still works, you haven't found the POV yet. Go back to answer #1.\n\n**In Phase 3 (Scene Planning)**, before writing any scene, state the POV from Phase 0 #4 and explain how THIS scene embodies that structural constraint. If you cannot, the scene is generic.",
+    "rationale": "The model followed a generic problem-solution-features-CTA template because Phase 0 #4's guidance wasn't enforced during scene planning; adding a template rejection test and requiring POV justification per-scene would force structural distinctiveness."
+  },
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "Scene 1's pain points are listed abstractly ('File-based, Single player, Bottlenecked') rather than felt. Without genuine frustration established, the subsequent relief lacks impact.",
+      "improvement": "Show the old way viscerally: a loading spinner, a 'File locked by another user' message, version chaos ('Design_FINAL_v3_FINAL2.fig'). Make viewers wince before offering relief. The contrast will make Scene 2's collaboration feel like genuine liberation."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "- VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]\n- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]",
+    "cause": "missing",
+    "proposedChange": "- VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]\n- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]\n- HOW IS THIS FELT, NOT TOLD?: [For problem scenes: what visual makes the viewer wince? For solution scenes: what visual makes them exhale? Listing pain points as text is telling. Showing 'File locked by another user' or 'design_FINAL_v3_FINAL2.fig' is feeling.]",
+    "rationale": "The model listed pain points abstractly ('File-based, Single player, Bottlenecked') because the scene template required viewer state but didn't require demonstrating how that state would be viscerally felt rather than textually stated."
+  }
+]

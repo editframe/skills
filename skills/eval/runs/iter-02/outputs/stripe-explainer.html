@@ -1,0 +1,145 @@
+<ef-configuration api-host="https://api.editframe.com" media-engine="local">
+    <ef-timegroup mode="sequence" overlap="0.8s" class="w-[1920px] h-[1080px]">
+      <!-- Scene 1: The Problem - Payment Friction Accumulation (0-10s) -->
+      <ef-timegroup mode="fixed" duration="10s" class="scene-1 absolute w-full h-full"
+        style="animation: fadeOut 0.8s var(--ef-transition-out-start) both">
+        <canvas id="chaos-canvas" class="absolute inset-0 w-full h-full"></canvas>
+        <ef-text
+          split="word"
+          class="absolute top-1/4 left-1/2 transform -translate-x-1/2 text-white text-6xl font-bold text-center max-w-3xl"
+          style="animation: slideUp 0.8s both 1.5s; animation-delay: calc(1.5s + var(--ef-word-index) * 100ms)">
+          Payment chaos slows you down
+        </ef-text>
+        <ef-text
+          class="absolute bottom-1/4 left-1/2 transform -translate-x-1/2 text-gray text-2xl text-center max-w-2xl"
+          style="animation: slideUp 0.7s both 3.5s">
+          Every transaction is friction. Every payment system is separate.
+        </ef-text>
+      </ef-timegroup>
+
+      <!-- Scene 2: Stripe Arrives - One Platform (10-20s) -->
+      <ef-timegroup mode="fixed" duration="10s" class="scene-2 absolute w-full h-full"
+        style="animation: fadeIn 0.8s both, fadeOut 0.8s var(--ef-transition-out-start) both">
+        <canvas id="convergence-canvas" class="absolute inset-0 w-full h-full"></canvas>
+        <ef-text
+          split="word"
+          class="absolute top-1/3 left-1/2 transform -translate-x-1/2 text-stripe-blue text-6xl font-bold text-center max-w-3xl"
+          style="animation: slideDown 0.8s both 0.3s; animation-delay: calc(0.3s + var(--ef-word-index) * 120ms)">
+          Stripe solves it
+        </ef-text>
+        <ef-text
+          class="absolute bottom-1/3 left-1/2 transform -translate-x-1/2 text-gray text-2xl text-center max-w-3xl"
+          style="animation: slideUp 0.7s both 2s">
+          One platform. Payments, payouts, compliance, fraud. Invisible to your users.
+        </ef-text>
+      </ef-timegroup>
+
+      <!-- Scene 3: Invisible Infrastructure (20-35s) -->
+      <ef-timegroup mode="fixed" duration="15s" class="scene-3 absolute w-full h-full"
+        style="animation: fadeIn 0.8s both, fadeOut 0.8s var(--ef-transition-out-start) both">
+        <ef-text
+          class="absolute top-16 left-1/2 transform -translate-x-1/2 text-stripe-blue text-5xl font-bold text-center"
+          style="animation: slideDown 0.8s both">
+          Your work. Stripe's infrastructure.
+        </ef-text>
+        <div class="absolute top-1/3 left-1/2 transform -translate-x-1/2 w-full px-8 flex justify-center">
+          <div class="grid grid-cols-2 gap-8 max-w-2xl">
+            <div style="animation: scaleIn 0.8s both 1s">
+              <div class="text-stripe-blue text-4xl font-bold mb-2">135+</div>
+              <div class="text-gray text-lg">Payment methods globally</div>
+            </div>
+            <div style="animation: scaleIn 0.8s both 1.3s">
+              <div class="text-stripe-blue text-4xl font-bold mb-2">195</div>
+              <div class="text-gray text-lg">Countries supported</div>
+            </div>
+            <div style="animation: scaleIn 0.8s both 1.6s">
+              <div class="text-stripe-blue text-4xl font-bold mb-2">99.99%</div>
+              <div class="text-gray text-lg">Uptime guarantee</div>
+            </div>
+            <div style="animation: scaleIn 0.8s both 1.9s">
+              <div class="text-stripe-blue text-4xl font-bold mb-2">Real-time</div>
+              <div class="text-gray text-lg">Fraud protection</div>
+            </div>
+          </div>
+        </div>
+        <ef-text
+          class="absolute bottom-12 left-1/2 transform -translate-x-1/2 text-gray text-lg text-center max-w-2xl"
+          style="animation: slideUp 0.7s both 2.8s">
+          Built for scale. Built for trust. Built for your growth.
+        </ef-text>
+      </ef-timegroup>
+
+      <!-- Scene 4: Global & Safe - Network Visualization (35-50s) -->
+      <ef-timegroup mode="fixed" duration="15s" class="scene-4 absolute w-full h-full"
+        style="animation: fadeIn 0.8s both, fadeOut 0.8s var(--ef-transition-out-start) both">
+        <canvas id="network-canvas" class="absolute inset-0 w-full h-full"></canvas>
+        <ef-text
+          split="word"
+          class="absolute top-1/4 left-1/2 transform -translate-x-1/2 text-white text-5xl font-bold text-center max-w-3xl"
+          style="animation: slideDown 0.8s both 0.5s; animation-delay: calc(0.5s + var(--ef-word-index) * 110ms)">
+          Built by engineers for engineers
+        </ef-text>
+        <ef-text
+          class="absolute bottom-1/3 left-1/2 transform -translate-x-1/2 text-gray text-xl text-center max-w-2xl"
+          style="animation: slideUp 0.7s both 2s">
+          Stripe's founders were payment systems engineers. They built what didn't exist. Now millions of companies rely on their creation.
+        </ef-text>
+      </ef-timegroup>
+
+      <!-- Scene 5: CTA & Closing (50-60s) -->
+      <ef-timegroup mode="fixed" duration="10s" class="scene-5 absolute w-full h-full flex flex-col items-center justify-center"
+        style="animation: fadeIn 0.8s both">
+        <ef-text
+          split="word"
+          class="text-white text-6xl font-bold text-center max-w-3xl mb-8"
+          style="animation: slideUp 0.8s both; animation-delay: calc(var(--ef-word-index) * 100ms)">
+          Start with Stripe
+        </ef-text>
+        <ef-text
+          class="text-gray text-2xl text-center max-w-2xl mb-12"
+          style="animation: slideUp 0.7s both 1.2s">
+          Accept payments in minutes. Scale globally instantly.
+        </ef-text>
+        <div class="px-8 py-4 bg-stripe-blue rounded text-white text-xl font-semibold"
+          style="animation: scaleIn 0.8s both 1.8s">
+          Get started free
+        </div>
+      </ef-timegroup>
+    </ef-timegroup>
+  </ef-configuration>
+
+  <script>
+    // Scene 1: Chaos Canvas - Tangled bezier curves accumulating to show payment friction
+    customElements.whenDefined('ef-timegroup').then(() => {
+      const chaosScene = document.querySelector('ef-timegroup[style*="fadeOut"]');
+      if (!chaosScene) return;
+
+      chaosScene.initializer = (instance) => {
+        const canvas = instance.querySelector('#chaos-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        return instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+          canvas.width = canvas.offsetWidth;
+          canvas.height = canvas.offsetHeight;
+          const progress = ownCurrentTimeMs / durationMs;
+
+          ctx.fillStyle = 'rgba(10, 14, 39, 0.05)';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          // Draw increasing number of chaotic curves
+          const curveCount = Math.floor(progress * 60);
+          for (let i = 0; i < curveCount; i++) {
+            const seed = i * 157.3;
+            const startX = (Math.sin(seed) * 0.4 + 0.5) * canvas.width;
+            const startY = (Math.cos(seed * 0.7) * 0.4 + 0.5) * canvas.height;
+            const cp1X = (Math.sin(seed + ownCurrentTimeMs * 0.001) * 0.3 + 0.5) * canvas.width;
+            const cp1Y = (Math.cos(seed * 1.3 + ownCurrentTimeMs * 0.0008) * 0.3 + 0.5) * canvas.height;
+            const cp2X = (Math.sin(seed * 0.5 + ownCurrentTimeMs * 0.0007) * 0.3 + 0.5) * canvas.width;
+            const cp2Y = (Math.cos(seed * 1.1 + ownCurrentTimeMs * 0.0009) * 0.3 + 0.5) * canvas.height;
+            const endX = (Math.sin(seed * 0.3 + ownCurrentTimeMs * 0.0006) * 0.4 + 0.5) * canvas.width;
+            const endY = (Math.cos(seed * 0.9 + ownCurrentTimeMs * 0.0005) * 0.4 + 0.5) * canvas.height;
+
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.bezierCurveTo(cp1X, cp1Y, cp2X, cp2Y, endX,

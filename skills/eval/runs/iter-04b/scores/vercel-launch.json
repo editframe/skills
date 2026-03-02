@@ -1,0 +1,53 @@
+{
+  "taskId": "vercel-launch",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:39:53.331Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is structural and carries meaning. Three distinct canvas animations use addFrameTask with procedural drawing that directly embodies each scene's concept—chaos for broken deployment, ripple for instant deploy, orbital network for global reach.",
+      "evidence": "Scene 1 uses `instance.addFrameTask((info) => {...})` with 40 tangled nodes that wobble and connect chaotically. Scene 2 creates an expanding ripple from center: `const radius = rippleProgress * maxRadius`. Scene 3 has 15 nodes orbiting with pulse animations: `const angle = (i / nodeCount) * Math.PI * 2 + info.ownCurrentTimeMs * 0.0002`. Text uses `split=\"word\"` with staggered delays: `animation-delay: calc(var(--ef-word-index) * 100ms)`."
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "Uses Vercel's black/blue color palette and references deployment speed, but the actual claims and visuals could apply to any CI/CD or edge deployment platform. No Vercel-specific features, no triangle logo, no reference to Next.js, Edge Functions, or the specific DX that defines Vercel.",
+      "evidence": "Colors match Vercel (`#000`, `#0070f3`), and 'Deployed in 47ms' references speed. But 'Ship instantly', 'Zero config. Everywhere', 'Deploy on every push' are generic deployment claims. Netlify, Railway, or Cloudflare could use identical messaging."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc moves from frustration (broken deployment) to relief (instant) to confidence (global) to action (ship). The transitions are present but the emotional beats are surface-level—the 'problem' scene doesn't create genuine tension, it just states a problem.",
+      "evidence": "Scene 1: 'Deployment is still broken' with red chaotic nodes. Scene 2: 'Ship instantly' with blue ripple and '✓ Deployed in 47ms'. Scene 3: 'Zero config. Everywhere.' Scene 4: 'Ship the thing'. The arc is traceable but formulaic—problem → solution → proof → CTA."
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "The composition takes a clear position: deployment friction is the enemy, speed is the virtue. The visual language of chaos → order communicates this consistently. However, this perspective is industry-standard for deployment tools, not a distinctive Vercel insight.",
+      "evidence": "The phrase 'Deployment is still broken' implies an incumbent problem. 'Ship the thing' is punchy and direct. The visual transition from red tangled nodes to blue ordered ripples embodies the POV. But the perspective (deployment should be fast and easy) is expected, not revelatory."
+    },
+    "omission": {
+      "score": 4,
+      "rationale": "Four scenes, each with a distinct function: problem, solution, proof, CTA. No scene repeats another's work. The 15-second runtime feels appropriate—Scene 3 and 4 are slightly redundant (both affirm capability), but each adds something.",
+      "evidence": "Scene 1 (4s): establishes pain. Scene 2 (4.3s): delivers solution. Scene 3 (4.8s): proves global scale. Scene 4 (3s): call to action. The global network scene could potentially merge with the CTA, but both earn their place by doing different emotional work."
+    }
+  },
+  "overall": 3.4,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic deployment messaging that any CI/CD platform could claim. No Vercel-specific features, products, or differentiators are mentioned.",
+      "improvement": "Include Vercel-specific proof points: the triangle logo, Edge Functions, integration with Next.js, specific infrastructure like 'Edge Network in 15 regions', or the preview deployment workflow that defines Vercel's DX."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "The 'problem' scene states that deployment is broken but doesn't make the viewer feel that pain. The chaotic nodes are abstract rather than visceral.",
+      "improvement": "Show recognizable deployment pain: a spinning CI indicator, a 'Build failed' message, or a progress bar stuck at 87%. Make the frustration concrete before resolving it."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "minor",
+      "observation": "The perspective (fast deployment is good) is true but expected. It doesn't reveal a distinctive Vercel worldview.",
+      "improvement": "Commit to Vercel's specific philosophy: the frontend cloud, the idea that every commit deserves a preview, or the belief that infrastructure should disappear. 'Ship the thing' hints at this directness but doesn't develop it."
+    }
+  ]
+}

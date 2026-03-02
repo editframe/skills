@@ -1,0 +1,36 @@
+Eval Run: 2026-03-02T19-23-45-152Z-verify
+Generator: anthropic/claude-haiku-4-5
+Evaluator: anthropic/claude-opus-4-5
+Date: 3/2/2026, 1:46:08 PM
+
+─── Scores ────────────────────────────────────────
+Task                          Motion  Spec  ViewerΔ  PoV  Omit  Overall
+─────────────────────────────────────────────────────────────────────────
+Linear (product-demo)           4/5    3/5   3/5      3/5   4/5    3.4/5
+Stripe (explainer)              4/5    3/5   4/5      3/5   3/5    3.4/5
+Figma (brand-awareness)         4/5    3/5   3/5      3/5   4/5    3.4/5
+Glossier (social)               3/5    2/5   1/5      1/5   2/5    1.8/5
+Patagonia (brand-awareness)     5/5    4/5   4/5      4/5   4/5    4.2/5
+Supabase (product-demo)         4/5    3/5   3/5      3/5   2/5    3/5
+─────────────────────────────────────────────────────────────────────────
+Average overall: 3.2/5
+
+─── Proposed Skill Changes ─────────────────────────────────────────────
+
+skills/skills/brand-video-generator/references/composition-patterns.md (3 changes)
+  [MAJOR specificity] (linear-product-demo) The existing guidance identifies Linear's conceptual differentiator but doesn't mandate that UI mockups use Linear's specific visual vocabulary, allowing generic issue card designs that could appear in any PM tool.
+  [MAJOR specificity] (stripe-explainer) The existing Stripe example was too vague ('dashboard UI patterns or actual API response format') and didn't explicitly prohibit the generic fintech visuals (blue gradients, expanding circles) that the model actually used.
+  [MAJOR specificity] (figma-brand-awareness) The model used approximated colors because the Figma-specific guidance in composition-patterns.md discusses visual metaphors but doesn't specify the exact brand colors or warn against logo approximation.
+
+skills/skills/brand-video-generator/SKILL.md (6 changes)
+  [MAJOR specificity] (stripe-explainer) The existing guidance described what to show but didn't explicitly list what NOT to show for Stripe, allowing the model to fall back on generic fintech aesthetics.
+  [CRITICAL specificity] (figma-brand-awareness, glossier-social) The model created colored circles instead of Figma's actual logo because the guidance says to identify 'the brand's logo form' without explicitly prohibiting fabrication or approximation of logos. Also: The guidance says assets 'must appear' but doesn't prohibit placeholder substitution or require actual URLs, allowing the model to use abstract SVG circles instead of real Glossier imagery.
+  [MAJOR specificity] (figma-brand-awareness) The model used 'The collaborative design platform' and 'Design • Prototype • Build' because while the skill lists false differentiators, it doesn't explicitly flag that generic category taglines should be rejected even when they appear on the brand's own website.
+  [CRITICAL viewer_state] (glossier-social) The template tracks viewer state change but doesn't enforce visual differentiation between scenes, allowing three nearly identical 'face' scenes that produce no emotional progression.
+  [MAJOR point_of_view] (glossier-social) The POV guidance exists but is only enforced during planning (Phase 0) — there's no checkpoint requiring the HTML composition itself to express the POV, allowing a generic pink-circle composition that could be any beauty brand.
+  [MAJOR specificity] (supabase-product-demo) The existing specificity gate only addresses visuals, not narrative problem framing; expanding it to explicitly require specific problem statements would have prevented the generic 'spinning up servers' pain points that apply to any BaaS.
+
+skills/skills/brand-video-generator/references/editing.md (1 change)
+  [MAJOR omission] (supabase-product-demo) The editing guidance exists but is in a separate reference file; placing an explicit redundancy check directly in the scene planning phase would have caught Scene 5 restating Scene 3's value proposition before the composition was finalized.
+
+To apply: npx tsx scripts/eval-skills-apply.ts --run-id 2026-03-02T19-23-45-152Z-verify

@@ -1,0 +1,58 @@
+[
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition describes any instant-deployment platform. 'Git push → live instantly' is the value prop of Vercel, Netlify, Railway, Render, and others. No Vercel-specific differentiators appear.",
+      "improvement": "Incorporate what makes Vercel specifically different: Edge Runtime globally distributed, v0 AI generation, Turborepo monorepo speed, the triangle logo as visual element, or the specific claim 'Develop. Preview. Ship.' The canvas animations could visualize edge nodes worldwide, or show the preview URL appearing instantly."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nYour answer must name a specific product, API, architectural decision, or design philosophy — not a marketing position. Marketing positions can be copied. Decisions cannot.\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nNot: \"They pioneered multiplayer design\" (competitors have since copied this — it no longer differentiates).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"\nYes: \"Their entire product is built on a single unified API — Connect, Radar, Terminal, and Billing all share the same objects.\"\nYes: \"They removed the 'new file' concept entirely — there are no files, only URLs.\"",
+    "cause": "missing",
+    "proposedChange": "Add after the existing examples in Phase 0 Question 1:\n\n**Deployment/infrastructure brands specifically:**\nNot: \"Git push → instant deploy\" (Vercel, Netlify, Railway, Render all do this).\nNot: \"Preview URLs for every PR\" (now table stakes).\nYes: \"Edge Runtime runs code in 30+ regions with zero config — competitors require explicit region selection.\"\nYes: \"Framework-defined infrastructure: Next.js routing conventions automatically provision edge functions, ISR, and caching.\"\nYes: \"v0 generates full React components from prompts, deployed instantly — no other platform has AI-to-deploy.\"\n\nFor deployment platforms, the differentiator is rarely the deploy itself — it's what happens *around* the deploy: the DX integrations, the framework coupling, the edge architecture, or the AI tooling.",
+    "rationale": "The model treated 'instant deployment' as Vercel-specific because the skill's false-differentiator list for deployment platforms only covers basic features, not the core 'git push → deploy' pattern that all competitors share."
+  },
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition describes any instant-deployment platform. 'Git push → live instantly' is the value prop of Vercel, Netlify, Railway, Render, and others. No Vercel-specific differentiators appear.",
+      "improvement": "Incorporate what makes Vercel specifically different: Edge Runtime globally distributed, v0 AI generation, Turborepo monorepo speed, the triangle logo as visual element, or the specific claim 'Develop. Preview. Ship.' The canvas animations could visualize edge nodes worldwide, or show the preview URL appearing instantly."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "- Deployment platforms: \"deploy on every git push\", \"preview URLs\", \"instant deploys\", \"global CDN\", \"serverless\"",
+    "cause": "present_wrong",
+    "proposedChange": "- Deployment platforms: \"deploy on every git push\", \"preview URLs\", \"instant deploys\", \"global CDN\", \"serverless\", \"git push → live\", \"zero config deploys\", \"framework support\", \"developer experience\"",
+    "rationale": "The false differentiators list for deployment platforms was too narrow; adding 'git push → live' and 'zero config deploys' explicitly would have flagged the model's chosen angle as generic."
+  },
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The perspective ('deployment should be instant') is correct but generic. It's the category's consensus view, not a distinctive Vercel stance.",
+      "improvement": "Vercel's actual POV is more specific: 'The frontend cloud' or 'Framework-defined infrastructure.' The composition could show the connection between Next.js code and automatic infrastructure, or visualize the preview-per-branch workflow that defined their early differentiation."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"",
+    "cause": "missing",
+    "proposedChange": "Add a Vercel/deployment example after the existing examples:\n\nNot: \"Vercel deploys instantly, so I'll show fast animations\" (speed is the category promise).\nYes: \"Vercel's POV is 'framework-defined infrastructure' — the code *is* the config. So each scene shows infrastructure appearing *as a consequence of* writing code, never as a separate step.\"\nYes: \"Vercel's edge-first architecture means code runs everywhere simultaneously. So the composition shows one action rippling to multiple locations in the same frame — not sequentially.\"",
+    "rationale": "The model defaulted to 'deployment should be instant' because the skill's POV examples didn't include a deployment-platform case showing how to move beyond speed-as-differentiator to architectural or workflow-level POV."
+  },
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The perspective ('deployment should be instant') is correct but generic. It's the category's consensus view, not a distinctive Vercel stance.",
+      "improvement": "Vercel's actual POV is more specific: 'The frontend cloud' or 'Framework-defined infrastructure.' The composition could show the connection between Next.js code and automatic infrastructure, or visualize the preview-per-branch workflow that defined their early differentiation."
+    },
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "currentText": "- Vercel (deploy on git push): shipping as instant as saving → a ripple that reaches the edges the moment it starts; latency → instantaneous is the literal product promise",
+    "cause": "present_wrong",
+    "proposedChange": "- Vercel (framework-defined infrastructure): code conventions *become* infrastructure → a Next.js route file appearing, then edge functions, caching rules, and regional deployments materializing around it without any config step; the absence of configuration *is* the product\n- Vercel (edge-first): one deploy, everywhere simultaneously → a single commit rippling outward to 30+ nodes in parallel, not sequentially; simultaneity (not just speed) is the differentiator",
+    "rationale": "The existing Vercel example in composition-patterns.md reinforced the generic 'instant deploy' framing; replacing it with framework-coupling and edge-simultaneity examples would have guided the model toward Vercel's actual differentiators."
+  }
+]

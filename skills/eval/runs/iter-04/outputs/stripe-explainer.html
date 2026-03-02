@@ -1,0 +1,235 @@
+<ef-timegroup mode="sequence" overlap="0.8s" class="container">
+  
+  <!-- SCENE 1: Hook - The Invisible Problem (0-8s) -->
+  <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full scene-bg-dark flex flex-col items-center justify-center"
+    style="animation: 0.8s fadeOut var(--ef-transition-out-start) both">
+    
+    <canvas id="canvas-chaos" class="absolute inset-0 w-full h-full"></canvas>
+    
+    <ef-text class="relative z-10 text-center max-w-3xl accent-white text-hero"
+      style="animation: 0.7s slideUp both 1s; text-shadow: 0 4px 20px rgba(0,0,0,0.5)">
+      The cost of payment chaos
+    </ef-text>
+    
+    <ef-text class="relative z-10 text-center max-w-2xl accent-white text-medium mt-8"
+      style="animation: 0.7s slideUp both 1.6s; color: rgba(255,255,255,0.7)">
+      Every payment gateway, every API, every integration is a separate problem to solve
+    </ef-text>
+    
+    <script>
+      const canvas = document.getElementById('canvas-chaos');
+      const ctx = canvas.getContext('2d');
+      const scene = canvas.parentElement;
+      
+      scene.addFrameTask((timeMs, durationMs) => {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        const progress = timeMs / durationMs;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const count = Math.floor(progress * 120);
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        
+        for (let i = 0; i < count; i++) {
+          const angle = (i / 120) * Math.PI * 2 + timeMs * 0.0003;
+          const radius = 150 + (i % 20) * 30 + Math.sin(timeMs * 0.002 + i) * 40;
+          const x = cx + Math.cos(angle) * radius;
+          const y = cy + Math.sin(angle) * radius;
+          
+          const x2 = cx + Math.cos(angle + 0.1) * (radius - 80);
+          const y2 = cy + Math.sin(angle + 0.1) * (radius - 80);
+          
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x2, y2);
+          ctx.strokeStyle = `rgba(255, 100, 100, ${(1 - progress) * 0.4})`;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+          
+          ctx.beginPath();
+          ctx.arc(x, y, 2, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255, 100, 100, ${(1 - progress) * 0.6})`;
+          ctx.fill();
+        }
+      });
+    </script>
+  </ef-timegroup>
+  
+  <!-- SCENE 2: The Stripe Difference - Everything Unified (8-18s) -->
+  <ef-timegroup mode="fixed" duration="10s" class="absolute w-full h-full scene-bg-blue flex items-center"
+    style="animation: 0.8s fadeOut var(--ef-transition-out-start) both">
+    
+    <div class="absolute inset-0 bg-gradient-to-r from-blue-600/90 to-blue-700/90"></div>
+    
+    <div class="relative z-10 w-full px-24 ml-0">
+      <ef-text split="word" class="text-hero accent-white"
+        style="animation: 0.5s slideUp both; animation-delay: calc(var(--ef-word-index) * 80ms)">
+        One platform. Everything connected.
+      </ef-text>
+      
+      <div class="mt-16 space-y-6">
+        <div class="flex items-start gap-6" style="animation: 0.6s slideUp 1s both">
+          <div class="text-4xl accent-white">→</div>
+          <div>
+            <div class="text-large accent-white font-semibold">Payments</div>
+            <div class="text-small mt-2" style="color: rgba(255,255,255,0.85)">Cards, wallets, local methods. One API.</div>
+          </div>
+        </div>
+        
+        <div class="flex items-start gap-6" style="animation: 0.6s slideUp 1.4s both">
+          <div class="text-4xl accent-white">→</div>
+          <div>
+            <div class="text-large accent-white font-semibold">Payouts</div>
+            <div class="text-small mt-2" style="color: rgba(255,255,255,0.85)">Send money to bank accounts globally.</div>
+          </div>
+        </div>
+        
+        <div class="flex items-start gap-6" style="animation: 0.6s slideUp 1.8s both">
+          <div class="text-4xl accent-white">→</div>
+          <div>
+            <div class="text-large accent-white font-semibold">Billing</div>
+            <div class="text-small mt-2" style="color: rgba(255,255,255,0.85)">Subscriptions, invoicing, revenue recognition.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ef-timegroup>
+  
+  <!-- SCENE 3: The Network Effect - Connected Systems (18-28s) -->
+  <ef-timegroup mode="fixed" duration="10s" class="absolute w-full h-full scene-bg-slate flex flex-col items-center justify-center"
+    style="animation: 0.8s fadeOut var(--ef-transition-out-start) both">
+    
+    <canvas id="canvas-network" class="absolute inset-0 w-full h-full"></canvas>
+    
+    <div class="relative z-10 text-center">
+      <ef-text class="text-hero accent-blue mb-6"
+        style="animation: 0.6s slideUp both 0.5s">
+        Built for scale
+      </ef-text>
+      <ef-text class="text-medium accent-slate max-w-2xl"
+        style="animation: 0.6s slideUp both 1.2s">
+        Stripe connects the entire financial ecosystem. Instantly.
+      </ef-text>
+    </div>
+    
+    <script>
+      const canvasNet = document.getElementById('canvas-network');
+      const ctxNet = canvasNet.getContext('2d');
+      const sceneNet = canvasNet.parentElement;
+      
+      sceneNet.addFrameTask((timeMs, durationMs) => {
+        canvasNet.width = canvasNet.offsetWidth;
+        canvasNet.height = canvasNet.offsetHeight;
+        const progress = timeMs / durationMs;
+        
+        ctxNet.clearRect(0, 0, canvasNet.width, canvasNet.height);
+        
+        const cx = canvasNet.width / 2;
+        const cy = canvasNet.height / 2;
+        const nodeCount = Math.floor(progress * 40);
+        const nodes = [];
+        
+        for (let i = 0; i < nodeCount; i++) {
+          const angle = (i / Math.max(1, nodeCount)) * Math.PI * 2;
+          const distance = 180 + Math.sin(progress * Math.PI * 2 + i * 0.5) * 60;
+          nodes.push({
+            x: cx + Math.cos(angle) * distance,
+            y: cy + Math.sin(angle) * distance,
+            angle,
+            i
+          });
+        }
+        
+        for (let i = 0; i < nodes.length; i++) {
+          for (let j = i + 1; j < Math.min(i + 3, nodes.length); j++) {
+            const n1 = nodes[i];
+            const n2 = nodes[j];
+            const dist = Math.hypot(n2.x - n1.x, n2.y - n1.y);
+            if (dist < 280) {
+              ctxNet.beginPath();
+              ctxNet.moveTo(n1.x, n1.y);
+              ctxNet.lineTo(n2.x, n2.y);
+              ctxNet.strokeStyle = `rgba(0, 82, 255, ${(1 - dist / 280) * 0.25})`;
+              ctxNet.lineWidth = 1;
+              ctxNet.stroke();
+            }
+          }
+        }
+        
+        for (const node of nodes) {
+          ctxNet.beginPath();
+          ctxNet.arc(node.x, node.y, 3, 0, Math.PI * 2);
+          ctxNet.fillStyle = '#0052ff';
+          ctxNet.fill();
+        }
+      });
+    </script>
+  </ef-timegroup>
+  
+  <!-- SCENE 4: Trust & Compliance (28-38s) -->
+  <ef-timegroup mode="fixed" duration="10s" class="absolute w-full h-full scene-bg-dark flex flex-col items-center justify-center"
+    style="animation: 0.8s fadeOut var(--ef-transition-out-start) both">
+    
+    <ef-text class="text-hero accent-white text-center max-w-3xl mb-12"
+      style="animation: 0.6s slideUp both 0.5s">
+      Enterprise security. <span class="accent-blue">Built in.</span>
+    </ef-text>
+    
+    <div class="grid grid-cols-2 gap-12 max-w-4xl">
+      <div class="text-center" style="animation: 0.6s scaleIn both 1s">
+        <div class="text-5xl accent-blue mb-3">🔒</div>
+        <div class="text-large accent-white mb-2">PCI Level 1</div>
+        <div class="text-small accent-slate">Highest security certification</div>
+      </div>
+      
+      <div class="text-center" style="animation: 0.6s scaleIn both 1.3s">
+        <div class="text-5xl accent-blue mb-3">🌍</div>
+        <div class="text-large accent-white mb-2">135+ Countries</div>
+        <div class="text-small accent-slate">Compliant with local regulations</div>
+      </div>
+      
+      <div class="text-center" style="animation: 0.6s scaleIn both 1.6s">
+        <div class="text-5xl accent-blue mb-3">⚡</div>
+        <div class="text-large accent-white mb-2">99.99% Uptime</div>
+        <div class="text-small accent-slate">Infrastructure built for reliability</div>
+      </div>
+      
+      <div class="text-center" style="animation: 0.6s scaleIn both 1.9s">
+        <div class="text-5xl accent-blue mb-3">📊</div>
+        <div class="text-large accent-white mb-2">Real-time Reporting</div>
+        <div class="text-small accent-slate">Complete visibility into every transaction</div>
+      </div>
+    </div>
+  </ef-timegroup>
+  
+  <!-- SCENE 5: The Moment - One Click Away (38-50s) -->
+  <ef-timegroup mode="fixed" duration="12s" class="absolute w-full h-full scene-bg-blue flex flex-col items-center justify-center overflow-hidden"
+    style="animation: 0.8s fadeOut var(--ef-transition-out-start) both">
+    
+    <div class="relative w-full h-full flex flex-col items-center justify-center">
+      <canvas id="canvas-flow" class="absolute inset-0"></canvas>
+      
+      <div class="relative z-10 text-center px-12">
+        <ef-text split="word" class="text-5xl font-bold accent-white mb-8"
+          style="animation: 0.5s slideUp both 0.3s; animation-delay: calc(0.3s + var(--ef-word-index) * 100ms)">
+          Start accepting payments in minutes
+        </ef-text>
+        
+        <ef-text class="text-2xl accent-white/80 max-w-2xl mx-auto"
+          style="animation: 0.6s slideUp 2s both">
+          No lengthy integrations. No vendor lock-in. No surprises.
+        </ef-text>
+        
+        <div class="mt-12" style="animation: 0.6s slideUp 2.8s both">
+          <div class="inline-block bg-white text-blue-600 px-10 py-4 rounded-lg font-semibold text-xl cursor-pointer hover:shadow-lg transition-shadow">
+            Get Started Free
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <script>
+      const canvasFlow = document.getElementById('canvas-flow');
+      const ctx

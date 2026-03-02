@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition describes generic payment processing capabilities (payments, payouts, billing, security) that apply equally to Stripe, Adyen, Square, or PayPal.",
+      "improvement": "Include Stripe-specific differentiators: their developer-first approach, the elegance of their API documentation, specific products like Stripe Radar for fraud or Connect for marketplaces, their role in enabling companies like Shopify and Lyft. Show code snippets that demonstrate their famous 7-line integration."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\"\n- Payment brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\"\n- Design tools: \"design and code together\", \"design faster\", \"real-time collaboration\"",
+    "cause": "present_wrong",
+    "proposedChange": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\"\n- Payment brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\", \"payments, payouts, billing\", \"unified dashboard\", \"fraud protection\"\n- Design tools: \"design and code together\", \"design faster\", \"real-time collaboration\"\n\n**True differentiators require evidence of specificity:**\n- For payment brands: What is the actual integration experience? Show code. What specific customers built what specific things on this platform? Name them. What architectural decision does this brand make that others don't?\n- Example (Stripe): Their 7-line integration is famous — show it. Stripe Radar, Connect, Atlas are named products competitors don't have. Shopify, Lyft, Amazon built on Stripe — name the relationship.",
+    "rationale": "The current false differentiators list mentions payment brands but doesn't explicitly flag 'payments, payouts, billing' as generic, and provides no guidance on what Stripe-specific evidence to seek instead."
+  },
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition takes the default 'complexity bad, our platform good' angle that every fintech uses. No authorial perspective on what makes Stripe's approach distinct.",
+      "improvement": "Take a stance: Stripe's philosophy is that payments should be invisible infrastructure. Or: Stripe believes developers are the decision-makers. Or: Stripe's insight is that the internet economy needs financial primitives, not just payment buttons. Let the composition's structure embody one of these truths."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"",
+    "cause": "wrong_priority",
+    "proposedChange": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"\n\n**Payment/fintech brands specifically:** The default angle is always 'complexity bad, unified platform good.' This is the category pitch, not a point of view. Force a stance:\n- \"Payments should be invisible infrastructure\" → structure: never show a dashboard, only show what the end-user experiences\n- \"Developers are the decision-makers\" → structure: show code as the primary visual, not UI\n- \"Financial primitives for the internet\" → structure: show what becomes possible (new business models), not what problems are solved\n\nIf your PoV could be stated by Adyen, Square, or PayPal without changing a word, you haven't found it yet.",
+    "rationale": "The Stripe example exists in Phase 0 but is buried as a single line; adding explicit guidance for payment/fintech brands with testable stances would force the model to choose a specific structural approach rather than defaulting to generic 'complexity→solution' framing."
+  }
+]

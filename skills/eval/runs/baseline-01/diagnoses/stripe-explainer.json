@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "critical",
+      "observation": "The composition follows a generic explainer template with no perspective on what makes Stripe distinct. Features listed apply to any payment processor.",
+      "improvement": "Commit to Stripe's actual point of view: developer-first infrastructure, the idea that financial infrastructure should be as programmable as software. Structure the video around code snippets, API elegance, or the philosophy that payments are a solved problem that shouldn't require thought. Let form reflect Stripe's minimalism."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+    "cause": "missing",
+    "proposedChange": "After the Phase 0 section, add a new subsection:\n\n**Phase 0.5: Form Follows Philosophy**\n\nThe brand's core philosophy must dictate the video's form, not just its content.\n\nFor each brand, ask: **What formal qualities would make this video impossible to attribute to a competitor?**\n\n- A developer-tools company → code should appear on screen; the video should feel like documentation\n- A design-forward brand → the video itself must exemplify their design principles\n- A speed-focused product → pacing must be faster than industry standard\n\n**Test**: Describe your video's formal approach. If a competitor could use the same approach, you haven't found the brand's form yet.\n\nExamples:\n- Stripe: Code snippets as primary visual element, terminal aesthetic, minimalist transitions—because Stripe believes infrastructure should be invisible and elegant\n- Apple: Slow reveals, negative space, product as sole focus—because Apple believes in singular attention\n- Duolingo: Mascot-driven, playful motion, gamified progress—because learning should feel like play",
+    "rationale": "The current Phase 0 asks about brand truths but doesn't require translating those truths into formal/structural video decisions, allowing generic templates to persist."
+  },
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "Beyond statistics, no Stripe-specific products, visual language, or brand truths are present. The features are category-generic.",
+      "improvement": "Reference specific Stripe products (Radar for fraud, Atlas for incorporation, Connect for marketplaces). Use Stripe's actual design language—the purple gradients, the terminal aesthetic, the code-forward identity. Show what Stripe does that competitors don't: instant payouts, one-line integration, global tax compliance."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)",
+    "cause": "missing",
+    "proposedChange": "Replace the Visual Identity section with:\n\n**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)\n- **Signature UI patterns**: What does their product interface look like? (dashboards, terminals, editors)\n- **Product-specific visuals**: What actual products/features should appear? List 3-5 by name.\n\n**Product Inventory (MANDATORY):**\nList the brand's actual named products, features, or services that could appear in the video. Generic feature descriptions (\"fast payments\", \"easy integration\") are not acceptable—use the brand's own terminology.\n\nExample for Stripe: Radar (fraud detection), Atlas (incorporation), Connect (marketplace payments), Terminal (in-person), Billing (subscriptions)",
+    "rationale": "The skill asks for visual identity but not product-specific inventory, allowing the model to describe generic category features rather than the brand's actual named offerings."
+  },
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "omission",
+      "severity": "major",
+      "observation": "Scene 2's chaos visualization (7s) is decorative. Scene 4 has dead time between feature reveals. Scene 6's CTA (17s) is excessive.",
+      "improvement": "Merge Scene 1 and 2 into a tighter 6-8 second problem statement. Compress Scene 4's features or make the animation continuous rather than waiting. Cut Scene 6 to 10 seconds—the call to action doesn't need repetition."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Scene budget**: Before writing individual scenes, commit to a total scene count and justify it. More scenes is not more impact. The minimum number of scenes that achieves the viewer-state change from Phase 0 is the right number.",
+    "cause": "missing",
+    "proposedChange": "Expand the Scene budget section to:\n\n**Scene budget**: Before writing individual scenes, commit to a total scene count and justify it. More scenes is not more impact. The minimum number of scenes that achieves the viewer-state change from Phase 0 is the right number.\n\n**Duration budget per scene type:**\n- Opening hook: 3-5 seconds maximum\n- Problem statement: 5-8 seconds (merge with hook if possible)\n- Feature/benefit scenes: 4-6 seconds each; animation should be continuous, not segmented\n- CTA/closing: 8-12 seconds maximum (one clear action, no repetition)\n\n**Dead time audit**: After planning scenes, identify any moment where nothing is animating or changing. If a scene has >2 seconds of static content, either add meaningful motion or cut the duration. Decorative animations that don't advance understanding count as dead time.",
+    "rationale": "The skill mentions scene budgeting abstractly but provides no concrete duration guidance, allowing excessive CTA scenes and dead time between animations."
+  }
+]

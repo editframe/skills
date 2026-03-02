@@ -1,0 +1,59 @@
+{
+  "taskId": "stripe-explainer",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:55:56.369Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural with addFrameTask canvas animations, text splitting with stagger delays, and time-based CSS variables. The chaos canvas in Scene 1 uses procedural drawing that responds to progress, and text animations use --ef-word-index for calculated delays.",
+      "evidence": "Scene 1: `style=\"animation-delay: calc(var(--ef-word-index) * 100ms)\"` with split=\"word\". Canvas code: `const progress = info.ownCurrentTimeMs / info.durationMs` drives connection count and opacity. However, the canvas code is incomplete (truncated at Scene 2) and the motion metaphor (chaos → unified) isn't fully realized."
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "Uses Stripe's color palette (blue) and mentions real products (Payments, Payouts, Billing), but the statistics ($2T+, 250+ countries, 99.99% uptime) and the unified API narrative could apply to any major payment processor. No distinctive Stripe visual language or developer-centric identity.",
+      "evidence": "Scene 4 stats are generic industry metrics. The grid of Payments/Payouts/Billing with generic icons (→, ⇄, ⚙) doesn't capture Stripe's distinctive developer experience or API-first philosophy. No code snippets, no radar/terminal aesthetic, no reference to specific products like Stripe Atlas, Connect, or Radar."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc is traceable: frustration (fragmented) → relief (unified) → confidence (scale) → trust (stats) → action (CTA). But the transitions feel formulaic rather than earned. The chaos-to-order visual metaphor promises more than the execution delivers.",
+      "evidence": "Scene 1 sets up 'fragmented' but the chaos canvas visualization is abstract. Scene 2's 'unified' claim isn't visually demonstrated as convergence. Scene 3's 'scales invisibly' is told not shown. The viewer understands the logical progression but doesn't feel the transformation."
+    },
+    "point_of_view": {
+      "score": 2,
+      "rationale": "The composition follows a standard SaaS explainer template: problem → solution → features → social proof → CTA. The 'infrastructure that scales invisibly' angle hints at a perspective (Stripe as invisible plumbing) but isn't committed to throughout.",
+      "evidence": "The five-scene structure is the default explainer format. 'Multiple integrations. Multiple providers. One headache.' is generic pain-point copywriting. The CTA buttons ('Start for free', 'View docs') are template-standard. No unusual structural choices or juxtapositions that reveal authorial intent."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Scene 3 (25s-40s) feels thin—15 seconds for 'Infrastructure that scales invisibly' with just a headline and subhead. Scene 4 duplicates the trust/credibility message that could be folded into Scene 2 or 5. But no scene is pure padding.",
+      "evidence": "Scene 3 content: one headline, one subhead, a gradient overlay, and a placeholder canvas. For 15 seconds of runtime, this is underdeveloped. Scene 4's stats could strengthen Scene 2's unified platform claim rather than existing as a separate beat."
+    }
+  },
+  "overall": 2.8,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic payment processor messaging ('unified API', '$2T+ processed') without Stripe's distinctive developer identity, visual language, or specific product differentiators.",
+      "improvement": "Include Stripe-specific elements: a glimpse of their actual API syntax, the distinctive gradient-mesh aesthetic, references to Stripe-only products (Radar, Atlas, Connect), or their 'increase the GDP of the internet' mission. Show code, not just icons."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition follows the standard SaaS explainer template without committing to a distinctive perspective on what makes Stripe different from Adyen, Square, or PayPal.",
+      "improvement": "Choose a specific angle: Stripe as developer infrastructure (show the DX), Stripe as startup enabler (founder journey), or Stripe as invisible complexity absorber (visualize what they handle vs. what you don't). Let that angle determine scene structure."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "The chaos-to-order arc is stated but not felt. Scene 1's 'fragmented' chaos canvas doesn't create visceral frustration, and Scene 2's 'unified' doesn't provide visual relief through convergence.",
+      "improvement": "Make the chaos canvas show actual pain: failed transactions, currency confusion, compliance warnings. Then have Scene 2 literally show those elements converging and simplifying through animation—let the viewer feel the relief through visual transformation."
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "Scene 3 occupies 15 seconds with minimal content ('Infrastructure that scales invisibly' + one subhead). This creates pacing drag without earning the time.",
+      "improvement": "Either enrich Scene 3 with visual demonstration of scaling (animated transaction counter, geographic expansion, load balancing visualization) or compress it and redistribute time to strengthen the unified platform demonstration."
+    }
+  ]
+}

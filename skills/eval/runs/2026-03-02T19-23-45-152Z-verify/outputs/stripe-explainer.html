@@ -1,0 +1,280 @@
+<ef-timegroup mode="sequence" class="w-[1920px] h-[1080px] bg-black">
+    
+    <!-- Scene 1: The Problem (0-12s) -->
+    <!-- Viewer state: Recognizes their own payment chaos -->
+    <ef-timegroup mode="fixed" duration="12s" class="absolute w-full h-full stripe-bg flex flex-col items-center justify-center">
+      <canvas id="chaos-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      
+      <div class="relative z-10 text-center max-w-2xl px-12">
+        <ef-text
+          split="word"
+          class="text-white text-6xl font-bold mb-8"
+          style="animation: 0.6s slide-up both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+        >Your payment stack is fragmented</ef-text>
+        
+        <ef-text
+          class="text-gray-300 text-2xl"
+          style="animation: 0.8s fade-in both 0.8s"
+        >Payments, payouts, billing, reconciliation — all separate systems, each with its own API, documentation, and developer burden.</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 2: The Unified Model (12-30s) -->
+    <!-- Viewer state: Understands that one system can replace many -->
+    <ef-timegroup mode="fixed" duration="18s" class="absolute w-full h-full stripe-bg flex flex-col items-center justify-center">
+      <canvas id="unified-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      
+      <div class="relative z-10 text-center max-w-3xl px-12">
+        <ef-text
+          split="word"
+          class="text-white text-5xl font-bold mb-8"
+          style="animation: 0.7s slide-up both 0.2s; animation-delay: calc(0.2s + var(--ef-word-index) * 90ms)"
+        >One unified object model</ef-text>
+        
+        <div class="accent-line" style="animation: 0.6s scale-in 1.2s both; transform-origin: left;"></div>
+        
+        <ef-text
+          class="text-gray-300 text-xl mt-8"
+          style="animation: 0.8s fade-in both 1.5s"
+        >A Charge in Stripe Payments is the same Charge in Connect, in Billing, in Radar. No translation layer. No inconsistency. Build once, deploy everywhere.</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 3: What This Means (30-45s) -->
+    <!-- Viewer state: Understands the practical consequence -->
+    <ef-timegroup mode="fixed" duration="15s" class="absolute w-full h-full stripe-bg flex flex-col items-center justify-center">
+      <div class="absolute inset-0 bg-gradient-to-r from-[#0a0e27] via-[#1a2547] to-[#0a0e27] opacity-80"></div>
+      
+      <canvas id="code-canvas" class="absolute inset-0 w-full h-full opacity-40"></canvas>
+      
+      <div class="relative z-10 text-center max-w-2xl px-12">
+        <ef-text
+          split="word"
+          class="text-blue-300 text-5xl font-bold mb-12"
+          style="animation: 0.6s slide-up both 0.3s; animation-delay: calc(0.3s + var(--ef-word-index) * 100ms)"
+        >Ship faster.</ef-text>
+        
+        <ef-text
+          split="line"
+          class="text-gray-300 text-xl leading-relaxed"
+          style="animation: 0.6s fade-in both 1s; animation-delay: calc(1s + var(--ef-line-index) * 150ms)"
+        >No glue code. No context switching between SDKs. Your data model is Stripe's data model. Move money with the same confidence you move objects through your application.</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 4: Scale (45-55s) -->
+    <!-- Viewer state: Convinced this works at any size -->
+    <ef-timegroup mode="fixed" duration="10s" class="absolute w-full h-full stripe-bg flex flex-col items-center justify-center overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-[#5469d4] to-transparent opacity-20"></div>
+      
+      <canvas id="scale-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      
+      <div class="relative z-10 text-center">
+        <ef-text
+          class="text-white text-7xl font-bold tracking-tight"
+          style="animation: 0.8s bounce-in both 0.5s"
+        >$1.1T</ef-text>
+        
+        <ef-text
+          class="text-gray-400 text-2xl mt-4"
+          style="animation: 0.6s fade-in both 1.2s"
+        >moved through Stripe in the last 12 months</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 5: CTA (55-60s) -->
+    <!-- Viewer state: Ready to act -->
+    <ef-timegroup mode="fixed" duration="5s" class="absolute w-full h-full stripe-bg flex flex-col items-center justify-center justify-between py-16">
+      <div></div>
+      
+      <div class="text-center">
+        <ef-text
+          class="text-white text-5xl font-bold mb-2"
+          style="animation: 0.6s fade-in both 0.3s"
+        >Stripe</ef-text>
+        
+        <ef-text
+          class="text-blue-400 text-xl"
+          style="animation: 0.6s fade-in both 0.6s"
+        >Payments infrastructure for the internet</ef-text>
+      </div>
+      
+      <ef-text
+        class="text-gray-400 text-lg"
+        style="animation: 0.6s slide-up both 0.9s"
+      >stripe.com/start</ef-text>
+    </ef-timegroup>
+
+  </ef-timegroup>
+
+  <script>
+    // Scene 1: Chaos visualization - many disconnected systems
+    function drawChaos(canvas, progress) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      
+      // Draw chaotic nodes
+      const nodeCount = Math.floor(progress * 12);
+      
+      for (let i = 0; i < nodeCount; i++) {
+        const angle = (i / 12) * Math.PI * 2 + progress * Math.PI;
+        const radius = 150 + Math.sin(i * 0.7 + progress * 3) * 80;
+        
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        
+        // Draw node
+        ctx.beginPath();
+        ctx.arc(x, y, 8, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(84, 105, 212, ${0.3 + progress * 0.4})`;
+        ctx.fill();
+        
+        // Draw edges to center (creating chaos)
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(x, y);
+        ctx.strokeStyle = `rgba(84, 105, 212, ${0.2})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+      
+      // Center node - overwhelmed
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 12 + Math.sin(progress * 10) * 4, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(239, 68, 68, ${0.4 + progress * 0.3})`;
+      ctx.fill();
+    }
+
+    // Scene 2: Unified model - single object spreading through systems
+    function drawUnified(canvas, progress) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      
+      // Draw the unified Charge object
+      const coreSize = 24;
+      ctx.beginPath();
+      ctx.rect(centerX - coreSize/2, centerY - coreSize/2, coreSize, coreSize);
+      ctx.fillStyle = 'rgba(84, 105, 212, 1)';
+      ctx.fill();
+      
+      // Draw system circles that connect to the core
+      const systems = 4;
+      for (let i = 0; i < systems; i++) {
+        const angle = (i / systems) * Math.PI * 2;
+        const baseRadius = 200;
+        const radius = baseRadius + Math.sin(progress * Math.PI + i) * 30;
+        
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        
+        // Connection line
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(x, y);
+        ctx.strokeStyle = `rgba(84, 105, 212, ${0.4 + progress * 0.3})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // System node
+        ctx.beginPath();
+        ctx.arc(x, y, 16, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(84, 105, 212, ${0.5 + progress * 0.3})`;
+        ctx.fill();
+      }
+      
+      // Pulse effect at core
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, coreSize + progress * 40, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(84, 105, 212, ${Math.max(0, 0.3 - progress * 0.6)})`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // Scene 3: Code-like visualization
+    function drawCode(canvas, progress) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const lines = [
+        'charge = stripe.charges.create(',
+        '  amount=2999,',
+        '  currency="usd"',
+        ')',
+        'billing.apply(charge)',
+        'connect.split(charge)',
+        'radar.verify(charge)'
+      ];
+      
+      const startY = 200;
+      const lineHeight = 80;
+      const displayLines = Math.floor(progress * lines.length);
+      
+      ctx.font = 'bold 28px monospace';
+      ctx.fillStyle = 'rgba(132, 204, 22, 0.6)';
+      
+      for (let i = 0; i < displayLines; i++) {
+        const y = startY + i * lineHeight;
+        ctx.globalAlpha = Math.min(1, (displayLines - i) * 0.5);
+        ctx.fillText(lines[i], 300, y);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // Scene 4: Scale visualization - volume throughput
+    function drawScale(canvas, progress) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      
+      // Draw expanding rings representing volume
+      const ringCount = 5;
+      for (let i = 0; i < ringCount; i++) {
+        const delay = i * 0.15;
+        const ringProgress = Math.max(0, Math.min(1, progress - delay));
+        
+        if (ringProgress === 0) continue;
+        
+        const radius = 100 + ringProgress * 300;
+        const opacity = Math.max(0, 0.4 - ringProgress * 0.3);
+        
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(84, 105, 212, ${opacity})`;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
+      
+      // Central core
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 40, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(84, 105, 212, 0.8)';
+      ctx.fill();
+    }
+
+    // Initialize scenes
+    const chaosCanvas = document.getElementById('chaos-canvas');
+    const unifiedCanvas = document.getElementById('unified-canvas');
+    const codeCanvas = document.getElementById('code-canvas');
+    const scaleCanvas = document.getElementById('scale-canvas');
+
+    function resizeCanvas(canvas) {
+      if (canvas) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+    }
+
+    resizeCanvas(chaosCanvas);
+    resizeCanvas(unifiedCanvas);
+    resizeCanvas(codeCanvas);
+    resizeCanvas(scaleCanvas);
+
+    // Find the root timegroup and attach frame tasks

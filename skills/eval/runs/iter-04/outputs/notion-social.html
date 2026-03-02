@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notion - Everything in One Place</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@editframe/elements/styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: #000;
+      width: 100%;
+      height: 100%;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(24px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideDown {
+      from {
+        transform: translateY(-24px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes scaleIn {
+      from {
+        transform: scale(0.95);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    .notion-white { color: #ffffff; }
+    .notion-dark { background: #0a0a0a; }
+    .notion-accent { color: #0a84ff; }
+
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <ef-configuration api-host="https://api.editframe.com" media-engine="local">
+    <ef-timegroup mode="sequence" overlap="0.8s" class="w-[1080px] h-[1920px] notion-dark">
+      
+      <!-- Scene 1: The Scattered Problem (0s-3.5s) -->
+      <ef-timegroup mode="fixed" duration="3.5s" class="absolute w-full h-full bg-gradient-to-b from-[#0a0a0a] to-[#1a1a1a] flex flex-col items-center justify-center">
+        <canvas id="scatter-canvas" class="absolute inset-0 w-full h-full"></canvas>
+        <ef-text 
+          split="word" 
+          class="notion-white text-center text-5xl font-bold relative z-10 px-8"
+          style="animation: 0.6s slideUp both; animation-delay: calc(var(--ef-word-index) * 120ms)"
+        >Tools scattered everywhere</ef-text>
+      </ef-timegroup>
+
+      <!-- Scene 2: One Place Revealed (3.5s-7.5s) -->
+      <ef-timegroup mode="fixed" duration="4s" class="absolute w-full h-full bg-white flex flex-col items-center justify-center">
+        <div class="absolute inset-0 w-full h-full" style="background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);"></div>
+        
+        <!-- Notion logo/symbol -->
+        <div class="relative z-10 text-center">
+          <ef-text 
+            class="notion-dark text-7xl font-black mb-8"
+            style="animation: 0.7s scaleIn both 0.3s"
+          >⊞</ef-text>
+          
+          <ef-text 
+            split="word" 
+            class="notion-dark text-4xl font-bold"
+            style="animation: 0.6s slideUp both; animation-delay: calc(0.8s + var(--ef-word-index) * 100ms)"
+          >Everything in one place</ef-text>
+        </div>
+
+        <!-- Four capability icons that enter -->
+        <div class="absolute bottom-32 left-0 right-0 flex justify-center gap-6 px-8 z-10">
+          <div class="flex flex-col items-center" style="animation: 0.5s slideUp 1.4s both;">
+            <div class="text-3xl mb-2">📝</div>
+            <div class="text-xs notion-dark font-medium">Notes</div>
+          </div>
+          <div class="flex flex-col items-center" style="animation: 0.5s slideUp 1.6s both;">
+            <div class="text-3xl mb-2">📋</div>
+            <div class="text-xs notion-dark font-medium">Docs</div>
+          </div>
+          <div class="flex flex-col items-center" style="animation: 0.5s slideUp 1.8s both;">
+            <div class="text-3xl mb-2">📊</div>
+            <div class="text-xs notion-dark font-medium">Database</div>
+          </div>
+          <div class="flex flex-col items-center" style="animation: 0.5s slideUp 2.0s both;">
+            <div class="text-3xl mb-2">✅</div>
+            <div class="text-xs notion-dark font-medium">Tasks</div>
+          </div>
+        </div>
+      </ef-timegroup>
+
+      <!-- Scene 3: Teams get organized (7.5s-11.5s) -->
+      <ef-timegroup mode="fixed" duration="4s" class="absolute w-full h-full bg-gradient-to-br from-[#0a84ff] to-[#0055cc] flex flex-col items-center justify-center">
+        <canvas id="grid-canvas" class="absolute inset-0 w-full h-full"></canvas>
+        
+        <div class="relative z-10 text-center px-8">
+          <ef-text 
+            split="word" 
+            class="text-white text-4xl font-bold"
+            style="animation: 0.6s slideUp both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+          >Teams finally organized</ef-text>
+          
+          <ef-text 
+            class="text-white/80 text-lg mt-8 max-w-xs"
+            style="animation: 0.5s slideUp 1.2s both"
+          >One workspace. All your work. No context switching.</ef-text>
+        </div>
+      </ef-timegroup>
+
+      <!-- Scene 4: CTA (11.5s-15s) -->
+      <ef-timegroup mode="fixed" duration="3.5s" class="absolute w-full h-full bg-gradient-to-t from-[#0a0a0a] to-[#1a1a1a] flex flex-col items-center justify-center">
+        <div class="relative z-10 text-center px-8">
+          <ef-text 
+            class="notion-white text-5xl font-black mb-6"
+            style="animation: 0.6s slideDown both"
+          >Notion</ef-text>
+          
+          <ef-text 
+            split="word" 
+            class="notion-accent text-2xl font-bold"
+            style="animation: 0.5s slideUp 0.4s both; animation-delay: calc(var(--ef-word-index) * 80ms)"
+          >Make it happen together</ef-text>
+
+          <ef-text 
+            class="text-white/60 text-sm mt-8"
+            style="animation: 0.5s fadeIn 1.2s both"
+          >notion.so</ef-text>
+        </div>
+      </ef-timegroup>
+
+    </ef-timegroup>
+  </ef-configuration>
+
+  <script>
+    // Scene 1: Scatter canvas - visualizing fragmentation
+    const scatterCanvas = document.getElementById('scatter-canvas');
+    if (scatterCanvas) {
+      const scatterScene = scatterCanvas.closest('ef-timegroup');
+      scatterScene.initializer = (instance) => {
+        return instance.addFrameTask((timeMs, durationMs) => {
+          const ctx = scatterCanvas.getContext('2d');
+          scatterCanvas.width = scatterCanvas.offsetWidth;
+          scatterCanvas.height = scatterCanvas.offsetHeight;
+
+          const progress = timeMs / durationMs;
+          ctx.clearRect(0, 0, scatterCanvas.width, scatterCanvas.height);
+
+          // Draw 40 scattered rectangles representing different tools
+          for (let i = 0; i < 40; i++) {
+            const seed = i * 97;
+            const x = (Math.sin(seed * 0.1) * 0.5 + 0.5) * scatterCanvas.width;
+            const y = (Math.cos(seed * 0.15) * 0.5 + 0.5) * scatterCanvas.height;
+
+            // Rectangles move erratically - chaos motion
+            const wobbleX = Math.sin(seed + timeMs * 0.003) * 30;
+            const wobbleY = Math.cos(seed * 0.7 + timeMs * 0.002) * 30;
+
+            const size = 40 + Math.sin(seed) * 10;
+            const alpha = 0.4 + progress * 0.3;
+
+            ctx.fillStyle = `rgba(100, 150, 255, ${alpha})`;
+            ctx.fillRect(x + wobbleX - size / 2, y + wobbleY - size / 2, size, size);
+
+            // Draw borders
+            ctx.strokeStyle = `rgba(0, 132, 255, ${alpha * 0.6})`;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x + wobbleX - size / 2, y + wobbleY - size / 2, size, size);
+          }
+        });
+      };
+    }
+
+    // Scene 3: Grid canvas - organizing structure
+    const gridCanvas = document.getElementById('grid-canvas');
+    if (gridCanvas) {
+      const gridScene = gridCanvas.closest('ef-timegroup');
+      gridScene.initializer = (instance) => {
+        return instance.addFrameTask((timeMs, durationMs) => {
+          const ctx = gridCanvas.getContext('2d');
+          gridCanvas.width = gridCanvas.offsetWidth;
+          gridCanvas.height = gridCanvas.offsetHeight;
+
+          const progress = timeMs / durationMs;
+          ctx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+
+          // Draw organized grid structure - order emerging from chaos
+          const cellSize = 80;
+          const cols = Math.ceil(gridCanvas.width / cellSize);
+          const rows = Math.ceil(gridCanvas.height / cellSize);
+
+          for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+              const x = col * cellSize;
+              const y = row * cellSize;
+
+              // Cells fade in with staggered timing based on position
+              const stagger = (row + col) * 0.05;
+              const cellProgress = Math.max(0, progress - stagger);
+
+              const alpha = cellProgress * 0.2;
+              ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+              ctx.fillRect(x + 5, y + 5, cellSize - 10, cellSize - 10);
+
+              ctx.strokeStyle = `rgba(255, 255, 255, ${cellProgress * 0.3})`;
+              ctx.lineWidth = 1;
+              ctx.strokeRect(x + 5, y + 5, cellSize - 10, cellSize - 10);
+            }
+          }
+        });
+      };
+    }
+  </script>
+
+</body>
+</html>

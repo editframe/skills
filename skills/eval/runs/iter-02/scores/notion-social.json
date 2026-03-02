@@ -1,0 +1,59 @@
+{
+  "taskId": "notion-social",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:17:28.260Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural and purposeful. The composition uses text splitting with stagger, addFrameTask for procedural canvas animation, and coordinated timing across scenes. The convergence animation directly embodies the brand message.",
+      "evidence": "Scene 2 uses `addFrameTask` with progress-driven convergence: `const progress = timeMs / durationMs; const x = p.start[0] + (cx - p.start[0]) * progress;`. Scene 1 uses `ef-text split=\"word\"` with `animation-delay: calc(var(--ef-word-index) * 100ms)`. Custom `float-drift` keyframes create chaos feeling."
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "The composition uses Notion's core value proposition (consolidation of tools) but relies on generic productivity tool language. The features listed (Write, Plan, Organize, Notes, Databases, Docs, Tasks) are accurate but could apply to Coda, Clickup, or similar tools.",
+      "evidence": "Scene 3 lists 'Write, Plan, Organize' - generic verbs. The scattered tools metaphor (📝📊✓💬) is universal productivity chaos, not Notion-specific. No mention of blocks, templates, AI features, or Notion's distinctive visual language."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "Clear arc from chaos (scattered tools) → convergence (consolidation) → solution (unified workspace) → action. The transitions produce detectable shifts, but the emotional journey is formulaic problem-solution.",
+      "evidence": "Scene 1: 'Tools scattered everywhere' (frustration). Scene 2: 'One place' with converging animation (relief). Scene 3: 'All in one place' (resolution). The arc is traceable but follows the standard social ad formula."
+    },
+    "point_of_view": {
+      "score": 2,
+      "rationale": "The visual metaphor of convergence is a perspective choice, but it's hedged - the composition doesn't commit to a distinctive angle on why Notion matters. It presents features rather than arguing for a worldview.",
+      "evidence": "The convergence canvas animation implies 'unity is the point' but this isn't pushed further. Scene 4 (incomplete) appears to be a standard CTA. No perspective on who Notion is for or why organization matters."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Four scenes for a 15s video is reasonable. Each scene has a distinct purpose, but Scene 3 overlaps with Scene 2's message ('One place' → 'All in one place'). Scene 4 is truncated/incomplete.",
+      "evidence": "Scene 2 ends with 'One place' and Scene 3 ends with 'All in one place' - redundant messaging. Scene 4 is cut off: `<ef-timegroup mode=\"fixed\" duration=\"3s\" class=\"absolute inset-0 w-full h-full bg-blue-600 flex flex` - incomplete code."
+    }
+  },
+  "overall": 2.8,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic productivity tool language (Write, Plan, Organize) and universal chaos metaphors (scattered emojis) that could apply to any workspace tool.",
+      "improvement": "Incorporate Notion-specific elements: the block-based editor, the distinctive sidebar navigation, specific template examples (meeting notes, project roadmap), or Notion AI. Show what makes Notion's approach to 'all-in-one' different from competitors."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition presents features without arguing for a perspective on why consolidated tools matter or who benefits most. It's descriptive rather than persuasive.",
+      "improvement": "Take a stance - perhaps 'Your brain doesn't work in silos, why should your tools?' or focus on a specific persona (creators, startups, students). Let the form argue for Notion's philosophy of connected thinking."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "The emotional arc follows a predictable problem-solution formula. The chaos → resolution path is clear but doesn't build tension or deliver surprise.",
+      "improvement": "Deepen the frustration in Scene 1 (show actual consequences of scattered tools), or add an unexpected beat - perhaps showing failed attempts at organization before Notion. Make the relief in Scene 2 feel more earned."
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "Scene 4 is incomplete (code truncated), and Scenes 2-3 deliver the same core message twice ('One place' / 'All in one place').",
+      "improvement": "Consolidate the 'one place' message into a single powerful moment. Use the recovered time to show Notion in action or differentiate the offering more specifically."
+    }
+  ]
+}

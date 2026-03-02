@@ -1,0 +1,39 @@
+Eval Run: iter-04b
+Generator: anthropic/claude-haiku-4-5
+Evaluator: anthropic/claude-opus-4-5
+Date: 2/26/2026, 5:42:46 PM
+
+─── Scores ────────────────────────────────────────
+Task                          Motion  Spec  ViewerΔ  PoV  Omit  Overall
+─────────────────────────────────────────────────────────────────────────
+Linear (product-demo)           4/5    3/5   3/5      3/5   4/5    3.4/5
+Stripe (explainer)              4/5    3/5   3/5      3/5   3/5    3.2/5
+Figma (brand-awareness)         5/5    3/5   4/5      3/5   3/5    3.6/5
+Vercel (launch)                 5/5    2/5   3/5      3/5   4/5    3.4/5
+Notion (social)                 4/5    2/5   3/5      2/5   3/5    2.8/5
+Supabase (product-demo)         3/5    3/5   3/5      3/5   2/5    2.8/5
+─────────────────────────────────────────────────────────────────────────
+Average overall: 3.2/5
+
+─── Proposed Skill Changes ─────────────────────────────────────────────
+
+skills/skills/brand-video-generator/SKILL.md (13 changes)
+  [MAJOR specificity] The model used generic productivity language because the false differentiators list didn't explicitly flag project management clichés, and there was no requirement to use actual product feature names in product-demo videos.
+  [MAJOR viewer_state] The model created an abstract chaos canvas because the guidance allowed 'Canvas animations for abstract mechanics' without specifying that problem scenes need concrete, recognizable pain rather than artistic abstraction.
+  [MAJOR specificity] The model accepted Stripe's marketing positioning ('invisible infrastructure') as the brand truth instead of identifying the architectural decision (unified API) that creates that invisibility — this addition forces the model to find structural, not messaging, truths for technical products.
+  [CRITICAL viewer_state] The model truncated Scene 5 mid-sentence because there was no explicit instruction that completeness of the final scene is non-negotiable — this change prioritizes arc resolution over content volume.
+  [MAJOR omission] The model included generic trust metrics because the skill's social proof guidance in Phase 1 didn't connect to Phase 0's thesis requirement — this change makes metric scenes subject to the same PoV test as all other scenes.
+  [MAJOR specificity] The current table warns against generic defaults but doesn't mandate using product-specific UI artifacts like Figma's distinctive cursor shape, causing the model to use generic collaboration imagery.
+  [MAJOR point_of_view] The model adopted Figma's pioneering 'multiplayer' narrative without recognizing that competitors have copied it; adding explicit guidance about category-defining vs. brand-defining truths would force the model to find a current differentiator.
+  [CRITICAL specificity] The skill requires extracting visual identity but never explicitly requires capturing and using named products, features, or the brand logo—causing the model to produce generic deployment messaging instead of Vercel-specific content.
+  [CRITICAL specificity] The model used generic emoji icons instead of Notion's distinctive block-based UI because the skill never instructed it to capture and use the product's actual interface patterns as visual identity.
+  [CRITICAL specificity] The model used generic category words ('Organize', 'Connect') because the skill told it to strip category claims but didn't tell it to replace them with specific named product features.
+  [MAJOR point_of_view] The model fell back on the generic 'fragmentation → unification' narrative because the skill's examples didn't include a productivity tool case, and it lacked explicit instruction to reject category-default framings as non-constraints.
+  [MAJOR specificity] The skill lists abstract visual options without requiring product-specific UI for demos, leading the model to use generic layer imagery instead of Supabase's actual dashboard or brand elements.
+  [CRITICAL omission] The model produced truncated output and duplicate scenes because nothing in the skill enforces completeness verification before output; an explicit checklist would catch these errors.
+
+skills/skills/brand-video-generator/references/composition-patterns.md (2 changes)
+  [MAJOR viewer_state] The skill warns against aesthetically pleasing chaos but doesn't provide concrete alternatives—adding specific examples of recognizable failure artifacts would guide the model to show visceral, relatable pain rather than abstract node animations.
+  [MAJOR motion] The model included a canvas element but omitted the script, likely because the documentation shows them separately; an explicit warning that canvas without script is broken would prevent orphaned canvas elements.
+
+To apply: npx tsx scripts/eval-skills-apply.ts --run-id iter-04b

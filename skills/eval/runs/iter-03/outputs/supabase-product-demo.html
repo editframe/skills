@@ -1,0 +1,178 @@
+<ef-timegroup mode="sequence" overlap="0.8s" class="w-[1920px] h-[1080px]">
+    
+    <!-- SCENE 1: The Problem (Postgres scattered) - 0s to 7s -->
+    <ef-timegroup mode="fixed" duration="7s" class="absolute w-full h-full bg-supabase-dark flex items-center justify-center" style="animation: fade-out 1s var(--ef-transition-out-start) both">
+      <canvas id="postgres-scatter" class="absolute inset-0 size-full"></canvas>
+      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+      
+      <div class="absolute inset-0 flex flex-col items-center justify-center">
+        <ef-text
+          split="word"
+          class="text-white text-7xl font-bold text-center mb-12 max-w-4xl"
+          style="animation: word-in 0.7s both; animation-delay: calc(var(--ef-word-index) * 100ms); z-index: 10"
+        >Building with Postgres feels scattered</ef-text>
+        
+        <ef-text
+          class="text-white/60 text-2xl max-w-2xl text-center"
+          style="animation: slide-up 0.6s both 1.8s; z-index: 10"
+        >Auth, APIs, storage, edge functions — each requires a separate tool, a separate vendor, a separate integration.</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <script>
+      const canvas1 = document.getElementById('postgres-scatter');
+      const ctx1 = canvas1.getContext('2d');
+      const sceneEl = canvas1.closest('ef-timegroup');
+      
+      function drawPostgresScatter(timeMs, durationMs) {
+        canvas1.width = canvas1.offsetWidth;
+        canvas1.height = canvas1.offsetHeight;
+        const progress = Math.min(timeMs / durationMs, 1);
+        
+        ctx1.clearRect(0, 0, canvas1.width, canvas1.height);
+        
+        const count = Math.floor(progress * 60);
+        for (let i = 0; i < count; i++) {
+          const angle = (i / 60) * Math.PI * 2;
+          const radius = 100 + Math.sin(i * 0.3 + timeMs * 0.003) * 50;
+          const x = canvas1.width / 2 + Math.cos(angle) * radius;
+          const y = canvas1.height / 2 + Math.sin(angle) * radius;
+          
+          const size = 3 + Math.sin(i * 0.7 + progress * Math.PI) * 2;
+          const alpha = 0.3 + (1 - Math.abs((i / count) - 0.5) * 2) * 0.5;
+          
+          ctx1.beginPath();
+          ctx1.arc(x, y, size, 0, Math.PI * 2);
+          ctx1.fillStyle = `rgba(99, 112, 145, ${alpha})`;
+          ctx1.fill();
+          
+          if (i > 0 && i % 8 === 0) {
+            ctx1.beginPath();
+            ctx1.moveTo(canvas1.width / 2, canvas1.height / 2);
+            ctx1.lineTo(x, y);
+            ctx1.strokeStyle = `rgba(99, 112, 145, ${alpha * 0.4})`;
+            ctx1.lineWidth = 1;
+            ctx1.stroke();
+          }
+        }
+      }
+      
+      sceneEl.addFrameTask(drawPostgresScatter);
+    </script>
+
+    <!-- SCENE 2: The Solution - Unified Platform (convergence) - 5.2s to 12.5s -->
+    <ef-timegroup mode="fixed" duration="7.3s" class="absolute w-full h-full bg-supabase-dark flex items-center justify-center" style="animation: fade-in 1s both, fade-out 1s var(--ef-transition-out-start) both">
+      <canvas id="postgres-converge" class="absolute inset-0 size-full"></canvas>
+      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
+      
+      <div class="absolute inset-0 flex flex-col items-center justify-center">
+        <ef-text
+          split="word"
+          class="text-white text-7xl font-bold text-center mb-8 max-w-4xl text-supabase-green"
+          style="animation: word-in 0.7s both; animation-delay: calc(var(--ef-word-index) * 100ms); z-index: 10"
+        >One open source platform</ef-text>
+        
+        <ef-text
+          class="text-white text-2xl max-w-3xl text-center"
+          style="animation: slide-up 0.6s both 1.8s; z-index: 10"
+        >Supabase is Postgres + Auth + Instant APIs + Edge Functions + Storage. Everything in one platform. Everything open source.</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <script>
+      const canvas2 = document.getElementById('postgres-converge');
+      const ctx2 = canvas2.getContext('2d');
+      const sceneEl2 = canvas2.closest('ef-timegroup');
+      
+      function drawPostgresConverge(timeMs, durationMs) {
+        canvas2.width = canvas2.offsetWidth;
+        canvas2.height = canvas2.offsetHeight;
+        const progress = Math.min(timeMs / durationMs, 1);
+        
+        ctx2.clearRect(0, 0, canvas2.width, canvas2.height);
+        
+        const cx = canvas2.width / 2;
+        const cy = canvas2.height / 2;
+        const count = 60;
+        const convergeRadius = 200 * (1 - progress * 0.85);
+        
+        for (let i = 0; i < count; i++) {
+          const angle = (i / count) * Math.PI * 2;
+          const x = cx + Math.cos(angle) * convergeRadius;
+          const y = cy + Math.sin(angle) * convergeRadius;
+          
+          const size = 2 + Math.sin(i * 0.5 + progress * Math.PI) * 1.5;
+          const alpha = 0.4 + progress * 0.5;
+          
+          ctx2.beginPath();
+          ctx2.arc(x, y, size, 0, Math.PI * 2);
+          ctx2.fillStyle = `rgba(63, 207, 142, ${alpha})`;
+          ctx2.fill();
+          
+          if (i % 6 === 0) {
+            ctx2.beginPath();
+            ctx2.moveTo(cx, cy);
+            ctx2.lineTo(x, y);
+            ctx2.strokeStyle = `rgba(63, 207, 142, ${alpha * 0.5})`;
+            ctx2.lineWidth = 1.5;
+            ctx2.stroke();
+          }
+        }
+        
+        ctx2.beginPath();
+        ctx2.arc(cx, cy, 40, 0, Math.PI * 2);
+        ctx2.fillStyle = `rgba(63, 207, 142, ${0.2 + progress * 0.3})`;
+        ctx2.fill();
+        ctx2.strokeStyle = `rgba(63, 207, 142, ${0.6})`;
+        ctx2.lineWidth = 2;
+        ctx2.stroke();
+      }
+      
+      sceneEl2.addFrameTask(drawPostgresConverge);
+    </script>
+
+    <!-- SCENE 3: Core Features - 11.7s to 20s -->
+    <ef-timegroup mode="fixed" duration="8.3s" class="absolute w-full h-full bg-supabase-dark flex items-center justify-center" style="animation: fade-in 1s both, fade-out 1s var(--ef-transition-out-start) both">
+      <div class="absolute inset-0 flex flex-col items-center justify-center">
+        <ef-text
+          class="text-white text-6xl font-bold mb-16"
+          style="animation: slide-up 0.6s both 0.2s"
+        >Five powers in one</ef-text>
+        
+        <div class="feature-grid absolute top-1/3 left-1/2 -translate-x-1/2 w-3/4" style="animation: fade-in 0.8s both 0.6s">
+          <div class="feature-item" style="animation: slide-up 0.5s both 0.8s">
+            <div class="feature-item-title">🐘 Postgres Database</div>
+            <div class="feature-item-desc">Full relational power. Zero vendor lock-in.</div>
+          </div>
+          <div class="feature-item" style="animation: slide-up 0.5s both 1.1s">
+            <div class="feature-item-title">🔐 Auth & Security</div>
+            <div class="feature-item-desc">Row-level security built in. OAuth ready.</div>
+          </div>
+          <div class="feature-item" style="animation: slide-up 0.5s both 1.4s">
+            <div class="feature-item-title">⚡ Instant APIs</div>
+            <div class="feature-item-desc">REST & GraphQL auto-generated from your schema.</div>
+          </div>
+          <div class="feature-item" style="animation: slide-up 0.5s both 1.7s">
+            <div class="feature-item-title">🌐 Edge Functions</div>
+            <div class="feature-item-desc">Serverless TypeScript deployed globally.</div>
+          </div>
+          <div class="feature-item" style="animation: slide-up 0.5s both 2s">
+            <div class="feature-item-title">📦 Storage</div>
+            <div class="feature-item-desc">S3-compatible object storage. Integrated permissions.</div>
+          </div>
+          <div class="feature-item" style="animation: slide-up 0.5s both 2.3s">
+            <div class="feature-item-title">🔓 Open Source</div>
+            <div class="feature-item-desc">MIT license. Self-host anywhere. Full control.</div>
+          </div>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- SCENE 4: From Concept to Ship (DAG visualization) - 19.2s to 28s -->
+    <ef-timegroup mode="fixed" duration="8.8s" class="absolute w-full h-full bg-supabase-dark flex items-center justify-center" style="animation: fade-in 1s both, fade-out 1s var(--ef-transition-out-start) both">
+      <canvas id="dag-viz" class="absolute inset-0 size-full"></canvas>
+      <div class="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40"></div>
+      
+      <div class="absolute inset-0 flex flex-col items-center justify-center">
+        <ef-text
+          split="word"

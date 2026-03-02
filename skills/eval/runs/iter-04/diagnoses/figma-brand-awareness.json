@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition describes category-level collaboration features that any design tool competitor could claim. No Figma-specific capabilities, UI elements, or terminology are shown.",
+      "improvement": "Include specific Figma differentiators: Dev Mode's code inspection, variables/design tokens, FigJam integration, or show actual Figma UI patterns. Reference specific use cases that Figma dominates (design systems, component libraries)."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\"\n- Payment brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\"\n- Design tools: \"design and code together\", \"design faster\", \"real-time collaboration\"",
+    "cause": "missing",
+    "proposedChange": "Add after the existing design tools line:\n- Design tools: \"design and code together\", \"design faster\", \"real-time collaboration\", \"multiplayer\", \"browser-based\", \"cloud-based\"\n\n**For design tool brands specifically:** The differentiator is never \"collaboration\" — every design tool claims this now. Look for: What specific workflow does this tool make possible that others structurally cannot? (e.g., Figma's Dev Mode code inspection, variables/design tokens system, or component introspection). What named features or UI patterns are unique to this product? Show those, not the category pitch.",
+    "rationale": "The model used 'multiplayer design' which the skill already lists as a false differentiator for design tools, but the guidance wasn't specific enough about what to look for instead in design tool brands."
+  },
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition restates Figma's official marketing positioning without adding an authorial interpretation. 'Multiplayer design' is their tagline, not a point of view.",
+      "improvement": "Take a specific stance: Is this about how Figma changed the power dynamic between designers and developers? About democratizing design? Pick one angle and let every scene serve it. For example: 'Design decisions used to be made alone, then explained. Now they're made together.'"
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"",
+    "cause": "missing",
+    "proposedChange": "Add after the existing examples:\n\nNot: \"Figma enables collaboration, so I'll show cursors moving together\" (that's their marketing tagline restated).\nYes: \"Figma collapsed the boundary between designing and implementing. So the video never shows a handoff — design and code exist in the same frame, responding to each other.\"\n\n**The brand's tagline is not a point of view.** If your structural constraint could appear in the brand's own marketing materials, you haven't found the authorial interpretation yet. A point of view is what *you* believe is true about the brand that they haven't explicitly said.",
+    "rationale": "The model treated Figma's marketing tagline ('multiplayer design') as the point of view rather than developing an original authorial interpretation; adding an explicit Figma-style example and clarifying that taglines are not points of view would prevent this."
+  }
+]

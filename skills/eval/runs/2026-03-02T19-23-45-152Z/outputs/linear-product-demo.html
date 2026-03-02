@@ -1,0 +1,239 @@
+<ef-timegroup mode="sequence" class="w-[1920px] h-[1080px] bg-black">
+    <!-- Scene 1: The Problem (0-10s) - Tangled workflow complexity -->
+    <ef-timegroup mode="fixed" duration="10s" class="absolute w-full h-full bg-black flex items-center justify-center relative overflow-hidden">
+      <canvas id="chaos-canvas" class="absolute inset-0 size-full"></canvas>
+      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
+      <ef-text class="relative z-10 text-white text-5xl font-bold text-center max-w-2xl"
+        style="animation: 0.8s slide-in-up 1s both">
+        Every platform fragments your workflow
+      </ef-text>
+    </ef-timegroup>
+
+    <!-- Scene 2: The Solution (10-18s) - Linear removes decisions -->
+    <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full bg-gradient-to-br from-black to-slate-900 flex items-center justify-center relative">
+      <div class="absolute inset-0 flex items-center justify-center">
+        <div class="relative w-96 h-96">
+          <!-- Clean grid representing Linear's opinionated structure -->
+          <div class="absolute inset-0 border-2 border-blue-500/20 grid grid-cols-4 gap-0">
+            <div class="border-r border-b border-blue-500/20"></div>
+            <div class="border-r border-b border-blue-500/20"></div>
+            <div class="border-r border-b border-blue-500/20"></div>
+            <div class="border-b border-blue-500/20"></div>
+            <div class="border-r border-b border-blue-500/20"></div>
+            <div class="border-r border-b border-blue-500/20"></div>
+            <div class="border-r border-b border-blue-500/20"></div>
+            <div class="border-b border-blue-500/20"></div>
+            <div class="border-r border-b border-blue-500/20"></div>
+            <div class="border-r border-b border-blue-500/20"></div>
+            <div class="border-r border-b border-blue-500/20"></div>
+            <div class="border-b border-blue-500/20"></div>
+            <div class="border-r border-blue-500/20"></div>
+            <div class="border-r border-blue-500/20"></div>
+            <div class="border-r border-blue-500/20"></div>
+          </div>
+
+          <!-- Issue card that appears -->
+          <div class="absolute top-12 left-12 w-72 bg-slate-800 border border-blue-500/40 rounded p-4 shadow-2xl"
+            style="animation: 0.6s scale-in 1.2s both">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-6 h-6 rounded border border-blue-400 flex items-center justify-center">
+                <span class="text-xs text-blue-400">#</span>
+              </div>
+              <span class="text-sm text-gray-300">LIN-2847</span>
+            </div>
+            <p class="text-white font-semibold text-sm mb-2">Fix sidebar collapse animation</p>
+            <div class="flex gap-2">
+              <span class="px-2 py-1 text-xs bg-blue-500/20 text-blue-300 rounded">Engineering</span>
+              <span class="px-2 py-1 text-xs bg-green-500/20 text-green-300 rounded">In Progress</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ef-text class="absolute bottom-12 left-12 text-white text-4xl font-bold"
+        style="animation: 0.6s slide-in-left 1.5s both">
+        One opinionated platform
+      </ef-text>
+    </ef-timegroup>
+
+    <!-- Scene 3: Keyboard-First Speed (18-24s) - Shortcuts reveal power -->
+    <ef-timegroup mode="fixed" duration="6s" class="absolute w-full h-full bg-slate-950 flex flex-col items-center justify-center gap-8 relative overflow-hidden">
+      <div class="absolute inset-0 opacity-10">
+        <canvas id="keyboard-canvas" class="w-full h-full"></canvas>
+      </div>
+
+      <ef-text class="relative z-10 text-blue-400 text-2xl font-mono text-center"
+        style="animation: 0.5s fade-in 0.3s both">
+        cmd + shift + c
+      </ef-text>
+
+      <ef-text class="relative z-10 text-white text-3xl font-bold text-center max-w-2xl"
+        split="word"
+        style="animation: 0.4s word-in 0.8s both; animation-delay: calc(0.8s + var(--ef-word-index) * 80ms)">
+        Create issues without leaving keyboard
+      </ef-text>
+
+      <ef-text class="relative z-10 text-gray-400 text-lg text-center mt-4"
+        style="animation: 0.5s fade-in 2.2s both">
+        No mouse. No menus. Pure intention.
+      </ef-text>
+    </ef-timegroup>
+
+    <!-- Scene 4: The Result (24-30s) - Team in sync, momentum -->
+    <ef-timegroup mode="fixed" duration="6s" class="absolute w-full h-full bg-gradient-to-br from-slate-900 to-black flex flex-col items-center justify-center gap-6 relative">
+      <canvas id="momentum-canvas" class="absolute inset-0 size-full opacity-40"></canvas>
+
+      <div class="relative z-10 text-center">
+        <ef-text class="text-5xl font-bold mb-4"
+          split="word"
+          style="animation: 0.5s word-in both; animation-delay: calc(var(--ef-word-index) * 100ms)">
+          <span class="text-white">Your</span>
+          <span class="text-blue-400">workflow</span>
+          <span class="text-white">finally</span>
+          <span class="text-blue-400">matches</span>
+          <span class="text-white">how</span>
+          <span class="text-white">you</span>
+          <span class="text-white">think</span>
+        </ef-text>
+
+        <ef-text class="text-lg text-gray-400 mt-6"
+          style="animation: 0.6s slide-in-up 2.5s both">
+          linear.app
+        </ef-text>
+      </div>
+    </ef-timegroup>
+  </ef-timegroup>
+
+  <script>
+    // Scene 1: Chaos canvas - tangled complexity
+    const chaosCanvas = document.getElementById('chaos-canvas');
+    if (chaosCanvas) {
+      const chaosCtx = chaosCanvas.getContext('2d');
+
+      function drawChaos(progress) {
+        chaosCtx.clearRect(0, 0, chaosCanvas.width, chaosCanvas.height);
+        chaosCanvas.width = chaosCanvas.offsetWidth;
+        chaosCanvas.height = chaosCanvas.offsetHeight;
+
+        const cx = chaosCanvas.width / 2;
+        const cy = chaosCanvas.height / 2;
+
+        // Draw tangled bezier curves that accumulate
+        const curveCount = Math.floor(progress * 60);
+        for (let i = 0; i < curveCount; i++) {
+          const seed = i * 137.5;
+          const t = (i / 60);
+
+          chaosCtx.beginPath();
+          const x1 = cx + Math.cos(seed) * 300;
+          const y1 = cy + Math.sin(seed) * 300;
+          const x2 = cx + Math.cos(seed + Math.PI) * 300;
+          const y2 = cy + Math.sin(seed + Math.PI) * 300;
+          const cpx = cx + Math.sin(seed * 0.7) * 400 * (0.5 + t * 0.5);
+          const cpy = cy + Math.cos(seed * 0.7) * 400 * (0.5 + t * 0.5);
+
+          chaosCtx.moveTo(x1, y1);
+          chaosCtx.quadraticCurveTo(cpx, cpy, x2, y2);
+          chaosCtx.strokeStyle = `rgba(59, 130, 246, ${0.1 + progress * 0.3})`;
+          chaosCtx.lineWidth = 2;
+          chaosCtx.stroke();
+        }
+
+        // Overwhelm effect: speed increases
+        if (progress > 0.6) {
+          const overflow = Math.floor((progress - 0.6) * 150);
+          for (let i = 0; i < overflow; i++) {
+            const seed = i * 47.3;
+            chaosCtx.beginPath();
+            const angle = seed + Math.random() * Math.PI;
+            const x1 = cx + Math.cos(angle) * 200;
+            const y1 = cy + Math.sin(angle) * 200;
+            const x2 = cx + Math.cos(angle + Math.PI * 0.5) * 200;
+            const y2 = cy + Math.sin(angle + Math.PI * 0.5) * 200;
+
+            chaosCtx.moveTo(x1, y1);
+            chaosCtx.lineTo(x2, y2);
+            chaosCtx.strokeStyle = `rgba(239, 68, 68, ${0.2 + (progress - 0.6) * 0.5})`;
+            chaosCtx.lineWidth = 1.5;
+            chaosCtx.stroke();
+          }
+        }
+      }
+
+      // Get the scene element and attach frame task
+      const scene1 = document.querySelector('ef-timegroup');
+      if (scene1.initializer === undefined) {
+        scene1.initializer = (instance) => {
+          return instance.addFrameTask((info) => {
+            const progress = Math.min(info.ownCurrentTimeMs / info.durationMs, 1);
+            drawChaos(progress);
+          });
+        };
+      }
+    }
+
+    // Scene 3: Keyboard shortcuts visualization
+    const keyboardCanvas = document.getElementById('keyboard-canvas');
+    if (keyboardCanvas) {
+      const keyboardCtx = keyboardCanvas.getContext('2d');
+
+      function drawKeyboardParticles(progress) {
+        keyboardCtx.clearRect(0, 0, keyboardCanvas.width, keyboardCanvas.height);
+        keyboardCanvas.width = keyboardCanvas.offsetWidth;
+        keyboardCanvas.height = keyboardCanvas.offsetHeight;
+
+        const cx = keyboardCanvas.width / 2;
+        const cy = keyboardCanvas.height / 2;
+        const particleCount = 40;
+
+        for (let i = 0; i < particleCount; i++) {
+          const seed = i * 137.5;
+          const angle = (i / particleCount) * Math.PI * 2;
+          const distance = 100 + Math.sin(seed + progress * Math.PI * 4) * 50;
+
+          const x = cx + Math.cos(angle) * distance;
+          const y = cy + Math.sin(angle) * distance;
+          const size = 1.5 + Math.sin(seed + progress * Math.PI * 2) * 1;
+
+          keyboardCtx.beginPath();
+          keyboardCtx.arc(x, y, size, 0, Math.PI * 2);
+          keyboardCtx.fillStyle = `rgba(59, 130, 246, ${0.3 + progress * 0.4})`;
+          keyboardCtx.fill();
+        }
+      }
+
+      // Attach to scene 3 via the scene elements array
+      const allScenes = document.querySelectorAll('ef-timegroup ef-timegroup');
+      const scene3 = allScenes[2];
+      if (scene3 && scene3.initializer === undefined) {
+        scene3.initializer = (instance) => {
+          return instance.addFrameTask((info) => {
+            const progress = Math.min(info.ownCurrentTimeMs / info.durationMs, 1);
+            drawKeyboardParticles(progress);
+          });
+        };
+      }
+    }
+
+    // Scene 4: Momentum visualization - energy building
+    const momentumCanvas = document.getElementById('momentum-canvas');
+    if (momentumCanvas) {
+      const momentumCtx = momentumCanvas.getContext('2d');
+
+      function drawMomentum(progress) {
+        momentumCtx.clearRect(0, 0, momentumCanvas.width, momentumCanvas.height);
+        momentumCanvas.width = momentumCanvas.offsetWidth;
+        momentumCanvas.height = momentumCanvas.offsetHeight;
+
+        const cx = momentumCanvas.width / 2;
+        const cy = momentumCanvas.height / 2;
+
+        // Expanding rings of energy
+        const ringCount = Math.floor(progress * 8);
+        for (let ring = 0; ring < ringCount; ring++) {
+          const ringProgress = (progress * 8 - ring) / 1;
+          const radius = 50 + ring * 60 + ringProgress * 40;
+
+          momentumCtx.beginPath();
+          momentumCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+          momentumCtx.strokeStyle = `rgba(59, 130, 246, ${Math.max(

@@ -1,0 +1,278 @@
+<ef-timegroup mode="sequence" overlap="0.8s" class="w-[1080px] h-[1920px] gradient-bg">
+    <!-- SCENE 1: The Deploy Moment (0-4s) -->
+    <!-- Semantic: Git push triggers instant infrastructure ripple -->
+    <ef-timegroup mode="fixed" duration="4s" class="absolute w-full h-full flex flex-col items-center justify-center" style="animation: fade-in 0.6s both, fade-out 0.6s var(--ef-transition-out-start) both;">
+      <canvas id="ripple-canvas" class="absolute inset-0 size-full"></canvas>
+      
+      <ef-text 
+        split="word"
+        class="relative text-center vercel-white text-5xl font-bold max-w-[900px] z-10"
+        style="animation: 0.6s word-rise both; animation-delay: calc(var(--ef-word-index) * 120ms)">
+        Push. Deploy. Live.
+      </ef-text>
+
+      <ef-text
+        class="relative text-center vercel-gray text-xl mt-8 max-w-[800px] z-10"
+        style="animation: 0.5s fade-in both 1.2s">
+        No builds. No waiting. No configuration.
+      </ef-text>
+
+      <script>
+        const canvas = document.getElementById('ripple-canvas');
+        const ctx = canvas.getContext('2d');
+        const timegroup = document.currentScript.closest('ef-timegroup');
+
+        timegroup.initializer = (instance) => {
+          return instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            const progress = ownCurrentTimeMs / durationMs;
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.globalCompositeOperation = 'lighter';
+
+            // Central pulse (the git push moment)
+            const pulseRadius = 40 + progress * 40;
+            ctx.beginPath();
+            ctx.arc(cx, cy, pulseRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 255, 255, ${Math.max(0, 1 - progress * 1.5)})`;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Expanding ripples (infrastructure spinning up globally)
+            for (let i = 0; i < 5; i++) {
+              const delay = i * 0.2;
+              const rippleProgress = Math.max(0, progress - delay);
+              const radius = rippleProgress * 400;
+              const alpha = Math.max(0, (1 - rippleProgress) * 0.6);
+
+              ctx.beginPath();
+              ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+              ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+              ctx.lineWidth = 2;
+              ctx.stroke();
+            }
+
+            // Outer perimeter (global reach)
+            const outerAlpha = Math.sin(progress * Math.PI) * 0.4;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 320, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 255, 255, ${outerAlpha})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            ctx.globalCompositeOperation = 'source-over';
+          });
+        };
+      </script>
+    </ef-timegroup>
+
+    <!-- SCENE 2: Preview URLs (4-8s) -->
+    <!-- Every commit gets a URL instantly — the workspace becomes distributed -->
+    <ef-timegroup mode="fixed" duration="4s" class="absolute w-full h-full flex flex-col items-center justify-center" style="animation: fade-in 0.6s both, fade-out 0.6s var(--ef-transition-out-start) both;">
+      <canvas id="branch-canvas" class="absolute inset-0 size-full"></canvas>
+
+      <ef-text 
+        split="word"
+        class="relative text-center vercel-white text-4xl font-bold max-w-[900px] z-10"
+        style="animation: 0.6s word-rise both; animation-delay: calc(var(--ef-word-index) * 100ms)">
+        Every branch. A preview.
+      </ef-text>
+
+      <ef-text
+        class="relative text-center vercel-gray text-lg mt-6 max-w-[800px] font-mono z-10"
+        style="animation: 0.5s fade-in both 1s">
+        Your team reviews changes before prod. Always.
+      </ef-text>
+
+      <script>
+        const canvas2 = document.getElementById('branch-canvas');
+        const ctx2 = canvas2.getContext('2d');
+        const timegroup2 = document.currentScript.closest('ef-timegroup');
+
+        timegroup2.initializer = (instance) => {
+          return instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+            canvas2.width = canvas2.offsetWidth;
+            canvas2.height = canvas2.offsetHeight;
+            const progress = ownCurrentTimeMs / durationMs;
+
+            ctx2.clearRect(0, 0, canvas2.width, canvas2.height);
+            ctx2.globalCompositeOperation = 'lighter';
+
+            const baseY = canvas2.height / 3;
+            const branches = 7;
+            const angle = Math.PI / (branches + 1);
+
+            // Main trunk (production)
+            ctx2.beginPath();
+            ctx2.moveTo(canvas2.width / 2, baseY);
+            ctx2.lineTo(canvas2.width / 2, baseY - 200 * progress);
+            ctx2.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx2.lineWidth = 3;
+            ctx2.stroke();
+
+            // Branch out (preview URLs)
+            for (let i = 0; i < branches; i++) {
+              const branchAngle = angle * (i + 1) - (angle * (branches / 2));
+              const branchLength = 150 * progress;
+              const startX = canvas2.width / 2;
+              const startY = baseY - 100;
+              const endX = startX + Math.sin(branchAngle) * branchLength;
+              const endY = startY - Math.cos(branchAngle) * branchLength;
+
+              ctx2.beginPath();
+              ctx2.moveTo(startX, startY);
+              ctx2.lineTo(endX, endY);
+              ctx2.strokeStyle = `rgba(150, 150, 255, ${0.6 * progress})`;
+              ctx2.lineWidth = 2;
+              ctx2.stroke();
+
+              // Endpoint indicator
+              if (progress > 0.5) {
+                ctx2.beginPath();
+                ctx2.arc(endX, endY, 6, 0, Math.PI * 2);
+                ctx2.fillStyle = `rgba(150, 150, 255, ${(progress - 0.5) * 2})`;
+                ctx2.fill();
+              }
+            }
+
+            ctx2.globalCompositeOperation = 'source-over';
+          });
+        };
+      </script>
+    </ef-timegroup>
+
+    <!-- SCENE 3: Global Distribution (8-12s) -->
+    <!-- Deployed everywhere. No vendor lock-in. Your infrastructure, instantly available anywhere -->
+    <ef-timegroup mode="fixed" duration="4s" class="absolute w-full h-full flex flex-col items-center justify-center" style="animation: fade-in 0.6s both, fade-out 0.6s var(--ef-transition-out-start) both;">
+      <canvas id="global-canvas" class="absolute inset-0 size-full"></canvas>
+
+      <ef-text 
+        split="word"
+        class="relative text-center vercel-white text-4xl font-bold max-w-[900px] z-10"
+        style="animation: 0.6s word-rise both; animation-delay: calc(var(--ef-word-index) * 110ms)">
+        Deployed globally. Instantly.
+      </ef-text>
+
+      <ef-text
+        class="relative text-center vercel-gray text-lg mt-6 max-w-[800px] z-10"
+        style="animation: 0.5s fade-in both 1s">
+        Edge functions run code closest to users. Zero latency.
+      </ef-text>
+
+      <script>
+        const canvas3 = document.getElementById('global-canvas');
+        const ctx3 = canvas3.getContext('2d');
+        const timegroup3 = document.currentScript.closest('ef-timegroup');
+
+        timegroup3.initializer = (instance) => {
+          return instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+            canvas3.width = canvas3.offsetWidth;
+            canvas3.height = canvas3.offsetHeight;
+            const progress = ownCurrentTimeMs / durationMs;
+
+            ctx3.clearRect(0, 0, canvas3.width, canvas3.height);
+            ctx3.globalCompositeOperation = 'lighter';
+
+            const cx = canvas3.width / 2;
+            const cy = canvas3.height / 2;
+            const regions = 12;
+
+            // Global ring
+            ctx3.beginPath();
+            ctx3.arc(cx, cy, 180, 0, Math.PI * 2);
+            ctx3.strokeStyle = `rgba(255, 255, 255, ${0.2 + progress * 0.3})`;
+            ctx3.lineWidth = 1;
+            ctx3.stroke();
+
+            // Region nodes expanding from center
+            for (let i = 0; i < regions; i++) {
+              const angle = (i / regions) * Math.PI * 2 + progress * Math.PI * 2 * 0.1;
+              const distance = 180 * progress;
+              const x = cx + Math.cos(angle) * distance;
+              const y = cy + Math.sin(angle) * distance;
+
+              // Node
+              ctx3.beginPath();
+              ctx3.arc(x, y, 8, 0, Math.PI * 2);
+              ctx3.fillStyle = `rgba(150, 200, 255, ${progress})`;
+              ctx3.fill();
+
+              // Connection to center
+              ctx3.beginPath();
+              ctx3.moveTo(cx, cy);
+              ctx3.lineTo(x, y);
+              ctx3.strokeStyle = `rgba(150, 200, 255, ${progress * 0.4})`;
+              ctx3.lineWidth = 1;
+              ctx3.stroke();
+
+              // Pulse outward from node
+              const pulseRadius = Math.sin(progress * Math.PI + i * 0.5) * 15 + 10;
+              ctx3.beginPath();
+              ctx3.arc(x, y, pulseRadius, 0, Math.PI * 2);
+              ctx3.strokeStyle = `rgba(150, 200, 255, ${Math.max(0, 0.3 - progress * 0.3)})`;
+              ctx3.lineWidth = 1;
+              ctx3.stroke();
+            }
+
+            ctx3.globalCompositeOperation = 'source-over';
+          });
+        };
+      </script>
+    </ef-timegroup>
+
+    <!-- SCENE 4: CTA (12-15s) -->
+    <!-- The inevitability: this is how frontend deployment works now -->
+    <ef-timegroup mode="fixed" duration="3s" class="absolute w-full h-full flex flex-col items-center justify-center" style="animation: fade-in 0.6s both;">
+      <div class="absolute inset-0 gradient-bg"></div>
+
+      <ef-text 
+        split="word"
+        class="relative text-center vercel-white text-5xl font-bold z-10"
+        style="animation: 0.6s word-rise both; animation-delay: calc(var(--ef-word-index) * 140ms)">
+        Start deploying now.
+      </ef-text>
+
+      <ef-text
+        class="relative text-center vercel-gray text-base mt-8 z-10 font-mono"
+        style="animation: 0.5s fade-in both 1.2s">
+        vercel.com/deploy
+      </ef-text>
+
+      <!-- Subtle background activity (confidence ripple) -->
+      <canvas id="confidence-canvas" class="absolute inset-0 size-full"></canvas>
+
+      <script>
+        const canvas4 = document.getElementById('confidence-canvas');
+        const ctx4 = canvas4.getContext('2d');
+        const timegroup4 = document.currentScript.closest('ef-timegroup');
+
+        timegroup4.initializer = (instance) => {
+          return instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+            canvas4.width = canvas4.offsetWidth;
+            canvas4.height = canvas4.offsetHeight;
+            const progress = ownCurrentTimeMs / durationMs;
+
+            ctx4.clearRect(0, 0, canvas4.width, canvas4.height);
+
+            // Subtle confidence ripple (this works, trust it)
+            const cx = canvas4.width / 2;
+            const cy = canvas4.height / 2;
+            
+            for (let ring = 0; ring < 3; ring++) {
+              const delay = ring * 0.15;
+              const ringProgress = Math.max(0, progress - delay);
+              const radius = ringProgress * 400;
+              const alpha = Math.max(0, (1 - ringProgress) * 0.15);
+
+              ctx4.beginPath();
+              ctx4.arc(cx, cy, radius, 0, Math.PI * 2);
+              ctx4.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+              ctx4.lineWidth = 1;
+              ctx4.stroke();
+            }
+          });
+        };
+      </script

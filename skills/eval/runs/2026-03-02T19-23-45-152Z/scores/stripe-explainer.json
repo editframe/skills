@@ -1,0 +1,41 @@
+{
+  "taskId": "stripe-explainer",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-03-02T19:24:32.363Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is the argument. The composition uses addFrameTask with procedural canvas rendering across all five scenes, where the visual metaphor carries meaning the text cannot express alone.",
+      "evidence": "Scene 1 uses chaos canvas with 'accumulating tangled lines representing disconnected payment systems' that grow with progress. Scene 2 shows 'Four systems orbiting the unified object' with the Charge at center - the orbital motion literally demonstrates the unified object model. Scene 3 shows 'Data particles flowing along the line' without translation. Each canvas animation directly embodies the conceptual point of its scene."
+    },
+    "specificity": {
+      "score": 4,
+      "rationale": "The composition's structure reflects Stripe's actual architectural differentiator - their unified object model where 'A Charge in Payments is the same Charge in Connect and Billing.' This is a specific technical truth about Stripe that competitors cannot claim.",
+      "evidence": "Scene 2's canvas shows four specific Stripe products (Payments, Billing, Connect, Radar) orbiting a central 'Charge' object. The text 'A Charge in Payments is the same Charge in Connect and Billing' references Stripe's actual API design philosophy. The tagline 'Invisible infrastructure. Visible results.' echoes Stripe's positioning."
+    },
+    "viewer_state": {
+      "score": 4,
+      "rationale": "The arc moves viewer from frustration (chaos of disconnected systems) → understanding (unified object) → relief (no translation layer) → excitement (speed benefits) → trust (CTA). Each scene prepares the next logically.",
+      "evidence": "Scene 1 creates discomfort with 'tangled lines' and 'disconnected systems'. Scene 2 resolves this with the unified object visualization. Scene 3 shows the consequence ('Data stays consistent. Errors are impossible at the boundary.'). Scene 4 delivers the payoff ('Ship faster. Fewer bugs.'). The visual chaos-to-order arc mirrors the emotional journey."
+    },
+    "point_of_view": {
+      "score": 4,
+      "rationale": "The composition takes a clear position: Stripe's value isn't features, it's architecture. The perspective is that infrastructure invisibility is a feature, not a bug - and that unified data models prevent entire categories of problems.",
+      "evidence": "Opening with 'Payments infrastructure is invisible / But building it shouldn't be' frames the problem as a developer experience issue. 'No translation layer' and 'Errors are impossible at the boundary' reflect a specific architectural perspective. The choice to visualize the unified object model rather than features like checkout or subscriptions reveals a POV about what matters."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Most scenes earn their place, but Scene 4 (Speed) feels like it could be absorbed into Scene 3 or the CTA. The consequence and the benefit it enables are closely related enough that separating them creates slight redundancy.",
+      "evidence": "Scene 3 says 'Data stays consistent. Errors are impossible.' Scene 4 says 'Ship faster. Fewer bugs. Scale without fear.' These are both consequences of the unified model - one technical, one business. The 12-second Scene 4 has only one text element and the 'speed-canvas' (code truncated) likely repeats similar visual language."
+    }
+  },
+  "overall": 4,
+  "feedback": [
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "Scene 4 (Speed) at 12 seconds feels thin - it has only one text element and serves primarily to restate Scene 3's consequences in business terms rather than technical terms.",
+      "improvement": "Either merge Scene 4's message into Scene 3 (making it 'This means: no bugs at boundaries, faster shipping, fearless scaling') or give Scene 4 a distinct visual argument - perhaps showing competitive comparison or concrete metrics that justify the separate scene."
+    }
+  ]
+}

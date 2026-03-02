@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition uses Figma's URL and brand colors but the visual metaphors (scattered rectangles, converging dots) could represent any collaborative tool. The 'fragmentation' canvas shows generic version labels, not Figma-specific design artifacts.",
+      "improvement": "Show Figma-specific elements: actual component instances, vector shapes, the distinctive pink/purple/blue/green/orange Figma logo colors in the fragments, or simulate the actual Figma cursor with name labels. Make the URL scene show the actual Figma file browser interface patterns."
+    },
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "currentText": "**The motion must demonstrate something true about this product that is false about competitors.** Ask: what unit does this product operate on? Show that unit moving. These examples illustrate the thinking pattern — apply the same logic to the brand you're working with:\n\n- Stripe (unified object model): the same `charge` object threads through Checkout, Radar, Connect, and Billing → show one object that every system touches simultaneously rather than a pipeline. Speed is generic; the shared object is Stripe's.\n- Linear (opinionated workflow): issues that enter triage exit resolved — no ambiguous state, no \"in review forever\" → a tangled graph that snaps to a clean DAG when Linear acts on it; the removal of ambiguity *is* the product\n- Vercel (frontend-to-edge): a Next.js component pushed to git → framework analyzed → edge functions distributed → build cached → each step shown as a separate materialization, not just a fast ripple. Vercel's differentiator is the build pipeline intelligence, not the speed.\n- Supabase (Postgres as the core): raw Postgres → instant REST → auth → realtime → storage → each capability materializing as a ring around a single database icon; the center never changes — the database stays the same",
+    "cause": "missing",
+    "proposedChange": "Add Figma example to the list:\n\n- Figma (URL-as-file, multiplayer cursors): There are no files — just URLs. The canvas shows multiple named cursors (with real names like 'Sarah', 'Marcus') moving simultaneously on the same frame. The visual metaphor is the cursor cluster, not abstract collaboration dots. Show the actual Figma component structure: frames nested in frames, the layers panel hierarchy, the distinctive component instance diamond icon. Generic rectangles could be any design tool; the nested frame structure with component instances is Figma's.",
+    "rationale": "Adding a Figma-specific example would have shown the model exactly what brand-specific visual artifacts look like for this product — named cursors, nested frames, component diamonds — instead of allowing generic 'collaboration' metaphors."
+  },
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition uses Figma's URL and brand colors but the visual metaphors (scattered rectangles, converging dots) could represent any collaborative tool. The 'fragmentation' canvas shows generic version labels, not Figma-specific design artifacts.",
+      "improvement": "Show Figma-specific elements: actual component instances, vector shapes, the distinctive pink/purple/blue/green/orange Figma logo colors in the fragments, or simulate the actual Figma cursor with name labels. Make the URL scene show the actual Figma file browser interface patterns."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Visual Metaphor Quick Reference:**\n\nThese are starting points, not answers. The right-hand column is a generic default — replace it with something specific to this brand before using it.\n\n| Concept | Generic default (avoid) | What to find instead |\n|---------|------------------------|----------------------|\n| Chaos/Complexity | Tangled bezier curves | What does chaos *look like for this product's users specifically*? |\n| Order/Simplicity | Grid layouts, organized patterns | What does resolution look like *in this product's own UI or workflow*? |",
+    "cause": "missing",
+    "proposedChange": "Add a new row to the Visual Metaphor Quick Reference table:\n\n| Collaboration | Converging dots, connecting lines | What does collaboration look like *in this product's actual interface*? (e.g., Figma: named cursors on a shared canvas; Notion: simultaneous text selections; Linear: assigned avatars on issues) |",
+    "rationale": "The model used generic 'converging dots' for collaboration because the quick reference table didn't explicitly flag this as a generic default to avoid, nor did it prompt for product-specific collaboration artifacts."
+  },
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition uses Figma's URL and brand colors but the visual metaphors (scattered rectangles, converging dots) could represent any collaborative tool. The 'fragmentation' canvas shows generic version labels, not Figma-specific design artifacts.",
+      "improvement": "Show Figma-specific elements: actual component instances, vector shapes, the distinctive pink/purple/blue/green/orange Figma logo colors in the fragments, or simulate the actual Figma cursor with name labels. Make the URL scene show the actual Figma file browser interface patterns."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**If you could swap the brand name and the canvas animation would still make sense, the animation is decoration.**",
+    "cause": "wrong_priority",
+    "proposedChange": "Move this sentence to Phase 2.5 under 'Visual Metaphors' as a mandatory check, and expand it:\n\n**Brand-swap test (MANDATORY before finalizing any canvas animation):** If you could swap the brand name and the canvas animation would still make sense, the animation is decoration. Before writing any `addFrameTask`, name three visual elements that are unique to this product's UI or workflow (e.g., Figma's named multiplayer cursors, component instance diamonds, nested frame hierarchy). If you cannot name three, research the product's interface before proceeding.",
+    "rationale": "The brand-swap test exists but is buried in composition-patterns.md; elevating it to a mandatory check in Phase 2.5 with a concrete 'name three elements' requirement would have forced the model to identify Figma-specific artifacts before generating generic metaphors."
+  }
+]

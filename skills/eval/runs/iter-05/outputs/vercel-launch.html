@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vercel Launch Video</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@editframe/elements@latest/styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: #000;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes slideDown {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes scaleIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    .gradient-bg {
+      background: linear-gradient(135deg, #000000 0%, #0a0e27 100%);
+    }
+
+    .vercel-bg {
+      background: #000;
+    }
+
+    .text-white {
+      color: #ffffff;
+    }
+
+    .text-gray {
+      color: #888888;
+    }
+
+    .mono-text {
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+      font-size: 14px;
+      letter-spacing: 0.05em;
+    }
+
+    .deploy-indicator {
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+      font-size: 12px;
+      color: #0070f3;
+      font-weight: 500;
+    }
+
+    .git-icon {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+  <ef-configuration>
+    <ef-timegroup mode="sequence" overlap="0.8s" class="w-[1200px] h-[675px]">
+      
+      <!-- Scene 1: Git Push (0-4s) - Problem State: Manual Deploy Friction -->
+      <ef-timegroup mode="contain" class="absolute w-full h-full gradient-bg flex flex-col items-center justify-center"
+        style="animation: fadeOut 0.8s var(--ef-transition-out-start) both">
+        <div class="absolute inset-0" id="scene1-canvas-container">
+          <canvas id="scene1-canvas" class="absolute inset-0 w-full h-full"></canvas>
+        </div>
+        <div class="absolute inset-0 bg-black/40"></div>
+        <ef-text class="relative z-10 text-white text-6xl font-bold text-center"
+          style="animation: slideUp 0.6s ease-out both">
+          git push
+        </ef-text>
+        <ef-text class="relative z-10 text-gray text-xl mt-4"
+          style="animation: slideUp 0.6s ease-out 0.2s both; animation-fill-mode: both">
+          The moment everything changes
+        </ef-text>
+      </ef-timegroup>
+
+      <!-- Scene 2: Instant Deploy (4-8s) - Solution State: Deploy Happens -->
+      <ef-timegroup mode="contain" class="absolute w-full h-full vercel-bg flex flex-col items-center justify-center"
+        style="animation: fadeIn 0.8s both">
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500/5 to-transparent"></div>
+        <div class="absolute inset-0" id="scene2-canvas-container">
+          <canvas id="scene2-canvas" class="absolute inset-0 w-full h-full"></canvas>
+        </div>
+        <ef-text class="relative z-10 text-white text-5xl font-bold text-center"
+          style="animation: slideUp 0.6s ease-out 0.1s both; animation-fill-mode: both">
+          <span class="deploy-indicator">✓ Deploy complete</span>
+        </ef-text>
+        <ef-text class="relative z-10 text-gray text-base mt-6 mono-text"
+          style="animation: slideUp 0.6s ease-out 0.3s both; animation-fill-mode: both">
+          Your code lives everywhere instantly
+        </ef-text>
+      </ef-timegroup>
+
+      <!-- Scene 3: Preview URL (8-12s) - Feature State: Every Push Gets a Preview -->
+      <ef-timegroup mode="contain" class="absolute w-full h-full gradient-bg flex flex-col items-center justify-center"
+        style="animation: fadeIn 0.8s both">
+        <div class="absolute inset-0" id="scene3-canvas-container">
+          <canvas id="scene3-canvas" class="absolute inset-0 w-full h-full"></canvas>
+        </div>
+        <div class="absolute inset-0 bg-black/50"></div>
+        <ef-text split="word" class="relative z-10 text-white text-4xl font-bold text-center max-w-2xl"
+          style="animation: slideUp 0.5s ease-out both; animation-delay: calc(var(--ef-word-index) * 80ms)">
+          Every push gets a live URL
+        </ef-text>
+        <div class="relative z-10 mt-6 bg-slate-900/80 border border-slate-700 rounded px-4 py-3 mono-text"
+          style="animation: scaleIn 0.6s ease-out 0.4s both; animation-fill-mode: both">
+          <span class="text-blue-400">vercel.com/project-name--abc123</span>
+        </div>
+      </ef-timegroup>
+
+      <!-- Scene 4: CTA (12-15s) - Action State: Ship It -->
+      <ef-timegroup mode="contain" class="absolute w-full h-full vercel-bg flex flex-col items-center justify-center justify-between"
+        style="animation: fadeIn 0.8s both">
+        <div class="absolute inset-0 bg-gradient-to-b from-blue-600/10 to-transparent"></div>
+        <div class="flex-1 flex items-center justify-center w-full">
+          <ef-text class="text-white text-5xl font-bold text-center"
+            style="animation: slideUp 0.6s ease-out both">
+            Ship today
+          </ef-text>
+        </div>
+        <div class="pb-12 text-center">
+          <ef-text class="text-gray text-lg mono-text"
+            style="animation: slideUp 0.6s ease-out 0.2s both; animation-fill-mode: both">
+            vercel.com
+          </ef-text>
+        </div>
+      </ef-timegroup>
+
+    </ef-timegroup>
+  </ef-configuration>
+
+  <script>
+    // Scene 1: Git push triggers a cascade of commits flowing downward
+    const scene1Canvas = document.getElementById('scene1-canvas');
+    const scene1TG = scene1Canvas.closest('ef-timegroup');
+    
+    if (scene1TG) {
+      scene1TG.initializer = (instance) => {
+        return instance.addFrameTask((ownTimeMs, durationMs) => {
+          const ctx = scene1Canvas.getContext('2d');
+          scene1Canvas.width = scene1Canvas.offsetWidth;
+          scene1Canvas.height = scene1Canvas.offsetHeight;
+          
+          const progress = ownTimeMs / durationMs;
+          const cx = scene1Canvas.width / 2;
+          const cy = scene1Canvas.height / 2;
+          
+          ctx.clearRect(0, 0, scene1Canvas.width, scene1Canvas.height);
+          
+          // Draw commit nodes flowing down
+          const commitCount = Math.floor(progress * 12);
+          for (let i = 0; i < commitCount; i++) {
+            const offset = i - progress * 12;
+            const y = cy + offset * 60;
+            const x = cx + Math.sin(i * 0.3) * 80;
+            
+            if (y > -100 && y < scene1Canvas.height + 100) {
+              const alpha = Math.max(0, 1 - Math.abs(offset) * 0.15);
+              
+              ctx.beginPath();
+              ctx.arc(x, y, 6, 0, Math.PI * 2);
+              ctx.fillStyle = `rgba(59, 130, 246, ${alpha * 0.7})`;
+              ctx.fill();
+              
+              ctx.strokeStyle = `rgba(59, 130, 246, ${alpha * 0.5})`;
+              ctx.lineWidth = 2;
+              ctx.stroke();
+              
+              if (i > 0) {
+                ctx.beginPath();
+                const prevOffset = i - 1 - progress * 12;
+                const prevY = cy + prevOffset * 60;
+                const prevX = cx + Math.sin((i - 1) * 0.3) * 80;
+                ctx.moveTo(prevX, prevY);
+                ctx.lineTo(x, y);
+                ctx.strokeStyle = `rgba(59, 130, 246, ${alpha * 0.3})`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+              }
+            }
+          }
+        });
+      };
+    }
+
+    // Scene 2: Deploy ripple - energy spreading outward from center
+    const scene2Canvas = document.getElementById('scene2-canvas');
+    const scene2TG = scene2Canvas.closest('ef-timegroup');
+    
+    if (scene2TG) {
+      scene2TG.initializer = (instance) => {
+        return instance.addFrameTask((ownTimeMs, durationMs) => {
+          const ctx = scene2Canvas.getContext('2d');
+          scene2Canvas.width = scene2Canvas.offsetWidth;
+          scene2Canvas.height = scene2Canvas.offsetHeight;
+          
+          const progress = ownTimeMs / durationMs;
+          const cx = scene2Canvas.width / 2;
+          const cy = scene2Canvas.height / 2;
+          
+          ctx.clearRect(0, 0, scene2Canvas.width, scene2Canvas.height);
+          
+          // Central deploy point
+          ctx.beginPath();
+          ctx.arc(cx, cy, 8 + Math.sin(progress * Math.PI * 4) * 2, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(0, 112, 243, 0.9)';
+          ctx.fill();
+          
+          // Expanding ripples of deployment
+          for (let wave = 0; wave < 4; wave++) {
+            const waveDelay = wave * 0.25;
+            const waveProgress = (progress - waveDelay) % 1;
+            
+            if (waveProgress >= 0 && waveProgress <= 1) {
+              const radius = waveProgress * 300;
+              const alpha = Math.max(0, 1 - waveProgress);
+              
+              ctx.beginPath();
+              ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+              ctx.strokeStyle = `rgba(0, 112, 243, ${alpha * 0.6})`;
+              ctx.lineWidth = 2;
+              ctx.stroke();
+            }
+          }
+          
+          // Small nodes radiating outward (deployed regions)
+          const nodeCount = 12;
+          for (let i = 0; i < nodeCount; i++) {
+            const angle = (i / nodeCount) * Math.PI * 2;
+            const distance = 120 + progress * 100;
+            const x = cx + Math.cos(angle) * distance;
+            const y = cy + Math.sin(angle) * distance;
+            
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(0, 112, 243, ${0.6 + Math.sin(progress * Math.PI * 2 + i) * 0.2})`;
+            ctx.fill();
+          }
+        });
+      };
+    }
+
+    // Scene 3: Network of preview URLs spreading
+    const scene3Canvas = document.getElementById('scene3-canvas');
+    const scene3TG = scene3Canvas.closest('ef-timegroup');
+    
+    if (scene3TG) {
+      scene3TG.initializer = (instance) => {
+        return instance.addFrameTask((ownTimeMs, durationMs) => {
+          const ctx = scene3Canvas.getContext('2d');
+          scene3Canvas.width = scene3Canvas.offsetWidth;
+          scene3Canvas.height = scene3Canvas.offsetHeight;
+          
+          const progress = ownTimeMs / durationMs;
+          const cx = scene3Canvas.width / 2;
+          const cy = scene3Canvas.height / 2;
+          
+          ctx.clearRect(0, 0, scene3Canvas.width, scene3Canvas.height);
+          
+          // Central branch point
+          ctx.beginPath();
+          ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(0, 112, 243, 1)';
+          ctx.fill();
+          
+          // Branching paths (git branches → preview URLs)
+          const branchCount = Math.floor(progress * 8) + 1;
+          for (let branch = 0; branch < branchCount; branch++) {
+            const branchDelay = branch * 0.12;
+            const branchProgress = Math.max(0, Math.min(1, (progress - branchDelay) * 1.5));
+            
+            const angle = (branch / 8) * Math.PI * 2;
+            const branchLength = branchProgress * 200;
+            const endX = cx + Math.cos(angle) * branchLength;
+            const endY = cy + Math.sin(angle) * branchLength;
+            
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(endX, endY);
+            ctx.strokeStyle = `rgba(0, 112, 243, ${branchProgress * 0.8})`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Preview URL node at branch end
+            if (branchProgress > 0) {
+              ctx.beginPath();
+              ctx.arc(endX, endY, 4 + Math.sin(progress * Math.PI * 3) * 1, 0, Math.PI * 2);
+              ctx.fillStyle = `rgba(0, 112, 243, ${branchProgress * 0.9})`;
+              ctx.fill();
+            }
+          }
+        });
+      };
+    }
+  </script>
+</body>
+</html>
