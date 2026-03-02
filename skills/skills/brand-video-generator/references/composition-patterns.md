@@ -128,12 +128,17 @@ Still photography becomes temporal through slow motion. A 0.8% scale change per 
 
 ## Procedural Canvas (frameTask)
 
-**CRITICAL: A `<canvas>` element without a complete `addFrameTask` script is a broken composition that renders nothing.** Before including any canvas element:
-1. Write the COMPLETE script first, including the full `addFrameTask` callback
-2. Test that the script closes all braces and has no truncation
-3. If you cannot complete the script, use CSS animations instead
+**CRITICAL: Canvas Completeness Requirements**
 
-Incomplete scripts (truncated variable names, missing closing braces, commented placeholders) are worse than no script — they produce a blank frame where motion was promised.
+A `<canvas>` element without a complete `addFrameTask` script is a broken composition that renders nothing.
+
+**Before including ANY canvas element:**
+1. Write the COMPLETE script first, including the full `addFrameTask` callback with all closing braces
+2. Verify the script is not truncated — check that it ends with `});` and `</script>`
+3. If approaching output length limits, STOP and either: (a) simplify the canvas animation, (b) replace with CSS animation, or (c) merge the scene's content into an adjacent scene
+4. Never leave a canvas scene with placeholder or incomplete code — delete the scene entirely rather than ship broken motion
+
+**Output limit rule:** If a composition has 4+ canvas scenes, verify each script is complete before adding another. A video with 3 working canvas scenes is better than 4 scenes where one is broken.
 
 For concepts that can't be shown with video — data, systems, processes, abstractions — `addFrameTask` gives access to the canvas for per-frame generative graphics. The animation is a pure function of time, so it's fully scrubbable and renderable.
 
@@ -166,6 +171,8 @@ For problem/pain scenes specifically:
 - Payments API (unified object model): the same core object threads through every product in the suite → show one object that every system touches simultaneously rather than a pipeline. Speed is generic; the shared object is the differentiator. **Scale metrics must be earned by first showing the mechanism. Show the object flowing through checkout → risk → connect → billing in one continuous motion, THEN reveal the scale that architecture enabled. A metric stated before the architecture is demonstrated is an unsupported claim.**
 
   **Problem-state specificity for payments APIs**: Do NOT show generic fintech pain points (payment processing, payouts, fraud detection, reporting). These describe every competitor. Instead show the specific pre-API architecture: multiple vendor SDKs with incompatible object models (a transaction object in one SDK ≠ an account object in another ≠ a score object in a third), the middleware translation layer developers had to build, or the actual code comparison (50 lines of vendor-specific glue code vs. 3 lines). The pain must be the pain this API specifically eliminated, not the category's general friction.
+
+  **Solution-state visual requirements for payments APIs**: The solution scene MUST include at least one of: (1) actual code showing the API's syntax elegance (the brand's actual SDK method calls and object names vs. competitor verbosity), (2) the distinctive Dashboard UI aesthetic (the specific card layouts, the typography, the data visualization style), (3) recognizable customer logos that this specific API powers, or (4) the branded visual identity beyond just colors (the brand's particular visual treatments, illustration style, or documentation aesthetic). Generic API response JSON or abstract 'unified platform' diagrams fail the substitute test — any payments company could use them.
 - Opinionated issue tracker: issues that enter triage exit resolved — no ambiguous state, no "in review forever" → a tangled graph that snaps to a clean DAG; the removal of ambiguity *is* the product
 - Browser-native design tool (URL-as-file, multiplayer cursors): There are no files — just URLs. The canvas shows multiple named cursors (with real names like 'Sarah', 'Marcus') moving simultaneously on the same frame. The visual metaphor is the cursor cluster, not abstract collaboration dots. Show the actual component structure: frames nested in frames, the layers panel hierarchy, the distinctive component instance icon. Generic rectangles could be any design tool; the nested frame structure with component instances is this tool's.
 - Backend-as-a-service built on an existing database: The differentiator is not 'unified platform' (every BaaS claims this) but that you retain full database access — row-level security policies written in standard SQL, realtime via database replication (not a proprietary protocol), queryable with any standard client. Show: a single RLS policy that replaces 200 lines of middleware, or the same table queried from browser JS, a mobile app, and a CLI simultaneously. The visual must be impossible to attribute to any competing BaaS product.

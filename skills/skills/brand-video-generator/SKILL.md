@@ -61,6 +61,8 @@ The answer must be:
 
 **The perspective test**: State your authorial angle in one sentence: "This video argues [X] which this brand's own marketing never says because [Y]." If you cannot complete this sentence, you are illustrating, not interpreting.
 
+**Scene-level enforcement (applied during Operation 6)**: For each scene, verify it embodies the authorial angle, not just the brand's own messaging: "This scene argues [specific claim] which the brand's marketing would not make because [reason]." If you cannot complete this for a scene, the scene is illustration. Common failure: showing what the product does rather than what it means that the product works this way. For infrastructure/platform products: the authorial angle is often about what disappears (cognitive load, decision fatigue, context-switching) rather than what appears.
+
 *If you cannot identify a non-transferable structural truth, ask the user for more context before proceeding.*
 
 ---
