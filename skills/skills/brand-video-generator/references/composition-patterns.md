@@ -145,7 +145,7 @@ For problem/pain scenes specifically:
 - Do NOT use abstract representations of chaos (bezier tangles, particle explosions, visual noise)
 - DO reference the specific predecessor products or workflows this brand replaced
 - Example (Figma): Show 'Final_v3_FINAL_real.sketch' filename hell, the specific email-attachment-feedback loop, or the 'someone overwrote my artboard' moment that Figma users recognize
-- Example (Linear): Show Jira's specific notification overwhelm, the Asana nested-project maze, or the Slack-ping-about-the-Jira-ticket pattern
+- Example (Linear): Show Jira's specific notification overwhelm, the Asana nested-project maze, or the Slack-ping-about-the-Jira-ticket pattern. Specifically: Jira's 47-field issue creation form, the 'which board is this on?' confusion across 12 open tabs, '@mentioned in PROJ-4521 comment' spam, or the exact moment a sprint ceremony produces no actionable output.
 - The test: would a user of the OLD workflow immediately recognize this as their specific pain? If the pain could apply to any tool in the category, it's not specific enough.
 
 **For environmental/waste problem scenes:**
@@ -157,7 +157,7 @@ For problem/pain scenes specifically:
 
 **Anti-pattern:** Drawing category-generic imagery (mountains for outdoor, circuits for tech, leaves for sustainability, tangled lines for 'complexity') instead of brand-specific imagery. The test: could this exact canvas animation appear in a competitor's video without modification? If yes, it fails.
 
-- Stripe (unified object model): the same `charge` object threads through Checkout, Radar, Connect, and Billing → show one object that every system touches simultaneously rather than a pipeline. Speed is generic; the shared object is Stripe's.
+- Stripe (unified object model): the same `charge` object threads through Checkout, Radar, Connect, and Billing → show one object that every system touches simultaneously rather than a pipeline. Speed is generic; the shared object is Stripe's. **Scale metrics must be earned by first showing the mechanism. Show the Charge flowing through Checkout → Radar → Connect → Billing in one continuous motion, THEN reveal the scale that architecture enabled. A metric stated before the architecture is demonstrated is an unsupported claim.**
 
   **Problem-state specificity for Stripe**: Do NOT show generic fintech pain points (payment processing, payouts, fraud detection, reporting). These describe every competitor. Instead show the specific pre-Stripe architecture: multiple vendor SDKs with incompatible object models (a Braintree transaction ≠ a Plaid account ≠ a Sift fraud score), the middleware translation layer developers had to build, or the actual code comparison (50 lines of vendor-specific glue code vs. 3 lines of Stripe). The pain must be the pain Stripe specifically eliminated, not the category's general friction.
 - Linear (opinionated workflow): issues that enter triage exit resolved — no ambiguous state, no "in review forever" → a tangled graph that snaps to a clean DAG when Linear acts on it; the removal of ambiguity *is* the product

@@ -203,10 +203,10 @@ Extract from the loaded website **and any other material you can access** (socia
 *If browser tools are available:* Download the brand logo, 3-5 product shots, and any proprietary visual elements. These must be used directly in the composition — no substitutes.
 
 *If working from training knowledge only (no live browser):* Do not fabricate assets or use abstract placeholders. Instead:
-- Use exact brand hex codes for all backgrounds and color elements — these MUST be sourced from the actual brand's public style guide, logo files, or verifiable documentation. Do not approximate colors based on memory or visual impression. If you cannot verify the exact hex codes, state this explicitly and use only black/white until confirmed. For example, Figma's brand colors are #F24E1E (orange-red), #FF7262 (coral), #A259FF (purple), #1ABCFE (blue), #0ACF83 (green) — but even this must be verified against current brand guidelines before use.
+- Use exact brand hex codes for all backgrounds and color elements — these MUST be sourced from the actual brand's public style guide, logo files, or verifiable documentation. Do not approximate colors based on memory or visual impression. **Category-generic 'sustainable' palettes (earth tones, amber, sage, slate) are prohibited unless they are the brand's actual documented colors.** For example, Patagonia's brand colors are not generic earth tones but specific documented values from their style guide. If you cannot verify the exact hex codes, state this explicitly and use only black/white until confirmed. For example, Figma's brand colors are #F24E1E (orange-red), #FF7262 (coral), #A259FF (purple), #1ABCFE (blue), #0ACF83 (green) — but even this must be verified against current brand guidelines before use.
 - Describe the brand's known visual vocabulary in CSS/canvas (e.g., Glossier's milky white + blush pink palette, their serifed wordmark, minimal product photography style)
 - Reference SPECIFIC NAMED PRODUCTS by name in text and visual elements (e.g., Glossier: 'Cloud Paint in Dusk', 'Boy Brow in Brown', 'Balm Dotcom' — not generic 'blush' or 'brow gel'). Include the brand's actual taglines or campaign copy verbatim.
-- Reference specific community artifacts by name (e.g., 'Into The Gloss', '@glossier submissions') — never use placeholder tokens like '@reader_1' or '@user_name'. Either use a real referenced source or design the scene to not require attribution.
+- Reference specific community artifacts by name (e.g., 'Into The Gloss', '@glossier submissions') — never use placeholder tokens like '@reader_1', '@user_name', '@reader', or any variation with generic words. If you cannot name a real source, either design the scene to not require attribution (use 'from our community' without fake handles) or redesign the POV to not depend on community proof you cannot demonstrate. Generic placeholder handles (@user, @reader, @customer) are categorically prohibited — they are worse than no attribution because they signal fabrication.
 - Canvas animations must reference brand-specific forms — the actual logo geometry, known product shapes, known UI patterns — not generic category shapes
 - **Named visual marks are mandatory**: If the brand has a recognizable logo silhouette (Patagonia's Fitzroy peak, Apple's apple, Nike's swoosh), that silhouette must appear as actual geometry in canvas animations or as an SVG/image element. Generic shapes (circles, rectangles, abstract curves) are never acceptable when the brand has a known mark.
 - **Sub-brand programs have their own identity**: If featuring a specific program (e.g., Patagonia's Worn Wear, Apple's Trade In), research and use that program's specific visual marks, not the parent brand's general identity.
@@ -287,7 +287,9 @@ A real differentiator is something that, if true about this brand, would be surp
 - A specific contrast that makes the viewer uncomfortable before the brand appears
 - Something the viewer must *react to* before they can be informed
 
-**Duration requirement for problem establishment**: The problem state must be shown long enough for the viewer to *feel* it, not just register it. Minimum 5-8 seconds for any problem/pain scene. A 2-second problem scene followed by 28 seconds of solution means the viewer never experiences the contrast — they're told about it rather than feeling it. The transformation arc requires the 'before' state to be inhabited, not just labeled.
+**Duration requirement for problem establishment**: The problem state must be shown long enough for the viewer to *feel* it, not just register it. Minimum 5-8 seconds for any problem/pain scene. A 2-second problem scene followed by 28 seconds of solution means the viewer never experiences the contrast — they're told about it rather than feeling it. **Canvas animations depicting accumulation (waste piling, complexity growing, problems mounting) must reach visual peak intensity before the scene cuts—not mid-build.** If the animation requires 8 seconds to reach full impact, the scene must be at least 9-10 seconds. Time the scene cut to the moment after the viewer feels maximum discomfort, not before. The transformation arc requires the 'before' state to be inhabited, not just labeled.
+
+**Product showcase consolidation rule**: If multiple scenes exist primarily to display products (swatches, SKUs, packaging), they MUST be consolidated into ONE scene unless each scene produces a categorically different viewer state (e.g., 'awareness of range' vs 'desire for specific item' vs 'trust in quality'). Two scenes that both produce 'here are the products' are redundant regardless of which products they show.
 
 The test: Does the viewer feel differently 3 seconds in than at frame 1? If the answer is 'they now know what the brand believes' — that's information, not state change. State change requires discomfort, recognition, surprise, or tension first. For product-demos specifically:
 - Do NOT open with abstract 'chaos' visualizations (tangled lines, scattered nodes, etc.)
@@ -365,10 +367,12 @@ Scene [N]: [Name] ([start]s-[end]s)
 - VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]
 - VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]
 - STATE DISTINCTNESS CHECK: [Name one emotion/state from this scene that was NOT available in any previous scene. If you cannot name one, this scene is redundant — either cut it or redesign it to produce a unique state.]
+- ADJACENT SCENE REGISTER CHECK (scenes 2+ only): [Does this scene's END state duplicate the previous scene's END state? If both end with 'product appreciation' or 'brand familiarity', one must be cut or redesigned. Name the previous scene's end state and confirm this one differs categorically.]
 - STATE CHANGE MECHANISM: [What specific technique creates the shift? Options: contrast (before/after, with/without), surprise (expectation subverted), scale revelation (one thing revealed as many), effort elimination (50 lines → 1 line). If the mechanism is 'demonstration' or 'showing how it works', the scene is informational, not transformational — rewrite it.]
 - ESCALATION CHECK (for scenes 2+ only): [How does this scene's emotional intensity or stakes INCREASE from the previous scene? If the answer is 'it doesn't' or 'it's the same level,' either cut this scene or introduce a complication. Flat sequences are prohibited. Options for escalation: higher stakes (what happens if this fails?), larger scale (one → many), deeper consequence (surface → core), contrast introduction (the opposite case). A scene that maintains the same register as the previous scene is redundant.]
+- CLAIM DEMONSTRATION CHECK (for architectural/structural claims): [If this scene claims the product has a property (unified, everywhere, consistent, simple), what VISUAL EVIDENCE proves it? A label stating the claim without visual proof fails. Show the SAME element appearing in 3+ contexts, or the mechanism in action—not the outcome metric.]
 - COMPETITOR DIFFERENTIATION CHECK (Scene 1 only): [List the specific competitor pain points being shown. If the visual could appear in a competitor's own marketing unchanged, rewrite. Name the exact UI elements, workflow patterns, or friction points that are unique to the problem THIS product solves. Generic category concepts fail this check — show the specific complexity that the product deliberately removes.]
-- PROOF REQUIREMENT: [If this scene makes a claim (monetary, impact, or structural), what concrete evidence is shown? Claims require: specific numbers, visual documentation, or named sources. A claim stated without visible proof fails the viewer-state shift — skepticism cannot convert to belief through assertion alone. List the specific proof element that will appear on screen.]
+- PROOF REQUIREMENT: [If this scene makes a claim (monetary, impact, or structural), what concrete evidence is shown? Claims require: specific numbers, visual documentation, or named sources. A claim stated without visible proof fails the viewer-state shift — skepticism cannot convert to belief through assertion alone. **Statistics alone are not proof—they are assertions. To prove scale, show the mechanism that enabled it. A number like '3.5 million businesses' creates no felt understanding unless the viewer sees WHY that number is possible. For architectural claims ('unified object made this possible'), the architecture must be visualized in action—show one object flowing through multiple systems, not the outcome metric.** List the specific proof element that will appear on screen, and verify it demonstrates causation, not just correlation.]
 - PRIMARY VISUAL: [Main visual element - NOT just text]
 - MOTION/ANIMATION: [How it moves, what animates, specific CSS or frameTask approach]
 - VISUAL METAPHOR: [What concept this shows visually]
@@ -378,8 +382,6 @@ Scene [N]: [Name] ([start]s-[end]s)
 ```
 
 **The viewer-state test**: If VIEWER STATE AT START and VIEWER STATE AT END are the same, the scene is not doing work. Cut it or change it until it does.
-
-**Adjacent-scene emotional register test**: No two consecutive scenes may target the same emotional register (e.g., both aiming for 'confidence' or 'trust'). After writing each scene's VIEWER STATE AT END, check: does it name the same feeling as the previous scene's end state? If so, one scene is redundant OR one must shift to a different register.
 
 **Structural repetition test (MANDATORY for sequences of 3+ similar elements):** If you have three or more scenes—or three or more elements within a single scene—with the same visual structure (e.g., all showing a face transition, all showing a product swatch), they MUST differ in emotional function:
 - Element/Scene 1: Establish (viewer learns the pattern)
@@ -412,7 +414,9 @@ Scene 2: The Problem (4s-9s)
                  Static image cannot show accumulation. Text alone cannot show it.
 ```
 
-**Scene budget**: `floor(duration_seconds / 10)` is your maximum scene count. A 30s video gets 3 scenes. A 60s video gets 6. Start at the minimum and add only if the viewer-state arc requires it — not because you have things to say.
+**Scene budget**: `floor(duration_seconds / 10)` is your maximum scene count. A 15s video gets 1-2 scenes. A 30s video gets 3 scenes. A 60s video gets 6. **For videos under 20 seconds, you are likely over-scened if you have more than 2 distinct scenes.** Start at the minimum and add only if the viewer-state arc requires it — not because you have things to say.
+
+**Short-form efficiency rule (≤20s)**: At 15 seconds, every scene must earn at minimum 5 seconds of screen time. Four scenes in 15 seconds means ~3.75s average per scene—this is almost always too fragmented. Before planning a short-form video, ask: can this be told in 2 scenes? If the answer involves collapsing 'product display' scenes, do that first.
 
 **Duration-to-content ratio**: No scene should exceed 15% of total duration unless it contains continuous visual motion (canvas animation, video footage, or complex CSS sequences). A 7-second scene in a 30-second video (23%) that contains only two text strings is a structural failure. Either:
 - Fill the duration with motion that earns it
@@ -522,3 +526,5 @@ After all scenes, add:
 - [references/video-fundamentals.md](references/video-fundamentals.md) - Transitions, arcs, brand basics
 - [references/editing.md](references/editing.md) - What to cut and when to stop
 - [references/genre-selection.md](references/genre-selection.md) - Full genre palette with formal characteristics and appropriate contexts
+
+

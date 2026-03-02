@@ -56,6 +56,8 @@ Without an intentional arc, videos feel flat or confusing.
 
 **Common mistake**: Not making problem painful enough - viewer won't care about solution
 
+**Timing mistake**: Cutting to the solution before the problem scene reaches peak intensity. If using an accumulation animation (waste piling, errors mounting), hold the scene 1-2 seconds past the visual climax. The viewer needs to sit in discomfort before relief is offered. Quantifying the problem with specific numbers ('11 million tons/year', '85% ends up in landfill') deepens the initial state and makes the transition to hope feel earned rather than rushed.
+
 ---
 
 ### 2. The Transformation Arc
