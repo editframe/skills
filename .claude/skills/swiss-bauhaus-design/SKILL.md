@@ -1,406 +1,189 @@
 ---
 name: swiss-bauhaus-design
-description: Apply sophisticated Bauhaus and Swiss typography-inspired design principles. Use when redesigning pages, creating landing pages, styling documentation, or when user mentions Swiss design, Bauhaus, geometric design, clean typography, or modernist aesthetics.
+description: Apply Swissted-style design to Editframe landing pages and docs. Use when redesigning sections, adding new sections, or auditing the design. Enforces the print-first composition model, the --poster-* token roles, and the completion standard.
 ---
 
-# Swiss / Bauhaus Design System (Refined)
+# Swissted Design System
 
-This design system captures the **spirit** of Bauhaus and International Typographic Style - not a literal recreation of De Stijl or Mondrian paintings.
+The Editframe landing page is modeled on **Swissted** — Mike Joyce's project reimagining punk/indie concert posters in the Swiss International Style. This is the specific reference. Not generic Swiss/Bauhaus, not De Stijl.
 
-## Core Philosophy
+Swissted characteristics:
+- Saturated primary colors as full-bleed grounds (not muted, not "sophisticated")
+- Heavy all-caps type set directly on color — no cards, no containers
+- Hard geometric rules as structural dividers
+- Three to four compositional elements per section, no more
 
-The goal is **sophistication through restraint**, not "geometric shapes everywhere."
+## Quality and Completion
 
-**Key principles:**
-- **White space is structure** - Generous margins, breathing room
-- **Typography creates hierarchy** - Not color blocks
-- **Color is accent** - Used sparingly for maximum impact
-- **Shadows add depth** - Subtle, like ink bleeding on paper
-- **Gradients add warmth** - Subtle, not flat digital perfection
+Design quality is felt before it is named. A developer lands on the page and either thinks "these people know what they're doing" or they feel an unease they can't name. That gap — between trust and almost-trust — is where the system runs out of care.
 
-## Common Mistakes to Avoid
+**A system feels complete when:**
+- Every token has a declared role
+- Every role is actually used
+- Color choices are motivated, not arbitrary
+- A new agent reading the CSS understands what to use and why
 
-### 1. Color Block Overload
-**Wrong:** Every section has a red/blue/yellow sidebar
-**Right:** Use color blocks once or twice per page as dramatic accents
+**A system feels abandoned when:**
+- Tokens are defined but unused
+- Colors appear because they were available
+- Rules are implied but never written
 
-### 2. Border Obsession
-**Wrong:** 4px black borders on everything
-**Right:** Subtle 1px rule lines, shadows for depth
+When something feels wrong, don't patch the symptom. Trace the failure back to where care ran out and repair the system there.
 
-### 3. Uppercase Everything
-**Wrong:** ALL CAPS on every heading and label
-**Right:** Mixed case, use caps sparingly for labels
+## Token System
 
-### 4. Repetitive Patterns
-**Wrong:** Same color-sidebar + content layout for every section
-**Right:** Vary layouts - some centered, some split, some full-width
-
-### 5. No Visual Rest
-**Wrong:** Dense grid of colored boxes
-**Right:** Generous padding, let content breathe
-
-## Color Palette
+Defined in `telecine/services/web/app/styles/landing.css`.
 
 ```css
-:root {
-  /* Sophisticated, not primary-school */
-  --accent-red: #C41E3A;      /* Crimson, not fire engine */
-  --accent-blue: #1E3A8A;     /* Navy, not primary blue */
-  --accent-gold: #B8860B;     /* Dark gold, not yellow */
-  --ink-black: #1a1a1a;       /* Soft black */
-  --paper-white: #FAFAFA;     /* Warm white */
-  --warm-gray: #78716C;       /* For secondary text */
-}
+/* PRIMARY — brand moment, hero CTA, primary feature section BG */
+--poster-red: #E53935;
 
-.dark {
-  --accent-red: #DC2626;
-  --accent-blue: #3B82F6;
-  --accent-gold: #F59E0B;
-  --paper-white: #0a0a0a;
-  --ink-black: #e5e5e5;
-}
+/* SECONDARY — emphasis on dark backgrounds, template/data section BG */
+/* Never as text on light backgrounds — contrast fails WCAG AA (~2.3:1) */
+--poster-gold: #FFB300;
+
+/* TECHNICAL — focus rings, code syntax, architecture diagrams */
+/* Not for section backgrounds or CTAs */
+--poster-blue: #1565C0;
+
+/* AI/AGENT — PromptToTool section only. Do not use elsewhere. */
+--poster-green: #2E7D32;
+
+/* STRUCTURE */
+--ink-black: #1a1a1a;
+--paper-cream: #FAF8F5;
+--warm-gray: #6B6B6B;
+--card-dark-bg: #1a1a1a;
 ```
 
-**Rules:**
-- Primary colors are **accents**, not backgrounds
-- Use warm grays for secondary text
-- Gradients are allowed (subtle, for depth)
-- Shadows are allowed (soft, like ink on paper)
+`--poster-pink` is defined in the CSS but removed from use. Dead tokens make the palette appear larger and less deliberate than it is.
+
+**Gold on light backgrounds:** `--poster-gold` (#FFB300) fails WCAG AA on cream or white. For gold text on light: use `#B45309` (~4.5:1 against white).
+
+## Section Architecture
+
+Each section has a declared ground color and a thematic rationale. The choice is motivated — not arbitrary.
+
+| Section | Ground | Primary accent | Rationale |
+|---|---|---|---|
+| Hero | `--paper-cream` | `--poster-red` | Brand moment, the first impression |
+| CodeExamples | `--card-dark-bg` | `--poster-gold` | Craft/code — gold reads on darkness |
+| TemplatedRendering | `--poster-gold` | black | Data drives the template — gold is the content |
+| RenderAnywhere | `--poster-red` | white | The primary power claim |
+| Architecture | `--paper-cream` | `--poster-blue` / gold | Technical diagrams |
+| GettingStarted | white | `--poster-red` | Action — red motivates |
+| PromptToTool | `--poster-green` | white / gold | AI/agent — green is reserved here |
+
+Narrative order: cream → dark → gold → red → cream → white → green. New sections must fit this sequence and declare their thematic rationale in a comment.
 
 ## Typography
 
-**Font:** Inter, or similar geometric sans-serif
-
 ```css
-body {
-  font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-}
+/* Headlines — the Swissted voice */
+font-weight: 900;           /* font-black */
+letter-spacing: -0.05em;    /* tracking-tighter */
+text-transform: uppercase;
+line-height: 0.9;
+
+/* Section labels — visually distinct from headlines */
+font-size: 0.75rem;         /* text-xs */
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 0.12em;     /* tracking-widest */
+color: var(--warm-gray);
+
+/* Body */
+font-weight: 400;
+color: var(--warm-gray);
+line-height: 1.625;         /* leading-relaxed */
 ```
 
-**Hierarchy through weight and size, not just color:**
+All-caps headlines are the aesthetic voice, not a label treatment. Do not soften them to mixed case. The power comes from commitment.
+
+## Type on Ground
+
+The ground is the section background. Type sits directly on it.
+
+```
+WRONG:  section-bg → white card → shadow → content
+RIGHT:  section-bg → content
+```
+
+Grid column alignment organizes elements. Rules separate them. Nothing else.
+
+**Structural dividers on light sections:**
+```html
+<div class="border-t-4 border-[var(--ink-black)]" />     <!-- section break -->
+<div class="border-r-2 border-[var(--ink-black)]" />     <!-- column divider -->
+```
+
+**On colored sections (red, gold, green):**
+```html
+<div class="border-t-2 border-white/40" />               <!-- white rule -->
+<div class="border-r-2 border-black/20" />               <!-- dark rule -->
+```
+
+The full-bleed color change already signals a new section. No additional signal — no label, no shadow, no card — is needed or appropriate.
+
+## Digital Affordances to Eliminate
+
+These are web UI conventions that break the print feel:
+
+| Element | Why it's wrong | What to do instead |
+|---|---|---|
+| `box-shadow` (any) | Print is flat. Shadows simulate UI depth that doesn't exist in print. | None. Color contrast carries weight. |
+| `border-radius` > 0 | Rounded corners signal interactive UI element. Print boxes are square. | `rounded-none` or omit entirely |
+| Cards on colored backgrounds | A white card on red is a web component, not a poster composition. | Type directly on the section ground |
+| Subtle borders `rgba(0,0,0,0.12)` | Whisper borders are a digital UI convention. | Full-weight rules (2–4px, full opacity) or none at all |
+| Multiple hierarchy signals | Color + shadow + label + card = four signals for one transition | Pick one. The color is enough. |
+| Hover states on non-interactive elements | Trains the eye to expect interaction everywhere | Restrict visual hover feedback to actual interactive elements |
+
+## Buttons
+
+No rounded corners. No soft shadow. Square geometry, clear intent.
 
 ```html
-<!-- Section label - small, uppercase, colored -->
-<p class="text-sm font-semibold text-[var(--accent-red)] uppercase tracking-wider mb-4">
-  The difference
-</p>
-
-<!-- Section heading - large, bold, normal case -->
-<h2 class="text-4xl md:text-5xl font-bold tracking-tight mb-6">
-  Before & after
-</h2>
-
-<!-- Body text - warm gray, relaxed leading -->
-<p class="text-lg text-[var(--warm-gray)] leading-relaxed">
-  Description text here.
-</p>
-```
-
-## Shadows & Depth
-
-Use soft shadows that feel like ink bleeding on paper:
-
-```css
-/* Light shadow - for cards */
-.shadow-print {
-  box-shadow: 
-    0 1px 2px rgba(0,0,0,0.04),
-    0 4px 8px rgba(0,0,0,0.04),
-    0 8px 16px rgba(0,0,0,0.02);
-}
-
-/* Medium shadow - for elevated elements */
-.shadow-print-lg {
-  box-shadow: 
-    0 2px 4px rgba(0,0,0,0.03),
-    0 8px 16px rgba(0,0,0,0.05),
-    0 16px 32px rgba(0,0,0,0.03);
-}
-```
-
-## Borders
-
-Use subtle rule lines, not heavy borders:
-
-```css
-/* Subtle border */
-.border-rule {
-  border-color: rgba(0,0,0,0.12);
-}
-.dark .border-rule {
-  border-color: rgba(255,255,255,0.12);
-}
-```
-
-```html
-<!-- Section divider -->
-<section class="py-24 border-t border-rule">
-```
-
-## Layout Principles
-
-### 1. Generous White Space
-- Sections: `py-24` (6rem vertical padding)
-- Max width: `max-w-7xl mx-auto px-6`
-- Let content breathe
-
-### 2. Varied Compositions
-Don't repeat the same pattern. Mix:
-
-```html
-<!-- Centered heading + content below -->
-<section class="py-24">
-  <div class="max-w-7xl mx-auto px-6">
-    <div class="text-center max-w-2xl mx-auto mb-16">
-      <h2>Heading</h2>
-    </div>
-    <div>Content</div>
-  </div>
-</section>
-
-<!-- Side-by-side with text left -->
-<section class="py-24">
-  <div class="max-w-7xl mx-auto px-6">
-    <div class="grid lg:grid-cols-2 gap-16 items-center">
-      <div>Text content</div>
-      <div>Visual content</div>
-    </div>
-  </div>
-</section>
-
-<!-- Full-width dark section -->
-<section class="py-24 bg-[var(--ink-black)] text-white">
-  <div class="max-w-7xl mx-auto px-6">
-    Content
-  </div>
-</section>
-```
-
-### 3. Color Accents (Sparse)
-Color should punctuate, not dominate:
-
-```html
-<!-- Accent line under heading -->
-<div class="w-16 h-1 bg-[var(--accent-gold)] mb-8" />
-
-<!-- Colored label before heading -->
-<p class="text-sm font-semibold text-[var(--accent-red)] uppercase tracking-wider mb-4">
-  The difference
-</p>
-
-<!-- Accent gradient on card top -->
-<div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[var(--accent-blue)] to-[var(--accent-blue)]/50" />
-
-<!-- ONE dramatic colored section per page (CTA) -->
-<section class="py-32 bg-accent-blue text-white">
-```
-
-## Component Patterns
-
-### Navigation
-Clean, not bordered:
-
-```html
-<nav class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-rule">
-  <div class="max-w-7xl mx-auto flex items-center justify-between h-16 px-6">
-    <a href="/" class="text-xl font-extrabold tracking-tight">brand</a>
-    <div class="flex items-center gap-8">
-      <a href="/docs" class="text-sm font-medium text-[var(--warm-gray)] hover:text-[var(--ink-black)]">Docs</a>
-    </div>
-  </div>
-</nav>
-```
-
-### Cards
-Subtle shadow, optional accent line:
-
-```html
-<div class="relative bg-white rounded shadow-print overflow-hidden">
-  <!-- Optional: colored accent line -->
-  <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[var(--accent-blue)] to-[var(--accent-blue)]/50" />
-  
-  <div class="p-8">
-    Content
-  </div>
-</div>
-```
-
-### Buttons
-Primary and secondary variants:
-
-```html
-<!-- Primary -->
-<a href="#" class="px-8 py-4 bg-[var(--ink-black)] text-white font-semibold text-sm rounded shadow-print hover:shadow-print-lg transition-shadow">
-  Primary action
+<!-- Primary CTA — always poster-red -->
+<a class="px-8 py-4 bg-[var(--poster-red)] text-white font-bold uppercase tracking-wider hover:bg-[var(--ink-black)]">
+  Get Early Access
 </a>
 
-<!-- Secondary -->
-<a href="#" class="px-8 py-4 border border-rule font-semibold text-sm rounded hover:bg-black/5 transition-colors">
-  Secondary action
-</a>
-
-<!-- Accent -->
-<a href="#" class="px-5 py-2 bg-accent-red text-white text-sm font-semibold rounded hover:opacity-90">
-  Get Started
+<!-- Secondary / outline -->
+<a class="px-8 py-4 border-2 border-[var(--ink-black)] font-bold uppercase tracking-wider hover:bg-[var(--ink-black)] hover:text-white">
+  Read the Docs
 </a>
 ```
 
-### Code Blocks
-Dark background, syntax highlighting with accent colors:
+Primary CTAs are always `--poster-red`. No section should introduce a different CTA background color.
+
+## Code Blocks
+
+The one exception to "no cards" — code needs a container to function as code. Use the established pattern:
 
 ```html
-<div class="bg-[#1a1a1a] rounded-lg overflow-hidden shadow-print-lg">
-  <!-- Window chrome -->
-  <div class="flex items-center gap-2 px-4 py-3 bg-[#252525] border-b border-white/10">
+<div class="bg-[var(--card-dark-bg)]">
+  <div class="flex items-center gap-2 px-4 py-3 border-b border-white/10">
     <div class="w-3 h-3 rounded-full bg-[#ff5f57]" />
     <div class="w-3 h-3 rounded-full bg-[#febc2e]" />
     <div class="w-3 h-3 rounded-full bg-[#28c840]" />
-    <span class="ml-4 text-xs text-white/50">filename.tsx</span>
+    <span class="ml-4 text-xs text-white/50 font-mono">filename.tsx</span>
   </div>
-  
-  <pre class="p-6">
-    <code class="text-sm font-mono text-white/90">...</code>
-  </pre>
+  <pre class="p-6 font-mono text-sm text-white/90">...</pre>
 </div>
 ```
 
-Syntax highlighting colors:
-- Keywords: `var(--accent-red)`
-- Tags/Components: `var(--accent-blue)`  
-- Attributes/Numbers: `var(--accent-gold)`
-- Strings: `emerald-400`
-- Comments: `opacity-50`
+Syntax highlighting: keywords → `--poster-red`, JSX tags → `--poster-blue`, strings/values → `--poster-gold`.
 
-## Print Texture (Subtle)
+## Completion Check
 
-Add warmth without going skeuomorphic:
+Before finishing any design work:
 
-```css
-/* Paper texture - very subtle */
-.texture-paper {
-  background-image: url("data:image/svg+xml,...");
-  /* opacity: 0.02 */
-}
-
-/* Text ink effect - slight blur */
-.text-ink {
-  text-shadow: 0 0 0.3px currentColor;
-}
-
-/* Gradient backgrounds for depth */
-.bg-accent-blue {
-  background: linear-gradient(135deg, var(--accent-blue) 0%, color-mix(in srgb, var(--accent-blue), black 10%) 100%);
-}
-```
-
-## Dark Mode
-
-Invert structure, keep accent colors similar:
-
-```css
-/* Light */
-background: #FAFAFA;
-text: #1a1a1a;
-borders: rgba(0,0,0,0.12);
-
-/* Dark */
-background: #0a0a0a;
-text: #e5e5e5;
-borders: rgba(255,255,255,0.12);
-/* Accents slightly brighter for contrast */
-```
-
----
-
-## Documentation Styling Guidelines
-
-For documentation and utility pages, apply the design system with **reduced intensity**:
-
-### Toned-Down Adjustments for Docs
-
-1. **Borders**: Use `border-2` maximum instead of `border-4`
-2. **Typography**: Use `font-bold` instead of `font-black` for headings
-3. **Uppercase**: Reserve for small labels only, not navigation
-4. **Hard shadows**: Replace with subtle `shadow-print` or simple 2px offsets
-5. **Color accents**: One accent color per section maximum, muted tones
-
-### Docs-Specific Components
-
-**Tables** - Clean but structured:
-```html
-<table class="w-full">
-  <thead>
-    <tr class="border-b-2 border-[var(--ink-black)] dark:border-white">
-      <th class="text-left py-3 px-4 font-bold text-sm">Property</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr class="border-b border-rule hover:bg-black/[0.02] dark:hover:bg-white/[0.02]">
-      <td class="py-3 px-4">...</td>
-    </tr>
-  </tbody>
-</table>
-```
-
-**Sidebar Navigation** - Structured with subtle accents:
-```html
-<nav class="text-sm">
-  <!-- Active item uses accent underline or left border -->
-  <a class="flex items-center gap-2 px-3 py-2 font-medium text-[var(--ink-black)] border-l-2 border-[var(--accent-blue)]">
-    Active item
-  </a>
-  <a class="flex items-center gap-2 px-3 py-2 text-[var(--warm-gray)] hover:text-[var(--ink-black)] border-l-2 border-transparent">
-    Inactive item
-  </a>
-</nav>
-```
-
-**Buttons** - Squared but not aggressive:
-```html
-<!-- Primary docs button -->
-<a class="inline-flex items-center px-4 py-2 bg-[var(--ink-black)] dark:bg-white text-white dark:text-black text-sm font-semibold">
-  Action
-</a>
-
-<!-- Secondary/outline -->
-<a class="inline-flex items-center px-4 py-2 border-2 border-[var(--ink-black)] dark:border-white text-sm font-semibold hover:bg-[var(--ink-black)] hover:text-white dark:hover:bg-white dark:hover:text-black">
-  Secondary
-</a>
-```
-
-**Code/property names** - Use accent color:
-```html
-<code class="font-mono text-sm text-[var(--accent-blue)] dark:text-[var(--accent-blue)]">propertyName</code>
-```
-
-**Badges/tags** - Squared, subtle:
-```html
-<span class="inline-flex px-2 py-0.5 text-xs font-semibold bg-[var(--accent-blue)]/10 text-[var(--accent-blue)]">
-  read-only
-</span>
-```
-
-## Implementation Checklist
-
-When applying this design system:
-
-- [ ] Use warm, muted accent colors (not pure primaries)
-- [ ] Add generous white space (py-24 between sections)
-- [ ] Use subtle shadows instead of heavy borders
-- [ ] Vary section layouts (don't repeat same pattern)
-- [ ] Use color accents sparingly (1-2 per page)
-- [ ] Mix typography weights and cases
-- [ ] Add subtle gradients for depth
-- [ ] Use rule-line borders (1px, low opacity)
-- [ ] Only one dramatic colored section (usually CTA)
-- [ ] Cards use shadows, optional accent line at top
-
-### For Documentation specifically:
-
-- [ ] Reduce border thickness (2px max)
-- [ ] Use font-bold not font-black
-- [ ] Squared buttons but not aggressive
-- [ ] Accent colors for links and code
-- [ ] Clean tables with 2px header border
-- [ ] Sidebar uses left-border for active state
+- [ ] Every token used has a declared role (cross-reference the table above)
+- [ ] Every section's color choice is motivated and commented
+- [ ] No `box-shadow` on non-code-block elements
+- [ ] No `border-radius` on section containers or feature items
+- [ ] Content sits on the ground, not inside a card
+- [ ] One structural signal per section transition (the color change is it)
+- [ ] All primary CTAs use `bg-[var(--poster-red)]`
+- [ ] Gold text on light backgrounds uses `#B45309`, not `--poster-gold`
+- [ ] A new agent reading this section's code would understand every color choice without asking

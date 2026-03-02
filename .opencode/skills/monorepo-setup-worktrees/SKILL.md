@@ -83,18 +83,18 @@ Never include `dev-projects/` in the URL path.
 
 ## Smoke testing
 
-`scripts/smoke-test <branch>` is the way to verify render pipeline changes before merge. It is not a persistent scope — it is a one-shot script:
+`scripts/smoke-test <branch>` is a one-shot render verification script, not a persistent scope. Use it as a pre-merge gate for render pipeline changes.
 
 1. Requires `web` or `render` scope (errors on `elements`)
-2. If scope is `web`: starts render-profile services temporarily, registers a cleanup trap to stop them on exit
-3. If scope is `render`: runs against already-running render services, no lifecycle management
-4. Runs `telecine/scripts/smoke-test.ts` inside the runner container (`docker-compose exec`) with `EF_HOST=http://web:3000` and the worktree's `EF_TOKEN`
-5. After tests complete, prints the dashboard URL (`http://<branch>.localhost:3000`) for visual inspection of render outputs
+2. If scope is `web`: temporarily starts render-profile services, registers a cleanup trap to stop them on exit
+3. If scope is `render`: runs against already-running services, no lifecycle management
+4. Runs `telecine/scripts/smoke-test.ts` inside the runner container with `EF_HOST=http://web:3000` and the worktree's `EF_TOKEN`
+5. Prints the dashboard URL (`http://<branch>.localhost:3000`) for visual inspection of render outputs
 6. Prompts to press enter before stopping render services (if they were started)
 
-Render development workflow: work at `web` scope, run tests directly, use `smoke-test` as a pre-merge gate rather than keeping render services running all day.
+Render development workflow: stay at `web` scope, run unit tests directly, use `smoke-test` as the merge gate rather than keeping a full render stack running all day.
 
-`scheduler-go` is a pre-built Go image not handled by docker-compose. `smoke-test` builds it automatically on first run. `build-runner-images` also builds it.
+`scheduler-go` is a pre-built Go image not managed by docker-compose. `smoke-test` builds it automatically on first run. `build-runner-images` also builds it.
 
 ## Troubleshooting
 
