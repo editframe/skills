@@ -26,7 +26,8 @@
     "skills/skills/brand-video-generator/references/video-archetypes.md",
     "skills/skills/brand-video-generator/references/visual-metaphors.md",
     "skills/skills/brand-video-generator/references/video-fundamentals.md",
-    "skills/skills/brand-video-generator/references/editing.md"
+    "skills/skills/brand-video-generator/references/editing.md",
+    "skills/skills/brand-video-generator/references/genre-selection.md"
   ],
   "diagnoseSkills": [
     "skills/skills/composition/SKILL.md",
@@ -47,7 +48,8 @@
     "skills/skills/brand-video-generator/references/composition-patterns.md",
     "skills/skills/brand-video-generator/references/emotional-arcs.md",
     "skills/skills/brand-video-generator/references/video-archetypes.md",
-    "skills/skills/brand-video-generator/references/editing.md"
+    "skills/skills/brand-video-generator/references/editing.md",
+    "skills/skills/brand-video-generator/references/genre-selection.md"
   ],
   "tasks": [
     {
@@ -78,21 +80,21 @@
       "held_out": false
     },
     {
-      "id": "vercel-launch",
-      "brand": "Vercel",
-      "description": "Frontend cloud platform. Deploy web apps globally with zero configuration. Known for instant deployments and preview URLs for every git push.",
-      "videoType": "launch",
+      "id": "glossier-social",
+      "brand": "Glossier",
+      "description": "Skincare and makeup brand built from a beauty blog community. Products developed from reader feedback. Known for the 'no-makeup makeup' aesthetic, minimalist pink packaging, and launching with no traditional advertising — only photos submitted by real customers.",
+      "videoType": "social",
       "duration": "15s",
-      "platform": "twitter",
+      "platform": "instagram",
       "held_out": false
     },
     {
-      "id": "notion-social",
-      "brand": "Notion",
-      "description": "All-in-one workspace where teams write, plan, and get organized. Combines notes, docs, databases, and project management in one tool.",
-      "videoType": "social",
-      "duration": "15s",
-      "platform": "tiktok",
+      "id": "patagonia-brand-awareness",
+      "brand": "Patagonia",
+      "description": "Outdoor apparel company whose mission statement is 'We're in business to save our home planet.' Known for the 'Don't Buy This Jacket' ad, their Worn Wear repair program that sells used gear, and a corporate structure that donates all profits to environmental causes.",
+      "videoType": "brand-awareness",
+      "duration": "30s",
+      "platform": "web",
       "held_out": false
     },
     {

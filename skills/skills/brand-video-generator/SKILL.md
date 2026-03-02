@@ -52,39 +52,55 @@ Provide a website URL and video objective. The skill will:
 
 ### Phase 0: Specificity Gate (MANDATORY — do this before touching the website)
 
-Before any analysis, answer these three questions. Generic answers are disqualifying — if you can substitute another brand's name and the answer still holds, your answer is not specific enough.
+Before any analysis, answer these four questions. Generic answers are disqualifying — if you can substitute another brand's name and the answer still holds, your answer is not specific enough.
 
 **1. What is true about this brand that would be false about any competitor?**
 
-Your answer must name a specific product, API, architectural decision, or design philosophy — not a marketing position. Marketing positions can be copied. Decisions cannot.
+The answer must be something structural or foundational — a decision, a relationship, a material fact about how the brand works or what it is. Not a marketing position (which can be copied) but a truth (which cannot).
 
-Not: "They focus on quality and customer service" (every brand claims this).
-Not: "They pioneered multiplayer design" (competitors have since copied this — it no longer differentiates).
-Yes: "They were founded by two researchers who spent eight years on a single problem before launching."
-Yes: "Their entire product is built on a single unified object model — a Charge in Radar is the same Charge in Connect and Billing; no translation layer exists."
-Yes: "They removed the 'new file' concept entirely — there are no Figma files, only URLs. The URL *is* the design."
-Yes: "Their product is built around a build step that understands your framework — it's not just CDN, it's the framework knowing where to put the edge functions."
+Not specific enough:
+- "They focus on quality and customer service" (every brand claims this)
+- "They're authentic and community-driven" (every DTC brand says this)
+- "They pioneered multiplayer design" (competitors have since copied this — it no longer differentiates)
 
-**Temporal test**: Could a well-funded 2025 competitor truthfully claim the same thing? If yes, dig deeper. The answer you're looking for is structural — something that would take years to replicate, not months.
+Specific enough — by category:
+
+*Software/developer tools*: "Their entire product is built on a single unified object model — a Charge in Radar is the same Charge in Connect and Billing; no translation layer." | "They removed the 'new file' concept entirely — there are no Figma files, only URLs."
+
+*Consumer/lifestyle*: "They launched with no advertising — only photos submitted by real customers, which meant the product had to be worth photographing before it could be marketed." | "Every product is tested by the founder on herself for a minimum of 6 months before it ships."
+
+*Physical goods / apparel*: "They don't sell seasons — they sell repairs. Their website has a 'Worn Wear' section that earns revenue from used items." | "The product is designed to be returned in the same bag it arrived in, zero-waste, no box."
+
+*Food / beverage*: "They publish their supply chain — not as a PR move, but because the flavor is different depending on which farm and which harvest, and they name the farm on the bag."
+
+**Temporal test**: Could a well-funded competitor truthfully claim the same thing next year? If yes, dig deeper. The answer you're looking for is structural — something that would take years to replicate, not months.
 
 **2. What would be lost if this video never existed?**
 
 Not: "People wouldn't know about the product" (that's true of any video).
-Yes: "Nobody would see the contrast between how chaotic their industry is and how calm their workflow actually is."
+Yes (SaaS): "Nobody would see the contrast between how chaotic their industry is and how calm their workflow actually is."
+Yes (consumer): "Nobody would see that this product exists because of one specific community — and that the community came first."
+Yes (apparel): "Nobody would see that the brand's entire supply chain is a design decision, not just a supply chain."
 
 **3. What should the viewer feel at the last frame that they didn't feel at the first frame?**
 
-This is a feeling, not a fact. "Informed" is not a feeling. "Like this problem is finally solved" is a feeling.
+This is a feeling, not a fact. "Informed" is not a feeling. Name the specific emotional movement:
+- SaaS: "Like this problem is finally solved" | "Like building again is possible"
+- Consumer beauty: "Like they already belong to something before they've bought anything"
+- Apparel: "Like buying less is somehow an act of defiance they want to be part of"
+- Food: "Like they've been eating anonymous food their whole life and just found out it has a name"
 
 **4. What formal choice does answer #1 force on this video?**
 
-The brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.
+The brand truth must determine the video's **structure** — not just its content. If the truth could be dropped into any template without changing the template, it isn't constraining anything.
 
-Not: "Linear is fast, so I'll use snappy cuts" (any brand could 'be fast').
-Yes: "Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains."
+*Structure follows truth — by category:*
 
-Not: "Stripe handles money, so I'll show a payment form" (category imagery).
-Yes: "Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction."
+Software: "Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains." | "Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction."
+
+Consumer/lifestyle: "Glossier's brand is made of user faces, not product shots. So the video is structured as a handoff — each face passes the screen to the next, as if the product is passing between real people." | "The brand's truth is that no one looks like the models — so the structure is the absence of the usual model shot."
+
+Physical goods: "The brand's truth is repair over replacement. So the video structure is reversal — damaged → restored — and every scene runs against the usual product-fantasy direction."
 
 The answer to this question is your point of view. If you cannot identify a structural consequence of the brand truth, you have not found the real truth yet.
 
@@ -94,21 +110,83 @@ The answers to Phase 0 determine the form of the video. Return to them at every 
 
 ---
 
+### Phase 0.5: Genre Determination (MANDATORY — before website analysis)
+
+The video type given as input (`launch`, `product-demo`, `explainer`, `brand-awareness`, `social`) is a **functional objective**, not a genre. Genre is the formal language the video speaks — and it must match the brand's category, audience, and sensibility. Getting genre wrong produces a video that is technically correct but tonally alien.
+
+**The genre question**: Given what you already know about this brand from Phase 0, what is the appropriate *formal register* for this video?
+
+**Step 1: Classify the brand's primary appeal mode**
+
+- **Rational appeal** — the product is chosen for what it *does*. Audience is evaluating capabilities, price, or fit. (Developer tools, B2B SaaS, financial services, medical)
+- **Sensory/aesthetic appeal** — the product is chosen for how it *feels* or *looks*. Audience is seeking identity, mood, or experience. (Cosmetics, fashion, food, fragrance, interiors)
+- **Community/identity appeal** — the product is chosen for *who else uses it*. Audience is seeking belonging or self-expression. (Lifestyle brands, streetwear, music, fitness culture)
+- **Mixed** — both rational and one of the above (e.g., a premium running shoe: rational performance claims + identity appeal)
+
+**Step 2: Determine appropriate genre from appeal mode + video objective**
+
+Do not default to the genre you most often produce. Derive it from the combination.
+
+| Appeal mode | Objective | Appropriate genre |
+|---|---|---|
+| Rational | Product demo / explainer | Feature demonstration, problem-solution, UI walkthrough |
+| Rational | Launch / awareness | Announcement, reveal, proof-of-concept |
+| Sensory/aesthetic | Awareness / social | Mood film, visual essay, texture reel |
+| Sensory/aesthetic | Product | Product poetry — the object in motion, no narration |
+| Community/identity | Awareness | Community portrait, faces film, cultural artifact |
+| Community/identity | Social | Participatory/UGC-style, duet-ready, trend-adjacent |
+| Mixed | Any | Hybrid: lead with sensory, resolve with rational — or vice versa depending on where in the funnel |
+
+**Step 3: Verify genre fitness against Phase 0 answers**
+
+The chosen genre must be compatible with the Phase 0 formal constraint. If Phase 0 Q4 says "the structure is absence — everything working without friction," a loud announcement-style genre is wrong even if the objective is a launch. Revise the genre or revise the constraint until they cohere.
+
+**Anti-patterns by appeal mode:**
+
+*Rational brands choosing sensory genre*: A B2B data pipeline company producing a wordless mood film confuses its audience. They came to evaluate, not feel. Give them something to evaluate.
+
+*Sensory/aesthetic brands choosing rational genre*: A teen skincare brand producing a feature-list explainer with voiceover and UI screenshots kills the mood. The product is a feeling — make the video feel like that.
+
+*Community brands erasing the community*: A streetwear brand producing a polished product-showcase with no people in it has removed the only thing that differentiates it.
+
+**Output of this phase**: One sentence stating the genre and the reasoning.
+
+Example: "Mood film — Glossier's appeal is sensory/community, the objective is brand awareness for Instagram, and the Phase 0 truth (brand built from user faces, not product shots) forces a community-portrait structure. A product demo would be genre-wrong."
+
+Example: "Problem-solution explainer — Stripe's appeal is rational (developers evaluating infrastructure), the objective is a 60s explainer for web, and the Phase 0 truth (invisible product, absence of friction) is best expressed by contrasting a world with friction against one without."
+
+See [references/genre-selection.md](references/genre-selection.md) for a full genre palette with formal characteristics and appropriate contexts.
+
+---
+
 ### Phase 1: Brand Analysis
 
-Extract from the loaded website:
+Extract from the loaded website **and any other material you can access** (social channels, existing video, press, packaging). The website is the minimum — brands whose primary communication is visual (consumer, lifestyle, fashion, food) often reveal more on Instagram or TikTok than on their homepage.
+
+**Material intake — gather from all accessible sources:**
+
+*Website*: Homepage, product pages, About page — extract visual identity, messaging hierarchy, and tone.
+
+*Social channels* (if accessible via browser tools): What does the brand's Instagram/TikTok grid look like? What is the ratio of product shots to people shots to lifestyle shots? What is the cadence — polished campaign imagery, or raw UGC-style content? This reveals the brand's actual visual register, which often differs from the website.
+
+*Existing brand video* (if available on website or YouTube): What genre does the brand already use? What is the editing tempo? Is there narration? Music-forward or dialogue-forward? Existing brand video is a strong signal — either match it (brand consistency) or deliberately depart from it (if the brief calls for something new).
+
+*Packaging / physical materials* (if shown): For physical goods brands, the packaging design is often the densest visual identity signal. Color, material texture, typography choices here are more precise than any website could be.
+
+**After intake, extract:**
 
 **Visual Identity:**
-- Color palette with exact hex codes
-- Typography (fonts and personality)
-- Design language (minimal, bold, playful, etc.)
-- Visual motifs (shapes, icons, image style)
+- Color palette with exact hex codes (from CSS inspection if on website, or from visual estimation of photography)
+- Typography (fonts and personality — clinical, handwritten, geometric, humanist?)
+- Design language — the adjective that describes the brand's visual register (clinical precision, warm grain, maximalist energy, austere minimalism, playful chaos)
+- Visual motifs: What recurring shapes, textures, or compositional choices appear across materials? (Soft grain on every photo? Hard diagonal compositions? Close-up skin texture? Abstract geometric patterns?)
+- Photography style: Do people appear? If so, how — models or real people, posed or candid, diverse or singular aesthetic? This is a primary brand signal.
 
 **Voice & Messaging:**
-- Tone (friendly, authoritative, urgent, etc.)
-- Target audience signals
+- Tone (friendly, authoritative, urgent, intimate, clinical, irreverent)
+- Target audience: demographic signals from photography, copy register, and social content
 - Core value propositions — **strip category-level claims** (see below)
-- Emotional positioning
+- Emotional positioning: What does the brand want the viewer to feel *about themselves* after encountering the brand? (Empowered, seen, aspirational, smart, part of something)
 
 **False differentiators — these describe every competitor too, ignore them:**
 - "Real-time collaboration", "easy to use", "powerful", "fast", "reliable", "all-in-one"
@@ -120,6 +198,10 @@ Extract from the loaded website:
 - Workspace/productivity tools: "fragmented tools → unified workspace", "all-in-one", "where work happens", "write, plan, organize"
 - Deployment platforms: "deploy on every git push", "preview URLs", "instant deploys", "global CDN", "serverless", "zero config deploys", "git push → live", "instant rollback", "edge network"
 - Backend-as-a-service: "fragmented backend → unified platform", "Firebase alternative", "open source", "integrated platform", "one backend for everything"
+- Consumer beauty/skincare: "clean ingredients", "dermatologist-tested", "for all skin types", "cruelty-free", "no harsh chemicals", "glow", "your skin but better"
+- Lifestyle/apparel: "sustainable", "made with care", "designed for real life", "premium quality", "built to last", "timeless style", "wear it your way"
+- Food/beverage: "real ingredients", "no artificial anything", "small batch", "crafted with love", "farm to table", "ethically sourced", "better for you"
+- Fitness/wellness: "feel your best", "stronger every day", "your journey", "science-backed", "community-driven", "transform your body"
 
 **The brand's marketing tagline is never the answer.** Your job is to find the structural truth underneath — what the brand *does architecturally* more than what it *claims in copy*.
 
@@ -314,3 +396,4 @@ After all scenes, add:
 - [references/video-archetypes.md](references/video-archetypes.md) - Industry patterns
 - [references/video-fundamentals.md](references/video-fundamentals.md) - Transitions, arcs, brand basics
 - [references/editing.md](references/editing.md) - What to cut and when to stop
+- [references/genre-selection.md](references/genre-selection.md) - Full genre palette with formal characteristics and appropriate contexts
