@@ -165,3 +165,14 @@ Specific emotional movements by category:
 | Transformation | Before/after morph | What is the named "before" state THIS brand's own users describe? |
 | Environmental waste | Abstract particles/shapes | Recognizable objects being discarded with actual product-specific texture |
 | Human faces | Circles, gradients, blobs | Actual facial features, real photography, or product as stand-in |
+
+---
+
+## Community-Driven Brands
+
+**The verification requirement**: When a brand claims community co-creation, the video must reference *verifiable* community artifacts, not plausible reconstructions.
+
+**Wrong**: Generic feedback quotes that sound like real customers ('I wish there was a product that...')
+**Right**: Named sources with verifiable provenance (specific blog post, Reddit thread, documented product origin story with dates and named publication)
+
+**Example (community beauty brand built from a blog)**: The structural truth isn't 'we listen to feedback' — every DTC brand claims this. The structural truth is that the brand's editorial platform existed for years before the first product launched, building documented demand. The video must reference this specific artifact: the platform's name, the year span, the specific community moments that led to specific named products. If you cannot verify the specific community moment, do not fabricate a plausible-sounding quote — note the gap instead.

@@ -210,20 +210,25 @@ export function buildGeneratePrompt(task: {
   duration: string
   platform: string
 }): string {
-  return `Using the Editframe composition skill, create a ${task.duration} ${task.videoType} video for ${task.brand}.
+  return `Using the Editframe brand-video-generator skill, create a ${task.duration} ${task.videoType} video for ${task.brand}.
 
 Brand description: ${task.description}
 Platform: ${task.platform}
 
-Before writing any HTML, work through the brand-video-generator skill's Phase 0 questions. You know this brand from training — use that knowledge. Name specific products, features, pricing models, design philosophy, and founder decisions that are true about ${task.brand} and false about its competitors.
+No URL is provided — use the brand description and your training knowledge as the brand knowledge source.
 
-Requirements:
-- Output only the HTML composition markup (the ef-timegroup structure + any script/style tags)
+Run both passes of the skill without pausing for confirmation:
+
+PASS 1 — Output the brief first (structural truth, formal constraint, authorial angle, felt arc). Use your training knowledge to name specific products, features, design decisions, and mechanisms that are true about ${task.brand} and false about its direct competitors.
+
+PASS 2 — Immediately follow the brief with the complete HTML composition. Do not wait for confirmation.
+
+HTML requirements:
 - Use real Editframe web components (ef-timegroup, ef-video, ef-text, ef-audio, ef-image)
 - Include CSS animations — text should move, not just appear
-- Do NOT use bars-n-tone.mp4 — use brand-color backgrounds, canvas animations, or leave video src empty with a CSS background instead
-- The composition structure must visibly follow from the specific brand truth you identify in Phase 0 Q4
-- Any canvas animation must be semantically connected to what is specific about this brand
+- Do NOT use bars-n-tone.mp4 — use brand-color backgrounds, canvas animations, or CSS backgrounds
+- The composition must visibly follow from the formal constraint in the brief
+- Canvas animations must be semantically connected to the structural truth
 
-Output only the HTML — no explanation, no markdown fences, just the raw HTML composition.`
+End your output with the complete HTML (no markdown fences). The brief prose comes first, then the raw HTML.`
 }

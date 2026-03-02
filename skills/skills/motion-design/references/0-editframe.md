@@ -37,14 +37,30 @@ The material physics model translates directly to CSS easing curves. Apply them 
 }
 ```
 
-**Material → cubic-bezier quick reference:**
+Add a new section after the material reference table:
 
-| Material feel | Curve | Use for |
-|---|---|---|
-| Glass (clean, precise) | `cubic-bezier(0, 0.55, 0.45, 1)` | Titles, professional content |
-| Rubber (bouncy, playful) | `cubic-bezier(0.68, -0.55, 0.265, 1.55)` | Logos, fun brands |
-| Metal (sharp, instant) | `cubic-bezier(0.55, 0, 1, 0.45)` | Urgent alerts, fast cuts |
-| Paper (gentle, light) | `cubic-bezier(0.25, 0.46, 0.45, 0.94)` | Secondary text, soft content |
+---
+
+## Rhythm Through Variation
+
+**Anti-pattern:** All animations using identical duration and easing creates mechanical, monotonous motion.
+
+**Rule:** Within any scene, vary at least ONE of: duration, easing, or delay pattern.
+
+**For keyboard/command-driven products (Linear, Raycast, etc.):**
+- Primary actions: 200-300ms, sharp easing (`cubic-bezier(0.55, 0, 1, 0.45)`) — feels responsive
+- State transitions: 400-500ms, smooth easing — shows the system working
+- Reveals/entrances: 500-600ms, gentle easing — gives content room to land
+
+```html
+<!-- Wrong: monotonous -->
+<ef-text style="animation: 0.6s enter ease-out">Action</ef-text>
+<ef-text style="animation: 0.6s enter ease-out">Result</ef-text>
+
+<!-- Right: rhythm through variation -->
+<ef-text style="animation: 0.25s snap cubic-bezier(0.55, 0, 1, 0.45)">⌘K</ef-text>
+<ef-text style="animation: 0.5s reveal ease-out 0.15s">Issue created</ef-text>
+```
 
 ---
 

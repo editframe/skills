@@ -459,16 +459,20 @@ Music should move from tense to calm
 
 ## Short-Form Arc Compression (15-30s)
 
-Short videos (social, TikTok, Instagram) cannot sustain a traditional three-act arc. Instead, compress to a **two-beat structure**:
+Short videos (social, TikTok, Instagram) cannot sustain a traditional three-act arc. Instead, compress to a **three-beat structure**:
 
-**Beat 1 (0-60% of duration):** Establish one emotional state clearly — recognition, desire, tension, or curiosity.
-**Beat 2 (60-100% of duration):** Shift to a contrasting state — belonging, release, revelation, or action.
+**Beat 1 (0-50% of duration):** Establish one emotional state clearly — recognition, desire, tension, or curiosity.
+**Beat 2 (50-75% of duration):** Introduce friction, surprise, or reframe. This beat prevents the arc from feeling like a predictable slide deck. Show: a rejected idea, an unexpected constraint, a moment where the expected path was wrong, a tension between what the brand could do and what it chose to do.
+**Beat 3 (75-100% of duration):** Resolution that earns the emotional shift.
+
+**The surprise requirement for short-form**: Even at 15-30s, the viewer must encounter one moment where their assumption is challenged. 'Feedback → product' is a slide. 'Feedback → unexpected constraint/choice → product' is a story. If the arc can be summarized as 'A leads to B', add the beat that makes it 'A leads to unexpected C, which enables B.'
 
 **The shift must be causally earned, not just sequenced.** The viewer must understand WHY they moved from state A to state B. For community brands: show the mechanism of participation (your feedback → this ingredient). For transformation brands: show the before/after contrast in the same frame or object. A logo landing is not a resolution unless something in the video built toward it. Test: cover the logo — does the final scene still feel like arrival? If not, the arc is unearned.
 
 **Concreteness requirement for abstract claims:** When the emotional arc involves abstract concepts (listening, community, co-creation), each beat must contain at least one concrete artifact:
 - Beat 1 (establishing state): Show specific text, quotes, or named inputs — not abstract representations of 'feedback' or 'voices'
-- Beat 2 (resolution): Show the specific output those inputs created — a named product, a visible change, a concrete result
+- Beat 2 (friction/surprise): Show the specific constraint or choice that makes this brand's response non-generic — the thing they did that most brands wouldn't
+- Beat 3 (resolution): Show the specific output those inputs created — a named product, a visible change, a concrete result
 
 Abstract-to-abstract arcs (dots representing feedback → dots converging) fail the viewer state test because no specific information anchors the emotional shift.
 

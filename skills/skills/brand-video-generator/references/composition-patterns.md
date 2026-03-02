@@ -137,6 +137,8 @@ A `<canvas>` element without a complete `addFrameTask` script is a broken compos
 2. Verify the script is not truncated — check that it ends with `});` and `</script>`
 3. If approaching output length limits, STOP and either: (a) simplify the canvas animation, (b) replace with CSS animation, or (c) merge the scene's content into an adjacent scene
 4. Never leave a canvas scene with placeholder or incomplete code — delete the scene entirely rather than ship broken motion
+5. **Output token awareness**: If you have generated more than 3,000 tokens of HTML/script content, STOP before adding any new canvas scene. Canvas scripts average 400–600 tokens. Incomplete scripts render as blank screens.
+6. **Verification step**: Before outputting the closing `</script>` tag, confirm the `addFrameTask` callback has: (a) a complete function body, (b) closing `});` for the callback, (c) closing `});` for the addFrameTask call.
 
 **Output limit rule:** If a composition has 4+ canvas scenes, verify each script is complete before adding another. A video with 3 working canvas scenes is better than 4 scenes where one is broken.
 
@@ -170,10 +172,19 @@ For problem/pain scenes specifically:
 
 - Payments API (unified object model): the same core object threads through every product in the suite → show one object that every system touches simultaneously rather than a pipeline. Speed is generic; the shared object is the differentiator. **Scale metrics must be earned by first showing the mechanism. Show the object flowing through checkout → risk → connect → billing in one continuous motion, THEN reveal the scale that architecture enabled. A metric stated before the architecture is demonstrated is an unsupported claim.**
 
+  **Beyond unification — what THIS payments API does differently:** Unification is table stakes. Every aggregator claims it. The canvas must show what happens INSIDE the unified layer that competitors cannot replicate:
+  - Fraud/risk: Show the risk scoring happening in real-time as the object flows — not a label, a live computation
+  - Developer experience: Show the actual CLI commands, webhook events, or dashboard UI that developers recognize as belonging to this specific API
+  - Reliability: Visualize what failover looks like at the object level — not abstract "99.99% uptime" text
+  - Growth trajectory: Show the same integration scaling from startup to enterprise without code changes
+
+  The test: swap in a competing payments brand. Would the animation still work? If yes, it's not specific enough.
+
   **Problem-state specificity for payments APIs**: Do NOT show generic fintech pain points (payment processing, payouts, fraud detection, reporting). These describe every competitor. Instead show the specific pre-API architecture: multiple vendor SDKs with incompatible object models (a transaction object in one SDK ≠ an account object in another ≠ a score object in a third), the middleware translation layer developers had to build, or the actual code comparison (50 lines of vendor-specific glue code vs. 3 lines). The pain must be the pain this API specifically eliminated, not the category's general friction.
 
   **Solution-state visual requirements for payments APIs**: The solution scene MUST include at least one of: (1) actual code showing the API's syntax elegance (the brand's actual SDK method calls and object names vs. competitor verbosity), (2) the distinctive Dashboard UI aesthetic (the specific card layouts, the typography, the data visualization style), (3) recognizable customer logos that this specific API powers, or (4) the branded visual identity beyond just colors (the brand's particular visual treatments, illustration style, or documentation aesthetic). Generic API response JSON or abstract 'unified platform' diagrams fail the substitute test — any payments company could use them.
-- Opinionated issue tracker: issues that enter triage exit resolved — no ambiguous state, no "in review forever" → a tangled graph that snaps to a clean DAG; the removal of ambiguity *is* the product
+
+- Opinionated issue tracker: issues that enter triage exit resolved — no ambiguous state, no "in review forever" → a tangled graph that snaps to a clean DAG; the removal of ambiguity *is* the product. **Content specificity requirement:** Issue titles, labels, and states shown in animations must reference the product's own domain concepts (its named workflow constructs, keyboard shortcuts, specific queue types) or show the product being used to build itself. Generic placeholder text ('API refactor', 'Dashboard bug') fails the substitute test — it could appear in any issue tracker's demo.
 - Browser-native design tool (URL-as-file, multiplayer cursors): There are no files — just URLs. The canvas shows multiple named cursors (with real names like 'Sarah', 'Marcus') moving simultaneously on the same frame. The visual metaphor is the cursor cluster, not abstract collaboration dots. Show the actual component structure: frames nested in frames, the layers panel hierarchy, the distinctive component instance icon. Generic rectangles could be any design tool; the nested frame structure with component instances is this tool's.
 - Backend-as-a-service built on an existing database: The differentiator is not 'unified platform' (every BaaS claims this) but that you retain full database access — row-level security policies written in standard SQL, realtime via database replication (not a proprietary protocol), queryable with any standard client. Show: a single RLS policy that replaces 200 lines of middleware, or the same table queried from browser JS, a mobile app, and a CLI simultaneously. The visual must be impossible to attribute to any competing BaaS product.
 

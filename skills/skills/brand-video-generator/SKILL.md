@@ -1,121 +1,198 @@
 ---
 name: brand-video-generator
 title: Brand Video Generator
-description: Generate video compositions from brand websites. Analyzes visual identity, messaging, and content hierarchy to create scene-by-scene video plans.
+description: Generate video compositions from brand websites or descriptions. Produces an inspectable creative brief before generating HTML.
 order: 50
 license: MIT
 metadata:
   author: editframe
-  version: "3.0"
+  version: "4.0"
 ---
 
 # Brand Video Generator
 
-Transform a brand's website into a video composition that could not have been made for any other brand.
+Two-pass pipeline. First produce an inspectable brief. Then generate the composition from it.
+
+---
 
 ## Input
 
-- **URL**: Brand website to analyze
+- **Brand**: URL or text description
 - **Video Type**: `launch` | `product-demo` | `explainer` | `brand-awareness` | `social`
-- **Duration Target**: `15s` | `30s` | `60s` | `90s` (optional)
+- **Duration**: `15s` | `30s` | `60s` | `90s` (optional)
 - **Platform**: `web` | `instagram` | `tiktok` | `youtube` | `linkedin` (optional)
 
-## CRITICAL: Browser Access Required
+**If a URL is supplied**: you MUST load it with browser tools before doing anything else. Extract exact hex codes from CSS. Download 3–5 brand assets. Do not infer colors or visual language from text descriptions of the site.
 
-**You MUST use browser tools to load the actual website before any analysis.**
+**If only a text description is supplied**: use it as the brand knowledge source. Ask the user for anything critical that's missing — specific product names, hex codes, recognizable visual marks — before generating the brief. Do not fabricate statistics or claims not present in the description or your verifiable training knowledge. If a specific number would strengthen the brief but you cannot verify it, note the gap rather than invent it.
 
-1. Navigate to the URL with your available browser tools
-2. Take screenshots of homepage and key pages
-3. Inspect CSS to extract exact color hex codes
-4. Download logo and brand assets (3-5 minimum)
-
-**Do NOT** infer visual identity from text descriptions, assume design patterns from industry, or hallucinate brand colors, fonts, or design language.
-
-**If you cannot access the website with browser tools, STOP and report this.**
+**If you cannot access a supplied URL with browser tools**: stop, report this, and ask whether to proceed from a text description instead.
 
 ---
 
-## The Single Gate
+## Pass 1 — The Brief
 
-Before placing any element — scene, visual, canvas animation, line of text — answer:
+Answer these four questions. Output them as a readable document the developer can inspect, correct, or approve before generation begins.
+
+**Do not skip to HTML. The brief is required output.**
+
+---
+
+### 1. Structural truth
+
+One thing true of this brand that is false of any direct competitor.
+
+Not a marketing claim. A material fact: a decision the brand made, a relationship it has, a mechanism it invented. The truth must be structural — if a well-funded competitor could claim the same thing next year, dig deeper.
+
+**Substitute test**: swap the brand name into the statement. Does it still hold? If yes, it's not specific enough.
+
+Output:
+```
+Structural truth: [one sentence]
+Substitute test: [why this fails for Competitor A and Competitor B]
+```
+
+---
+
+### 2. Formal constraint
+
+What the structural truth forces on the video's *mechanics* — not its subject matter.
+
+Structure means timing, motion logic, and compositional form. If the truth is about removal, scenes must subtract elements. If it's about unification, the same visual element must thread through multiple contexts. If it's about community, real faces must appear.
+
+State it as a rule: "Because [truth], this video [does X mechanically]."
+
+Output:
+```
+Formal constraint: [one rule in motion terms]
+Single argument: "This video argues [X] by showing [Y]."
+```
+
+If [Y] could illustrate a different argument, the form isn't embodying the truth yet — rewrite.
+
+---
+
+### 3. Authorial angle
+
+What the video argues that the brand's own marketing does not say.
+
+Complete: *"This video argues [X] which this brand's marketing never says because [Y]."*
+
+If [X] is already on their homepage, the composition is illustration, not argument. Find the interpretation: what tension does this truth create? What does it reveal about the audience? What norm does it contradict?
+
+**Category truth vs. brand angle:** If the authorial angle could be claimed by any direct competitor in the same category, it's a category truth, not an angle. 'Unification beats fragmentation' is true of ALL payment aggregators. A valid angle must reference something only THIS brand can claim:
+- Their specific customer roster or market position
+- Their specific technical decision that shaped the product's architecture
+- Their specific philosophy made visible in a product choice competitors didn't make
+
+Rewrite until the angle fails the substitute test.
+
+**Category trap**: "fragmentation is bad, unification is good" is a category-level narrative any competitor can use. "This specific brand's unification works because [architectural reason no competitor has]" is a brand angle. If the argument could be the headline of a competitor's ad campaign, dig deeper.
+
+Output:
+```
+Authorial angle: [one sentence]
+Why the brand wouldn't say this: [one sentence]
+```
+
+---
+
+### 4. Felt arc
+
+The emotional journey from frame 1 to the last frame.
+
+Name the emotion at entry and at exit. They must differ. Then define the minimum path — the fewest distinct state changes required to move between them.
+
+Scene budget: `floor(duration_seconds / 10)` maximum. 15s → 2 scenes. 30s → 3. 60s → 6.
+
+Output:
+```
+Entry state: [what the viewer feels at frame 1]
+Exit state:  [what the viewer feels at the last frame]
+Arc:         [entry] → [intermediate state if needed] → [exit]
+Scene budget: [N scenes maximum]
+```
+
+---
+
+### Brief checkpoint
+
+After outputting the brief, pause and ask:
+
+> "Does this brief look right? I'll generate the composition once you confirm, or adjust any section now."
+
+If the user confirms or says to proceed: move to Pass 2.
+If the user corrects any section: revise that section only, then ask again before generating.
+
+---
+
+## Pass 2 — The Composition
+
+Generate HTML from the confirmed brief. Every decision traces back to the brief's formal constraint.
+
+### The single gate
+
+Before placing any element — scene, visual, canvas animation, line of text — ask:
 
 > **Could a direct competitor's marketing team use this exact element unchanged?**
 
-If yes: delete it and find the element only this brand could use. Apply this gate at every decision, recursively. It is a factual substitutability test, not a style preference. Generic imagery fails it. Category tropes fail it. Marketing language fails it.
+If yes: delete it and find what only this brand could use. Apply recursively.
 
----
+### Scene rules
 
-## Four questions to answer before writing any scene
+- Each scene earns its place by changing the viewer's emotional state. State the transition for every scene: "viewer enters feeling [X], exits feeling [Y]." Information-only scenes get cut.
+- No two adjacent scenes may leave the viewer in the same state.
+- Feature sequences must build causally — if scenes can be reordered without loss, they're a list, not an argument.
+- Prove, don't assert: "unified" is shown by one element appearing in multiple contexts, not by text saying "unified."
 
-**1. What is the structural truth?**
-One thing true of this brand that would be false of any competitor. Not a marketing claim — a material fact about how the brand works: a decision it made, a relationship it has, a mechanism it invented. Test: swap the brand name — does it still hold? If yes, dig deeper. It must appear in the composition as a concrete visual artifact.
+### Hard stops
 
-**2. What does that truth force on the video's mechanics?**
-Structure means motion, timing, and compositional logic — not narrative order. If the truth is about removal, scenes subtract. If it's about unification, the same visual element must appear in multiple contexts. If it's about community, real faces must appear — abstract shapes cannot represent people. State it as: "Because [truth], this video [does X mechanically]."
-
-**3. What does the video argue that the brand's own marketing does not say?**
-Complete: "This video argues [X] which this brand's marketing never says because [Y]." If [X] is already on their homepage, the composition is illustration. Find the interpretation: what tension does this truth create? What does it reveal about the audience? What norm does it contradict?
-
-**4. What is the felt transition from frame 1 to the last frame?**
-Name the emotion at entry and the emotion at exit. They must differ. State it for each scene: "viewer enters feeling [X], exits feeling [Y]." If a scene does not change the viewer's emotional state — only adds information — cut it.
-
----
-
-## Scene rules
-
-- **Budget**: `floor(duration_seconds / 10)` maximum scenes. 15s → 2. 30s → 3. 60s → 6.
-- **Each scene earns its place** by changing viewer state, not delivering information.
-- **One argument**: the entire video makes one claim. State it as "This video argues [X] by showing [Y]." If [Y] could illustrate a different argument, rewrite until the form is inseparable from the claim.
-- **Prove, don't assert**: structural claims require showing the mechanism. "Unified" is proven by showing one element operating across multiple contexts — not by text saying "unified."
-- **Redundancy check**: if two scenes leave the viewer in the same emotional state, cut one.
-
----
-
-## Hard stops (non-negotiable)
-
-**Colors**: Extract exact hex codes from the brand's CSS. Use them. Do not estimate or infer from category.
+**Colors**: Use exact hex codes from the brief (extracted from CSS or provided). Do not estimate.
 
 **Canvas**:
-- Use `addFrameTask`, never `requestAnimationFrame`. Callback signature: `(info) => { const { ownCurrentTimeMs, durationMs } = info; }`
-- A canvas element without a **complete** `addFrameTask` script is a broken composition — delete the scene rather than ship incomplete code
-- If approaching output length, cut canvas scenes or replace with CSS animation. A 3-scene video with working canvas beats a 4-scene video with a broken one
+- Use `addFrameTask`, never `requestAnimationFrame`. Callback: `(info) => { const { ownCurrentTimeMs, durationMs } = info; }`
+- A canvas without a complete `addFrameTask` script renders nothing — delete the scene rather than ship broken code
+- If approaching output length, cut canvas scenes or replace with CSS animation; a working 3-scene video beats a broken 4-scene one
 - Canvas visual state at second 1 must differ visibly from second 20
 
-**People**: Abstract shapes (circles, gradient blobs) cannot represent faces. Use real photography or draw recognizable facial features.
+**People**: Circles and gradient blobs cannot represent faces. Use real photography or draw recognizable facial features.
 
-**Logo geometry**: If the brand has a recognizable silhouette, render it from its actual geometry. `fillRect()` for organic or clothing forms is prohibited.
+**Logo geometry**: Render from the brand's actual geometry. `fillRect()` for clothing or organic forms is prohibited.
 
 **Named products**: At least one specific product name (not a category description) must appear.
 
----
+### Completeness check
 
-## Completeness check (before outputting)
+Before outputting:
+- [ ] Scene durations sum to target duration EXACTLY (e.g., 60s request = 60s total)
+- [ ] No canvas element without a complete `addFrameTask` script
+- [ ] Output ends with `</ef-timegroup>`, `</script>`, `</style>` — verify closing tags are present
+- [ ] Every scene passes the substitutability gate
+- [ ] The single argument is traceable through every scene
+- [ ] **Final scene exists**: Composition must include a closing/CTA scene (typically 4-8s) that resolves the arc
+- [ ] **Duration accounting**: List each scene's duration in a comment before output to verify sum: `<!-- Scene 1: 8s, Scene 2: 12s, Scene 3: 24s, Scene 4: 16s = 60s total -->`
 
-- Scene durations sum to target duration
-- No canvas element without a complete `addFrameTask` script
-- Output ends with complete closing tags (`</ef-timegroup>`, `</script>`, `</style>`)
-- Every scene passes the substitutability gate
-- The single argument is traceable through every scene
-
----
-
-## Key Principles
-
-- **The form is the argument** — if the video's visual structure could hold a different brand's truth, it is not specific enough
-- **State change, not information transfer** — scenes exist to change how the viewer feels, not what they know
-- **Prove, don't assert** — every claim requires a visual demonstration of the mechanism
-- **One argument** — a video that makes multiple claims makes none
+**If approaching output length limits:** Stop adding scenes. A complete 45s video is better than a truncated 60s video. Reduce scene count or simplify canvas animations rather than producing incomplete code.
 
 ---
 
 ## Reference Files
 
-- [references/brand-examples.md](references/brand-examples.md) — Category structural truths, false differentiators, visual specificity by vertical
-- [references/composition-patterns.md](references/composition-patterns.md) — Canvas patterns, frameTask API, brand-specific visual requirements
+- [references/brand-examples.md](references/brand-examples.md) — Structural truths, false differentiators, visual specificity by category
+- [references/composition-patterns.md](references/composition-patterns.md) — Canvas patterns, frameTask API, visual specificity requirements
 - [references/genre-selection.md](references/genre-selection.md) — Genre palette and fitness checks
-- [references/emotional-arcs.md](references/emotional-arcs.md) — Emotional arc patterns, short-form compression
-- [references/editing.md](references/editing.md) — What to cut and when to stop
+- [references/emotional-arcs.md](references/emotional-arcs.md) — Arc patterns, short-form compression
+- [references/editing.md](references/editing.md) — What to cut
 - [references/visual-metaphors.md](references/visual-metaphors.md) — Visual metaphor library
 - [references/video-archetypes.md](references/video-archetypes.md) — Industry patterns
-- [references/typography-personalities.md](references/typography-personalities.md) — Font personality and video timing
+- [references/typography-personalities.md](references/typography-personalities.md) — Font personality and timing
 - [references/video-fundamentals.md](references/video-fundamentals.md) — Transitions, arcs, brand basics
+
+### Factual verification requirement
+
+Every statistic, figure, or quantified claim in the brief MUST be:
+1. Directly sourced from the brand's website, press releases, or official communications
+2. Attributed with specific context (what, where, when)
+3. If no verifiable figure exists, state the structural truth qualitatively rather than fabricating a number
+
+**Do not invent statistics.** When in doubt, quote the brand's own language verbatim rather than paraphrasing into invented specifics. The brand's actual tagline is more verifiable and more powerful than a plausible-sounding invented metric.
