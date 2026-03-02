@@ -1,0 +1,59 @@
+{
+  "taskId": "stripe-explainer",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:37:26.657Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural and meaningful. Two canvas-based procedural animations drive visual metaphors, and text splitting with stagger is used purposefully. The chaos-to-order animation in Scene 1 directly supports the narrative of complexity becoming invisible.",
+      "evidence": "Scene 1 uses `addFrameTask` with `info.percentComplete` to animate nodes from chaotic scattered positions to organized circles: `const currentRadius = startRadius + (endRadius - startRadius) * progress`. Scene 5 has a similar canvas setup. Text uses `split=\"word\"` with `animation-delay: calc(var(--ef-word-index) * 100ms)` for staggered reveals. Multiple scenes use coordinated CSS animations with explicit delays."
+    },
+    "specificity": {
+      "score": 3,
+      "rationale": "Several Stripe-specific truths are present: the API-centric model, specific metrics, and the 'invisible infrastructure' positioning. However, the structure could largely work for any payment processor claiming simplicity.",
+      "evidence": "Stripe-specific: code block showing `stripe.paymentIntents.create()` API call, metrics like '$1T+ Payment volume processed', '195 Countries supported', '8M+ Businesses live'. The 'Without Stripe' vs 'With Stripe' comparison lists generic pain points (PCI, fraud, compliance) that any competitor also solves. The tagline 'Global payments should be invisible' could be Adyen, Square, or any modern processor."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc is traceable: problem awareness → comparison clarity → technical understanding → trust → appreciation. However, several transitions feel formulaic rather than earned, and the final scene is cut off, breaking the intended arc.",
+      "evidence": "Scene 1 (complexity exists) → Scene 2 (with/without comparison) → Scene 3 (API simplicity) → Scene 4 (scale metrics). The comparison in Scene 2 is a standard before/after that produces mild clarity. Scene 5 begins 'Simplicity is the consequence of smart architecture' but is truncated mid-sentence: 'Stripe doesn't' — breaking the intended resolution."
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "A clear perspective exists: 'infrastructure should disappear.' This is stated explicitly and reinforced structurally through the chaos-to-order animation. However, the perspective is Stripe's marketing position, not a genuinely authorial take.",
+      "evidence": "The POV is summarizable: 'The best infrastructure is invisible.' This appears in Scene 1 ('Invisible because they work'), Scene 2 ('Everything. Invisible.'), Scene 3 ('Invisible to your user'), Scene 5 ('Simplicity is the consequence of smart architecture'). The canvas animation physically embodies this idea. But this is Stripe's existing positioning, not a fresh interpretation."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Five scenes for 60 seconds is reasonable, and most scenes carry weight. However, Scene 4 (trust metrics) feels like standard B2B padding — impressive numbers that don't advance the 'invisible infrastructure' argument. Scene 5 is incomplete.",
+      "evidence": "Scene 4 shows '$1T+', '195 Countries', '8M+ Businesses' — these are credibility signals that any enterprise SaaS would include. They don't deepen the specific argument about invisibility. The truncated Scene 5 ('Stripe doesn't') suggests either the composition is incomplete or there's a technical issue, meaning the arc doesn't resolve."
+    }
+  },
+  "overall": 3.2,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition relies heavily on Stripe's public positioning ('invisible infrastructure') without embedding details that could only be true of Stripe — like Radar's ML approach, Connect's marketplace model, or specific API design philosophy.",
+      "improvement": "Show why Stripe's architecture enables invisibility differently than competitors. For example, demonstrate how Stripe's unified API across products (Payments, Connect, Billing, Radar) creates compounding simplicity, or show the specific developer experience (webhooks, idempotency keys) that makes integration actually invisible."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "critical",
+      "observation": "Scene 5 is truncated mid-sentence ('Stripe doesn't'), leaving the composition without resolution. The viewer arc cannot complete.",
+      "improvement": "Complete Scene 5 and Scene 6 (if planned). The arc needs a resolution that transforms initial skepticism into genuine appreciation — ideally showing what becomes possible when payments are truly invisible (focus on the business, not the infrastructure)."
+    },
+    {
+      "dimension": "omission",
+      "severity": "major",
+      "observation": "Scene 4's trust metrics ($1T+, 195 countries, 8M businesses) are generic social proof that don't reinforce the 'invisible infrastructure' thesis. They pad runtime without deepening the argument.",
+      "improvement": "Either cut Scene 4 entirely or reframe metrics to support the thesis: e.g., '8M businesses that don't think about payments' or 'Zero PCI audits for developers' — metrics that prove invisibility, not just scale."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "minor",
+      "observation": "The POV is Stripe's marketing message restated, not an authorial interpretation. The composition feels like it could have been generated from Stripe's brand guidelines.",
+      "improvement": "Take a specific stance that Stripe marketing wouldn't necessarily approve. For example: 'Stripe is a bet that infrastructure complexity is a solved problem' or 'Stripe exists so you never have to learn what PCI-DSS means.' A sharper, more opinionated framing would distinguish this from template content."
+    }
+  ]
+}

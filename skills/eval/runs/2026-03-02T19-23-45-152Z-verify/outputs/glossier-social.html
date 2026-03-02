@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glossier – 15s Social</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #fff;
+    }
+
+    @keyframes face-slide-in-right {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes face-slide-out-left {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(-100%);
+        opacity: 0;
+      }
+    }
+
+    @keyframes product-float-in {
+      from {
+        transform: scale(0.8) translateY(12px);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes glow-pulse {
+      0%, 100% {
+        filter: drop-shadow(0 0 6px rgba(255, 182, 193, 0.4));
+      }
+      50% {
+        filter: drop-shadow(0 0 12px rgba(255, 182, 193, 0.8));
+      }
+    }
+
+    @keyframes text-emerge {
+      from {
+        transform: translateY(8px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    ef-timegroup {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .face-slot {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    .face-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+
+    .product-overlay {
+      position: absolute;
+      bottom: 20%;
+      right: 12%;
+      width: 80px;
+      height: 100px;
+      background: linear-gradient(135deg, #ffc0cb 0%, #ffb6c1 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      animation: product-float-in 0.6s cubic-bezier(0, 0.55, 0.45, 1) forwards;
+      animation-delay: 0.2s;
+      opacity: 0;
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+    }
+
+    .cta-text {
+      position: absolute;
+      bottom: 12%;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 10;
+    }
+
+    .cta-text span {
+      display: inline-block;
+      color: #222;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      animation: text-emerge 0.5s cubic-bezier(0, 0.55, 0.45, 1) forwards;
+      opacity: 0;
+    }
+
+    .cta-text span:nth-child(1) {
+      animation-delay: 9.5s;
+    }
+
+    .cta-text span:nth-child(2) {
+      display: block;
+      margin-top: 4px;
+      animation-delay: 10s;
+      font-size: 12px;
+      font-weight: 400;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+  <ef-timegroup mode="fixed" duration="15s" class="w-[1080px] h-[1920px] bg-white overflow-hidden">
+    
+    <!-- Face 1: Enters and holds, then exits -->
+    <ef-timegroup mode="fixed" duration="3.5s" class="absolute inset-0">
+      <div class="face-slot" style="animation: face-slide-in-right 0.4s ease-out, face-slide-out-left 0.4s ease-in var(--ef-transition-out-start) both;">
+        <svg class="face-image" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="skin1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#fdd7e4;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#f8c5d6;stop-opacity:1" />
+            </linearGradient>
+          </defs>
+          <circle cx="200" cy="200" r="180" fill="url(#skin1)"/>
+          <circle cx="160" cy="170" r="18" fill="#333"/>
+          <circle cx="240" cy="170" r="18" fill="#333"/>
+          <path d="M 200 220 Q 180 240 160 235" stroke="#333" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </ef-timegroup>
+
+    <!-- Face 2: Overlaps and replaces Face 1 -->
+    <ef-timegroup mode="fixed" duration="3.5s" class="absolute inset-0" style="animation: 0.4s fade-in 3.1s both;">
+      <div class="face-slot" style="animation: face-slide-in-right 0.4s ease-out, face-slide-out-left 0.4s ease-in var(--ef-transition-out-start) both;">
+        <svg class="face-image" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="skin2" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#f5d0de;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#ead5db;stop-opacity:1" />
+            </linearGradient>
+          </defs>
+          <circle cx="200" cy="200" r="180" fill="url(#skin2)"/>
+          <circle cx="160" cy="175" r="16" fill="#222"/>
+          <circle cx="240" cy="175" r="16" fill="#222"/>
+          <path d="M 200 225 Q 190 245 170 240" stroke="#222" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </ef-timegroup>
+
+    <!-- Face 3: Final hand-off -->
+    <ef-timegroup mode="fixed" duration="3.5s" class="absolute inset-0" style="animation: 0.4s fade-in 6.2s both;">
+      <div class="face-slot" style="animation: face-slide-in-right 0.4s ease-out, face-slide-out-left 0.4s ease-in var(--ef-transition-out-start) both;">
+        <svg class="face-image" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="skin3" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#ffb6c1;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#ffc0cb;stop-opacity:1" />
+            </linearGradient>
+          </defs>
+          <circle cx="200" cy="200" r="180" fill="url(#skin3)"/>
+          <circle cx="155" cy="165" r="20" fill="#1a1a1a"/>
+          <circle cx="245" cy="165" r="20" fill="#1a1a1a"/>
+          <path d="M 200 210 Q 175 235 150 230" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </ef-timegroup>
+
+    <!-- Product: Glossier G icon that floats in after 0.2s delay -->
+    <div class="product-overlay">
+      <span style="font-weight: 700;">G</span>
+    </div>
+
+    <!-- CTA: "You're next" appears at end -->
+    <div class="cta-text">
+      <span>You're next</span>
+      <span>@glossier</span>
+    </div>
+
+  </ef-timegroup>
+
+  <style>
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes fade-out {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+  </style>
+
+</body>
+</html>

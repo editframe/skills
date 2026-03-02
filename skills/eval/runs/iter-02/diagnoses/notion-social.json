@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic productivity tool language (Write, Plan, Organize) and universal chaos metaphors (scattered emojis) that could apply to any workspace tool.",
+      "improvement": "Incorporate Notion-specific elements: the block-based editor, the distinctive sidebar navigation, specific template examples (meeting notes, project roadmap), or Notion AI. Show what makes Notion's approach to 'all-in-one' different from competitors."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+    "cause": "present_wrong",
+    "proposedChange": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nNot: \"It's an all-in-one workspace\" or \"Write, plan, organize\" (category descriptors, not differentiators).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"\nYes: \"Notion treats everything as a composable block — a paragraph, a database, an embed are all the same primitive.\"\n\n**Product-specific test**: Can you name a specific UI element, interaction pattern, or architectural decision unique to this product? If not, you haven't found specificity yet.",
+    "rationale": "The model used category-level language ('Write, Plan, Organize') because the skill's example of a bad answer didn't warn against product category descriptors, and lacked guidance to identify specific UI/architectural elements like Notion's block system."
+  },
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition presents features without arguing for a perspective on why consolidated tools matter or who benefits most. It's descriptive rather than persuasive.",
+      "improvement": "Take a stance - perhaps 'Your brain doesn't work in silos, why should your tools?' or focus on a specific persona (creators, startups, students). Let the form argue for Notion's philosophy of connected thinking."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"",
+    "cause": "missing",
+    "proposedChange": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nNot: Listing features in sequence (any product video does this).\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\nYes: \"Notion's blocks are composable — so the video itself is built by combining and recombining the same visual primitives.\"\n\n**The video must argue, not describe.** A descriptive video shows what the product does. A persuasive video argues why the product's philosophy matters. State the argument in one sentence: \"[Persona] should use [Product] because [philosophical stance], not just because [feature list].\" If you cannot complete that sentence, you have no point of view yet.",
+    "rationale": "The model produced a descriptive feature tour because the skill lacked explicit guidance distinguishing 'arguing for a philosophy' from 'describing features' — adding the argument test forces the model to articulate a persuasive stance."
+  }
+]

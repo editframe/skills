@@ -1,0 +1,16 @@
+[
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition uses generic developer aesthetics (dark mode, monospace font, blue accent colors) that could represent any modern deployment platform. No Vercel-specific visual identity elements are present.",
+      "improvement": "Incorporate Vercel's distinctive triangle logo, use their actual brand colors, or reference specific products (Turbopack, v0, Edge Functions). The network visualization could form a triangular pattern echoing the logo."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)",
+    "cause": "missing",
+    "proposedChange": "**Visual Identity:**\n- Color palette with exact hex codes (from actual CSS inspection)\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)\n- **Logo geometry and how to echo it** — identify the primary logo shape (triangle, circle, wordmark angles) and specify how scene layouts, network visualizations, or transitions should reference this shape. A canvas animation that could belong to any brand has failed this step.",
+    "rationale": "The current guidance extracts visual identity but doesn't require translating logo geometry into compositional structure, allowing generic developer aesthetics to pass as 'brand-aligned'."
+  }
+]

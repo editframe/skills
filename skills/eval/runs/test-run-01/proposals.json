@@ -1,0 +1,34 @@
+[
+  {
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "changes": [
+      {
+        "taskId": "vercel-launch",
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+        "proposedChange": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nNot: \"They make deployment fast and easy\" (every deployment platform claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"\nYes: \"Their triangular logo doubles as a deployment status indicator in their dashboard.\"\n\n**This answer must appear visually in your composition.** If you cannot show it, you haven't found it yet.",
+        "rationale": "The current example doesn't enforce that specificity must be visualized, allowing the model to identify specific facts but then use generic messaging in the actual composition."
+      },
+      {
+        "taskId": "vercel-launch",
+        "dimension": "viewer_state",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "**3. What should the viewer feel at the last frame that they didn't feel at the first frame?**\n\nThis is a feeling, not a fact. \"Informed\" is not a feeling. \"Like this problem is finally solved\" is a feeling.",
+        "proposedChange": "**3. What should the viewer feel at the last frame that they didn't feel at the first frame?**\n\nThis is a feeling, not a fact. \"Informed\" is not a feeling. \"Like this problem is finally solved\" is a feeling—but it's also generic.\n\nThe feeling must be one that only this brand can produce. \"Relieved that deployment is easy\" could come from any platform. \"Awe at seeing a real deployment complete in 800ms\" is specific to Vercel's actual capability.\n\n**Test:** Could a competitor's video produce the same feeling? If yes, you haven't found the right feeling.",
+        "rationale": "The current guidance accepts any emotional arc without requiring it to be brand-specific, allowing generic frustration→relief patterns."
+      },
+      {
+        "taskId": "vercel-launch",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**Message Structure:**\n- Opening hook (3 seconds) — what earns the next 3 seconds?\n- Core message (one sentence)\n- Emotional arc (start → middle → end feeling from Phase 0)\n- Call-to-action",
+        "proposedChange": "**Message Structure:**\n- Opening hook (3 seconds) — what earns the next 3 seconds?\n- Core message (one sentence)\n- Emotional arc (start → middle → end feeling from Phase 0)\n- Call-to-action\n\n**Point of View:**\n- What does this brand believe about its category that competitors don't?\n- How should the video's structure embody that belief?\n- Example: If the brand believes \"deployment should be invisible,\" perhaps don't show deployment—show only what becomes possible when it's zero-friction. The form argues the thesis.",
+        "rationale": "The creative brief has no field for point of view, so the model defaults to template structures (problem-solution-CTA) without expressing a perspective through form."
+      }
+    ]
+  }
+]

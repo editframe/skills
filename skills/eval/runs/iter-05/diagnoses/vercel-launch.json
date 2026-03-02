@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition relies on features that are true of Vercel but equally true of competitors (Netlify, Cloudflare Pages, Railway). The preview URL format is specific but swappable.",
+      "improvement": "Anchor in Vercel-unique truths: the Next.js integration, specific performance metrics ('Edge in 18 regions'), the Vercel triangle as visual motif, or founder voice/positioning. The canvas animations could render the actual Vercel triangle expanding outward."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nYour answer must name a specific product, API, architectural decision, or design philosophy — not a marketing position. Marketing positions can be copied. Decisions cannot.\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nNot: \"They pioneered multiplayer design\" (competitors have since copied this — it no longer differentiates).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"\nYes: \"Their entire product is built on a single unified API — Connect, Radar, Terminal, and Billing all share the same objects.\"\nYes: \"They removed the 'new file' concept entirely — there are no files, only URLs.\"",
+    "cause": "missing",
+    "proposedChange": "Add after the existing examples:\n\n**Platform/infrastructure brands require extra scrutiny.** If the differentiator is a capability (edge functions, instant deploys, preview URLs), ask: could a well-funded competitor ship this in 6 months? If yes, it's not structural. For Vercel specifically, the structural truths are: (1) they own Next.js and optimize the platform for it — no competitor can claim native framework integration at this level, (2) the Vercel triangle is a visual identity that appears in their CLI, dashboard, and brand — it's an ownable motif, (3) their specific edge network topology (name the regions, the latency numbers). Generic 'edge deployment' is not differentiating.",
+    "rationale": "The model found features (preview URLs, edge deployment) that are industry-standard rather than Vercel-specific; explicit guidance on platform brands and Vercel-specific examples would have forced deeper digging."
+  },
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "The state changes are present but predictable. Problem→Solution→Feature→CTA is a template arc. The viewer is informed but not transformed or surprised.",
+      "improvement": "Create a genuine emotional turn. Scene 1 could start with deployment anxiety/complexity (visible friction), making Scene 2's resolution feel like relief. Or subvert expectations: start with the deployed state and rewind to show how little it took."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "- VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]\n- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]",
+    "cause": "missing",
+    "proposedChange": "Replace with:\n\n- VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]\n- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]\n- EMOTIONAL VALENCE: [Is this a positive, negative, or neutral beat? Mark P/N/X]\n\n**Emotional arc requirement**: A video must have at least one valence shift (N→P or P→N→P). If all scenes are positive (P→P→P→P), the arc is flat — there's no tension to resolve. Problem→Solution is the minimum viable arc, but predictable. Better: start in an unexpected emotional state (calm acceptance of a bad status quo, or already-deployed success) and reveal the contrast.",
+    "rationale": "The model produced a predictable Problem→Solution→Feature→CTA arc because nothing required valence tracking or non-obvious emotional structure."
+  },
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition tries to say multiple things (speed, previews, global edge, shipping velocity) rather than arguing one thing with conviction. The canvas 'energy spreading' motif is strong but the text doesn't commit to it.",
+      "improvement": "Choose one perspective and make every scene serve it. If the argument is 'deploy is now instant energy transfer,' then Scene 1 should show blocked energy, Scene 2 the release, Scene 3 the network effect, Scene 4 the invitation to feel this. Unify text and motion around one claim."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it.",
+    "cause": "wrong_priority",
+    "proposedChange": "Replace with:\n\n**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it.\n\n**Single-claim rule**: A video argues ONE thing. Count the distinct claims in your scene plan. If you have more than one (e.g., 'fast' AND 'preview URLs' AND 'global edge' AND 'ship more'), you are making a brochure, not an argument. Choose the claim that only this brand can make, and make every scene serve that single claim. The other claims can appear as evidence for the main claim, but not as separate points.\n\n**Motion-text unity test**: For each scene, the canvas/animation concept and the text must argue the same thing. If the animation shows 'energy spreading' but the text says 'preview URLs for every PR,' they are not unified. Rewrite until motion and text are saying the same thing in different languages.",
+    "rationale": "The model's composition had strong motion concepts ('energy spreading') that didn't unify with the text claims because nothing enforced single-claim discipline or motion-text alignment."
+  }
+]

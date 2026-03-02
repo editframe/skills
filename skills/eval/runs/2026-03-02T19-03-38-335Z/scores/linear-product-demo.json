@@ -1,0 +1,59 @@
+{
+  "taskId": "linear-product-demo",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-03-02T19:04:28.454Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural and purposeful. The chaos canvas uses addFrameTask with procedural animation that builds intensity over time, and the issue items use choreographed slide-in/slide-out animations that directly communicate the product's value proposition.",
+      "evidence": "scene1.addFrameTask((ownCurrentTimeMs, durationMs) => { ... const lineCount = Math.floor(progress * 40); ... if (progress > 0.5) { const chaosIntensity = (progress - 0.5) * 2; } }); Also: @keyframes issue-slide-in, @keyframes issue-complete with staggered animation-delay: 0.2s, 0.5s, 0.8s"
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "Linear's purple color (#5e56e9) is used, and the Cmd+K keyboard shortcut hints at Linear's keyboard-first UX. However, the issue IDs (LIN-451) are generic placeholders, and the product claims ('clarity software teams deserve') are tagline-level. Any project management tool could make similar claims.",
+      "evidence": "border-left: 3px solid #5e56e9; color: #5e56e9; span class='issue-id'>LIN-451</span>; 'Press Cmd+K to close them all'; 'The clarity software teams deserve'"
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc from chaos → issues appearing → resolution → clarity tagline is traceable. Scene 1 establishes overwhelm, Scene 2-3 demonstrate resolution, Scene 4 lands the brand. However, the transitions between states are formulaic (problem → solution → CTA) and the emotional shifts are predictable.",
+      "evidence": "Scene 1: 'Issue tracking is chaos' with chaotic canvas. Scene 2-3: Issues slide in then complete with checkmarks. Scene 4: 'Linear - The clarity software teams deserve - Ship your work today'"
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "There's a clear perspective: Linear brings order to chaos through speed. The composition commits to showing rapid task completion rather than feature lists. However, this is a common SaaS narrative (chaos → our product → calm) rather than something uniquely true about Linear.",
+      "evidence": "The chaos-to-clarity arc, 'Resolved in seconds' text, keyboard hint suggesting power-user efficiency. The visual language (dark mode, monospace fonts, terminal-like issue items) reflects developer tooling aesthetic."
+    },
+    "omission": {
+      "score": 4,
+      "rationale": "Four scenes, each with a distinct purpose: establish problem, show workflow, demonstrate resolution, land brand. No obvious padding. Scene 2 and 3 could potentially merge, but their separation (issues appearing vs. issues completing) creates meaningful pacing.",
+      "evidence": "Scene 1 (8s): chaos visualization. Scene 2 (8s): issues appear. Scene 3 (6s): issues resolve. Scene 4 (8s): brand close. Total 30s with proportional allocation."
+    }
+  },
+  "overall": 3.2,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition uses generic issue titles ('Fix auth token expiry bug') and standard project management language. The only Linear-specific elements are the color and a keyboard shortcut hint.",
+      "improvement": "Include Linear's actual differentiators: cycles (not sprints), roadmaps, the specific issue state workflow, or real visual elements from Linear's UI. Show something only Linear does—like automatic issue prioritization or the specific way Linear handles project updates."
+    },
+    {
+      "dimension": "specificity",
+      "severity": "minor",
+      "observation": "The tagline 'The clarity software teams deserve' is brand-accurate but doesn't show what clarity looks like in Linear specifically.",
+      "improvement": "Replace the generic tagline scene with a glimpse of Linear's actual interface showing the organized state—the board view, the clean typography, the specific visual language that distinguishes Linear from Jira or Asana."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "The chaos → resolution arc follows a predictable problem/solution template. The viewer knows where it's going by Scene 2.",
+      "improvement": "Add an unexpected beat—perhaps a moment where the chaos seems insurmountable before the rapid resolution, or show a specific insight that reframes what 'chaos' means (not just visual noise, but the cognitive load of context-switching between tools)."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "minor",
+      "observation": "The perspective ('speed brings clarity') is coherent but generic to the productivity tool category.",
+      "improvement": "Commit to something more specific about Linear's philosophy—like 'software should feel like software' or the craft-focused approach to tooling. The form could reflect this: precise animations, deliberate timing, nothing extraneous."
+    }
+  ]
+}

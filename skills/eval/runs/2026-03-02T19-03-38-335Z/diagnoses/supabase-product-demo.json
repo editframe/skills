@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "omission",
+      "severity": "major",
+      "observation": "Scene 3 dedicates 14 seconds to a 4-card feature grid that functions as a product catalog. Each card has identical structure and similar animation timing, making the scene feel like padding despite containing real information.",
+      "improvement": "Either reduce Scene 3 to 8-10s with faster card reveals, or give each feature a distinct visual treatment that demonstrates rather than describes (e.g., show RLS policy syntax, animate a realtime subscription flow)."
+    },
+    "skillFile": "skills/skills/brand-video-generator/references/editing.md",
+    "currentText": "",
+    "cause": "missing",
+    "proposedChange": "Add after '## When a Scene Is Not Working' section:\n\n**It uses identical structure for multiple items.** A 4-card grid where each card animates the same way, at the same pace, with the same layout is a list pretending to be motion. If items must be shown, either:\n- Collapse them into a single visual (icons in a row, 2 seconds total)\n- Give each a distinct treatment that demonstrates rather than describes (show the RLS policy syntax, animate a realtime subscription)\n- Dramatically compress timing (0.5s per item, not 3s per item)\n\nRepeated identical structure signals the scene is cataloging, not communicating.",
+    "rationale": "The model created a 14-second scene with 4 identically-structured cards because no guidance warned against repetitive grid layouts as a form of padding."
+  },
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "omission",
+      "severity": "critical",
+      "observation": "The composition is truncated—Scene 4's canvas animation code ends mid-line (`const x = cx - 150 +`), and no CTA scene exists. A 45s product demo without resolution or call-to-action leaves the arc incomplete.",
+      "improvement": "Complete Scene 4's 'chain breaking' animation and add a 5s closing scene with clear CTA. The current 8+12+14+6=40s structure has room for a proper ending."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "## Completeness Check (before finalizing)\n\n- Every scene in the plan is represented in the HTML\n- No canvas element is present without a corresponding `addFrameTask` script\n- The last scene is fully written — it does not trail off mid-sentence\n- The PoV trace is complete — every scene can be traced to Phase 0 Q4\n- The CTA does not read as generic marketing (\"Try it free\", \"Get started\", \"Learn more\") — it follows from the structural constraint",
+    "cause": "wrong_priority",
+    "proposedChange": "Move this section BEFORE Phase 4 (Asset Requirements) and rename to:\n\n## Completeness Check (MANDATORY — verify before outputting)\n\n**STOP and verify each item. Do not output a composition until all pass:**\n\n- [ ] Every scene in the plan has complete, runnable code — no truncated lines, no `...` placeholders\n- [ ] Every `<canvas>` element has a complete `addFrameTask` script (test: can you copy-paste and run it?)\n- [ ] A CTA/closing scene exists and follows from the structural constraint\n- [ ] Total scene durations sum to target duration ± 5 seconds\n- [ ] The PoV trace is complete — every scene traces to Phase 0 Q4\n\n**If any check fails, fix it before proceeding.**",
+    "rationale": "The completeness check was at the end and phrased as reminders rather than blocking gates; moving it earlier with explicit checkboxes and a STOP instruction would have caught the truncated code and missing CTA before output."
+  }
+]

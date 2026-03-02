@@ -1,0 +1,189 @@
+<ef-timegroup mode="sequence" overlap="1s" class="w-[1080px] h-[1920px] bg-black">
+  <!-- Scene 1: The Deploy Moment (0-4s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full flex flex-col items-center justify-center"
+    style="animation: 1s fade-out var(--ef-transition-out-start) both">
+    <canvas id="deploy-canvas" class="absolute inset-0 size-full"></canvas>
+    <ef-text class="absolute top-1/3 text-white text-6xl font-black text-center"
+      style="animation: 0.8s scale-pop both 0.2s">
+      git push
+    </ef-text>
+  </ef-timegroup>
+
+  <!-- Scene 2: Deploy Ripple (4-8s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full flex flex-col items-center justify-center"
+    style="animation: 1s fade-in both, 1s fade-out var(--ef-transition-out-start) both">
+    <canvas id="ripple-canvas" class="absolute inset-0 size-full"></canvas>
+    <ef-text class="absolute bottom-1/4 text-white text-5xl font-black text-center px-8"
+      style="animation: 0.6s fade-in-text both 1s">
+      Live in seconds
+    </ef-text>
+  </ef-timegroup>
+
+  <!-- Scene 3: Global Distribution (8-12s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full bg-gradient-to-b from-black via-slate-900 to-black flex flex-col items-center justify-center"
+    style="animation: 1s fade-in both, 1s fade-out var(--ef-transition-out-start) both">
+    <canvas id="globe-canvas" class="absolute inset-0 size-full"></canvas>
+    <ef-text
+      split="word"
+      class="absolute bottom-1/3 text-white text-4xl font-bold text-center px-8"
+      style="animation: 0.5s enter-up both; animation-delay: calc(var(--ef-word-index) * 100ms)">
+      Deployed globally
+    </ef-text>
+  </ef-timegroup>
+
+  <!-- Scene 4: CTA (12-15s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full flex flex-col items-center justify-center bg-white"
+    style="animation: 1s fade-in both">
+    <ef-text class="text-black text-5xl font-black text-center mb-4"
+      style="animation: 0.8s scale-pop both">
+      Vercel
+    </ef-text>
+    <ef-text class="text-black/60 text-2xl text-center"
+      style="animation: 0.6s fade-in-text both 0.4s">
+      vercel.com
+    </ef-text>
+  </ef-timegroup>
+
+  <style>
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes fade-out {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+    @keyframes fade-in-text {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes scale-pop {
+      from { opacity: 0; transform: scale(0.85); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes enter-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+
+  <script>
+    // Scene 1: Deploy command with typing effect
+    const deployCanvas = document.getElementById('deploy-canvas');
+    const deployTg = deployCanvas.closest('ef-timegroup');
+    if (deployTg) {
+      deployTg.initializer = (instance) => {
+        const ctx = deployCanvas.getContext('2d');
+        return instance.addFrameTask((time, duration) => {
+          deployCanvas.width = deployCanvas.offsetWidth;
+          deployCanvas.height = deployCanvas.offsetHeight;
+          const progress = time / duration;
+
+          // Fade background
+          ctx.fillStyle = `rgba(0, 0, 0, ${0.6 + progress * 0.3})`;
+          ctx.fillRect(0, 0, deployCanvas.width, deployCanvas.height);
+
+          // Draw cursor that blinks
+          ctx.fillStyle = '#10b981';
+          if (Math.sin(time * 0.01) > 0) {
+            ctx.fillRect(deployCanvas.width / 2, deployCanvas.height / 2 + 60, 20, 80);
+          }
+        });
+      };
+    }
+
+    // Scene 2: Ripple expanding outward
+    const rippleCanvas = document.getElementById('ripple-canvas');
+    const rippleTg = rippleCanvas.closest('ef-timegroup');
+    if (rippleTg) {
+      rippleTg.initializer = (instance) => {
+        const ctx = rippleCanvas.getContext('2d');
+        return instance.addFrameTask((time, duration) => {
+          rippleCanvas.width = rippleCanvas.offsetWidth;
+          rippleCanvas.height = rippleCanvas.offsetHeight;
+          const progress = time / duration;
+          const cx = rippleCanvas.width / 2;
+          const cy = rippleCanvas.height / 2;
+
+          // Draw background
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+          ctx.fillRect(0, 0, rippleCanvas.width, rippleCanvas.height);
+
+          // Draw expanding ripples
+          for (let i = 0; i < 4; i++) {
+            const delay = i * 0.25;
+            const adjustedProgress = (progress - delay) * 1.33;
+            if (adjustedProgress > 0 && adjustedProgress < 1) {
+              const radius = adjustedProgress * Math.min(cx, cy) * 0.8;
+              const opacity = (1 - adjustedProgress) * 0.8;
+              ctx.strokeStyle = `rgba(16, 185, 129, ${opacity})`;
+              ctx.lineWidth = 3;
+              ctx.beginPath();
+              ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+              ctx.stroke();
+            }
+          }
+
+          // Center pulse
+          ctx.fillStyle = `rgba(16, 185, 129, ${0.3 + Math.sin(time * 0.01) * 0.2})`;
+          ctx.beginPath();
+          ctx.arc(cx, cy, 30, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      };
+    }
+
+    // Scene 3: Globe representation
+    const globeCanvas = document.getElementById('globe-canvas');
+    const globeTg = globeCanvas.closest('ef-timegroup');
+    if (globeTg) {
+      globeTg.initializer = (instance) => {
+        const ctx = globeCanvas.getContext('2d');
+        return instance.addFrameTask((time, duration) => {
+          globeCanvas.width = globeCanvas.offsetWidth;
+          globeCanvas.height = globeCanvas.offsetHeight;
+          const progress = time / duration;
+          const cx = globeCanvas.width / 2;
+          const cy = globeCanvas.height / 2.5;
+
+          // Draw background gradient
+          const grad = ctx.createLinearGradient(0, 0, 0, globeCanvas.height);
+          grad.addColorStop(0, 'rgba(15, 23, 42, 0.5)');
+          grad.addColorStop(1, 'rgba(30, 41, 59, 0.5)');
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, globeCanvas.width, globeCanvas.height);
+
+          // Draw globe nodes
+          const nodeCount = 12;
+          for (let i = 0; i < nodeCount; i++) {
+            const angle = (i / nodeCount) * Math.PI * 2 + time * 0.0005;
+            const distance = 150 + Math.sin(time * 0.0003 + i) * 30;
+            const x = cx + Math.cos(angle) * distance;
+            const y = cy + Math.sin(angle) * distance * 0.4;
+            const nodeProgress = (progress - (i / nodeCount) * 0.3);
+            const opacity = Math.max(0, Math.min(1, nodeProgress * 3));
+
+            ctx.fillStyle = `rgba(59, 130, 246, ${opacity})`;
+            ctx.beginPath();
+            ctx.arc(x, y, 8 * opacity, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Connection lines
+            if (i > 0) {
+              const prevAngle = ((i - 1) / nodeCount) * Math.PI * 2 + time * 0.0005;
+              const prevDistance = 150 + Math.sin(time * 0.0003 + (i - 1)) * 30;
+              const prevX = cx + Math.cos(prevAngle) * prevDistance;
+              const prevY = cy + Math.sin(prevAngle) * prevDistance * 0.4;
+              ctx.strokeStyle = `rgba(59, 130, 246, ${opacity * 0.4})`;
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(x, y);
+              ctx.lineTo(prevX, prevY);
+              ctx.stroke();
+            }
+          }
+        });
+      };
+    }
+  </script>
+</ef-timegroup>

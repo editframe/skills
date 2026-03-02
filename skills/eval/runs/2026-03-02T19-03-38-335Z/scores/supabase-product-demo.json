@@ -1,0 +1,47 @@
+{
+  "taskId": "supabase-product-demo",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-03-02T19:04:34.090Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is structural and meaning-carrying. Three distinct canvas-based addFrameTask animations create procedural visualizations that embody the narrative: lock-in as multiplying constraints, Postgres as central hub with radiating APIs, and an open-source 'chain breaking' metaphor. CSS animations with staggered word splitting reinforce the procedural work.",
+      "evidence": "Scene 1: `tg.addFrameTask((ownCurrentTimeMs, durationMs) => {...})` draws multiplying lock shapes representing Firebase trap. Scene 2: Central Postgres with 6 rotating API surface nodes connected by lines. Text uses `split=\"word\"` with `animation-delay: calc(var(--ef-word-index) * 100ms)`. Scene 3: CSS `scale-in` with 0.2s staggered delays across 4 cards."
+    },
+    "specificity": {
+      "score": 4,
+      "rationale": "The composition reflects genuine Supabase positioning truths: Postgres-centric architecture, the specific API surfaces (REST, GraphQL, Realtime, Edge Functions), Row Level Security as the auth model, and the open-source self-hosting option. The central visual metaphor of 'one Postgres, infinite surfaces' is structurally true about Supabase and false about Firebase.",
+      "evidence": "Scene 2: `'REST API • GraphQL • Realtime • Auth • Edge Functions • Storage — all from the same Postgres'`. Scene 3: `'Row Level Security'` and `'Postgres policies. Not vendor lock-in.'` Feature cards name actual Supabase products. The canvas draws Postgres as literal center with APIs as satellites—this architecture IS Supabase's differentiator."
+    },
+    "viewer_state": {
+      "score": 4,
+      "rationale": "Clear emotional arc: frustration/trapped (Scene 1) → revelation/clarity (Scene 2) → capability/empowerment (Scene 3) → freedom/autonomy (Scene 4). Each scene builds on the previous state. The shift from red constraint visuals to green growth visuals reinforces the state change visually.",
+      "evidence": "Scene 1 uses `rgba(239, 68, 68, ...)` (red) for 'trap effect' with multiplying constraints. Scene 2 shifts to `rgba(62, 207, 142, ...)` (Supabase green) with expanding, connected nodes. Scene 4's 'chain breaking animation' literalizes the freedom promised. The arc moves from problem → solution → proof → liberation."
+    },
+    "point_of_view": {
+      "score": 4,
+      "rationale": "The composition takes a clear position: vendor lock-in is a trap, and the antidote is architectural transparency (Postgres underneath everything). This isn't just 'Supabase is good'—it's 'the database should be the truth, not the vendor's abstraction.' The POV is that open standards = freedom.",
+      "evidence": "Opening with 'Firebase Lock-in' as the villain is a choice. `'Expensive pricing. Proprietary database. No escape route.'` frames the competition negatively. `'Postgres policies. Not vendor lock-in.'` in Scene 3 doubles down. The perspective: infrastructure should be yours to own and migrate."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Four scenes for 45s is disciplined. However, Scene 3 (14s with 4 feature cards) feels like it's doing catalog work—listing features rather than earning each one narratively. The cards could be condensed or the duration reduced. Scene 4 is truncated (composition cuts off mid-animation code), suggesting incomplete execution.",
+      "evidence": "Scene 3 runs 14s (31% of total runtime) to display 4 feature cards with similar CSS animations. Each card follows identical structure: `<div class='accent-green'>LABEL</div><div class='feature-text'>Title</div><div class='text-subtle'>Subtitle</div>`. This is list presentation, not argument. The composition also ends mid-code: `const x = cx - 150 +` suggesting incomplete Scene 4."
+    }
+  },
+  "overall": 4,
+  "feedback": [
+    {
+      "dimension": "omission",
+      "severity": "major",
+      "observation": "Scene 3 dedicates 14 seconds to a 4-card feature grid that functions as a product catalog. Each card has identical structure and similar animation timing, making the scene feel like padding despite containing real information.",
+      "improvement": "Either reduce Scene 3 to 8-10s with faster card reveals, or give each feature a distinct visual treatment that demonstrates rather than describes (e.g., show RLS policy syntax, animate a realtime subscription flow)."
+    },
+    {
+      "dimension": "omission",
+      "severity": "critical",
+      "observation": "The composition is truncated—Scene 4's canvas animation code ends mid-line (`const x = cx - 150 +`), and no CTA scene exists. A 45s product demo without resolution or call-to-action leaves the arc incomplete.",
+      "improvement": "Complete Scene 4's 'chain breaking' animation and add a 5s closing scene with clear CTA. The current 8+12+14+6=40s structure has room for a proper ending."
+    }
+  ]
+}

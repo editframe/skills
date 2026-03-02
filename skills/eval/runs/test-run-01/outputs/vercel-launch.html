@@ -1,0 +1,260 @@
+<ef-timegroup mode="sequence" overlap="0.8s" class="w-[1080px] h-[1920px] bg-black">
+  <!-- Scene 1: The Problem - Deploy Friction (0s-3s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 0.8s fade-out var(--ef-transition-out-start) both">
+    <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="0s" sourceout="3s" class="absolute inset-0 size-full object-cover opacity-40"></ef-video>
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/80"></div>
+    
+    <ef-text
+      split="char"
+      class="absolute top-24 left-8 right-8 text-white text-6xl font-black text-center"
+      style="animation: 0.4s char-in cubic-bezier(0.68, -0.55, 0.265, 1.55) both; animation-delay: calc(var(--ef-index) * 30ms)"
+    >Deploy pain</ef-text>
+    
+    <div id="canvas-chaos" class="absolute inset-0 size-full opacity-60"></div>
+  </ef-timegroup>
+
+  <script>
+    const chaosScene = document.currentScript.parentElement.querySelector('ef-timegroup');
+    chaosScene.initializer = (instance) => {
+      const canvas = instance.querySelector('#canvas-chaos');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      
+      instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        const progress = ownCurrentTimeMs / durationMs;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw accumulating tangled lines to represent deployment complexity
+        const lineCount = Math.floor(progress * 40);
+        for (let i = 0; i < lineCount; i++) {
+          const seed = i * 89.7;
+          const startX = (Math.sin(seed) * 0.4 + 0.5) * canvas.width;
+          const startY = (Math.cos(seed * 0.6) * 0.3 + 0.2) * canvas.height;
+          const endX = (Math.sin(seed + 2.5) * 0.4 + 0.5) * canvas.width;
+          const endY = (Math.cos(seed * 0.9 + 1.8) * 0.3 + 0.6) * canvas.height;
+          
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          ctx.bezierCurveTo(
+            startX + Math.sin(ownCurrentTimeMs * 0.001 + seed) * 100,
+            startY + Math.cos(ownCurrentTimeMs * 0.0008 + seed) * 100,
+            endX - Math.sin(ownCurrentTimeMs * 0.0009 + seed) * 100,
+            endY + Math.cos(ownCurrentTimeMs * 0.0007 + seed) * 100,
+            endX,
+            endY
+          );
+          ctx.strokeStyle = `rgba(239, 68, 68, ${0.3 + progress * 0.4})`;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      });
+    };
+  </script>
+
+  <!-- Scene 2: The Solution - Vercel Instant Deploy (3.2s-8s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 0.8s fade-out var(--ef-transition-out-start) both">
+    <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="3s" sourceout="8s" class="absolute inset-0 size-full object-cover opacity-30"></ef-video>
+    <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80"></div>
+    
+    <!-- Grid of deploy events -->
+    <div class="absolute inset-0 flex items-center justify-center">
+      <div id="deploy-grid" class="relative w-80 h-80"></div>
+    </div>
+    
+    <!-- Main message -->
+    <ef-text
+      split="word"
+      class="absolute bottom-32 left-8 right-8 text-white text-5xl font-black text-center"
+      style="animation: 0.6s word-in cubic-bezier(0, 0.55, 0.45, 1) both; animation-delay: calc(2s + var(--ef-index) * 100ms)"
+    >Deploy in seconds</ef-text>
+    
+    <!-- Subtext -->
+    <ef-text
+      class="absolute bottom-16 left-8 right-8 text-slate-300 text-lg text-center"
+      style="animation: 0.5s fade-in both 3s"
+    >Every git push gets a live preview</ef-text>
+  </ef-timegroup>
+
+  <script>
+    const deployScene = document.currentScript.parentElement.querySelector('ef-timegroup:nth-of-type(2)');
+    deployScene.initializer = (instance) => {
+      const grid = instance.querySelector('#deploy-grid');
+      if (!grid) return;
+      
+      instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        const progress = ownCurrentTimeMs / durationMs;
+        const gridSize = 3;
+        const cellSize = 80;
+        
+        // Clear and redraw grid
+        grid.innerHTML = '';
+        
+        for (let i = 0; i < gridSize * gridSize; i++) {
+          const row = Math.floor(i / gridSize);
+          const col = i % gridSize;
+          const deployTime = (i / (gridSize * gridSize)) * 0.8;
+          
+          if (progress < deployTime) continue;
+          
+          const relativeProgress = (progress - deployTime) / (1 - deployTime);
+          const scale = Math.min(1, relativeProgress * 2);
+          const opacity = Math.min(1, relativeProgress * 3);
+          
+          const cell = document.createElement('div');
+          cell.style.position = 'absolute';
+          cell.style.left = `${col * cellSize}px`;
+          cell.style.top = `${row * cellSize}px`;
+          cell.style.width = `${cellSize - 8}px`;
+          cell.style.height = `${cellSize - 8}px`;
+          cell.style.background = `rgba(34, 197, 94, ${opacity * 0.8})`;
+          cell.style.border = `2px solid rgba(34, 197, 94, ${opacity})`;
+          cell.style.borderRadius = '8px';
+          cell.style.transform = `scale(${scale})`;
+          cell.style.display = 'flex';
+          cell.style.alignItems = 'center';
+          cell.style.justifyContent = 'center';
+          cell.style.fontSize = '24px';
+          cell.textContent = '✓';
+          cell.style.color = `rgba(255, 255, 255, ${opacity})`;
+          cell.style.fontWeight = 'bold';
+          
+          grid.appendChild(cell);
+        }
+      });
+    };
+  </script>
+
+  <!-- Scene 3: Preview URLs - The Differentiator (8.8s-12s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 0.8s fade-out var(--ef-transition-out-start) both">
+    <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="8s" sourceout="12s" class="absolute inset-0 size-full object-cover opacity-25"></ef-video>
+    <div class="absolute inset-0 bg-gradient-to-b from-black/50 to-black/90"></div>
+    
+    <!-- URL cards -->
+    <div class="absolute top-1/4 left-8 right-8 space-y-4">
+      <div 
+        class="bg-slate-900/80 border border-blue-500/50 rounded-lg p-4 font-mono text-sm text-blue-300"
+        style="animation: 0.5s slide-right cubic-bezier(0.34, 1.56, 0.64, 1) both 0.5s"
+      >vercel.app/pr-123-feature</div>
+      <div 
+        class="bg-slate-900/80 border border-blue-500/50 rounded-lg p-4 font-mono text-sm text-blue-300"
+        style="animation: 0.5s slide-right cubic-bezier(0.34, 1.56, 0.64, 1) both 0.8s"
+      >vercel.app/pr-124-bugfix</div>
+      <div 
+        class="bg-slate-900/80 border border-blue-500/50 rounded-lg p-4 font-mono text-sm text-blue-300"
+        style="animation: 0.5s slide-right cubic-bezier(0.34, 1.56, 0.64, 1) both 1.1s"
+      >vercel.app/pr-125-redesign</div>
+    </div>
+    
+    <!-- Message -->
+    <ef-text
+      split="word"
+      class="absolute bottom-24 left-8 right-8 text-white text-5xl font-black text-center"
+      style="animation: 0.6s word-in cubic-bezier(0, 0.55, 0.45, 1) both; animation-delay: calc(1.5s + var(--ef-index) * 100ms)"
+    >Preview everything</ef-text>
+  </ef-timegroup>
+
+  <!-- Scene 4: CTA - Global Edge (12.8s-15s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full">
+    <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="12s" sourceout="15s" class="absolute inset-0 size-full object-cover opacity-40"></ef-video>
+    <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-black/60 to-black/90"></div>
+    
+    <!-- Global network visualization -->
+    <div id="network-viz" class="absolute inset-0 size-full opacity-50"></div>
+    
+    <!-- Main CTA -->
+    <div class="absolute inset-0 flex flex-col items-center justify-center gap-6">
+      <ef-text
+        split="char"
+        class="text-white text-7xl font-black text-center"
+        style="animation: 0.5s char-in cubic-bezier(0.68, -0.55, 0.265, 1.55) both; animation-delay: calc(var(--ef-index) * 40ms)"
+      >Vercel</ef-text>
+      
+      <ef-text
+        class="text-slate-300 text-xl text-center max-w-sm"
+        style="animation: 0.6s fade-in both 1.2s"
+      >Deploy once. Serve globally.</ef-text>
+      
+      <div
+        class="mt-8 px-8 py-3 bg-white text-black font-bold rounded-lg text-lg"
+        style="animation: 0.5s scale-in cubic-bezier(0.34, 1.56, 0.64, 1) both 1.5s"
+      >Get started free</div>
+    </div>
+  </ef-timegroup>
+
+  <script>
+    const ctaScene = document.currentScript.parentElement.querySelector('ef-timegroup:nth-of-type(4)');
+    ctaScene.initializer = (instance) => {
+      const viz = instance.querySelector('#network-viz');
+      if (!viz) return;
+      const ctx = viz.getContext('2d');
+      
+      instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        viz.width = viz.offsetWidth;
+        viz.height = viz.offsetHeight;
+        const progress = ownCurrentTimeMs / durationMs;
+        
+        ctx.clearRect(0, 0, viz.width, viz.height);
+        
+        // Draw expanding network nodes
+        const nodeCount = 12;
+        const centerX = viz.width / 2;
+        const centerY = viz.height / 2;
+        
+        for (let i = 0; i < nodeCount; i++) {
+          const angle = (i / nodeCount) * Math.PI * 2;
+          const distance = 120 + Math.sin(progress * Math.PI) * 40;
+          const x = centerX + Math.cos(angle) * distance;
+          const y = centerY + Math.sin(angle) * distance;
+          
+          ctx.beginPath();
+          ctx.arc(x, y, 6 + Math.sin(ownCurrentTimeMs * 0.003 + i) * 2, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(99, 179, 237, ${0.4 + progress * 0.3})`;
+          ctx.fill();
+          
+          // Lines to center
+          ctx.beginPath();
+          ctx.moveTo(centerX, centerY);
+          ctx.lineTo(x, y);
+          ctx.strokeStyle = `rgba(99, 179, 237, ${0.2 + progress * 0.2})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      });
+    };
+  </script>
+</ef-timegroup>
+
+<style>
+  @keyframes char-in {
+    from { transform: translateY(30px) rotate(-5deg); opacity: 0; }
+    to   { transform: translateY(0) rotate(0); opacity: 1; }
+  }
+  
+  @keyframes word-in {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+  
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
+  
+  @keyframes slide-right {
+    from { transform: translateX(-40px); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
+  }
+  
+  @keyframes scale-in {
+    from { transform: scale(0.8); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+</style>

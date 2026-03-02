@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "Uses generic fintech claims ('195 countries', 'fraud detection', 'PCI compliance') that any payment processor could make. Product names are correct but lack Stripe-specific details.",
+      "improvement": "Include Stripe-specific differentiators: the actual API simplicity (show a code snippet), specific companies that use it, Stripe's particular approach to developer experience, or distinctive product details like Stripe Atlas or Radar's machine learning model."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nYour answer must name a specific product, API, architectural decision, or design philosophy — not a marketing position.",
+    "cause": "present_wrong",
+    "proposedChange": "**1. What is true about this brand that would be false about any competitor?**\n\nYour answer must name a specific product, API, architectural decision, or design philosophy — not a marketing position.\n\n**For developer/API brands specifically**: The differentiator is almost never a feature list (competitors copy features). Look for: the exact developer experience (show a real code snippet from their docs), the architectural bet they made (REST vs GraphQL, client vs server-side), the specific companies that chose them and why, or the philosophical stance that shapes their product decisions. For payment brands: '195 countries', 'fraud detection', 'PCI compliance' are table stakes — every processor claims these. Find the thing that would require a competitor to rebuild their entire product to match.",
+    "rationale": "The model listed generic fintech features because the skill didn't explicitly warn that capability lists are false differentiators for developer/API brands, nor did it require showing actual code or specific customer examples."
+  },
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "motion",
+      "severity": "major",
+      "observation": "Canvas-based procedural animations are declared but not implemented (script truncated). The 'chaos' metaphor in Scene 1 could have been powerful visual storytelling but exists only as an empty canvas element.",
+      "improvement": "Complete the addFrameTask implementations. The 'chaos-canvas' should visualize tangled payment flows that resolve into clean lines when Stripe appears. Use --ef-progress to drive the transformation, making motion carry the 'invisible infrastructure' argument."
+    },
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "currentText": "**A `<canvas>` element with no `<script>` is a broken composition.** If you include a canvas, you must include the `addFrameTask` implementation. If you are not going to write the script, use a CSS animation instead.",
+    "cause": "wrong_priority",
+    "proposedChange": "In Phase 4 (Asset Requirements) of SKILL.md, add as the first bullet under **Motion Graphics:**:\n\n- **Canvas completeness check (MANDATORY)**: Every `<canvas>` element in your output MUST have a complete, working `addFrameTask` script immediately following it. A canvas without its script is a broken composition that will render as a blank rectangle. If you cannot write the full implementation, use CSS animations instead. Before finalizing, verify: count your `<canvas>` elements, count your `addFrameTask` calls — they must match.",
+    "rationale": "The warning exists in composition-patterns.md but the model truncated the script anyway; moving this to a mandatory checklist in the main SKILL.md output phase would force verification before completion."
+  },
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "omission",
+      "severity": "major",
+      "observation": "Scenes 3 and 4 are both 11-second feature lists with emoji icons and bullet points. They serve the same structural purpose (enumerate capabilities) without distinct emotional functions.",
+      "improvement": "Consolidate Scenes 3 and 4 into one scene, or give each a distinct purpose. Scene 3 could show the problem space (what you'd have to build), Scene 4 the solution (what Stripe handles). Currently both just list Stripe features."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**The viewer-state test**: If VIEWER STATE AT START and VIEWER STATE AT END are the same, the scene is not doing work. Cut it or change it until it does.",
+    "cause": "missing",
+    "proposedChange": "After the viewer-state test paragraph, add:\n\n**The structural redundancy test**: If two adjacent scenes have the same format (e.g., both are feature lists, both are text-over-video, both enumerate capabilities), they are structurally redundant even if the content differs. Consolidate them or give each a distinct emotional/structural purpose. A scene showing 'what you'd have to build yourself' and a scene showing 'what the product handles' are structurally distinct; two scenes that both list product features are not.",
+    "rationale": "The model created two consecutive scenes that were both feature lists with emoji bullet points; a test specifically flagging structural redundancy between adjacent scenes would have caught this."
+  }
+]

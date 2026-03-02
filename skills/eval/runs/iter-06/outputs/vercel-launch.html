@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vercel Launch Video</title>
+  <script src="https://cdn.jsdelivr.net/npm/@editframe/elements@latest/dist/index.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@editframe/elements@latest/styles.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(24px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideDown {
+      from {
+        transform: translateY(-24px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes scaleIn {
+      from {
+        transform: scale(0.95);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .container {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .bg-dark {
+      background: #0a0a0a;
+    }
+
+    .bg-vercel-black {
+      background: #000000;
+    }
+
+    .bg-vercel-white {
+      background: #ffffff;
+    }
+
+    .text-white {
+      color: #ffffff;
+    }
+
+    .text-black {
+      color: #000000;
+    }
+
+    .canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <ef-configuration>
+    <ef-timegroup mode="sequence" overlap="0.8s" class="container bg-dark">
+      <!-- Scene 1: The Friction (0s-3.5s) -->
+      <ef-timegroup mode="fixed" duration="3.5s" class="absolute w-full h-full bg-dark flex items-center justify-center">
+        <canvas id="deployment-chaos" class="canvas-container"></canvas>
+        <ef-text
+          split="word"
+          class="relative text-white text-5xl font-bold text-center z-10"
+          style="animation: 0.6s slideUp both; animation-delay: calc(var(--ef-word-index) * 100ms); max-width: 90%"
+        >Deploying is chaos</ef-text>
+      </ef-timegroup>
+
+      <!-- Scene 2: The Problem Revealed (3.5s-7s) -->
+      <ef-timegroup mode="fixed" duration="3.5s" class="absolute w-full h-full bg-dark flex flex-col items-center justify-center"
+        style="animation: 0.8s fadeOut var(--ef-transition-out-start) both">
+        <canvas id="git-push-problem" class="canvas-container"></canvas>
+        <div class="relative z-10 text-center">
+          <ef-text
+            split="word"
+            class="text-white text-4xl font-bold mb-4"
+            style="animation: 0.5s slideUp both; animation-delay: calc(var(--ef-word-index) * 80ms)"
+          >Git push</ef-text>
+          <ef-text
+            class="text-white/60 text-2xl"
+            style="animation: 0.5s slideUp 0.8s both"
+          >then wait</ef-text>
+        </div>
+      </ef-timegroup>
+
+      <!-- Scene 3: The Solution (instant) (7s-11s) -->
+      <ef-timegroup mode="fixed" duration="4s" class="absolute w-full h-full bg-white flex flex-col items-center justify-center"
+        style="animation: 0.8s fadeIn both">
+        <canvas id="instant-deploy" class="canvas-container"></canvas>
+        <div class="relative z-10 text-center">
+          <ef-text
+            split="word"
+            class="text-black text-5xl font-bold"
+            style="animation: 0.6s slideDown both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+          >Live instantly</ef-text>
+        </div>
+      </ef-timegroup>
+
+      <!-- Scene 4: The CTA (11s-15s) -->
+      <ef-timegroup mode="fixed" duration="4s" class="absolute w-full h-full bg-black flex flex-col items-center justify-center"
+        style="animation: 0.6s fadeOut var(--ef-transition-out-start) both">
+        <ef-text
+          split="word"
+          class="text-white text-6xl font-bold text-center mb-8"
+          style="animation: 0.6s slideUp both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+        >Ship now</ef-text>
+        <ef-text
+          class="text-white/70 text-xl"
+          style="animation: 0.5s slideUp 0.8s both"
+        >vercel.com</ef-text>
+      </ef-timegroup>
+    </ef-timegroup>
+  </ef-configuration>
+
+  <script>
+    function initChaosCanvas() {
+      const canvas = document.getElementById('deployment-chaos');
+      if (!canvas) return;
+      const container = canvas.parentElement;
+
+      function setup() {
+        canvas.width = container.offsetWidth;
+        canvas.height = container.offsetHeight;
+      }
+      setup();
+      window.addEventListener('resize', setup);
+
+      const timegroup = canvas.closest('ef-timegroup');
+      if (timegroup && timegroup.addFrameTask) {
+        timegroup.addFrameTask((ownCurrentTimeMs, durationMs) => {
+          const progress = ownCurrentTimeMs / durationMs;
+          const ctx = canvas.getContext('2d');
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          // Draw tangled deployment pipes accumulating in real-time
+          const pipeCount = Math.floor(progress * 60);
+          ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+          ctx.lineWidth = 2;
+
+          for (let i = 0; i < pipeCount; i++) {
+            const seed = i * 137.5;
+            const x1 = (Math.sin(seed) * 0.3 + 0.5) * canvas.width;
+            const y1 = (Math.cos(seed * 0.6) * 0.3 + 0.3) * canvas.height;
+            
+            const endAngle = Math.sin(seed + progress * Math.PI * 2);
+            const x2 = x1 + Math.cos(seed + endAngle * Math.PI) * 120;
+            const y2 = y1 + Math.sin(seed * 1.3 + endAngle * Math.PI) * 120;
+
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.quadraticCurveTo(
+              (x1 + x2) / 2 + Math.sin(seed + ownCurrentTimeMs * 0.003) * 40,
+              (y1 + y2) / 2 + Math.cos(seed + ownCurrentTimeMs * 0.003) * 40,
+              x2,
+              y2
+            );
+            ctx.stroke();
+          }
+        });
+      }
+    }
+
+    function initGitPushProblem() {
+      const canvas = document.getElementById('git-push-problem');
+      if (!canvas) return;
+      const container = canvas.parentElement;
+
+      function setup() {
+        canvas.width = container.offsetWidth;
+        canvas.height = container.offsetHeight;
+      }
+      setup();
+      window.addEventListener('resize', setup);
+
+      const timegroup = canvas.closest('ef-timegroup');
+      if (timegroup && timegroup.addFrameTask) {
+        timegroup.addFrameTask((ownCurrentTimeMs, durationMs) => {
+          const progress = ownCurrentTimeMs / durationMs;
+          const ctx = canvas.getContext('2d');
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          // Git push symbol spinning and waiting
+          const cx = canvas.width / 2;
+          const cy = canvas.height * 0.35;
+
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.rotate((progress * Math.PI * 0.5));
+          ctx.strokeStyle = 'rgba(239, 68, 68, 0.6)';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(0, 0, 40, 0, Math.PI * 2);
+          ctx.stroke();
+          
+          // Loading indicator
+          ctx.strokeStyle = 'rgba(239, 68, 68, 0.3)';
+          ctx.beginPath();
+          ctx.arc(0, 0, 50, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+
+          // Waiting dots
+          const dotY = cy + 80;
+          const dotCount = 3;
+          for (let i = 0; i < dotCount; i++) {
+            const dotProgress = (progress * 2 - i * 0.3) % 1;
+            const opacity = dotProgress < 0.5 ? dotProgress * 2 : (1 - dotProgress) * 2;
+            ctx.fillStyle = `rgba(239, 68, 68, ${Math.max(0, opacity)})`;
+            ctx.beginPath();
+            ctx.arc(cx - 30 + i * 30, dotY, 6, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        });
+      }
+    }
+
+    function initInstantDeploy() {
+      const canvas = document.getElementById('instant-deploy');
+      if (!canvas) return;
+      const container = canvas.parentElement;
+
+      function setup() {
+        canvas.width = container.offsetWidth;
+        canvas.height = container.offsetHeight;
+      }
+      setup();
+      window.addEventListener('resize', setup);
+
+      const timegroup = canvas.closest('ef-timegroup');
+      if (timegroup && timegroup.addFrameTask) {
+        timegroup.addFrameTask((ownCurrentTimeMs, durationMs) => {
+          const progress = ownCurrentTimeMs / durationMs;
+          const ctx = canvas.getContext('2d');
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          const cx = canvas.width / 2;
+          const cy = canvas.height * 0.3;
+
+          // Ripple that spreads instantly (the core truth: zero latency)
+          const rippleRadius = progress * 300;
+          const rippleOpacity = Math.max(0, 1 - progress);
+
+          ctx.strokeStyle = `rgba(0, 0, 0, ${rippleOpacity * 0.6})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(cx, cy, rippleRadius, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Center checkmark (appears instantly)
+          ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+          ctx.beginPath();
+          ctx.arc(cx, cy, 20, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Checkmark line
+          ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
+          ctx.lineWidth = 3;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(cx - 8, cy);
+          ctx.lineTo(cx - 2, cy + 6);
+          ctx.lineTo(cx + 10, cy - 6);
+          ctx.stroke();
+
+          // Secondary ripples for emphasis
+          for (let i = 1; i < 3; i++) {
+            const delayedProgress = Math.max(0, progress - i * 0.15);
+            const secondRippleRadius = delayedProgress * 300;
+            const secondOpacity = Math.max(0, 1 - delayedProgress) * 0.3;
+            ctx.strokeStyle = `rgba(0, 0, 0, ${secondOpacity})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(cx, cy, secondRippleRadius, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        });
+      }
+    }
+
+    // Initialize canvases when elements are ready
+    customElements.whenDefined('ef-timegroup').then(() => {
+      setTimeout(() => {
+        initChaosCanvas();
+        initGitPushProblem();
+        initInstantDeploy();
+      }, 100);
+    });
+  </script>
+</body>
+</html>

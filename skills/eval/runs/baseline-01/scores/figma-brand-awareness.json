@@ -1,0 +1,59 @@
+{
+  "taskId": "figma-brand-awareness",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T22:57:53.142Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural and purposeful. Two procedural canvas animations drive meaning (chaos representing fragmentation, collaboration nodes representing unity). Text uses staggered word-in animations with CSS variables. However, the canvas animations are illustrative rather than carrying meaning the text cannot.",
+      "evidence": "Scene 2 uses `addFrameTask` for chaos-canvas: `const count = Math.floor(progress * 40)` with diverging lines. Scene 4 uses collab-canvas with `const nodeCount = Math.floor(progress * 12) + 3` showing connecting nodes. Scene 5 uses `split=\"word\"` with `animation-delay: calc(var(--ef-word-index) * 100ms)`."
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "The composition uses Figma's purple/blue color palette and mentions 'browser-based' and 'real-time' collaboration. But these claims apply equally to competitors like Framer, Miro, or even Google Docs. No specific Figma features (Auto Layout, Components, Dev Mode, FigJam) are mentioned.",
+      "evidence": "Brand-specific elements limited to: `bg-gradient-to-br from-purple-400 to-blue-500` (Figma colors), the 'F' logo, and generic claims: `Design in the browser. Together. Real-time.` and `Designers. Developers. PMs.` - all of which describe any modern collaborative design tool."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc is traceable: isolation → frustration/chaos → discovery → collaboration → empowerment. Scene 2's chaos canvas creates genuine tension. But the transitions are formulaic and the final 'Ship faster together' resolves to a generic SaaS promise rather than earned transformation.",
+      "evidence": "Scene 1: 'Design alone. Files. Versions. Email.' (establish pain) → Scene 2: dark bg, chaotic lines, 'teams need to work together' (tension) → Scene 3: bright, centered logo (relief) → Scene 4: connecting nodes (possibility) → Scene 5: 'Ship faster together' (resolution). The states exist but feel prescribed rather than discovered."
+    },
+    "point_of_view": {
+      "score": 2,
+      "rationale": "There's an implied perspective that collaboration is the solution to design fragmentation, but this is the default category narrative, not an authored stance. The composition doesn't commit to what makes Figma's approach to collaboration distinctive.",
+      "evidence": "The structure follows the standard before/after template: old way (Scene 1-2) → new way (Scene 3-5). The only non-obvious choice is the chaos/order visual metaphor, but it's a general principle applied to Figma, not a perspective arising from understanding Figma specifically."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Most scenes earn their place in the narrative arc. Scene 4 (collaboration) feels slightly redundant after Scene 3 already establishes 'Together. Real-time.' Both scenes say the same thing with different visuals. The composition could compress to 4 scenes.",
+      "evidence": "Scene 3: 'Design in the browser. Together. Real-time.' Scene 4: 'Designers. Developers. PMs. One workspace. One truth.' Both communicate collaboration without advancing the argument. The connecting-nodes canvas is visually distinct from the logo reveal but semantically redundant."
+    }
+  },
+  "overall": 2.8,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition describes generic collaborative design rather than Figma specifically. 'Design in the browser. Together. Real-time.' could describe Canva, Miro, or dozens of competitors.",
+      "improvement": "Ground the video in specific Figma truths: show Auto Layout responding to content, Components propagating changes across files, Dev Mode translating designs to code, or multiplayer cursors with real names. The collaboration scene could show the distinctive Figma cursor avatars."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition adopts the default SaaS 'old way vs. new way' template without revealing why Figma's approach to collaboration is philosophically distinct from competitors.",
+      "improvement": "Commit to a specific perspective: Is Figma about democratizing design? About treating design as infrastructure? About eliminating the gap between design and implementation? The form should reflect that stance—if Figma is about 'design as shared language,' the video's structure should make viewers experience that rather than assert it."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "The chaos-to-order arc is recognizable but lands on the generic 'Ship faster together' rather than a state change specific to understanding Figma.",
+      "improvement": "The final state should be more precise than 'empowered to collaborate.' What does a viewer understand about design work after this video that they didn't before? The ending could position Figma as the place where design decisions become visible to everyone, changing how teams make choices."
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "Scene 4 (collaboration visualization) repeats the core message of Scene 3 (Figma enables togetherness) without advancing the argument.",
+      "improvement": "Either merge Scenes 3-4 or make Scene 4 distinctly about something Scene 3 isn't—perhaps showing what becomes possible once collaboration is solved (speed, fewer meetings, design systems that scale), rather than restating that collaboration exists."
+    }
+  ]
+}

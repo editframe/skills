@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition uses generic deployment platform messaging ('Deploy in seconds', 'Preview everything', 'Serve globally') that could apply to any competitor.",
+      "improvement": "Include Vercel-specific elements: the triangular logo as a visual motif, Next.js framework integration, specific Edge Function capabilities, or the distinctive vercel.com dashboard aesthetic. Show what makes Vercel different from Netlify/Railway, not just what makes deployment platforms different from manual deployment."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+    "cause": "present_wrong",
+    "proposedChange": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nNot: \"They make deployment fast and easy\" (every deployment platform claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"\nYes: \"Their triangular logo doubles as a deployment status indicator in their dashboard.\"\n\n**This answer must appear visually in your composition.** If you cannot show it, you haven't found it yet.",
+    "rationale": "The current example doesn't enforce that specificity must be visualized, allowing the model to identify specific facts but then use generic messaging in the actual composition."
+  },
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "The emotional arc follows predictable advertising formula: frustration → relief → interest → action. States change but don't build on each other in a way that creates compounding effect.",
+      "improvement": "Create a state that only Vercel can produce. Perhaps awe at the speed (show a real deployment completing in under a second), or the specific satisfaction of sharing a preview URL and getting instant feedback. The viewer should feel something they wouldn't feel watching a competitor's video."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**3. What should the viewer feel at the last frame that they didn't feel at the first frame?**\n\nThis is a feeling, not a fact. \"Informed\" is not a feeling. \"Like this problem is finally solved\" is a feeling.",
+    "cause": "present_wrong",
+    "proposedChange": "**3. What should the viewer feel at the last frame that they didn't feel at the first frame?**\n\nThis is a feeling, not a fact. \"Informed\" is not a feeling. \"Like this problem is finally solved\" is a feeling—but it's also generic.\n\nThe feeling must be one that only this brand can produce. \"Relieved that deployment is easy\" could come from any platform. \"Awe at seeing a real deployment complete in 800ms\" is specific to Vercel's actual capability.\n\n**Test:** Could a competitor's video produce the same feeling? If yes, you haven't found the right feeling.",
+    "rationale": "The current guidance accepts any emotional arc without requiring it to be brand-specific, allowing generic frustration→relief patterns."
+  },
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition fulfills the template of 'problem-solution-feature-CTA' without revealing a perspective on what deployment should be or why Vercel's approach is philosophically different.",
+      "improvement": "Express a point of view through structure. If Vercel's insight is 'deployment should be invisible,' then perhaps don't show deployment at all—show only the creative work that becomes possible when deployment is zero-friction. Or commit to the 'speed' argument by making the entire video feel faster than expected."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Message Structure:**\n- Opening hook (3 seconds) — what earns the next 3 seconds?\n- Core message (one sentence)\n- Emotional arc (start → middle → end feeling from Phase 0)\n- Call-to-action",
+    "cause": "missing",
+    "proposedChange": "**Message Structure:**\n- Opening hook (3 seconds) — what earns the next 3 seconds?\n- Core message (one sentence)\n- Emotional arc (start → middle → end feeling from Phase 0)\n- Call-to-action\n\n**Point of View:**\n- What does this brand believe about its category that competitors don't?\n- How should the video's structure embody that belief?\n- Example: If the brand believes \"deployment should be invisible,\" perhaps don't show deployment—show only what becomes possible when it's zero-friction. The form argues the thesis.",
+    "rationale": "The creative brief has no field for point of view, so the model defaults to template structures (problem-solution-CTA) without expressing a perspective through form."
+  }
+]

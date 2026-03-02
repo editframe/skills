@@ -247,7 +247,7 @@ Using motion to enhance meaning:
 #### Single Font Family
 **Signal**: Cohesive, systematic, modern, minimalist  
 **Video approach**: Use weight variation for hierarchy  
-**Example brands**: Apple, Airbnb, Stripe
+**Common in**: Consumer tech, fintech, design-forward consumer brands
 
 #### Two Font Families
 **Signal**: Balanced, professional, considered design  

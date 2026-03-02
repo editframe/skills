@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Linear - Speed Through Simplicity</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@editframe/elements/styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #000;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(24px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes slideDown {
+      from { transform: translateY(-24px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes scaleIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    @keyframes lineSlide {
+      from { transform: scaleX(0); opacity: 0; }
+      to { transform: scaleX(1); opacity: 1; }
+    }
+
+    .bg-gradient {
+      background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
+    }
+
+    .accent-color {
+      color: #5e56e6;
+    }
+
+    .text-white {
+      color: #fff;
+    }
+
+    .text-gray {
+      color: #a1a1a1;
+    }
+
+    ef-timegroup {
+      display: block;
+    }
+
+    .canvas-container {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .overlay-gradient {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.6) 100%);
+    }
+
+    .content-wrapper {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px 80px;
+    }
+
+    .keyboard-hint {
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      position: absolute;
+      bottom: 40px;
+      left: 40px;
+      right: 40px;
+    }
+
+    .feature-item {
+      padding: 20px;
+      border-left: 2px solid #5e56e6;
+      padding-left: 24px;
+    }
+
+    .feature-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #5e56e6;
+      margin-bottom: 8px;
+    }
+
+    .feature-text {
+      font-size: 18px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <ef-timegroup mode="sequence" overlap="0.8s" class="w-[1920px] h-[1080px]">
+    
+    <!-- Scene 1: The Problem (0s-7s) -->
+    <!-- Phrase: "Work gets lost in noise" -->
+    <!-- PoV: Linear removes decisions by removing options. Show this by: clutter accumulating, then vanishing. -->
+    <ef-timegroup mode="fixed" duration="7s" class="absolute w-full h-full bg-gradient">
+      <canvas id="chaos-canvas" class="canvas-container"></canvas>
+      
+      <div class="content-wrapper">
+        <ef-text
+          split="word"
+          class="text-white"
+          style="font-size: 64px; font-weight: 600; line-height: 1.2; max-width: 1000px; animation: slideUp 0.8s ease-out both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+        >
+          Work gets lost in noise
+        </ef-text>
+      </div>
+
+      <script>
+        (function() {
+          const canvas = document.getElementById('chaos-canvas');
+          if (!canvas) return;
+          const ctx = canvas.getContext('2d');
+          const canvasParent = canvas.parentElement.parentElement;
+
+          canvasParent.addFrameTask = canvasParent.addFrameTask || function(callback) {
+            const interval = setInterval(() => {
+              const rect = canvas.getBoundingClientRect();
+              canvas.width = rect.width;
+              canvas.height = rect.height;
+              const offsetParent = this;
+              if (offsetParent.ownCurrentTimeMs !== undefined) {
+                callback(offsetParent.ownCurrentTimeMs, offsetParent.durationMs);
+              }
+            }, 16);
+            return () => clearInterval(interval);
+          };
+
+          const observer = new MutationObserver(() => {
+            if (canvasParent.initializer) {
+              canvasParent.initializer({
+                addFrameTask: (callback) => {
+                  const cleanup = () => {};
+                  return cleanup;
+                }
+              });
+            }
+          });
+
+          canvasParent.initializer = (instance) => {
+            return instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+              canvas.width = canvas.offsetWidth;
+              canvas.height = canvas.offsetHeight;
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+              const progress = ownCurrentTimeMs / durationMs;
+              const elementCount = Math.floor(progress * 120);
+
+              ctx.font = '14px monospace';
+              ctx.fillStyle = 'rgba(94, 86, 230, 0.15)';
+
+              for (let i = 0; i < elementCount; i++) {
+                const seed = i * 137.5;
+                const x = Math.sin(seed) * canvas.width * 0.3 + canvas.width * 0.35;
+                const y = Math.cos(seed * 0.7) * canvas.height * 0.3 + canvas.height * 0.35;
+                const size = 10 + Math.sin(seed * 3) * 4;
+
+                ctx.fillRect(x, y, size, size);
+
+                if (progress > 0.5) {
+                  const fadeProgress = (progress - 0.5) * 2;
+                  ctx.fillStyle = `rgba(94, 86, 230, ${0.15 * (1 - fadeProgress)})`;
+                }
+              }
+            });
+          };
+        })();
+      </script>
+    </ef-timegroup>
+
+    <!-- Scene 2: The Solution (7s-17s) -->
+    <!-- Phrase: "One tool. One workflow. Built for speed." -->
+    <!-- Visual: UI elements emerging with precision, keyboard navigation visible -->
+    <ef-timegroup mode="fixed" duration="10s" class="absolute w-full h-full bg-gradient" style="animation: fadeIn 0.8s ease-out both">
+      <canvas id="solution-canvas" class="canvas-container"></canvas>
+
+      <div class="content-wrapper">
+        <ef-text
+          class="text-white"
+          style="font-size: 48px; font-weight: 600; margin-bottom: 32px; animation: slideUp 0.8s ease-out both"
+        >
+          One tool. One workflow.
+        </ef-text>
+
+        <div class="feature-grid">
+          <div class="feature-item" style="animation: slideUp 0.6s ease-out 1.2s both">
+            <div class="feature-label">Keyboard First</div>
+            <div class="feature-text text-white">Navigate without your mouse. Every action, one keystroke.</div>
+          </div>
+          <div class="feature-item" style="animation: slideUp 0.6s ease-out 1.4s both">
+            <div class="feature-label">Instant Search</div>
+            <div class="feature-text text-white">Find what you need in milliseconds, not minutes.</div>
+          </div>
+          <div class="feature-item" style="animation: slideUp 0.6s ease-out 1.6s both">
+            <div class="feature-label">Opinionated</div>
+            <div class="feature-text text-white">We make decisions so you don't have to.</div>
+          </div>
+          <div class="feature-item" style="animation: slideUp 0.6s ease-out 1.8s both">
+            <div class="feature-label">Built for Teams</div>
+            <div class="feature-text text-white">Designed for how high-performance teams actually work.</div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        (function() {
+          const canvas = document.getElementById('solution-canvas');
+          if (!canvas) return;
+          const ctx = canvas.getContext('2d');
+          const canvasParent = canvas.parentElement.parentElement;
+
+          canvasParent.initializer = (instance) => {
+            return instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+              canvas.width = canvas.offsetWidth;
+              canvas.height = canvas.offsetHeight;
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+              const progress = ownCurrentTimeMs / durationMs;
+
+              // Draw keyboard keys as animated grid
+              const keySize = 40;
+              const keySpacing = 12;
+              const startX = canvas.width * 0.05;
+              const startY = canvas.height * 0.1;
+
+              for (let row = 0; row < 4; row++) {
+                for (let col = 0; col < 8; col++) {
+                  const x = startX + col * (keySize + keySpacing);
+                  const y = startY + row * (keySize + keySpacing);
+
+                  const delay = (row * 8 + col) * 0.02;
+                  const keyProgress = Math.max(0, progress - delay);
+
+                  if (keyProgress > 0) {
+                    const scale = Math.min(1, keyProgress * 2);
+                    const opacity = Math.min(1, keyProgress * 1.5);
+
+                    ctx.save();
+                    ctx.globalAlpha = opacity * 0.4;
+                    ctx.strokeStyle = '#5e56e6';
+                    ctx.lineWidth = 2;
+                    ctx.fillStyle = `rgba(94, 86, 230, ${0.1 * scale})`;
+
+                    const w = keySize * scale;
+                    const h = keySize * scale;
+                    const offsetX = (keySize - w) / 2;
+                    const offsetY = (keySize - h) / 2;
+
+                    ctx.fillRect(x + offsetX, y + offsetY, w, h);
+                    ctx.strokeRect(x + offsetX, y + offsetY, w, h);
+                    ctx.restore();
+                  }
+                }
+              }
+            });
+          };
+        })();
+      </script>
+    </ef-timegroup>
+
+    <!-- Scene 3: Call to Action (17s-30s) -->
+    <!-- Phrase: "Ship faster. Think clearer. Organize better." -->
+    <!-- Visual: Three action items, each appearing in sequence, with underline animation -->
+    <ef-timegroup mode="fixed" duration="13s" class="absolute w-full h-full bg-gradient" style="animation: fadeIn 0.8s ease-out both">
+      <div class="content-wrapper" style="justify-content: flex-start; padding-top: 200px">
+        <ef-text
+          class="text-white"
+          style="font-size: 72px; font-weight: 700; margin-bottom: 60px; animation: slideUp 0.8s ease-out both"
+        >
+          Built for how you work
+        </ef-text>
+
+        <ef-text
+          split="word"
+          class="text-gray"
+          style="font-size: 24px; line-height: 1.6; max-width: 900px; animation: slideUp 0.6s ease-out 0.4s both; animation-delay: calc(0.4s + var(--ef-word-index) * 60ms)"
+        >
+          Linear is the issue tracking platform built for modern software teams. Fast. Focused. Built by developers, for developers.
+        </ef-text>
+
+        <div style="margin-top: 80px">
+          <div style="animation: slideUp 0.6s ease-out 2s both">
+            <a href="#" style="
+              display: inline-block;
+              padding: 16px 40px;
+              background: #5e56e6;
+              color: white;
+              text-decoration: none;
+              font-size: 16px;
+              font-weight: 600;
+              border-radius: 6px;
+              transition: background 0.3s ease;
+            ">Start free — no credit card</a>
+          </div>
+        </div>
+      </div>
+
+      <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 200px; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8) 100%)"></div>
+    </ef-timegroup>
+
+  </ef-timegroup>
+</body>
+</html>

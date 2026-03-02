@@ -1,0 +1,34 @@
+Eval Run: 2026-03-02T19-23-45-152Z
+Generator: anthropic/claude-haiku-4-5
+Evaluator: anthropic/claude-opus-4-5
+Date: 3/2/2026, 1:25:08 PM
+
+─── Scores ────────────────────────────────────────
+Task                          Motion  Spec  ViewerΔ  PoV  Omit  Overall
+─────────────────────────────────────────────────────────────────────────
+Linear (product-demo)           5/5    3/5   4/5      4/5   4/5    4/5
+Stripe (explainer)              5/5    4/5   4/5      4/5   3/5    4/5
+Figma (brand-awareness)         4/5    3/5   4/5      3/5   4/5    3.6/5
+Glossier (social)               4/5    3/5   3/5      3/5   4/5    3.4/5
+Patagonia (brand-awareness)     4/5    3/5   4/5      3/5   4/5    3.6/5
+Supabase (product-demo)         4/5    3/5   3/5      3/5   3/5    3.2/5
+─────────────────────────────────────────────────────────────────────────
+Average overall: 3.6/5
+
+─── Proposed Skill Changes ─────────────────────────────────────────────
+
+skills/skills/brand-video-generator/SKILL.md (8 changes)
+  [MAJOR specificity] (linear-product-demo) The visual metaphor guidance exists but is buried in Phase 2.5 as a reference table; moving it to Scene Planning and adding an explicit Scene 1 gate with product-demo-specific anti-patterns would force the model to validate specificity before writing the opening scene.
+  [MAJOR specificity] (figma-brand-awareness) The model used generic 'converging dots' for collaboration because the quick reference table didn't explicitly flag this as a generic default to avoid, nor did it prompt for product-specific collaboration artifacts.
+  [MAJOR specificity] (figma-brand-awareness) The brand-swap test exists but is buried in composition-patterns.md; elevating it to a mandatory check in Phase 2.5 with a concrete 'name three elements' requirement would have forced the model to identify Figma-specific artifacts before generating generic metaphors.
+  [MAJOR specificity] (glossier-social) The Phase 4 asset requirements lacked any specificity mandate, allowing the model to list generic assets without requiring named products, specific brand moments, or traceable community references that distinguish the brand from competitors.
+  [MAJOR specificity] (glossier-social) Phase 0 establishes brand truth but doesn't require that truth to manifest visually in the final composition — adding an explicit mandate that the structural truth must appear as a named/shown element would prevent philosophical-only references.
+  [MAJOR specificity] (patagonia-brand-awareness) The model defaulted to category-generic visuals (mountain silhouettes, earth tones) because the skill required extracting visual identity but never mandated that the final composition use brand-specific assets rather than generic category representations.
+  [MAJOR specificity] (supabase-product-demo) The original example was generic 'capabilities as rings' which doesn't surface Supabase's actual differentiator (full Postgres access with RLS, standard clients) — the revised text forces the model to identify features unique to Supabase.
+  [MAJOR viewer_state] (supabase-product-demo) The model wrote a code example scene that was purely informational because nothing in the template forced it to specify HOW the viewer state changes — adding a required 'mechanism' field would have flagged that mere demonstration doesn't create emotional shift.
+
+skills/skills/brand-video-generator/references/composition-patterns.md (2 changes)
+  [MAJOR specificity] (figma-brand-awareness) Adding a Figma-specific example would have shown the model exactly what brand-specific visual artifacts look like for this product — named cursors, nested frames, component diamonds — instead of allowing generic 'collaboration' metaphors.
+  [MAJOR specificity] (patagonia-brand-awareness) The existing guidance about 'demonstrate something true about this product' focuses on conceptual differentiation but doesn't enforce visual specificity — the model understood it needed to show Patagonia's repair philosophy but rendered it as generic 'damage lines' rather than brand-specific visual elements.
+
+To apply: npx tsx scripts/eval-skills-apply.ts --run-id 2026-03-02T19-23-45-152Z

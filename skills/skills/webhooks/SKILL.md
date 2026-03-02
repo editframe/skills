@@ -13,45 +13,42 @@ metadata:
 
 Receive real-time HTTP notifications when renders complete, files finish processing, or other asynchronous events occur in your Editframe account.
 
-## Quick Start
+## Setup
+
+Webhooks are configured on an API key, not separately. The webhook URL and events you want to receive are set at API key creation time.
+
+**Step 1**: Create an API key with webhook configuration via the Editframe dashboard (editframe.com → API Keys → Create), or via your application's API key management endpoint. The dashboard returns a webhook secret — store it securely.
+
+**Step 2**: Handle webhook requests:
 
 ```typescript
-// 1. Create an API key with webhook configuration
-const apiKey = await createApiKey({
-  name: "My App",
-  webhookUrl: "https://your-app.com/webhooks/editframe",
-  webhookEvents: ["render.completed", "render.failed"]
-});
-
-// 2. Store the webhook secret for signature verification
-const webhookSecret = apiKey.webhook_secret;
-
 // 3. Handle webhook requests
 app.post("/webhooks/editframe", async (req, res) => {
   const signature = req.headers["x-webhook-signature"];
   const payload = JSON.stringify(req.body);
+  const webhookSecret = process.env.EDITFRAME_WEBHOOK_SECRET;
 
-  // Verify signature
+  // Verify signature — always verify before processing
   const expectedSignature = crypto
     .createHmac("sha256", webhookSecret)
     .update(payload)
     .digest("hex");
 
-  if (signature !== expectedSignature) {
+  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
     return res.status(401).send("Invalid signature");
   }
 
-  // Process event
-  const { topic, data } = req.body;
-
-  if (topic === "render.completed") {
-    console.log(`Render ${data.id} completed!`);
-    console.log(`Download: ${data.download_url}`);
-  }
-
+  // Respond quickly, process asynchronously
   res.status(200).send("OK");
+
+  const { topic, data } = req.body;
+  if (topic === "render.completed") {
+    console.log(`Render ${data.id} completed. Download: ${data.download_url}`);
+  }
 });
 ```
+
+**Critical:** Hash the raw request body string (`JSON.stringify(req.body)`), not the parsed object. Use `timingSafeEqual` to prevent timing attacks.
 
 ## Event Topics
 

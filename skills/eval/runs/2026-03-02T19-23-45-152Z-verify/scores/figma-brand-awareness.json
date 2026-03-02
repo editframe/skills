@@ -1,0 +1,53 @@
+{
+  "taskId": "figma-brand-awareness",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-03-02T19:45:40.983Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural and purposeful. Canvas-based procedural animation drives Scene 2 with named cursors that move based on progress. The addFrameTask pattern is used correctly to animate cursor positions over time.",
+      "evidence": "scene2.initializer uses `instance.addFrameTask((ownCurrentTimeMs, durationMs) => { const progress = ownCurrentTimeMs / durationMs; drawScene2(progress); })`. Cursors animate with staggered delays: `const delay = i * 0.15; const adjustedProgress = Math.max(0, progress - delay);` and positions update via `Math.sin(adjustedProgress * 2) * 20`"
+    },
+    "specificity": {
+      "score": 3,
+      "rationale": "The composition captures Figma's core truth—multiplayer design in the browser—and structures scenes around the single-player vs. multiplayer contrast. The named cursors, URL sharing concept, and 'same canvas' metaphor are distinctly Figma. However, generic elements like the fabricated logo and lack of actual Figma UI specifics weaken it.",
+      "evidence": "Scene 2 shows multiple named cursors ('Sarah', 'Marcus', 'Alex') on one canvas—Figma's signature feature. Scene 3 shows `figma.com/@team/design-system` URL. But the SVG logo is invented (colored circles) rather than Figma's actual logo, and 'Design • Prototype • Build' is generic enough for any design tool."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "There's a traceable arc: frustration with isolation (Scene 1) → revelation of togetherness (Scene 2) → practical understanding via URL (Scene 3) → brand affirmation (Scene 4). The shifts are present but somewhat formulaic—the emotional escalation doesn't fully land.",
+      "evidence": "Scene 1: 'Design alone / Files. Downloads. Versions.' (problem state). Scene 2: 'Everyone together. / Real-time collaboration' (solution reveal). Scene 3: 'Share a link, not a file' (practical insight). The X marks between frames in Scene 1 and unified canvas in Scene 2 visually encode the before/after."
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "The perspective is clear: 'Design has been unnecessarily lonely, and Figma fixed that.' This POV is consistent throughout and shapes scene structure. However, it's the obvious Figma pitch rather than a surprising or deeply considered angle.",
+      "evidence": "The composition commits to the isolation-to-collaboration arc: isolated frames with X marks → single shared canvas → URL-as-access. The perspective could be stated as 'the medium is the message—browser-native means truly shared.' But this is Figma's marketing position, not an authored insight."
+    },
+    "omission": {
+      "score": 4,
+      "rationale": "Four scenes, each with a distinct job: establish problem, show solution, explain mechanism, close with brand. The 8-10-8-4 second distribution feels intentional. Scene 3 could arguably merge with Scene 2, but the URL/practical angle earns its separation.",
+      "evidence": "Scene 1 (8s): problem. Scene 2 (10s): solution demo with animated cursors. Scene 3 (8s): URL concept. Scene 4 (4s): CTA. No scene repeats another's function. The longest scene (2) has the most motion and carries the core demonstration."
+    }
+  },
+  "overall": 3.4,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The logo is fabricated colored circles rather than Figma's actual distinctive logo. The tagline 'The collaborative design platform' and 'Design • Prototype • Build' are generic enough for Sketch, Adobe XD, or Framer.",
+      "improvement": "Use Figma's actual logo or a more accurate representation of its four-node structure. Reference specific Figma features like Dev Mode, Variables, or FigJam. Include Figma's actual brand colors (#F24E1E, #FF7262, #A259FF, #1ABCFE, #0ACF83) rather than approximations."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "The transition from Scene 2 to Scene 3 loses emotional momentum. After the 'aha' of seeing cursors collaborate, the URL scene feels like an info dump rather than an escalation.",
+      "improvement": "Scene 3 should build on the emotional high of Scene 2. Perhaps show the URL being shared in real-time with a cursor clicking 'Share' and new collaborators appearing instantly. Make the link-sharing feel like magic, not explanation."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "minor",
+      "observation": "The POV is Figma's existing marketing position rather than a fresh angle. 'Collaboration is better than isolation' is true but obvious.",
+      "improvement": "Find a sharper angle—perhaps 'design decisions are better when they're witnessed' or 'the file was always the bottleneck, not the tool.' A more specific thesis would make the composition feel authored rather than templated."
+    }
+  ]
+}

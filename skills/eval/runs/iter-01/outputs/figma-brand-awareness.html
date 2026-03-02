@@ -1,0 +1,262 @@
+<ef-timegroup mode="sequence" overlap="1.2s" class="w-[1080px] h-[1920px] bg-black">
+  <!-- Scene 1: The Old Way (0-5s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 1.2s fade-out var(--ef-transition-out-start) both">
+    <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="0s" sourceout="5s" class="absolute inset-0 size-full object-cover opacity-40"></ef-video>
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80"></div>
+    
+    <ef-text class="absolute top-1/3 left-8 right-8 text-white text-6xl font-bold text-center"
+      style="animation: 0.8s enter-down both 0.2s">
+      Design in isolation
+    </ef-text>
+    
+    <div class="absolute bottom-24 left-8 right-8 space-y-4">
+      <div class="flex items-center gap-3"
+        style="animation: 0.6s enter-right both 1.2s">
+        <div class="w-12 h-12 rounded-lg bg-red-500/30 flex items-center justify-center">
+          <span class="text-white text-xl">📁</span>
+        </div>
+        <span class="text-white text-xl">File-based</span>
+      </div>
+      <div class="flex items-center gap-3"
+        style="animation: 0.6s enter-right both 1.5s">
+        <div class="w-12 h-12 rounded-lg bg-red-500/30 flex items-center justify-center">
+          <span class="text-white text-xl">👤</span>
+        </div>
+        <span class="text-white text-xl">Single player</span>
+      </div>
+      <div class="flex items-center gap-3"
+        style="animation: 0.6s enter-right both 1.8s">
+        <div class="w-12 h-12 rounded-lg bg-red-500/30 flex items-center justify-center">
+          <span class="text-white text-xl">🔒</span>
+        </div>
+        <span class="text-white text-xl">Bottlenecked</span>
+      </div>
+    </div>
+  </ef-timegroup>
+
+  <!-- Scene 2: Collaboration Emerges (5-12s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 1.2s fade-in both, 1.2s fade-out var(--ef-transition-out-start) both">
+    <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="5s" sourceout="12s" class="absolute inset-0 size-full object-cover opacity-30"></ef-video>
+    <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/80"></div>
+    
+    <div id="collab-canvas" class="absolute inset-0"></div>
+    
+    <ef-text class="absolute top-20 left-8 right-8 text-white text-5xl font-bold text-center z-10"
+      style="animation: 0.7s enter-up both 0.5s">
+      Meet in the browser
+    </ef-text>
+    
+    <ef-text class="absolute bottom-32 left-8 right-8 text-white/80 text-2xl text-center z-10"
+      style="animation: 0.6s fade-in both 2s">
+      Real-time collaboration. No files. No waiting.
+    </ef-text>
+  </ef-timegroup>
+
+  <!-- Scene 3: Design + Prototype + Develop (12-20s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 1.2s fade-in both, 1.2s fade-out var(--ef-transition-out-start) both">
+    <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="10s" sourceout="18s" class="absolute inset-0 size-full object-cover opacity-25"></ef-video>
+    <div class="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/90"></div>
+    
+    <div class="absolute top-1/2 left-8 right-8 -translate-y-1/2">
+      <div class="grid grid-cols-3 gap-4">
+        <div class="text-center"
+          style="animation: 0.6s scale-in both 0.3s">
+          <div class="w-16 h-16 rounded-2xl bg-purple-500/40 mx-auto mb-3 flex items-center justify-center">
+            <span class="text-white text-3xl">🎨</span>
+          </div>
+          <p class="text-white font-semibold text-lg">Design</p>
+        </div>
+        <div class="text-center"
+          style="animation: 0.6s scale-in both 0.5s">
+          <div class="w-16 h-16 rounded-2xl bg-blue-500/40 mx-auto mb-3 flex items-center justify-center">
+            <span class="text-white text-3xl">⚙️</span>
+          </div>
+          <p class="text-white font-semibold text-lg">Prototype</p>
+        </div>
+        <div class="text-center"
+          style="animation: 0.6s scale-in both 0.7s">
+          <div class="w-16 h-16 rounded-2xl bg-green-500/40 mx-auto mb-3 flex items-center justify-center">
+            <span class="text-white text-3xl">💻</span>
+          </div>
+          <p class="text-white font-semibold text-lg">Develop</p>
+        </div>
+      </div>
+    </div>
+    
+    <ef-text class="absolute top-12 left-8 right-8 text-white text-4xl font-bold text-center"
+      style="animation: 0.6s enter-down both 0.2s">
+      One platform
+    </ef-text>
+  </ef-timegroup>
+
+  <!-- Scene 4: CTA / Conclusion (20-30s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 1.2s fade-in both">
+    <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="15s" sourceout="25s" class="absolute inset-0 size-full object-cover opacity-20"></ef-video>
+    <div class="absolute inset-0 bg-gradient-to-b from-black/60 to-black"></div>
+    
+    <div id="geometric-canvas" class="absolute inset-0 opacity-60"></div>
+    
+    <div class="absolute inset-0 flex flex-col items-center justify-center">
+      <ef-text split="word" class="text-white text-6xl font-bold text-center mb-8 max-w-3xl"
+        style="animation: 0.5s word-in both; animation-delay: calc(var(--ef-word-index) * 60ms)">
+        Design together
+      </ef-text>
+      
+      <ef-text class="text-white/70 text-2xl text-center mb-12 max-w-2xl"
+        style="animation: 0.6s fade-in both 1.5s">
+        Figma: Where teams build the future
+      </ef-text>
+      
+      <div class="px-8 py-3 bg-white rounded-lg text-black font-bold text-xl"
+        style="animation: 0.6s scale-in both 2.2s">
+        Start designing free
+      </div>
+    </div>
+  </ef-timegroup>
+
+  <ef-audio src="https://assets.editframe.com/bars-n-tone.mp4" volume="0.3"></ef-audio>
+</ef-timegroup>
+
+<style>
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+
+  @keyframes enter-down {
+    from { transform: translateY(-30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes enter-up {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes enter-right {
+    from { transform: translateX(-30px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  @keyframes scale-in {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes word-in {
+    from { transform: translateY(20px) scale(0.95); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+  }
+</style>
+
+<script>
+  const collabScene = document.getElementById('collab-canvas');
+  const geoScene = document.getElementById('geometric-canvas');
+
+  // Collaboration canvas - nodes connecting
+  if (collabScene) {
+    const collabTimegroup = collabScene.closest('ef-timegroup');
+    collabTimegroup.initializer = (instance) => {
+      const canvas = document.createElement('canvas');
+      canvas.className = 'absolute inset-0 size-full';
+      instance.insertBefore(canvas, instance.firstChild);
+      const ctx = canvas.getContext('2d');
+
+      return instance.addFrameTask((info) => {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        const progress = info.percentComplete;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw connecting nodes to show collaboration
+        const nodes = [
+          { x: 0.2, y: 0.3, label: 'Designer' },
+          { x: 0.5, y: 0.15, label: 'PM' },
+          { x: 0.8, y: 0.35, label: 'Developer' },
+        ];
+
+        nodes.forEach((node, i) => {
+          const x = node.x * canvas.width;
+          const y = node.y * canvas.height;
+          const scale = 0.5 + progress * 0.5;
+          const r = 30 * scale;
+
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(139, 92, 246, ${0.3 + progress * 0.4})`;
+          ctx.fill();
+          ctx.strokeStyle = `rgba(139, 92, 246, ${0.8})`;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        });
+
+        // Draw connections between nodes
+        for (let i = 0; i < nodes.length; i++) {
+          for (let j = i + 1; j < nodes.length; j++) {
+            const x1 = nodes[i].x * canvas.width;
+            const y1 = nodes[i].y * canvas.height;
+            const x2 = nodes[j].x * canvas.width;
+            const y2 = nodes[j].y * canvas.height;
+
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = `rgba(139, 92, 246, ${progress * 0.6})`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          }
+        }
+      });
+    };
+  }
+
+  // Geometric canvas - expanding circles for finale
+  if (geoScene) {
+    const geoTimegroup = geoScene.closest('ef-timegroup');
+    geoTimegroup.initializer = (instance) => {
+      const canvas = document.createElement('canvas');
+      canvas.className = 'absolute inset-0 size-full';
+      instance.insertBefore(canvas, instance.firstChild);
+      const ctx = canvas.getContext('2d');
+
+      return instance.addFrameTask((info) => {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        const progress = info.percentComplete;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+
+        // Expanding rings
+        for (let i = 0; i < 5; i++) {
+          const delay = i * 0.15;
+          if (progress > delay) {
+            const ringProgress = (progress - delay) / (1 - delay);
+            const radius = ringProgress * 300;
+            const alpha = Math.max(0, 1 - ringProgress);
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(99, 179, 237, ${alpha * 0.4})`;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+          }
+        }
+
+        // Core circle
+        ctx.beginPath();
+        ctx.arc(cx, cy, 60, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(139, 92, 246, 0.6)';
+        ctx.fill();
+      });
+    };
+  }
+</script>

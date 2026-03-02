@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The problem scene ('Stitching together a dozen services') and solution structure could describe any integrated backend platform. No uniquely Supabase truth shapes the narrative.",
+      "improvement": "Lean into what makes Supabase specifically different: show the actual Postgres SQL console, demonstrate that your data isn't abstracted away, contrast with Firebase's proprietary query language, or show the open-source GitHub repo as proof of transparency."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+    "cause": "missing",
+    "proposedChange": "Add after the existing example under question 1:\n\n**For developer tools specifically:**\nNot: \"It's an all-in-one platform\" (Firebase, AWS Amplify, PlanetScale all claim this).\nNot: \"It's easy to use\" (every DevEx-focused tool claims this).\nYes: \"It exposes raw Postgres—you can write real SQL, export your data, and leave anytime.\"\nYes: \"The entire codebase is on GitHub; you can self-host it tomorrow.\"\n\nThe test: if a competitor could say the same thing without lying, it's not specific enough.",
+    "rationale": "The model treated 'open source' and 'integrated platform' as differentiators without being forced to prove these claims couldn't describe Firebase or PlanetScale—adding developer-tool-specific examples would have caught this."
+  },
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "Scenes 3 and 4 produce the same emotional state—'oh, this feature exists'—with no escalation or contrast between them. Feature listing doesn't build momentum.",
+      "improvement": "Create tension between scenes: show a developer struggling with auth complexity THEN reveal the one-line Supabase solution. Or demonstrate how RLS eliminates entire categories of security bugs. The viewer should feel relief or surprise, not just receive information."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "- VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]\n- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]",
+    "cause": "missing",
+    "proposedChange": "Replace with:\n\n- VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]\n- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]\n- ESCALATION CHECK: [How is this state change MORE intense than the previous scene's? If it isn't, justify why plateau serves the arc.]\n\n**Adjacent scenes cannot produce the same emotional register.** If Scene 3 ends with 'impressed' and Scene 4 ends with 'impressed,' one of them isn't doing work. Options:\n- Introduce contrast (tension → relief, confusion → clarity)\n- Escalate stakes (useful → essential → can't-live-without)\n- Shift register entirely (rational → emotional, or vice versa)",
+    "rationale": "The template allowed consecutive scenes with flat emotional states; adding an explicit escalation check would force the model to justify or fix scenes that don't build momentum."
+  },
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition claims 'open source' matters but never shows why. The perspective is announced, not argued through form.",
+      "improvement": "If open source is the point of view, make it visible: show the GitHub stars, display the actual source code, contrast vendor lock-in with 'you own your data.' Or commit to a different angle entirely—speed, developer experience, cost—and let the structure prove it."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it.",
+    "cause": "present_wrong",
+    "proposedChange": "Replace with:\n\n**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask:\n1. \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\"\n2. \"What is the VISUAL EVIDENCE of this point of view in this scene?\" Name the specific element—not text overlay, but a visual or structural choice (showing actual source code, displaying a GitHub star count, cutting to a competitor's lock-in warning, etc.).\n\nIf the PoV is only stated in voiceover or text and not embodied in imagery or structure, it is not a point of view—it is a claim. Rewrite until the PoV is visible with the sound off.",
+    "rationale": "The model announced 'open source matters' in text but never showed evidence; requiring visual proof of PoV in each scene would have forced concrete demonstration rather than assertion."
+  }
+]

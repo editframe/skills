@@ -1,0 +1,187 @@
+<ef-timegroup mode="sequence" overlap="1s" class="w-[1080px] h-[1920px] bg-black">
+  <!-- Scene 1: The Problem - Deploy Chaos (0s-4s) -->
+  <ef-timegroup mode="fixed" duration="4s" class="absolute w-full h-full flex flex-col items-center justify-center" style="animation: 1s fade-out var(--ef-transition-out-start) both">
+    <canvas id="chaos-canvas" class="absolute inset-0 size-full"></canvas>
+    <ef-text class="absolute bottom-16 text-white text-5xl font-black text-center px-8" style="animation: 0.6s enter-up both 1.2s">
+      Deploy. Configure. Wait.
+    </ef-text>
+  </ef-timegroup>
+
+  <!-- Scene 2: The Solution - Instant Deploy (4s-8s) -->
+  <ef-timegroup mode="fixed" duration="4s" class="absolute w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-black to-slate-900" style="animation: 1s fade-in both">
+    <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="0s" sourceout="4s" class="absolute inset-0 size-full object-cover opacity-30"></ef-video>
+    <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60"></div>
+    <ef-text split="word" class="absolute top-1/3 text-white text-6xl font-black text-center px-8 leading-tight" style="animation: 0.5s word-in both; animation-delay: calc(var(--ef-word-index) * 100ms)">
+      Push. Deploy. Live.
+    </ef-text>
+    <div class="absolute top-1/2 w-48 h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent rounded-full" style="animation: 0.8s pulse-glow both 1.2s"></div>
+  </ef-timegroup>
+
+  <!-- Scene 3: Preview URLs - Git Magic (8s-12s) -->
+  <ef-timegroup mode="fixed" duration="4s" class="absolute w-full h-full flex flex-col items-center justify-center bg-black" style="animation: 1s fade-out var(--ef-transition-out-start) both">
+    <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="5s" sourceout="9s" class="absolute inset-0 size-full object-cover opacity-20"></ef-video>
+    <div class="absolute inset-0 bg-black/60"></div>
+    
+    <div class="absolute top-1/4 space-y-4">
+      <div class="flex items-center gap-4 px-8" style="animation: 0.5s enter-left both 0.4s">
+        <div class="w-3 h-3 rounded-full bg-green-400"></div>
+        <ef-text class="text-white text-2xl font-mono">main → vercel.app</ef-text>
+      </div>
+      <div class="flex items-center gap-4 px-8" style="animation: 0.5s enter-left both 0.8s">
+        <div class="w-3 h-3 rounded-full bg-blue-400"></div>
+        <ef-text class="text-white text-2xl font-mono">feature → feature-preview-xyz.vercel.app</ef-text>
+      </div>
+      <div class="flex items-center gap-4 px-8" style="animation: 0.5s enter-left both 1.2s">
+        <div class="w-3 h-3 rounded-full bg-purple-400"></div>
+        <ef-text class="text-white text-2xl font-mono">every-push → instant-preview</ef-text>
+      </div>
+    </div>
+
+    <ef-text class="absolute bottom-20 text-center text-blue-300 text-xl font-semibold px-8" style="animation: 0.6s enter-up both 1.6s">
+      Every commit becomes a shareable preview
+    </ef-text>
+  </ef-timegroup>
+
+  <!-- Scene 4: Global Scale (12s-15s) -->
+  <ef-timegroup mode="fixed" duration="3s" class="absolute w-full h-full flex flex-col items-center justify-center" style="animation: 1s fade-in both">
+    <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="10s" sourceout="13s" class="absolute inset-0 size-full object-cover opacity-40"></ef-video>
+    <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
+    
+    <canvas id="network-canvas" class="absolute inset-0 size-full opacity-60"></canvas>
+    
+    <ef-text split="char" class="absolute top-1/3 text-white text-7xl font-black text-center" style="animation: 0.3s char-in both; animation-delay: calc(var(--ef-index) * 30ms)">
+      VERCEL
+    </ef-text>
+    
+    <ef-text class="absolute bottom-24 text-center text-white text-2xl font-light px-8" style="animation: 0.8s enter-up both 1s">
+      Deploy globally. Instantly.
+    </ef-text>
+  </ef-timegroup>
+</ef-timegroup>
+
+<style>
+  @keyframes word-in {
+    from { transform: translateY(24px) scale(0.95); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  
+  @keyframes char-in {
+    from { transform: translateY(40px) rotateX(90deg); opacity: 0; }
+    to { transform: translateY(0) rotateX(0); opacity: 1; }
+  }
+  
+  @keyframes enter-up {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  
+  @keyframes enter-left {
+    from { transform: translateX(-30px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+  
+  @keyframes pulse-glow {
+    0% { opacity: 0; filter: blur(0); }
+    50% { opacity: 1; filter: blur(8px); }
+    100% { opacity: 0; filter: blur(0); }
+  }
+</style>
+
+<script>
+  // Chaos canvas - Scene 1: Deploy chaos visualization
+  const chaosCanvas = document.getElementById('chaos-canvas');
+  const chaosScene = chaosCanvas?.parentElement?.parentElement;
+  
+  if (chaosScene) {
+    chaosScene.initializer = (instance) => {
+      return instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        if (!chaosCanvas) return;
+        const ctx = chaosCanvas.getContext('2d');
+        chaosCanvas.width = chaosCanvas.offsetWidth;
+        chaosCanvas.height = chaosCanvas.offsetHeight;
+        
+        const progress = ownCurrentTimeMs / durationMs;
+        const lineCount = Math.floor(progress * 40);
+        
+        ctx.clearRect(0, 0, chaosCanvas.width, chaosCanvas.height);
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.6)';
+        ctx.lineWidth = 2;
+        
+        for (let i = 0; i < lineCount; i++) {
+          const seed = i * 137.508;
+          const startX = (Math.sin(seed) * 0.5 + 0.5) * chaosCanvas.width;
+          const startY = (Math.cos(seed * 0.7) * 0.5 + 0.5) * chaosCanvas.height;
+          const angle = seed * 2 + ownCurrentTimeMs * 0.002;
+          const length = 100 + Math.sin(seed + ownCurrentTimeMs * 0.001) * 50;
+          
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(
+            startX + Math.cos(angle) * length,
+            startY + Math.sin(angle) * length
+          );
+          ctx.stroke();
+        }
+      });
+    };
+  }
+
+  // Network canvas - Scene 4: Global network visualization
+  const networkCanvas = document.getElementById('network-canvas');
+  const networkScene = networkCanvas?.parentElement?.parentElement;
+  
+  if (networkScene) {
+    networkScene.initializer = (instance) => {
+      return instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        if (!networkCanvas) return;
+        const ctx = networkCanvas.getContext('2d');
+        networkCanvas.width = networkCanvas.offsetWidth;
+        networkCanvas.height = networkCanvas.offsetHeight;
+        
+        const progress = ownCurrentTimeMs / durationMs;
+        const nodeCount = 12;
+        
+        ctx.clearRect(0, 0, networkCanvas.width, networkCanvas.height);
+        
+        // Draw nodes and connections
+        const nodes = [];
+        for (let i = 0; i < nodeCount; i++) {
+          const angle = (i / nodeCount) * Math.PI * 2;
+          const radius = 200 + Math.sin(ownCurrentTimeMs * 0.0005 + i) * 40;
+          const x = networkCanvas.width / 2 + Math.cos(angle) * radius;
+          const y = networkCanvas.height / 2 + Math.sin(angle) * radius;
+          nodes.push({ x, y });
+        }
+        
+        // Draw connections
+        ctx.strokeStyle = 'rgba(96, 165, 250, 0.4)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < nodes.length; i++) {
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[(i + 1) % nodes.length].x, nodes[(i + 1) % nodes.length].y);
+          ctx.stroke();
+        }
+        
+        // Draw nodes
+        nodes.forEach((node, i) => {
+          const pulse = 0.5 + Math.sin(ownCurrentTimeMs * 0.003 + i) * 0.5;
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, 4 + pulse * 2, 0, Math.PI * 2);
+          ctx.fillStyle = i % 3 === 0 ? 'rgba(96, 165, 250, 0.8)' : 'rgba(147, 197, 253, 0.6)';
+          ctx.fill();
+        });
+      });
+    };
+  }
+</script>

@@ -1,0 +1,122 @@
+[
+  {
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "changes": [
+      {
+        "taskIds": [
+          "linear-product-demo"
+        ],
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "wrong_priority",
+        "currentText": "**Visual Metaphor Quick Reference:**\n\nThese are starting points, not answers. The right-hand column is a generic default — replace it with something specific to this brand before using it.\n\n| Concept | Generic default (avoid) | What to find instead |\n|---------|------------------------|----------------------|\n| Chaos/Complexity | Tangled bezier curves | What does chaos *look like for this product's users specifically*? |",
+        "proposedChange": "Move the Visual Metaphor Quick Reference table from Phase 2.5 into Phase 3: Scene Planning, and add this enforcement rule immediately before the scene template:\n\n**Scene 1 specificity gate**: The opening scene is most vulnerable to category-generic visuals. Before writing Scene 1, answer: \"What would a competitor's video show for this same concept?\" If your planned visual could appear in that competitor's video unchanged, it is not specific enough. For product-demos specifically:\n- Do NOT open with abstract 'chaos' visualizations (tangled lines, scattered nodes, etc.)\n- DO open with a recognizable pain point from this product's actual competitive landscape (e.g., for Linear: screenshot-style mockups of Jira's notification hell, Asana's nested project chaos, or the Slack-Jira-Notion tab-switching dance)\n- The first 3 seconds must show something only THIS brand's users would recognize as their specific problem",
+        "rationale": "The visual metaphor guidance exists but is buried in Phase 2.5 as a reference table; moving it to Scene Planning and adding an explicit Scene 1 gate with product-demo-specific anti-patterns would force the model to validate specificity before writing the opening scene."
+      },
+      {
+        "taskIds": [
+          "figma-brand-awareness"
+        ],
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**Visual Metaphor Quick Reference:**\n\nThese are starting points, not answers. The right-hand column is a generic default — replace it with something specific to this brand before using it.\n\n| Concept | Generic default (avoid) | What to find instead |\n|---------|------------------------|----------------------|\n| Chaos/Complexity | Tangled bezier curves | What does chaos *look like for this product's users specifically*? |\n| Order/Simplicity | Grid layouts, organized patterns | What does resolution look like *in this product's own UI or workflow*? |",
+        "proposedChange": "Add a new row to the Visual Metaphor Quick Reference table:\n\n| Collaboration | Converging dots, connecting lines | What does collaboration look like *in this product's actual interface*? (e.g., Figma: named cursors on a shared canvas; Notion: simultaneous text selections; Linear: assigned avatars on issues) |",
+        "rationale": "The model used generic 'converging dots' for collaboration because the quick reference table didn't explicitly flag this as a generic default to avoid, nor did it prompt for product-specific collaboration artifacts."
+      },
+      {
+        "taskIds": [
+          "figma-brand-awareness"
+        ],
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "wrong_priority",
+        "currentText": "**If you could swap the brand name and the canvas animation would still make sense, the animation is decoration.**",
+        "proposedChange": "Move this sentence to Phase 2.5 under 'Visual Metaphors' as a mandatory check, and expand it:\n\n**Brand-swap test (MANDATORY before finalizing any canvas animation):** If you could swap the brand name and the canvas animation would still make sense, the animation is decoration. Before writing any `addFrameTask`, name three visual elements that are unique to this product's UI or workflow (e.g., Figma's named multiplayer cursors, component instance diamonds, nested frame hierarchy). If you cannot name three, research the product's interface before proceeding.",
+        "rationale": "The brand-swap test exists but is buried in composition-patterns.md; elevating it to a mandatory check in Phase 2.5 with a concrete 'name three elements' requirement would have forced the model to identify Figma-specific artifacts before generating generic metaphors."
+      },
+      {
+        "taskIds": [
+          "glossier-social"
+        ],
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**Visual Assets:**\n- List each asset: [name] - [type] - [source: website/Canvas API/generate]",
+        "proposedChange": "**Visual Assets:**\n- List each asset: [name] - [type] - [source: website/Canvas API/generate]\n\n**Specificity requirement for assets:**\n- At least one named product must appear (not category — the actual product name from the website)\n- At least one specific brand origin element (founding story detail, named community platform, specific location)\n- User/community content must reference real sources (e.g., \"placeholder for @username submission\" or \"Into The Gloss reader photo\") — not generic \"real people\" claims\n- If the brand has a known origin story (blog, founder story, community), it must be referenced visually, not just philosophically",
+        "rationale": "The Phase 4 asset requirements lacked any specificity mandate, allowing the model to list generic assets without requiring named products, specific brand moments, or traceable community references that distinguish the brand from competitors."
+      },
+      {
+        "taskIds": [
+          "glossier-social"
+        ],
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "wrong_priority",
+        "currentText": "**1. What is true about this brand that would be false about any competitor?**",
+        "proposedChange": "**1. What is true about this brand that would be false about any competitor?**\n\nThe answer must be something structural or foundational — a decision, a relationship, a material fact about how the brand works or what it is. Not a marketing position (which can be copied) but a truth (which cannot).\n\n**This answer must directly appear in the composition.** If your answer is \"Glossier launched from Into The Gloss blog and user submissions,\" then Into The Gloss must be named or shown. If your answer is \"they use real customer photos,\" specific customer attributions must appear. A philosophical reference to the truth without visual evidence is not specific enough.",
+        "rationale": "Phase 0 establishes brand truth but doesn't require that truth to manifest visually in the final composition — adding an explicit mandate that the structural truth must appear as a named/shown element would prevent philosophical-only references."
+      },
+      {
+        "taskIds": [
+          "patagonia-brand-awareness"
+        ],
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**Visual Identity:**\n- Color palette with exact hex codes (from CSS inspection if on website, or from visual estimation of photography)\n- Typography (fonts and personality — clinical, handwritten, geometric, humanist?)\n- Design language — the adjective that describes the brand's visual register (clinical precision, warm grain, maximalist energy, austere minimalism, playful chaos)\n- Visual motifs: What recurring shapes, textures, or compositional choices appear across materials? (Soft grain on every photo? Hard diagonal compositions? Close-up skin texture? Abstract geometric patterns?)\n- Photography style: Do people appear? If so, how — models or real people, posed or candid, diverse or singular aesthetic? This is a primary brand signal.",
+        "proposedChange": "After the Visual Identity section, add a new subsection:\n\n**Brand-Specific Visual Assets (MANDATORY):**\nBefore proceeding to creative brief, identify and download:\n- The brand's logo in vector/high-res form\n- 3-5 product shots or hero images from the website\n- Any proprietary visual elements (icons, patterns, illustrations unique to this brand)\n\nThese assets MUST appear in the final composition. Generic visual representations (mountain silhouettes for outdoor brands, abstract lines for tech brands, gradient backgrounds) are prohibited unless they are literally the brand's own design language extracted from their materials. If you cannot identify brand-specific visual assets, the composition must use:\n- The actual logo (animated or static)\n- Actual product photography from the website\n- Color-blocked backgrounds using exact brand hex codes\n- Real screenshots or footage from the brand's existing video content\n\nCanvas animations must depict brand-specific elements (the actual logo shape, actual product silhouettes, actual UI patterns) — not category-generic abstractions.",
+        "rationale": "The model defaulted to category-generic visuals (mountain silhouettes, earth tones) because the skill required extracting visual identity but never mandated that the final composition use brand-specific assets rather than generic category representations."
+      },
+      {
+        "taskIds": [
+          "supabase-product-demo"
+        ],
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "- Supabase (Postgres as the core): raw Postgres → instant REST → auth → realtime → storage → each capability materializing as a ring around a single database icon; the center never changes — the database stays the same",
+        "proposedChange": "- Supabase (Postgres as the core): The differentiator is not 'unified platform' (every BaaS claims this) but that you retain full Postgres access — Row Level Security policies written in SQL, realtime via Postgres replication (not a proprietary protocol), queryable with any Postgres client (psql, Prisma, any ORM). Show: a single RLS policy that replaces 200 lines of middleware, or the same table queried from browser JS, a mobile app, and psql simultaneously. The visual must be impossible to attribute to Firebase or PlanetScale.",
+        "rationale": "The original example was generic 'capabilities as rings' which doesn't surface Supabase's actual differentiator (full Postgres access with RLS, standard clients) — the revised text forces the model to identify features unique to Supabase."
+      },
+      {
+        "taskIds": [
+          "supabase-product-demo"
+        ],
+        "dimension": "viewer_state",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]",
+        "proposedChange": "- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]\n- STATE CHANGE MECHANISM: [What specific technique creates the shift? Options: contrast (before/after, with/without), surprise (expectation subverted), scale revelation (one thing revealed as many), effort elimination (50 lines → 1 line). If the mechanism is 'demonstration' or 'showing how it works', the scene is informational, not transformational — rewrite it.]",
+        "rationale": "The model wrote a code example scene that was purely informational because nothing in the template forced it to specify HOW the viewer state changes — adding a required 'mechanism' field would have flagged that mere demonstration doesn't create emotional shift."
+      }
+    ]
+  },
+  {
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "changes": [
+      {
+        "taskIds": [
+          "figma-brand-awareness"
+        ],
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**The motion must demonstrate something true about this product that is false about competitors.** Ask: what unit does this product operate on? Show that unit moving. These examples illustrate the thinking pattern — apply the same logic to the brand you're working with:\n\n- Stripe (unified object model): the same `charge` object threads through Checkout, Radar, Connect, and Billing → show one object that every system touches simultaneously rather than a pipeline. Speed is generic; the shared object is Stripe's.\n- Linear (opinionated workflow): issues that enter triage exit resolved — no ambiguous state, no \"in review forever\" → a tangled graph that snaps to a clean DAG when Linear acts on it; the removal of ambiguity *is* the product\n- Vercel (frontend-to-edge): a Next.js component pushed to git → framework analyzed → edge functions distributed → build cached → each step shown as a separate materialization, not just a fast ripple. Vercel's differentiator is the build pipeline intelligence, not the speed.\n- Supabase (Postgres as the core): raw Postgres → instant REST → auth → realtime → storage → each capability materializing as a ring around a single database icon; the center never changes — the database stays the same",
+        "proposedChange": "Add Figma example to the list:\n\n- Figma (URL-as-file, multiplayer cursors): There are no files — just URLs. The canvas shows multiple named cursors (with real names like 'Sarah', 'Marcus') moving simultaneously on the same frame. The visual metaphor is the cursor cluster, not abstract collaboration dots. Show the actual Figma component structure: frames nested in frames, the layers panel hierarchy, the distinctive component instance diamond icon. Generic rectangles could be any design tool; the nested frame structure with component instances is Figma's.",
+        "rationale": "Adding a Figma-specific example would have shown the model exactly what brand-specific visual artifacts look like for this product — named cursors, nested frames, component diamonds — instead of allowing generic 'collaboration' metaphors."
+      },
+      {
+        "taskIds": [
+          "patagonia-brand-awareness"
+        ],
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**The motion must demonstrate something true about this product that is false about competitors.** Ask: what unit does this product operate on? Show that unit moving. These examples illustrate the thinking pattern — apply the same logic to the brand you're working with:",
+        "proposedChange": "After \"apply the same logic to the brand you're working with:\" and before the bullet list of examples, add:\n\n**Visual specificity requirement:** The canvas animation must depict elements that are visually identifiable as belonging to this specific brand. For Patagonia, this means the Fitz Roy mountain silhouette from their logo, their specific product shapes, or their Worn Wear repair iconography — not generic mountain outlines that could belong to REI, North Face, or any outdoor brand. For Stripe, this means their specific dashboard UI patterns or their actual API response format — not generic code blocks. If you cannot identify a brand-specific visual element to animate, use the brand's actual logo as the animated element.\n\n**Anti-pattern:** Drawing category-generic imagery (mountains for outdoor, circuits for tech, leaves for sustainability) instead of brand-specific imagery. The test: could this exact canvas animation appear in a competitor's video without modification? If yes, it fails.",
+        "rationale": "The existing guidance about 'demonstrate something true about this product' focuses on conceptual differentiation but doesn't enforce visual specificity — the model understood it needed to show Patagonia's repair philosophy but rendered it as generic 'damage lines' rather than brand-specific visual elements."
+      }
+    ]
+  }
+]

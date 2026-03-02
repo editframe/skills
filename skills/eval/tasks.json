@@ -1,0 +1,130 @@
+{
+  "generateSkills": [
+    "skills/skills/composition/SKILL.md",
+    "skills/skills/composition/references/getting-started.md",
+    "skills/skills/composition/references/scripting.md",
+    "skills/skills/composition/references/css-variables.md",
+    "skills/skills/composition/references/text.md",
+    "skills/skills/composition/references/video.md",
+    "skills/skills/composition/references/audio.md",
+    "skills/skills/composition/references/image.md",
+    "skills/skills/composition/references/timegroup.md",
+    "skills/skills/composition/references/timegroup-modes.md",
+    "skills/skills/composition/references/time-model.md",
+    "skills/skills/composition/references/sequencing.md",
+    "skills/skills/composition/references/transitions.md",
+    "skills/skills/motion-design/SKILL.md",
+    "skills/skills/motion-design/references/0-editframe.md",
+    "skills/skills/motion-design/references/1-intent.md",
+    "skills/skills/motion-design/references/2-physics-model.md",
+    "skills/skills/motion-design/references/3-attention.md",
+    "skills/skills/brand-video-generator/SKILL.md",
+    "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "skills/skills/brand-video-generator/references/emotional-arcs.md",
+    "skills/skills/brand-video-generator/references/typography-personalities.md",
+    "skills/skills/brand-video-generator/references/color-psychology.md",
+    "skills/skills/brand-video-generator/references/video-archetypes.md",
+    "skills/skills/brand-video-generator/references/visual-metaphors.md",
+    "skills/skills/brand-video-generator/references/video-fundamentals.md",
+    "skills/skills/brand-video-generator/references/editing.md",
+    "skills/skills/brand-video-generator/references/genre-selection.md"
+  ],
+  "diagnoseSkills": [
+    "skills/skills/composition/SKILL.md",
+    "skills/skills/composition/references/getting-started.md",
+    "skills/skills/composition/references/scripting.md",
+    "skills/skills/composition/references/css-variables.md",
+    "skills/skills/composition/references/text.md",
+    "skills/skills/composition/references/video.md",
+    "skills/skills/composition/references/audio.md",
+    "skills/skills/composition/references/timegroup.md",
+    "skills/skills/composition/references/timegroup-modes.md",
+    "skills/skills/composition/references/sequencing.md",
+    "skills/skills/composition/references/transitions.md",
+    "skills/skills/motion-design/SKILL.md",
+    "skills/skills/motion-design/references/0-editframe.md",
+    "skills/skills/motion-design/references/1-intent.md",
+    "skills/skills/brand-video-generator/SKILL.md",
+    "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "skills/skills/brand-video-generator/references/emotional-arcs.md",
+    "skills/skills/brand-video-generator/references/video-archetypes.md",
+    "skills/skills/brand-video-generator/references/editing.md",
+    "skills/skills/brand-video-generator/references/genre-selection.md"
+  ],
+  "tasks": [
+    {
+      "id": "linear-product-demo",
+      "brand": "Linear",
+      "description": "Project management and issue tracking tool built for high-performance software teams. Known for speed, keyboard-first design, and opinionated workflow.",
+      "videoType": "product-demo",
+      "duration": "30s",
+      "platform": "web",
+      "held_out": false
+    },
+    {
+      "id": "stripe-explainer",
+      "brand": "Stripe",
+      "description": "Payments infrastructure for the internet. Used by millions of businesses to accept payments, send payouts, and manage their businesses online.",
+      "videoType": "explainer",
+      "duration": "60s",
+      "platform": "web",
+      "held_out": false
+    },
+    {
+      "id": "figma-brand-awareness",
+      "brand": "Figma",
+      "description": "Collaborative design tool where teams design, prototype, and develop together in the browser. Replaced the model of single-player, file-based design.",
+      "videoType": "brand-awareness",
+      "duration": "30s",
+      "platform": "instagram",
+      "held_out": false
+    },
+    {
+      "id": "glossier-social",
+      "brand": "Glossier",
+      "description": "Skincare and makeup brand built from a beauty blog community. Products developed from reader feedback. Known for the 'no-makeup makeup' aesthetic, minimalist pink packaging, and launching with no traditional advertising — only photos submitted by real customers.",
+      "videoType": "social",
+      "duration": "15s",
+      "platform": "instagram",
+      "held_out": false
+    },
+    {
+      "id": "patagonia-brand-awareness",
+      "brand": "Patagonia",
+      "description": "Outdoor apparel company whose mission statement is 'We're in business to save our home planet.' Known for the 'Don't Buy This Jacket' ad, their Worn Wear repair program that sells used gear, and a corporate structure that donates all profits to environmental causes.",
+      "videoType": "brand-awareness",
+      "duration": "30s",
+      "platform": "web",
+      "held_out": false
+    },
+    {
+      "id": "supabase-product-demo",
+      "brand": "Supabase",
+      "description": "Open source Firebase alternative. Gives developers a Postgres database, authentication, instant APIs, edge functions, and storage.",
+      "videoType": "product-demo",
+      "duration": "45s",
+      "platform": "youtube",
+      "held_out": false
+    },
+    {
+      "id": "loom-explainer",
+      "brand": "Loom",
+      "description": "Async video messaging for work. Record and share video messages instead of writing long emails or scheduling unnecessary meetings.",
+      "videoType": "explainer",
+      "duration": "60s",
+      "platform": "web",
+      "held_out": true,
+      "note": "Held-out: used only for regression, never for improvement"
+    },
+    {
+      "id": "raycast-brand-awareness",
+      "brand": "Raycast",
+      "description": "Blazingly fast Mac productivity tool. Replaces Spotlight with an extensible launcher — search, control apps, and build custom workflows.",
+      "videoType": "brand-awareness",
+      "duration": "30s",
+      "platform": "web",
+      "held_out": true,
+      "note": "Held-out: used only for regression, never for improvement"
+    }
+  ]
+}

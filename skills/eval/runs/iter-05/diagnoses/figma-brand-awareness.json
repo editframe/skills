@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic blue colors and abstract geometric shapes that could represent any collaborative software. No Figma brand colors, logo, or distinctive visual elements appear.",
+      "improvement": "Use Figma's actual brand colors (#F24E1E, #FF7262, #A259FF, #1ABCFE, #0ACF83). Show recognizable Figma UI elements—cursors with names, frames/components, the collaboration indicators. The canvas animations should draw Figma-specific metaphors."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)",
+    "cause": "missing",
+    "proposedChange": "**Visual Identity:**\n- Color palette with exact hex codes — **these MUST appear in the final composition's CSS/Tailwind classes**\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)\n- Logo and brand marks — **must be downloaded and used, not replaced with generic shapes**\n\n**Enforcement:** If Phase 1 extracts hex codes #F24E1E, #A259FF, etc., the Phase 3 scenes MUST reference those exact values in `bg-[#F24E1E]`, `stroke: '#A259FF'`, etc. Generic blues/grays are a composition failure.",
+    "rationale": "The model extracted brand identity but never enforced its use in the actual composition—adding explicit enforcement language would prevent substitution with generic colors."
+  },
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The narrative ('files keep you apart', 'one place everyone meets') describes the collaborative design category, not Figma specifically. Sketch, Canva, or Adobe XD could make identical claims.",
+      "improvement": "Reference Figma-specific truths: real-time multiplayer as core architecture (not added feature), browser-native access, Dev Mode, FigJam integration. Show what's true about Figma that's false about competitors."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\"\n- Payment brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\"\n- Design tools: \"design and code together\", \"design faster\", \"real-time collaboration\"",
+    "cause": "missing",
+    "proposedChange": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\"\n- Payment brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\"\n- Design tools: \"design and code together\", \"design faster\", \"real-time collaboration\", \"one place to design\", \"files keep you apart\"\n\n**Finding the real differentiator for design tools:** Ask: what architectural decision did this brand make that competitors avoided? For Figma: browser-native (no desktop app required), multiplayer as core architecture (not bolted on), Dev Mode as first-class feature. For Sketch: macOS-native, plugin ecosystem. The differentiator is in the *how*, not the *what*.",
+    "rationale": "The model used 'files keep you apart' which is category-level messaging—adding this exact phrase to the false differentiators list and providing architectural guidance would force deeper specificity."
+  },
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition takes a safe category-level stance (collaboration good, files bad) without revealing a distinctive perspective on design itself.",
+      "improvement": "Commit to a specific angle: Figma believes design is a team sport, not a solo art. Or: Figma treats the browser as native, not the desktop. Let that perspective shape visual choices—show the browser URL bar, show multiple cursors actively designing together."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"",
+    "cause": "missing",
+    "proposedChange": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"\n\nNot: \"Figma enables collaboration, so I'll show people working together\" (category stance).\nYes: \"Figma is browser-native multiplayer — the URL bar IS the product. So I'll show the browser chrome, the shareable URL, multiple named cursors designing simultaneously in one viewport.\"\n\n**The PoV must be visible in the actual composition.** If your structural constraint is 'multiplayer as architecture', the canvas must show multiple cursors with names. If it's 'browser-native', show the URL bar. Abstract geometric shapes do not embody a point of view.",
+    "rationale": "Adding a Figma-specific example and the enforcement clause 'visible in the actual composition' would prevent the model from claiming a PoV but then rendering generic abstractions."
+  }
+]

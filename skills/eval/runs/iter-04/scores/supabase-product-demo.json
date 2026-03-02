@@ -1,0 +1,59 @@
+{
+  "taskId": "supabase-product-demo",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:33:53.148Z",
+  "scores": {
+    "motion": {
+      "score": 3,
+      "rationale": "CSS animations are present and intentional throughout—text splitting with stagger, slideUp/scaleIn animations with calculated delays. Canvas elements are declared but no addFrameTask or procedural drawing code is visible. Motion exists but doesn't carry meaning beyond entrance choreography.",
+      "evidence": "split=\"word\" with animation-delay: calc(var(--ef-word-index) * 100ms); canvas elements like <canvas id=\"hero-canvas\"> are declared but no rendering code shown; animations are entrance-only (slideUp, scaleIn, fadeOut)"
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "Uses Supabase's actual positioning ('open source Firebase alternative'), mentions real features (PostgreSQL, Row Level Security, JSONB), and the green/slate color palette approximates brand. But the structure—hero, problem, feature, feature, CTA—is generic SaaS template. Any backend-as-a-service could use this exact flow.",
+      "evidence": "\"Supabase is the open source Firebase alternative\"; PostgreSQL code snippet; mentions of RLS, MFA, magic links. But 'Stitching together a dozen services' problem statement applies equally to Firebase, PlanetScale, Neon, etc."
+    },
+    "viewer_state": {
+      "score": 2,
+      "rationale": "Follows formulaic arc: intrigue (hero) → frustration (problem) → relief (solution) → trust (features) → action (CTA). Each transition is predictable. The 'problem' scene attempts emotional shift but 'dozen services' is abstract rather than visceral.",
+      "evidence": "Scene 2 labeled 'The Problem' with generic pain ('separate bill, separate config, separate vendor lock-in')—this is telling not showing. Scenes 3-4 are feature dumps with identical structure (badge → title → description → visual)."
+    },
+    "point_of_view": {
+      "score": 2,
+      "rationale": "The 'open source' angle hints at a perspective (transparency, ownership, anti-lock-in), but it's stated rather than embodied. The composition doesn't commit to why open source matters differently here. Structure is standard product demo template.",
+      "evidence": "Title says 'Open Source Database Made Simple' but nothing in the visual or structural language demonstrates openness—no code transparency, no community, no self-hosting angle explored. Badges like 'THE FOUNDATION' and 'BUILT-IN' are generic category labels."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Five scenes for 45s is reasonable density. Scenes 3 and 4 (Database/Auth) are structurally identical—both could potentially merge. The composition is cut off mid-Scene 5, so full assessment is incomplete, but visible scenes each advance the narrative.",
+      "evidence": "Scenes 3 and 4 share exact pattern: badge animation → split-word title → description text → visual element. Different content but identical form suggests possible consolidation. Scene 5 truncated at 'animation: 0.8s fadeOut var(--ef-transition-out-'"
+    }
+  },
+  "overall": 2.4,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The problem scene ('Stitching together a dozen services') and solution structure could describe any integrated backend platform. No uniquely Supabase truth shapes the narrative.",
+      "improvement": "Lean into what makes Supabase specifically different: show the actual Postgres SQL console, demonstrate that your data isn't abstracted away, contrast with Firebase's proprietary query language, or show the open-source GitHub repo as proof of transparency."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "Scenes 3 and 4 produce the same emotional state—'oh, this feature exists'—with no escalation or contrast between them. Feature listing doesn't build momentum.",
+      "improvement": "Create tension between scenes: show a developer struggling with auth complexity THEN reveal the one-line Supabase solution. Or demonstrate how RLS eliminates entire categories of security bugs. The viewer should feel relief or surprise, not just receive information."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition claims 'open source' matters but never shows why. The perspective is announced, not argued through form.",
+      "improvement": "If open source is the point of view, make it visible: show the GitHub stars, display the actual source code, contrast vendor lock-in with 'you own your data.' Or commit to a different angle entirely—speed, developer experience, cost—and let the structure prove it."
+    },
+    {
+      "dimension": "motion",
+      "severity": "minor",
+      "observation": "Canvas elements are declared but appear to have no procedural content. The stagger animations are well-timed but decorative rather than semantic.",
+      "improvement": "Use the canvas elements: animate a database schema forming in real-time, show data flowing between tables, visualize the auth token lifecycle. Motion should demonstrate what Supabase does, not just make text entrances prettier."
+    }
+  ]
+}

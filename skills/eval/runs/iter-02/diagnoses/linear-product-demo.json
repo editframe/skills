@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "linear-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition uses abstract visualizations (tangled nodes, purple gradients) that could represent any productivity or workflow tool. No actual Linear UI, no specific feature like Cycles, Roadmaps, or the actual command palette is shown.",
+      "improvement": "Include a stylized but recognizable Linear interface element—even a simplified command palette dropdown, an issue card, or the distinctive Linear logo glyph—to ground the abstract motion in the actual product."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Do NOT:**\n- Infer visual identity from text descriptions\n- Assume design patterns based on industry\n- Use text content as substitute for visual analysis\n- Hallucinate brand colors, fonts, or design language\n- Use `bars-n-tone.mp4` or any placeholder media in the final composition — use brand-color backgrounds, canvas animations, or actual product footage URLs instead",
+    "cause": "missing",
+    "proposedChange": "**Do NOT:**\n- Infer visual identity from text descriptions\n- Assume design patterns based on industry\n- Use text content as substitute for visual analysis\n- Hallucinate brand colors, fonts, or design language\n- Use `bars-n-tone.mp4` or any placeholder media in the final composition — use brand-color backgrounds, canvas animations, or actual product footage URLs instead\n- Use abstract visualizations (particles, nodes, gradients) as a substitute for the actual product UI — for product demos, include recognizable UI elements (command palettes, cards, navigation) even if stylized or simplified",
+    "rationale": "The model defaulted to abstract canvas visualizations instead of showing Linear's actual interface; explicitly prohibiting abstract substitutes for product UI in product-demo videos would have forced inclusion of recognizable Linear elements."
+  },
+  {
+    "taskId": "linear-product-demo",
+    "feedbackItem": {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "The 'chaos' visualization in Scene 1 is aesthetically pleasing rather than disorienting. Purple nodes with elegant curves don't create the visceral frustration that would make Linear's solution feel necessary.",
+      "improvement": "Make the chaos genuinely uncomfortable—overlapping UI elements, notification overload, jarring color conflicts—so the transition to Linear's clarity produces relief rather than mild preference."
+    },
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "currentText": "| Chaos/Complexity | Tangled bezier curves | What does chaos *look like for this product's users specifically*? |",
+    "cause": "present_wrong",
+    "proposedChange": "| Chaos/Complexity | Tangled bezier curves | What does chaos *look like for this product's users specifically*? Chaos must feel uncomfortable, not elegant—use jarring overlaps, notification overload, conflicting colors, or visual noise that creates genuine discomfort the viewer wants resolved. |",
+    "rationale": "The documentation prompted finding user-specific chaos but didn't specify that chaos visualizations must be viscerally uncomfortable rather than aesthetically pleasing, leading to elegant purple curves instead of genuinely frustrating visuals."
+  }
+]

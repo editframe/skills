@@ -39,3 +39,4 @@ scripts/certs/
 
 ./.claude/**
 ./.cursor/**
+skills/eval/runs/

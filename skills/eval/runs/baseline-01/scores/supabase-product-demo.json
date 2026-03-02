@@ -1,0 +1,65 @@
+{
+  "taskId": "supabase-product-demo",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:01:36.325Z",
+  "scores": {
+    "motion": {
+      "score": 3,
+      "rationale": "CSS animations are present throughout with intentional stagger patterns, but motion remains decorative rather than structural. Text splitting with word-index delays exists, but there's no use of --ef-progress for dynamic properties, no addFrameTask, no procedural canvas despite an empty #chaos-canvas div being declared.",
+      "evidence": "Text uses `animation-delay: calc(var(--ef-word-index) * 100ms)` for stagger. Feature cards use sequential delays: `animation: 0.6s feature-in 1s both`, `1.2s`, `1.4s`, `1.6s`. The progress bar in Scene 4 references `--ef-progress` but the composition truncates before completing. The `#chaos-canvas` div is declared but never populated with any canvas logic."
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "The composition names Supabase-specific features (Postgres, row-level security, Edge Functions, real-time subscriptions) but presents them generically. The emerald/green color palette loosely references Supabase branding. However, the structure could trivially apply to PlanetScale, Neon, or any backend-as-a-service.",
+      "evidence": "Features listed are accurate (`'Postgres Database'`, `'Row-level security, OAuth, JWT'`, `'Edge Functions'`, `'Serverless TypeScript at the edge'`) but presented as bullet points any competitor could claim. The `text-emerald-400` color choice nods at Supabase's green, but the video uses generic bars-n-tone placeholder video throughout (`src=\"https://assets.editframe.com/bars-n-tone.mp4\"`)."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc attempts frustration → relief → understanding → trust → action. Scene 1 establishes a problem, Scene 4's comparison creates a before/after contrast. However, the emotional shifts are formulaic and the viewer arrives at predictable states without surprise or earned insight.",
+      "evidence": "Scene 1: `'Building backends is slow'` (frustration). Scene 2: `'Postgres backend in minutes'` (relief). Scene 4: `'4 weeks'` vs `'2 hours'` comparison (conviction). Scene 6: `'Start building now'` (action). The progression is traceable but each transition follows the obvious path without subverting expectations."
+    },
+    "point_of_view": {
+      "score": 1,
+      "rationale": "The composition follows a standard product demo template: problem → solution → features → comparison → trust signals → CTA. One non-obvious choice exists (the comparison visualization in Scene 4), but it doesn't connect to anything specific about Supabase's philosophy or positioning.",
+      "evidence": "Six scenes follow the exact structure of countless SaaS demos. The only distinctive structural choice is the side-by-side comparison with checklist items, but this is a common persuasion pattern. No scene reflects Supabase's open-source ethos in form, no acknowledgment of the Firebase competitor positioning, no technical depth that would reveal understanding."
+    },
+    "omission": {
+      "score": 2,
+      "rationale": "Scene 3 (feature grid) and Scene 5 (open source & scalable) cover substantially overlapping ground—both enumerate capabilities. Scene 5's 'production ready' point repeats Scene 2's implicit promise. The 45-second runtime feels padded to fill time rather than earned by content density.",
+      "evidence": "Scene 3 covers: database, auth, APIs, edge functions. Scene 5 covers: open source, community, production ready. The 'production ready' claim in Scene 5 (`'Used by thousands in production'`) adds minimal new information after Scene 4 already established Supabase as the superior choice. Scene 5's 8 seconds could compress into Scene 3 or be cut entirely."
+    }
+  },
+  "overall": 2.2,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "Uses placeholder bars-n-tone video throughout all six scenes instead of actual Supabase UI footage, dashboard screenshots, or relevant B-roll.",
+      "improvement": "Replace placeholder video with Supabase dashboard recordings, code editor showing supabase-js integration, or real-time data sync demonstrations that could only be this product."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "critical",
+      "observation": "Follows generic SaaS demo template without expressing what makes Supabase's approach distinctive (open-source Firebase alternative, Postgres maximalism, developer-first philosophy).",
+      "improvement": "Structure the video around Supabase's specific positioning: open a scene with 'Firebase, but you own it' or show the actual SQL alongside the auto-generated API to demonstrate the Postgres-first philosophy in form."
+    },
+    {
+      "dimension": "motion",
+      "severity": "major",
+      "observation": "Declared a #chaos-canvas element in Scene 1 but left it empty. The --ef-progress variable is referenced once but the composition truncates, suggesting incomplete implementation.",
+      "improvement": "Use addFrameTask to animate the #chaos-canvas with a visualization of database complexity resolving into order, or drive the Scene 4 progress bar meaningfully with --ef-progress to show the speed difference in real time."
+    },
+    {
+      "dimension": "omission",
+      "severity": "major",
+      "observation": "Scene 5 (open source & scalable) largely repeats value propositions already established, adding only weak trust signals that don't advance the viewer's understanding.",
+      "improvement": "Cut Scene 5 entirely and redistribute its 8 seconds: expand Scene 4's comparison with actual code snippets, or add a brief 'real companies using this' moment with specificity rather than generic 'thousands in production' claims."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "Scene transitions follow predictable emotional beats without any moment of surprise or reframe that would make the viewer's state change memorable.",
+      "improvement": "Add one unexpected beat—perhaps showing what developers do with their saved time, or a moment acknowledging the skepticism ('another backend service?') before resolving it."
+    }
+  ]
+}

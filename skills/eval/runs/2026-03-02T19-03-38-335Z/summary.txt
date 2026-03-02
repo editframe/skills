@@ -1,0 +1,32 @@
+Eval Run: 2026-03-02T19-03-38-335Z
+Generator: anthropic/claude-haiku-4-5
+Evaluator: anthropic/claude-opus-4-5
+Date: 3/2/2026, 1:06:00 PM
+
+─── Scores ────────────────────────────────────────
+Task                          Motion  Spec  ViewerΔ  PoV  Omit  Overall
+─────────────────────────────────────────────────────────────────────────
+Linear (product-demo)           4/5    2/5   3/5      3/5   4/5    3.2/5
+Stripe (explainer)              5/5    3/5   4/5      4/5   3/5    3.8/5
+Figma (brand-awareness)         5/5    4/5   4/5      4/5   3/5    4/5
+Vercel (launch)                 4/5    3/5   3/5      3/5   4/5    3.4/5
+Notion (social)                 5/5    2/5   4/5      3/5   5/5    3.8/5
+Supabase (product-demo)         5/5    4/5   4/5      4/5   3/5    4/5
+─────────────────────────────────────────────────────────────────────────
+Average overall: 3.7/5
+
+─── Proposed Skill Changes ─────────────────────────────────────────────
+
+skills/skills/brand-video-generator/SKILL.md (7 changes)
+  [MAJOR specificity] (linear-product-demo) The model identified Linear's opinionated nature in Phase 0 but created a demo with generic issue content; explicit guidance that product-demo videos must manifest the Phase 0 answer in visible UI content would have forced Linear-specific issues, cycles, or workflow states into the composition.
+  [MAJOR specificity] (stripe-explainer) The skill lists false differentiators for problem statements but not for resolutions—the model avoided generic problems but used generic resolution language ('It just works', 'Millions of businesses') because the skill didn't flag these as equally hollow.
+  [MAJOR omission] (stripe-explainer) The scene budget rule exists but has no specific guidance for CTA duration—the model allocated 20 seconds (33%) to a CTA because nothing told it that CTAs have tighter budgets than narrative scenes.
+  [CRITICAL omission] (figma-brand-awareness, supabase-product-demo) The completeness check exists but is buried at the end and lacks explicit guidance about closing the arc with a final brand beat; elevating it and adding explicit tag-counting and arc-closure requirements would have prevented truncation. Also: The completeness check was at the end and phrased as reminders rather than blocking gates; moving it earlier with explicit checkboxes and a STOP instruction would have caught the truncated code and missing CTA before output.
+  [CRITICAL specificity] (vercel-launch, notion-social) The current guidance extracts visual identity but doesn't require translating logo geometry into compositional structure, allowing generic developer aesthetics to pass as 'brand-aligned'. Also: The model used generic colorful blocks because the skill didn't explicitly require extracting and using signature UI elements and the actual logo/logomark as mandatory visual components.
+  [CRITICAL specificity] (notion-social) The model substituted generic colorful blocks for Notion's specific visual identity because there was no explicit prohibition against replacing brand elements with generic abstractions.
+  [MAJOR specificity] (notion-social) The model used generic 'scattered → one place → organized' messaging because the skill's false differentiator list didn't include these specific workspace clichés, and there was no explicit substitution test requiring brand-specific language in video text.
+
+skills/skills/brand-video-generator/references/editing.md (1 change)
+  [MAJOR omission] (figma-brand-awareness, supabase-product-demo) The editing guide discusses what to cut but never addresses structural completeness or the requirement to close the arc with a final brand beat, leaving no guidance to prevent truncated outputs. Also: The model created a 14-second scene with 4 identically-structured cards because no guidance warned against repetitive grid layouts as a form of padding.
+
+To apply: npx tsx scripts/eval-skills-apply.ts --run-id 2026-03-02T19-03-38-335Z

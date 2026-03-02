@@ -11,6 +11,27 @@ metadata:
 
 # Editframe CLI
 
+## The Development Loop
+
+```
+1. npm create @editframe     ← scaffold a project (editframe-create skill)
+2. npx editframe preview     ← open in browser with hot-reload
+3. edit composition files    ← iterate
+4. npx editframe render -o output.mp4  ← render to MP4 locally
+5. npx editframe cloud-render          ← (optional) render in the cloud
+```
+
+**Which command for which need:**
+
+| Need | Command |
+|------|---------|
+| Iterate on composition in browser | `preview` |
+| Export to MP4 (local) | `render` |
+| Render from already-running dev server | `render --url http://localhost:4321` |
+| Render with dynamic data | `render --data '{"key":"val"}'` |
+| Generate captions from audio | `transcribe` |
+| Render in Editframe cloud | `cloud-render` |
+
 ## Quick Start
 
 ```bash

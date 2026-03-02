@@ -1,0 +1,59 @@
+{
+  "taskId": "linear-product-demo",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T22:55:19.907Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural and purposeful. Text splitting with staggered word animations, canvas-based procedural animations using addFrameTask, and coordinated entrance sequences create meaningful movement that reinforces content.",
+      "evidence": "Text splitting: `split=\"word\"` with `animation-delay: calc(var(--ef-word-index) * 100ms)`. Canvas animations in Scene 2 (chaos lines) and Scene 5 (orbital rings) use `instance.addFrameTask((info) => {...})` with progress-based calculations. Staggered bullet points: `animation: 0.5s slide-right 0.4s both`, `0.7s`, `1s`."
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "The composition references Linear's keyboard-first approach (CMD+K) and real-time sync features, but these are generic productivity tool features. The dark slate/blue color palette loosely matches Linear's brand, but the actual product is never shown, and the '1.2s resolution time' metric appears fabricated.",
+      "evidence": "Only specific references: `CMD + K` keyboard shortcut, brand name 'Linear', and `linear.app`. All video sources are placeholder: `src=\"https://assets.editframe.com/bars-n-tone.mp4\"`. Claims like 'Most tools are built for the 1990s' and features (real-time updates, instant notifications) apply equally to Asana, Jira, or Monday."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "There's a traceable arc: urgency/speed → frustration with old tools → revelation of keyboard-first solution → team collaboration benefits → performance proof → CTA. However, the shifts are formulaic and the emotional progression is predictable SaaS marketing.",
+      "evidence": "Scene progression: Hook ('Issues move fast') → Problem ('Most tools are built for the 1990s') → Solution ('Everything via keyboard') → Benefits ('Your team moves together') → Proof ('1.2s resolution time') → CTA. The structure follows standard product demo formula without subversion."
+    },
+    "point_of_view": {
+      "score": 2,
+      "rationale": "There's an implied perspective that speed and keyboard-first design matter, but this is Linear's own marketing positioning, not an authorial interpretation. The composition doesn't reveal why these things matter or demonstrate understanding beyond surface claims.",
+      "evidence": "The chaos canvas animation in Scene 2 attempts to visualize 'old tools' as chaotic lines, but this is generic visual noise rather than a specific critique. The performance orbital rings in Scene 5 have no conceptual relationship to issue tracking speed. Form doesn't argue; it decorates."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Each scene serves a distinct narrative function, but Scene 4 (Real-time Sync) and Scene 5 (Performance) feel somewhat redundant—both argue 'Linear is fast/smooth.' The composition could be tighter at 25 seconds.",
+      "evidence": "Scene 4 lists: 'Real-time updates, Instant notifications, Zero friction collaboration.' Scene 5 claims: 'Built for high-performance teams' with a speed metric. Both make essentially the same argument about speed/efficiency through different framings."
+    }
+  },
+  "overall": 2.8,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "All video sources are placeholder bars-and-tone content. No actual Linear UI, workflows, or product footage is shown. The '1.2s average issue resolution time' appears to be invented.",
+      "improvement": "Include actual Linear interface footage showing the CMD+K command palette, issue creation flow, and real-time collaboration. Use verifiable metrics from Linear's marketing or leave the metric symbolic without false precision."
+    },
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The features highlighted (keyboard shortcuts, real-time sync, speed) are generic productivity tool claims. Linear's actual differentiators—cycles, project updates, automatic issue grouping, GitHub integration—are absent.",
+      "improvement": "Research Linear's specific positioning: focus on their unique workflow concepts like Cycles, their opinionated approach to issue hierarchy, or their specific developer tool integrations that competitors lack."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The chaos visualization (random lines) and performance visualization (orbital rings) are decorative rather than meaningful. They don't communicate anything specific about issue tracking or Linear's approach.",
+      "improvement": "Design canvas animations that visualize the actual concept: chaos could show scattered, unconnected task cards that organize into Linear's board view. Performance could show a timeline of issue states resolving quickly."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "The problem statement ('Most tools are built for the 1990s') is asserted but not demonstrated. The viewer is told to feel frustrated rather than experiencing why old tools fail.",
+      "improvement": "Show the friction: a quick montage of clicking through menus, waiting for page loads, or navigating nested dialogs—then contrast with Linear's single-keystroke flow."
+    }
+  ]
+}

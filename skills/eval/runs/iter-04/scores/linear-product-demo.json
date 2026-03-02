@@ -1,0 +1,53 @@
+{
+  "taskId": "linear-product-demo",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:27:50.400Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural and purposeful. Two canvas-based procedural animations drive the chaos and speed concepts, with coordinated CSS animations using stagger delays. The chaos canvas literally visualizes the problem state with accumulating nodes.",
+      "evidence": "addFrameTask used for both chaos-canvas ('120 chaotic nodes that grow and overlap') and speed-canvas ('Orbital rings representing keyboard command flow'). CSS stagger via '--index' variable: 'animation-delay: calc(var(--index) * 0.15s)'. Scene transitions use overlap='0.8s' with coordinated fadeIn/fadeOut."
+    },
+    "specificity": {
+      "score": 3,
+      "rationale": "Linear's signature color (#5e56e9), dark mode aesthetic, and issue-tracking context are present. The keyboard-first philosophy is explicitly called out. However, the issues shown are generic engineering problems, and the workflow could apply to any issue tracker.",
+      "evidence": "Color palette matches Linear exactly: '#5e56e9' accent, '#0a0a0a' background. 'Keyboard. Built in.' references Linear's core differentiator. But issue examples ('API Rate Limiting', 'Webhook Delivery Failure') are generic. The card UI doesn't match Linear's actual interface closely."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc from chaos to clarity to speed is clear and traceable. Scene 1 creates overwhelm, Scene 2 shows resolution, Scene 3 delivers velocity promise. However, the transitions feel formulaic rather than emotionally resonant.",
+      "evidence": "Scene 1: 'Issues everywhere. No clarity.' with chaotic canvas creates anxiety. Scene 2: 'Clarity. Hierarchy. Connection.' resolves with organized cards. Scene 3: 'Move faster than your ideas' promises transformation. Arc exists but each shift is stated rather than felt."
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "There's a clear perspective: Linear brings order to chaos through speed. The chaos-to-orbital-motion visual metaphor shows intentional thinking. However, this is a standard productivity tool narrative.",
+      "evidence": "The choice to represent chaos as accumulating nodes that 'grow and overlap as time progresses' vs. speed as 'orbital rings representing keyboard command flow' shows authorial thinking. But 'Move faster than your ideas' is generic SaaS copy."
+    },
+    "omission": {
+      "score": 4,
+      "rationale": "Three scenes, each serving a distinct purpose: establish problem, show solution, deliver promise. No padding. The 8s/12s/10s timing feels appropriate for each scene's complexity.",
+      "evidence": "Scene 1 (0-8s): Problem state. Scene 2 (8-20s): Solution demonstration with three example issues. Scene 3 (20-30s): Speed thesis and CTA. Each scene does one job. The overlap transitions prevent dead time."
+    }
+  },
+  "overall": 3.4,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The issue cards show generic engineering problems ('API Rate Limiting', 'Webhook Delivery Failure') rather than demonstrating what makes Linear's issue structure distinctive—cycles, projects, or Linear's specific workflow states.",
+      "improvement": "Show Linear's actual UI patterns: the cycle progress bar, the keyboard shortcut hints appearing on hover, or the distinctive way Linear links issues to projects. Reference real Linear terminology like 'Triage', 'Backlog', or their status workflow."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "The chaos canvas creates visual overwhelm but the text 'Issues everywhere. No clarity.' tells us what to feel rather than letting the visual earn that state. The transition to clarity happens through a cut rather than a transformation.",
+      "improvement": "Let the chaos canvas actually resolve into the ordered card layout—animate the chaotic nodes coalescing into the three organized issues. This would make the viewer experience the transformation rather than observe two separate states."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "minor",
+      "observation": "The 'keyboard-first' message in Scene 3 is Linear's strongest differentiator but arrives late and disconnected. The orbital animation doesn't clearly represent keyboard navigation.",
+      "improvement": "Thread keyboard-first through the entire piece. Scene 2 could show keyboard commands appearing as issues are navigated, demonstrating the speed thesis before Scene 3 names it. The form should prove the claim before the text makes it."
+    }
+  ]
+}

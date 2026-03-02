@@ -1,0 +1,34 @@
+{
+  "taskId": "linear-product-demo",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:45:00.392Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is the argument. The chaos canvas in Scene 1 procedurally generates tangled issue nodes that multiply over time, visualizing the problem of scattered work. The team canvas in Scene 4 shows convergence—users moving toward a central resolved issue. Both use addFrameTask with progress-driven calculations. Text splitting with staggered word delays reinforces the structural role of motion.",
+      "evidence": "Scene 1: `const count = Math.floor(progress * 120)` drives chaos accumulation. Scene 4: `const currentDist = startDist + (endDist - startDist) * progress` creates convergence. Text: `animation-delay: calc(2.5s + var(--ef-word-index) * 100ms)` for staggered reveals."
+    },
+    "specificity": {
+      "score": 4,
+      "rationale": "The composition reflects Linear's specific positioning: keyboard-first workflow (cmd+k), issue IDs (LIN-1), the 'one workflow' philosophy, and the unified data model. The chaos→clarity arc mirrors Linear's value proposition against fragmented tools. However, some elements (green checkmark, team collaboration) are generic project management tropes.",
+      "evidence": "Scene 3 shows `cmd+k` command palette with 'Update status to Done'—Linear's actual keyboard-first UX. Scene 2 uses Linear's issue ID format 'LIN-1'. The PoV comments explicitly reference Linear's 'architectural' unified data model."
+    },
+    "viewer_state": {
+      "score": 4,
+      "rationale": "Each scene has explicit state change goals documented in comments and the execution follows them. Chaos→resolution→speed→team alignment→action is a coherent arc where each state prepares the next. The canvas animations physically manifest the state changes rather than just describing them.",
+      "evidence": "Comments show intentional arc: 'VIEWER STATE AT START: Unaware they have a problem → AT END: Viscerally recognizes unresolved issue chaos'. Scene transitions build: individual chaos → individual clarity → individual speed → team scale → collective action."
+    },
+    "point_of_view": {
+      "score": 4,
+      "rationale": "The PoV is clear and committed: Linear's power is visible as the absence of complexity. The CTA refuses 'try it free' in favor of 'Build without the chaos'—reflecting the thesis that using Linear is incidental to actually building. The form (procedural chaos collapsing to order) embodies the argument.",
+      "evidence": "PoV comments: 'Linear removes decisions by enforcing workflow. Show the opposite' and 'Don't \"try it free\" - the PoV is that you just build.' CTA text 'Build without the chaos' with subdued 'linear.app' executes this."
+    },
+    "omission": {
+      "score": 4,
+      "rationale": "Five scenes at 6 seconds each fill 30 seconds with no obvious padding. Each scene has a distinct function: problem→solution→mechanism→scale→action. The overlap transitions (0.8s) keep pacing tight. Scene 3 (keyboard speed) could arguably be folded into Scene 2, but it earns its place by isolating the 'how' from the 'what'.",
+      "evidence": "Scene structure: (1) visualize problem, (2) show resolution, (3) explain mechanism, (4) demonstrate team scale, (5) call to action. Each has unique visual treatment and purpose. No repeated messaging."
+    }
+  },
+  "overall": 4.2,
+  "feedback": []
+}

@@ -1,0 +1,37 @@
+Eval Run: iter-04
+Generator: anthropic/claude-haiku-4-5
+Evaluator: anthropic/claude-opus-4-5
+Date: 2/26/2026, 5:34:16 PM
+
+─── Scores ────────────────────────────────────────
+Task                          Motion  Spec  ViewerΔ  PoV  Omit  Overall
+─────────────────────────────────────────────────────────────────────────
+Linear (product-demo)           4/5    3/5   3/5      3/5   4/5    3.4/5
+Stripe (explainer)              5/5    2/5   3/5      2/5   3/5    3/5
+Figma (brand-awareness)         4/5    2/5   3/5      2/5   3/5    2.8/5
+Vercel (launch)                 4/5    2/5   3/5      2/5   3/5    2.8/5
+Notion (social)                 5/5    2/5   3/5      2/5   4/5    3.2/5
+Supabase (product-demo)         3/5    2/5   2/5      2/5   3/5    2.4/5
+─────────────────────────────────────────────────────────────────────────
+Average overall: 2.9/5
+
+─── Proposed Skill Changes ─────────────────────────────────────────────
+
+skills/skills/brand-video-generator/SKILL.md (15 changes)
+  [MAJOR specificity] The current guidance says to 'show the actual product UI' but doesn't specify that generic representations of common UI patterns (like issue cards) fail this requirement—the model needs explicit instruction to identify and use product-specific visual vocabulary.
+  [CRITICAL specificity] The current false differentiators list mentions payment brands but doesn't explicitly flag 'payments, payouts, billing' as generic, and provides no guidance on what Stripe-specific evidence to seek instead.
+  [MAJOR point_of_view] The Stripe example exists in Phase 0 but is buried as a single line; adding explicit guidance for payment/fintech brands with testable stances would force the model to choose a specific structural approach rather than defaulting to generic 'complexity→solution' framing.
+  [CRITICAL specificity] The model used 'multiplayer design' which the skill already lists as a false differentiator for design tools, but the guidance wasn't specific enough about what to look for instead in design tool brands.
+  [MAJOR point_of_view] The model treated Figma's marketing tagline ('multiplayer design') as the point of view rather than developing an original authorial interpretation; adding an explicit Figma-style example and clarifying that taglines are not points of view would prevent this.
+  [CRITICAL specificity] The model used 'instant deploy', 'preview URLs', and 'zero config' because the false differentiators list didn't explicitly flag deployment platform clichés or provide a specificity test for this category.
+  [MAJOR point_of_view] Adding a deployment-specific example and a template rejection test would have forced the model to recognize that a standard problem-solution structure without structural deformation indicates missing point of view.
+  [MAJOR viewer_state] The model wrote '0ms' as text without demonstrating speed because the skill lacks guidance that claims must be visually demonstrated rather than stated.
+  [CRITICAL specificity] The model used generic productivity terms because the skill never required identifying the product's unique conceptual vocabulary and core abstraction during analysis.
+  [CRITICAL specificity] The model invented a symbol ⊞ and used generic feature names because the skill didn't explicitly prohibit placeholder logos or generic terminology.
+  [MAJOR point_of_view] The model fell back on chaos-to-order because the examples didn't demonstrate how to handle products whose differentiation is about composability and interconnection rather than speed or simplicity.
+  [MAJOR point_of_view] The model used chaos-to-order because the false differentiators list didn't explicitly flag this common productivity-tool cliché or require identifying the specific mechanism of organization.
+  [CRITICAL specificity] The model treated 'open source' and 'integrated platform' as differentiators without being forced to prove these claims couldn't describe Firebase or PlanetScale—adding developer-tool-specific examples would have caught this.
+  [MAJOR viewer_state] The template allowed consecutive scenes with flat emotional states; adding an explicit escalation check would force the model to justify or fix scenes that don't build momentum.
+  [MAJOR point_of_view] The model announced 'open source matters' in text but never showed evidence; requiring visual proof of PoV in each scene would have forced concrete demonstration rather than assertion.
+
+To apply: npx tsx scripts/eval-skills-apply.ts --run-id iter-04

@@ -8,11 +8,14 @@
     "skills:sync:dry": "./scripts/skills-sync --dry-run",
     "skills:sync:verbose": "./scripts/skills-sync --verbose",
     "skills:generate": "./scripts/skills-generate",
-    "skills:full": "./scripts/skills-full"
+    "skills:full": "./scripts/skills-full",
+    "skills:eval": "npx tsx scripts/eval-skills.ts",
+    "skills:eval:apply": "npx tsx scripts/eval-skills-apply.ts"
   },
   "author": "",
   "license": "Copyright Editframe Inc.",
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "chalk": "^5.6.2",
     "ora": "^9.0.0",
     "oxfmt": "^0.15.0",

@@ -1,0 +1,58 @@
+[
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition follows a generic product demo template (problem → solution → features → CTA) without a distinctive authorial perspective. Open source is mentioned but not used to structure the narrative.",
+      "improvement": "If open source is the differentiator, the whole video should be organized around that truth. Show what 'owning your data' actually means visually—perhaps the constellation canvas could represent community contributions, or the fragmentation scene could show vendor lock-in specifically."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"",
+    "cause": "present_wrong",
+    "proposedChange": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\n**Template rejection test**: After answering, check: does your scene plan follow problem → solution → features → CTA? If yes, your formal choice is not constraining anything. The structure must be *different* because of the brand truth. Examples:\n- Open source brand → video structure could mirror contribution/fork/merge cycle, or show the 'escape hatch' moment of data export\n- API-first brand → structure could be request/response rhythm, or show the developer's terminal as the primary visual\n- Opinionated tool → structure removes elements scene by scene rather than adding them",
+    "rationale": "The existing guidance shows good vs bad examples but doesn't explicitly reject the generic template structure; adding a 'template rejection test' would force the model to verify its structure actually departs from the default."
+  },
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition follows a generic product demo template (problem → solution → features → CTA) without a distinctive authorial perspective. Open source is mentioned but not used to structure the narrative.",
+      "improvement": "If open source is the differentiator, the whole video should be organized around that truth. Show what 'owning your data' actually means visually—perhaps the constellation canvas could represent community contributions, or the fragmentation scene could show vendor lock-in specifically."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it.",
+    "cause": "wrong_priority",
+    "proposedChange": "**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it.\n\n**Structural manifestation examples**:\n- If the brand truth is 'open source / own your data': one scene must literally show data leaving or being exported — not just mention ownership\n- If the brand truth is 'unified API surface': visual elements must share a single origin point or converge to one\n- If the brand truth is 'removes a workflow step': a scene must show absence/removal, not just speed",
+    "rationale": "The per-scene check exists but is abstract; concrete examples of how structural truths must manifest visually would force the model to actually change scene design rather than just checking a box."
+  },
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The 'fragmentation problem' framing applies equally to Firebase, PlanetScale, Neon, or any integrated backend. The code example is generic SQL.",
+      "improvement": "Show something only Supabase can do—like the realtime subscriptions, the row-level security syntax, or the specific CLI experience (`supabase init`). The code block should demonstrate Supabase's actual differentiating DX."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "- `product-demo`: Show the product in action — real UI screenshots if available, or styled HTML/CSS representations of the actual interface if not. Canvas animations for abstract mechanics only (data flow, request handling). Feature density: one demonstrable feature per scene — not a list.",
+    "cause": "present_wrong",
+    "proposedChange": "- `product-demo`: Show the product in action — real UI screenshots if available, or styled HTML/CSS representations of the actual interface if not. Canvas animations for abstract mechanics only (data flow, request handling). Feature density: one demonstrable feature per scene — not a list.\n  \n  **Code specificity requirement**: Any code shown must be product-specific syntax that would not work in a competing product. Generic SQL, generic REST calls, or generic authentication flows fail this test. Good examples: Supabase's `supabase.from().select().subscribe()` (realtime), Stripe's `stripe.customers.create()`, Vercel's `vercel.json` edge config. If you cannot identify product-specific syntax, do not show code — show the UI instead.",
+    "rationale": "The guidance says to show the product but doesn't prohibit generic code examples; requiring product-specific syntax that wouldn't work elsewhere would have prevented the generic SQL block."
+  },
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The 'fragmentation problem' framing applies equally to Firebase, PlanetScale, Neon, or any integrated backend. The code example is generic SQL.",
+      "improvement": "Show something only Supabase can do—like the realtime subscriptions, the row-level security syntax, or the specific CLI experience (`supabase init`). The code block should demonstrate Supabase's actual differentiating DX."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\", \"zero config\", \"batteries included\"\n- Payment/fintech brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\", \"invisible infrastructure\", \"end-to-end payments\"\n- Design tools: \"design and code together\", \"design faster\", \"multiplayer design\", \"browser-based\", \"files keep you apart\"\n- Workspace/productivity tools: \"fragmented tools → unified workspace\", \"all-in-one\", \"where work happens\", \"write, plan, organize\"\n- Deployment platforms: \"deploy on every git push\", \"preview URLs\", \"instant deploys\", \"global CDN\", \"serverless\"",
+    "cause": "missing",
+    "proposedChange": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\", \"zero config\", \"batteries included\"\n- Payment/fintech brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\", \"invisible infrastructure\", \"end-to-end payments\"\n- Design tools: \"design and code together\", \"design faster\", \"multiplayer design\", \"browser-based\", \"files keep you apart\"\n- Workspace/productivity tools: \"fragmented tools → unified workspace\", \"all-in-one\", \"where work happens\", \"write, plan, organize\"\n- Deployment platforms: \"deploy on every git push\", \"preview URLs\", \"instant deploys\", \"global CDN\", \"serverless\"\n- Backend/database platforms: \"fragmented backend services\", \"Firebase alternative\", \"Postgres + auth + storage\", \"one platform for backend\", \"realtime database\", \"integrated backend\"",
+    "rationale": "The false differentiators list covers many categories but omits backend-as-a-service platforms; adding this category would have flagged 'fragmented backend → unified platform' as a generic claim requiring deeper specificity."
+  }
+]

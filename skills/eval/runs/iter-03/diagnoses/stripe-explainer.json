@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The chaos-to-simplification narrative could apply to Adyen, Square, or Braintree. The tangled bezier curves represent generic integration complexity, not a uniquely Stripe insight.",
+      "improvement": "Ground the chaos in Stripe-specific history or customer pain. Show the before-Stripe world with specific integrations (Authorize.net + PayPal + Braintree + currency converter) rather than abstract tangles. Make the simplification visually reference Stripe's actual API structure or dashboard."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "| Chaos/Complexity | Tangled bezier curves | What does chaos *look like for this product's users specifically*? |",
+    "cause": "present_wrong",
+    "proposedChange": "| Chaos/Complexity | Tangled bezier curves | What does chaos *look like for this product's users specifically*? For payment brands: show the actual before-state (e.g., 4 different vendor logos, 3 currency symbols, code snippets from competing SDKs) — not abstract visual metaphors. |",
+    "rationale": "The table provides a generic prompt to 'find what chaos looks like' but doesn't enforce that payment/infrastructure brands must show literal vendor sprawl rather than abstract curves, which led directly to the non-specific bezier animation."
+  },
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The chaos-to-simplification narrative could apply to Adyen, Square, or Braintree. The tangled bezier curves represent generic integration complexity, not a uniquely Stripe insight.",
+      "improvement": "Ground the chaos in Stripe-specific history or customer pain. Show the before-Stripe world with specific integrations (Authorize.net + PayPal + Braintree + currency converter) rather than abstract tangles. Make the simplification visually reference Stripe's actual API structure or dashboard."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "- Payment brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\"",
+    "cause": "missing",
+    "proposedChange": "- Payment brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\"\n\n**Visual specificity test for payment/infrastructure brands:** If your chaos animation could represent any API integration problem, it's not specific. Show the *named competitors or legacy systems* this brand replaces (e.g., \"Authorize.net + PayPal + currency converter\" not \"tangled lines\"). Show the *actual UI or code structure* that embodies the simplification (e.g., Stripe's 7-line integration, their dashboard's transaction view).",
+    "rationale": "The skill lists false differentiators to avoid but doesn't provide the concrete replacement — what TO show instead — which left the model defaulting to abstract bezier curves rather than specific competitive displacement."
+  },
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The chaos-to-simplification narrative could apply to Adyen, Square, or Braintree. The tangled bezier curves represent generic integration complexity, not a uniquely Stripe insight.",
+      "improvement": "Ground the chaos in Stripe-specific history or customer pain. Show the before-Stripe world with specific integrations (Authorize.net + PayPal + Braintree + currency converter) rather than abstract tangles. Make the simplification visually reference Stripe's actual API structure or dashboard."
+    },
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "currentText": "**The motion must be semantically connected to the specific product.** Generic particles or bezier curves say nothing. The form of the animation should demonstrate what is true about this brand and false about others:\n- Stripe: money moving without friction → particles that pass through each other without collision",
+    "cause": "present_wrong",
+    "proposedChange": "**The motion must be semantically connected to the specific product.** Generic particles or bezier curves say nothing. The form of the animation should demonstrate what is true about this brand and false about others:\n- Stripe: the before-state is vendor sprawl (show logos: Authorize.net, PayPal, Braintree converging into chaos), the after-state is their actual code (show the 7-line integration appearing clean). Abstract 'money particles' fail the specificity test.\n- For any infrastructure brand: if you can swap competitor names and the animation still works, start over.",
+    "rationale": "The Stripe example in composition-patterns suggests 'particles that pass through each other' which is still abstract — replacing it with concrete guidance to show actual vendor logos and real code would have forced the model toward specific rather than metaphorical visuals."
+  }
+]

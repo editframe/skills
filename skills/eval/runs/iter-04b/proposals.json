@@ -1,0 +1,147 @@
+[
+  {
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "changes": [
+      {
+        "taskId": "linear-product-demo",
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\"\n- Payment brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\"\n- Design tools: \"design and code together\", \"design faster\", \"real-time collaboration\"",
+        "proposedChange": "Add after the existing false differentiators list:\n\n- Project management/productivity tools: \"ship faster\", \"work gets lost\", \"noise\", \"focus\", \"think clearer\", \"streamline workflow\", \"stay organized\"\n\n**For product-demo videos specifically:** Generic problem/solution language is not allowed. Reference the product's actual named features, UI elements, and interaction patterns. For Linear: Cycles, Roadmaps, Projects, command palette (Cmd+K), keyboard-first navigation, issue statuses, SLAs. For any product-demo: identify 3-5 named features from the actual product and ensure at least one appears in every scene.",
+        "rationale": "The model used generic productivity language because the false differentiators list didn't explicitly flag project management clichés, and there was no requirement to use actual product feature names in product-demo videos."
+      },
+      {
+        "taskId": "linear-product-demo",
+        "dimension": "viewer_state",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "- `product-demo`: Show the product in action — real UI screenshots if available, or styled HTML/CSS representations of the actual interface if not. Canvas animations for abstract mechanics only (data flow, request handling). Feature density: one demonstrable feature per scene — not a list.",
+        "proposedChange": "- `product-demo`: Show the product in action — real UI screenshots if available, or styled HTML/CSS representations of the actual interface if not. Canvas animations for abstract mechanics only (data flow, request handling). Feature density: one demonstrable feature per scene — not a list.\n\n  **Problem scenes in product-demos must show the actual pain, not an abstraction of it.** A canvas animation of \"chaos\" is too removed from the user's lived experience. Instead: show the specific screens, notifications, or workflows that create the problem. If Linear solves issue management chaos, show a realistic representation of 47 Slack notifications, 12 browser tabs, 3 competing tools — the actual visual environment users escape from. The viewer should recognize their own screen, not appreciate an artistic interpretation of stress.",
+        "rationale": "The model created an abstract chaos canvas because the guidance allowed 'Canvas animations for abstract mechanics' without specifying that problem scenes need concrete, recognizable pain rather than artistic abstraction."
+      },
+      {
+        "taskId": "stripe-explainer",
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+        "proposedChange": "After the existing example, add:\n\n**For infrastructure/API companies specifically:** The answer must be architectural, not marketing. Ask: What technical decision did this company make that competitors didn't? What does their system *require* developers to do (or not do) that others don't?\n\nNot: \"Stripe makes payments invisible\" (that's their tagline, not a structural truth).\nYes: \"Stripe's single API spans payments, subscriptions, marketplaces, and fraud — competitors have separate products with separate integrations. The invisibility comes from integration consolidation, not magic.\"",
+        "rationale": "The model accepted Stripe's marketing positioning ('invisible infrastructure') as the brand truth instead of identifying the architectural decision (unified API) that creates that invisibility — this addition forces the model to find structural, not messaging, truths for technical products."
+      },
+      {
+        "taskId": "stripe-explainer",
+        "dimension": "viewer_state",
+        "severity": "critical",
+        "cause": "missing",
+        "currentText": "**Scene budget**: `floor(duration_seconds / 10)` is your maximum scene count. A 30s video gets 3 scenes. A 60s video gets 6. Start at the minimum and add only if the viewer-state arc requires it — not because you have things to say.",
+        "proposedChange": "After the scene budget paragraph, add:\n\n**Completion requirement**: Before finalizing, verify that every planned scene is fully written. The last scene must deliver the viewer-state resolution identified in Phase 0. A truncated or missing final scene fails the entire composition — the viewer arc has no resolution. If you reach output limits, cut earlier scenes to make room for the ending, never the ending itself.",
+        "rationale": "The model truncated Scene 5 mid-sentence because there was no explicit instruction that completeness of the final scene is non-negotiable — this change prioritizes arc resolution over content volume."
+      },
+      {
+        "taskId": "stripe-explainer",
+        "dimension": "omission",
+        "severity": "major",
+        "cause": "wrong_priority",
+        "currentText": "**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it.",
+        "proposedChange": "Replace with:\n\n**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it.\n\n**Social proof scenes require thesis integration**: Generic metrics (revenue processed, countries served, customer count) are category-level claims. If including metrics, each must directly support your Phase 0 thesis. \"$1T processed\" proves scale; \"$1T processed without a single developer thinking about PCI compliance\" proves invisibility. If you cannot reframe the metric to reinforce the thesis, cut the scene.",
+        "rationale": "The model included generic trust metrics because the skill's social proof guidance in Phase 1 didn't connect to Phase 0's thesis requirement — this change makes metric scenes subject to the same PoV test as all other scenes."
+      },
+      {
+        "taskId": "figma-brand-awareness",
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "**Visual Metaphor Quick Reference:**\n\nThese are starting points, not answers. The right-hand column is a generic default — replace it with something specific to this brand before using it.\n\n| Concept | Generic default (avoid) | What to find instead |\n|---------|------------------------|----------------------|\n| Chaos/Complexity | Tangled bezier curves | What does chaos *look like for this product's users specifically*? |\n| Order/Simplicity | Grid layouts, organized patterns | What does resolution look like *in this product's own UI or workflow*? |",
+        "proposedChange": "**Visual Metaphor Quick Reference:**\n\nThese are starting points, not answers. The right-hand column is a generic default — replace it with something specific to this brand before using it.\n\n| Concept | Generic default (avoid) | What to find instead |\n|---------|------------------------|----------------------|\n| Chaos/Complexity | Tangled bezier curves | What does chaos *look like for this product's users specifically*? |\n| Order/Simplicity | Grid layouts, organized patterns | What does resolution look like *in this product's own UI or workflow*? |\n| Collaboration | Multiple cursors converging | What is the *shape* of this product's collaboration? (Figma's cursor is a named, colored arrow — use that exact shape. Slack's is threaded replies. Notion's is inline comments.) |\n| Connection | Network nodes, generic lines | What specific visual artifact represents connection *in this product's UI*? Extract and animate the actual UI element, not an abstraction of it. |\n\n**UI-specific visual elements are not optional.** If the product has a distinctive cursor, component shape, color palette, or interaction pattern, those must appear in the video — not generic representations of the same concept. A collaboration video for Figma that doesn't show Figma's actual cursor shape has failed the specificity test.",
+        "rationale": "The current table warns against generic defaults but doesn't mandate using product-specific UI artifacts like Figma's distinctive cursor shape, causing the model to use generic collaboration imagery."
+      },
+      {
+        "taskId": "figma-brand-awareness",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+        "proposedChange": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nNot: \"Real-time collaboration\" (if the brand pioneered it but competitors now have it, it's category-defining, not brand-defining).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"\n\n**Category-defining vs. brand-defining:** If this brand invented a feature that competitors have since copied, that feature is now category table-stakes. Find what the brand does *now* that others still don't — or what structural belief (not feature) led them to build differently. For Figma: not \"multiplayer design\" (everyone has it) but \"design as shared infrastructure\" or \"the browser as the design surface\" (architectural choices competitors haven't matched).",
+        "rationale": "The model adopted Figma's pioneering 'multiplayer' narrative without recognizing that competitors have copied it; adding explicit guidance about category-defining vs. brand-defining truths would force the model to find a current differentiator."
+      },
+      {
+        "taskId": "vercel-launch",
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "missing",
+        "currentText": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)",
+        "proposedChange": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)\n- **Brand marks**: Logo, wordmark, or symbol that must appear in the video. If the brand has a distinctive logo (triangle, apple, swoosh), it should be visible.\n\n**Product Specifics:**\n- Named features or products (e.g., 'Edge Functions', 'Preview Deployments', 'Turborepo')\n- Technical differentiators with specifics (e.g., 'Edge Network in 15 regions', not 'fast CDN')\n- Integration points that define the product (e.g., 'first-class Next.js support')\n\n**These must appear in the video.** A launch video for Vercel that doesn't mention Next.js, Edge Functions, or show the triangle logo is not a Vercel video.",
+        "rationale": "The skill requires extracting visual identity but never explicitly requires capturing and using named products, features, or the brand logo—causing the model to produce generic deployment messaging instead of Vercel-specific content."
+      },
+      {
+        "taskId": "notion-social",
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "missing",
+        "currentText": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)",
+        "proposedChange": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality) — capture specific type pairings (e.g., serif headlines + sans-serif body) that distinguish the brand\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)\n- **Product UI fingerprint**: What does the actual product interface look like? Capture distinctive UI patterns (block editors, card layouts, specific component shapes) that could be recreated or referenced in the video. Generic emoji or icon sets are not visual identity — the product's own interface is.",
+        "rationale": "The model used generic emoji icons instead of Notion's distinctive block-based UI because the skill never instructed it to capture and use the product's actual interface patterns as visual identity."
+      },
+      {
+        "taskId": "notion-social",
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "wrong_priority",
+        "currentText": "- Core value propositions — **strip category-level claims** (see below)",
+        "proposedChange": "- Core value propositions — **strip category-level claims** (see below)\n- **Named features**: Extract 2-3 specific, named product features (e.g., 'linked databases', 'synced blocks', 'toggle lists') that could only exist in this product. Use these exact names in copy and show these exact features visually — not abstract concepts like 'Organize' or 'Connect'.",
+        "rationale": "The model used generic category words ('Organize', 'Connect') because the skill told it to strip category claims but didn't tell it to replace them with specific named product features."
+      },
+      {
+        "taskId": "notion-social",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"",
+        "proposedChange": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"\n\nNot: \"Notion unifies your tools\" (every productivity tool claims unification).\nYes: \"Notion treats everything as a block that can be rearranged infinitely. So the video's elements are visually blocks — moving, nesting, and reconfiguring rather than static slides.\"\n\n**The formal constraint must reject the category default.** If your answer describes what any competitor would also do (problem → solution → CTA), you haven't found a constraint yet. The constraint should make certain obvious choices impossible.",
+        "rationale": "The model fell back on the generic 'fragmentation → unification' narrative because the skill's examples didn't include a productivity tool case, and it lacked explicit instruction to reject category-default framings as non-constraints."
+      },
+      {
+        "taskId": "supabase-product-demo",
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**Canvas API Opportunities** (use `frameTask` for generative graphics):\n- Particle systems (energy, activity)\n- Bezier curves (chaos, complexity, connections)\n- Grid multiplication (scale, quantity)\n- Orbital motion (energy, dynamism)\n- Shape morphing (transformation)",
+        "proposedChange": "Replace the Canvas API Opportunities section with:\n\n**Canvas API Opportunities** (use `frameTask` for generative graphics):\n- Particle systems (energy, activity)\n- Bezier curves (chaos, complexity, connections)\n- Grid multiplication (scale, quantity)\n- Orbital motion (energy, dynamism)\n- Shape morphing (transformation)\n\n**Product-demo visual requirements:**\nFor `product-demo` videos, abstract canvas animations are insufficient. You must show:\n- Actual product UI (screenshots, or HTML/CSS recreations using the brand's exact colors and typography)\n- Real interface elements the user would recognize (dashboard panels, code editors, terminal output)\n- Brand-specific visual markers (logo, color palette, UI patterns unique to this product)\n\nGeneric infrastructure metaphors (layers, nodes, grids) fail the specificity test—they could represent any competitor. The visual must be unmistakably *this* product.",
+        "rationale": "The skill lists abstract visual options without requiring product-specific UI for demos, leading the model to use generic layer imagery instead of Supabase's actual dashboard or brand elements."
+      },
+      {
+        "taskId": "supabase-product-demo",
+        "dimension": "omission",
+        "severity": "critical",
+        "cause": "missing",
+        "currentText": "**Scene budget**: `floor(duration_seconds / 10)` is your maximum scene count. A 30s video gets 3 scenes. A 60s video gets 6. Start at the minimum and add only if the viewer-state arc requires it — not because you have things to say.",
+        "proposedChange": "After the scene budget paragraph, add:\n\n**Composition completeness requirement:** Every scene in your plan must be fully implemented in the final composition. Before outputting code:\n1. Verify every scene has complete HTML/CSS (no truncation, no placeholder comments)\n2. Verify every `<canvas>` element has a corresponding `<script>` with `addFrameTask`\n3. Verify no two scenes communicate the same viewer-state change (merge duplicates)\n4. Count your scenes against the budget—if you exceed it, cut the weakest scene entirely rather than rushing implementation\n\nAn incomplete composition is worse than a shorter complete one.",
+        "rationale": "The model produced truncated output and duplicate scenes because nothing in the skill enforces completeness verification before output; an explicit checklist would catch these errors."
+      }
+    ]
+  },
+  {
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "changes": [
+      {
+        "taskId": "vercel-launch",
+        "dimension": "viewer_state",
+        "severity": "major",
+        "cause": "wrong_priority",
+        "currentText": "**When showing chaos or pain, make it viscerally uncomfortable — not aesthetically pleasing.** A beautiful tangle of purple bezier curves communicates \"elegant complexity.\" To communicate \"I live in this every day and it's exhausting,\" the visual needs to be overwhelming: too many elements, too fast, overlapping in a way that makes the eye unable to rest. Chaos animations that look designed signal that the problem is aesthetic, not real.",
+        "proposedChange": "**When showing chaos or pain, make it viscerally uncomfortable — not aesthetically pleasing.** A beautiful tangle of purple bezier curves communicates \"elegant complexity.\" To communicate \"I live in this every day and it's exhausting,\" the visual needs to be overwhelming: too many elements, too fast, overlapping in a way that makes the eye unable to rest. Chaos animations that look designed signal that the problem is aesthetic, not real.\n\n**Use recognizable artifacts of failure, not abstract shapes.** The viewer should see something they've experienced:\n- A terminal with `Build failed: exit code 1`\n- A CI progress bar stuck at 87%\n- A spinning deployment indicator that never resolves\n- A Slack notification: \"Production is down\"\n- A 502 Bad Gateway error page\n\nAbstract particle systems and bezier tangles communicate 'complexity' in the abstract. Concrete failure artifacts communicate 'I know this pain.'",
+        "rationale": "The skill warns against aesthetically pleasing chaos but doesn't provide concrete alternatives—adding specific examples of recognizable failure artifacts would guide the model to show visceral, relatable pain rather than abstract node animations."
+      },
+      {
+        "taskId": "supabase-product-demo",
+        "dimension": "motion",
+        "severity": "major",
+        "cause": "wrong_priority",
+        "currentText": "```html\n<ef-timegroup mode=\"fixed\" duration=\"6s\" id=\"canvas-scene\" class=\"w-[720px] h-[400px] bg-slate-900\">\n  <canvas id=\"particles\" class=\"absolute inset-0 size-full\"></canvas>\n  <ef-text class=\"absolute bottom-8 left-8 text-white text-3xl font-bold\"\n    style=\"animation: 0.6s enter-up 1s both\">Energy in motion</ef-text>\n</ef-timegroup>\n\n<script>\n  const tg = document.getElementById('canvas-scene');",
+        "proposedChange": "Add a warning box immediately before the Procedural Canvas section:\n\n**⚠️ Canvas elements require `addFrameTask` implementation.** A `<canvas>` element without a corresponding `<script>` that calls `addFrameTask` will render as a blank rectangle. Never include a canvas element unless you also include the complete JavaScript that animates it. If you're unsure how to implement the animation, use CSS-based motion instead.",
+        "rationale": "The model included a canvas element but omitted the script, likely because the documentation shows them separately; an explicit warning that canvas without script is broken would prevent orphaned canvas elements."
+      }
+    ]
+  }
+]

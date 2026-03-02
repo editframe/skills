@@ -1,0 +1,141 @@
+<ef-timegroup mode="sequence" overlap="1.2s" class="w-full h-full">
+    
+    <!-- Scene 1: Hero - The Problem (0-10s) -->
+    <ef-timegroup mode="fixed" duration="10s" class="absolute w-full h-full bg-dark flex items-center justify-center" style="animation: fadeOut 1.2s var(--ef-transition-out-start) both;">
+      <div class="absolute inset-0">
+        <canvas id="chaos-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      </div>
+      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+      <div class="container flex flex-col items-center justify-center relative z-10">
+        <ef-text class="text-white text-4xl font-bold mb-8" style="animation: slideUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both; max-width: 900px; text-align: center;">
+          Payments infrastructure is supposed to be invisible.
+        </ef-text>
+        <ef-text class="text-gray text-xl font-normal" style="animation: slideUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.6s both; max-width: 700px; text-align: center;">
+          Instead, it's everywhere. Blocking your engineering. Slowing your shipping.
+        </ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 2: The Solution Appears (10-20s) -->
+    <ef-timegroup mode="fixed" duration="10s" class="absolute w-full h-full bg-blue-grad flex items-center justify-center" style="animation: fadeIn 1.2s both;">
+      <div class="absolute inset-0 opacity-20">
+        <canvas id="solution-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      </div>
+      <div class="container flex flex-col items-center justify-center relative z-10">
+        <ef-text class="text-white text-5xl font-bold mb-6" style="animation: slideUp 0.8s cubic-bezier(0, 0.55, 0.45, 1) 0.3s both; text-align: center;">
+          Stripe removes the problem entirely.
+        </ef-text>
+        <ef-text class="text-white/80 text-xl font-normal mt-4" style="animation: slideUp 0.8s cubic-bezier(0, 0.55, 0.45, 1) 0.7s both; max-width: 800px; text-align: center;">
+          One unified API. One dashboard. One place for all the infrastructure chaos.
+        </ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 3: Payments (20-31s) -->
+    <ef-timegroup mode="fixed" duration="11s" class="absolute w-full h-full bg-dark flex items-center justify-center" style="animation: fadeOut 1.2s var(--ef-transition-out-start) both;">
+      <div class="absolute inset-0 flex flex-col items-center justify-center">
+        <div class="absolute top-1/4 left-1/2 transform -translate-x-1/2" style="animation: slideInLeft 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;">
+          <div class="text-center">
+            <div class="text-6xl mb-4">💳</div>
+            <ef-text class="text-white text-2xl font-bold">Accept payments</ef-text>
+            <ef-text class="text-gray text-base mt-2">Every card. Every method. Every country.</ef-text>
+          </div>
+        </div>
+        <div class="absolute bottom-1/4 right-1/2 transform translate-x-1/2" style="animation: slideInRight 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s both;">
+          <div class="text-center">
+            <div class="text-6xl mb-4">🌍</div>
+            <ef-text class="text-white text-2xl font-bold">Global scale</ef-text>
+            <ef-text class="text-gray text-base mt-2">Available in 195 countries. 135+ currencies.</ef-text>
+          </div>
+        </div>
+        <div class="absolute bottom-1/4 left-1/2 transform -translate-x-1/2" style="animation: slideInLeft 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.8s both;">
+          <div class="text-center">
+            <div class="text-6xl mb-4">📊</div>
+            <ef-text class="text-white text-2xl font-bold">Built-in controls</ef-text>
+            <ef-text class="text-gray text-base mt-2">Fraud detection, compliance, reporting.</ef-text>
+          </div>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 4: Payouts & Connect (31-42s) -->
+    <ef-timegroup mode="fixed" duration="11s" class="absolute w-full h-full bg-darker flex items-center justify-center" style="animation: fadeIn 1.2s both;">
+      <div class="absolute inset-0 flex items-center justify-center">
+        <div class="max-w-4xl">
+          <ef-text class="text-white text-4xl font-bold mb-12 text-center" style="animation: slideUp 0.8s cubic-bezier(0, 0.55, 0.45, 1) 0.2s both;">
+            Send money. Run a marketplace. Build financial products.
+          </ef-text>
+          <div class="grid grid-cols-3 gap-8">
+            <div style="animation: scaleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both;">
+              <ef-text class="text-blue text-2xl font-bold mb-2">Payouts</ef-text>
+              <ef-text class="text-gray text-sm">Send payments to bank accounts, cards, wallets. Instant or scheduled.</ef-text>
+            </div>
+            <div style="animation: scaleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.6s both;">
+              <ef-text class="text-blue text-2xl font-bold mb-2">Connect</ef-text>
+              <ef-text class="text-gray text-sm">Onboard sellers instantly. They connect their accounts directly.</ef-text>
+            </div>
+            <div style="animation: scaleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.8s both;">
+              <ef-text class="text-blue text-2xl font-bold mb-2">Treasury</ef-text>
+              <ef-text class="text-gray text-sm">Hold and move money. Earn yield. No banking partner needed.</ef-text>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 5: The Unseen Work (42-52s) -->
+    <ef-timegroup mode="fixed" duration="10s" class="absolute w-full h-full bg-blue-grad flex items-center justify-center" style="animation: fadeOut 1.2s var(--ef-transition-out-start) both;">
+      <div class="absolute inset-0 opacity-30">
+        <canvas id="invisible-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      </div>
+      <div class="container flex flex-col items-center justify-center relative z-10">
+        <ef-text class="text-white text-5xl font-bold mb-8" style="animation: slideUp 0.8s cubic-bezier(0, 0.55, 0.45, 1) 0.2s both; max-width: 900px; text-align: center;">
+          The infrastructure you never see
+        </ef-text>
+        <div class="grid grid-cols-2 gap-8 mt-8 max-w-2xl">
+          <ef-text class="text-white/90 text-base" style="animation: slideUp 0.8s cubic-bezier(0, 0.55, 0.45, 1) 0.4s both;">
+            ✓ PCI compliance handled
+          </ef-text>
+          <ef-text class="text-white/90 text-base" style="animation: slideUp 0.8s cubic-bezier(0, 0.55, 0.45, 1) 0.5s both;">
+            ✓ Real-time fraud detection
+          </ef-text>
+          <ef-text class="text-white/90 text-base" style="animation: slideUp 0.8s cubic-bezier(0, 0.55, 0.45, 1) 0.6s both;">
+            ✓ Instant settlement options
+          </ef-text>
+          <ef-text class="text-white/90 text-base" style="animation: slideUp 0.8s cubic-bezier(0, 0.55, 0.45, 1) 0.7s both;">
+            ✓ Automatic reconciliation
+          </ef-text>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 6: CTA - Ship Faster (52-60s) -->
+    <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full bg-dark flex items-center justify-center" style="animation: fadeIn 1.2s both;">
+      <div class="absolute inset-0">
+        <canvas id="close-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      </div>
+      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/70"></div>
+      <div class="container flex flex-col items-center justify-center relative z-10">
+        <ef-text class="text-white text-6xl font-bold mb-6" style="animation: slideUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;">
+          Stop building payments.
+        </ef-text>
+        <ef-text class="text-white text-6xl font-bold" style="animation: slideUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s both;">
+          Start shipping.
+        </ef-text>
+        <button class="cta-button mt-12" style="animation: scaleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.8s both;">
+          Start building →
+        </button>
+      </div>
+    </ef-timegroup>
+
+  </ef-timegroup>
+
+  <script>
+    // Scene 1: Chaos Canvas - tangled payment infrastructure problem
+    const chaosCanvas = document.getElementById('chaos-canvas');
+    if (chaosCanvas) {
+      const chaosScene = chaosCanvas.closest('ef-timegroup');
+      if (chaosScene) {
+        chaosScene.initializer = (instance) => {
+          return instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+            const ctx = chaosCanvas.getContext('2d');

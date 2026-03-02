@@ -1,0 +1,244 @@
+<ef-timegroup mode="sequence" overlap="1s" class="w-[1920px] h-[1080px] bg-slate-950">
+  <!-- Scene 1: The Problem - Chaos of Manual Work (0s-6s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 1s fade-out var(--ef-transition-out-start) both">
+    <canvas id="chaos-canvas" class="absolute inset-0 size-full"></canvas>
+    <ef-text class="absolute top-16 left-16 text-white text-6xl font-bold" style="animation: 0.7s enter-up both 1s">
+      Without Linear
+    </ef-text>
+    <ef-text class="absolute bottom-16 left-16 text-white/60 text-2xl" style="animation: 0.7s enter-up both 1.5s">
+      Work is chaos. Decisions are unclear.
+    </ef-text>
+    <script>
+      const canvas = document.getElementById('chaos-canvas');
+      const tg = canvas.closest('ef-timegroup');
+      const ctx = canvas.getContext('2d');
+      
+      tg.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        const progress = ownCurrentTimeMs / durationMs;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.3)';
+        ctx.lineWidth = 2;
+        
+        // Tangled lines accumulating chaos
+        const lineCount = Math.floor(progress * 40);
+        for (let i = 0; i < lineCount; i++) {
+          const seed = i * 0.618;
+          const x1 = (Math.sin(seed) * 0.4 + 0.5) * canvas.width;
+          const y1 = (Math.cos(seed * 0.7) * 0.4 + 0.5) * canvas.height;
+          const x2 = (Math.sin(seed + progress * 4) * 0.4 + 0.5) * canvas.width;
+          const y2 = (Math.cos(seed * 0.7 + progress * 3) * 0.4 + 0.5) * canvas.height;
+          
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+        }
+      });
+    </script>
+  </ef-timegroup>
+
+  <!-- Scene 2: The Linear Way - Clarity Through Structure (5s-12s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 1s fade-out var(--ef-transition-out-start) both">
+    <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="0s" sourceout="7s" class="absolute inset-0 size-full object-cover"></ef-video>
+    <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60"></div>
+    
+    <ef-text class="absolute top-16 left-16 text-white text-6xl font-bold" style="animation: 0.7s enter-up both 0.3s">
+      With Linear
+    </ef-text>
+    
+    <ef-text split="word" class="absolute top-32 right-16 text-white/90 text-2xl max-w-xl" style="animation: 0.5s enter-right both; animation-delay: calc(1s + var(--ef-word-index) * 100ms)">
+      Issues flow. Work resolves. Decisions stick.
+    </ef-text>
+    
+    <canvas id="grid-canvas" class="absolute inset-0 size-full"></canvas>
+    
+    <script>
+      const gridCanvas = document.getElementById('grid-canvas');
+      const gridTg = gridCanvas.closest('ef-timegroup');
+      const gridCtx = gridCanvas.getContext('2d');
+      
+      gridTg.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        gridCanvas.width = gridCanvas.offsetWidth;
+        gridCanvas.height = gridCanvas.offsetHeight;
+        const progress = ownCurrentTimeMs / durationMs;
+        
+        gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+        gridCtx.strokeStyle = 'rgba(59, 130, 246, 0.15)';
+        gridCtx.lineWidth = 1;
+        
+        // Clean grid appearing
+        const cellSize = 80;
+        const visibleCells = Math.floor(progress * 20);
+        
+        for (let i = 0; i < visibleCells; i++) {
+          const row = Math.floor(i / 6);
+          const col = i % 6;
+          const x = col * cellSize + 200;
+          const y = row * cellSize + 200;
+          
+          gridCtx.strokeRect(x, y, cellSize, cellSize);
+          
+          // Dot in center of cell
+          gridCtx.fillStyle = `rgba(59, 130, 246, ${0.3 + progress * 0.3})`;
+          gridCtx.beginPath();
+          gridCtx.arc(x + cellSize / 2, y + cellSize / 2, 3, 0, Math.PI * 2);
+          gridCtx.fill();
+        }
+      });
+    </script>
+  </ef-timegroup>
+
+  <!-- Scene 3: Speed Through Keyboard (11s-18s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 1s fade-out var(--ef-transition-out-start) both">
+    <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="8s" sourceout="15s" class="absolute inset-0 size-full object-cover"></ef-video>
+    <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-transparent to-black/70"></div>
+    
+    <ef-text class="absolute left-16 top-1/2 transform -translate-y-1/2 text-white text-6xl font-bold" style="animation: 0.6s enter-left both 0.4s">
+      Keyboard-first
+    </ef-text>
+    
+    <ef-text class="absolute right-16 top-1/2 transform -translate-y-1/2 text-right text-white/70 text-xl max-w-md" style="animation: 0.6s enter-right both 1s">
+      Every action three keystrokes away. No mouse needed. Work flows at thought speed.
+    </ef-text>
+    
+    <canvas id="keyboard-canvas" class="absolute inset-0 size-full"></canvas>
+    
+    <script>
+      const kbCanvas = document.getElementById('keyboard-canvas');
+      const kbTg = kbCanvas.closest('ef-timegroup');
+      const kbCtx = kbCanvas.getContext('2d');
+      
+      kbTg.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        kbCanvas.width = kbCanvas.offsetWidth;
+        kbCanvas.height = kbCanvas.offsetHeight;
+        const progress = ownCurrentTimeMs / durationMs;
+        
+        kbCtx.clearRect(0, 0, kbCanvas.width, kbCanvas.height);
+        
+        // Keyboard keys lighting up
+        const keys = ['⌘', 'K', 'N', 'E', 'W'];
+        let keyProgress = progress * keys.length;
+        
+        for (let i = 0; i < keys.length; i++) {
+          const lightness = Math.max(0, Math.min(1, keyProgress - i));
+          const x = 200 + i * 100;
+          const y = kbCanvas.height / 2;
+          
+          kbCtx.fillStyle = `rgba(59, 130, 246, ${lightness * 0.6})`;
+          kbCtx.fillRect(x - 30, y - 40, 60, 80);
+          
+          kbCtx.fillStyle = `rgba(255, 255, 255, ${lightness})`;
+          kbCtx.font = 'bold 28px monospace';
+          kbCtx.textAlign = 'center';
+          kbCtx.textBaseline = 'middle';
+          kbCtx.fillText(keys[i], x, y);
+        }
+      });
+    </script>
+  </ef-timegroup>
+
+  <!-- Scene 4: The Result - Shipping Fast (17s-25s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 1s fade-out var(--ef-transition-out-start) both">
+    <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="16s" sourceout="23s" class="absolute inset-0 size-full object-cover"></ef-video>
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-black/80"></div>
+    
+    <ef-text split="word" class="absolute top-1/3 left-1/2 transform -translate-x-1/2 text-white text-7xl font-bold text-center" style="animation: 0.6s scale-in both; animation-delay: calc(var(--ef-word-index) * 120ms)">
+      Ship faster
+    </ef-text>
+    
+    <canvas id="ship-canvas" class="absolute inset-0 size-full"></canvas>
+    
+    <script>
+      const shipCanvas = document.getElementById('ship-canvas');
+      const shipTg = shipCanvas.closest('ef-timegroup');
+      const shipCtx = shipCanvas.getContext('2d');
+      
+      shipTg.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        shipCanvas.width = shipCanvas.offsetWidth;
+        shipCanvas.height = shipCanvas.offsetHeight;
+        const progress = ownCurrentTimeMs / durationMs;
+        
+        shipCtx.clearRect(0, 0, shipCanvas.width, shipCanvas.height);
+        
+        // Expanding ripple from center (shipping/deployment metaphor)
+        const maxRadius = Math.max(shipCanvas.width, shipCanvas.height);
+        const rippleRadius = progress * maxRadius;
+        
+        shipCtx.strokeStyle = `rgba(34, 197, 94, ${(1 - progress) * 0.4})`;
+        shipCtx.lineWidth = 3;
+        shipCtx.beginPath();
+        shipCtx.arc(shipCanvas.width / 2, shipCanvas.height / 2, rippleRadius, 0, Math.PI * 2);
+        shipCtx.stroke();
+        
+        // Center glow
+        shipCtx.fillStyle = `rgba(34, 197, 94, ${0.3 * (1 - progress)})`;
+        shipCtx.beginPath();
+        shipCtx.arc(shipCanvas.width / 2, shipCanvas.height / 2, 40 + progress * 20, 0, Math.PI * 2);
+        shipCtx.fill();
+      });
+    </script>
+  </ef-timegroup>
+
+  <!-- Scene 5: CTA - Join Linear (24s-30s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full bg-gradient-to-br from-slate-950 to-blue-950" style="animation: 1s fade-in both">
+    <ef-text class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-6xl font-bold text-center" style="animation: 0.8s scale-pop both 0.2s">
+      Linear
+    </ef-text>
+    
+    <ef-text class="absolute top-2/3 left-1/2 transform -translate-x-1/2 text-white/70 text-2xl text-center" style="animation: 0.6s enter-up both 0.8s">
+      The fastest issue tracking for software teams
+    </ef-text>
+    
+    <ef-text class="absolute bottom-16 left-1/2 transform -translate-x-1/2 text-blue-400 text-xl font-semibold tracking-widest" style="animation: 0.6s enter-up both 1.3s">
+      linear.app
+    </ef-text>
+    
+    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-400 rounded-full" style="animation: 1.5s pulse both 1.8s; animation-iteration-count: 2"></div>
+  </ef-timegroup>
+</ef-timegroup>
+
+<style>
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
+  
+  @keyframes enter-up {
+    from { transform: translateY(24px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  
+  @keyframes enter-left {
+    from { transform: translateX(-40px); opacity: 0; }
+    to   { transform: translateX(0);     opacity: 1; }
+  }
+  
+  @keyframes enter-right {
+    from { transform: translateX(40px); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+  }
+  
+  @keyframes scale-in {
+    from { transform: scale(0.85); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+  }
+  
+  @keyframes scale-pop {
+    0%   { transform: scale(0);    opacity: 0; }
+    50%  { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1);    opacity: 1; }
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.3; }
+  }
+</style>

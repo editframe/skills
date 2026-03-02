@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic productivity tool framing and visual language. Emoji icons, standard feature categories, and ubiquitous SaaS CTA copy could belong to any workspace product.",
+      "improvement": "Use Notion's distinctive visual language: the serif + sans-serif type pairing, the actual block interface mockups, the specific way Notion renders databases. Reference specific Notion features like 'linked databases' or 'synced blocks' rather than generic 'Organize' and 'Connect'."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)",
+    "cause": "missing",
+    "proposedChange": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality) — capture specific type pairings (e.g., serif headlines + sans-serif body) that distinguish the brand\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)\n- **Product UI fingerprint**: What does the actual product interface look like? Capture distinctive UI patterns (block editors, card layouts, specific component shapes) that could be recreated or referenced in the video. Generic emoji or icon sets are not visual identity — the product's own interface is.",
+    "rationale": "The model used generic emoji icons instead of Notion's distinctive block-based UI because the skill never instructed it to capture and use the product's actual interface patterns as visual identity."
+  },
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic productivity tool framing and visual language. Emoji icons, standard feature categories, and ubiquitous SaaS CTA copy could belong to any workspace product.",
+      "improvement": "Use Notion's distinctive visual language: the serif + sans-serif type pairing, the actual block interface mockups, the specific way Notion renders databases. Reference specific Notion features like 'linked databases' or 'synced blocks' rather than generic 'Organize' and 'Connect'."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "- Core value propositions — **strip category-level claims** (see below)",
+    "cause": "wrong_priority",
+    "proposedChange": "- Core value propositions — **strip category-level claims** (see below)\n- **Named features**: Extract 2-3 specific, named product features (e.g., 'linked databases', 'synced blocks', 'toggle lists') that could only exist in this product. Use these exact names in copy and show these exact features visually — not abstract concepts like 'Organize' or 'Connect'.",
+    "rationale": "The model used generic category words ('Organize', 'Connect') because the skill told it to strip category claims but didn't tell it to replace them with specific named product features."
+  },
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition implies that fragmentation is the problem and unification is the solution, but this is the default claim of every productivity tool. No specific stance on why Notion's approach differs.",
+      "improvement": "Commit to a specific truth about Notion—perhaps that it treats all content as 'blocks' that can be rearranged infinitely, or that it trusts users to build their own systems rather than imposing structure. Let this truth shape the visual form, not just the copy."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"",
+    "cause": "missing",
+    "proposedChange": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"\n\nNot: \"Notion unifies your tools\" (every productivity tool claims unification).\nYes: \"Notion treats everything as a block that can be rearranged infinitely. So the video's elements are visually blocks — moving, nesting, and reconfiguring rather than static slides.\"\n\n**The formal constraint must reject the category default.** If your answer describes what any competitor would also do (problem → solution → CTA), you haven't found a constraint yet. The constraint should make certain obvious choices impossible.",
+    "rationale": "The model fell back on the generic 'fragmentation → unification' narrative because the skill's examples didn't include a productivity tool case, and it lacked explicit instruction to reject category-default framings as non-constraints."
+  }
+]

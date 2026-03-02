@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The visual language relies on generic fintech aesthetics (blue gradients, expanding circles, code snippets) that could apply to any payment processor. The Stripe brand gradient (#5469d4) is used but not distinctively.",
+      "improvement": "Incorporate Stripe's actual visual identity more deeply - their documentation aesthetic, their specific illustrations style, or their signature API-first messaging format. The canvas animations could visualize actual Stripe data objects rather than abstract nodes."
+    },
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "currentText": "**Visual specificity requirement:** The canvas animation must depict elements that are visually identifiable as belonging to this specific brand. For Patagonia, this means the Fitz Roy mountain silhouette from their logo, their specific product shapes, or their Worn Wear repair iconography — not generic mountain outlines that could belong to REI, North Face, or any outdoor brand. For Stripe, this means their specific dashboard UI patterns or their actual API response format — not generic code blocks.",
+    "cause": "present_wrong",
+    "proposedChange": "**Visual specificity requirement:** The canvas animation must depict elements that are visually identifiable as belonging to this specific brand. For Patagonia, this means the Fitz Roy mountain silhouette from their logo, their specific product shapes, or their Worn Wear repair iconography — not generic mountain outlines that could belong to REI, North Face, or any outdoor brand. For Stripe, this means their specific dashboard UI patterns, their actual API response JSON structure (showing real field names like `payment_intent`, `customer`, `metadata`), or their distinctive documentation code-block styling with the purple/blue syntax highlighting — not generic code snippets or abstract fintech visuals like expanding circles or node networks. Blue gradients and payment-themed abstractions are category-generic; Stripe's visual identity is defined by their documentation aesthetic, their specific object model nomenclature, and their minimalist illustration style with precise line weights.",
+    "rationale": "The existing Stripe example was too vague ('dashboard UI patterns or actual API response format') and didn't explicitly prohibit the generic fintech visuals (blue gradients, expanding circles) that the model actually used."
+  },
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The visual language relies on generic fintech aesthetics (blue gradients, expanding circles, code snippets) that could apply to any payment processor. The Stripe brand gradient (#5469d4) is used but not distinctively.",
+      "improvement": "Incorporate Stripe's actual visual identity more deeply - their documentation aesthetic, their specific illustrations style, or their signature API-first messaging format. The canvas animations could visualize actual Stripe data objects rather than abstract nodes."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "- Stripe (unified object model): the same `charge` object threads through Checkout, Radar, Connect, and Billing → show one object that every system touches simultaneously rather than a pipeline. Speed is generic; the shared object is Stripe's.",
+    "cause": "present_wrong",
+    "proposedChange": "- Stripe (unified object model): the same `charge` object threads through Checkout, Radar, Connect, and Billing → show one object that every system touches simultaneously rather than a pipeline. Speed is generic; the shared object is Stripe's. **Anti-pattern for Stripe specifically:** Blue gradients, expanding payment circles, abstract node networks, and generic code blocks are category-generic fintech visuals — they could appear in any competitor's video. Stripe's visual identity comes from their documentation aesthetic: precise monospace typography, their specific JSON field names (`payment_intent.id`, `customer.metadata`), their purple/blue syntax highlighting, and their signature minimalist illustrations with consistent line weights. If the visual could appear in a Square, Adyen, or Braintree video unchanged, it fails.",
+    "rationale": "The existing guidance described what to show but didn't explicitly list what NOT to show for Stripe, allowing the model to fall back on generic fintech aesthetics."
+  }
+]

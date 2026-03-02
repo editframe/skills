@@ -1,0 +1,59 @@
+{
+  "taskId": "figma-brand-awareness",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:06:54.300Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural and purposeful. The composition uses staggered CSS animations for text and UI elements, text splitting with word-based animation, and two addFrameTask-driven procedural canvas animations that visualize collaboration and brand energy.",
+      "evidence": "Scene 2 uses `addFrameTask` with `info.percentComplete` to draw connecting nodes: `nodes.forEach((node, i) => { const scale = 0.5 + progress * 0.5; }`. Scene 4 has expanding rings: `const ringProgress = (progress - delay) / (1 - delay)`. Text uses `split=\"word\"` with `animation-delay: calc(var(--ef-word-index) * 60ms)`. Pain points in Scene 1 stagger with delays `1.2s`, `1.5s`, `1.8s`."
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "The composition mentions Figma by name and references real-time collaboration and browser-based design, but these are category-generic claims. Nothing about Figma's specific visual language, features like FigJam, Dev Mode, or its distinctive purple brand color is consistently used.",
+      "evidence": "Generic claims: 'Real-time collaboration. No files. No waiting.' and 'Design together' could describe any collaborative design tool (Canva, Sketch with plugins, Adobe XD). The icons are emoji-based rather than Figma's actual UI or brand assets. The purple used (`rgba(139, 92, 246)`) is not Figma's brand purple. No mention of multiplayer cursors, components, auto-layout, or other Figma-specific features."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "There's a traceable arc from frustration (old way) → possibility (collaboration) → capability (unified platform) → invitation (CTA). However, the shifts are formulaic and don't create genuine emotional movement—the 'pain' of Scene 1 is abstract, making the relief of Scene 2 less felt.",
+      "evidence": "Scene 1 presents 'File-based, Single player, Bottlenecked' with red-tinted icons, but these are stated pains, not shown ones. Scene 2's 'Meet in the browser' is a transition but the canvas animation of connecting nodes doesn't create a felt sense of collaboration emerging. Scene 4's 'Design together' is a platitude rather than an earned conclusion."
+    },
+    "point_of_view": {
+      "score": 2,
+      "rationale": "The composition follows a standard brand awareness template: problem → solution → features → CTA. There's an implied perspective that collaboration is the key differentiator, but this isn't committed to deeply or expressed in the form.",
+      "evidence": "The structure is predictable: 'The Old Way' → 'Collaboration Emerges' → 'Design + Prototype + Develop' → CTA. The node-connecting canvas animation in Scene 2 is the one moment where form attempts to embody meaning (people connecting), but it's undercooked—the nodes are labeled 'Designer, PM, Developer' but this isn't visible in the rendered output."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Four scenes for a 30s video is appropriate. Scene 3 (Design/Prototype/Develop) feels the most expendable—it lists capabilities without advancing the collaboration narrative established in Scene 2.",
+      "evidence": "Scene 3 shows three icons with 'Design, Prototype, Develop' under 'One platform'—this is a feature list that interrupts the emotional arc. The video could go from Scene 2's collaboration revelation directly to Scene 4's 'Design together' CTA without losing coherence. Scene 3 is telling rather than showing."
+    }
+  },
+  "overall": 2.8,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic collaborative design claims and emoji icons rather than Figma's actual brand assets, visual language, or distinctive features like multiplayer cursors, components, or Dev Mode.",
+      "improvement": "Use Figma's actual brand purple (#A259FF), show multiplayer cursor animations, reference specific features ('Inspect code in Dev Mode'), or demonstrate Figma's actual UI patterns. The collaboration canvas should show Figma's distinctive cursor labels, not generic nodes."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition follows a generic problem-solution-features-CTA template without expressing a distinctive perspective on why Figma matters or what makes its approach to collaboration different.",
+      "improvement": "Take a stance: Is Figma about democratizing design? About design-engineering convergence? About killing the handoff? Choose one perspective and let it shape every scene. For example, if the POV is 'design is a team sport,' show designers and engineers literally in the same space, not just connected nodes."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "Scene 1's pain points are listed abstractly ('File-based, Single player, Bottlenecked') rather than felt. Without genuine frustration established, the subsequent relief lacks impact.",
+      "improvement": "Show the old way viscerally: a loading spinner, a 'File locked by another user' message, version chaos ('Design_FINAL_v3_FINAL2.fig'). Make viewers wince before offering relief. The contrast will make Scene 2's collaboration feel like genuine liberation."
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "Scene 3 (Design/Prototype/Develop) is a feature list that interrupts the collaboration narrative without advancing the viewer's emotional state.",
+      "improvement": "Either cut Scene 3 and extend the collaboration demonstration, or integrate the 'one platform' message into Scene 2 by showing Design/Prototype/Develop happening simultaneously in the collaborative canvas, rather than as a separate feature announcement."
+    }
+  ]
+}

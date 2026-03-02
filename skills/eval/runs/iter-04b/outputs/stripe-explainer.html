@@ -1,0 +1,233 @@
+<ef-timegroup mode="sequence" overlap="0.8s" class="w-[1920px] h-[1080px] bg-black">
+    
+    <!-- SCENE 1: Hook - The Problem (Complexity Hidden) -->
+    <ef-timegroup mode="contain" duration="8s" class="absolute w-full h-full scene-bg-dark flex items-center justify-center">
+      <canvas id="chaos-canvas" class="absolute inset-0 size-full"></canvas>
+      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
+      
+      <div class="relative z-10 text-center max-w-2xl">
+        <ef-text 
+          split="word"
+          duration="8s"
+          class="text-white text-6xl font-bold mb-8"
+          style="animation: slideUp 0.6s both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+        >Global payments should be invisible</ef-text>
+        
+        <ef-text 
+          duration="8s"
+          class="text-gray text-2xl"
+          style="animation: slideUp 0.6s both 0.8s"
+        >Not invisible because they're broken. Invisible because they work.</ef-text>
+      </div>
+
+      <script>
+        const canvas = document.getElementById('chaos-canvas');
+        const ctx = canvas.getContext('2d');
+        const tg = canvas.closest('ef-timegroup');
+
+        tg.initializer = (instance) => {
+          return instance.addFrameTask((info) => {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            const progress = info.percentComplete;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.globalAlpha = 0.15 + progress * 0.1;
+
+            // Draw nodes converging toward center as scene progresses
+            // At start: chaotic scattered nodes. At end: organized points on paths.
+            const nodeCount = Math.floor(200 * progress);
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            for (let i = 0; i < nodeCount; i++) {
+              const seed = i * 137.5;
+              const angle = (seed / 200) * Math.PI * 2;
+              
+              // Start position: random
+              // End position: organized on circle
+              const startRadius = Math.random() * 400;
+              const endRadius = 300;
+              const currentRadius = startRadius + (endRadius - startRadius) * progress;
+              
+              const x = cx + Math.cos(angle) * currentRadius;
+              const y = cy + Math.sin(angle) * currentRadius;
+
+              ctx.beginPath();
+              ctx.arc(x, y, 2 + Math.sin(seed) * 1, 0, Math.PI * 2);
+              ctx.fillStyle = `rgba(99, 179, 237, ${0.5 + progress * 0.3})`;
+              ctx.fill();
+
+              // Draw connecting lines at end state
+              if (progress > 0.7) {
+                const nextI = (i + 1) % nodeCount;
+                const nextSeed = nextI * 137.5;
+                const nextAngle = (nextSeed / 200) * Math.PI * 2;
+                const nextX = cx + Math.cos(nextAngle) * currentRadius;
+                const nextY = cy + Math.sin(nextAngle) * currentRadius;
+
+                ctx.strokeStyle = `rgba(99, 179, 237, ${(progress - 0.7) * 0.2})`;
+                ctx.lineWidth = 0.5;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(nextX, nextY);
+                ctx.stroke();
+              }
+            }
+
+            ctx.globalAlpha = 1;
+          });
+        };
+      </script>
+    </ef-timegroup>
+
+    <!-- SCENE 2: Core Truth - Payments Should Be Invisible (Crossfade) -->
+    <ef-timegroup mode="contain" duration="8s" class="absolute w-full h-full scene-bg-dark flex items-center justify-center"
+      style="animation: fadeIn 0.8s both, fadeOut 0.8s var(--ef-transition-out-start) both">
+      
+      <div class="absolute inset-0 flex items-center justify-between px-24 py-20">
+        <!-- Left: Before (Visible, Messy) -->
+        <div class="flex-1 pr-12">
+          <ef-text 
+            duration="8s"
+            class="text-gray text-sm uppercase tracking-widest mb-4"
+            style="animation: slideUp 0.5s both 0.2s"
+          >Without Stripe</ef-text>
+          
+          <div class="card"
+            style="animation: slideUp 0.6s both 0.4s">
+            <div class="text-white text-xl font-semibold mb-4">Your stack:</div>
+            <div class="space-y-3 text-gray text-lg">
+              <div>✗ Payment processor</div>
+              <div>✗ Fraud detection</div>
+              <div>✗ Compliance (PCI, GDPR, etc)</div>
+              <div>✗ Bank connections</div>
+              <div>✗ Payout infrastructure</div>
+              <div>✗ Dispute handling</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: After (Invisible, Clean) -->
+        <div class="flex-1 pl-12">
+          <ef-text 
+            duration="8s"
+            class="text-accent text-sm uppercase tracking-widest mb-4"
+            style="animation: slideUp 0.5s both 0.6s"
+          >With Stripe</ef-text>
+          
+          <div class="card bg-gradient-to-br from-indigo-900/40 to-indigo-800/20 border-indigo-500/30"
+            style="animation: slideUp 0.6s both 0.8s">
+            <div class="text-white text-xl font-semibold mb-4">One platform:</div>
+            <div class="space-y-3 text-accent text-lg font-medium">
+              <div>✓ Everything. Invisible.</div>
+              <div style="font-size: 0.9em; color: rgba(255, 255, 255, 0.5); margin-top: 12px;">No PCI scope. No complexity. Just API calls.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- SCENE 3: Product Demonstration (API as Abstraction) -->
+    <ef-timegroup mode="contain" duration="10s" class="absolute w-full h-full scene-bg-accent flex flex-col items-center justify-center p-16"
+      style="animation: fadeIn 0.8s both, fadeOut 0.8s var(--ef-transition-out-start) both">
+      
+      <ef-text 
+        duration="10s"
+        class="text-white text-5xl font-bold mb-12 text-center"
+        style="animation: slideUp 0.6s both 0.3s"
+      >One API. Unlimited possibilities.</ef-text>
+
+      <!-- Code-like interface showing hidden complexity -->
+      <div class="w-full max-w-3xl"
+        style="animation: scaleIn 0.7s both 0.8s">
+        <div class="bg-black/40 backdrop-filter backdrop-blur border border-white/10 rounded-12 p-8 font-mono text-white">
+          <div class="text-indigo-300 text-lg mb-6">stripe.paymentIntents.create({</div>
+          
+          <div class="ml-4 space-y-2 text-sm">
+            <div class="text-white">amount: 9999,</div>
+            <div class="text-white">currency: 'usd',</div>
+            <div class="text-gray">// Fraud detection ✓</div>
+            <div class="text-gray">// 3D Secure ✓</div>
+            <div class="text-gray">// Bank routing ✓</div>
+            <div class="text-gray">// Compliance ✓</div>
+            <div class="text-white">metadata: { ... }</div>
+          </div>
+
+          <div class="text-indigo-300 text-lg mt-6">})</div>
+          
+          <div class="mt-8 pt-6 border-t border-white/10 text-indigo-300">
+            <div class="text-green-400 text-sm">→ Payment processed</div>
+            <div class="text-green-400 text-sm">→ Funds transferred</div>
+            <div class="text-green-400 text-sm">→ Invisible to your user</div>
+          </div>
+        </div>
+      </div>
+
+      <ef-text 
+        duration="10s"
+        class="text-white/80 text-lg mt-12 text-center"
+        style="animation: slideUp 0.6s both 1.2s"
+      >The infrastructure that powers the internet disappears behind your product.</ef-text>
+    </ef-timegroup>
+
+    <!-- SCENE 4: Scale & Trust (Global, Proven) -->
+    <ef-timegroup mode="contain" duration="8s" class="absolute w-full h-full scene-bg-dark flex flex-col items-center justify-center"
+      style="animation: fadeIn 0.8s both, fadeOut 0.8s var(--ef-transition-out-start) both">
+      
+      <ef-text 
+        duration="8s"
+        class="text-white text-5xl font-bold mb-16 text-center"
+        style="animation: slideUp 0.6s both 0.2s"
+      >Trusted by the internet</ef-text>
+
+      <div class="grid grid-cols-3 gap-8 w-full max-w-4xl">
+        <!-- Metric 1: Scale -->
+        <div class="card text-center"
+          style="animation: slideUp 0.6s both 0.4s">
+          <div class="text-accent text-5xl font-bold mb-2">$1T+</div>
+          <div class="text-gray text-lg">Payment volume processed</div>
+        </div>
+
+        <!-- Metric 2: Reach -->
+        <div class="card text-center"
+          style="animation: slideUp 0.6s both 0.6s">
+          <div class="text-accent text-5xl font-bold mb-2">195</div>
+          <div class="text-gray text-lg">Countries supported</div>
+        </div>
+
+        <!-- Metric 3: Users -->
+        <div class="card text-center"
+          style="animation: slideUp 0.6s both 0.8s">
+          <div class="text-accent text-5xl font-bold mb-2">8M+</div>
+          <div class="text-gray text-lg">Businesses live</div>
+        </div>
+      </div>
+
+      <ef-text 
+        duration="8s"
+        class="text-gray text-xl mt-12 text-center max-w-2xl"
+        style="animation: slideUp 0.6s both 1.0s"
+      >Not trust in a brand. Trust in what Stripe makes possible: businesses of any size, anywhere, accepting any form of payment.</ef-text>
+    </ef-timegroup>
+
+    <!-- SCENE 5: Specific Differentiator - Simplicity Through Architecture -->
+    <ef-timegroup mode="contain" duration="10s" class="absolute w-full h-full scene-bg-dark flex items-center justify-center"
+      style="animation: fadeIn 0.8s both, fadeOut 0.8s var(--ef-transition-out-start) both">
+      
+      <canvas id="architecture-canvas" class="absolute inset-0 size-full"></canvas>
+      <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+
+      <div class="relative z-10 text-center max-w-3xl">
+        <ef-text 
+          split="word"
+          duration="10s"
+          class="text-white text-5xl font-bold mb-6"
+          style="animation: slideUp 0.6s both; animation-delay: calc(0.2s + var(--ef-word-index) * 100ms)"
+        >Simplicity is the consequence of smart architecture</ef-text>
+
+        <ef-text 
+          duration="10s"
+          class="text-gray text-xl"
+          style="animation: slideUp 0.6s both 1.0s"
+        >Stripe doesn't

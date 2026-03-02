@@ -1,0 +1,34 @@
+{
+  "taskId": "figma-brand-awareness",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:23:08.185Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is the argument itself. Each scene uses addFrameTask with procedural canvas animations that directly illustrate the conceptual progression: isolated cursors orbiting separately → cursors converging to a central point → particles flowing from design to code. The motion carries meaning the text cannot.",
+      "evidence": "Scene 1: 'Draw isolated cursors in separate corners (no interaction)' with individual orbit paths. Scene 2: 'Cursors move toward center as progress increases' with 'startDistance - (startDistance - endDistance) * progress' and connection lines appearing at progress > 0.3. Scene 3: Particles flowing from design frame to code indicator. Text uses 'split=\"word\"' with staggered 'animation-delay: calc(var(--ef-word-index) * 100ms)'."
+    },
+    "specificity": {
+      "score": 4,
+      "rationale": "The composition's structure reflects Figma's core differentiator: browser-based real-time collaboration transforming siloed design into shared surfaces. The cursor metaphor, the convergence animation, and the design-to-dev flow are specific to Figma's value proposition. The color palette (#a259ff, #18a0fb) matches Figma's brand.",
+      "evidence": "Colors array: 'const colors = [\"#a259ff\", \"#18a0fb\", \"#1dd1a1\", \"#ff6b6b\", \"#ffd93d\"]' matches Figma's palette. Text: 'In the browser. Real-time. Everyone sees the same canvas.' and 'Design and dev on the same surface. Prototype becomes product.' are specific Figma truths. CTA: 'figma.com'."
+    },
+    "viewer_state": {
+      "score": 4,
+      "rationale": "Clear emotional arc: Scene 1 creates recognition of pain (isolation), Scene 2 delivers relief/excitement (collaboration), Scene 3 provides aspiration/possibility (direct shipping). Each state builds on the previous. The viewer moves from problem-aware to solution-excited to action-ready.",
+      "evidence": "Scene 1: 'Design happened alone. Every designer worked in isolation. Files passed like notes.' (establishes problem). Scene 2: 'Design happens together. In the browser. Real-time.' (presents solution). Scene 3: 'Ship directly from design... Prototype becomes product.' (shows outcome). Tense shift from past to present reinforces transformation."
+    },
+    "point_of_view": {
+      "score": 4,
+      "rationale": "The composition takes a clear position: design was broken by isolation, and Figma fixed it by making collaboration the default. The POV is that collaboration isn't a feature—it's the fundamental shift. The cursor metaphor throughout commits to this perspective.",
+      "evidence": "The structural choice to show cursors as the visual metaphor (not UI mockups, not logos) reveals a perspective: Figma is about people working together, not about the tool itself. The progression 'alone → together → ship' is a specific argument about what matters, not a feature list."
+    },
+    "omission": {
+      "score": 5,
+      "rationale": "Three scenes, each earning its place in the narrative arc: problem → solution → outcome. No redundancy. The 30-second constraint is respected with ~8 seconds per scene plus overlaps. Every element serves the argument.",
+      "evidence": "Scene structure: 'duration=\"8s\"' × 3 scenes with 'overlap=\"0.8s\"'. No filler scenes, no repeated messages, no gratuitous brand moments. The CTA is integrated into the final scene rather than given its own scene. Canvas animations are content, not decoration."
+    }
+  },
+  "overall": 4.4,
+  "feedback": []
+}

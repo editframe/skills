@@ -1,0 +1,53 @@
+{
+  "taskId": "raycast-brand-awareness",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:54:04.674Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is the argument itself. Each scene uses addFrameTask with procedural canvas animation that carries semantic meaning—chaos/disorder for Spotlight's limitations, clean emergence for Raycast's clarity, radial expansion for extensibility. The animations aren't decoration; they embody the narrative.",
+      "evidence": "Scene 1 uses `addFrameTask` to draw 'frustrating search results — slow, scattered, growing disorder' with `const resultCount = Math.floor(progress * 40)` and tangled connecting lines. Scene 2 contrasts with 'Clean result items appearing (ordered, aligned, decisive)'. Scene 3 shows 'Extensions orbiting and radiating outward' with wave propagation. Text uses word-splitting with stagger: `animation-delay: calc(var(--ef-word-index) * 100ms)`"
+    },
+    "specificity": {
+      "score": 3,
+      "rationale": "The composition uses Raycast's orange color (#FF6B35) consistently and references real product attributes (launcher, extensions, commands, workflows). However, the visual metaphors (search field, extensions radiating) could apply to many launcher/productivity tools. The 'Spotlight comparison' is specific to Mac but generic in execution.",
+      "evidence": "Brand color: `rgba(255, 107, 53, ...)` used throughout. Scene 2 references 'Raycast orange border'. Scene 3 mentions 'Build your own commands. Your workflows.' But no Raycast-specific features like AI, snippets, window management, or the actual UI aesthetic are shown."
+    },
+    "viewer_state": {
+      "score": 4,
+      "rationale": "Clear emotional arc: frustration (chaos animation) → curiosity ('What if...') → empowerment (extensibility) → intended action (CTA). Each scene produces a distinct shift, and the canvas animations reinforce the emotional states—tangled mess resolving into clean order.",
+      "evidence": "Scene 1: 'same search. same limits. same friction' with scattered, chaotic dots. Scene 2: 'What if your launcher was instant' with clean search field emerging. Scene 3: 'Your workflows. Not theirs' with radiating extensions showing control/ownership. The visual disorder-to-order progression mirrors the emotional arc."
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "There's a clear perspective: 'Your default tools are holding you back, and you deserve control.' The chaos-to-order visual metaphor commits to this. However, it's a common productivity tool narrative—the 'you're being limited, break free' angle is well-worn territory.",
+      "evidence": "The POV is visible in 'You're still using Spotlight' (accusatory), 'same limits. same friction' (naming the pain), 'Your workflows. Not theirs' (ownership framing). The Spotlight-as-chaos vs Raycast-as-order visual system is consistent but not particularly novel."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Four scenes for a 30s video is appropriate, and each has a distinct role. However, Scene 4 (CTA) is truncated/incomplete in the code, and Scene 3's 'extensibility' message partially overlaps with Scene 2's 'instant' promise—both are about Raycast being better. The separation could be tighter.",
+      "evidence": "Scene 4 cuts off at `style=\"animation:` suggesting incomplete composition. Scene 2 ('instant') and Scene 3 ('Build your own commands') both argue 'Raycast > Spotlight' without strongly differentiated value propositions. The 8-second scenes could potentially be compressed."
+    }
+  },
+  "overall": 3.6,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition uses Raycast's brand color and mentions generic features (commands, workflows, extensions) but doesn't visualize anything uniquely Raycast—the actual command palette UI, AI features, clipboard history, or window management that differentiate it from Alfred, LaunchBar, or other launchers.",
+      "improvement": "Show Raycast's actual distinctive features: the AI chat interface, the specific extension store aesthetic, or real commands like 'Create Jira Ticket' or 'Translate with DeepL'. The canvas could render a stylized version of Raycast's actual UI rather than generic search fields."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "minor",
+      "observation": "The 'your defaults are limiting you' narrative is a standard productivity tool angle. The chaos-to-order visual metaphor, while well-executed, doesn't reveal anything specifically true about Raycast versus any other launcher replacement.",
+      "improvement": "Commit to a more distinctive angle—perhaps Raycast's developer-first ethos ('built by developers, for everyone'), or the idea that customization shouldn't require technical skill. The form could reflect Raycast's actual personality rather than generic 'empowerment' messaging."
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "Scene 4 is incomplete (code cuts off), and Scenes 2-3 both deliver variants of 'Raycast is better than your current tool' without clearly differentiated value propositions.",
+      "improvement": "Complete Scene 4 with a strong CTA. Consider whether Scene 2 (speed) and Scene 3 (extensibility) could be combined, or make their distinctions sharper—perhaps Scene 2 shows individual productivity, Scene 3 shows team/ecosystem benefits."
+    }
+  ]
+}

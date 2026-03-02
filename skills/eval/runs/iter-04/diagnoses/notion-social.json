@@ -1,0 +1,58 @@
+[
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic productivity features (Notes, Docs, Database, Tasks) and could describe any workspace tool. The visual symbol ⊞ is not Notion's actual logo.",
+      "improvement": "Reference Notion-specific concepts: blocks as the fundamental unit, slash commands, the wiki-database hybrid model, specific templates (roadmaps, team wikis). Use Notion's actual logo and visual language (the clean sans-serif aesthetic, the specific way pages nest)."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**You MUST use browser tools to load the actual website before any analysis.**\n\n1. Navigate to the URL with your available browser tools\n2. Take screenshots of homepage and key pages\n3. Inspect CSS to extract exact color hex codes\n4. Download logo and brand assets (3-5 minimum)",
+    "cause": "missing",
+    "proposedChange": "Add after \"4. Download logo and brand assets (3-5 minimum)\":\n\n5. Identify the product's **core abstraction** — the fundamental unit or concept the product is built around (e.g., Notion's \"blocks\", Linear's \"issues\", Figma's \"frames\"). This abstraction must appear in the composition.\n6. Extract **product-specific terminology** from the UI and marketing (e.g., slash commands, database views, linked mentions) — generic category terms (notes, docs, tasks) are not specific enough.",
+    "rationale": "The model used generic productivity terms because the skill never required identifying the product's unique conceptual vocabulary and core abstraction during analysis."
+  },
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic productivity features (Notes, Docs, Database, Tasks) and could describe any workspace tool. The visual symbol ⊞ is not Notion's actual logo.",
+      "improvement": "Reference Notion-specific concepts: blocks as the fundamental unit, slash commands, the wiki-database hybrid model, specific templates (roadmaps, team wikis). Use Notion's actual logo and visual language (the clean sans-serif aesthetic, the specific way pages nest)."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Do NOT:**\n- Infer visual identity from text descriptions\n- Assume design patterns based on industry\n- Use text content as substitute for visual analysis\n- Hallucinate brand colors, fonts, or design language\n- Use `bars-n-tone.mp4` or any placeholder media in the final composition — use brand-color backgrounds, canvas animations, or actual product footage URLs instead",
+    "cause": "missing",
+    "proposedChange": "Add to the \"Do NOT\" list:\n- Use placeholder symbols or invented logos — extract the actual brand mark from the website\n- Use generic category features (\"notes\", \"docs\", \"tasks\") — use the brand's specific feature names as they appear in their product UI",
+    "rationale": "The model invented a symbol ⊞ and used generic feature names because the skill didn't explicitly prohibit placeholder logos or generic terminology."
+  },
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The chaos-to-order narrative is standard productivity advertising. The composition doesn't express what makes Notion's approach to organization different.",
+      "improvement": "Build the composition around Notion's actual philosophy: information as interconnected blocks, not siloed apps. Show the same piece of information appearing in multiple contexts (a database row becoming a page, a mention linking to a doc). The form should demonstrate Notion's 'everything is a block' mental model."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"",
+    "cause": "wrong_priority",
+    "proposedChange": "Add a third example specifically about interconnection/composition products:\n\nNot: \"Notion organizes everything, so I'll show chaos becoming order\" (any productivity tool claims this).\nYes: \"Notion's core unit is the block — everything is the same thing in different contexts. So the video shows one piece of information transforming: a row becomes a page, a mention becomes a link, the same block appears in three places.\"",
+    "rationale": "The model fell back on chaos-to-order because the examples didn't demonstrate how to handle products whose differentiation is about composability and interconnection rather than speed or simplicity."
+  },
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The chaos-to-order narrative is standard productivity advertising. The composition doesn't express what makes Notion's approach to organization different.",
+      "improvement": "Build the composition around Notion's actual philosophy: information as interconnected blocks, not siloed apps. Show the same piece of information appearing in multiple contexts (a database row becoming a page, a mention linking to a doc). The form should demonstrate Notion's 'everything is a block' mental model."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"",
+    "cause": "missing",
+    "proposedChange": "Add to the false differentiators list:\n- Productivity tools: \"organize everything\", \"one place for all your work\", \"chaos to order\", \"scattered to organized\", \"simplify your workflow\"\n\nAdd guidance after the list:\n**Productivity tool test:** If your concept is \"scattered things become organized,\" you have not found the differentiator. Every productivity tool claims this. Ask instead: what is the *mechanism* of organization that is unique to this product? (Notion: blocks that can be anything. Coda: docs that are also apps. Roam: bidirectional links.)",
+    "rationale": "The model used chaos-to-order because the false differentiators list didn't explicitly flag this common productivity-tool cliché or require identifying the specific mechanism of organization."
+  }
+]

@@ -1,0 +1,221 @@
+<ef-timegroup mode="sequence" overlap="0.8s" class="absolute w-full h-full">
+    
+    <!-- SCENE 1: Problem / Fragmentation (0-6s) -->
+    <ef-timegroup mode="fixed" duration="6s" class="absolute w-full h-full bg-white">
+      <div class="absolute inset-0 flex items-center justify-center">
+        <canvas id="scene1-canvas" class="canvas-container"></canvas>
+      </div>
+      <ef-text
+        split="word"
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-figma-dark text-5xl font-bold text-center max-w-2xl"
+        style="animation: 0.7s word-reveal both; animation-delay: calc(1.5s + var(--ef-word-index) * 100ms); z-index: 10;"
+      >Design alone in files</ef-text>
+    </ef-timegroup>
+
+    <!-- SCENE 2: Solution / Multiplicity (6-13s) -->
+    <ef-timegroup mode="fixed" duration="7s" class="absolute w-full h-full bg-figma-purple" style="animation: cross-fade-in 0.8s both;">
+      <div class="absolute inset-0 flex items-center justify-center">
+        <canvas id="scene2-canvas" class="canvas-container"></canvas>
+      </div>
+      <ef-text
+        split="word"
+        class="absolute top-1/3 left-1/2 -translate-x-1/2 text-figma-dark text-6xl font-bold text-center"
+        style="animation: 0.8s word-reveal both; animation-delay: calc(0.5s + var(--ef-word-index) * 100ms); z-index: 10;"
+      >Design together</ef-text>
+      <ef-text
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 text-figma-purple text-2xl text-center max-w-xl"
+        style="animation: 0.6s element-fade-in 2s both; z-index: 10;"
+      >In the browser. In real time.</ef-text>
+    </ef-timegroup>
+
+    <!-- SCENE 3: Multiplicity / Simultaneity (13-20s) -->
+    <ef-timegroup mode="fixed" duration="7s" class="absolute w-full h-full bg-figma-dark" style="animation: cross-fade-in 0.8s both;">
+      <div class="absolute inset-0 flex items-center justify-center">
+        <canvas id="scene3-canvas" class="canvas-container"></canvas>
+      </div>
+      <ef-text
+        split="word"
+        class="absolute bottom-1/3 left-1/2 -translate-x-1/2 text-white text-5xl font-bold text-center"
+        style="animation: 0.7s word-reveal both; animation-delay: calc(1s + var(--ef-word-index) * 100ms); z-index: 10;"
+      >Same design, infinite voices</ef-text>
+    </ef-timegroup>
+
+    <!-- SCENE 4: Development (20-27s) -->
+    <ef-timegroup mode="fixed" duration="7s" class="absolute w-full h-full bg-white" style="animation: cross-fade-in 0.8s both;">
+      <div class="absolute inset-0 flex items-center justify-center overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-purple-50 to-blue-50"></div>
+      </div>
+      <ef-text
+        split="word"
+        class="absolute top-1/3 left-1/2 -translate-x-1/2 text-figma-dark text-5xl font-bold text-center"
+        style="animation: 0.7s word-reveal both; animation-delay: calc(0.8s + var(--ef-word-index) * 100ms); z-index: 10;"
+      >Design to code, seamless</ef-text>
+      <ef-text
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 text-gray-600 text-xl text-center max-w-lg"
+        style="animation: 0.6s element-fade-in 2.2s both; z-index: 10;"
+      >Handoff happens automatically</ef-text>
+    </ef-timegroup>
+
+    <!-- SCENE 5: CTA / Transformation (27-30s) -->
+    <ef-timegroup mode="fixed" duration="3s" class="absolute w-full h-full bg-gradient-to-br from-purple-600 to-blue-600 flex flex-col items-center justify-center" style="animation: cross-fade-in 0.6s both;">
+      <ef-text
+        class="text-white text-7xl font-bold mb-4"
+        style="animation: 0.5s layer-scale 0.4s both;"
+      >Figma</ef-text>
+      <ef-text
+        class="text-white/90 text-3xl text-center max-w-2xl"
+        style="animation: 0.5s element-fade-in 0.8s both;"
+      >The collaborative design platform</ef-text>
+    </ef-timegroup>
+
+  </ef-timegroup>
+
+  <script>
+    // SCENE 1: Fragmented, isolated boxes (the problem of single-player design)
+    const scene1 = document.getElementById('scene1-canvas');
+    const scene1Ctx = scene1.getContext('2d');
+    
+    const tg1 = document.querySelector('ef-timegroup ef-timegroup:nth-child(1)');
+    tg1.initializer = (instance) => {
+      instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        scene1.width = scene1.offsetWidth;
+        scene1.height = scene1.offsetHeight;
+        const progress = ownCurrentTimeMs / durationMs;
+        
+        scene1Ctx.clearRect(0, 0, scene1.width, scene1.height);
+        
+        // 5 isolated boxes drifting apart
+        const boxes = [
+          { x: 0.3, y: 0.2, id: 0 },
+          { x: 0.7, y: 0.3, id: 1 },
+          { x: 0.2, y: 0.6, id: 2 },
+          { x: 0.6, y: 0.7, id: 3 },
+          { x: 0.45, y: 0.5, id: 4 }
+        ];
+        
+        scene1Ctx.fillStyle = '#e5e7eb';
+        boxes.forEach((box, idx) => {
+          const drift = progress * 80;
+          const offsetX = Math.sin(idx * 0.8) * drift;
+          const offsetY = Math.cos(idx * 1.2) * drift;
+          
+          const x = box.x * scene1.width + offsetX;
+          const y = box.y * scene1.height + offsetY;
+          
+          scene1Ctx.fillRect(x - 30, y - 30, 60, 60);
+          
+          scene1Ctx.fillStyle = '#a78bfa';
+          scene1Ctx.font = 'bold 20px sans-serif';
+          scene1Ctx.textAlign = 'center';
+          scene1Ctx.textBaseline = 'middle';
+          scene1Ctx.fillText(String(idx + 1), x, y);
+          
+          scene1Ctx.fillStyle = '#e5e7eb';
+        });
+      });
+    };
+
+    // SCENE 2: Converging points meeting at center (multiple people, same file)
+    const scene2 = document.getElementById('scene2-canvas');
+    const scene2Ctx = scene2.getContext('2d');
+    
+    const allTimegroups = document.querySelectorAll('ef-timegroup ef-timegroup');
+    const tg2 = allTimegroups[1];
+    
+    tg2.initializer = (instance) => {
+      instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        scene2.width = scene2.offsetWidth;
+        scene2.height = scene2.offsetHeight;
+        const progress = ownCurrentTimeMs / durationMs;
+        
+        scene2Ctx.clearRect(0, 0, scene2.width, scene2.height);
+        
+        const centerX = scene2.width / 2;
+        const centerY = scene2.height / 2;
+        
+        // 4 cursors converging to center (representing multiple users)
+        const cursors = [
+          { angle: 0, color: '#f97316' },      // orange
+          { angle: Math.PI / 2, color: '#ec4899' },    // pink
+          { angle: Math.PI, color: '#06b6d4' },        // cyan
+          { angle: (3 * Math.PI) / 2, color: '#8b5cf6' } // violet
+        ];
+        
+        cursors.forEach((cursor) => {
+          const startDist = 200;
+          const endDist = 60;
+          const currentDist = startDist - (startDist - endDist) * progress;
+          
+          const x = centerX + Math.cos(cursor.angle) * currentDist;
+          const y = centerY + Math.sin(cursor.angle) * currentDist;
+          
+          // Draw cursor circle
+          scene2Ctx.beginPath();
+          scene2Ctx.arc(x, y, 25, 0, Math.PI * 2);
+          scene2Ctx.fillStyle = cursor.color;
+          scene2Ctx.fill();
+          
+          // Draw line to center
+          scene2Ctx.beginPath();
+          scene2Ctx.moveTo(x, y);
+          scene2Ctx.lineTo(centerX, centerY);
+          scene2Ctx.strokeStyle = cursor.color;
+          scene2Ctx.globalAlpha = 0.3;
+          scene2Ctx.lineWidth = 2;
+          scene2Ctx.stroke();
+          scene2Ctx.globalAlpha = 1;
+        });
+        
+        // Central point that grows
+        scene2Ctx.beginPath();
+        scene2Ctx.arc(centerX, centerY, 20 + progress * 40, 0, Math.PI * 2);
+        scene2Ctx.fillStyle = '#7c3aed';
+        scene2Ctx.globalAlpha = 0.3 + progress * 0.3;
+        scene2Ctx.fill();
+        scene2Ctx.globalAlpha = 1;
+      });
+    };
+
+    // SCENE 3: Multiple layers stacking (simultaneity, voices, edits accumulating)
+    const scene3 = document.getElementById('scene3-canvas');
+    const scene3Ctx = scene3.getContext('2d');
+    
+    const tg3 = allTimegroups[2];
+    
+    tg3.initializer = (instance) => {
+      instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        scene3.width = scene3.offsetWidth;
+        scene3.height = scene3.offsetHeight;
+        const progress = ownCurrentTimeMs / durationMs;
+        
+        scene3Ctx.clearRect(0, 0, scene3.width, scene3.height);
+        
+        const centerX = scene3.width / 2;
+        const centerY = scene3.height / 2;
+        const baseSize = 100;
+        
+        // Multiple layers accumulating on top of each other
+        const layerCount = Math.floor(progress * 8) + 1;
+        
+        for (let i = 0; i < layerCount; i++) {
+          const layerProgress = (progress * 8 - i);
+          if (layerProgress < 0) continue;
+          
+          const scale = 1 + (layerProgress * 0.3);
+          const opacity = Math.max(0, 1 - layerProgress * 0.5);
+          const rotation = i * (Math.PI / 6) + ownCurrentTimeMs * 0.0005;
+          
+          const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#6c5ce7', '#a29bfe', '#fd79a8', '#fdcb6e'];
+          
+          scene3Ctx.save();
+          scene3Ctx.translate(centerX, centerY);
+          scene3Ctx.rotate(rotation);
+          scene3Ctx.globalAlpha = opacity;
+          
+          scene3Ctx.fillStyle = colors[i % colors.length];
+          const size = baseSize * scale;
+          scene3Ctx.fillRect(-size / 2, -size / 2, size, size);
+          
+          scene3Ctx.restore();
+        }
+      });

@@ -1,0 +1,157 @@
+<ef-timegroup mode="sequence" class="container">
+    <!-- SCENE 1: The Problem (Chaos of Building Without Supabase) - 0s to 10s -->
+    <ef-timegroup mode="fixed" duration="10s" class="scene">
+      <div class="overlay"></div>
+      <canvas id="chaos-canvas"></canvas>
+      <div class="content">
+        <ef-text class="text-primary" style="font-size: 48px; margin-bottom: 16px; animation: slide-up 0.6s ease-out both">
+          Building backend without Supabase
+        </ef-text>
+        <ef-text class="text-secondary" style="font-size: 20px; max-width: 600px; animation: slide-up 0.6s ease-out both 0.2s">
+          Spinning up servers, managing databases, writing authentication from scratch, building APIs...
+        </ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- SCENE 2: The Problem Revealed (Specific Pain Points) - 10s to 18s -->
+    <ef-timegroup mode="fixed" duration="8s" class="scene" style="animation: fade-in 0.8s ease-out both, fade-out 0.8s ease-in var(--ef-transition-out-start) both">
+      <div class="overlay"></div>
+      <div class="content">
+        <ef-text class="text-primary" style="font-size: 32px; margin-bottom: 32px; animation: slide-up 0.6s ease-out both">
+          The middleware explosion
+        </ef-text>
+        <div class="grid-3" style="animation: scale-in 0.6s ease-out both 0.3s">
+          <div class="grid-item">
+            <div class="icon">🔐</div>
+            <div class="text-secondary">Auth layer</div>
+          </div>
+          <div class="grid-item">
+            <div class="icon">⚙️</div>
+            <div class="text-secondary">API gateway</div>
+          </div>
+          <div class="grid-item">
+            <div class="icon">💾</div>
+            <div class="text-secondary">Database</div>
+          </div>
+        </div>
+        <ef-text class="text-secondary" style="font-size: 16px; margin-top: 24px; animation: slide-up 0.6s ease-out both 0.4s">
+          All separate. All talking to each other. All things that can break.
+        </ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- SCENE 3: The Reveal (Supabase Unified Model) - 18s to 28s -->
+    <ef-timegroup mode="fixed" duration="10s" class="scene" style="animation: fade-in 0.8s ease-out both, fade-out 0.8s ease-in var(--ef-transition-out-start) both">
+      <div class="overlay"></div>
+      <canvas id="unified-canvas"></canvas>
+      <div class="content">
+        <ef-text class="text-primary" style="font-size: 48px; margin-bottom: 8px; animation: slide-up 0.6s ease-out both">
+          Meet
+        </ef-text>
+        <ef-text class="text-primary" style="font-size: 56px; margin-bottom: 24px; animation: slide-up 0.6s ease-out both 0.15s">
+          <span class="text-accent">Supabase</span>
+        </ef-text>
+        <ef-text class="text-secondary" style="font-size: 18px; max-width: 500px; animation: slide-up 0.6s ease-out both 0.3s">
+          One Postgres database. Everything else comes from it.
+        </ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- SCENE 4: The Unified Object Model - 28s to 36s -->
+    <ef-timegroup mode="fixed" duration="8s" class="scene" style="animation: fade-in 0.8s ease-out both, fade-out 0.8s ease-in var(--ef-transition-out-start) both">
+      <div class="overlay"></div>
+      <div class="content">
+        <ef-text class="text-primary" style="font-size: 28px; margin-bottom: 32px; animation: slide-up 0.6s ease-out both">
+          Same data. Everywhere.
+        </ef-text>
+        <div class="code-block" style="animation: scale-in 0.6s ease-out both 0.2s">
+          <div style="color: #94a3b8; margin-bottom: 8px">// Your table in Postgres</div>
+          <div>const { data } = await supabase</div>
+          <div style="margin-left: 20px; color: #22c55e">.from('users')</div>
+          <div style="margin-left: 20px; color: #22c55e">.select('*')</div>
+          <div style="color: #94a3b8; margin-top: 8px">// Just SQL. Instant REST API.</div>
+        </div>
+        <ef-text class="text-secondary" style="font-size: 14px; margin-top: 16px; animation: slide-up 0.6s ease-out both 0.4s">
+          Auth, RLS, real-time subscriptions — all from one source of truth
+        </ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- SCENE 5: The Solution (What You Get) - 36s to 42s -->
+    <ef-timegroup mode="fixed" duration="6s" class="scene" style="animation: fade-in 0.8s ease-out both, fade-out 0.8s ease-in var(--ef-transition-out-start) both">
+      <div class="overlay"></div>
+      <div class="content">
+        <ef-text class="text-primary" style="font-size: 36px; margin-bottom: 32px; animation: slide-up 0.6s ease-out both">
+          Everything built in
+        </ef-text>
+        <div class="grid-3" style="animation: scale-in 0.6s ease-out both 0.2s">
+          <div class="grid-item">
+            <div class="icon">🗄️</div>
+            <div class="text-secondary" style="font-size: 14px">Postgres DB</div>
+          </div>
+          <div class="grid-item">
+            <div class="icon">🔑</div>
+            <div class="text-secondary" style="font-size: 14px">Auth + RLS</div>
+          </div>
+          <div class="grid-item">
+            <div class="icon">⚡</div>
+            <div class="text-secondary" style="font-size: 14px">Edge Functions</div>
+          </div>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- SCENE 6: Call to Action - 42s to 45s -->
+    <ef-timegroup mode="fixed" duration="3s" class="scene" style="animation: fade-in 0.8s ease-out both">
+      <div class="overlay"></div>
+      <div class="content">
+        <ef-text class="text-primary" style="font-size: 40px; animation: slide-up 0.6s ease-out both">
+          Start building
+        </ef-text>
+        <button class="cta-button" style="animation: scale-in 0.6s ease-out both 0.2s">
+          Go to Supabase
+        </button>
+      </div>
+    </ef-timegroup>
+  </ef-timegroup>
+
+  <script>
+    // Scene 1: Chaos canvas - tangled connections representing fragmented backend
+    const chaosCanvas = document.getElementById('chaos-canvas');
+    if (chaosCanvas) {
+      const chaosScene = document.querySelector('ef-timegroup .scene');
+      const tg = chaosScene.closest('ef-timegroup');
+      
+      tg.initializer = (instance) => {
+        instance.addFrameTask((info) => {
+          const canvas = chaosCanvas;
+          canvas.width = canvas.offsetWidth;
+          canvas.height = canvas.offsetHeight;
+          const ctx = canvas.getContext('2d');
+          const progress = info.ownCurrentTimeMs / info.durationMs;
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          // Draw tangled bezier curves representing complexity
+          const count = Math.floor(progress * 40);
+          for (let i = 0; i < count; i++) {
+            const seed = i * 137.5;
+            const sx = (Math.sin(seed) * 0.5 + 0.5) * canvas.width;
+            const sy = (Math.cos(seed * 0.7) * 0.5 + 0.5) * canvas.height;
+            const ex = (Math.sin(seed + progress * Math.PI) * 0.5 + 0.5) * canvas.width;
+            const ey = (Math.cos(seed * 0.7 + progress * Math.PI) * 0.5 + 0.5) * canvas.height;
+
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.quadraticCurveTo(
+              canvas.width * 0.5 + Math.sin(seed + info.ownCurrentTimeMs * 0.001) * 200,
+              canvas.height * 0.5 + Math.cos(seed + info.ownCurrentTimeMs * 0.001) * 200,
+              ex, ey
+            );
+            ctx.strokeStyle = `rgba(239, 68, 68, ${0.1 + (i / 40) * 0.4})`;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+          }
+
+          // Draw nodes
+          for (let i = 0; i

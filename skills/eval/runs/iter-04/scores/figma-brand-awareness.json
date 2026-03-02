@@ -1,0 +1,59 @@
+{
+  "taskId": "figma-brand-awareness",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:30:11.766Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural and intentional. Text splitting with word-level stagger, CSS animations with calculated delays using --ef-word-index, and two canvas-based procedural animations (collaboration nodes, cursor trails) that visualize the collaborative concept.",
+      "evidence": "split=\"word\" with animation-delay: calc(var(--ef-word-index) * 100ms), addFrameTask for collaboration-canvas drawing connecting nodes, cursor-canvas with trail animations using info.percentComplete to drive positions. However, the cursor canvas code appears truncated and motion doesn't quite reach 'the argument' level."
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "The composition uses Figma's general positioning (multiplayer design, real-time collaboration) but these are category-level truths shared by competitors. The brand color (#0d99ff) is referenced but no Figma-specific UI, terminology, or unique features are shown.",
+      "evidence": "brand-color-bg class references Figma blue, mentions 'Design and code, live together' and 'real-time cursors' - but Miro, Canva, or Framer could claim identical features. No mention of Dev Mode, auto-layout, variables, or Figma-specific vocabulary. 'Ship from the file' is generic."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc attempts frustration → revelation → relief → excitement → action. Scene 1 establishes pain ('Chaos'), Scene 2 reveals the solution, Scenes 3-4 build benefits, Scene 5 calls to action. The shifts are traceable but formulaic.",
+      "evidence": "Scene 1: 'Design alone doesn't ship...Chaos' (problem state). Scene 2: 'Everyone in the same canvas' (solution reveal). Scene 3: 'Ship from the file' (benefit). Scene 4: 'One source of truth' (benefit continuation - feels redundant). Scene 5: CTA. States 3 and 4 don't feel distinct."
+    },
+    "point_of_view": {
+      "score": 2,
+      "rationale": "There's an implied perspective that collaboration is the core value proposition, but this is Figma's official marketing position, not an authorial interpretation. The composition doesn't commit to a specific angle on what makes Figma's collaboration meaningful.",
+      "evidence": "The 'Design alone doesn't ship' framing hints at a POV about team dynamics, but it immediately retreats to feature descriptions ('Real-time cursors. Live updates.'). No choice reveals why this author believes in Figma specifically - just category benefits restated."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Five scenes for 30 seconds is reasonable, but Scenes 3 and 4 cover nearly identical ground ('no handoff' and 'real-time collaboration' are the same value proposition). Either could be cut or merged.",
+      "evidence": "Scene 3: 'No export. No reimport. Ship from the file' and Scene 4: 'Real-time cursors. Live updates. One source of truth.' Both argue 'collaboration eliminates handoff friction.' The cursor animation in Scene 4 doesn't add enough distinct value to justify separation."
+    }
+  },
+  "overall": 2.8,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition describes category-level collaboration features that any design tool competitor could claim. No Figma-specific capabilities, UI elements, or terminology are shown.",
+      "improvement": "Include specific Figma differentiators: Dev Mode's code inspection, variables/design tokens, FigJam integration, or show actual Figma UI patterns. Reference specific use cases that Figma dominates (design systems, component libraries)."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition restates Figma's official marketing positioning without adding an authorial interpretation. 'Multiplayer design' is their tagline, not a point of view.",
+      "improvement": "Take a specific stance: Is this about how Figma changed the power dynamic between designers and developers? About democratizing design? Pick one angle and let every scene serve it. For example: 'Design decisions used to be made alone, then explained. Now they're made together.'"
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "Scenes 3 and 4 produce similar viewer states (relief at eliminated friction) rather than building distinct emotional beats.",
+      "improvement": "If keeping both scenes, make them emotionally distinct. Scene 3 could focus on the relief of elimination (what you no longer have to do), Scene 4 on the joy of addition (new capabilities enabled). Currently both feel like 'handoff problem solved.'"
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "Scenes 3 and 4 cover overlapping territory about collaboration eliminating handoff friction.",
+      "improvement": "Merge into one scene or replace Scene 4 with a different value proposition (e.g., prototyping, design systems, community resources) to broaden the argument beyond just 'collaboration.'"
+    }
+  ]
+}

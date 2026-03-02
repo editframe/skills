@@ -1,0 +1,195 @@
+<ef-configuration media-engine="local">
+    <ef-timegroup mode="sequence" class="w-[1920px] h-[1080px] bg-black">
+      
+      <!-- Scene 1: The Problem (0s-10s) -->
+      <!-- Opinionated flow = issues progress through defined states, no ambiguous "in review forever" -->
+      <ef-timegroup mode="contain" class="absolute w-full h-full flex items-center justify-center" style="background: #0a0a0a;">
+        <div class="grid-bg"></div>
+        
+        <canvas id="chaos-canvas" class="chaos-animation"></canvas>
+        
+        <div class="absolute top-16 left-16">
+          <ef-text 
+            split="word"
+            class="text-white text-6xl font-bold"
+            style="animation: 0.6s slideUp both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+          >Issues that sit
+          </ef-text>
+          <ef-text 
+            split="word"
+            class="text-white text-6xl font-bold mt-4"
+            style="animation: 0.6s slideUp 0.2s both; animation-delay: calc(0.2s + var(--ef-word-index) * 100ms)"
+          >in review forever
+          </ef-text>
+        </div>
+
+        <div class="absolute bottom-16 right-16 text-right">
+          <ef-text class="text-white/40 text-sm" style="animation: 0.5s fadeIn 0.8s both">
+            Every project management tool claims to solve this
+          </ef-text>
+        </div>
+      </ef-timegroup>
+
+      <!-- Scene 2: Linear's Solution (10s-20s) -->
+      <!-- The opinionated workflow: issues have 3 states (Todo → In Progress → Done), no other state possible -->
+      <ef-timegroup mode="contain" class="absolute w-full h-full flex items-center justify-center" style="background: #0a0a0a;">
+        <div class="grid-bg"></div>
+
+        <div class="absolute inset-0 flex items-center justify-center gap-8">
+          <!-- Todo state card -->
+          <div class="issue-card" style="animation: 0.6s revealFromLeft 0.3s both">
+            <div class="issue-header">
+              <div class="issue-status" style="background: #666;"></div>
+              <span>Backlog</span>
+            </div>
+            <div class="issue-title">Implement WebSocket reconnection logic</div>
+            <div class="issue-footer">
+              <span>FEAT-421</span>
+              <span>Alex</span>
+            </div>
+            <div class="state-indicator state-todo">Not started</div>
+          </div>
+
+          <!-- Arrow transition -->
+          <div class="text-white/40 text-3xl" style="animation: 0.5s fadeIn 0.5s both">→</div>
+
+          <!-- In Progress state card -->
+          <div class="issue-card" style="animation: 0.6s scaleIn 0.6s both">
+            <div class="issue-header">
+              <div class="issue-status" style="background: #3b82f6;"></div>
+              <span>Active</span>
+            </div>
+            <div class="issue-title">Implement WebSocket reconnection logic</div>
+            <div class="issue-footer">
+              <span>FEAT-421</span>
+              <span>Alex</span>
+            </div>
+            <div class="state-indicator state-in-progress">In Progress</div>
+          </div>
+
+          <!-- Arrow transition -->
+          <div class="text-white/40 text-3xl" style="animation: 0.5s fadeIn 0.7s both">→</div>
+
+          <!-- Done state card -->
+          <div class="issue-card" style="animation: 0.6s revealFromRight 0.9s both">
+            <div class="issue-header">
+              <div class="issue-status" style="background: #00dc82;"></div>
+              <span>Completed</span>
+            </div>
+            <div class="issue-title">Implement WebSocket reconnection logic</div>
+            <div class="issue-footer">
+              <span>FEAT-421</span>
+              <span>Alex</span>
+            </div>
+            <div class="state-indicator state-done">Completed</div>
+          </div>
+        </div>
+
+        <div class="absolute top-16 left-16">
+          <ef-text class="text-white text-5xl font-bold" style="animation: 0.6s slideDown 0.4s both">
+            Opinionated flow
+          </ef-text>
+          <ef-text class="text-white/50 text-lg mt-2" style="animation: 0.5s fadeIn 0.6s both">
+            Issues move through defined states. No ambiguity.
+          </ef-text>
+        </div>
+
+        <div class="keyboard-hint" style="animation: 0.5s fadeIn 1.2s both">
+          press J to navigate
+        </div>
+      </ef-timegroup>
+
+      <!-- Scene 3: The Result (20s-30s) -->
+      <!-- Team velocity, predictability, shipping happens faster because friction is removed -->
+      <ef-timegroup mode="contain" class="absolute w-full h-full flex flex-col items-center justify-center" style="background: linear-gradient(135deg, #0a0a0a 0%, #111 100%);">
+        <div class="grid-bg"></div>
+
+        <div class="text-center">
+          <ef-text 
+            split="word"
+            class="text-white text-7xl font-bold"
+            style="animation: 0.7s scaleIn both; animation-delay: calc(var(--ef-word-index) * 80ms)"
+          >Your team ships
+          </ef-text>
+          <ef-text 
+            split="word"
+            class="text-white text-7xl font-bold mt-4"
+            style="animation: 0.7s scaleIn 0.2s both; animation-delay: calc(0.2s + var(--ef-word-index) * 80ms)"
+          >faster
+          </ef-text>
+
+          <div class="mt-12">
+            <ef-text class="text-white/60 text-xl" style="animation: 0.6s fadeIn 1.2s both">
+              When every issue has one path forward, teams don't debate workflow. They ship.
+            </ef-text>
+          </div>
+        </div>
+
+        <div class="absolute bottom-16 flex gap-6" style="animation: 0.6s slideUp 1.5s both">
+          <a class="cta-button">Start free trial</a>
+          <a class="cta-button" style="background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.2);">View pricing</a>
+        </div>
+
+        <!-- Metric visualization -->
+        <div class="absolute top-20 right-20">
+          <div class="text-right" style="animation: 0.6s slideUp 1s both">
+            <div class="text-4xl font-bold text-green-400">3x</div>
+            <div class="text-white/60 text-sm">faster issue triage</div>
+          </div>
+        </div>
+      </ef-timegroup>
+
+    </ef-timegroup>
+  </ef-configuration>
+
+  <script>
+    // Chaos canvas animation for Scene 1
+    // Represents the tangled state of issues across multiple tools (Jira, Asana, Notion)
+    // where no two systems agree on issue state
+    
+    customElements.whenDefined('ef-timegroup').then(() => {
+      const chaosCanvas = document.getElementById('chaos-canvas');
+      if (!chaosCanvas) return;
+
+      const ctx = chaosCanvas.getContext('2d');
+      const canvasContainer = chaosCanvas.parentElement;
+
+      // Find the first timegroup (Scene 1 - the problem scene)
+      const allTimegroups = document.querySelectorAll('ef-timegroup');
+      const problemScene = allTimegroups[1]; // Second timegroup (index 1) is Scene 1
+
+      if (!problemScene) return;
+
+      problemScene.initializer = (instance) => {
+        instance.addFrameTask((info) => {
+          const progress = info.ownCurrentTimeMs / info.durationMs;
+
+          chaosCanvas.width = 300;
+          chaosCanvas.height = 300;
+          ctx.clearRect(0, 0, 300, 300);
+
+          // Draw increasingly chaotic bezier curves
+          // Each curve represents an issue bouncing between states in different tools
+          const curveCount = Math.floor(progress * 40) + 10;
+
+          for (let i = 0; i < curveCount; i++) {
+            const seed = i * 137.5;
+            const startX = Math.sin(seed + progress * 3) * 100 + 150;
+            const startY = Math.cos(seed * 0.7 + progress * 2.5) * 100 + 150;
+            const cp1X = Math.sin(seed * 1.3 + progress * 2) * 80 + 150;
+            const cp1Y = Math.cos(seed * 0.9 + progress * 1.8) * 80 + 150;
+            const cp2X = Math.sin(seed * 1.7 + progress * 3.2) * 80 + 150;
+            const cp2Y = Math.cos(seed * 1.1 + progress * 2.2) * 80 + 150;
+            const endX = Math.sin(seed * 2 + progress * 4) * 100 + 150;
+            const endY = Math.cos(seed * 1.3 + progress * 3) * 100 + 150;
+
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.bezierCurveTo(cp1X, cp1Y, cp2X, cp2Y, endX, endY);
+            ctx.strokeStyle = `rgba(150, 150, 150, ${0.1 + progress * 0.3})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Dots at endpoints to show issue state uncertainty
+            ctx.fillStyle = `rgba(200, 100, 100, ${0.2 + progress * 0.3})`;
+            ctx

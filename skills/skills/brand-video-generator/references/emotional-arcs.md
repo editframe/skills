@@ -56,6 +56,22 @@ Without an intentional arc, videos feel flat or confusing.
 
 **Common mistake**: Not making problem painful enough - viewer won't care about solution
 
+**Timing mistake**: Cutting to the solution before the problem scene reaches peak intensity. If using an accumulation animation (waste piling, errors mounting), hold the scene 1-2 seconds past the visual climax. The viewer needs to sit in discomfort before relief is offered. Quantifying the problem with specific numbers ('11 million tons/year', '85% ends up in landfill') deepens the initial state and makes the transition to hope feel earned rather than rushed.
+
+**Reveal scenes require contrast setup:** When a scene contains a surprising or counter-normative claim (e.g., '100% of profits donated'), the previous scene must establish the norm being violated. Show what competitors/industry typically does FIRST, then reveal the difference. Visual techniques for earned reveals:
+- Numeric contrast: show industry average before the brand's number
+- Visual pause: insert a 0.5-1s beat of stillness before the reveal text animates
+- Scale visualization: don't just state the percentage — show it spatially (a bar filling completely vs. partially)
+- Animation escalation: the reveal scene should have MORE visual energy than preceding scenes, not the same
+
+**Landing the reveal with magnitude:** A percentage or mechanism alone doesn't create emotional impact—scale does. When revealing a counter-normative claim, the final beat must concretize the magnitude:
+- Cumulative totals: '$X million since founding', 'Y acres protected', 'Z tons diverted'
+- Specific outcomes: Name the grants, the land parcels, the species, the communities
+- Temporal scale: Show accumulation over time (counter ticking, map filling, timeline extending)
+- Human/environmental anchors: One protected watershed beats 'environmental causes'; one employee grant story beats 'employee programs'
+
+The test: Does the viewer leave with a number or image they could repeat to someone else? If the reveal is abstract ('100% goes to causes'), the arc informs but doesn't land.
+
 ---
 
 ### 2. The Transformation Arc
@@ -448,3 +464,33 @@ Music should move from tense to calm
 | Surprise | Expecting | Surprised | Delighted | Creative brands |
 | Reassurance | Anxious | Understanding | Calm | Healthcare, finance |
 | Momentum | Static | Moving | Accelerating | Growth platforms |
+
+## Short-Form Arc Compression (15-30s)
+
+Short videos (social, TikTok, Instagram) cannot sustain a traditional three-act arc. Instead, compress to a **three-beat structure**:
+
+**Beat 1 (0-50% of duration):** Establish one emotional state clearly — recognition, desire, tension, or curiosity.
+**Beat 2 (50-75% of duration):** Introduce friction, surprise, or reframe. This beat prevents the arc from feeling like a predictable slide deck. Show: a rejected idea, an unexpected constraint, a moment where the expected path was wrong, a tension between what the brand could do and what it chose to do.
+**Beat 3 (75-100% of duration):** Resolution that earns the emotional shift.
+
+**The surprise requirement for short-form**: Even at 15-30s, the viewer must encounter one moment where their assumption is challenged. 'Feedback → product' is a slide. 'Feedback → unexpected constraint/choice → product' is a story. If the arc can be summarized as 'A leads to B', add the beat that makes it 'A leads to unexpected C, which enables B.'
+
+**The shift must be causally earned, not just sequenced.** The viewer must understand WHY they moved from state A to state B. For community brands: show the mechanism of participation (your feedback → this ingredient). For transformation brands: show the before/after contrast in the same frame or object. A logo landing is not a resolution unless something in the video built toward it. Test: cover the logo — does the final scene still feel like arrival? If not, the arc is unearned.
+
+**Concreteness requirement for abstract claims:** When the emotional arc involves abstract concepts (listening, community, co-creation), each beat must contain at least one concrete artifact:
+- Beat 1 (establishing state): Show **verbatim text** from real customer requests, reviews, or community posts. 'Dots representing feedback' fails—the viewer must be able to read actual words they might have written themselves.
+- Beat 2 (friction/surprise): Name the specific constraint or tradeoff the brand made. 'We listened' is abstract; 'We combined 847 requests for a tinted moisturizer with SPF into one formula' is concrete.
+- Beat 3 (resolution): The reveal must be **identifiable without the brand name**. If 'G Suit' means nothing to the viewer, the scene has no payoff. Either show the product visually (recognizable packaging) or explain what it is in the same beat.
+
+**The viewer state test for community arcs:** At the reveal moment, ask: would the viewer feel 'that's MY feedback that made this' or just 'feedback in general made this'? The first is emotional; the second is intellectual. Abstract-to-abstract arcs (dots → product name) always produce the second.
+
+Abstract-to-abstract arcs (dots representing feedback → dots converging) fail the viewer state test because no specific information anchors the emotional shift.
+
+The shift must be felt, not just stated. At 15s, you have time for exactly one emotional movement. At 30s, you might have two movements but not three.
+
+**Anti-pattern for short-form:** Three scenes that all deliver the same soft/aspirational register. This produces a mood without an arc. Even a 15s video needs internal contrast — the last 5 seconds should feel different from the first 5 seconds.
+
+**Social-specific registers:**
+- Recognition → Desire (show me, then make me want it)
+- Curiosity → Satisfaction (hook, then payoff)
+- Intimacy → Belonging (personal, then communal)

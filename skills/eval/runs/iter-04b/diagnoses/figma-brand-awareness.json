@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The visual metaphors (converging cursors, layered edits) are generic collaboration imagery that could represent Miro, Notion, or any multiplayer tool. The Figma-specific details are in text only, not in form.",
+      "improvement": "Embed Figma-specific visual language: the distinctive Figma cursor shape, the component/variant relationship, the specific purple-blue-pink gradient palette as interactive elements, or the 'vector network' innovation that distinguishes Figma's approach to paths."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Visual Metaphor Quick Reference:**\n\nThese are starting points, not answers. The right-hand column is a generic default — replace it with something specific to this brand before using it.\n\n| Concept | Generic default (avoid) | What to find instead |\n|---------|------------------------|----------------------|\n| Chaos/Complexity | Tangled bezier curves | What does chaos *look like for this product's users specifically*? |\n| Order/Simplicity | Grid layouts, organized patterns | What does resolution look like *in this product's own UI or workflow*? |",
+    "cause": "present_wrong",
+    "proposedChange": "**Visual Metaphor Quick Reference:**\n\nThese are starting points, not answers. The right-hand column is a generic default — replace it with something specific to this brand before using it.\n\n| Concept | Generic default (avoid) | What to find instead |\n|---------|------------------------|----------------------|\n| Chaos/Complexity | Tangled bezier curves | What does chaos *look like for this product's users specifically*? |\n| Order/Simplicity | Grid layouts, organized patterns | What does resolution look like *in this product's own UI or workflow*? |\n| Collaboration | Multiple cursors converging | What is the *shape* of this product's collaboration? (Figma's cursor is a named, colored arrow — use that exact shape. Slack's is threaded replies. Notion's is inline comments.) |\n| Connection | Network nodes, generic lines | What specific visual artifact represents connection *in this product's UI*? Extract and animate the actual UI element, not an abstraction of it. |\n\n**UI-specific visual elements are not optional.** If the product has a distinctive cursor, component shape, color palette, or interaction pattern, those must appear in the video — not generic representations of the same concept. A collaboration video for Figma that doesn't show Figma's actual cursor shape has failed the specificity test.",
+    "rationale": "The current table warns against generic defaults but doesn't mandate using product-specific UI artifacts like Figma's distinctive cursor shape, causing the model to use generic collaboration imagery."
+  },
+  {
+    "taskId": "figma-brand-awareness",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition adopts the standard 'single-player vs. multiplayer' narrative that Figma pioneered but competitors have since copied. The perspective is category-defining but no longer brand-defining.",
+      "improvement": "Take a stance on what Figma specifically enables that others don't: the blurring of designer/developer roles, the democratization of design beyond specialists, or Figma's position as infrastructure (design as shared space) rather than tool. Let form follow that specific insight."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+    "cause": "missing",
+    "proposedChange": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nNot: \"Real-time collaboration\" (if the brand pioneered it but competitors now have it, it's category-defining, not brand-defining).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"\n\n**Category-defining vs. brand-defining:** If this brand invented a feature that competitors have since copied, that feature is now category table-stakes. Find what the brand does *now* that others still don't — or what structural belief (not feature) led them to build differently. For Figma: not \"multiplayer design\" (everyone has it) but \"design as shared infrastructure\" or \"the browser as the design surface\" (architectural choices competitors haven't matched).",
+    "rationale": "The model adopted Figma's pioneering 'multiplayer' narrative without recognizing that competitors have copied it; adding explicit guidance about category-defining vs. brand-defining truths would force the model to find a current differentiator."
+  }
+]

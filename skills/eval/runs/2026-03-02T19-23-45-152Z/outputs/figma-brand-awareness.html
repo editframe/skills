@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Figma — Design Together</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+    }
+
+    @keyframes slide-up {
+      from {
+        transform: translateY(24px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes scale-pop {
+      from {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { filter: drop-shadow(0 0 8px rgba(79, 184, 245, 0.4)); }
+      50% { filter: drop-shadow(0 0 16px rgba(79, 184, 245, 0.8)); }
+    }
+
+    ef-text-segment {
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <ef-configuration media-engine="local">
+    <ef-timegroup mode="sequence" class="w-[1080px] h-[1920px] bg-white">
+      <!-- Scene 1: Problem State (0-8s) - Fragmentation -->
+      <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full bg-gradient-to-b from-slate-50 to-slate-100 flex flex-col items-center justify-center overflow-hidden">
+        <canvas id="fragmentation" class="absolute inset-0 w-full h-full"></canvas>
+        <ef-text class="relative text-center text-slate-900 text-4xl font-bold px-8"
+          style="animation: 0.6s slide-up both 2s">
+          Designing alone, together
+        </ef-text>
+        <ef-text class="relative text-center text-slate-600 text-lg px-8 mt-6"
+          style="animation: 0.5s slide-up both 2.5s">
+          Files. Sync. Versions. Confusion.
+        </ef-text>
+      </ef-timegroup>
+
+      <!-- Scene 2: The URL (8-15s) - Revelation -->
+      <ef-timegroup mode="fixed" duration="7s" class="absolute w-full h-full bg-gradient-to-br from-blue-50 to-blue-100 flex flex-col items-center justify-center">
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="bg-white rounded-2xl shadow-2xl p-12 max-w-md w-full mx-6"
+            style="animation: 0.7s scale-pop both 0.5s">
+            <ef-text class="text-center text-blue-600 text-sm font-mono font-bold mb-4"
+              style="animation: 0.5s fade-in both 1s">
+              figma.com/file/xyz
+            </ef-text>
+            <ef-text class="text-center text-slate-900 text-2xl font-bold"
+              style="animation: 0.6s slide-up both 1.3s">
+              One URL
+            </ef-text>
+            <ef-text class="text-center text-slate-600 text-sm mt-4"
+              style="animation: 0.5s slide-up both 1.8s">
+              Share. Open. Design. Together.
+            </ef-text>
+          </div>
+        </div>
+      </ef-timegroup>
+
+      <!-- Scene 3: Multiplayer (15-24s) - The truth -->
+      <ef-timegroup mode="fixed" duration="9s" class="absolute w-full h-full bg-gradient-to-br from-slate-900 to-slate-800 flex flex-col items-center justify-center overflow-hidden">
+        <canvas id="multiplayer" class="absolute inset-0 w-full h-full"></canvas>
+        
+        <div class="relative z-10 text-center">
+          <ef-text split="word" class="text-white text-3xl font-bold mb-8 px-8"
+            style="animation: 0.5s slide-up both; animation-delay: calc(var(--ef-word-index) * 100ms)">
+            Real-time. Same URL. No merge conflicts.
+          </ef-text>
+          
+          <div class="flex justify-center gap-6 mt-12">
+            <div class="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold"
+              style="animation: 0.6s scale-pop both 1.5s">👩‍🎨</div>
+            <div class="w-16 h-16 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold"
+              style="animation: 0.6s scale-pop both 1.7s">👨‍💼</div>
+            <div class="w-16 h-16 rounded-full bg-pink-500 flex items-center justify-center text-white font-bold"
+              style="animation: 0.6s scale-pop both 1.9s">👩‍💻</div>
+          </div>
+        </div>
+      </ef-timegroup>
+
+      <!-- Scene 4: CTA (24-30s) - The resolution -->
+      <ef-timegroup mode="fixed" duration="6s" class="absolute w-full h-full bg-gradient-to-br from-blue-600 to-blue-700 flex flex-col items-center justify-center">
+        <ef-text class="text-white text-5xl font-bold text-center px-8 mb-6"
+          style="animation: 0.7s scale-pop both 0.3s; animation-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55)">
+          figma.com
+        </ef-text>
+        <ef-text class="text-blue-100 text-lg text-center px-8"
+          style="animation: 0.6s slide-up both 0.8s">
+          Design together. No friction.
+        </ef-text>
+      </ef-timegroup>
+    </ef-timegroup>
+  </ef-configuration>
+
+  <script>
+    // Fragmentation canvas — shows separated, chaotic design elements
+    const fragCanvas = document.getElementById('fragmentation');
+    const fragCtx = fragCanvas.getContext('2d');
+
+    function setupFragmentationCanvas() {
+      fragCanvas.width = fragCanvas.offsetWidth;
+      fragCanvas.height = fragCanvas.offsetHeight;
+    }
+
+    setupFragmentationCanvas();
+    window.addEventListener('resize', setupFragmentationCanvas);
+
+    // Multiplayer canvas — shows converging cursors/elements to a center
+    const multiCanvas = document.getElementById('multiplayer');
+    const multiCtx = multiCanvas.getContext('2d');
+
+    function setupMultiplayerCanvas() {
+      multiCanvas.width = multiCanvas.offsetWidth;
+      multiCanvas.height = multiCanvas.offsetHeight;
+    }
+
+    setupMultiplayerCanvas();
+    window.addEventListener('resize', setupMultiplayerCanvas);
+
+    // Attach frame tasks to scenes
+    const tg = document.querySelector('ef-timegroup');
+
+    tg.initializer = (instance) => {
+      // Fragmentation scene (0-8s)
+      instance.addFrameTask((info) => {
+        if (info.ownCurrentTimeMs < 8000) {
+          fragCtx.clearRect(0, 0, fragCanvas.width, fragCanvas.height);
+          
+          const progress = Math.min(info.ownCurrentTimeMs / 8000, 1);
+          const count = Math.floor(progress * 40);
+
+          fragCtx.fillStyle = 'rgba(51, 65, 85, 0.1)';
+          fragCtx.strokeStyle = 'rgba(51, 65, 85, 0.3)';
+          fragCtx.lineWidth = 1.5;
+
+          for (let i = 0; i < count; i++) {
+            const x = Math.random() * fragCanvas.width;
+            const y = Math.random() * fragCanvas.height;
+            const w = 60 + Math.random() * 80;
+            const h = 40 + Math.random() * 60;
+
+            fragCtx.strokeRect(x, y, w, h);
+            fragCtx.fillText('v' + Math.floor(Math.random() * 5), x + 8, y + 24);
+          }
+        }
+      });
+
+      // Multiplayer scene (15-24s) — converging cursors
+      instance.addFrameTask((info) => {
+        if (info.ownCurrentTimeMs >= 15000 && info.ownCurrentTimeMs < 24000) {
+          multiCtx.clearRect(0, 0, multiCanvas.width, multiCanvas.height);
+
+          const sceneProgress = (info.ownCurrentTimeMs - 15000) / 9000;
+          const cx = multiCanvas.width / 2;
+          const cy = multiCanvas.height / 2;
+
+          // Three cursors converging to center
+          const colors = ['#3b82f6', '#a855f7', '#ec4899'];
+          const startPositions = [
+            { x: 100, y: 100 },
+            { x: multiCanvas.width - 100, y: 100 },
+            { x: multiCanvas.width / 2, y: multiCanvas.height - 100 }
+          ];
+
+          for (let i = 0; i < 3; i++) {
+            const start = startPositions[i];
+            const x = start.x + (cx - start.x) * Math.pow(sceneProgress, 2);
+            const y = start.y + (cy - start.y) * Math.pow(sceneProgress, 2);
+
+            // Draw cursor
+            multiCtx.fillStyle = colors[i];
+            multiCtx.beginPath();
+            multiCtx.arc(x, y, 12, 0, Math.PI * 2);
+            multiCtx.fill();
+
+            // Draw orbit line
+            multiCtx.strokeStyle = colors[i] + '40';
+            multiCtx.lineWidth = 2;
+            multiCtx.beginPath();
+            multiCtx.moveTo(start.x, start.y);
+            multiCtx.lineTo(x, y);
+            multiCtx.stroke();
+          }
+
+          // Central URL sphere grows
+          const radius = 40 + sceneProgress * 30;
+          multiCtx.fillStyle = 'rgba(59, 130, 246, 0.2)';
+          multiCtx.beginPath();
+          multiCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+          multiCtx.fill();
+
+          multiCtx.strokeStyle = 'rgba(59, 130, 246, 0.6)';
+          multiCtx.lineWidth = 2;
+          multiCtx.stroke();
+        }
+      });
+    };
+  </script>
+</body>
+</html>

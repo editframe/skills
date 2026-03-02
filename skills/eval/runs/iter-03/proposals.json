@@ -1,0 +1,138 @@
+[
+  {
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "changes": [
+      {
+        "taskId": "linear-product-demo",
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "missing",
+        "currentText": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)",
+        "proposedChange": "**Visual Identity:**\n- Color palette with exact hex codes — **use these exact colors in the composition, not approximations**\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)\n- **Product UI elements**: Screenshot or describe 3-5 distinctive UI patterns from the actual product (sidebars, command palettes, specific workflows). These must appear in the composition — abstract representations of 'the product' are not acceptable.",
+        "rationale": "The model used generic blue and abstract DAGs because the skill never required extracting and using actual product UI elements and exact brand colors in the composition."
+      },
+      {
+        "taskId": "linear-product-demo",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"",
+        "proposedChange": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\n**The form must argue, not illustrate.** If your composition shows chaos then shows order, you've illustrated the marketing copy. If your composition *embodies* the brand's stance — e.g., remaining visually calm and minimal even while depicting speed, because Linear believes speed comes from focus not frenzy — then the form itself is making an argument the words don't make.\n\n**Test your PoV:** Write one sentence completing: \"This video argues that [brand] is right about [specific claim] by [formal choice that embodies it].\" If you can't complete this sentence, you don't have a point of view yet.",
+        "rationale": "The model adopted Linear's marketing language without interpreting it because the skill didn't explicitly require the form to argue something beyond illustrating the copy — the test for whether form is arguing vs illustrating was missing."
+      },
+      {
+        "taskId": "linear-product-demo",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "wrong_priority",
+        "currentText": "**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it.",
+        "proposedChange": "**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it.\n\n**Anti-pattern: Marketing ventriloquism.** If your scene's text says \"Ship faster\" and your visuals show \"fast things,\" you are illustrating copy, not arguing a perspective. The visual treatment must add meaning the words don't contain. Example failure: showing chaotic lines becoming ordered while text says \"Linear brings order to chaos\" — the visuals just repeat the text. Example success: showing calm, sparse, slow visuals while text says \"Ship faster\" — the form argues that Linear's speed comes from reduction, not acceleration.",
+        "rationale": "The PoV check existed but didn't explicitly call out the failure mode of visuals that merely illustrate the marketing copy, which is exactly what the model produced."
+      },
+      {
+        "taskId": "stripe-explainer",
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "| Chaos/Complexity | Tangled bezier curves | What does chaos *look like for this product's users specifically*? |",
+        "proposedChange": "| Chaos/Complexity | Tangled bezier curves | What does chaos *look like for this product's users specifically*? For payment brands: show the actual before-state (e.g., 4 different vendor logos, 3 currency symbols, code snippets from competing SDKs) — not abstract visual metaphors. |",
+        "rationale": "The table provides a generic prompt to 'find what chaos looks like' but doesn't enforce that payment/infrastructure brands must show literal vendor sprawl rather than abstract curves, which led directly to the non-specific bezier animation."
+      },
+      {
+        "taskId": "stripe-explainer",
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "- Payment brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\"",
+        "proposedChange": "- Payment brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\"\n\n**Visual specificity test for payment/infrastructure brands:** If your chaos animation could represent any API integration problem, it's not specific. Show the *named competitors or legacy systems* this brand replaces (e.g., \"Authorize.net + PayPal + currency converter\" not \"tangled lines\"). Show the *actual UI or code structure* that embodies the simplification (e.g., Stripe's 7-line integration, their dashboard's transaction view).",
+        "rationale": "The skill lists false differentiators to avoid but doesn't provide the concrete replacement — what TO show instead — which left the model defaulting to abstract bezier curves rather than specific competitive displacement."
+      },
+      {
+        "taskId": "notion-social",
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "| Chaos/Complexity | Tangled bezier curves | What does chaos *look like for this product's users specifically*? |",
+        "proposedChange": "| Chaos/Complexity | Tangled bezier curves, rotating abstract shapes | What does chaos *look like for this product's users specifically*? For workspace tools: show their actual fragmented UI (scattered tabs, disconnected apps, email/chat/docs chaos) — not abstract shapes. |",
+        "rationale": "The model used rotating rectangles converging, which is exactly the abstract shape pattern the table should warn against — adding explicit guidance that workspace tools must show actual fragmented UIs would have prevented this."
+      },
+      {
+        "taskId": "notion-social",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"",
+        "proposedChange": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Consolidates your tools\", \"everything in one place\", \"reduces fragmentation\", \"unified workspace\"\n- Workspace/productivity brands: \"fragmentation is the enemy\" is the category default — find what's specific about *how* this product unifies (blocks vs. pages vs. databases vs. folders)",
+        "rationale": "The model adopted 'fragmentation is the enemy' as its POV — explicitly listing consolidation/fragmentation language as a false differentiator for workspace tools would have forced the model to find Notion's specific approach."
+      },
+      {
+        "taskId": "notion-social",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content.",
+        "proposedChange": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. A POV about the *category problem* (fragmentation, chaos, slowness) is not a brand truth — it's what every competitor also believes. The answer must be about *this brand's specific approach* to solving it.\n\nNot: \"Tools are fragmented, so I'll show chaos becoming order\" (category POV).\nYes: \"Notion treats everything as composable blocks, so the video itself is built from blocks that rearrange\" (brand-specific formal constraint).",
+        "rationale": "The model's POV was about the category problem (fragmentation) rather than Notion's specific approach — adding an explicit example distinguishing category POV from brand-specific POV would have prevented this."
+      },
+      {
+        "taskId": "supabase-product-demo",
+        "dimension": "omission",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**Scene budget**: `floor(duration_seconds / 10)` is your maximum scene count. A 30s video gets 3 scenes. A 60s video gets 6. Start at the minimum and add only if the viewer-state arc requires it — not because you have things to say.",
+        "proposedChange": "**Scene budget**: `floor(duration_seconds / 10)` is your maximum scene count. A 30s video gets 3 scenes. A 60s video gets 6. Start at the minimum and add only if the viewer-state arc requires it — not because you have things to say.\n\n**Feature budget**: If a scene introduces product features, show a maximum of 2-3. Each feature needs distinct visual treatment or micro-interaction to be memorable. A grid of 6 identical items is a list, not a demonstration. If a feature has competitive importance (e.g., 'open source'), it may deserve its own scene rather than sharing space.",
+        "rationale": "The model crammed six features into one scene because there was no guidance limiting feature density or requiring distinct visual treatments per feature."
+      },
+      {
+        "taskId": "supabase-product-demo",
+        "dimension": "viewer_state",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]",
+        "proposedChange": "- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]\n- EMOTIONAL TARGET: [Name the specific feeling — 'I understand this' is not enough. Target 'I want to use this' or 'I see myself in this workflow' for product demos.]",
+        "rationale": "The model achieved 'understanding' but not 'desire to use' because the template didn't distinguish between cognitive comprehension and emotional activation as distinct targets."
+      },
+      {
+        "taskId": "supabase-product-demo",
+        "dimension": "viewer_state",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it. The structural constraint is the whole point — if it's not visible in scene 2, it won't be visible in scene 5 either.",
+        "proposedChange": "**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it. The structural constraint is the whole point — if it's not visible in scene 2, it won't be visible in scene 5 either.\n\n**Payoff scene check**: For product demos, identify which scene delivers the 'aha' moment — where the viewer shifts from understanding features to wanting to build. This scene needs full duration to land. If your most compelling visual (e.g., a workflow diagram, a real-time demo) is compressed into a transition or truncated, restructure to give it space.",
+        "rationale": "The DAG visualization that could have delivered emotional payoff was truncated because there was no guidance about protecting 'aha' moments from time pressure."
+      }
+    ]
+  },
+  {
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "changes": [
+      {
+        "taskId": "linear-product-demo",
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "present_wrong",
+        "currentText": "**The motion must be semantically connected to the specific product.** Generic particles or bezier curves say nothing. The form of the animation should demonstrate what is true about this brand and false about others:\n- Stripe: money moving without friction → particles that pass through each other without collision\n- Linear: work resolved without ambiguity → a tangled graph that converges to a clean DAG\n- Vercel: deploys as instant as saving a file → a ripple that expands to the edges the moment it starts",
+        "proposedChange": "**The motion must be semantically connected to the specific product.** Generic particles or bezier curves say nothing. The form of the animation should demonstrate what is true about this brand and false about others.\n\n**Bad examples (too abstract):**\n- Linear: a tangled graph that converges to a clean DAG — this is a visual metaphor anyone could use for 'order from chaos'\n- Stripe: particles that pass through each other — this could represent any frictionless system\n\n**Good examples (product-specific):**\n- Linear: Animate the actual Linear issue card with its status dot changing from yellow to green, the keyboard shortcut 'Cmd+K' appearing and resolving an action\n- Stripe: Show a Stripe Dashboard payment row appearing with the green 'Succeeded' badge, the actual checkout form completing\n- Vercel: The actual deployment progress bar filling, the preview URL appearing letter by letter\n\n**The test:** Could you swap the brand name and the animation would still make sense? If yes, it's too abstract. Show the product's actual interface elements, not metaphors for what the product does.",
+        "rationale": "The current examples actually encourage abstract metaphors ('tangled graph → DAG') rather than requiring actual product UI, which led the model to create generic visualizations."
+      },
+      {
+        "taskId": "stripe-explainer",
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "**The motion must be semantically connected to the specific product.** Generic particles or bezier curves say nothing. The form of the animation should demonstrate what is true about this brand and false about others:\n- Stripe: money moving without friction → particles that pass through each other without collision",
+        "proposedChange": "**The motion must be semantically connected to the specific product.** Generic particles or bezier curves say nothing. The form of the animation should demonstrate what is true about this brand and false about others:\n- Stripe: the before-state is vendor sprawl (show logos: Authorize.net, PayPal, Braintree converging into chaos), the after-state is their actual code (show the 7-line integration appearing clean). Abstract 'money particles' fail the specificity test.\n- For any infrastructure brand: if you can swap competitor names and the animation still works, start over.",
+        "rationale": "The Stripe example in composition-patterns suggests 'particles that pass through each other' which is still abstract — replacing it with concrete guidance to show actual vendor logos and real code would have forced the model toward specific rather than metaphorical visuals."
+      },
+      {
+        "taskId": "notion-social",
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**The motion must be semantically connected to the specific product.** Generic particles or bezier curves say nothing. The form of the animation should demonstrate what is true about this brand and false about others:",
+        "proposedChange": "**The motion must be semantically connected to the specific product.** Generic particles or bezier curves say nothing. Abstract shapes (rectangles, circles, polygons) converging or organizing are equally generic — they visualize 'unity' without showing *this product's* unity. The form of the animation should demonstrate what is true about this brand and false about others. For products with distinctive UI patterns (blocks, cards, components), use recognizable fragments of that UI rather than geometric abstractions:",
+        "rationale": "The model created abstract rectangles converging — this explicit warning against geometric abstractions for products with distinctive UI would have forced use of Notion's block structure."
+      }
+    ]
+  }
+]

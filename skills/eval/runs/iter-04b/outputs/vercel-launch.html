@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vercel Launch Video</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@editframe/elements@latest/styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #000;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(24px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes slideDown {
+      from { transform: translateY(-24px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes scaleIn {
+      from { transform: scale(0.96); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes pullApart {
+      0% {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    .vercel-black { background: #000; }
+    .vercel-white { color: #fff; }
+
+    .deploy-indicator {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #0070f3;
+    }
+
+    .deployment-badge {
+      display: inline-block;
+      background: rgba(0, 112, 243, 0.1);
+      border: 1px solid #0070f3;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #0070f3;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <ef-timegroup mode="sequence" overlap="0.8s" class="w-[1200px] h-[675px]">
+    <!-- Scene 1: The Problem - Deploy Friction (0s-4s) -->
+    <ef-timegroup mode="fixed" duration="4s" class="absolute w-full h-full bg-slate-950 flex items-center justify-center overflow-hidden">
+      <canvas id="deployment-chaos" class="absolute inset-0 size-full"></canvas>
+      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/40"></div>
+      <ef-text 
+        class="relative text-white text-5xl font-bold text-center max-w-2xl z-10"
+        style="animation: 0.6s slideUp 2s both"
+      >
+        Deployment is still broken
+      </ef-text>
+    </ef-timegroup>
+
+    <!-- Scene 2: The Shift - Instant Deploy (4.2s-8.5s) -->
+    <ef-timegroup mode="fixed" duration="4.3s" class="absolute w-full h-full vercel-black flex flex-col items-center justify-center overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-transparent to-transparent"></div>
+      
+      <ef-text 
+        split="word"
+        class="relative text-white text-6xl font-bold text-center max-w-3xl z-10"
+        style="animation: 0.5s slideUp both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+      >
+        Ship instantly
+      </ef-text>
+      
+      <div class="relative mt-8 z-10">
+        <div class="deployment-badge" style="animation: 0.7s scaleIn 1.2s both">
+          ✓ Deployed in 47ms
+        </div>
+      </div>
+
+      <canvas id="deploy-ripple" class="absolute inset-0 size-full"></canvas>
+    </ef-timegroup>
+
+    <!-- Scene 3: The Proof - Global Reach (8s-12.8s) -->
+    <ef-timegroup mode="fixed" duration="4.8s" class="absolute w-full h-full vercel-black flex flex-col items-center justify-center">
+      <div class="absolute inset-0 bg-gradient-to-b from-slate-900/50 to-black"></div>
+      
+      <canvas id="global-network" class="absolute inset-0 size-full"></canvas>
+      
+      <div class="relative z-10 text-center">
+        <ef-text 
+          class="text-blue-400 text-sm font-semibold tracking-wide mb-4"
+          style="animation: 0.5s slideDown 0.5s both"
+        >
+          DEPLOYED GLOBALLY
+        </ef-text>
+        
+        <ef-text 
+          split="word"
+          class="text-white text-5xl font-bold max-w-2xl"
+          style="animation: 0.6s slideUp 1s both; animation-delay: calc(var(--ef-word-index) * 90ms)"
+        >
+          Zero config. Everywhere.
+        </ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 4: The Call - Ship Now (12s-15s) -->
+    <ef-timegroup mode="fixed" duration="3s" class="absolute w-full h-full vercel-black flex flex-col items-center justify-center">
+      <div class="absolute inset-0 bg-gradient-to-t from-blue-900/30 to-transparent"></div>
+      
+      <ef-text 
+        split="word"
+        class="text-white text-6xl font-bold text-center mb-6"
+        style="animation: 0.7s slideUp both; animation-delay: calc(var(--ef-word-index) * 110ms)"
+      >
+        Ship the thing
+      </ef-text>
+      
+      <ef-text 
+        class="text-gray-400 text-xl"
+        style="animation: 0.6s slideUp 1.2s both"
+      >
+        Deploy on every push
+      </ef-text>
+    </ef-timegroup>
+  </ef-timegroup>
+
+  <script>
+    // Scene 1: Deployment Chaos Canvas
+    const chaosCanvas = document.getElementById('deployment-chaos');
+    if (chaosCanvas) {
+      const scene1 = chaosCanvas.closest('ef-timegroup');
+      if (scene1) {
+        scene1.initializer = (instance) => {
+          return instance.addFrameTask((info) => {
+            chaosCanvas.width = chaosCanvas.offsetWidth;
+            chaosCanvas.height = chaosCanvas.offsetHeight;
+            const ctx = chaosCanvas.getContext('2d');
+            const progress = info.ownCurrentTimeMs / info.durationMs;
+
+            ctx.clearRect(0, 0, chaosCanvas.width, chaosCanvas.height);
+
+            // 40 tangled deployment nodes accumulating
+            const nodeCount = Math.floor(progress * 40);
+            for (let i = 0; i < nodeCount; i++) {
+              const seed = i * 137.5;
+              const x = (Math.sin(seed + info.ownCurrentTimeMs * 0.0004) * 0.4 + 0.5) * chaosCanvas.width;
+              const y = (Math.cos(seed * 0.7 + info.ownCurrentTimeMs * 0.0003) * 0.4 + 0.5) * chaosCanvas.height;
+              const wobble = Math.sin(seed + progress * Math.PI * 2) * 15;
+              
+              ctx.beginPath();
+              ctx.arc(x + wobble, y, 3, 0, Math.PI * 2);
+              ctx.fillStyle = `rgba(239, 68, 68, ${0.6 * (1 - progress * 0.3)})`;
+              ctx.fill();
+
+              // Lines connecting to create chaos
+              if (i > 0 && i % 3 === 0) {
+                const prevSeed = (i - 1) * 137.5;
+                const prevX = (Math.sin(prevSeed + info.ownCurrentTimeMs * 0.0004) * 0.4 + 0.5) * chaosCanvas.width;
+                const prevY = (Math.cos(prevSeed * 0.7 + info.ownCurrentTimeMs * 0.0003) * 0.4 + 0.5) * chaosCanvas.height;
+                ctx.beginPath();
+                ctx.moveTo(prevX, prevY);
+                ctx.lineTo(x + wobble, y);
+                ctx.strokeStyle = `rgba(239, 68, 68, ${0.3 * (1 - progress * 0.2)})`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+              }
+            }
+          });
+        };
+      }
+    }
+
+    // Scene 2: Deploy Ripple Canvas
+    const rippleCanvas = document.getElementById('deploy-ripple');
+    if (rippleCanvas) {
+      const scene2Elements = document.querySelectorAll('ef-timegroup');
+      const scene2 = Array.from(scene2Elements)[1];
+      if (scene2) {
+        scene2.initializer = (instance) => {
+          return instance.addFrameTask((info) => {
+            rippleCanvas.width = rippleCanvas.offsetWidth;
+            rippleCanvas.height = rippleCanvas.offsetHeight;
+            const ctx = rippleCanvas.getContext('2d');
+            const progress = info.ownCurrentTimeMs / info.durationMs;
+
+            ctx.clearRect(0, 0, rippleCanvas.width, rippleCanvas.height);
+
+            const cx = rippleCanvas.width / 2;
+            const cy = rippleCanvas.height / 2;
+
+            // Instant ripple from center at progress=0.3
+            if (progress > 0.25) {
+              const rippleProgress = Math.min((progress - 0.25) / 0.75, 1);
+              const maxRadius = Math.sqrt(cx * cx + cy * cy) * 1.5;
+              const radius = rippleProgress * maxRadius;
+              const alpha = (1 - rippleProgress) * 0.6;
+
+              ctx.beginPath();
+              ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+              ctx.strokeStyle = `rgba(0, 112, 243, ${alpha})`;
+              ctx.lineWidth = 2;
+              ctx.stroke();
+
+              // Inner glow
+              ctx.beginPath();
+              ctx.arc(cx, cy, radius * 0.95, 0, Math.PI * 2);
+              ctx.strokeStyle = `rgba(0, 112, 243, ${alpha * 0.4})`;
+              ctx.lineWidth = 1;
+              ctx.stroke();
+            }
+
+            // Filled center that grows
+            const centerSize = Math.max(0, progress - 0.1) * 80;
+            if (centerSize > 0) {
+              ctx.beginPath();
+              ctx.arc(cx, cy, centerSize, 0, Math.PI * 2);
+              ctx.fillStyle = `rgba(0, 112, 243, ${0.3 * (1 - progress * 0.5)})`;
+              ctx.fill();
+            }
+          });
+        };
+      }
+    }
+
+    // Scene 3: Global Network Canvas
+    const networkCanvas = document.getElementById('global-network');
+    if (networkCanvas) {
+      const scene3Elements = document.querySelectorAll('ef-timegroup');
+      const scene3 = Array.from(scene3Elements)[2];
+      if (scene3) {
+        scene3.initializer = (instance) => {
+          return instance.addFrameTask((info) => {
+            networkCanvas.width = networkCanvas.offsetWidth;
+            networkCanvas.height = networkCanvas.offsetHeight;
+            const ctx = networkCanvas.getContext('2d');
+            const progress = info.ownCurrentTimeMs / info.durationMs;
+
+            ctx.clearRect(0, 0, networkCanvas.width, networkCanvas.height);
+
+            // 15 global deployment nodes orbiting
+            const nodeCount = 15;
+            for (let i = 0; i < nodeCount; i++) {
+              const angle = (i / nodeCount) * Math.PI * 2 + info.ownCurrentTimeMs * 0.0002;
+              const radius = 150 + Math.sin(i * 0.5 + progress * Math.PI) * 40;
+              const x = networkCanvas.width / 2 + Math.cos(angle) * radius;
+              const y = networkCanvas.height / 2 + Math.sin(angle) * radius;
+              const alpha = 0.4 + progress * 0.4;
+
+              // Node
+              ctx.beginPath();
+              ctx.arc(x, y, 6, 0, Math.PI * 2);
+              ctx.fillStyle = `rgba(0, 112, 243, ${alpha})`;
+              ctx.fill();
+
+              // Pulse
+              const pulseRadius = 6 + Math.sin(info.ownCurrentTimeMs * 0.003 + i) * 3;
+              ctx.beginPath();
+              ctx.arc(x, y, pulseRadius, 0, Math.PI * 2);
+              ctx.strokeStyle = `rgba(0, 112, 243, ${alpha * 0.3})`;
+              ctx.lineWidth = 1;
+              ctx.stroke();
+
+              // Connection to center
+              if (progress > 0.3 && i % 2 === 0) {
+                ctx.beginPath();
+                ctx.moveTo(networkCanvas.width / 2, networkCanvas.height / 2);
+                ctx.lineTo(x, y);
+                ctx.strokeStyle = `rgba(0, 112, 243, ${(progress - 0.3) * 0.5})`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+              }
+            }
+
+            // Center node
+            const centerAlpha = 0.7 + progress * 0.3;
+            ctx.beginPath();
+            ctx.arc(networkCanvas.width / 2, networkCanvas.height / 2, 12, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(0, 112, 243, ${centerAlpha})`;
+            ctx.fill();
+          });
+        };
+      }
+    }
+  </script>
+</body>
+</html>

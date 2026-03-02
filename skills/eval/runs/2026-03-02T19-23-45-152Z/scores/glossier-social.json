@@ -1,0 +1,53 @@
+{
+  "taskId": "glossier-social",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-03-02T19:24:31.592Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural and meaningful. The canvas animation uses addFrameTask with procedural generation where particles accumulate to visualize community building—the form carries conceptual meaning. CSS animations use staggered timing and custom cubic-bezier curves.",
+      "evidence": "Canvas uses `instance.addFrameTask((ownCurrentTimeMs, durationMs) => {...})` with golden spiral positioning (`phi = seed * 2.39996`) and progress-driven particle count (`Math.floor(progress * 200)`). Face entries use staggered delays (0s, 0.1s, 0.2s) with spring-like easing (`cubic-bezier(0.34, 1.56, 0.64, 1)`)."
+    },
+    "specificity": {
+      "score": 3,
+      "rationale": "Several Glossier-specific truths are visible: the 'skin first' philosophy, community-driven ethos ('by the people'), signature pink (#F4E4E1), and minimalist aesthetic. However, the execution could apply to other clean beauty brands like Kosas or Merit.",
+      "evidence": "Uses Glossier's signature pink (`glossier-pink { background: #F4E4E1 }`), their 'skin first' tagline, and 'You, Unfiltered' messaging. The community visualization metaphor aligns with their user-generated content strategy. But no specific products, no 'Boy Brow' or 'Cloud Paint', no Emily Weiss origin story."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc moves from community belonging (faces) → personal empowerment (You, Unfiltered) → brand philosophy (skin first). Each scene produces a shift, but the transitions feel formulaic and the emotional journey isn't deeply earned.",
+      "evidence": "Scene 1 establishes collective identity (three faces), Scene 2 pivots to individual affirmation ('You, Unfiltered'), Scene 3 grounds in philosophy ('skin first, by the people'). The progression is logical but the state changes are mild—curiosity to mild inspiration rather than transformation."
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "A clear perspective exists: Glossier's power comes from community, not brand authority. The canvas metaphor of particles forming a whole articulates this. But the execution still feels like it could be a brand template rather than a genuine authorial stance.",
+      "evidence": "Comment explicitly states the POV: 'Glossier's truth: the community builds the product, not the brand. Visual metaphor: individual dots (users/community members) forming a cohesive field.' This is a real perspective, but 'You, Unfiltered' and 'shop now' CTA feel like category conventions."
+    },
+    "omission": {
+      "score": 4,
+      "rationale": "Three scenes for 15 seconds is disciplined. Each scene has a distinct function: establish community, make personal, reveal philosophy. No obvious padding, though the CTA in Scene 2 could be questioned.",
+      "evidence": "Scene 1 (5s): faces/community. Scene 2 (4.5s effective): personal message + CTA. Scene 3 (5.5s effective): brand essence. The overlap transitions (`overlap='0.5s'`) are efficient. Only potential cut: the 'shop now' button feels obligatory rather than earned."
+    }
+  },
+  "overall": 3.4,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition uses Glossier's general brand philosophy but no specific product references, user testimonials, or distinctive brand moments that competitors couldn't claim.",
+      "improvement": "Include at least one specific Glossier product (Cloud Paint, Boy Brow, Balm Dotcom), reference their Into The Gloss origin, or use actual user-submitted imagery placeholders with attribution. The 'real skin, real stories' claim needs real evidence."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "The emotional arc progresses logically but doesn't create tension or surprise. Viewer moves from neutral to mildly warm without experiencing contrast or revelation.",
+      "improvement": "Introduce a moment of vulnerability or truth before the affirmation—perhaps a scene showing 'filtered' expectations being stripped away, making 'You, Unfiltered' feel like relief rather than just a tagline."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "minor",
+      "observation": "The community-builds-brand perspective is stated in code comments but the 'shop now' CTA undermines it by reverting to standard commercial framing.",
+      "improvement": "Replace transactional CTA with community-aligned action: 'share your skin story' or 'join the conversation'. If selling is required, make it feel like joining rather than purchasing—'get the routine' or 'start here'."
+    }
+  ]
+}

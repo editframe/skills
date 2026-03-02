@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition presents Supabase's official marketing narrative faithfully but doesn't offer a distinctive editorial perspective. The chaos-to-clarity arc and 'Postgres + everything' message are essentially Supabase's homepage copy in video form.",
+      "improvement": "Take a bolder stance—perhaps emphasize what Supabase asks you to give up (the 'freedom' of choosing best-of-breed tools), or position against a specific competitor ideology (Firebase's proprietary lock-in, or the Jamstack complexity explosion). Make the viewer think something they didn't already know about the category."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+    "cause": "present_wrong",
+    "proposedChange": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nNot: Restating the brand's own marketing copy (that's their perspective, not yours).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"\n\n**Your answer must be something the brand does NOT say about itself.** The brand's homepage already makes their case. Your job is to find the angle they can't or won't articulate—the trade-off they're asking users to accept, the competitor ideology they're implicitly rejecting, or the counterintuitive reason their approach works. If your answer appears anywhere on their website, it's not a point of view.",
+    "rationale": "The model faithfully reproduced Supabase's marketing narrative because the skill didn't explicitly prohibit using the brand's own messaging as the 'unique truth'—adding this constraint forces the model to find an editorial angle the brand itself doesn't state."
+  },
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition presents Supabase's official marketing narrative faithfully but doesn't offer a distinctive editorial perspective. The chaos-to-clarity arc and 'Postgres + everything' message are essentially Supabase's homepage copy in video form.",
+      "improvement": "Take a bolder stance—perhaps emphasize what Supabase asks you to give up (the 'freedom' of choosing best-of-breed tools), or position against a specific competitor ideology (Firebase's proprietary lock-in, or the Jamstack complexity explosion). Make the viewer think something they didn't already know about the category."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**2. What would be lost if this video never existed?**\n\nNot: \"People wouldn't know about the product\" (that's true of any video).\nYes: \"Nobody would see the contrast between how chaotic their industry is and how calm their workflow actually is.\"",
+    "cause": "missing",
+    "proposedChange": "**2. What would be lost if this video never existed?**\n\nNot: \"People wouldn't know about the product\" (that's true of any video).\nNot: \"The brand's message wouldn't reach this audience\" (that's distribution, not content).\nYes: \"Nobody would see the contrast between how chaotic their industry is and how calm their workflow actually is.\"\n\n**The answer must name a specific reframe or tension the viewer wouldn't encounter elsewhere.** Examples of valid tensions:\n- What this brand asks you to give up (and why that's worth it)\n- The competitor ideology this brand implicitly rejects\n- The counterintuitive trade-off that makes this approach work\n- Something true about the category that incumbents can't say",
+    "rationale": "The model defaulted to 'chaos-to-clarity' which is generic; explicitly requiring the video to surface a tension or trade-off (like 'what Supabase asks you to give up') would force a distinctive editorial angle."
+  }
+]

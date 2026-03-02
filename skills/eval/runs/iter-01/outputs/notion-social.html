@@ -1,0 +1,186 @@
+<ef-timegroup mode="sequence" overlap="0.8s" class="w-[1080px] h-[1920px] bg-white">
+  <!-- Scene 1: The Chaos (0s-3s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center" style="animation: 0.8s fade-out var(--ef-transition-out-start) both">
+    <canvas id="chaos-canvas" class="absolute inset-0 size-full"></canvas>
+    <ef-text class="absolute top-1/3 left-1/2 transform -translate-x-1/2 text-slate-900 text-5xl font-bold text-center z-10" style="animation: 0.6s scale-in 0.4s both; transform-origin: center">
+      Too many tabs
+    </ef-text>
+  </ef-timegroup>
+
+  <!-- Scene 2: The Problem Reveals (3s-7s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full bg-white flex flex-col items-center justify-center p-8" style="animation: 0.8s fade-in both">
+    <div class="absolute top-0 left-0 w-full h-1/3 bg-gradient-to-b from-blue-50 to-transparent"></div>
+    <ef-text split="word" class="text-slate-900 text-4xl font-bold text-center mb-8 relative z-10" style="animation: 0.5s word-in both; animation-delay: calc(var(--ef-word-index) * 100ms)">
+      Notes scattered everywhere
+    </ef-text>
+    <ef-text split="word" class="text-slate-600 text-2xl text-center max-w-md relative z-10" style="animation: 0.5s word-in both; animation-delay: calc(0.6s + var(--ef-word-index) * 100ms)">
+      Docs lost in folders
+    </ef-text>
+    <ef-text split="word" class="text-slate-600 text-2xl text-center max-w-md relative z-10" style="animation: 0.5s word-in both; animation-delay: calc(1.2s + var(--ef-word-index) * 100ms)">
+      No single source of truth
+    </ef-text>
+  </ef-timegroup>
+
+  <!-- Scene 3: One Workspace Intro (7s-10s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center" style="animation: 0.8s fade-out var(--ef-transition-out-start) both">
+    <canvas id="solution-canvas" class="absolute inset-0 size-full"></canvas>
+    <ef-text class="absolute text-white text-6xl font-bold text-center z-10 max-w-xs" style="animation: 0.7s scale-in-up 0.3s both">
+      One workspace
+    </ef-text>
+  </ef-timegroup>
+
+  <!-- Scene 4: Features Reveal (10s-14s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full bg-white flex flex-col items-center justify-center p-8" style="animation: 0.8s fade-in both">
+    <div class="grid grid-cols-2 gap-6 w-full max-w-md z-10 relative">
+      <div class="bg-blue-50 rounded-lg p-4 text-center" style="animation: 0.5s scale-in 0.2s both">
+        <div class="text-3xl mb-2">📝</div>
+        <ef-text class="text-sm font-semibold text-slate-900">Write</ef-text>
+      </div>
+      <div class="bg-purple-50 rounded-lg p-4 text-center" style="animation: 0.5s scale-in 0.4s both">
+        <div class="text-3xl mb-2">📋</div>
+        <ef-text class="text-sm font-semibold text-slate-900">Plan</ef-text>
+      </div>
+      <div class="bg-pink-50 rounded-lg p-4 text-center" style="animation: 0.5s scale-in 0.6s both">
+        <div class="text-3xl mb-2">📊</div>
+        <ef-text class="text-sm font-semibold text-slate-900">Database</ef-text>
+      </div>
+      <div class="bg-amber-50 rounded-lg p-4 text-center" style="animation: 0.5s scale-in 0.8s both">
+        <div class="text-3xl mb-2">✅</div>
+        <ef-text class="text-sm font-semibold text-slate-900">Manage</ef-text>
+      </div>
+    </div>
+    <ef-text class="absolute bottom-12 text-slate-900 text-2xl font-bold text-center" style="animation: 0.6s enter-up 1.2s both">
+      Everything in one place
+    </ef-text>
+  </ef-timegroup>
+
+  <!-- Scene 5: CTA (14s-15s) -->
+  <ef-timegroup mode="contain" class="absolute w-full h-full bg-gradient-to-br from-blue-600 to-indigo-700 flex flex-col items-center justify-center" style="animation: 0.8s fade-in both">
+    <ef-text class="text-white text-5xl font-bold mb-6 text-center" style="animation: 0.7s scale-in both">
+      Notion
+    </ef-text>
+    <ef-text class="text-blue-100 text-xl text-center" style="animation: 0.6s enter-up 0.4s both">
+      Your all-in-one workspace
+    </ef-text>
+  </ef-timegroup>
+</ef-timegroup>
+
+<style>
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+  @keyframes scale-in {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  @keyframes scale-in-up {
+    from { transform: scale(0.7) translateY(20px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  @keyframes word-in {
+    from { transform: translateY(16px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes enter-up {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+</style>
+
+<script>
+  const chaosCanvas = document.getElementById('chaos-canvas');
+  const chaosScene = chaosCanvas.parentElement.parentElement;
+  const chaosCtx = chaosCanvas.getContext('2d');
+
+  chaosScene.addFrameTask((ownCurrentTimeMs, durationMs) => {
+    chaosCanvas.width = chaosCanvas.offsetWidth;
+    chaosCanvas.height = chaosCanvas.offsetHeight;
+    const progress = ownCurrentTimeMs / durationMs;
+
+    chaosCtx.clearRect(0, 0, chaosCanvas.width, chaosCanvas.height);
+    chaosCtx.fillStyle = 'rgba(51, 65, 85, 0.08)';
+
+    // Draw increasingly tangled lines to show chaos
+    const lineCount = Math.floor(progress * 30);
+    for (let i = 0; i < lineCount; i++) {
+      const seed = i * 43.7;
+      const startX = (Math.sin(seed) * 0.5 + 0.5) * chaosCanvas.width;
+      const startY = (Math.cos(seed * 0.7) * 0.5 + 0.5) * chaosCanvas.height;
+      const endX = (Math.sin(seed + 2) * 0.5 + 0.5) * chaosCanvas.width;
+      const endY = (Math.cos(seed * 0.7 + 2) * 0.5 + 0.5) * chaosCanvas.height;
+
+      chaosCtx.beginPath();
+      chaosCtx.moveTo(startX, startY);
+      chaosCtx.lineTo(endX, endY);
+      chaosCtx.strokeStyle = `rgba(71, 85, 105, ${0.2 + progress * 0.3})`;
+      chaosCtx.lineWidth = 2 + Math.sin(seed + progress * Math.PI) * 1.5;
+      chaosCtx.stroke();
+    }
+
+    // Draw scattered rectangles (like windows/tabs)
+    const tabCount = Math.floor(progress * 20);
+    for (let i = 0; i < tabCount; i++) {
+      const seed = i * 73.3;
+      const x = (Math.sin(seed) * 0.5 + 0.5) * chaosCanvas.width;
+      const y = (Math.cos(seed * 0.8) * 0.5 + 0.5) * chaosCanvas.height;
+      const w = 60 + Math.sin(seed + progress * Math.PI) * 20;
+      const h = 40 + Math.cos(seed * 1.3 + progress * Math.PI) * 15;
+
+      chaosCtx.strokeStyle = `rgba(59, 130, 246, ${0.15 + progress * 0.2})`;
+      chaosCtx.lineWidth = 1.5;
+      chaosCtx.strokeRect(x, y, w, h);
+    }
+  });
+
+  const solutionCanvas = document.getElementById('solution-canvas');
+  const solutionScene = solutionCanvas.parentElement.parentElement;
+  const solutionCtx = solutionCanvas.getContext('2d');
+
+  solutionScene.addFrameTask((ownCurrentTimeMs, durationMs) => {
+    solutionCanvas.width = solutionCanvas.offsetWidth;
+    solutionCanvas.height = solutionCanvas.offsetHeight;
+    const progress = ownCurrentTimeMs / durationMs;
+
+    solutionCtx.clearRect(0, 0, solutionCanvas.width, solutionCanvas.height);
+
+    // Draw converging grid lines that organize into structure
+    const gridSize = 40;
+    const convergence = progress * 0.3;
+
+    for (let i = 0; i < 15; i++) {
+      const x = (i * gridSize) - (convergence * gridSize * i);
+      solutionCtx.beginPath();
+      solutionCtx.moveTo(x, 0);
+      solutionCtx.lineTo(x, solutionCanvas.height);
+      solutionCtx.strokeStyle = `rgba(255, 255, 255, ${0.1 + progress * 0.15})`;
+      solutionCtx.lineWidth = 1;
+      solutionCtx.stroke();
+    }
+
+    for (let i = 0; i < 20; i++) {
+      const y = (i * gridSize) - (convergence * gridSize * i * 0.5);
+      solutionCtx.beginPath();
+      solutionCtx.moveTo(0, y);
+      solutionCtx.lineTo(solutionCanvas.width, y);
+      solutionCtx.strokeStyle = `rgba(255, 255, 255, ${0.1 + progress * 0.15})`;
+      solutionCtx.lineWidth = 1;
+      solutionCtx.stroke();
+    }
+
+    // Draw central organizing element
+    const centerX = solutionCanvas.width / 2;
+    const centerY = solutionCanvas.height / 2;
+    const radius = 40 + progress * 60;
+
+    solutionCtx.beginPath();
+    solutionCtx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    solutionCtx.strokeStyle = `rgba(255, 255, 255, ${progress * 0.4})`;
+    solutionCtx.lineWidth = 3;
+    solutionCtx.stroke();
+  });
+</script>

@@ -1,0 +1,20 @@
+Eval Run: test-run-01
+Generator: anthropic/claude-haiku-4-5
+Evaluator: anthropic/claude-opus-4-5
+Date: 2/26/2026, 4:44:15 PM
+
+─── Scores ────────────────────────────────────────
+Task                          Motion  Spec  ViewerΔ  PoV  Omit  Overall
+─────────────────────────────────────────────────────────────────────────
+Vercel (launch)                 5/5    3/5   3/5      2/5   4/5    3.4/5
+─────────────────────────────────────────────────────────────────────────
+Average overall: 3.4/5
+
+─── Proposed Skill Changes ─────────────────────────────────────────────
+
+skills/skills/brand-video-generator/SKILL.md (3 changes)
+  [MAJOR specificity] The current example doesn't enforce that specificity must be visualized, allowing the model to identify specific facts but then use generic messaging in the actual composition.
+  [MAJOR viewer_state] The current guidance accepts any emotional arc without requiring it to be brand-specific, allowing generic frustration→relief patterns.
+  [MAJOR point_of_view] The creative brief has no field for point of view, so the model defaults to template structures (problem-solution-CTA) without expressing a perspective through form.
+
+To apply: npx tsx scripts/eval-skills-apply.ts --run-id test-run-01

@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic fintech language ('accept payments', 'enterprise security', 'built for scale') that could describe PayPal, Square, Adyen, or any payment processor.",
+      "improvement": "Include Stripe-specific truths: the 7-line integration that changed the industry, specific products (Radar's ML fraud detection, Connect's marketplace model), the developer-community relationship, or notable customers/scale figures that only Stripe can claim."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"",
+    "cause": "missing",
+    "proposedChange": "Add to the False differentiators list:\n- \"Accept payments\", \"secure\", \"scalable\", \"enterprise-ready\", \"global\"\n- \"Simple integration\", \"built for developers\", \"modern API\"\n\nAnd add a new section immediately after:\n\n**Specificity test for extracted claims:**\nFor each value proposition extracted, ask: \"Would this be surprising or false if said about [top 3 competitors]?\" If not, it's a category claim, not a brand truth. Replace it with:\n- Founding stories or origin details competitors don't share\n- Specific product names and what makes them unique (not \"fraud detection\" but \"Radar's ML model trained on X transactions\")\n- Quantified achievements only this brand can claim\n- Named customers or case studies with specific outcomes",
+    "rationale": "The model used generic fintech language because the false differentiators list didn't include payment-industry clichés, and there was no explicit instruction to replace category claims with brand-specific facts."
+  },
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition follows a standard explainer template (problem → solution → features → trust → CTA) without committing to a distinctive perspective on what makes Stripe different.",
+      "improvement": "Choose a specific angle: Stripe as infrastructure (like AWS for payments), Stripe as the 'developer's choice', or Stripe as the company that made payments invisible. Let that single idea determine which scenes exist and how they're structured."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.",
+    "cause": "wrong_priority",
+    "proposedChange": "Replace the existing Phase 0 question 4 guidance with:\n\n**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\n**Anti-pattern (REJECT THIS):** \"Stripe makes payments simple, so I'll show a clean UI and fast animations.\"\n**Correct pattern:** \"Stripe made integration invisible—7 lines of code. So the video structure is subtraction: each scene removes complexity until only the essential action remains.\"\n\n**Structural constraint examples:**\n- If the truth is about invisibility → scenes show absence, not presence\n- If the truth is about speed → the video itself is shorter than competitors would dare\n- If the truth is about developer empowerment → show real code, not abstractions\n\n**Gate:** Name the structural constraint before proceeding. If your constraint is \"clean/fast/simple animations,\" you have not found a real constraint.",
+    "rationale": "The model followed a standard explainer template because the guidance about formal constraints lacked concrete anti-patterns and didn't explicitly reject generic structural choices like 'clean animations.'"
+  },
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "omission",
+      "severity": "major",
+      "observation": "Seven scenes across 60 seconds with multiple scenes making similar points about simplicity, scale, and power. The Security scene (Scene 5) adds little emotional or informational value.",
+      "improvement": "Cut to 4-5 scenes. Merge Scale and Security into one 'trust at scale' beat. Use the recovered time to deepen the developer experience scene with a real integration story, or show an actual customer transformation."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Scene budget**: Before writing individual scenes, commit to a total scene count and justify it. More scenes is not more impact. The minimum number of scenes that achieves the viewer-state change from Phase 0 is the right number.",
+    "cause": "wrong_priority",
+    "proposedChange": "Replace with:\n\n**Scene budget (MANDATORY PRE-COMMITMENT):**\n\nBefore writing any scene, declare:\n- Total scene count: [N]\n- Duration per scene: [average]\n- Justification: Why N and not N-1?\n\n**Hard limits by video duration:**\n| Duration | Max scenes | Rationale |\n|----------|------------|----------|\n| 15s | 2-3 | Each scene needs 5s minimum to register |\n| 30s | 3-4 | Transitions consume ~20% of runtime |\n| 60s | 4-5 | More scenes = shallower scenes |\n| 90s | 5-6 | Viewer fatigue after 6 context switches |\n\n**Merge test:** For each adjacent pair of scenes, ask: \"Do these make the same emotional point?\" If yes, merge them. Security + Scale often = one \"trust\" scene. Problem + Agitation often = one scene.\n\n**Depth test:** If a scene states a claim without showing evidence (customer name, specific number, real code), it's not earning its time. Cut it or add the evidence.",
+    "rationale": "The model created 7 scenes for a 60s video with redundant beats because the scene budget guidance lacked concrete limits and didn't include a merge test for similar scenes."
+  }
+]

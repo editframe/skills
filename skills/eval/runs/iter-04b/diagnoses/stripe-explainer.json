@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition relies heavily on Stripe's public positioning ('invisible infrastructure') without embedding details that could only be true of Stripe — like Radar's ML approach, Connect's marketplace model, or specific API design philosophy.",
+      "improvement": "Show why Stripe's architecture enables invisibility differently than competitors. For example, demonstrate how Stripe's unified API across products (Payments, Connect, Billing, Radar) creates compounding simplicity, or show the specific developer experience (webhooks, idempotency keys) that makes integration actually invisible."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+    "cause": "missing",
+    "proposedChange": "After the existing example, add:\n\n**For infrastructure/API companies specifically:** The answer must be architectural, not marketing. Ask: What technical decision did this company make that competitors didn't? What does their system *require* developers to do (or not do) that others don't?\n\nNot: \"Stripe makes payments invisible\" (that's their tagline, not a structural truth).\nYes: \"Stripe's single API spans payments, subscriptions, marketplaces, and fraud — competitors have separate products with separate integrations. The invisibility comes from integration consolidation, not magic.\"",
+    "rationale": "The model accepted Stripe's marketing positioning ('invisible infrastructure') as the brand truth instead of identifying the architectural decision (unified API) that creates that invisibility — this addition forces the model to find structural, not messaging, truths for technical products."
+  },
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "viewer_state",
+      "severity": "critical",
+      "observation": "Scene 5 is truncated mid-sentence ('Stripe doesn't'), leaving the composition without resolution. The viewer arc cannot complete.",
+      "improvement": "Complete Scene 5 and Scene 6 (if planned). The arc needs a resolution that transforms initial skepticism into genuine appreciation — ideally showing what becomes possible when payments are truly invisible (focus on the business, not the infrastructure)."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Scene budget**: `floor(duration_seconds / 10)` is your maximum scene count. A 30s video gets 3 scenes. A 60s video gets 6. Start at the minimum and add only if the viewer-state arc requires it — not because you have things to say.",
+    "cause": "missing",
+    "proposedChange": "After the scene budget paragraph, add:\n\n**Completion requirement**: Before finalizing, verify that every planned scene is fully written. The last scene must deliver the viewer-state resolution identified in Phase 0. A truncated or missing final scene fails the entire composition — the viewer arc has no resolution. If you reach output limits, cut earlier scenes to make room for the ending, never the ending itself.",
+    "rationale": "The model truncated Scene 5 mid-sentence because there was no explicit instruction that completeness of the final scene is non-negotiable — this change prioritizes arc resolution over content volume."
+  },
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "omission",
+      "severity": "major",
+      "observation": "Scene 4's trust metrics ($1T+, 195 countries, 8M businesses) are generic social proof that don't reinforce the 'invisible infrastructure' thesis. They pad runtime without deepening the argument.",
+      "improvement": "Either cut Scene 4 entirely or reframe metrics to support the thesis: e.g., '8M businesses that don't think about payments' or 'Zero PCI audits for developers' — metrics that prove invisibility, not just scale."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it.",
+    "cause": "wrong_priority",
+    "proposedChange": "Replace with:\n\n**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it.\n\n**Social proof scenes require thesis integration**: Generic metrics (revenue processed, countries served, customer count) are category-level claims. If including metrics, each must directly support your Phase 0 thesis. \"$1T processed\" proves scale; \"$1T processed without a single developer thinking about PCI compliance\" proves invisibility. If you cannot reframe the metric to reinforce the thesis, cut the scene.",
+    "rationale": "The model included generic trust metrics because the skill's social proof guidance in Phase 1 didn't connect to Phase 0's thesis requirement — this change makes metric scenes subject to the same PoV test as all other scenes."
+  }
+]

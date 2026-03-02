@@ -1,0 +1,59 @@
+{
+  "taskId": "stripe-explainer",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:28:55.714Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is deeply structural and meaning-carrying. Three canvas-based procedural animations use addFrameTask to create evolving visualizations that embody the narrative—chaos becoming order, isolated nodes becoming a connected network.",
+      "evidence": "Scene 1's canvas draws chaotic, disconnecting lines with `ctx.strokeStyle = rgba(255, 100, 100, ${(1 - progress) * 0.4})` that fade as progress increases—visually representing 'payment chaos.' Scene 3's network animation builds connected nodes with `const nodeCount = Math.floor(progress * 40)` showing Stripe's unifying effect. Text uses `split='word'` with staggered delays: `animation-delay: calc(var(--ef-word-index) * 80ms)`."
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "The composition names Stripe's product categories (Payments, Payouts, Billing) and uses blue branding, but the actual claims are generic fintech promises. '135+ Countries' and 'PCI Level 1' could describe any major payment processor.",
+      "evidence": "Scene 2 lists: 'Payments - Cards, wallets, local methods. One API' and 'Billing - Subscriptions, invoicing, revenue recognition.' These are category descriptions, not Stripe-specific differentiators. Scene 4's stats (99.99% uptime, PCI Level 1) are table stakes for enterprise payment providers. No mention of Stripe-specific innovations like Radar, Connect, or their developer-first philosophy."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc from chaos (anxiety) → unification (relief) → scale (confidence) → security (trust) → action (motivated) is traceable and intentional. However, the emotional transitions are formulaic rather than earned through specificity.",
+      "evidence": "Scene 1 creates anxiety with 'The cost of payment chaos' and red chaotic visuals. Scene 2 offers relief with 'One platform. Everything connected.' Scene 4's security grid provides reassurance. The progression exists but follows a predictable explainer video template rather than creating genuine insight."
+    },
+    "point_of_view": {
+      "score": 2,
+      "rationale": "The composition implies a perspective—complexity is the enemy, unification is the solution—but this is the default fintech pitch. There's no angle that feels authored or reveals genuine understanding of what makes Stripe different.",
+      "evidence": "The chaos-to-order visual metaphor (red disorder → blue order) is competent but stock. Scene 5's 'No lengthy integrations. No vendor lock-in. No surprises.' are standard SaaS promises. A genuine Stripe perspective might emphasize developer experience, API elegance, or their role in enabling internet businesses—none of which appear."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Five scenes for 60 seconds is efficient. Each scene has a distinct function. However, Scene 4 (Trust & Compliance) and Scene 2 (One Platform) both argue 'Stripe handles everything'—there's thematic overlap.",
+      "evidence": "Scene 2: 'Payments... Payouts... Billing' establishes comprehensive capability. Scene 4: 'PCI Level 1... 135+ Countries... 99.99% Uptime' could have been compressed into Scene 2 or integrated with Scene 3's 'Built for scale' message. The security emoji grid (🔒🌍⚡📊) adds time without adding insight."
+    }
+  },
+  "overall": 3,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition describes generic payment processing capabilities (payments, payouts, billing, security) that apply equally to Stripe, Adyen, Square, or PayPal.",
+      "improvement": "Include Stripe-specific differentiators: their developer-first approach, the elegance of their API documentation, specific products like Stripe Radar for fraud or Connect for marketplaces, their role in enabling companies like Shopify and Lyft. Show code snippets that demonstrate their famous 7-line integration."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition takes the default 'complexity bad, our platform good' angle that every fintech uses. No authorial perspective on what makes Stripe's approach distinct.",
+      "improvement": "Take a stance: Stripe's philosophy is that payments should be invisible infrastructure. Or: Stripe believes developers are the decision-makers. Or: Stripe's insight is that the internet economy needs financial primitives, not just payment buttons. Let the composition's structure embody one of these truths."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "The emotional arc follows the explainer video template (problem → solution → features → trust → CTA) without any moment that genuinely surprises or reframes understanding.",
+      "improvement": "Add a scene that creates genuine insight—perhaps showing what becomes possible when payments are solved (focus on building, not plumbing), or a moment that acknowledges the viewer's sophistication rather than just promising features."
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "Scene 4's four-quadrant trust grid and Scene 2's three-feature list both argue comprehensive capability. The security scene adds runtime without differentiation.",
+      "improvement": "Merge trust signals into the network visualization scene—show security as part of the connected system, not a separate argument. Use saved time for a Stripe-specific moment (developer experience, specific customer success)."
+    }
+  ]
+}

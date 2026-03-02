@@ -1,0 +1,58 @@
+[
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "Uses placeholder bars-n-tone video throughout all six scenes instead of actual Supabase UI footage, dashboard screenshots, or relevant B-roll.",
+      "improvement": "Replace placeholder video with Supabase dashboard recordings, code editor showing supabase-js integration, or real-time data sync demonstrations that could only be this product."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Visual Assets:**\n- List each asset: [name] - [type] - [source: website/Canvas API/generate]",
+    "cause": "missing",
+    "proposedChange": "**Visual Assets:**\n- List each asset: [name] - [type] - [source: website/Canvas API/generate]\n\n**CRITICAL: No Placeholder Media**\nNever use generic placeholder videos (bars-n-tone, stock footage, etc.) in final compositions. Every visual must be:\n- Captured from the actual product (screenshots, screen recordings)\n- Downloaded from the brand's website\n- Generated specifically for this brand via Canvas API\n\nIf you cannot obtain product-specific footage, explicitly note what recordings are needed and where to capture them (e.g., 'Record: Dashboard view showing real-time sync at supabase.com/dashboard').",
+    "rationale": "The skill never explicitly prohibited placeholder media, so the model defaulted to bars-n-tone throughout instead of specifying actual product footage requirements."
+  },
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "critical",
+      "observation": "Follows generic SaaS demo template without expressing what makes Supabase's approach distinctive (open-source Firebase alternative, Postgres maximalism, developer-first philosophy).",
+      "improvement": "Structure the video around Supabase's specific positioning: open a scene with 'Firebase, but you own it' or show the actual SQL alongside the auto-generated API to demonstrate the Postgres-first philosophy in form."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+    "cause": "wrong_priority",
+    "proposedChange": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"\n\n**This answer must appear in the video's form, not just its words.** If Supabase's truth is 'open-source Firebase alternative with Postgres underneath,' the video must show SQL and auto-generated APIs side by side—not just say 'open source' over generic footage.",
+    "rationale": "Phase 0 asks for specificity but doesn't require the unique positioning to manifest in visual form; adding this instruction would force the model to show Postgres-first philosophy rather than just stating it."
+  },
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "motion",
+      "severity": "major",
+      "observation": "Declared a #chaos-canvas element in Scene 1 but left it empty. The --ef-progress variable is referenced once but the composition truncates, suggesting incomplete implementation.",
+      "improvement": "Use addFrameTask to animate the #chaos-canvas with a visualization of database complexity resolving into order, or drive the Scene 4 progress bar meaningfully with --ef-progress to show the speed difference in real time."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "- Canvas animations (particle systems, bezier curves, etc. — specify `frameTask` logic)",
+    "cause": "missing",
+    "proposedChange": "- Canvas animations (particle systems, bezier curves, etc. — specify `frameTask` logic)\n\n**Implementation requirement:** When specifying a Canvas animation, provide the complete `addFrameTask` callback code inline in the scene plan. Do not reference empty canvas elements without implementation. Example:\n```\nscene.addFrameTask((t, d) => {\n  // actual drawing code here\n});\n```",
+    "rationale": "The model declared a #chaos-canvas element but left it empty because the skill only says to 'specify frameTask logic' without requiring the actual implementation code be provided."
+  },
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "omission",
+      "severity": "major",
+      "observation": "Scene 5 (open source & scalable) largely repeats value propositions already established, adding only weak trust signals that don't advance the viewer's understanding.",
+      "improvement": "Cut Scene 5 entirely and redistribute its 8 seconds: expand Scene 4's comparison with actual code snippets, or add a brief 'real companies using this' moment with specificity rather than generic 'thousands in production' claims."
+    },
+    "skillFile": "skills/skills/brand-video-generator/references/editing.md",
+    "currentText": "",
+    "cause": "missing",
+    "proposedChange": "Create the file `skills/skills/brand-video-generator/references/editing.md` with:\n\n# Editing: What to Cut\n\n## The Repetition Test\nBefore finalizing scenes, read only the VIEWER STATE AT END for each scene in sequence. If two scenes end with the viewer in the same state, one of them is redundant.\n\n**Cut the weaker scene.** Redistribute its time to scenes that do unique work.\n\n## Trust Signal Placement\nGeneric trust signals ('thousands of customers', 'enterprise-ready', 'scalable') add nothing unless made specific. Either:\n- Show a recognizable logo with a concrete metric ('Discord: 4M concurrent connections')\n- Cut the trust signal entirely\n\nNever end a scene with vague reassurance that could apply to any product.",
+    "rationale": "The SKILL.md references 'references/editing.md' for 'what to cut' but the file doesn't exist; creating it with specific guidance on repetition and weak trust signals would have flagged Scene 5 for removal."
+  }
+]

@@ -1,0 +1,14 @@
+Eval Run: 2026-02-26T22-41-31-166Z
+Generator: anthropic/claude-haiku-4-5
+Evaluator: anthropic/claude-opus-4-5
+Date: 2/26/2026, 4:41:31 PM
+
+─── Scores ────────────────────────────────────────
+Task                          Motion  Spec  ViewerΔ  PoV  Omit  Overall
+─────────────────────────────────────────────────────────────────────────
+─────────────────────────────────────────────────────────────────────────
+Average overall: 0/5
+
+─── Proposed Skill Changes ─────────────────────────────────────────────
+
+To apply: npx tsx scripts/eval-skills-apply.ts --run-id 2026-02-26T22-41-31-166Z

@@ -1,0 +1,59 @@
+{
+  "taskId": "notion-social",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:41:02.737Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural, with canvas-based procedural animations and coordinated stagger sequences that carry meaning. Scene 1's scattered blocks visualize chaos, Scene 3's connected nodes visualize organization. However, the motion isn't quite carrying meaning the text cannot—it illustrates the text rather than transcending it.",
+      "evidence": "Two addFrameTask implementations: `ctx1.strokeRect(-size/2, -size/2, size, size)` with rotation for chaos, `ctx2.arc(node.x, node.y, 8 + progress * 4...)` for connection. Staggered block-reveal: `.block-item:nth-child(1) { animation-delay: 0.1s; }` through nth-child(4). CSS variables used: `var(--ef-transition-out-start)`."
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "The composition uses Notion's actual feature categories (Pages, Databases, Relations) and the blocks metaphor that's central to Notion's identity. However, the visual treatment and structure could easily apply to any productivity/workspace tool—Coda, Airtable, or Monday.com could substitute with minimal changes.",
+      "evidence": "Generic emoji icons: `📝 Write`, `📋 Organize`, `🎯 Plan`. Feature list in Scene 4 names Notion concepts but visually treats them generically. CTA text 'Free forever. No credit card' is standard SaaS copy. No distinctive Notion visual language (serif headings, specific illustrations, the distinctive UI)."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "There's a traceable arc: frustration (scattered) → relief (unified) → appreciation (connected) → empowerment (build your way) → action. The chaos-to-order progression is real but formulaic for productivity tools. The shifts exist but don't feel particularly earned or surprising.",
+      "evidence": "Scene 1 establishes problem state with 'Everything scattered' and visual chaos. Scene 2 pivots to 'One space for everything'. Scene 5 attempts empowerment with 'Start Building'. The sequence follows a predictable problem-solution-CTA template."
+    },
+    "point_of_view": {
+      "score": 2,
+      "rationale": "There's an implied perspective that Notion's value is in unification rather than features, but it's hedged. The chaos-to-order contrast suggests a point of view about fragmentation, but doesn't commit to why Notion specifically solves this differently than alternatives.",
+      "evidence": "The structural contrast between Scene 1 (scattered blocks) and Scene 2-4 (organized elements) implies a perspective. However, the messaging remains generic: 'One space for everything' and 'Build your way' are claims any competitor makes. No specific truth about Notion's philosophy visible."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Five scenes for 15 seconds is appropriate. Scene 3 (connected nodes) and Scene 4 (build your way) both communicate 'organization and flexibility'—there's some redundancy. Scene 2's block grid could potentially be merged with Scene 4's feature list without loss.",
+      "evidence": "Scene 2 shows 'Write, Organize, Plan, Connect' as capabilities. Scene 4 shows 'Pages, Databases, Relations' as building blocks. Both communicate 'Notion has versatile components'—similar value, different framing. Scene 3's animated nodes add visual interest but its message ('data beautifully organized') overlaps with Scene 2's 'One space for everything'."
+    }
+  },
+  "overall": 2.8,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic productivity tool framing and visual language. Emoji icons, standard feature categories, and ubiquitous SaaS CTA copy could belong to any workspace product.",
+      "improvement": "Use Notion's distinctive visual language: the serif + sans-serif type pairing, the actual block interface mockups, the specific way Notion renders databases. Reference specific Notion features like 'linked databases' or 'synced blocks' rather than generic 'Organize' and 'Connect'."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition implies that fragmentation is the problem and unification is the solution, but this is the default claim of every productivity tool. No specific stance on why Notion's approach differs.",
+      "improvement": "Commit to a specific truth about Notion—perhaps that it treats all content as 'blocks' that can be rearranged infinitely, or that it trusts users to build their own systems rather than imposing structure. Let this truth shape the visual form, not just the copy."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "The emotional arc follows a predictable problem-solution-CTA template. The shifts are present but feel mechanical rather than experiential.",
+      "improvement": "Consider a less expected emotional journey—perhaps starting with overwhelm at too many tools, moving through the anxiety of learning something new, to the satisfaction of building a personal system. Let the viewer feel something Notion-specific, not just 'productivity tool good'."
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "Scenes 2, 3, and 4 all communicate variations of 'Notion organizes your stuff flexibly.' The connected-nodes animation in Scene 3 is visually nice but doesn't advance the argument beyond Scene 2.",
+      "improvement": "Either cut Scene 3 and give more time to the CTA, or make Scene 3 communicate something distinct—perhaps the specific feeling of linking databases together, or the power of seeing the same data in multiple views."
+    }
+  ]
+}

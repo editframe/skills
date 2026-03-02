@@ -1,0 +1,157 @@
+<ef-timegroup mode="sequence" overlap="0.8s" class="absolute inset-0 w-full h-full" style="width: 1080px; height: 1920px;">
+
+  <!-- SCENE 1: The Problem - Scattered Tools (0-3s) -->
+  <ef-timegroup mode="fixed" duration="3s" class="absolute inset-0 w-full h-full bg-white">
+    <!-- Background with subtle animation -->
+    <div class="absolute inset-0 w-full h-full bg-gray-50"></div>
+
+    <!-- Floating tool icons scattered - represents chaos -->
+    <div class="absolute top-1/4 left-1/4 w-20 h-20 bg-yellow-300 rounded-lg flex items-center justify-center text-2xl font-bold text-black"
+      style="animation: 3s float-drift both; animation-timing-function: ease-in-out;">📝</div>
+
+    <div class="absolute top-1/3 right-1/4 w-20 h-20 bg-red-400 rounded-lg flex items-center justify-center text-2xl font-bold text-white"
+      style="animation: 3.2s float-drift 0.3s both; animation-timing-function: ease-in-out;">📊</div>
+
+    <div class="absolute bottom-1/3 left-1/3 w-20 h-20 bg-purple-400 rounded-lg flex items-center justify-center text-2xl font-bold text-white"
+      style="animation: 3.1s float-drift 0.6s both; animation-timing-function: ease-in-out;">✓</div>
+
+    <div class="absolute bottom-1/4 right-1/3 w-20 h-20 bg-blue-400 rounded-lg flex items-center justify-center text-2xl font-bold text-white"
+      style="animation: 3.3s float-drift 0.9s both; animation-timing-function: ease-in-out;">💬</div>
+
+    <!-- Text overlay -->
+    <ef-text split="word" class="absolute bottom-16 left-8 right-8 text-black text-4xl font-bold text-center"
+      style="animation: 0.6s slide-up both; animation-delay: calc(var(--ef-word-index) * 100ms);">
+      Tools scattered everywhere
+    </ef-text>
+
+    <style>
+      @keyframes float-drift {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        25% { transform: translateY(-12px) rotate(2deg); }
+        50% { transform: translateY(0) rotate(-1deg); }
+        75% { transform: translateY(-8px) rotate(1deg); }
+      }
+    </style>
+  </ef-timegroup>
+
+  <!-- SCENE 2: The Consolidation - Things Coming Together (3-7.5s) -->
+  <ef-timegroup mode="fixed" duration="4.5s" class="absolute inset-0 w-full h-full bg-black">
+    <!-- Canvas for convergence animation -->
+    <canvas id="convergence-canvas" class="absolute inset-0 w-full h-full"></canvas>
+
+    <!-- Text entering from different directions -->
+    <ef-text class="absolute top-1/4 left-8 text-white text-3xl font-bold"
+      style="animation: 0.8s slide-down 0.5s both;">Notes</ef-text>
+
+    <ef-text class="absolute top-1/3 right-8 text-white text-3xl font-bold"
+      style="animation: 0.8s slide-down 0.8s both;">Databases</ef-text>
+
+    <ef-text class="absolute bottom-1/3 left-8 text-white text-3xl font-bold"
+      style="animation: 0.8s slide-up 1.1s both;">Docs</ef-text>
+
+    <ef-text class="absolute bottom-1/4 right-8 text-white text-3xl font-bold"
+      style="animation: 0.8s slide-up 1.4s both;">Tasks</ef-text>
+
+    <!-- Central connecting text -->
+    <ef-text class="absolute top-1/2 left-1/2 text-white text-2xl font-bold text-center"
+      style="transform: translateX(-50%) translateY(-50%); animation: 1s scale-pop 2.2s both;">
+      One place
+    </ef-text>
+
+    <script>
+      const canvas = document.getElementById('convergence-canvas');
+      const ctx = canvas.getContext('2d');
+      const tg = canvas.closest('ef-timegroup');
+
+      tg.initializer = (instance) => {
+        return instance.addFrameTask((timeMs, durationMs) => {
+          canvas.width = canvas.offsetWidth;
+          canvas.height = canvas.offsetHeight;
+          const progress = timeMs / durationMs;
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+          ctx.lineWidth = 2;
+
+          // Four points representing tools, converging to center
+          const points = [
+            { start: [canvas.width * 0.2, canvas.height * 0.25], label: 'Notes' },
+            { start: [canvas.width * 0.8, canvas.height * 0.3], label: 'Databases' },
+            { start: [canvas.width * 0.2, canvas.height * 0.7], label: 'Docs' },
+            { start: [canvas.width * 0.8, canvas.height * 0.75], label: 'Tasks' }
+          ];
+
+          const cx = canvas.width / 2;
+          const cy = canvas.height / 2;
+
+          // Draw lines from each point converging to center, following progress
+          points.forEach((p, i) => {
+            const x = p.start[0] + (cx - p.start[0]) * progress;
+            const y = p.start[1] + (cy - p.start[1]) * progress;
+
+            ctx.beginPath();
+            ctx.moveTo(p.start[0], p.start[1]);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            // Draw circles at convergence points
+            ctx.beginPath();
+            ctx.arc(x, y, 4 + progress * 6, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 255, 255, ${0.5 + progress * 0.5})`;
+            ctx.stroke();
+          });
+
+          // Draw pulsing center circle at full convergence
+          if (progress > 0.5) {
+            const pulseAlpha = Math.sin(progress * Math.PI * 4) * 0.3 + 0.3;
+            ctx.fillStyle = `rgba(255, 255, 255, ${pulseAlpha})`;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 20, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        });
+      };
+    </script>
+  </ef-timegroup>
+
+  <!-- SCENE 3: The Solution Revealed - Notion's Canvas (7.5-12s) -->
+  <ef-timegroup mode="fixed" duration="4.5s" class="absolute inset-0 w-full h-full bg-white">
+    <!-- Grid background representing unified workspace -->
+    <div class="absolute inset-0 w-full h-full grid-bg"></div>
+
+    <!-- Notion logo/icon entering -->
+    <div class="absolute top-12 left-1/2 flex flex-col items-center justify-center"
+      style="transform: translateX(-50%); animation: 0.7s slide-down both;">
+      <div class="notion-icon text-black mb-4">
+        <div class="notion-icon-square"></div>
+        <div class="notion-icon-square"></div>
+        <div class="notion-icon-square"></div>
+        <div class="notion-icon-square"></div>
+      </div>
+    </div>
+
+    <!-- Key features stacking -->
+    <ef-text class="absolute top-1/3 left-1/2 text-black text-2xl font-bold text-center px-8"
+      style="transform: translateX(-50%); max-width: 300px; animation: 0.6s scale-pop 0.4s both;">
+      Write
+    </ef-text>
+
+    <ef-text class="absolute top-1/2 left-1/2 text-black text-2xl font-bold text-center px-8"
+      style="transform: translateX(-50%); max-width: 300px; animation: 0.6s scale-pop 0.7s both;">
+      Plan
+    </ef-text>
+
+    <ef-text class="absolute bottom-1/3 left-1/2 text-black text-2xl font-bold text-center px-8"
+      style="transform: translateX(-50%); max-width: 300px; animation: 0.6s scale-pop 1s both;">
+      Organize
+    </ef-text>
+
+    <!-- Main message -->
+    <ef-text split="word" class="absolute bottom-8 left-8 right-8 text-black text-3xl font-bold text-center"
+      style="animation: 0.6s slide-up 1.5s both; animation-delay: calc(1.5s + var(--ef-word-index) * 80ms);">
+      All in one place
+    </ef-text>
+  </ef-timegroup>
+
+  <!-- SCENE 4: Call to Action - The Hook (12-15s) -->
+  <ef-timegroup mode="fixed" duration="3s" class="absolute inset-0 w-full h-full bg-blue-600 flex flex

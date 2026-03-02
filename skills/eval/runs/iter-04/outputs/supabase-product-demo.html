@@ -1,0 +1,92 @@
+<ef-timegroup mode="sequence" overlap="0.8s" class="w-[1920px] h-[1080px]">
+    <!-- Scene 1: Hero (0-9s) - The Open Source Truth -->
+    <ef-timegroup mode="contain" duration="9s" class="absolute w-full h-full bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900">
+      <canvas id="hero-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      <div class="absolute inset-0 z-10 flex flex-col items-center justify-center">
+        <ef-text
+          split="word"
+          class="text-white text-7xl font-bold text-center mb-6"
+          style="animation: 0.6s slideUp both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+        >Open Source Database Made Simple</ef-text>
+        <ef-text
+          class="text-gray-300 text-2xl max-w-2xl text-center"
+          style="animation: 0.6s slideUp 0.8s both"
+        >Supabase is the open source Firebase alternative. Get a production database, authentication, and instant APIs in minutes.</ef-text>
+        <button class="cta-button" style="animation: scaleIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both 1.2s">Start Building Free</button>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 2: The Problem (9-18s) - Fragmented Stack -->
+    <ef-timegroup mode="contain" duration="9s" class="absolute w-full h-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950"
+      style="animation: 0.8s fadeOut var(--ef-transition-out-start) both">
+      <canvas id="problem-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      <div class="absolute inset-0 z-10 flex flex-col items-center justify-center px-24">
+        <ef-text class="text-gray-400 text-sm tracking-widest uppercase mb-8" style="animation: slideUp 0.5s both">The Problem</ef-text>
+        <ef-text
+          split="word"
+          class="text-white text-6xl font-bold text-center mb-8"
+          style="animation: 0.6s slideUp 0.3s both; animation-delay: calc(0.3s + var(--ef-word-index) * 100ms)"
+        >Stitching together a dozen services</ef-text>
+        <ef-text class="text-gray-300 text-xl text-center max-w-3xl" style="animation: slideUp 0.6s 1.2s both">
+          Database here, auth there, API layer over there, storage somewhere else. Each one a separate bill, separate config, separate vendor lock-in.
+        </ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 3: Database Feature (18-27s) - Postgres at the Core -->
+    <ef-timegroup mode="contain" duration="9s" class="absolute w-full h-full bg-gradient-to-br from-slate-950 to-blue-950"
+      style="animation: 0.8s fadeOut var(--ef-transition-out-start) both">
+      <div class="grid-bg"></div>
+      <div class="absolute inset-0 z-10 flex flex-col items-center justify-center px-24">
+        <div class="badge" style="animation: scaleIn 0.4s 0.2s both">THE FOUNDATION</div>
+        <ef-text
+          split="word"
+          class="text-white text-6xl font-bold text-center mb-8 mt-4"
+          style="animation: 0.6s slideUp 0.5s both; animation-delay: calc(0.5s + var(--ef-word-index) * 80ms)"
+        >PostgreSQL Database</ef-text>
+        <ef-text class="text-gray-300 text-lg text-center mb-12 max-w-2xl" style="animation: slideUp 0.5s 1.2s both">
+          Full relational database with JSONB, full-text search, and trigonometry functions. Real SQL, real power.
+        </ef-text>
+        <div class="database-visual" style="animation: slideUp 0.6s 1.5s both">
+          <div class="code-line">CREATE TABLE users (</div>
+          <div class="code-line">  id BIGINT PRIMARY KEY,</div>
+          <div class="code-line">  email TEXT UNIQUE,</div>
+          <div class="code-line">);</div>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 4: Auth Feature (27-36s) - Built-in Authentication -->
+    <ef-timegroup mode="contain" duration="9s" class="absolute w-full h-full bg-gradient-to-br from-blue-950 via-slate-950 to-slate-900"
+      style="animation: 0.8s fadeOut var(--ef-transition-out-start) both">
+      <canvas id="auth-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      <div class="absolute inset-0 z-10 flex flex-col items-center justify-center px-24">
+        <div class="badge" style="animation: scaleIn 0.4s 0.2s both">BUILT-IN</div>
+        <ef-text
+          split="word"
+          class="text-white text-6xl font-bold text-center mb-8 mt-4"
+          style="animation: 0.6s slideUp 0.5s both; animation-delay: calc(0.5s + var(--ef-word-index) * 80ms)"
+        >Authentication Included</ef-text>
+        <ef-text class="text-gray-300 text-lg text-center mb-12 max-w-2xl" style="animation: slideUp 0.5s 1.2s both">
+          OAuth, magic links, passwordless, MFA. Secure by default. No separate auth vendor needed.
+        </ef-text>
+        <div class="flex gap-8 justify-center" style="animation: slideUp 0.6s 1.5s both">
+          <div class="text-center">
+            <div class="text-4xl mb-2">🔐</div>
+            <div class="text-gray-300">Row Level Security</div>
+          </div>
+          <div class="text-center">
+            <div class="text-4xl mb-2">🪑</div>
+            <div class="text-gray-300">Session Management</div>
+          </div>
+          <div class="text-center">
+            <div class="text-4xl mb-2">🔑</div>
+            <div class="text-gray-300">API Key Protection</div>
+          </div>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 5: Instant APIs (36-45s) - The Closing Truth -->
+    <ef-timegroup mode="contain" duration="9s" class="absolute w-full h-full bg-gradient-to-br from-slate-950 via-blue-900 to-slate-950"
+      style="animation: 0.8s fadeOut var(--ef-transition-out-

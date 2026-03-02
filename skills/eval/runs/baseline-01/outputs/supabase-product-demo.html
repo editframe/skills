@@ -1,0 +1,226 @@
+<ef-configuration api-host="https://api.editframe.com" media-engine="local">
+  <ef-timegroup mode="sequence" overlap="0.8s" class="w-[1920px] h-[1080px] bg-slate-950">
+    
+    <!-- Scene 1: Problem State (0-5s) -->
+    <ef-timegroup mode="contain" duration="5s" class="absolute w-full h-full" style="animation: 0.8s fade-out var(--ef-transition-out-start) both">
+      <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="0s" sourceout="5s" class="absolute inset-0 size-full object-cover"></ef-video>
+      <div class="absolute inset-0 bg-gradient-to-b from-slate-950/30 via-slate-950/50 to-slate-950/80"></div>
+      
+      <ef-text split="word" class="absolute top-24 left-16 text-white text-6xl font-bold max-w-2xl"
+        style="animation: 0.6s slide-up both; animation-delay: calc(var(--ef-word-index) * 100ms)">
+        Building backends is slow
+      </ef-text>
+      
+      <div id="chaos-canvas" class="absolute bottom-32 right-16 w-96 h-96 rounded-lg overflow-hidden border border-orange-500/30"></div>
+    </ef-timegroup>
+
+    <!-- Scene 2: Solution Intro (5-12s) -->
+    <ef-timegroup mode="contain" duration="7s" class="absolute w-full h-full" style="animation: 0.8s fade-out var(--ef-transition-out-start) both; animation: 0.8s fade-in both">
+      <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="5s" sourceout="12s" class="absolute inset-0 size-full object-cover"></ef-video>
+      <div class="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-slate-950/60 to-slate-950/90"></div>
+      
+      <ef-text class="absolute top-20 left-16 text-emerald-400 text-lg font-semibold tracking-wide"
+        style="animation: 0.5s fade-in 0.3s both">INTRODUCING SUPABASE</ef-text>
+      
+      <ef-text split="word" class="absolute top-40 left-16 text-white text-6xl font-bold max-w-3xl"
+        style="animation: 0.6s slide-up 0.5s both; animation-delay: calc(0.5s + var(--ef-word-index) * 100ms)">
+        Postgres backend in minutes
+      </ef-text>
+      
+      <div class="absolute bottom-20 left-16 space-y-3">
+        <div class="flex items-center gap-3 text-white text-xl" style="animation: 0.5s slide-right 1.2s both">
+          <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+          <span>Real-time database</span>
+        </div>
+        <div class="flex items-center gap-3 text-white text-xl" style="animation: 0.5s slide-right 1.4s both">
+          <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+          <span>Auth & row-level security</span>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 3: Core Features Grid (12-22s) -->
+    <ef-timegroup mode="contain" duration="10s" class="absolute w-full h-full" style="animation: 0.8s fade-out var(--ef-transition-out-start) both; animation: 0.8s fade-in both">
+      <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="12s" sourceout="22s" class="absolute inset-0 size-full object-cover"></ef-video>
+      <div class="absolute inset-0 bg-slate-950/85"></div>
+      
+      <ef-text split="word" class="absolute top-16 left-16 text-white text-5xl font-bold"
+        style="animation: 0.6s slide-up both; animation-delay: calc(var(--ef-word-index) * 100ms)">
+        Everything you need
+      </ef-text>
+
+      <div class="absolute top-40 left-16 grid grid-cols-2 gap-8 w-fit">
+        <!-- Feature 1 -->
+        <div class="w-80 p-6 rounded-lg border border-emerald-500/30 bg-slate-900/50 backdrop-blur"
+          style="animation: 0.6s feature-in 1s both">
+          <div class="text-2xl font-bold text-emerald-400 mb-2">🗄️</div>
+          <div class="text-white font-semibold text-lg">Postgres Database</div>
+          <div class="text-slate-400 text-sm mt-2">Full SQL power with real-time subscriptions</div>
+        </div>
+        
+        <!-- Feature 2 -->
+        <div class="w-80 p-6 rounded-lg border border-blue-500/30 bg-slate-900/50 backdrop-blur"
+          style="animation: 0.6s feature-in 1.2s both">
+          <div class="text-2xl font-bold text-blue-400 mb-2">🔐</div>
+          <div class="text-white font-semibold text-lg">Auth & Security</div>
+          <div class="text-slate-400 text-sm mt-2">Row-level security, OAuth, JWT</div>
+        </div>
+        
+        <!-- Feature 3 -->
+        <div class="w-80 p-6 rounded-lg border border-purple-500/30 bg-slate-900/50 backdrop-blur"
+          style="animation: 0.6s feature-in 1.4s both">
+          <div class="text-2xl font-bold text-purple-400 mb-2">⚡</div>
+          <div class="text-white font-semibold text-lg">Instant APIs</div>
+          <div class="text-slate-400 text-sm mt-2">Auto-generated REST & GraphQL endpoints</div>
+        </div>
+        
+        <!-- Feature 4 -->
+        <div class="w-80 p-6 rounded-lg border border-pink-500/30 bg-slate-900/50 backdrop-blur"
+          style="animation: 0.6s feature-in 1.6s both">
+          <div class="text-2xl font-bold text-pink-400 mb-2">🔧</div>
+          <div class="text-white font-semibold text-lg">Edge Functions</div>
+          <div class="text-slate-400 text-sm mt-2">Serverless TypeScript at the edge</div>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 4: Speed Comparison (22-32s) -->
+    <ef-timegroup mode="contain" duration="10s" class="absolute w-full h-full" style="animation: 0.8s fade-out var(--ef-transition-out-start) both; animation: 0.8s fade-in both">
+      <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="22s" sourceout="32s" class="absolute inset-0 size-full object-cover"></ef-video>
+      <div class="absolute inset-0 bg-slate-950/85"></div>
+
+      <div class="absolute top-24 left-16 flex gap-16 items-center">
+        <!-- Without Supabase -->
+        <div class="space-y-4">
+          <div class="text-slate-400 text-lg">Without Supabase</div>
+          <div class="space-y-2" style="animation: 0.5s fade-in 0.5s both">
+            <div class="text-slate-300 text-sm">✗ Design schema</div>
+            <div class="text-slate-300 text-sm">✗ Set up server</div>
+            <div class="text-slate-300 text-sm">✗ Write API routes</div>
+            <div class="text-slate-300 text-sm">✗ Handle auth</div>
+            <div class="text-slate-300 text-sm">✗ Deploy & scale</div>
+          </div>
+          <div class="text-4xl font-bold text-slate-400 mt-6" style="animation: 0.6s count-up 1.2s both">
+            <span id="weeks-text">4</span> weeks
+          </div>
+        </div>
+
+        <!-- With Supabase -->
+        <div class="space-y-4">
+          <div class="text-emerald-400 text-lg">With Supabase</div>
+          <div class="space-y-2" style="animation: 0.5s fade-in 0.7s both">
+            <div class="text-emerald-300 text-sm">✓ Instant Postgres</div>
+            <div class="text-emerald-300 text-sm">✓ Ready APIs</div>
+            <div class="text-emerald-300 text-sm">✓ Built-in auth</div>
+            <div class="text-emerald-300 text-sm">✓ Real-time enabled</div>
+            <div class="text-emerald-300 text-sm">✓ Auto-scaling</div>
+          </div>
+          <div class="text-4xl font-bold text-emerald-400 mt-6" style="animation: 0.6s count-up 1.2s both">
+            <span id="hours-text">2</span> hours
+          </div>
+        </div>
+      </div>
+
+      <div class="absolute bottom-20 left-16 right-16">
+        <div class="h-1 bg-slate-800 rounded-full overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full" style="width: calc(var(--ef-progress) * 100%); animation: none"></div>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 5: Developer Experience (32-40s) -->
+    <ef-timegroup mode="contain" duration="8s" class="absolute w-full h-full" style="animation: 0.8s fade-out var(--ef-transition-out-start) both; animation: 0.8s fade-in both">
+      <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="32s" sourceout="40s" class="absolute inset-0 size-full object-cover"></ef-video>
+      <div class="absolute inset-0 bg-slate-950/85"></div>
+
+      <ef-text split="word" class="absolute top-20 left-16 text-white text-5xl font-bold"
+        style="animation: 0.6s slide-up both; animation-delay: calc(var(--ef-word-index) * 100ms)">
+        Open source & scalable
+      </ef-text>
+
+      <div class="absolute top-48 left-16 space-y-6 max-w-2xl">
+        <div class="flex gap-6 items-start" style="animation: 0.6s slide-right 1s both">
+          <div class="text-3xl text-emerald-400">→</div>
+          <div>
+            <div class="text-white font-semibold text-lg">Full source code transparency</div>
+            <div class="text-slate-400 text-sm">Self-hosted or managed cloud</div>
+          </div>
+        </div>
+        
+        <div class="flex gap-6 items-start" style="animation: 0.6s slide-right 1.2s both">
+          <div class="text-3xl text-blue-400">→</div>
+          <div>
+            <div class="text-white font-semibold text-lg">Active community & support</div>
+            <div class="text-slate-400 text-sm">GitHub, Discord, docs that work</div>
+          </div>
+        </div>
+        
+        <div class="flex gap-6 items-start" style="animation: 0.6s slide-right 1.4s both">
+          <div class="text-3xl text-purple-400">→</div>
+          <div>
+            <div class="text-white font-semibold text-lg">Production ready</div>
+            <div class="text-slate-400 text-sm">Used by thousands in production</div>
+          </div>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 6: CTA (40-45s) -->
+    <ef-timegroup mode="contain" duration="5s" class="absolute w-full h-full" style="animation: 0.8s fade-in both">
+      <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="40s" sourceout="45s" class="absolute inset-0 size-full object-cover"></ef-video>
+      <div class="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-slate-950/70 to-slate-950/95"></div>
+
+      <div class="absolute inset-0 flex flex-col items-center justify-center">
+        <ef-text split="word" class="text-white text-6xl font-bold text-center mb-8"
+          style="animation: 0.6s zoom-in both; animation-delay: calc(var(--ef-word-index) * 100ms)">
+          Start building now
+        </ef-text>
+        
+        <div class="px-8 py-4 rounded-lg bg-emerald-500 text-slate-950 font-bold text-2xl mt-8"
+          style="animation: 0.5s fade-in 1s both">
+          supabase.com
+        </div>
+        
+        <div class="text-slate-400 text-lg mt-8" style="animation: 0.5s fade-in 1.3s both">
+          Open source • Postgres • Real-time
+        </div>
+      </div>
+    </ef-timegroup>
+
+  </ef-timegroup>
+</ef-configuration>
+
+<style>
+  @keyframes slide-up {
+    from { transform: translateY(32px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  
+  @keyframes slide-right {
+    from { transform: translateX(-32px); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+  }
+  
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
+  
+  @keyframes feature-in {
+    from { transform: translateY(16px) scale(0.95); opacity: 0; }
+    to   { transform: translateY(0)    scale(1);    opacity: 1; }
+  }
+  
+  @keyframes zoom-in {
+    from { transform: scale(0.9); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+  }
+  
+  @keyframes count-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(

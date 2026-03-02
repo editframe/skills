@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition relies on generic deployment platform claims (instant deploy, preview URLs, zero config) that any competitor could make. The only Vercel-specific elements are the domain name and brand colors.",
+      "improvement": "Lean into Vercel-specific differentiators: the Edge Network's 100+ global regions, the specific Next.js integration, Turborepo, or the distinctive triangle logo as a visual motif. Show the actual Vercel dashboard UI or reference real developer experiences unique to the platform."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\"",
+    "cause": "present_wrong",
+    "proposedChange": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\"\n- Deployment platforms: \"zero config\", \"preview URLs\", \"instant deploys\", \"global CDN\"\n\n**Specificity test for deployment/infrastructure brands:** If the claim could appear on Vercel, Netlify, Railway, Render, and Fly.io landing pages interchangeably, it is not specific. Look instead for: proprietary technology names (Turborepo, Edge Middleware), specific integration depth (Next.js App Router), quantified network scale (100+ edge regions with specific latency numbers), or visual elements unique to this product's UI (the triangle deployment indicator, the specific dashboard layout).",
+    "rationale": "The model used 'instant deploy', 'preview URLs', and 'zero config' because the false differentiators list didn't explicitly flag deployment platform clichés or provide a specificity test for this category."
+  },
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition follows a predictable problem-solution template without revealing a perspective on why Vercel matters beyond feature parity with competitors.",
+      "improvement": "Take a stance. Is Vercel about developer experience as a competitive advantage? About the philosophy that deployment should be invisible? Structure the video around that belief - perhaps showing what developers do with the time they save, or contrasting the mental state of a developer before/after Vercel adoption."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"",
+    "cause": "missing",
+    "proposedChange": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Vercel is instant, so I'll show a fast deployment\" (any deployment platform could show speed).\nYes: \"Vercel's belief is that deployment should be invisible — developers shouldn't think about infrastructure. So the video never shows infrastructure; it only shows what developers build with the time they reclaim.\"\n\n**Template rejection test:** If your scene breakdown follows Hook → Problem → Solution → Features → CTA without the brand truth visibly deforming that structure, you have defaulted to a template. The PoV must break or rearrange the expected structure.",
+    "rationale": "Adding a deployment-specific example and a template rejection test would have forced the model to recognize that a standard problem-solution structure without structural deformation indicates missing point of view."
+  },
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "Scene 2's '0ms' claim arrives without demonstration. The viewer is told deployment is instant but doesn't experience the contrast viscerally. The emotional shift from frustration to relief is asserted rather than earned.",
+      "improvement": "Make Scene 2 an actual demonstration - show the deployment canvas from Scene 1 suddenly collapsing/completing instantly, or use a split-screen showing the old way vs. Vercel's way. Let the viewer feel the speed difference rather than reading a number."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**The viewer-state test**: If VIEWER STATE AT START and VIEWER STATE AT END are the same, the scene is not doing work. Cut it or change it until it does.",
+    "cause": "missing",
+    "proposedChange": "**The viewer-state test**: If VIEWER STATE AT START and VIEWER STATE AT END are the same, the scene is not doing work. Cut it or change it until it does.\n\n**The demonstration test**: If a scene makes a claim (\"instant\", \"fast\", \"simple\"), the viewer must *experience* the claim through visual demonstration, not read it as text. A number on screen (\"0ms\") is not a demonstration. A demonstration is: showing the before/after contrast in real time, collapsing a complex visual into a simple one, or letting the viewer watch something happen that would normally take longer. Claims without demonstrations are assertions the viewer has no reason to believe.",
+    "rationale": "The model wrote '0ms' as text without demonstrating speed because the skill lacks guidance that claims must be visually demonstrated rather than stated."
+  }
+]

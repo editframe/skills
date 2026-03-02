@@ -1,0 +1,53 @@
+{
+  "taskId": "supabase-product-demo",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:25:49.084Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is the argument. The canvas animations use addFrameTask to visualize the core message: scattered Postgres tools converging into a unified platform. The visual transformation from chaos to order IS the product thesis.",
+      "evidence": "Scene 1 uses `sceneEl.addFrameTask(drawPostgresScatter)` to animate 60 particles scattering outward. Scene 2 uses `sceneEl2.addFrameTask(drawPostgresConverge)` where `convergeRadius = 200 * (1 - progress * 0.85)` literally shows convergence. Text uses `split='word'` with staggered delays: `animation-delay: calc(var(--ef-word-index) * 100ms)`. Feature grid has cascading reveals from 0.8s to 2.3s."
+    },
+    "specificity": {
+      "score": 4,
+      "rationale": "The composition reflects Supabase's specific positioning: an open-source Firebase alternative built on Postgres. The five-feature breakdown matches their actual product architecture. The scattered-to-unified visual metaphor reflects their core value proposition against fragmented tooling.",
+      "evidence": "Features listed match Supabase exactly: '🐘 Postgres Database', '🔐 Auth & Security', '⚡ Instant APIs', '🌐 Edge Functions', '📦 Storage', '🔓 Open Source'. Brand colors used: `bg-supabase-dark`, `text-supabase-green`, green particles `rgba(63, 207, 142, ${alpha})`. Messaging like 'Zero vendor lock-in' and 'MIT license. Self-host anywhere' reflects their actual positioning."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "There's a clear arc from frustration (scattered tools) to relief (unified platform) to understanding (features). However, the composition is incomplete (cuts off mid-Scene 4) and the emotional states are somewhat formulaic rather than deeply earned.",
+      "evidence": "Scene 1: 'Building with Postgres feels scattered' + chaotic particle animation creates frustration. Scene 2: 'One open source platform' + converging particles delivers relief. Scene 3: Feature grid delivers understanding. Scene 4 appears to introduce a DAG visualization but is truncated at '</ef-text'"
+    },
+    "point_of_view": {
+      "score": 4,
+      "rationale": "The composition commits to a clear perspective: the problem isn't that developers need better tools, it's that fragmentation itself is the enemy. The scattered-to-unified visual metaphor is the structural argument, not decoration.",
+      "evidence": "Opening line 'Building with Postgres feels scattered' identifies a specific pain (not generic 'databases are hard'). The canvas animations structurally embody this: Scene 1 particles connected to center with broken lines, Scene 2 particles converging with strengthening center glow. The choice to lead with 'open source' throughout reflects Supabase's specific competitive angle."
+    },
+    "omission": {
+      "score": 2,
+      "rationale": "Scene 3's six-feature grid is exhaustive where selective would be stronger. The composition also appears incomplete, cutting off mid-scene, so true omission discipline cannot be fully assessed.",
+      "evidence": "Scene 3 lists all six features with similar treatments rather than choosing the 2-3 that matter most. Each feature box follows identical structure: emoji title + one-line description. The composition is truncated at Scene 4: `<ef-text\n          split=\"word\"` suggesting incomplete delivery. For a 45s video, four scenes with overlaps seems reasonable, but we can't see the full arc."
+    }
+  },
+  "overall": 3.6,
+  "feedback": [
+    {
+      "dimension": "omission",
+      "severity": "major",
+      "observation": "Scene 3 attempts to showcase all six Supabase features with equal weight, creating a list-reading effect rather than memorable demonstration.",
+      "improvement": "Choose 2-3 features that best support the unified-platform thesis. Show them with distinct visual treatments or micro-interactions rather than uniform grid items. The 'open source' feature could have been a separate scene given its competitive importance."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "The frustration → relief → understanding arc is competent but follows a predictable SaaS formula. The emotional payoff doesn't quite match the sophistication of the visual motion.",
+      "improvement": "Scene 4's DAG visualization could have been the 'aha' moment—showing how these tools work together in a real workflow—but it's truncated. Complete this to give viewers an 'I want to build with this' state rather than just 'I understand what this is.'"
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "The composition appears incomplete, cutting off at Scene 4 with `<ef-text split=\"word\"` hanging.",
+      "improvement": "Complete the composition. For a 45s product demo, the missing ~17 seconds likely need a compelling demonstration or CTA. The current 28s of content suggests significant structural work remains."
+    }
+  ]
+}

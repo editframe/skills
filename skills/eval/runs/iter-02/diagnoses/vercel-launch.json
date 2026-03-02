@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition uses generic deployment platform claims (instant deploys, preview URLs, edge functions) that apply equally to Netlify, Cloudflare Pages, or AWS Amplify. No Vercel-specific differentiators like Next.js framework integration, v0 AI, or specific DX features are surfaced.",
+      "improvement": "Include at least one element that is only true about Vercel: the Next.js zero-config detection, the specific preview comment integration with GitHub, or the framework-aware edge rendering. The visual metaphors should encode something specific—perhaps the triangle logo could be incorporated into the motion language."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"",
+    "cause": "missing",
+    "proposedChange": "Add after the existing false differentiators list:\n\n**Platform-specific false differentiators — these describe every competitor in the category:**\n- Deployment platforms: \"instant deploys\", \"preview URLs\", \"edge functions\", \"global CDN\", \"serverless\"\n- Dev tools: \"developer experience\", \"fast builds\", \"easy setup\"\n- Infrastructure: \"scales automatically\", \"99.9% uptime\", \"enterprise-ready\"\n\n**Finding real differentiators:** Look for integration depth (which specific frameworks/tools get special treatment?), unique product features (AI tools, specific workflow integrations), or architectural decisions that competitors cannot easily copy. For example, Vercel's Next.js zero-config detection and framework-aware edge rendering are specific; \"edge functions\" is not.",
+    "rationale": "The model used category-level deployment claims because the skill's false differentiator list didn't include platform-specific examples, so it didn't recognize 'instant deploys' and 'edge functions' as generic."
+  },
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition uses generic deployment platform claims (instant deploys, preview URLs, edge functions) that apply equally to Netlify, Cloudflare Pages, or AWS Amplify. No Vercel-specific differentiators like Next.js framework integration, v0 AI, or specific DX features are surfaced.",
+      "improvement": "Include at least one element that is only true about Vercel: the Next.js zero-config detection, the specific preview comment integration with GitHub, or the framework-aware edge rendering. The visual metaphors should encode something specific—perhaps the triangle logo could be incorporated into the motion language."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+    "cause": "wrong_priority",
+    "proposedChange": "Replace the example with a platform/tool-relevant one:\n\n**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They have fast deploys and preview URLs\" (every deployment platform has this).\nYes: \"They created Next.js and give it zero-config detection that no competitor can match without forking the framework.\"\n\nNot: \"They focus on developer experience\" (every dev tool claims this).\nYes: \"They built v0, an AI that generates React components—competitors would need to build an entirely new product to match it.\"",
+    "rationale": "The generic founding-story example didn't help the model recognize that platform feature claims need the same scrutiny; a deployment-specific example would have triggered rejection of generic claims like 'instant deploys'."
+  },
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition uses generic deployment platform claims (instant deploys, preview URLs, edge functions) that apply equally to Netlify, Cloudflare Pages, or AWS Amplify. No Vercel-specific differentiators like Next.js framework integration, v0 AI, or specific DX features are surfaced.",
+      "improvement": "Include at least one element that is only true about Vercel: the Next.js zero-config detection, the specific preview comment integration with GitHub, or the framework-aware edge rendering. The visual metaphors should encode something specific—perhaps the triangle logo could be incorporated into the motion language."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)",
+    "cause": "missing",
+    "proposedChange": "Add to Visual Identity section:\n\n- **Brand marks and their motion potential**: Logo shapes that can be animated (Vercel's triangle, Stripe's gradient bars, Linear's cube). These should inform the motion language—if the brand has a distinctive geometric mark, consider how its form can recur in transitions, loading states, or scene compositions.",
+    "rationale": "The feedback specifically mentioned incorporating the triangle logo into motion language; adding explicit guidance to analyze brand marks for motion potential would have prompted this integration."
+  }
+]

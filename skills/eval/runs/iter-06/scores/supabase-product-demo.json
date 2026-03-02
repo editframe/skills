@@ -1,0 +1,59 @@
+{
+  "taskId": "supabase-product-demo",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-27T00:00:41.922Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural with text splitting, stagger sequences using --ef-word-index, and canvas-based procedural animation via addFrameTask. The fragmentation canvas uses time-based movement to illustrate chaos. However, the canvas script is truncated and constellation canvases lack implementation.",
+      "evidence": "Text splitting with stagger: `split=\"word\"` with `animation-delay: calc(var(--ef-word-index) * 100ms)`. Frame task pattern: `fragTg.initializer = (instance) => { return instance.addFrameTask((info) => {...})`. Time-based chaos: `Math.sin(i * 0.7 + info.ownCurrentTimeMs * 0.002) * 50 * progress`."
+    },
+    "specificity": {
+      "score": 3,
+      "rationale": "Uses Supabase's green (#3ecf8e), mentions specific features (Postgres, Auth, Edge Functions, REST API), and references the open-source positioning. However, the structure (fragmentation → unified solution) is a generic SaaS pattern. The Postgres elephant emoji and 'One Database' framing are Supabase-specific but not deeply distinctive.",
+      "evidence": "Brand color: `text-[#3ecf8e]`. Feature specifics: `Postgres + Auth + APIs + Functions + Storage`. Code example: `CREATE TABLE users` → `/rest/v1/users`. Open source messaging: `100% Open Source`, `Self-host. No vendor lock-in.`"
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc moves from promise (Scene 1) → problem (Scene 2: fragmentation) → solution (Scene 3) → features (Scene 4) → trust signal (Scene 5: open source) → CTA (Scene 6). The transitions are formulaic but coherent. The problem scene attempts emotional weight but the canvas chaos is subtle.",
+      "evidence": "State progression: 'Everything Included' → 'Glue. Manage. Maintain.' (pain) → 'One unified platform' (relief) → feature proof → 'No vendor lock-in' (trust) → 'Ship faster. Own your data.' (empowerment)."
+    },
+    "point_of_view": {
+      "score": 2,
+      "rationale": "The composition implies a perspective ('fragmentation is the problem, consolidation is the answer') but this is the default positioning for any backend-as-a-service. The open source scene suggests a stance but doesn't fully commit—it's presented as a feature rather than a philosophy that shapes the whole video.",
+      "evidence": "Scene 5 treats open source as one benefit among many rather than the organizing principle. The structure follows a standard product demo template: hero → problem → solution → features → trust → CTA."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Six scenes in 45 seconds is reasonable density. Scene 4's feature sequence (3 sub-scenes) could arguably be compressed—the three features follow identical patterns. The open source scene (Scene 5) feels like it could be integrated into the CTA rather than standing alone.",
+      "evidence": "Feature sub-scenes are structurally identical: left-align title → feature name → subtitle → icon/code on opposite side. Each takes ~4 seconds for essentially the same information density."
+    }
+  },
+  "overall": 3,
+  "feedback": [
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition follows a generic product demo template (problem → solution → features → CTA) without a distinctive authorial perspective. Open source is mentioned but not used to structure the narrative.",
+      "improvement": "If open source is the differentiator, the whole video should be organized around that truth. Show what 'owning your data' actually means visually—perhaps the constellation canvas could represent community contributions, or the fragmentation scene could show vendor lock-in specifically."
+    },
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The 'fragmentation problem' framing applies equally to Firebase, PlanetScale, Neon, or any integrated backend. The code example is generic SQL.",
+      "improvement": "Show something only Supabase can do—like the realtime subscriptions, the row-level security syntax, or the specific CLI experience (`supabase init`). The code block should demonstrate Supabase's actual differentiating DX."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "The problem scene (fragmentation) relies on a truncated canvas animation that may not render. The emotional weight of 'chaos' is under-delivered.",
+      "improvement": "Complete the canvas implementation with more aggressive visual chaos—services drifting apart, connection lines breaking. The viewer should feel the pain of fragmentation viscerally, not just see labeled boxes floating."
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "The three feature sub-scenes (API, Auth, Edge Functions) use identical structures and could be consolidated without loss.",
+      "improvement": "Show all three features emerging from the central database in one unified scene, reinforcing the 'one platform' message visually rather than presenting them sequentially as separate slides."
+    }
+  ]
+}

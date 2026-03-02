@@ -1,0 +1,16 @@
+[
+  {
+    "taskId": "linear-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The opening scene's 'Every platform fragments your workflow' and chaos visualization could apply to any productivity tool's marketing. The visual metaphor of tangled lines becoming order is category-generic.",
+      "improvement": "Ground the chaos in Linear-specific pain points—show actual UI mockups of competing tools' notification overload, or visualize the specific friction Linear eliminates (status meetings, duplicate work, context switching between Slack/Jira/Notion). The issue card in Scene 2 is good; Scene 1 needs similar specificity."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Visual Metaphor Quick Reference:**\n\nThese are starting points, not answers. The right-hand column is a generic default — replace it with something specific to this brand before using it.\n\n| Concept | Generic default (avoid) | What to find instead |\n|---------|------------------------|----------------------|\n| Chaos/Complexity | Tangled bezier curves | What does chaos *look like for this product's users specifically*? |",
+    "cause": "wrong_priority",
+    "proposedChange": "Move the Visual Metaphor Quick Reference table from Phase 2.5 into Phase 3: Scene Planning, and add this enforcement rule immediately before the scene template:\n\n**Scene 1 specificity gate**: The opening scene is most vulnerable to category-generic visuals. Before writing Scene 1, answer: \"What would a competitor's video show for this same concept?\" If your planned visual could appear in that competitor's video unchanged, it is not specific enough. For product-demos specifically:\n- Do NOT open with abstract 'chaos' visualizations (tangled lines, scattered nodes, etc.)\n- DO open with a recognizable pain point from this product's actual competitive landscape (e.g., for Linear: screenshot-style mockups of Jira's notification hell, Asana's nested project chaos, or the Slack-Jira-Notion tab-switching dance)\n- The first 3 seconds must show something only THIS brand's users would recognize as their specific problem",
+    "rationale": "The visual metaphor guidance exists but is buried in Phase 2.5 as a reference table; moving it to Scene Planning and adding an explicit Scene 1 gate with product-demo-specific anti-patterns would force the model to validate specificity before writing the opening scene."
+  }
+]

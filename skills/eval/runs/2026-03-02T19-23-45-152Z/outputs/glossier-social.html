@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glossier — 15s Social</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@editframe/elements/styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #000;
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes face-enter {
+      from { 
+        opacity: 0;
+        transform: scale(0.95) translateY(8px);
+      }
+      to { 
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    @keyframes text-reveal {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes glow-pulse {
+      0%, 100% { box-shadow: inset 0 0 20px rgba(255, 182, 193, 0.3); }
+      50% { box-shadow: inset 0 0 40px rgba(255, 182, 193, 0.6); }
+    }
+
+    .glossier-pink { background: #F4E4E1; }
+    .face-circle {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background-size: cover;
+      background-position: center;
+    }
+
+    #canvas-container {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <ef-configuration api-host="https://api.editframe.com" media-engine="local">
+    <ef-timegroup 
+      mode="sequence" 
+      overlap="0.5s"
+      class="w-[1080px] h-[1920px] bg-white"
+      workbench
+    >
+      <!-- Scene 1: Three Faces (User-Submitted Hero) 5s -->
+      <ef-timegroup 
+        mode="contain" 
+        class="absolute w-full h-full flex items-center justify-center gap-6 px-8"
+        style="background: white; animation: fade-in 0.4s both"
+      >
+        <!-- Face 1 -->
+        <div class="w-32 h-32 rounded-full overflow-hidden bg-gray-200"
+          style="animation: face-enter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both 0s">
+          <div class="face-circle" style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22128%22 height=%22128%22%3E%3Ccircle cx=%2264%22 cy=%2264%22 r=%2264%22 fill=%22%23D4A574%22/%3E%3C/svg%3E')"></div>
+        </div>
+
+        <!-- Face 2 (Center, larger) -->
+        <div class="w-40 h-40 rounded-full overflow-hidden bg-gray-200 -mt-8"
+          style="animation: face-enter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both 0.1s">
+          <div class="face-circle" style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Ccircle cx=%2280%22 cy=%2280%22 r=%2280%22 fill=%22%23E8B4A0%22/%3E%3C/svg%3E')"></div>
+        </div>
+
+        <!-- Face 3 -->
+        <div class="w-32 h-32 rounded-full overflow-hidden bg-gray-200"
+          style="animation: face-enter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both 0.2s">
+          <div class="face-circle" style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22128%22 height=%22128%22%3E%3Ccircle cx=%2264%22 cy=%2264%22 r=%2264%22 fill=%22%23F5C8A8%22/%3E%3C/svg%3E')"></div>
+        </div>
+      </ef-timegroup>
+
+      <!-- Scene 2: "You, Unfiltered" + CTA 5s + 0.5s overlap = 4.5s new -->
+      <ef-timegroup 
+        mode="contain"
+        class="absolute w-full h-full flex flex-col items-center justify-center gap-4 glossier-pink px-8"
+        style="animation: fade-in 0.5s both"
+      >
+        <ef-text 
+          class="text-5xl font-light text-center text-gray-900 tracking-tight"
+          style="animation: text-reveal 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) both 0.2s; max-width: 320px; line-height: 1.2"
+        >You,<br/>Unfiltered</ef-text>
+
+        <ef-text 
+          class="text-lg text-center text-gray-700 font-light mt-4"
+          style="animation: text-reveal 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) both 0.5s; max-width: 280px"
+        >built from real skin, real stories</ef-text>
+
+        <div 
+          class="mt-8 px-6 py-3 rounded-full glossier-pink border-2 border-gray-900 text-sm font-medium text-gray-900 cursor-pointer"
+          style="animation: text-reveal 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) both 0.8s; border: 2px solid #333"
+        >shop now</div>
+      </ef-timegroup>
+
+      <!-- Scene 3: Essence (Micro-Close-Up, No-Makeup Truth) 5s + 0.5s overlap -->
+      <ef-timegroup 
+        mode="contain"
+        id="essence-scene"
+        class="absolute w-full h-full flex items-center justify-center overflow-hidden"
+        style="background: linear-gradient(135deg, #FFF5F3 0%, #F4E4E1 100%)"
+      >
+        <canvas id="skin-texture" class="absolute inset-0 w-full h-full"></canvas>
+        
+        <div class="absolute inset-0 flex flex-col items-center justify-center gap-6 z-10">
+          <ef-text 
+            class="text-6xl font-light text-gray-900 text-center"
+            style="animation: text-reveal 0.8s cubic-bezier(0, 0.55, 0.45, 1) both 0.1s; text-shadow: 0 4px 12px rgba(0,0,0,0.08); max-width: 90%"
+          >skin first</ef-text>
+
+          <ef-text 
+            class="text-sm tracking-widest text-gray-600 uppercase font-light"
+            style="animation: text-reveal 0.6s cubic-bezier(0, 0.55, 0.45, 1) both 0.4s; letter-spacing: 2px"
+          >by the people</ef-text>
+        </div>
+      </ef-timegroup>
+    </ef-timegroup>
+  </ef-configuration>
+
+  <script>
+    // Canvas animation: organic, skin-like texture that builds throughout the scene
+    // Glossier's truth: the community builds the product, not the brand.
+    // Visual metaphor: individual dots (users/community members) forming a cohesive field
+    const essenceScene = document.getElementById('essence-scene');
+    const canvas = document.getElementById('skin-texture');
+    const ctx = canvas.getContext('2d');
+
+    if (essenceScene && canvas) {
+      essenceScene.initializer = (instance) => {
+        return instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+          canvas.width = canvas.offsetWidth;
+          canvas.height = canvas.offsetHeight;
+          const progress = ownCurrentTimeMs / durationMs;
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = 'rgba(244, 228, 225, 0.15)';
+
+          // 200 particles representing community members
+          // They accumulate and settle, visualizing how the community forms the product
+          const particleCount = Math.floor(progress * 200);
+
+          for (let i = 0; i < particleCount; i++) {
+            // Deterministic positioning based on index (same animation each render)
+            const seed = i * 137.5;
+            const phi = seed * 2.39996;
+            
+            // Golden spiral layout (organic, natural looking)
+            const baseRadius = Math.sqrt(i) * 12;
+            const x = canvas.width / 2 + Math.cos(phi) * baseRadius;
+            const y = canvas.height / 2 + Math.sin(phi) * baseRadius;
+
+            // Particle size varies subtly
+            const particleSize = 1.5 + Math.sin(seed) * 1;
+            
+            // Alpha increases as progress increases
+            const alpha = Math.min(0.6, progress * 1.2);
+            ctx.globalAlpha = alpha;
+
+            ctx.beginPath();
+            ctx.arc(x, y, particleSize, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(217, 142, 110, ${alpha})`;
+            ctx.fill();
+          }
+
+          ctx.globalAlpha = 1;
+        });
+      };
+    }
+  </script>
+</body>
+</html>

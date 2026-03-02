@@ -1,0 +1,53 @@
+{
+  "taskId": "notion-social",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:09:12.972Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural and purposeful. The composition uses addFrameTask for procedural canvas animations, word-splitting with staggered delays, and coordinated animation sequences. The chaos canvas visually builds tangled lines over time, and the solution canvas shows converging grid lines - both driven by progress-based calculations.",
+      "evidence": "addFrameTask with progress-based drawing: `const lineCount = Math.floor(progress * 30)`, word splitting with `animation-delay: calc(var(--ef-word-index) * 100ms)`, and canvas elements that animate based on `ownCurrentTimeMs / durationMs`."
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "The composition uses Notion's brand colors (blue gradient) and references general product categories (Write, Plan, Database, Manage), but these features are generic productivity tool language. The 'all-in-one workspace' tagline is used but the visual execution could apply to Coda, Confluence, or any workspace tool.",
+      "evidence": "Features shown are generic icons with labels: '📝 Write', '📋 Plan', '📊 Database', '✅ Manage'. The chaos-to-order narrative is a standard SaaS trope. No Notion-specific UI, blocks system, or distinctive visual language present."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The composition follows a recognizable arc: overwhelm (chaos) → problem articulation → solution promise → features → CTA. Each scene shifts the viewer state, but the shifts are formulaic. The chaos canvas is the most effective state-change moment.",
+      "evidence": "Scene 1 creates visual anxiety with tangled lines, Scene 2 names the pain points ('Notes scattered everywhere'), Scene 3 offers relief ('One workspace'), Scene 4 delivers proof points, Scene 5 resolves with CTA. The arc is traceable but predictable."
+    },
+    "point_of_view": {
+      "score": 2,
+      "rationale": "The composition implies a perspective (digital chaos is the enemy, unification is the answer) but doesn't commit to anything distinctive. The visual metaphor of tangled lines → organized grid is competent but not revelatory about Notion specifically.",
+      "evidence": "The chaos canvas uses generic representations of disorder (scattered rectangles 'like windows/tabs'), not anything specific to how Notion users actually experience fragmentation. The solution is presented as spatial organization rather than Notion's actual paradigm (blocks, linked databases, etc.)."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Most scenes earn their place in the narrative arc. Scene 2 could potentially be trimmed - the three separate text animations ('Notes scattered everywhere', 'Docs lost in folders', 'No single source of truth') feel slightly redundant when the chaos canvas already established the problem visually.",
+      "evidence": "Scene 2 takes 4 seconds (3s-7s) to state three variations of the same problem. The chaos canvas in Scene 1 already communicated disorder effectively. Combining or shortening these would tighten the composition."
+    }
+  },
+  "overall": 2.8,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition relies on generic productivity tool language and visuals. Features are represented by emoji icons (📝📋📊✅) with single-word labels that could describe any workspace tool.",
+      "improvement": "Show Notion's distinctive elements: the slash command interface, the blocks system, a database toggle, or the sidebar organization. Use Notion's actual UI patterns rather than abstract icons. Reference specific use cases Notion owns (team wikis, project databases with views)."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The chaos-to-order metaphor is a SaaS advertising cliché. The converging grid lines don't reflect how Notion actually organizes information (it's not about spatial grids but about linked, flexible blocks).",
+      "improvement": "Build the visual metaphor around Notion's actual paradigm: scattered pieces becoming interconnected blocks, or isolated documents gaining relational links. The solution canvas could show blocks snapping together rather than generic grid convergence."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "Scene 2's three-part text reveal (scattered notes, lost docs, no single source) is emotionally flat after the effective chaos visualization. It names what we already felt.",
+      "improvement": "Use Scene 2 to deepen the emotional stakes rather than restate the problem. Show specific scenarios (missed deadlines, duplicate work, lost context) or use the viewer's own recognition ('Sound familiar?') to escalate rather than repeat."
+    }
+  ]
+}

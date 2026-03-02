@@ -1,0 +1,53 @@
+{
+  "taskId": "vercel-launch",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:48:23.096Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is the argument here. The composition uses addFrameTask with procedural canvas animations that directly visualize the deploy workflow - commits flowing, deployment ripples expanding, preview URLs branching. The animation form carries meaning the text cannot.",
+      "evidence": "Three separate canvas-based animations using `instance.addFrameTask((ownTimeMs, durationMs) => {...})`. Scene 1 draws 'commit nodes flowing down' with connecting lines. Scene 2 creates 'expanding ripples of deployment' with radiating nodes. Scene 3 shows 'branching paths (git branches → preview URLs)' that grow outward. Each animation is time-synchronized and conceptually tied to the scene's meaning."
+    },
+    "specificity": {
+      "score": 3,
+      "rationale": "Several Vercel-specific truths are present: the git-push-to-deploy workflow, instant preview URLs, edge deployment visualization. However, these features exist in Netlify, Railway, and other competitors. The composition reflects Vercel's positioning but not uniquely.",
+      "evidence": "Scene 1: 'git push' with 'The moment everything changes' - generic to all CI/CD. Scene 2: 'Deploy complete' with 'Your code lives everywhere instantly' - edge deployment claim. Scene 3: 'vercel.com/project-name--abc123' - specific URL format but substitutable. Missing: Next.js relationship, specific performance claims, Vercel's distinctive triangle logo treatment."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc is traceable: friction → resolution → capability → action. But the shifts are formulaic and the emotional stakes are understated. The viewer moves through expected states without surprise.",
+      "evidence": "Scene 1 (Problem): 'git push' - establishes familiar dev moment. Scene 2 (Solution): '✓ Deploy complete' - relief/satisfaction. Scene 3 (Feature): 'Every push gets a live URL' - capability awareness. Scene 4 (CTA): 'Ship today' - call to action. The progression is logical but the emotional register is flat throughout."
+    },
+    "point_of_view": {
+      "score": 2,
+      "rationale": "A perspective is implied - that deployment should be invisible/instant - but it's not committed to with conviction. The composition hedges by covering multiple angles (speed, previews, shipping) rather than arguing one thing powerfully.",
+      "evidence": "The taglines shift: 'The moment everything changes' (drama), 'Your code lives everywhere instantly' (capability), 'Every push gets a live URL' (feature), 'Ship today' (urgency). These are four different angles, not one perspective deepened. The canvas animations suggest 'deploy as energy transfer' but the text doesn't reinforce this."
+    },
+    "omission": {
+      "score": 4,
+      "rationale": "Every scene serves a distinct function in the arc. None are redundant. The only question is whether Scene 3 (preview URLs) is essential or if Scene 2's deployment message could carry into the CTA directly.",
+      "evidence": "Scene 1: Problem state. Scene 2: Solution state. Scene 3: Feature proof. Scene 4: CTA. Four scenes for a 15-second video is appropriate. Scene 3 adds concrete evidence (the URL format) that Scene 2's abstract claim needs. Removing it would weaken the proof chain."
+    }
+  },
+  "overall": 3.4,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition relies on features that are true of Vercel but equally true of competitors (Netlify, Cloudflare Pages, Railway). The preview URL format is specific but swappable.",
+      "improvement": "Anchor in Vercel-unique truths: the Next.js integration, specific performance metrics ('Edge in 18 regions'), the Vercel triangle as visual motif, or founder voice/positioning. The canvas animations could render the actual Vercel triangle expanding outward."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "The state changes are present but predictable. Problem→Solution→Feature→CTA is a template arc. The viewer is informed but not transformed or surprised.",
+      "improvement": "Create a genuine emotional turn. Scene 1 could start with deployment anxiety/complexity (visible friction), making Scene 2's resolution feel like relief. Or subvert expectations: start with the deployed state and rewind to show how little it took."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition tries to say multiple things (speed, previews, global edge, shipping velocity) rather than arguing one thing with conviction. The canvas 'energy spreading' motif is strong but the text doesn't commit to it.",
+      "improvement": "Choose one perspective and make every scene serve it. If the argument is 'deploy is now instant energy transfer,' then Scene 1 should show blocked energy, Scene 2 the release, Scene 3 the network effect, Scene 4 the invitation to feel this. Unify text and motion around one claim."
+    }
+  ]
+}

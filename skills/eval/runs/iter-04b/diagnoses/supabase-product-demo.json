@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "motion",
+      "severity": "major",
+      "observation": "Canvas element in Scene 5 exists but has no animation logic—it's a dead element promising procedural motion.",
+      "improvement": "Either implement `addFrameTask` to animate database constraint visualization on canvas, or remove the canvas and use CSS-based motion that actually renders. The 'constraints that protect' concept begs for animated visualization of data validation."
+    },
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "currentText": "```html\n<ef-timegroup mode=\"fixed\" duration=\"6s\" id=\"canvas-scene\" class=\"w-[720px] h-[400px] bg-slate-900\">\n  <canvas id=\"particles\" class=\"absolute inset-0 size-full\"></canvas>\n  <ef-text class=\"absolute bottom-8 left-8 text-white text-3xl font-bold\"\n    style=\"animation: 0.6s enter-up 1s both\">Energy in motion</ef-text>\n</ef-timegroup>\n\n<script>\n  const tg = document.getElementById('canvas-scene');",
+    "cause": "wrong_priority",
+    "proposedChange": "Add a warning box immediately before the Procedural Canvas section:\n\n**⚠️ Canvas elements require `addFrameTask` implementation.** A `<canvas>` element without a corresponding `<script>` that calls `addFrameTask` will render as a blank rectangle. Never include a canvas element unless you also include the complete JavaScript that animates it. If you're unsure how to implement the animation, use CSS-based motion instead.",
+    "rationale": "The model included a canvas element but omitted the script, likely because the documentation shows them separately; an explicit warning that canvas without script is broken would prevent orphaned canvas elements."
+  },
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The layer-stripping visual metaphor in Scene 2 is generic infrastructure imagery that any database product could claim.",
+      "improvement": "Show actual Supabase dashboard UI, real schema visualization, or the specific green brand palette in the layer design. The 'Postgres underneath' reveal should feel like seeing Supabase specifically, not generic architecture."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Canvas API Opportunities** (use `frameTask` for generative graphics):\n- Particle systems (energy, activity)\n- Bezier curves (chaos, complexity, connections)\n- Grid multiplication (scale, quantity)\n- Orbital motion (energy, dynamism)\n- Shape morphing (transformation)",
+    "cause": "missing",
+    "proposedChange": "Replace the Canvas API Opportunities section with:\n\n**Canvas API Opportunities** (use `frameTask` for generative graphics):\n- Particle systems (energy, activity)\n- Bezier curves (chaos, complexity, connections)\n- Grid multiplication (scale, quantity)\n- Orbital motion (energy, dynamism)\n- Shape morphing (transformation)\n\n**Product-demo visual requirements:**\nFor `product-demo` videos, abstract canvas animations are insufficient. You must show:\n- Actual product UI (screenshots, or HTML/CSS recreations using the brand's exact colors and typography)\n- Real interface elements the user would recognize (dashboard panels, code editors, terminal output)\n- Brand-specific visual markers (logo, color palette, UI patterns unique to this product)\n\nGeneric infrastructure metaphors (layers, nodes, grids) fail the specificity test—they could represent any competitor. The visual must be unmistakably *this* product.",
+    "rationale": "The skill lists abstract visual options without requiring product-specific UI for demos, leading the model to use generic layer imagery instead of Supabase's actual dashboard or brand elements."
+  },
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "omission",
+      "severity": "critical",
+      "observation": "Composition is truncated/incomplete (Scene 6 cuts off at `0.`), Scene 5's canvas is non-functional, and Scene 4's feature grid duplicates earlier content.",
+      "improvement": "Complete Scene 6, either implement or remove the canvas animation, and consider merging Scenes 3-4 since both establish 'what you get'—the code example already implies the feature breadth."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Scene budget**: `floor(duration_seconds / 10)` is your maximum scene count. A 30s video gets 3 scenes. A 60s video gets 6. Start at the minimum and add only if the viewer-state arc requires it — not because you have things to say.",
+    "cause": "missing",
+    "proposedChange": "After the scene budget paragraph, add:\n\n**Composition completeness requirement:** Every scene in your plan must be fully implemented in the final composition. Before outputting code:\n1. Verify every scene has complete HTML/CSS (no truncation, no placeholder comments)\n2. Verify every `<canvas>` element has a corresponding `<script>` with `addFrameTask`\n3. Verify no two scenes communicate the same viewer-state change (merge duplicates)\n4. Count your scenes against the budget—if you exceed it, cut the weakest scene entirely rather than rushing implementation\n\nAn incomplete composition is worse than a shorter complete one.",
+    "rationale": "The model produced truncated output and duplicate scenes because nothing in the skill enforces completeness verification before output; an explicit checklist would catch these errors."
+  }
+]

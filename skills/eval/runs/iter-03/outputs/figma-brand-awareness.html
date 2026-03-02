@@ -1,0 +1,239 @@
+<ef-timegroup mode="sequence" overlap="0.8s" class="w-[1080px] h-[1920px] bg-black">
+    <!-- Scene 1: The Problem (Siloed Design) -->
+    <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full gradient-bg-1 flex flex-col items-center justify-center">
+      <canvas id="scene1-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      <div class="absolute inset-0 bg-black/40"></div>
+      <ef-text
+        split="word"
+        class="relative z-10 text-center text-white-primary text-5xl font-bold px-8"
+        style="animation: 0.6s word-enter-stagger both; animation-delay: calc(var(--ef-word-index) * 100ms); line-height: 1.2;"
+      >Design happened alone</ef-text>
+      <ef-text
+        class="relative z-10 text-center text-white-secondary text-xl mt-6 px-8 max-w-2xl"
+        style="animation: 0.5s element-fade-in both 0.8s"
+      >Every designer worked in isolation. Files passed like notes.</ef-text>
+    </ef-timegroup>
+
+    <!-- Scene 2: The Shift (Figma's Model) -->
+    <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full gradient-bg-2 flex flex-col items-center justify-center"
+      style="animation: 0.8s fade-out-scene var(--ef-transition-out-start) both">
+      <canvas id="scene2-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      <div class="absolute inset-0 bg-black/35"></div>
+      <ef-text
+        split="word"
+        class="relative z-10 text-center text-white-primary text-5xl font-bold px-8"
+        style="animation: 0.6s word-enter-stagger 0.3s both; animation-delay: calc(0.3s + var(--ef-word-index) * 100ms); line-height: 1.2;"
+      >Design happens together</ef-text>
+      <ef-text
+        class="relative z-10 text-center text-white-secondary text-xl mt-6 px-8 max-w-2xl"
+        style="animation: 0.5s element-fade-in both 1.1s"
+      >In the browser. Real-time. Everyone sees the same canvas.</ef-text>
+    </ef-timegroup>
+
+    <!-- Scene 3: The Outcome (Ship From Design) -->
+    <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full gradient-bg-3 flex flex-col items-center justify-center"
+      style="animation: 0.8s fade-in-scene both">
+      <canvas id="scene3-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      <div class="absolute inset-0 bg-black/40"></div>
+      <ef-text
+        split="word"
+        class="relative z-10 text-center text-white-primary text-5xl font-bold px-8"
+        style="animation: 0.6s word-enter-stagger 0.3s both; animation-delay: calc(0.3s + var(--ef-word-index) * 100ms); line-height: 1.2;"
+      >Ship directly from design</ef-text>
+      <ef-text
+        class="relative z-10 text-center text-white-secondary text-xl mt-6 px-8 max-w-2xl"
+        style="animation: 0.5s element-fade-in both 1.1s"
+      >Design and dev on the same surface. Prototype becomes product.</ef-text>
+      <ef-text
+        class="relative z-10 text-center figma-purple text-lg font-semibold mt-12"
+        style="animation: 0.5s element-fade-in both 1.6s"
+      >Start designing free at figma.com</ef-text>
+    </ef-timegroup>
+  </ef-timegroup>
+
+  <script>
+    // Scene 1: Isolated cursors (siloed work)
+    function drawScene1() {
+      const canvas = document.getElementById('scene1-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+
+      const tg = canvas.closest('ef-timegroup');
+      tg.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const progress = ownCurrentTimeMs / durationMs;
+        const count = Math.floor(progress * 5);
+
+        // Draw isolated cursors in separate corners (no interaction)
+        for (let i = 0; i < count; i++) {
+          const angle = (i / 5) * Math.PI * 2;
+          const distance = 150 + Math.sin(ownCurrentTimeMs * 0.003 + i) * 30;
+          const x = canvas.width / 2 + Math.cos(angle) * distance;
+          const y = canvas.height / 2 + Math.sin(angle) * distance;
+
+          // Draw cursor
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + 12, y + 18);
+          ctx.lineTo(x + 6, y + 12);
+          ctx.closePath();
+          ctx.fillStyle = `rgba(255, 255, 255, ${0.6 - i * 0.1})`;
+          ctx.fill();
+
+          // Draw orbit path (faint)
+          ctx.beginPath();
+          ctx.arc(canvas.width / 2, canvas.height / 2, distance, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(162, 89, 255, ${0.15})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      });
+    }
+
+    // Scene 2: Converging cursors (collaboration)
+    function drawScene2() {
+      const canvas = document.getElementById('scene2-canvas');
+      if (!canvas) return;
+      const tg = canvas.closest('ef-timegroup');
+      const ctx = canvas.getContext('2d');
+
+      tg.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const progress = ownCurrentTimeMs / durationMs;
+        const count = 5;
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        // Cursors move toward center as progress increases
+        for (let i = 0; i < count; i++) {
+          const angle = (i / count) * Math.PI * 2;
+          const startDistance = 220;
+          const endDistance = 60;
+          const currentDistance = startDistance - (startDistance - endDistance) * progress;
+
+          const x = centerX + Math.cos(angle) * currentDistance;
+          const y = centerY + Math.sin(angle) * currentDistance;
+
+          // Draw cursor color cycling through Figma palette
+          const hue = (i * 72 + ownCurrentTimeMs * 0.1) % 360;
+          const colors = ['#a259ff', '#18a0fb', '#1dd1a1', '#ff6b6b', '#ffd93d'];
+          const color = colors[i % colors.length];
+
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + 12, y + 18);
+          ctx.lineTo(x + 6, y + 12);
+          ctx.closePath();
+          ctx.fillStyle = color;
+          ctx.globalAlpha = 0.8;
+          ctx.fill();
+          ctx.globalAlpha = 1;
+
+          // Draw connection line to center
+          if (progress > 0.3) {
+            ctx.beginPath();
+            ctx.moveTo(x + 6, y + 12);
+            ctx.lineTo(centerX, centerY);
+            ctx.strokeStyle = `rgba(162, 89, 255, ${(progress - 0.3) * 0.4})`;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+          }
+        }
+
+        // Draw central collaboration point
+        if (progress > 0.5) {
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, 8 + Math.sin(ownCurrentTimeMs * 0.01) * 3, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(162, 89, 255, ${0.6 + Math.sin(ownCurrentTimeMs * 0.005) * 0.2})`;
+          ctx.fill();
+        }
+      });
+    }
+
+    // Scene 3: Design to code flow
+    function drawScene3() {
+      const canvas = document.getElementById('scene3-canvas');
+      if (!canvas) return;
+      const tg = canvas.closest('ef-timegroup');
+      const ctx = canvas.getContext('2d');
+
+      tg.addFrameTask((ownCurrentTimeMs, durationMs) => {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const progress = ownCurrentTimeMs / durationMs;
+
+        // Draw flowing particles from design frame to code
+        const startX = canvas.width * 0.25;
+        const startY = canvas.height * 0.5;
+        const endX = canvas.width * 0.75;
+        const endY = canvas.height * 0.5;
+
+        const particleCount = Math.floor(progress * 40);
+
+        for (let i = 0; i < particleCount; i++) {
+          const particleProgress = (progress * 1.5 - i * 0.05) % 1;
+          if (particleProgress < 0) continue;
+
+          const x = startX + (endX - startX) * particleProgress;
+          const y = startY + Math.sin(particleProgress * Math.PI * 2) * 20;
+
+          const size = 3 + Math.sin(i * 0.7) * 2;
+          ctx.beginPath();
+          ctx.arc(x, y, size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(24, 160, 251, ${0.8 - particleProgress * 0.8})`;
+          ctx.fill();
+        }
+
+        // Draw design frame
+        if (progress > 0.1) {
+          ctx.strokeStyle = 'rgba(162, 89, 255, 0.4)';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(startX - 40, startY - 60, 80, 120);
+          ctx.fillStyle = 'rgba(162, 89, 255, 0.05)';
+          ctx.fillRect(startX - 40, startY - 60, 80, 120);
+        }
+
+        // Draw code/dev indicator
+        if (progress > 0.1) {
+          ctx.strokeStyle = 'rgba(24, 160, 251, 0.4)';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(endX - 40, endY - 60, 80, 120);
+          ctx.fillStyle = 'rgba(24, 160, 251, 0.05)';
+          ctx.fillRect(endX - 40, endY - 60, 80, 120);
+        }
+
+        // Draw directional arrow
+        if (progress > 0.2) {
+          const arrowX = startX + (endX - startX) * 0.5;
+          const arrowY = startY;
+          ctx.beginPath();
+          ctx.moveTo(arrowX - 20, arrowY);
+          ctx.lineTo(arrowX + 20, arrowY);
+          ctx.strokeStyle = 'rgba(29, 209, 161, 0.6)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(arrowX + 15, arrowY - 6);
+          ctx.lineTo(arrowX + 20, arrowY);
+          ctx.lineTo(arrowX + 15, arrowY + 6);
+          ctx.strokeStyle = 'rgba(29, 209, 161, 0.6)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      });
+    }
+
+    // Initialize canvas animations after DOM is ready
+    setTimeout(() => {

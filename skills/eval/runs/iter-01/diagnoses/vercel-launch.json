@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition describes any deployment platform, not Vercel specifically. 'Git push → live in seconds → global' is the category promise, not Vercel's unique position.",
+      "improvement": "Include Vercel-specific elements: the triangle logo as a visual motif, preview deployment URLs appearing, the 'Promoted to Production' moment, Edge Function cold start speed, or the Next.js framework lock-in advantage. Show the actual Vercel dashboard deployment animation."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+    "cause": "missing",
+    "proposedChange": "After the existing example, add:\n\n**For deployment/infrastructure brands specifically:**\nNot: \"Fast deploys\" or \"Git push to production\" (every CI/CD platform claims this).\nYes: \"Framework-aware deployment — Vercel knows Next.js internals, so it optimizes what generic platforms can't touch.\"\n\n**Specificity test for SaaS/DevTools:** Can you name the specific UI element, API response, or workflow step that only this product has? If not, you haven't found the truth yet. Examples:\n- Vercel: Preview URLs generated per-branch, 'Promoted to Production' button, Edge Function cold starts under 25ms\n- Linear: Cmd+K everything, no settings pages, cycles instead of sprints\n- Stripe: The 7-line integration code block, test mode toggle, webhook event viewer",
+    "rationale": "The model treated 'fast deployment' as a differentiator because the skill's example of specificity was about founding story, not product-specific UI/workflow elements — adding DevTools-specific examples would have forced identification of Vercel's actual unique features."
+  },
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition takes no stance on what makes Vercel's approach philosophically different. It's a template 'fast deployment' video.",
+      "improvement": "Commit to Vercel's specific worldview: 'The best DX creates the best UX' or 'Framework-aware deployment changes everything.' Structure scenes around what Vercel does that others can't — instant rollback, preview URLs for every branch, zero-config Next.js optimization."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"",
+    "cause": "wrong_priority",
+    "proposedChange": "Add a new validation step immediately after Phase 0, before proceeding:\n\n**Phase 0.5: Structural Consequence Validation (MANDATORY)**\n\nWrite out the scene structure you're planning. Now substitute a competitor's name. If the structure still makes sense, you have not found the real point of view.\n\nExample failure: \"Scene 1: Problem (slow deploys), Scene 2: Solution (fast deploys), Scene 3: CTA\" — this works for Vercel, Netlify, Railway, Render, or any deployment platform. It has no point of view.\n\nExample success for Vercel: \"Each scene shows the same deploy, but from a different vantage point: the git push, the build log, the preview URL appearing, the production promotion. The video is about the *visibility* of deployment, not the speed — because Vercel's real advantage is that you can see and share every state.\" This structure would not work for a competitor without preview URLs.\n\n**If your structure passes the competitor-substitution test, return to Phase 0 question #1.**",
+    "rationale": "The existing guidance about structural consequence was buried in the middle of Phase 0 and lacked a concrete validation mechanism — adding an explicit substitution test with a deployment-platform example would have caught the generic 'fast deployment' structure."
+  }
+]

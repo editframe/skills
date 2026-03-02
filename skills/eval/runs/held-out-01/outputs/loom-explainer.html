@@ -1,0 +1,235 @@
+<ef-timegroup mode="sequence" overlap="1.2s" class="w-[1920px] h-[1080px]">
+    <!-- Scene 1: The Problem (0s - 12s) -->
+    <ef-timegroup mode="fixed" duration="12s" class="absolute w-full h-full brand-gradient flex flex-col items-center justify-center">
+      <ef-text
+        split="word"
+        class="text-primary text-7xl font-bold text-center mb-8 max-w-4xl"
+        style="animation: 0.6s slide-up both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+      >
+        Work drowns in async noise
+      </ef-text>
+      
+      <div class="chaos-container absolute inset-0" id="chaos-canvas">
+        <canvas id="chaos" class="absolute inset-0 size-full"></canvas>
+      </div>
+      
+      <ef-text
+        class="text-secondary text-3xl absolute bottom-20"
+        style="animation: 1s fade-in 3s both"
+      >
+        Emails pile up. Meetings multiply. Context gets lost.
+      </ef-text>
+    </ef-timegroup>
+
+    <!-- Scene 2: The Moment (12s - 24s) -->
+    <ef-timegroup mode="fixed" duration="12s" class="absolute w-full h-full bg-gradient-to-b from-[#1f2937] to-[#5d3fd3] flex items-center justify-center"
+      style="animation: 1.2s fade-in both">
+      <div class="absolute inset-0 flex items-center justify-center">
+        <div class="relative w-96 h-96">
+          <div class="absolute inset-0 rounded-full border-2 border-purple-500/30" id="resolve-container"></div>
+          <div class="absolute inset-0 flex items-center justify-center">
+            <div class="text-center">
+              <ef-text
+                class="text-primary text-6xl font-bold mb-4"
+                style="animation: 0.8s scale-in 1s both"
+              >
+                ▶
+              </ef-text>
+              <ef-text
+                class="text-secondary text-2xl"
+                style="animation: 0.8s scale-in 1.5s both"
+              >
+                One click. One message. Done.
+              </ef-text>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 3: The Solution (24s - 36s) -->
+    <ef-timegroup mode="fixed" duration="12s" class="absolute w-full h-full bg-[#0f172a] flex flex-col items-start justify-center px-24"
+      style="animation: 1.2s fade-in both">
+      <ef-text
+        split="word"
+        class="text-primary text-6xl font-bold mb-12 max-w-3xl"
+        style="animation: 0.6s slide-up both; animation-delay: calc(var(--ef-word-index) * 80ms)"
+      >
+        Record instead of write
+      </ef-text>
+      
+      <div class="max-w-2xl">
+        <div class="mb-8" style="animation: 1s fade-in 2s both">
+          <ef-text class="text-secondary text-2xl mb-2">• Face to face, remotely</ef-text>
+          <ef-text class="text-secondary text-lg text-white/60">Tone and clarity at scale</ef-text>
+        </div>
+        
+        <div class="mb-8" style="animation: 1s fade-in 2.5s both">
+          <ef-text class="text-secondary text-2xl mb-2">• Async by design</ef-text>
+          <ef-text class="text-secondary text-lg text-white/60">No meeting required, no timezone conflict</ef-text>
+        </div>
+        
+        <div style="animation: 1s fade-in 3s both">
+          <ef-text class="text-secondary text-2xl mb-2">• Full context in 90 seconds</ef-text>
+          <ef-text class="text-secondary text-lg text-white/60">Everything needed, nothing wasted</ef-text>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 4: The Work (36s - 48s) -->
+    <ef-timegroup mode="fixed" duration="12s" class="absolute w-full h-full bg-gradient-to-r from-[#5d3fd3] via-[#3b2667] to-[#1f2937] flex items-center justify-center"
+      style="animation: 1.2s fade-in both">
+      <div class="max-w-2xl text-center">
+        <ef-text
+          class="text-primary text-5xl font-bold mb-8"
+          style="animation: 0.8s scale-in 1s both"
+        >
+          Loom works where you work
+        </ef-text>
+        
+        <div class="flex justify-center gap-8 mt-12" style="animation: 1s fade-in 2s both">
+          <div class="flex flex-col items-center">
+            <div class="w-16 h-16 rounded-lg bg-white/10 flex items-center justify-center mb-3">
+              <ef-text class="text-2xl">💬</ef-text>
+            </div>
+            <ef-text class="text-secondary text-sm">Slack</ef-text>
+          </div>
+          <div class="flex flex-col items-center">
+            <div class="w-16 h-16 rounded-lg bg-white/10 flex items-center justify-center mb-3">
+              <ef-text class="text-2xl">📧</ef-text>
+            </div>
+            <ef-text class="text-secondary text-sm">Email</ef-text>
+          </div>
+          <div class="flex flex-col items-center">
+            <div class="w-16 h-16 rounded-lg bg-white/10 flex items-center justify-center mb-3">
+              <ef-text class="text-2xl">📋</ef-text>
+            </div>
+            <ef-text class="text-secondary text-sm">Teams</ef-text>
+          </div>
+          <div class="flex flex-col items-center">
+            <div class="w-16 h-16 rounded-lg bg-white/10 flex items-center justify-center mb-3">
+              <ef-text class="text-2xl">🌐</ef-text>
+            </div>
+            <ef-text class="text-secondary text-sm">Browser</ef-text>
+          </div>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 5: The CTA (48s - 60s) -->
+    <ef-timegroup mode="fixed" duration="12s" class="absolute w-full h-full brand-gradient flex flex-col items-center justify-center"
+      style="animation: 1.2s fade-in both">
+      <ef-text
+        split="word"
+        class="text-primary text-6xl font-bold text-center mb-12 max-w-3xl"
+        style="animation: 0.6s slide-up both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+      >
+        Record your first message today
+      </ef-text>
+      
+      <div class="mt-8 px-12 py-4 bg-white/10 rounded-lg border border-white/20 backdrop-blur"
+        style="animation: 0.8s scale-in 2.5s both">
+        <ef-text class="text-primary text-2xl font-semibold">
+          Get started free — no credit card needed
+        </ef-text>
+      </div>
+      
+      <ef-text
+        class="text-secondary text-xl absolute bottom-16"
+        style="animation: 1s fade-in 3.5s both"
+      >
+        Async communication that actually works
+      </ef-text>
+    </ef-timegroup>
+  </ef-timegroup>
+
+  <script>
+    const chaosCanvas = document.getElementById('chaos');
+    const chaosContainer = document.getElementById('chaos-canvas');
+    const resolveContainer = document.getElementById('resolve-container');
+
+    if (chaosCanvas) {
+      const ctx = chaosCanvas.getContext('2d');
+      const tg = document.querySelector('ef-timegroup');
+      
+      // Get reference to first scene
+      const firstScene = tg.querySelector('ef-timegroup[duration="12s"]');
+      if (firstScene) {
+        firstScene.initializer = (instance) => {
+          instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+            chaosCanvas.width = chaosCanvas.offsetWidth;
+            chaosCanvas.height = chaosCanvas.offsetHeight;
+            
+            const progress = ownCurrentTimeMs / durationMs;
+            ctx.clearRect(0, 0, chaosCanvas.width, chaosCanvas.height);
+            
+            // Draw accumulating chaos particles that fill the screen
+            const particleCount = Math.floor(progress * 200);
+            
+            for (let i = 0; i < particleCount; i++) {
+              const seed = i * 73.5;
+              const x = (Math.sin(seed + progress * 8) * 0.5 + 0.5) * chaosCanvas.width;
+              const y = (Math.cos(seed * 0.73 + progress * 7) * 0.5 + 0.5) * chaosCanvas.height;
+              const r = 2 + Math.sin(seed + progress * 3) * 1.5;
+              const alpha = 0.4 + progress * 0.3;
+              
+              ctx.beginPath();
+              ctx.arc(x, y, r, 0, Math.PI * 2);
+              ctx.fillStyle = `rgba(147, 51, 234, ${alpha})`;
+              ctx.fill();
+            }
+            
+            // Draw connecting lines between nearby particles
+            if (particleCount > 1) {
+              for (let i = 0; i < Math.min(particleCount, 100); i += 3) {
+                const seed = i * 73.5;
+                const x1 = (Math.sin(seed + progress * 8) * 0.5 + 0.5) * chaosCanvas.width;
+                const y1 = (Math.cos(seed * 0.73 + progress * 7) * 0.5 + 0.5) * chaosCanvas.height;
+                
+                const nextSeed = (i + 1) * 73.5;
+                const x2 = (Math.sin(nextSeed + progress * 8) * 0.5 + 0.5) * chaosCanvas.width;
+                const y2 = (Math.cos(nextSeed * 0.73 + progress * 7) * 0.5 + 0.5) * chaosCanvas.height;
+                
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.strokeStyle = `rgba(147, 51, 234, ${0.1 * progress})`;
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+              }
+            }
+          });
+        };
+      }
+    }
+
+    // Resolve animation for scene 2
+    if (resolveContainer) {
+      const secondScene = document.querySelectorAll('ef-timegroup[duration="12s"]')[1];
+      if (secondScene) {
+        secondScene.initializer = (instance) => {
+          instance.addFrameTask((ownCurrentTimeMs, durationMs) => {
+            const progress = ownCurrentTimeMs / durationMs;
+            const elements = resolveContainer.querySelectorAll('.chaos-element');
+            
+            // Remove old elements
+            elements.forEach(el => el.remove());
+            
+            // In second half, spawn resolving particles that shrink to center
+            if (progress > 0.3) {
+              const spawnProgress = (progress - 0.3) / 0.7;
+              const spawnCount = Math.floor(spawnProgress * 60);
+              
+              for (let i = 0; i < spawnCount; i++) {
+                const el = document.createElement('div');
+                el.className = 'chaos-element';
+                const angle = (i / 60) * Math.PI * 2;
+                const distance = 150;
+                const x = 50 + Math.cos(angle) * distance;
+                const y = 50 + Math.sin(angle) * distance;
+                
+                el.style.left = x + '%';
+                el.style.top = y + '%';
+                el.style.animation = 'resolve-shrink 1s ease-in forwards';
+                el.style.animationDelay = (i * 0.02) + 's';
+                resolveContainer.appendChild(el

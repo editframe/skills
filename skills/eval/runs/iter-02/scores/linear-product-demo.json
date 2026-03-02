@@ -1,0 +1,53 @@
+{
+  "taskId": "linear-product-demo",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:12:53.782Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is structural and carries meaning. The chaos canvas animation visualizes workflow complexity with tangled nodes and quadratic curves, while the clarity canvas shows convergence to resolution. These aren't decorative—they ARE the argument about Linear's value proposition.",
+      "evidence": "Scene 1 uses `addFrameTask` with procedural canvas: `const nodeCount = Math.floor(progress * 60)` creates accumulating tangled connections. Scene 3's clarity canvas shows `const distance = startDistance + (endDistance - startDistance) * progress` for convergence. Character-level text splitting with `split=\"char\"` and staggered delays: `animation-delay: calc(var(--ef-index) * 40ms)`"
+    },
+    "specificity": {
+      "score": 3,
+      "rationale": "Several Linear-specific truths are present—keyboard-first philosophy, ⌘K command, 'work without friction' positioning. However, the visual language (purple gradients, node animations) could apply to any productivity tool. No actual UI glimpses or specific feature demonstrations.",
+      "evidence": "Linear-specific: `⌘K to search anything. Tab to assign. Enter to move. No mouse required.` and tagline 'Work without friction'. Generic elements: gradient backgrounds (#0f0f0f, indigo tones), abstract node visualizations that could represent any workflow tool."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc is traceable: frustration with chaos → discovery of keyboard speed → resolution clarity → brand recall. However, the emotional shifts are conventional and the 'chaos' opening doesn't create genuine discomfort—it's aesthetically pleasing rather than viscerally frustrating.",
+      "evidence": "Scene 1 presents 'Most tools add process' (problem state), Scene 2 offers solution 'Keyboard commands that think for you', Scene 3 resolves 'Issues solved, not deferred', Scene 4 closes with brand. The progression exists but shifts are formulaic."
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "There's a clear perspective: 'speed is intention' and friction-free work. The composition commits to showing Linear as fundamentally different from process-heavy tools. However, this is Linear's own marketing language, not an authorial interpretation.",
+      "evidence": "Consistent perspective visible in `Speed is intention` caption, `Most tools add process. Linear removes it.` and structural choice to use canvas animations showing chaos→clarity. The POV is present but borrowed from Linear's existing positioning."
+    },
+    "omission": {
+      "score": 4,
+      "rationale": "Four scenes, each serving a distinct purpose in the argument arc. No scene repeats another's function. The keyboard scene (Scene 2) earns its place by being the 'how' between problem and resolution.",
+      "evidence": "Scene 1: Problem (8s), Scene 2: Mechanism (10s), Scene 3: Outcome (8s), Scene 4: CTA (4s). Each has unique visual treatment and advances the narrative. Scene 2 could potentially be tighter but isn't padding."
+    }
+  },
+  "overall": 3.6,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The composition uses abstract visualizations (tangled nodes, purple gradients) that could represent any productivity or workflow tool. No actual Linear UI, no specific feature like Cycles, Roadmaps, or the actual command palette is shown.",
+      "improvement": "Include a stylized but recognizable Linear interface element—even a simplified command palette dropdown, an issue card, or the distinctive Linear logo glyph—to ground the abstract motion in the actual product."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "The 'chaos' visualization in Scene 1 is aesthetically pleasing rather than disorienting. Purple nodes with elegant curves don't create the visceral frustration that would make Linear's solution feel necessary.",
+      "improvement": "Make the chaos genuinely uncomfortable—overlapping UI elements, notification overload, jarring color conflicts—so the transition to Linear's clarity produces relief rather than mild preference."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "minor",
+      "observation": "The perspective ('friction is the enemy') is Linear's own marketing language, not an authorial interpretation. The composition faithfully reproduces Linear's positioning without adding insight.",
+      "improvement": "Take a stance that Linear's marketing doesn't explicitly state—perhaps focusing on how keyboard-first design reflects a philosophy about respecting user intelligence, or how Linear treats issues as temporary states rather than permanent artifacts."
+    }
+  ]
+}

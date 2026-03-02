@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The problem statement ('Payment chaos everywhere') and resolution ('It just works', 'Millions of businesses live here') use generic language that any payment processor could claim.",
+      "improvement": "Ground the chaos in specific pain points Stripe solves (e.g., 'Currency conversion breaking at checkout', 'Fraud rules that don't talk to billing') and make the resolution Stripe-specific (e.g., reference API-first design, mention specific customer scale like '$1 trillion processed')."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\", \"zero config\", \"batteries included\"\n- Payment/fintech brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\", \"invisible infrastructure\", \"end-to-end payments\"",
+    "cause": "present_wrong",
+    "proposedChange": "Add after the Payment/fintech brands line:\n\n**Resolution language that is also generic (avoid in CTAs and final scenes):**\n- \"It just works\", \"Everything works\", \"Millions trust us\", \"Join thousands of businesses\"\n- Scale claims without specifics: \"Millions of businesses\", \"Trusted worldwide\", \"Global scale\"\n- Vague resolution: \"Finally solved\", \"No more chaos\", \"Peace of mind\"\n\n**Instead, make resolutions product-specific:**\n- Reference architectural decisions: \"One Charge object across every product\"\n- Use verifiable scale: \"$1 trillion processed\" not \"millions of businesses\"\n- Show the specific absence: \"No webhook translation layer\" rather than \"it just works\"",
+    "rationale": "The skill lists false differentiators for problem statements but not for resolutions—the model avoided generic problems but used generic resolution language ('It just works', 'Millions of businesses') because the skill didn't flag these as equally hollow."
+  },
+  {
+    "taskId": "stripe-explainer",
+    "feedbackItem": {
+      "dimension": "omission",
+      "severity": "major",
+      "observation": "Scene 4 (CTA) occupies 20 seconds—33% of the video—for a static button, headline, and URL. This is significant padding.",
+      "improvement": "Reduce CTA to 8-10 seconds. Use recovered time to deepen Scene 2 or 3 with specific examples of how Charge flows between products, or show a developer experience moment."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Scene budget**: `floor(duration_seconds / 10)` is your maximum scene count. A 30s video gets 3 scenes. A 60s video gets 6. Start at the minimum and add only if the viewer-state arc requires it — not because you have things to say.",
+    "cause": "missing",
+    "proposedChange": "Add immediately after the scene budget paragraph:\n\n**CTA scene budget**: The final CTA scene should be 15-20% of total duration maximum (e.g., 6-12 seconds for a 60s video). If your CTA scene exceeds this, you are padding. A CTA that needs 20+ seconds to land is not a CTA—it's an underdeveloped scene disguised as a closing. Reduce to the minimum required for: one action word, one visual, one URL/button. Reallocate recovered time to scenes that demonstrate the product truth.",
+    "rationale": "The scene budget rule exists but has no specific guidance for CTA duration—the model allocated 20 seconds (33%) to a CTA because nothing told it that CTAs have tighter budgets than narrative scenes."
+  }
+]

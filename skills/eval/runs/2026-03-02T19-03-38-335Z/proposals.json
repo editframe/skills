@@ -1,0 +1,103 @@
+[
+  {
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "changes": [
+      {
+        "taskIds": [
+          "linear-product-demo"
+        ],
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nYour answer must name a specific product, API, architectural decision, or design philosophy — not a marketing position. Marketing positions can be copied. Decisions cannot.\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nNot: \"They pioneered multiplayer design\" (competitors have since copied this — it no longer differentiates).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"\nYes: \"Their entire product is built on a single unified object model — a Charge in Radar is the same Charge in Connect and Billing; no translation layer exists.\"\nYes: \"They removed the 'new file' concept entirely — there are no Figma files, only URLs. The URL *is* the design.\"\nYes: \"Their product is built around a build step that understands your framework — it's not just CDN, it's the framework knowing where to put the edge functions.\"",
+        "proposedChange": "Add after the existing 'Yes' examples:\n\nYes: \"Linear replaced sprints with cycles, removed story points entirely, and auto-closes stale issues — the product has opinions that eliminate decisions other tools force you to make.\"\n\n**For product-demo videos specifically:** The Phase 0 answer must appear in the demo itself. If the differentiator is 'cycles not sprints,' the demo must show a cycle, not a generic issue board. If the differentiator is 'opinionated workflow,' show a decision the product makes for you that competitors leave to the user. Generic issue titles like 'Fix auth bug' can appear in any tool — replace them with content that could only exist in this product's model.",
+        "rationale": "The model identified Linear's opinionated nature in Phase 0 but created a demo with generic issue content; explicit guidance that product-demo videos must manifest the Phase 0 answer in visible UI content would have forced Linear-specific issues, cycles, or workflow states into the composition."
+      },
+      {
+        "taskIds": [
+          "stripe-explainer"
+        ],
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\", \"zero config\", \"batteries included\"\n- Payment/fintech brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\", \"invisible infrastructure\", \"end-to-end payments\"",
+        "proposedChange": "Add after the Payment/fintech brands line:\n\n**Resolution language that is also generic (avoid in CTAs and final scenes):**\n- \"It just works\", \"Everything works\", \"Millions trust us\", \"Join thousands of businesses\"\n- Scale claims without specifics: \"Millions of businesses\", \"Trusted worldwide\", \"Global scale\"\n- Vague resolution: \"Finally solved\", \"No more chaos\", \"Peace of mind\"\n\n**Instead, make resolutions product-specific:**\n- Reference architectural decisions: \"One Charge object across every product\"\n- Use verifiable scale: \"$1 trillion processed\" not \"millions of businesses\"\n- Show the specific absence: \"No webhook translation layer\" rather than \"it just works\"",
+        "rationale": "The skill lists false differentiators for problem statements but not for resolutions—the model avoided generic problems but used generic resolution language ('It just works', 'Millions of businesses') because the skill didn't flag these as equally hollow."
+      },
+      {
+        "taskIds": [
+          "stripe-explainer"
+        ],
+        "dimension": "omission",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**Scene budget**: `floor(duration_seconds / 10)` is your maximum scene count. A 30s video gets 3 scenes. A 60s video gets 6. Start at the minimum and add only if the viewer-state arc requires it — not because you have things to say.",
+        "proposedChange": "Add immediately after the scene budget paragraph:\n\n**CTA scene budget**: The final CTA scene should be 15-20% of total duration maximum (e.g., 6-12 seconds for a 60s video). If your CTA scene exceeds this, you are padding. A CTA that needs 20+ seconds to land is not a CTA—it's an underdeveloped scene disguised as a closing. Reduce to the minimum required for: one action word, one visual, one URL/button. Reallocate recovered time to scenes that demonstrate the product truth.",
+        "rationale": "The scene budget rule exists but has no specific guidance for CTA duration—the model allocated 20 seconds (33%) to a CTA because nothing told it that CTAs have tighter budgets than narrative scenes."
+      },
+      {
+        "taskIds": [
+          "figma-brand-awareness",
+          "supabase-product-demo"
+        ],
+        "dimension": "omission",
+        "severity": "critical",
+        "cause": "wrong_priority",
+        "currentText": "## Completeness Check (before finalizing)\n\n- Every scene in the plan is represented in the HTML\n- No canvas element is present without a corresponding `addFrameTask` script\n- The last scene is fully written — it does not trail off mid-sentence\n- The PoV trace is complete — every scene can be traced to Phase 0 Q4\n- The CTA does not read as generic marketing (\"Try it free\", \"Get started\", \"Learn more\") — it follows from the structural constraint",
+        "proposedChange": "Move this section BEFORE Phase 4 (Asset Requirements) and rename to:\n\n## Completeness Check (MANDATORY — verify before outputting)\n\n**STOP and verify each item. Do not output a composition until all pass:**\n\n- [ ] Every scene in the plan has complete, runnable code — no truncated lines, no `...` placeholders\n- [ ] Every `<canvas>` element has a complete `addFrameTask` script (test: can you copy-paste and run it?)\n- [ ] A CTA/closing scene exists and follows from the structural constraint\n- [ ] Total scene durations sum to target duration ± 5 seconds\n- [ ] The PoV trace is complete — every scene traces to Phase 0 Q4\n\n**If any check fails, fix it before proceeding.**",
+        "rationale": "The completeness check exists but is buried at the end and lacks explicit guidance about closing the arc with a final brand beat; elevating it and adding explicit tag-counting and arc-closure requirements would have prevented truncation. Also: The completeness check was at the end and phrased as reminders rather than blocking gates; moving it earlier with explicit checkboxes and a STOP instruction would have caught the truncated code and missing CTA before output."
+      },
+      {
+        "taskIds": [
+          "vercel-launch",
+          "notion-social"
+        ],
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "missing",
+        "currentText": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)",
+        "proposedChange": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)\n- **Signature UI elements**: Identify 3-5 recognizable interface components (sidebar, specific icon shapes, interaction patterns) that are uniquely associated with this brand. These must appear in the video — generic abstract shapes are not acceptable substitutes for actual brand visual language.\n- **Logo and wordmark**: Download the actual logo. If the brand has a distinctive logomark (like Notion's blocks), this element should be featured, not replaced with generic geometry.",
+        "rationale": "The current guidance extracts visual identity but doesn't require translating logo geometry into compositional structure, allowing generic developer aesthetics to pass as 'brand-aligned'. Also: The model used generic colorful blocks because the skill didn't explicitly require extracting and using signature UI elements and the actual logo/logomark as mandatory visual components."
+      },
+      {
+        "taskIds": [
+          "notion-social"
+        ],
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "missing",
+        "currentText": "**Do NOT:**\n- Infer visual identity from text descriptions\n- Assume design patterns based on industry\n- Use text content as substitute for visual analysis\n- Hallucinate brand colors, fonts, or design language\n- Use `bars-n-tone.mp4` or any placeholder media in the final composition — use brand-color backgrounds, canvas animations, or actual product footage URLs instead",
+        "proposedChange": "**Do NOT:**\n- Infer visual identity from text descriptions\n- Assume design patterns based on industry\n- Use text content as substitute for visual analysis\n- Hallucinate brand colors, fonts, or design language\n- Use `bars-n-tone.mp4` or any placeholder media in the final composition — use brand-color backgrounds, canvas animations, or actual product footage URLs instead\n- **Replace brand-specific visual elements with generic abstractions** (e.g., using colorful blocks instead of Notion's actual monochromatic block icons, or generic checkmarks instead of a brand's actual UI components). If the brand has a recognizable visual language, the video must use it, not an abstracted version of it.",
+        "rationale": "The model substituted generic colorful blocks for Notion's specific visual identity because there was no explicit prohibition against replacing brand elements with generic abstractions."
+      },
+      {
+        "taskIds": [
+          "notion-social"
+        ],
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\", \"zero config\", \"batteries included\"\n- Payment/fintech brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\", \"invisible infrastructure\", \"end-to-end payments\"\n- Design tools: \"design and code together\", \"design faster\", \"multiplayer design\", \"browser-based\", \"files keep you apart\"\n- Workspace/productivity tools: \"fragmented tools → unified workspace\", \"all-in-one\", \"where work happens\", \"write, plan, organize\"",
+        "proposedChange": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\", \"zero config\", \"batteries included\"\n- Payment/fintech brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\", \"invisible infrastructure\", \"end-to-end payments\"\n- Design tools: \"design and code together\", \"design faster\", \"multiplayer design\", \"browser-based\", \"files keep you apart\"\n- Workspace/productivity tools: \"fragmented tools → unified workspace\", \"all-in-one\", \"where work happens\", \"write, plan, organize\", **\"everything in one place\", \"one place for all\", \"get organized\", \"scattered → organized\"** — these are category-level promises, not brand truths\n\n**Text must pass the substitution test**: Before finalizing any headline or tagline, ask: \"Could a direct competitor use this exact text without changing it?\" If yes, rewrite it to include a brand-specific term, feature name, or concept (e.g., 'Build it in blocks' for Notion, 'Ship with git push' for Vercel).",
+        "rationale": "The model used generic 'scattered → one place → organized' messaging because the skill's false differentiator list didn't include these specific workspace clichés, and there was no explicit substitution test requiring brand-specific language in video text."
+      }
+    ]
+  },
+  {
+    "skillFile": "skills/skills/brand-video-generator/references/editing.md",
+    "changes": [
+      {
+        "taskIds": [
+          "figma-brand-awareness",
+          "supabase-product-demo"
+        ],
+        "dimension": "omission",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "",
+        "proposedChange": "Add a new section at the end of the file:\n\n## Structural Completeness\n\nBefore declaring a composition complete, verify:\n\n1. **The arc closes.** The final scene must resolve the emotional journey established in Scene 1. For brand videos, this typically means: logo, tagline, or CTA that crystallizes the viewer's transformed state.\n\n2. **All tags close.** Count `<ef-timegroup>` openings and `</ef-timegroup>` closings. They must match. A truncated composition is not a draft—it's broken.\n\n3. **The last frame is intentional.** Ask: if I freeze on the final frame, does it communicate completion? If it looks like the video stopped mid-thought, add a closing beat.",
+        "rationale": "The editing guide discusses what to cut but never addresses structural completeness or the requirement to close the arc with a final brand beat, leaving no guidance to prevent truncated outputs. Also: The model created a 14-second scene with 4 identically-structured cards because no guidance warned against repetitive grid layouts as a form of padding."
+      }
+    ]
+  }
+]

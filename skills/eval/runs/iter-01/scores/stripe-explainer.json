@@ -1,0 +1,59 @@
+{
+  "taskId": "stripe-explainer",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:05:33.241Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural and intentional. The composition uses text splitting with staggered delays, procedural canvas animations via addFrameTask, and time-based CSS variables. However, the motion doesn't fully carry meaning the text cannot.",
+      "evidence": "Text splitting: `split=\"word\"` with `animation-delay: calc(var(--ef-word-index) * 100ms)`. Procedural canvas: `chaosGroup.initializer = (instance) => { return instance.addFrameTask((timeMs, durationMs) => {...})` drawing animated bezier curves. Scene 4 uses `growth-canvas` with expanding concentric circles tied to progress."
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "The composition includes Stripe's brand name and references its API syntax, but most content is generic fintech messaging. The blue color palette could apply to any payment processor. Key differentiators like specific product names (Stripe Connect, Radar, Atlas) are absent.",
+      "evidence": "Generic messaging: 'Payments shouldn't be this hard', 'Built for scale', 'Enterprise security'. The code snippet `stripe.charges.create({...})` is specific but brief. No mention of Stripe's actual differentiators: developer-first philosophy, specific products, or notable customers."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc moves from frustration (chaos) → curiosity → understanding → trust → action. Most scenes produce shifts, but the transitions are formulaic and the emotional journey is predictable for an explainer video.",
+      "evidence": "Scene 1 establishes problem state ('Payments shouldn't be this hard' with chaos canvas), Scene 2 pivots to possibility ('What if payments just worked?'), Scene 3 delivers capabilities, Scene 5 builds trust (security). The arc is traceable but follows standard explainer structure."
+    },
+    "point_of_view": {
+      "score": 2,
+      "rationale": "A perspective is implied—that complexity is the enemy and simplicity is the solution—but it's not committed to with any depth. The composition hedges by including every expected explainer beat without a distinctive take.",
+      "evidence": "The chaos-to-order visual metaphor (Scene 1's tangled beziers) suggests a POV, but Scene 3's generic 'Accept/Send/Manage' boxes and Scene 5's standard security messaging retreat to template. No unexpected structural choice or provocative framing."
+    },
+    "omission": {
+      "score": 2,
+      "rationale": "Several scenes feel redundant. Scene 4 (Scale) and Scene 5 (Security) could be combined. Scene 6 (Developer Experience) overlaps conceptually with the API simplicity implied throughout. The 60-second runtime feels padded.",
+      "evidence": "Scene 4 says 'Built for scale. Millions of transactions. Zero friction.' Scene 6 says 'Simple. Powerful. Instant.' These are thematically similar. Seven scenes for three core ideas (problem, solution, CTA) indicates padding."
+    }
+  },
+  "overall": 2.6,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic fintech language ('accept payments', 'enterprise security', 'built for scale') that could describe PayPal, Square, Adyen, or any payment processor.",
+      "improvement": "Include Stripe-specific truths: the 7-line integration that changed the industry, specific products (Radar's ML fraud detection, Connect's marketplace model), the developer-community relationship, or notable customers/scale figures that only Stripe can claim."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition follows a standard explainer template (problem → solution → features → trust → CTA) without committing to a distinctive perspective on what makes Stripe different.",
+      "improvement": "Choose a specific angle: Stripe as infrastructure (like AWS for payments), Stripe as the 'developer's choice', or Stripe as the company that made payments invisible. Let that single idea determine which scenes exist and how they're structured."
+    },
+    {
+      "dimension": "omission",
+      "severity": "major",
+      "observation": "Seven scenes across 60 seconds with multiple scenes making similar points about simplicity, scale, and power. The Security scene (Scene 5) adds little emotional or informational value.",
+      "improvement": "Cut to 4-5 scenes. Merge Scale and Security into one 'trust at scale' beat. Use the recovered time to deepen the developer experience scene with a real integration story, or show an actual customer transformation."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "The emotional arc follows a predictable problem-solution-trust-CTA pattern without any surprising state changes or moments of genuine revelation.",
+      "improvement": "Introduce an unexpected shift—perhaps showing the 'after' state first, or creating a moment of awe at what Stripe enables rather than just listing capabilities. Let one scene genuinely surprise the viewer."
+    }
+  ]
+}

@@ -1,0 +1,190 @@
+<ef-timegroup mode="sequence" overlap="1.2s" class="w-[1920px] h-[1080px] bg-gradient-to-b from-slate-900 to-black">
+  <!-- Scene 1: The Problem (0s-5s) -->
+  <ef-timegroup mode="contain" duration="5s" class="absolute w-full h-full" style="animation: 1.2s fade-out var(--ef-transition-out-start) both">
+    <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="0s" sourceout="5s" class="absolute inset-0 size-full object-cover"></ef-video>
+    <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+    <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+      <ef-text split="word" class="text-white text-6xl font-bold max-w-4xl" style="animation: 0.6s word-in both; animation-delay: calc(var(--ef-word-index) * 100ms)">
+        Payments are broken
+      </ef-text>
+      <ef-text split="word" class="text-white/70 text-3xl max-w-4xl mt-8" style="animation: 0.6s word-in both; animation-delay: calc(2.5s + var(--ef-word-index) * 80ms)">
+        Every business fights with fragmented tools
+      </ef-text>
+    </div>
+  </ef-timegroup>
+
+  <!-- Scene 2: The Chaos (5s-12s) -->
+  <ef-timegroup mode="fixed" duration="7s" class="absolute w-full h-full bg-black" style="animation: 1.2s fade-in both">
+    <canvas id="chaos-canvas" class="absolute inset-0 size-full"></canvas>
+    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+    <ef-text class="absolute bottom-20 left-1/2 -translate-x-1/2 text-white text-4xl font-bold text-center" style="animation: 0.8s scale-in both 2s">
+      Multiple platforms, multiple logins, multiple problems
+    </ef-text>
+    <script>
+      const canvas = document.getElementById('chaos-canvas');
+      const ctx = canvas.getContext('2d');
+      const tg = canvas.closest('ef-timegroup');
+      
+      tg.addFrameTask((t, d) => {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        const progress = t / d;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.lineWidth = 2;
+        
+        const count = Math.floor(progress * 40);
+        for (let i = 0; i < count; i++) {
+          const angle = (i / 40) * Math.PI * 2;
+          const radius = 200 + Math.sin(i * 0.3 + t * 0.002) * 80;
+          const x = canvas.width / 2 + Math.cos(angle) * radius;
+          const y = canvas.height / 2 + Math.sin(angle) * radius;
+          
+          ctx.beginPath();
+          ctx.arc(x, y, 8, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(99, 179, 237, ${0.3 + progress * 0.4})`;
+          ctx.fill();
+          
+          if (i > 0) {
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, canvas.height / 2);
+            ctx.lineTo(x, y);
+            ctx.strokeStyle = `rgba(99, 179, 237, ${0.2 + progress * 0.3})`;
+            ctx.stroke();
+          }
+        }
+      });
+    </script>
+  </ef-timegroup>
+
+  <!-- Scene 3: Enter Stripe (12s-19s) -->
+  <ef-timegroup mode="contain" duration="7s" class="absolute w-full h-full bg-gradient-to-br from-blue-600 to-indigo-900" style="animation: 1.2s fade-out var(--ef-transition-out-start) both">
+    <div class="absolute inset-0 flex items-center justify-center">
+      <div class="text-center">
+        <ef-text class="text-white text-7xl font-bold" style="animation: 0.7s scale-in both">
+          Stripe
+        </ef-text>
+        <ef-text split="word" class="text-white/80 text-2xl mt-6 max-w-3xl" style="animation: 0.6s word-in 0.8s both; animation-delay: calc(0.8s + var(--ef-word-index) * 100ms)">
+          One platform. All your payments.
+        </ef-text>
+        <div class="mt-12 h-1 w-32 bg-white/40 mx-auto" style="animation: 0.8s width-expand 2s both"></div>
+      </div>
+    </div>
+  </ef-timegroup>
+
+  <!-- Scene 4: Key Features (19s-33s) -->
+  <ef-timegroup mode="fixed" duration="14s" class="absolute w-full h-full bg-black" style="animation: 1.2s fade-in both">
+    <div class="absolute inset-0 flex flex-col items-center justify-center gap-16">
+      <!-- Feature 1: Accept Payments -->
+      <div class="text-center max-w-2xl" style="animation: 0.8s feature-in both 1s">
+        <div class="inline-block bg-blue-500/20 rounded-full p-4 mb-4">
+          <div class="w-12 h-12 bg-blue-400 rounded-full flex items-center justify-center text-white text-2xl">💳</div>
+        </div>
+        <ef-text split="word" class="text-white text-3xl font-bold" style="animation: 0.5s word-in both; animation-delay: calc(var(--ef-word-index) * 80ms)">
+          Accept payments from anywhere
+        </ef-text>
+        <p class="text-white/60 text-lg mt-3">Cards, wallets, bank transfers, local methods—all in one integration</p>
+      </div>
+
+      <!-- Feature 2: Send Payouts -->
+      <div class="text-center max-w-2xl" style="animation: 0.8s feature-in both 4.5s">
+        <div class="inline-block bg-green-500/20 rounded-full p-4 mb-4">
+          <div class="w-12 h-12 bg-green-400 rounded-full flex items-center justify-center text-white text-2xl">💰</div>
+        </div>
+        <ef-text split="word" class="text-white text-3xl font-bold" style="animation: 0.5s word-in both; animation-delay: calc(var(--ef-word-index) * 80ms)">
+          Send payouts instantly
+        </ef-text>
+        <p class="text-white/60 text-lg mt-3">Pay your users, vendors, and contractors across 135+ countries</p>
+      </div>
+
+      <!-- Feature 3: Manage Everything -->
+      <div class="text-center max-w-2xl" style="animation: 0.8s feature-in both 8s">
+        <div class="inline-block bg-purple-500/20 rounded-full p-4 mb-4">
+          <div class="w-12 h-12 bg-purple-400 rounded-full flex items-center justify-center text-white text-2xl">⚙️</div>
+        </div>
+        <ef-text split="word" class="text-white text-3xl font-bold" style="animation: 0.5s word-in both; animation-delay: calc(var(--ef-word-index) * 80ms)">
+          Manage your entire business
+        </ef-text>
+        <p class="text-white/60 text-lg mt-3">Billing, reporting, compliance, and fraud prevention built-in</p>
+      </div>
+    </div>
+  </ef-timegroup>
+
+  <!-- Scene 5: Scale and Trust (33s-43s) -->
+  <ef-timegroup mode="contain" duration="10s" class="absolute w-full h-full" style="animation: 1.2s fade-out var(--ef-transition-out-start) both">
+    <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="10s" sourceout="20s" class="absolute inset-0 size-full object-cover"></ef-video>
+    <div class="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
+    <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+      <ef-text class="text-white text-5xl font-bold" style="animation: 0.7s scale-in both 1s">
+        <span class="text-blue-400">$11 trillion</span> in payments
+      </ef-text>
+      <ef-text class="text-white/70 text-2xl mt-4" style="animation: 0.7s fade-in both 2s">
+        processed by 8+ million businesses
+      </ef-text>
+      <div class="mt-12 flex gap-8 justify-center flex-wrap max-w-3xl" style="animation: 0.6s fade-in 3s both">
+        <div class="bg-white/10 px-6 py-3 rounded-lg backdrop-blur">
+          <p class="text-white/80 text-sm">Founded 2010</p>
+        </div>
+        <div class="bg-white/10 px-6 py-3 rounded-lg backdrop-blur">
+          <p class="text-white/80 text-sm">45+ countries</p>
+        </div>
+        <div class="bg-white/10 px-6 py-3 rounded-lg backdrop-blur">
+          <p class="text-white/80 text-sm">99.99% uptime</p>
+        </div>
+      </div>
+    </div>
+  </ef-timegroup>
+
+  <!-- Scene 6: Call to Action (43s-60s) -->
+  <ef-timegroup mode="fixed" duration="17s" class="absolute w-full h-full bg-gradient-to-b from-indigo-900 to-blue-900" style="animation: 1.2s fade-in both">
+    <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+      <ef-text split="word" class="text-white text-6xl font-bold max-w-4xl" style="animation: 0.6s word-in both 1s; animation-delay: calc(1s + var(--ef-word-index) * 100ms)">
+        Start accepting payments today
+      </ef-text>
+      <p class="text-white/70 text-xl mt-8 max-w-2xl" style="animation: 0.6s fade-in both 4s">
+        Join millions of businesses worldwide. Get started in minutes, scale infinitely.
+      </p>
+      <div class="mt-12" style="animation: 0.7s scale-in both 5s">
+        <div class="bg-white text-blue-600 px-8 py-4 rounded-lg font-bold text-lg hover:shadow-2xl transition-all">
+          Get Started Free
+        </div>
+      </div>
+      <p class="text-white/50 text-sm mt-8" style="animation: 0.6s fade-in both 6.5s">
+        No credit card required • Free forever for test mode
+      </p>
+    </div>
+    <ef-audio src="https://assets.editframe.com/bars-n-tone.mp4" volume="0.1"></ef-audio>
+  </ef-timegroup>
+</ef-timegroup>
+
+<style>
+  @keyframes word-in {
+    from { transform: translateY(24px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  @keyframes scale-in {
+    from { transform: scale(0.92); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
+
+  @keyframes feature-in {
+    from { transform: translateY(40px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  @keyframes width-expand {
+    from { width: 0; }
+    to   { width: 128px; }
+  }
+</style>

@@ -1,0 +1,47 @@
+{
+  "taskId": "supabase-product-demo",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:50:58.181Z",
+  "scores": {
+    "motion": {
+      "score": 5,
+      "rationale": "Motion is structural and meaning-carrying. Each scene uses addFrameTask with procedural canvas animations that visually represent the conceptual content—tangled chaos for vendor lock-in, crystalline growth for Postgres foundation, radiating sessions for auth, and API patterns for the instant APIs scene.",
+      "evidence": "Scene 1: `addFrameTask` draws 'tangled service boxes representing locked-in services' with chaotic connections. Scene 2: 'crystalline structure growing from center' with data blocks and connecting lines representing Postgres as foundation. Scene 3: User sessions 'radiating out' from central lock with orbital rings. Text uses `split='word'` with staggered delays: `animation-delay: calc(var(--ef-word-index) * 100ms)`"
+    },
+    "specificity": {
+      "score": 4,
+      "rationale": "The composition is structured around Supabase's actual differentiator: being open-source Postgres vs Firebase's proprietary lock-in. The visual metaphors (chaos→structure, lock-in→ownership) reflect real brand positioning. However, some elements remain category-generic.",
+      "evidence": "Scene 1 explicitly positions against Firebase: 'Firebase is closed... You're locked into their infrastructure'. Scene 2 states Supabase's core truth: 'PostgreSQL is your database... Not a limited API'. Scene 3: 'Auth tables live in your database. You own the rows.' Scene 4: 'Add a table to Postgres, get a REST API' describes actual product behavior."
+    },
+    "viewer_state": {
+      "score": 4,
+      "rationale": "Clear emotional arc: frustration (lock-in problem) → relief (there's an alternative) → understanding (how it works) → confidence (specific capabilities). Each scene builds on the previous state rather than resetting.",
+      "evidence": "Scene 1 creates anxiety: 'locked into their infrastructure, their pricing, their choices' with chaotic visuals. Scene 2 shifts to stability: 'Real Postgres. Real control.' Scene 3 deepens understanding: 'You own the rows.' Scene 4 demonstrates capability. The visual progression from tangled chaos to orderly, radiating structures reinforces the state change."
+    },
+    "point_of_view": {
+      "score": 4,
+      "rationale": "The composition takes a clear stance: ownership and openness matter more than convenience features. The POV is that developer autonomy is worth fighting for, expressed through the problem-solution framing and the emphasis on 'real' and 'owning' throughout.",
+      "evidence": "Perspective visible in language choices: 'Firebase is closed', 'Real Postgres', 'You own the rows', 'Direct table access'. The visual metaphor of chaos (proprietary) vs crystalline growth (open) embodies an argument about software philosophy. The green-accent color choice (Supabase green) and the 0.8s overlap creating smooth philosophical transitions."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "The four scenes shown each serve a purpose in the argument (problem→foundation→auth→APIs), but the composition is truncated mid-scene 4. The visible scenes are reasonably tight, though Scene 3 and 4 follow very similar patterns and could potentially be condensed.",
+      "evidence": "Scene 3 (Auth) and Scene 4 (APIs) use nearly identical structures: left/right positioning, same text hierarchy (label→headline→supporting text), same animation timing. The 10s duration for each middle scene may be longer than necessary to make the point. The composition cuts off mid-script in Scene 4, making full assessment impossible."
+    }
+  },
+  "overall": 4,
+  "feedback": [
+    {
+      "dimension": "omission",
+      "severity": "major",
+      "observation": "Scenes 2, 3, and 4 follow identical structural templates (green label → big headline → supporting text → canvas animation) with 10 seconds each. This creates redundancy in form even when content differs.",
+      "improvement": "Vary the scene structures to match their content. Auth could be demonstrated through a rapid visual sequence rather than another canvas animation. APIs could show actual code syntax appearing. Different forms would make each scene feel necessary rather than templated."
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "The composition is incomplete (cuts off mid-Scene 4 script), so final scenes including CTA cannot be evaluated. For a 45s video, 4 scenes of 8-10s each leaves ~7s unaccounted for.",
+      "improvement": "Ensure the final scene earns its place—if it's a standard CTA, consider whether it can be integrated into the final feature scene rather than being a separate templated ending."
+    }
+  ]
+}

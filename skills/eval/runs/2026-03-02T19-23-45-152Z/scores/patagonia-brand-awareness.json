@@ -1,0 +1,47 @@
+{
+  "taskId": "patagonia-brand-awareness",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-03-02T19:24:33.111Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural with addFrameTask driving a procedural canvas animation that visualizes environmental damage accumulating over time. CSS animations are purposeful with staggered reveals and varied easing. The motion carries meaning—damage lines grow with progress to embody the 'taken from the mountain' message.",
+      "evidence": "Canvas animation uses `addFrameTask((ownCurrentTimeMs, durationMs) => {...})` with `const damageCount = Math.floor(progress * 40)` to draw accumulating 'damage lines.' CSS uses staggered delays: `animation-delay: 0.5s`, `0.7s`, `0.9s` for the 'Used. Repaired. Reworn.' sequence."
+    },
+    "specificity": {
+      "score": 3,
+      "rationale": "Several Patagonia-specific truths are present: Worn Wear program (repair/reuse), the 'Earth is now our only shareholder' restructuring (Profits → Earth), and environmental activism framing. However, the visual execution uses generic mountain imagery and could apply to other outdoor brands with minor text changes.",
+      "evidence": "'Used. Repaired. Reworn.' references Worn Wear. 'Profits → Earth' and 'A company born to save it' reference their corporate structure change. But the mountain canvas and color schemes (slate, amber, green) are generic outdoor brand territory."
+    },
+    "viewer_state": {
+      "score": 4,
+      "rationale": "The arc is clearly designed and documented: Problem → Alternative → Understanding → Action. Each scene builds on the previous. The shift from 'weight of environmental damage' to 'there's a structural solution' to 'ready to act' is traceable and intentional.",
+      "evidence": "Comments document the arc: Scene 1: 'I know the planet is in trouble' → 'I feel the weight of it'; Scene 2: 'I feel the problem' → 'I see there's another way'; Scene 3: 'I see an alternative' → 'I understand this is how they operate'; Scene 4: 'I understand' → 'I'm ready to act'"
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "A clear perspective exists: consumption causes harm, and Patagonia's business model is a structural solution, not charity. The 'Not a company that gives to the planet. A company born to save it.' line shows genuine point of view. However, the execution hedges with safe visual choices.",
+      "evidence": "'Everything we own is taken from the mountain' opens with an accusation. Scene 3 distinguishes 'gives to the planet' from 'born to save it'—a specific philosophical claim. But the CTA 'Join the Fight' is generic activism language."
+    },
+    "omission": {
+      "score": 4,
+      "rationale": "Four scenes for 30 seconds, each serving a distinct purpose in the argument. Scene 1 establishes problem, Scene 2 presents alternative, Scene 3 explains why Patagonia specifically, Scene 4 calls to action. The 2-second CTA is appropriately brief.",
+      "evidence": "Scene structure: 10s problem, 10s solution concept, 8s brand differentiation, 2s CTA. `duration='2s'` on final scene shows restraint. No repeated information or filler scenes."
+    }
+  },
+  "overall": 3.6,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The visual language (mountain silhouettes, earth tones, gradient backgrounds) is interchangeable with any outdoor/sustainability brand. The canvas animation draws abstract 'damage lines' rather than anything uniquely Patagonia.",
+      "improvement": "Use Patagonia's actual visual identity: the Fitz Roy logo silhouette, their specific teal/blue palette, or depict their actual repair stations, specific products, or the 1% for the Planet documentation. The canvas could animate their logo being 'repaired' or show actual garment details."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "minor",
+      "observation": "The CTA 'Join the Fight' is generic activist language that could appear on any cause-marketing campaign. It undercuts the specific structural argument made in Scene 3.",
+      "improvement": "A CTA that reflects the 'structural solution' POV: 'Buy Used. Buy Less.' or 'Repair What You Own' or even Patagonia's actual 'Don't Buy This Jacket' provocative stance. The form of the ask should match the form of the argument."
+    }
+  ]
+}

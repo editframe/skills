@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notion - 15s Social Video</title>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@editframe/elements@latest"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@editframe/elements@latest/styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+      background: #000;
+    }
+
+    @keyframes block-rise {
+      from {
+        transform: translateY(24px) scale(0.92);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes block-fall {
+      from {
+        transform: translateY(-24px) scale(0.92);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fade-in {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes fade-out {
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+      }
+    }
+
+    @keyframes collapse-blocks {
+      from {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+      to {
+        transform: scale(0.96) translateY(8px);
+        opacity: 0.7;
+      }
+    }
+
+    @keyframes expand-blocks {
+      from {
+        transform: scale(0.96) translateY(8px);
+        opacity: 0.7;
+      }
+      to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .video-container {
+      width: 100%;
+      height: 100%;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .block-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      position: relative;
+    }
+
+    .notion-block {
+      width: 80px;
+      height: 80px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 24px;
+      color: white;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .block-notes {
+      background: #5b4ef5;
+    }
+
+    .block-docs {
+      background: #0891b2;
+    }
+
+    .block-db {
+      background: #dc2626;
+    }
+
+    .block-tasks {
+      background: #059669;
+    }
+
+    .hero-text {
+      font-size: 56px;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -1px;
+      color: #000;
+      text-align: center;
+      max-width: 320px;
+    }
+
+    .subtext {
+      font-size: 16px;
+      color: #666;
+      margin-top: 8px;
+      font-weight: 500;
+    }
+
+    .cta-text {
+      font-size: 18px;
+      font-weight: 700;
+      color: #000;
+      padding: 12px 24px;
+      background: #000;
+      color: #fff;
+      border-radius: 6px;
+      display: inline-block;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <ef-timegroup mode="sequence" overlap="0.8s" class="w-screen h-screen" style="aspect-ratio: 9/16; max-width: 100vw; max-height: 100vh;">
+    <!-- SCENE 1: The Fragmentation (0-4s) -->
+    <!-- VIEWER STATE AT START: Unaware of a problem
+         VIEWER STATE AT END: Recognizes scattered tools as friction
+         PoV Structural Constraint: Show information scattered, then unified — because Notion's core truth is that it unified what was fragmentary -->
+    <ef-timegroup mode="fixed" duration="4s" class="absolute w-full h-full">
+      <div class="video-container">
+        <div style="position: absolute; width: 100%; height: 100%; background: linear-gradient(135deg, #f8f9fa 0%, #e8eaed 100%); z-index: -1;"></div>
+        
+        <!-- Scattered blocks entering from all directions -->
+        <div class="notion-block block-notes" style="position: absolute; top: 60px; left: 24px; animation: 0.6s block-fall both;">📝</div>
+        <div class="notion-block block-docs" style="position: absolute; top: 180px; right: 24px; animation: 0.6s block-fall 0.15s both;">📄</div>
+        <div class="notion-block block-db" style="position: absolute; bottom: 120px; left: 40px; animation: 0.6s block-fall 0.3s both;">🗂️</div>
+        <div class="notion-block block-tasks" style="position: absolute; bottom: 60px; right: 32px; animation: 0.6s block-fall 0.45s both;">✓</div>
+
+        <!-- Floating text in between -->
+        <ef-text class="hero-text" style="animation: 0.7s fade-in both 0.6s; position: absolute; z-index: 10;">
+          Your tools live in separate places
+        </ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- SCENE 2: The Unification (4-9s) -->
+    <!-- VIEWER STATE AT START: Frustrated by fragmentation
+         VIEWER STATE AT END: Saw the scattered pieces merge into one
+         MOTION: Blocks move toward center and condense (the visual metaphor for unification) -->
+    <ef-timegroup mode="fixed" duration="5s" class="absolute w-full h-full" style="animation: 0.8s fade-in both;">
+      <div class="video-container">
+        <div style="position: absolute; width: 100%; height: 100%; background: #ffffff; z-index: -1;"></div>
+        
+        <!-- Blocks converging to center grid -->
+        <div class="block-grid" style="animation: 0.8s expand-blocks 0.2s both;">
+          <div class="notion-block block-notes" style="animation: 0.4s collapse-blocks 0s both; width: 100%; height: 100%;">📝</div>
+          <div class="notion-block block-docs" style="animation: 0.4s collapse-blocks 0s both; width: 100%; height: 100%;">📄</div>
+          <div class="notion-block block-db" style="animation: 0.4s collapse-blocks 0s both; width: 100%; height: 100%;">🗂️</div>
+          <div class="notion-block block-tasks" style="animation: 0.4s collapse-blocks 0s both; width: 100%; height: 100%;">✓</div>
+        </div>
+
+        <ef-text class="hero-text" style="animation: 0.6s block-rise 0.4s both; position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 5;">
+          One workspace
+        </ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- SCENE 3: The Promise (9-15s) -->
+    <!-- VIEWER STATE AT START: Experienced unification
+         VIEWER STATE AT END: Ready to act, knows where to go
+         MOTION: Unified block stable, text appears emphasizing the complete solution -->
+    <ef-timegroup mode="fixed" duration="6s" class="absolute w-full h-full" style="animation: 0.8s fade-in both;">
+      <div class="video-container">
+        <div style="position: absolute; width: 100%; height: 100%; background: #ffffff; z-index: -1;"></div>
+        
+        <!-- Stable unified grid -->
+        <div class="block-grid" style="position: absolute; top: 80px; left: 50%; transform: translateX(-50%); animation: 0.3s fade-in 0.2s both;">
+          <div class="notion-block block-notes" style="width: 100%; height: 100%;">📝</div>
+          <div class="notion-block block-docs" style="width: 100%; height: 100%;">📄</div>
+          <div class="notion-block block-db" style="width: 100%; height: 100%;">🗂️</div>
+          <div class="notion-block block-tasks" style="width: 100%; height: 100%;">✓</div>
+        </div>
+
+        <div style="position: absolute; bottom: 140px; left: 50%; transform: translateX(-50%); text-align: center; animation: 0.6s block-rise 0.5s both; z-index: 10;">
+          <ef-text split="word" class="hero-text" style="animation: 0.5s block-rise both; animation-delay: calc(0.7s + var(--ef-word-index) * 100ms); display: inline-block; margin-bottom: 12px;">
+            One tool
+          </ef-text>
+          <div class="subtext" style="animation: 0.5s fade-in 1.2s both;">Everything your team needs</div>
+          <div class="cta-text" style="animation: 0.5s block-rise 1.4s both;">Try Notion free</div>
+        </div>
+      </div>
+    </ef-timegroup>
+
+  </ef-timegroup>
+
+  <script>
+    // No canvas needed for this composition — the metaphor is purely structural:
+    // scattered blocks (fragmentation) → unified grid (resolution)
+    // This structure visibly demonstrates Notion's core truth:
+    // it took separate categories of tools (notes, docs, databases, tasks)
+    // and unified them into one platform that handled all four without forcing users
+    // to choose between them or maintain separate instances.
+  </script>
+</body>
+</html>

@@ -1,0 +1,206 @@
+<ef-configuration api-host="https://api.editframe.com" media-engine="local">
+  <ef-timegroup mode="sequence" overlap="1s" class="w-[1920px] h-[1080px] bg-slate-950">
+    <!-- Scene 1: The Problem (0s-5s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 1s fade-out var(--ef-transition-out-start) both">
+      <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="0s" sourceout="5s" class="absolute inset-0 size-full object-cover"></ef-video>
+      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-slate-950/80"></div>
+      <div class="absolute inset-0 flex flex-col items-center justify-center">
+        <ef-text split="word" class="text-white text-6xl font-bold text-center max-w-4xl mb-8" style="animation: 0.6s word-in both; animation-delay: calc(var(--ef-word-index) * 100ms)">Building APIs shouldn't be this hard</ef-text>
+        <ef-text split="word" class="text-slate-300 text-2xl text-center max-w-3xl" style="animation: 0.5s word-in both 0.4s; animation-delay: calc(0.4s + var(--ef-word-index) * 80ms)">You manage databases, auth, storage, and functions separately</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 2: Complexity Visualization (5s-12s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 1s fade-out var(--ef-transition-out-start) both">
+      <div class="absolute inset-0 bg-slate-950"></div>
+      <canvas id="complexity-canvas" class="absolute inset-0 size-full"></canvas>
+      <div class="absolute inset-0 flex items-end justify-center pb-16">
+        <ef-text class="text-slate-400 text-xl" style="animation: 0.6s enter-up 2s both">Too many pieces. Too much to maintain.</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 3: Supabase Intro (12s-18s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 1s fade-out var(--ef-transition-out-start) both">
+      <div class="absolute inset-0 bg-gradient-to-br from-emerald-950 to-slate-950"></div>
+      <div class="absolute inset-0 flex flex-col items-center justify-center gap-8">
+        <div class="text-6xl font-bold text-emerald-400" style="animation: 0.7s scale-in both">⚡</div>
+        <ef-text split="word" class="text-white text-5xl font-bold text-center" style="animation: 0.6s word-in both 0.3s; animation-delay: calc(0.3s + var(--ef-word-index) * 100ms)">Meet Supabase</ef-text>
+        <ef-text class="text-slate-300 text-xl text-center max-w-2xl" style="animation: 0.6s enter-up 1s both">Open source Firebase alternative. Everything you need. One platform.</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 4: Database Feature (18s-24s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 1s fade-out var(--ef-transition-out-start) both">
+      <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="0s" sourceout="6s" class="absolute inset-0 size-full object-cover opacity-40"></ef-video>
+      <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/60 to-transparent"></div>
+      <div class="absolute left-16 top-1/2 -translate-y-1/2 max-w-xl">
+        <ef-text class="text-emerald-400 text-lg font-semibold mb-4" style="animation: 0.5s enter-up both">01 PostgreSQL Database</ef-text>
+        <ef-text split="word" class="text-white text-4xl font-bold mb-6" style="animation: 0.6s word-in both 0.2s; animation-delay: calc(0.2s + var(--ef-word-index) * 80ms)">Production-ready Postgres in seconds</ef-text>
+        <ef-text class="text-slate-400 text-lg" style="animation: 0.5s enter-up 0.8s both">Instant API generation. Query your data with SQL. Scale without limits.</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 5: Auth Feature (24s-30s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 1s fade-out var(--ef-transition-out-start) both">
+      <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="5s" sourceout="11s" class="absolute inset-0 size-full object-cover opacity-40"></ef-video>
+      <div class="absolute inset-0 bg-gradient-to-l from-slate-950 via-slate-950/60 to-transparent"></div>
+      <div class="absolute right-16 top-1/2 -translate-y-1/2 max-w-xl text-right">
+        <ef-text class="text-blue-400 text-lg font-semibold mb-4" style="animation: 0.5s enter-up both">02 Authentication</ef-text>
+        <ef-text split="word" class="text-white text-4xl font-bold mb-6" style="animation: 0.6s word-in both 0.2s; animation-delay: calc(0.2s + var(--ef-word-index) * 80ms)">OAuth built in. Social login ready.</ef-text>
+        <ef-text class="text-slate-400 text-lg" style="animation: 0.5s enter-up 0.8s both">JWT tokens. Row-level security. Multi-factor authentication out of the box.</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 6: Storage & Edge (30s-36s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 1s fade-out var(--ef-transition-out-start) both">
+      <div class="absolute inset-0 bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-950"></div>
+      <div class="absolute inset-0 flex flex-col items-center justify-center gap-6">
+        <div class="flex gap-12">
+          <div class="flex flex-col items-center gap-3" style="animation: 0.6s enter-up both">
+            <div class="text-5xl">📦</div>
+            <ef-text class="text-slate-300 text-lg font-semibold">Storage</ef-text>
+            <ef-text class="text-slate-500 text-sm text-center">S3-compatible files</ef-text>
+          </div>
+          <div class="flex flex-col items-center gap-3" style="animation: 0.6s enter-up 0.2s both">
+            <div class="text-5xl">⚙️</div>
+            <ef-text class="text-slate-300 text-lg font-semibold">Edge Functions</ef-text>
+            <ef-text class="text-slate-500 text-sm text-center">Deploy anywhere</ef-text>
+          </div>
+        </div>
+        <ef-text split="word" class="text-white text-3xl font-bold text-center mt-8" style="animation: 0.6s word-in 0.3s both; animation-delay: calc(0.3s + var(--ef-word-index) * 80ms)">Everything. One dashboard.</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 7: Developer Experience (36s-41s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 1s fade-out var(--ef-transition-out-start) both">
+      <canvas id="grid-canvas" class="absolute inset-0 size-full bg-slate-950"></canvas>
+      <div class="absolute inset-0 flex flex-col items-center justify-center gap-6">
+        <ef-text class="text-emerald-400 text-sm font-semibold tracking-wider" style="animation: 0.5s enter-up both">BUILT FOR DEVELOPERS</ef-text>
+        <ef-text split="word" class="text-white text-5xl font-bold text-center max-w-3xl" style="animation: 0.6s word-in 0.2s both; animation-delay: calc(0.2s + var(--ef-word-index) * 100ms)">Real-time APIs. JavaScript client. Full type safety.</ef-text>
+        <ef-text class="text-slate-400 text-lg text-center max-w-2xl" style="animation: 0.5s enter-up 0.8s both">Open source. Self-hostable. MIT licensed.</ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 8: CTA (41s-45s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 1s fade-out var(--ef-transition-out-start) both">
+      <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" sourcein="0s" sourceout="4s" class="absolute inset-0 size-full object-cover"></ef-video>
+      <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+      <div class="absolute inset-0 flex flex-col items-center justify-center gap-8">
+        <ef-text split="word" class="text-white text-5xl font-bold text-center" style="animation: 0.6s word-in both; animation-delay: calc(var(--ef-word-index) * 100ms)">Start building now</ef-text>
+        <ef-text class="text-emerald-400 text-2xl font-semibold" style="animation: 0.6s enter-up 0.8s both">supabase.com</ef-text>
+      </div>
+    </ef-timegroup>
+  </ef-timegroup>
+</ef-configuration>
+
+<script>
+  // Scene 2: Complexity visualization
+  const complexityScene = document.querySelector('ef-timegroup:nth-child(2)');
+  if (complexityScene) {
+    complexityScene.initializer = (instance) => {
+      const canvas = instance.querySelector('#complexity-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      
+      return instance.addFrameTask((info) => {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        const progress = info.percentComplete;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw accumulating tangled lines representing system complexity
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const lineCount = Math.floor(progress * 40);
+        
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)';
+        ctx.lineWidth = 2;
+        
+        for (let i = 0; i < lineCount; i++) {
+          const startAngle = (i / 40) * Math.PI * 2;
+          const endAngle = startAngle + (Math.random() * 2 - 1) * Math.PI;
+          const radius = 150 + Math.sin(i * 0.5 + progress * Math.PI) * 50;
+          
+          ctx.beginPath();
+          ctx.moveTo(
+            centerX + Math.cos(startAngle) * 80,
+            centerY + Math.sin(startAngle) * 80
+          );
+          ctx.quadraticCurveTo(
+            centerX + Math.cos(startAngle + Math.PI / 2) * 200,
+            centerY + Math.sin(startAngle + Math.PI / 2) * 200,
+            centerX + Math.cos(endAngle) * radius,
+            centerY + Math.sin(endAngle) * radius
+          );
+          ctx.stroke();
+        }
+      });
+    };
+  }
+
+  // Scene 7: Grid background
+  const gridScene = document.querySelector('ef-timegroup:nth-child(7)');
+  if (gridScene) {
+    gridScene.initializer = (instance) => {
+      const canvas = instance.querySelector('#grid-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      
+      return instance.addFrameTask((info) => {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        const progress = info.percentComplete;
+        
+        ctx.fillStyle = 'rgb(15, 23, 42)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw animated grid
+        const gridSize = 40;
+        ctx.strokeStyle = `rgba(16, 185, 129, ${0.1 + progress * 0.15})`;
+        ctx.lineWidth = 1;
+        
+        for (let x = 0; x < canvas.width; x += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, canvas.height);
+          ctx.stroke();
+        }
+        
+        for (let y = 0; y < canvas.height; y += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvas.width, y);
+          ctx.stroke();
+        }
+      });
+    };
+  }
+</script>
+
+<style>
+  @keyframes word-in {
+    from { transform: translateY(24px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  @keyframes enter-up {
+    from { transform: translateY(16px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
+
+  @keyframes scale-in {
+    from { transform: scale(0.8); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+  }
+</style>

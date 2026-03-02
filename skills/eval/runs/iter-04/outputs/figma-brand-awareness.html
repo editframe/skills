@@ -1,0 +1,224 @@
+<ef-configuration api-host="https://api.editframe.com" media-engine="local">
+    <ef-timegroup mode="sequence" overlap="0.8s" class="w-[1080px] h-[1920px] bg-black relative">
+      
+      <!-- Scene 1: Single Player Problem (0-6s) -->
+      <ef-timegroup mode="contain" duration="6s" class="absolute w-full h-full bg-gradient-to-b from-[#0a0a0a] to-[#1a1a1a]">
+        <div class="absolute inset-0">
+          <div class="absolute inset-0 flex flex-col items-center justify-center px-8">
+            <div class="absolute inset-0 opacity-5">
+              <svg class="w-full h-full" viewBox="0 0 1080 1920" preserveAspectRatio="none">
+                <defs>
+                  <pattern id="dotPattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+                    <circle cx="50" cy="50" r="3" fill="#fff"/>
+                  </pattern>
+                </defs>
+                <rect width="1080" height="1920" fill="url(#dotPattern)"/>
+              </svg>
+            </div>
+          </div>
+          <ef-text 
+            split="word"
+            class="absolute top-1/3 left-8 right-8 text-white text-5xl font-bold leading-tight"
+            style="animation: 0.6s wordIn both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+          >Design alone doesn't ship</ef-text>
+          <ef-text 
+            class="absolute top-1/2 left-8 right-8 text-white/60 text-xl leading-relaxed"
+            style="animation: 0.5s fadeIn 1.2s both"
+          >You design. Engineers rebuild. Handoff breaks. Feedback loops. Chaos.</ef-text>
+        </div>
+      </ef-timegroup>
+
+      <!-- Scene 2: Multiplayer Revealed (6-12s) -->
+      <ef-timegroup mode="contain" duration="6s" class="absolute w-full h-full brand-color-bg"
+        style="animation: 0.8s fadeOut var(--ef-transition-out-start) both">
+        <div class="absolute inset-0 opacity-20">
+          <div class="collaboration-grid"></div>
+        </div>
+        <canvas id="collaboration-canvas" class="absolute inset-0 w-full h-full"></canvas>
+        <ef-text 
+          split="word"
+          class="absolute bottom-1/3 left-8 right-8 text-white text-5xl font-bold leading-tight text-center"
+          style="animation: 0.6s wordIn 1s both; animation-delay: calc(1s + var(--ef-word-index) * 100ms)"
+        >Everyone in the same canvas</ef-text>
+        <ef-text 
+          class="absolute bottom-1/4 left-8 right-8 text-white/80 text-lg text-center"
+          style="animation: 0.5s fadeIn 2.4s both"
+        >Design and code, live together</ef-text>
+      </ef-timegroup>
+
+      <!-- Scene 3: No Handoff (12-18s) -->
+      <ef-timegroup mode="contain" duration="6s" class="absolute w-full h-full bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f]"
+        style="animation: 0.8s fadeOut var(--ef-transition-out-start) both">
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="absolute w-full h-full opacity-10">
+            <svg class="w-full h-full" viewBox="0 0 1080 1920" preserveAspectRatio="none">
+              <defs>
+                <pattern id="gridSmall" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+                  <path d="M 0 0 L 80 0 L 80 80 L 0 80 Z" fill="none" stroke="#fff" stroke-width="1"/>
+                </pattern>
+              </defs>
+              <rect width="1080" height="1920" fill="url(#gridSmall)"/>
+            </svg>
+          </div>
+        </div>
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <ef-text 
+            split="char"
+            class="text-white/40 text-sm tracking-widest uppercase mb-8"
+            style="animation: 0.4s fadeIn 0.5s both; animation-delay: calc(var(--ef-word-index) * 40ms)"
+          >No export. No reimport.</ef-text>
+          <ef-text 
+            split="word"
+            class="text-white text-6xl font-bold text-center max-w-[800px] leading-tight"
+            style="animation: 0.6s wordIn 1.5s both; animation-delay: calc(1.5s + var(--ef-word-index) * 110ms)"
+          >Ship from the file</ef-text>
+        </div>
+      </ef-timegroup>
+
+      <!-- Scene 4: Multiplayer Mode (18-24s) -->
+      <ef-timegroup mode="contain" duration="6s" class="absolute w-full h-full bg-gradient-to-br from-[#0d99ff]/10 to-[#667dff]/10"
+        style="animation: 0.8s fadeOut var(--ef-transition-out-start) both">
+        <canvas id="cursor-canvas" class="absolute inset-0 w-full h-full"></canvas>
+        <div class="absolute inset-0 flex flex-col items-center justify-end pb-20 px-8">
+          <ef-text 
+            split="word"
+            class="text-white text-4xl font-bold text-center max-w-[900px] leading-tight mb-6"
+            style="animation: 0.6s slideUp 0.8s both; animation-delay: calc(0.8s + var(--ef-word-index) * 90ms)"
+          >Real-time cursors. Live updates. One source of truth.</ef-text>
+          <ef-text 
+            class="text-white/60 text-base text-center max-w-[800px]"
+            style="animation: 0.5s fadeIn 2.2s both"
+          >Design, prototype, handoff—all in Figma</ef-text>
+        </div>
+      </ef-timegroup>
+
+      <!-- Scene 5: CTA (24-30s) -->
+      <ef-timegroup mode="contain" duration="6s" class="absolute w-full h-full brand-color-bg flex flex-col items-center justify-center"
+        style="animation: 0.8s fadeIn both">
+        <div class="text-center px-8">
+          <ef-text 
+            split="word"
+            class="text-white text-5xl font-bold mb-6"
+            style="animation: 0.6s wordIn 0.5s both; animation-delay: calc(0.5s + var(--ef-word-index) * 100ms)"
+          >Start designing together</ef-text>
+          <ef-text 
+            class="text-white/80 text-lg mb-12"
+            style="animation: 0.5s fadeIn 1.8s both"
+          >Figma is where teams ship products</ef-text>
+          <div 
+            class="inline-block bg-white text-[#0d99ff] px-8 py-3 rounded-full font-semibold text-lg"
+            style="animation: 0.6s scaleIn 2.3s both"
+          >Try free</div>
+        </div>
+      </ef-timegroup>
+
+    </ef-timegroup>
+  </ef-configuration>
+
+  <script>
+    // Scene 2: Collaboration canvas - nodes appearing and connecting
+    const collaborationCanvas = document.getElementById('collaboration-canvas');
+    if (collaborationCanvas) {
+      const scene2 = collaborationCanvas.closest('ef-timegroup');
+      if (scene2) {
+        scene2.initializer = (instance) => {
+          return instance.addFrameTask((info) => {
+            const canvas = instance.querySelector('#collaboration-canvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const progress = info.percentComplete;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            // Draw connecting lines between nodes
+            const nodeCount = Math.floor(progress * 8);
+            const nodes = [];
+            
+            for (let i = 0; i < nodeCount; i++) {
+              const angle = (i / 8) * Math.PI * 2;
+              const radius = 150 + Math.sin(i * 0.5 + progress * Math.PI) * 50;
+              const x = centerX + Math.cos(angle) * radius;
+              const y = centerY + Math.sin(angle) * radius;
+              nodes.push({ x, y, angle, i });
+            }
+            
+            // Draw connections
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < nodes.length; i++) {
+              for (let j = i + 1; j < Math.min(i + 3, nodes.length); j++) {
+                ctx.beginPath();
+                ctx.moveTo(nodes[i].x, nodes[i].y);
+                ctx.lineTo(nodes[j].x, nodes[j].y);
+                ctx.stroke();
+              }
+            }
+            
+            // Draw nodes (cursors/avatars)
+            nodes.forEach((node, idx) => {
+              const nodeProgress = Math.max(0, (progress - (idx / nodeCount)) * 2);
+              const size = 8 + nodeProgress * 4;
+              const alpha = Math.min(1, nodeProgress * 3);
+              
+              ctx.beginPath();
+              ctx.arc(node.x, node.y, size, 0, Math.PI * 2);
+              ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.6})`;
+              ctx.fill();
+              
+              ctx.beginPath();
+              ctx.arc(node.x, node.y, size + 2, 0, Math.PI * 2);
+              ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.3})`;
+              ctx.lineWidth = 1;
+              ctx.stroke();
+            });
+          });
+        };
+      }
+    }
+    
+    // Scene 4: Cursor trails animation
+    const cursorCanvas = document.getElementById('cursor-canvas');
+    if (cursorCanvas) {
+      const scene4 = cursorCanvas.closest('ef-timegroup');
+      if (scene4) {
+        scene4.initializer = (instance) => {
+          return instance.addFrameTask((info) => {
+            const canvas = instance.querySelector('#cursor-canvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            
+            // Fade previous frame
+            ctx.fillStyle = 'rgba(15, 15, 15, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const progress = info.percentComplete;
+            const time = info.ownCurrentTimeMs / 1000;
+            
+            // Multiple cursor trails moving across canvas
+            const trails = [
+              { startX: 100, startY: 300, endX: 800, endY: 600, color: '#fff' },
+              { startX: 800, startY: 400, endX: 200, endY: 800, color: '#fff' },
+              { startX: 300, startY: 200, endX: 700, endY: 1000, color: '#fff' }
+            ];
+            
+            trails.forEach((trail, idx) => {
+              const trailProgress = Math.max(0, progress - (idx * 0.15));
+              if (trailProgress <= 0) return;
+              
+              const x = trail.startX + (trail.endX - trail.startX) * Math.min(1, trailProgress * 1.5);
+              const y = trail.startY + (trail.endY - trail.startY) * Math.min(1, trailProgress * 1.5);
+              const alpha = Math.sin(trailProgress * Math.PI) * 0.7;
+              
+              // Cursor
+              ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+              ctx.beginPath();
+              ctx.arc(x, y, 6, 0, Math.PI * 2);

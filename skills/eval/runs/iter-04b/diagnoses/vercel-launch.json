@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic deployment messaging that any CI/CD platform could claim. No Vercel-specific features, products, or differentiators are mentioned.",
+      "improvement": "Include Vercel-specific proof points: the triangle logo, Edge Functions, integration with Next.js, specific infrastructure like 'Edge Network in 15 regions', or the preview deployment workflow that defines Vercel's DX."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)",
+    "cause": "missing",
+    "proposedChange": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)\n- **Brand marks**: Logo, wordmark, or symbol that must appear in the video. If the brand has a distinctive logo (triangle, apple, swoosh), it should be visible.\n\n**Product Specifics:**\n- Named features or products (e.g., 'Edge Functions', 'Preview Deployments', 'Turborepo')\n- Technical differentiators with specifics (e.g., 'Edge Network in 15 regions', not 'fast CDN')\n- Integration points that define the product (e.g., 'first-class Next.js support')\n\n**These must appear in the video.** A launch video for Vercel that doesn't mention Next.js, Edge Functions, or show the triangle logo is not a Vercel video.",
+    "rationale": "The skill requires extracting visual identity but never explicitly requires capturing and using named products, features, or the brand logo—causing the model to produce generic deployment messaging instead of Vercel-specific content."
+  },
+  {
+    "taskId": "vercel-launch",
+    "feedbackItem": {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "The 'problem' scene states that deployment is broken but doesn't make the viewer feel that pain. The chaotic nodes are abstract rather than visceral.",
+      "improvement": "Show recognizable deployment pain: a spinning CI indicator, a 'Build failed' message, or a progress bar stuck at 87%. Make the frustration concrete before resolving it."
+    },
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "currentText": "**When showing chaos or pain, make it viscerally uncomfortable — not aesthetically pleasing.** A beautiful tangle of purple bezier curves communicates \"elegant complexity.\" To communicate \"I live in this every day and it's exhausting,\" the visual needs to be overwhelming: too many elements, too fast, overlapping in a way that makes the eye unable to rest. Chaos animations that look designed signal that the problem is aesthetic, not real.",
+    "cause": "wrong_priority",
+    "proposedChange": "**When showing chaos or pain, make it viscerally uncomfortable — not aesthetically pleasing.** A beautiful tangle of purple bezier curves communicates \"elegant complexity.\" To communicate \"I live in this every day and it's exhausting,\" the visual needs to be overwhelming: too many elements, too fast, overlapping in a way that makes the eye unable to rest. Chaos animations that look designed signal that the problem is aesthetic, not real.\n\n**Use recognizable artifacts of failure, not abstract shapes.** The viewer should see something they've experienced:\n- A terminal with `Build failed: exit code 1`\n- A CI progress bar stuck at 87%\n- A spinning deployment indicator that never resolves\n- A Slack notification: \"Production is down\"\n- A 502 Bad Gateway error page\n\nAbstract particle systems and bezier tangles communicate 'complexity' in the abstract. Concrete failure artifacts communicate 'I know this pain.'",
+    "rationale": "The skill warns against aesthetically pleasing chaos but doesn't provide concrete alternatives—adding specific examples of recognizable failure artifacts would guide the model to show visceral, relatable pain rather than abstract node animations."
+  }
+]

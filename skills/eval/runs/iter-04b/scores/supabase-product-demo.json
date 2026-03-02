@@ -1,0 +1,65 @@
+{
+  "taskId": "supabase-product-demo",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:42:22.041Z",
+  "scores": {
+    "motion": {
+      "score": 3,
+      "rationale": "CSS animations are present throughout with intentional staggering and timing, but motion remains decorative rather than structural. The composition uses `split='word'` with `--ef-word-index` for staggered text reveals, and layer animations for the stack visualization, but doesn't leverage `--ef-progress` or `addFrameTask` for time-synchronized motion.",
+      "evidence": "Text animations use `animation-delay: calc(var(--ef-word-index) * 100ms)` for stagger. Layer fade effects: `style=\"animation: 1s layer-fade-out 0.8s both\"`. Canvas element exists (`<canvas id=\"postgres-canvas\">`) but no scripting visible to animate it. Scene transitions use `fade-in-transition` and `overlap=\"1.2s\"`."
+    },
+    "specificity": {
+      "score": 3,
+      "rationale": "The composition incorporates genuine Supabase-specific elements: PostgreSQL as the foundation, specific features (Row-level security, Edge Functions), and the open-source positioning. However, the visual language and structure could work for any 'Firebase alternative' or database-as-a-service product.",
+      "evidence": "Specific: `<span class=\"postgres-accent\">PostgreSQL</span>`, `$ npm install @supabase/supabase-js`, 'Row-level security built in', 'No vendor lock-in'. Generic: The 'strip away abstraction' metaphor, the 6-feature grid, and the CTA are patterns any competitor could use verbatim."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "There's a traceable arc from problem (complexity) → revelation (Postgres underneath) → capability (what you get) → assurance (constraints that protect). However, the transitions feel mechanical rather than building emotional momentum. The viewer understands more but doesn't feel differently.",
+      "evidence": "Scene 1-2 attempts a reveal ('Strip away the abstraction. Here's what's real.'), Scene 3-4 delivers capability information, Scene 5 addresses trust/safety. The arc exists but each scene delivers similar energy—confident, explanatory, professional—without tonal variation."
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "A clear perspective is present: 'Supabase respects developers who understand databases.' The composition commits to showing infrastructure rather than hiding it. However, this perspective isn't pushed to discomfort—it states the position without making the viewer feel the difference.",
+      "evidence": "'Most platforms abstract it away. Supabase reveals what's underneath.' and 'Designed for developers who understand databases' establish the POV. But the feature grid (Scene 4) reverts to standard marketing listing, and the visual stack metaphor is generic infrastructure imagery."
+    },
+    "omission": {
+      "score": 2,
+      "rationale": "Scene 4 (feature grid) is largely redundant with the information established in Scenes 2-3. Scene 5's canvas visualization promises something procedural but the canvas appears empty/non-functional. The CTA (Scene 6) is cut off mid-code, suggesting incomplete work.",
+      "evidence": "Scene 4 lists 'PostgreSQL, Auth, APIs, Storage, Functions, Realtime'—information partially covered by Scene 2's layers and Scene 3's code example. Scene 5 has `<canvas id=\"postgres-canvas\" class=\"absolute inset-0\"></canvas>` with no drawing logic. Scene 6 truncates at `0.` suggesting the composition is incomplete."
+    }
+  },
+  "overall": 2.8,
+  "feedback": [
+    {
+      "dimension": "motion",
+      "severity": "major",
+      "observation": "Canvas element in Scene 5 exists but has no animation logic—it's a dead element promising procedural motion.",
+      "improvement": "Either implement `addFrameTask` to animate database constraint visualization on canvas, or remove the canvas and use CSS-based motion that actually renders. The 'constraints that protect' concept begs for animated visualization of data validation."
+    },
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The layer-stripping visual metaphor in Scene 2 is generic infrastructure imagery that any database product could claim.",
+      "improvement": "Show actual Supabase dashboard UI, real schema visualization, or the specific green brand palette in the layer design. The 'Postgres underneath' reveal should feel like seeing Supabase specifically, not generic architecture."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "All scenes maintain the same confident, explanatory tone without emotional variation.",
+      "improvement": "Scene 1 should create tension or dissatisfaction with the status quo before Scene 2's revelation. Consider a moment of overwhelm (too many abstractions) before the relief of simplicity."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "minor",
+      "observation": "The perspective ('we show you what's real') is stated but not demonstrated through form—the composition itself is fairly conventional marketing structure.",
+      "improvement": "If the POV is 'revealing what's underneath,' the composition form should mirror this—perhaps showing actual SQL, actual RLS policies, or uncomfortably technical details that competitors would hide."
+    },
+    {
+      "dimension": "omission",
+      "severity": "critical",
+      "observation": "Composition is truncated/incomplete (Scene 6 cuts off at `0.`), Scene 5's canvas is non-functional, and Scene 4's feature grid duplicates earlier content.",
+      "improvement": "Complete Scene 6, either implement or remove the canvas animation, and consider merging Scenes 3-4 since both establish 'what you get'—the code example already implies the feature breadth."
+    }
+  ]
+}

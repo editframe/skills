@@ -1,0 +1,38 @@
+Eval Run: iter-06
+Generator: anthropic/claude-haiku-4-5
+Evaluator: anthropic/claude-opus-4-5
+Date: 2/26/2026, 6:01:20 PM
+
+─── Scores ────────────────────────────────────────
+Task                          Motion  Spec  ViewerΔ  PoV  Omit  Overall
+─────────────────────────────────────────────────────────────────────────
+Linear (product-demo)           5/5    4/5   4/5      4/5   3/5    4/5
+Stripe (explainer)              4/5    2/5   3/5      2/5   3/5    2.8/5
+Figma (brand-awareness)         5/5    4/5   3/5      3/5   3/5    3.6/5
+Vercel (launch)                 5/5    2/5   4/5      3/5   4/5    3.6/5
+Notion (social)                 3/5    4/5   4/5      4/5   4/5    3.8/5
+Supabase (product-demo)         4/5    3/5   3/5      2/5   3/5    3/5
+─────────────────────────────────────────────────────────────────────────
+Average overall: 3.5/5
+
+─── Proposed Skill Changes ─────────────────────────────────────────────
+
+skills/skills/brand-video-generator/SKILL.md (11 changes)
+  [CRITICAL specificity] The model used 'unified API' and processed volume stats because these weren't explicitly flagged as false differentiators, and no guidance existed for what Stripe-specific elements to show instead.
+  [MAJOR point_of_view] The existing Stripe example was correct but too brief; adding an explicit competitor test and concrete angle options forces the model to commit to a distinctive perspective rather than defaulting to generic SaaS template.
+  [MAJOR viewer_state] The model created two problem scenes with identical viewer states because the skill only checks that viewer state changes between scenes, not that consecutive scenes of the same type must escalate.
+  [MAJOR point_of_view] The model produced a predictable marketing message because Phase 0 only asks what's unique and what formal choice follows, without requiring the model to identify trade-offs that would generate a distinctive perspective.
+  [CRITICAL specificity] The model treated 'instant deployment' as Vercel-specific because the skill's false-differentiator list for deployment platforms only covers basic features, not the core 'git push → deploy' pattern that all competitors share.
+  [CRITICAL specificity] The false differentiators list for deployment platforms was too narrow; adding 'git push → live' and 'zero config deploys' explicitly would have flagged the model's chosen angle as generic.
+  [MAJOR point_of_view] The model defaulted to 'deployment should be instant' because the skill's POV examples didn't include a deployment-platform case showing how to move beyond speed-as-differentiator to architectural or workflow-level POV.
+  [MAJOR point_of_view] The existing guidance shows good vs bad examples but doesn't explicitly reject the generic template structure; adding a 'template rejection test' would force the model to verify its structure actually departs from the default.
+  [MAJOR point_of_view] The per-scene check exists but is abstract; concrete examples of how structural truths must manifest visually would force the model to actually change scene design rather than just checking a box.
+  [MAJOR specificity] The guidance says to show the product but doesn't prohibit generic code examples; requiring product-specific syntax that wouldn't work elsewhere would have prevented the generic SQL block.
+  [MAJOR specificity] The false differentiators list covers many categories but omits backend-as-a-service platforms; adding this category would have flagged 'fragmented backend → unified platform' as a generic claim requiring deeper specificity.
+
+skills/skills/brand-video-generator/references/composition-patterns.md (3 changes)
+  [MAJOR viewer_state] The guidance warned against aesthetic chaos but didn't specify that chaos needs domain-specific pain signals or that resolution must visually transform (not replace) the chaos elements, which would have prevented the generic shapes and the lack of convergence animation.
+  [MAJOR point_of_view] The existing Vercel example in composition-patterns.md reinforced the generic 'instant deploy' framing; replacing it with framework-coupling and edge-simultaneity examples would have guided the model toward Vercel's actual differentiators.
+  [MAJOR motion] The model used fixed keyframe animations for 'collapse-blocks' because the documentation only showed --ef-progress for simple width/color changes, not for interpolating element positions between scattered and unified states.
+
+To apply: npx tsx scripts/eval-skills-apply.ts --run-id iter-06

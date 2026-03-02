@@ -1,0 +1,142 @@
+[
+  {
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "changes": [
+      {
+        "taskId": "linear-product-demo",
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "**Video type determines visual strategy:**\n- `product-demo`: Show the actual product UI. Canvas animations are a fallback for non-visual concepts only. Feature density: one demonstrable feature per scene — not a list.",
+        "proposedChange": "**Video type determines visual strategy:**\n- `product-demo`: Show the actual product UI with its distinctive elements—not generic representations. Identify what makes this product's interface visually unique (unique UI patterns, specific terminology, distinctive workflows, characteristic interaction hints). A product demo that shows generic cards/panels instead of the product's actual visual vocabulary is a failed demo. Feature density: one demonstrable feature per scene — not a list.\n  - **Anti-pattern**: Showing generic 'issue cards' or 'task items' when the product has distinctive UI elements (progress indicators, keyboard hints, specific status workflows, proprietary terminology).\n  - **Required**: Name 3+ UI elements unique to this product before designing any scene.",
+        "rationale": "The current guidance says to 'show the actual product UI' but doesn't specify that generic representations of common UI patterns (like issue cards) fail this requirement—the model needs explicit instruction to identify and use product-specific visual vocabulary."
+      },
+      {
+        "taskId": "stripe-explainer",
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "present_wrong",
+        "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\"\n- Payment brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\"\n- Design tools: \"design and code together\", \"design faster\", \"real-time collaboration\"",
+        "proposedChange": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\"\n- Payment brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\", \"payments, payouts, billing\", \"unified dashboard\", \"fraud protection\"\n- Design tools: \"design and code together\", \"design faster\", \"real-time collaboration\"\n\n**True differentiators require evidence of specificity:**\n- For payment brands: What is the actual integration experience? Show code. What specific customers built what specific things on this platform? Name them. What architectural decision does this brand make that others don't?\n- Example (Stripe): Their 7-line integration is famous — show it. Stripe Radar, Connect, Atlas are named products competitors don't have. Shopify, Lyft, Amazon built on Stripe — name the relationship.",
+        "rationale": "The current false differentiators list mentions payment brands but doesn't explicitly flag 'payments, payouts, billing' as generic, and provides no guidance on what Stripe-specific evidence to seek instead."
+      },
+      {
+        "taskId": "stripe-explainer",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "wrong_priority",
+        "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"",
+        "proposedChange": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"\n\n**Payment/fintech brands specifically:** The default angle is always 'complexity bad, unified platform good.' This is the category pitch, not a point of view. Force a stance:\n- \"Payments should be invisible infrastructure\" → structure: never show a dashboard, only show what the end-user experiences\n- \"Developers are the decision-makers\" → structure: show code as the primary visual, not UI\n- \"Financial primitives for the internet\" → structure: show what becomes possible (new business models), not what problems are solved\n\nIf your PoV could be stated by Adyen, Square, or PayPal without changing a word, you haven't found it yet.",
+        "rationale": "The Stripe example exists in Phase 0 but is buried as a single line; adding explicit guidance for payment/fintech brands with testable stances would force the model to choose a specific structural approach rather than defaulting to generic 'complexity→solution' framing."
+      },
+      {
+        "taskId": "figma-brand-awareness",
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "missing",
+        "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\"\n- Payment brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\"\n- Design tools: \"design and code together\", \"design faster\", \"real-time collaboration\"",
+        "proposedChange": "Add after the existing design tools line:\n- Design tools: \"design and code together\", \"design faster\", \"real-time collaboration\", \"multiplayer\", \"browser-based\", \"cloud-based\"\n\n**For design tool brands specifically:** The differentiator is never \"collaboration\" — every design tool claims this now. Look for: What specific workflow does this tool make possible that others structurally cannot? (e.g., Figma's Dev Mode code inspection, variables/design tokens system, or component introspection). What named features or UI patterns are unique to this product? Show those, not the category pitch.",
+        "rationale": "The model used 'multiplayer design' which the skill already lists as a false differentiator for design tools, but the guidance wasn't specific enough about what to look for instead in design tool brands."
+      },
+      {
+        "taskId": "figma-brand-awareness",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Stripe handles money, so I'll show a payment form\" (category imagery).\nYes: \"Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction.\"",
+        "proposedChange": "Add after the existing examples:\n\nNot: \"Figma enables collaboration, so I'll show cursors moving together\" (that's their marketing tagline restated).\nYes: \"Figma collapsed the boundary between designing and implementing. So the video never shows a handoff — design and code exist in the same frame, responding to each other.\"\n\n**The brand's tagline is not a point of view.** If your structural constraint could appear in the brand's own marketing materials, you haven't found the authorial interpretation yet. A point of view is what *you* believe is true about the brand that they haven't explicitly said.",
+        "rationale": "The model treated Figma's marketing tagline ('multiplayer design') as the point of view rather than developing an original authorial interpretation; adding an explicit Figma-style example and clarifying that taglines are not points of view would prevent this."
+      },
+      {
+        "taskId": "vercel-launch",
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "present_wrong",
+        "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\"",
+        "proposedChange": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\"\n- Deployment platforms: \"zero config\", \"preview URLs\", \"instant deploys\", \"global CDN\"\n\n**Specificity test for deployment/infrastructure brands:** If the claim could appear on Vercel, Netlify, Railway, Render, and Fly.io landing pages interchangeably, it is not specific. Look instead for: proprietary technology names (Turborepo, Edge Middleware), specific integration depth (Next.js App Router), quantified network scale (100+ edge regions with specific latency numbers), or visual elements unique to this product's UI (the triangle deployment indicator, the specific dashboard layout).",
+        "rationale": "The model used 'instant deploy', 'preview URLs', and 'zero config' because the false differentiators list didn't explicitly flag deployment platform clichés or provide a specificity test for this category."
+      },
+      {
+        "taskId": "vercel-launch",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"",
+        "proposedChange": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"\n\nNot: \"Vercel is instant, so I'll show a fast deployment\" (any deployment platform could show speed).\nYes: \"Vercel's belief is that deployment should be invisible — developers shouldn't think about infrastructure. So the video never shows infrastructure; it only shows what developers build with the time they reclaim.\"\n\n**Template rejection test:** If your scene breakdown follows Hook → Problem → Solution → Features → CTA without the brand truth visibly deforming that structure, you have defaulted to a template. The PoV must break or rearrange the expected structure.",
+        "rationale": "Adding a deployment-specific example and a template rejection test would have forced the model to recognize that a standard problem-solution structure without structural deformation indicates missing point of view."
+      },
+      {
+        "taskId": "vercel-launch",
+        "dimension": "viewer_state",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**The viewer-state test**: If VIEWER STATE AT START and VIEWER STATE AT END are the same, the scene is not doing work. Cut it or change it until it does.",
+        "proposedChange": "**The viewer-state test**: If VIEWER STATE AT START and VIEWER STATE AT END are the same, the scene is not doing work. Cut it or change it until it does.\n\n**The demonstration test**: If a scene makes a claim (\"instant\", \"fast\", \"simple\"), the viewer must *experience* the claim through visual demonstration, not read it as text. A number on screen (\"0ms\") is not a demonstration. A demonstration is: showing the before/after contrast in real time, collapsing a complex visual into a simple one, or letting the viewer watch something happen that would normally take longer. Claims without demonstrations are assertions the viewer has no reason to believe.",
+        "rationale": "The model wrote '0ms' as text without demonstrating speed because the skill lacks guidance that claims must be visually demonstrated rather than stated."
+      },
+      {
+        "taskId": "notion-social",
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "missing",
+        "currentText": "**You MUST use browser tools to load the actual website before any analysis.**\n\n1. Navigate to the URL with your available browser tools\n2. Take screenshots of homepage and key pages\n3. Inspect CSS to extract exact color hex codes\n4. Download logo and brand assets (3-5 minimum)",
+        "proposedChange": "Add after \"4. Download logo and brand assets (3-5 minimum)\":\n\n5. Identify the product's **core abstraction** — the fundamental unit or concept the product is built around (e.g., Notion's \"blocks\", Linear's \"issues\", Figma's \"frames\"). This abstraction must appear in the composition.\n6. Extract **product-specific terminology** from the UI and marketing (e.g., slash commands, database views, linked mentions) — generic category terms (notes, docs, tasks) are not specific enough.",
+        "rationale": "The model used generic productivity terms because the skill never required identifying the product's unique conceptual vocabulary and core abstraction during analysis."
+      },
+      {
+        "taskId": "notion-social",
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "missing",
+        "currentText": "**Do NOT:**\n- Infer visual identity from text descriptions\n- Assume design patterns based on industry\n- Use text content as substitute for visual analysis\n- Hallucinate brand colors, fonts, or design language\n- Use `bars-n-tone.mp4` or any placeholder media in the final composition — use brand-color backgrounds, canvas animations, or actual product footage URLs instead",
+        "proposedChange": "Add to the \"Do NOT\" list:\n- Use placeholder symbols or invented logos — extract the actual brand mark from the website\n- Use generic category features (\"notes\", \"docs\", \"tasks\") — use the brand's specific feature names as they appear in their product UI",
+        "rationale": "The model invented a symbol ⊞ and used generic feature names because the skill didn't explicitly prohibit placeholder logos or generic terminology."
+      },
+      {
+        "taskId": "notion-social",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "wrong_priority",
+        "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. If the truth could be dropped into any problem-solution-CTA template without changing the template, it isn't constraining anything.\n\nNot: \"Linear is fast, so I'll use snappy cuts\" (any brand could 'be fast').\nYes: \"Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains.\"",
+        "proposedChange": "Add a third example specifically about interconnection/composition products:\n\nNot: \"Notion organizes everything, so I'll show chaos becoming order\" (any productivity tool claims this).\nYes: \"Notion's core unit is the block — everything is the same thing in different contexts. So the video shows one piece of information transforming: a row becomes a page, a mention becomes a link, the same block appears in three places.\"",
+        "rationale": "The model fell back on chaos-to-order because the examples didn't demonstrate how to handle products whose differentiation is about composability and interconnection rather than speed or simplicity."
+      },
+      {
+        "taskId": "notion-social",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"",
+        "proposedChange": "Add to the false differentiators list:\n- Productivity tools: \"organize everything\", \"one place for all your work\", \"chaos to order\", \"scattered to organized\", \"simplify your workflow\"\n\nAdd guidance after the list:\n**Productivity tool test:** If your concept is \"scattered things become organized,\" you have not found the differentiator. Every productivity tool claims this. Ask instead: what is the *mechanism* of organization that is unique to this product? (Notion: blocks that can be anything. Coda: docs that are also apps. Roam: bidirectional links.)",
+        "rationale": "The model used chaos-to-order because the false differentiators list didn't explicitly flag this common productivity-tool cliché or require identifying the specific mechanism of organization."
+      },
+      {
+        "taskId": "supabase-product-demo",
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "missing",
+        "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+        "proposedChange": "Add after the existing example under question 1:\n\n**For developer tools specifically:**\nNot: \"It's an all-in-one platform\" (Firebase, AWS Amplify, PlanetScale all claim this).\nNot: \"It's easy to use\" (every DevEx-focused tool claims this).\nYes: \"It exposes raw Postgres—you can write real SQL, export your data, and leave anytime.\"\nYes: \"The entire codebase is on GitHub; you can self-host it tomorrow.\"\n\nThe test: if a competitor could say the same thing without lying, it's not specific enough.",
+        "rationale": "The model treated 'open source' and 'integrated platform' as differentiators without being forced to prove these claims couldn't describe Firebase or PlanetScale—adding developer-tool-specific examples would have caught this."
+      },
+      {
+        "taskId": "supabase-product-demo",
+        "dimension": "viewer_state",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "- VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]\n- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]",
+        "proposedChange": "Replace with:\n\n- VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]\n- VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]\n- ESCALATION CHECK: [How is this state change MORE intense than the previous scene's? If it isn't, justify why plateau serves the arc.]\n\n**Adjacent scenes cannot produce the same emotional register.** If Scene 3 ends with 'impressed' and Scene 4 ends with 'impressed,' one of them isn't doing work. Options:\n- Introduce contrast (tension → relief, confusion → clarity)\n- Escalate stakes (useful → essential → can't-live-without)\n- Shift register entirely (rational → emotional, or vice versa)",
+        "rationale": "The template allowed consecutive scenes with flat emotional states; adding an explicit escalation check would force the model to justify or fix scenes that don't build momentum."
+      },
+      {
+        "taskId": "supabase-product-demo",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\" If the latter, rewrite the scene or cut it.",
+        "proposedChange": "Replace with:\n\n**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask:\n1. \"Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?\"\n2. \"What is the VISUAL EVIDENCE of this point of view in this scene?\" Name the specific element—not text overlay, but a visual or structural choice (showing actual source code, displaying a GitHub star count, cutting to a competitor's lock-in warning, etc.).\n\nIf the PoV is only stated in voiceover or text and not embodied in imagery or structure, it is not a point of view—it is a claim. Rewrite until the PoV is visible with the sound off.",
+        "rationale": "The model announced 'open source matters' in text but never showed evidence; requiring visual proof of PoV in each scene would have forced concrete demonstration rather than assertion."
+      }
+    ]
+  }
+]

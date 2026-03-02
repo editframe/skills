@@ -1,0 +1,38 @@
+Eval Run: iter-02
+Generator: anthropic/claude-haiku-4-5
+Evaluator: anthropic/claude-opus-4-5
+Date: 2/26/2026, 5:18:51 PM
+
+─── Scores ────────────────────────────────────────
+Task                          Motion  Spec  ViewerΔ  PoV  Omit  Overall
+─────────────────────────────────────────────────────────────────────────
+Linear (product-demo)           5/5    3/5   3/5      3/5   4/5    3.6/5
+Stripe (explainer)              4/5    2/5   3/5      2/5   3/5    2.8/5
+Figma (brand-awareness)         5/5    3/5   4/5      3/5   3/5    3.6/5
+Vercel (launch)                 5/5    3/5   4/5      3/5   4/5    3.8/5
+Notion (social)                 4/5    2/5   3/5      2/5   3/5    2.8/5
+Supabase (product-demo)         5/5    4/5   4/5      3/5   4/5    4/5
+─────────────────────────────────────────────────────────────────────────
+Average overall: 3.4/5
+
+─── Proposed Skill Changes ─────────────────────────────────────────────
+
+skills/skills/brand-video-generator/SKILL.md (12 changes)
+  [MAJOR specificity] The model defaulted to abstract canvas visualizations instead of showing Linear's actual interface; explicitly prohibiting abstract substitutes for product UI in product-demo videos would have forced inclusion of recognizable Linear elements.
+  [MAJOR specificity] The model defaulted to category-level claims ('Payment chaos', 'One platform') because the skill's examples don't address API/developer products where the differentiation is often in implementation details that need explicit guidance to surface.
+  [MAJOR specificity] The model used 'One platform' and generic stats because the false differentiators list didn't include payment/infrastructure clichés, so the model didn't recognize them as generic.
+  [MAJOR point_of_view] The model abandoned its perspective at the CTA because the skill doesn't explicitly require the CTA to embody the PoV—models default to safe marketing language unless instructed otherwise.
+  [MAJOR point_of_view] The instruction was present but not enforced as a visible output requirement; making it mandatory in the output format forces the model to explicitly verify PoV consistency for every scene including the CTA.
+  [MAJOR specificity] The model used category-level deployment claims because the skill's false differentiator list didn't include platform-specific examples, so it didn't recognize 'instant deploys' and 'edge functions' as generic.
+  [MAJOR specificity] The generic founding-story example didn't help the model recognize that platform feature claims need the same scrutiny; a deployment-specific example would have triggered rejection of generic claims like 'instant deploys'.
+  [MAJOR specificity] The feedback specifically mentioned incorporating the triangle logo into motion language; adding explicit guidance to analyze brand marks for motion potential would have prompted this integration.
+  [CRITICAL specificity] The model used category-level language ('Write, Plan, Organize') because the skill's example of a bad answer didn't warn against product category descriptors, and lacked guidance to identify specific UI/architectural elements like Notion's block system.
+  [MAJOR point_of_view] The model produced a descriptive feature tour because the skill lacked explicit guidance distinguishing 'arguing for a philosophy' from 'describing features' — adding the argument test forces the model to articulate a persuasive stance.
+  [MAJOR point_of_view] The model faithfully reproduced Supabase's marketing narrative because the skill didn't explicitly prohibit using the brand's own messaging as the 'unique truth'—adding this constraint forces the model to find an editorial angle the brand itself doesn't state.
+  [MAJOR point_of_view] The model defaulted to 'chaos-to-clarity' which is generic; explicitly requiring the video to surface a tension or trade-off (like 'what Supabase asks you to give up') would force a distinctive editorial angle.
+
+skills/skills/brand-video-generator/references/composition-patterns.md (2 changes)
+  [MAJOR viewer_state] The documentation prompted finding user-specific chaos but didn't specify that chaos visualizations must be viscerally uncomfortable rather than aesthetically pleasing, leading to elegant purple curves instead of genuinely frustrating visuals.
+  [MAJOR specificity] The existing guidance requires semantic connection but doesn't explicitly require visual brand elements (colors, logo shapes, UI patterns) to appear in the canvas itself, leading to generic circles/nodes instead of Figma-specific cursors and purple.
+
+To apply: npx tsx scripts/eval-skills-apply.ts --run-id iter-02

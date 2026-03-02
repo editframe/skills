@@ -1,0 +1,44 @@
+[
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic colorful blocks and standard productivity messaging. Notion's actual visual identity (monochromatic, minimalist, the specific Notion logo, the sidebar, the slash command, the specific block types) is absent.",
+      "improvement": "Incorporate Notion's actual brand elements: black/white/gray palette, the iconic Notion logo blocks, recognizable UI elements like the sidebar or page structure, or reference specific features like databases, toggles, or linked pages that distinguish Notion from competitors."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)",
+    "cause": "missing",
+    "proposedChange": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)\n- **Signature UI elements**: Identify 3-5 recognizable interface components (sidebar, specific icon shapes, interaction patterns) that are uniquely associated with this brand. These must appear in the video — generic abstract shapes are not acceptable substitutes for actual brand visual language.\n- **Logo and wordmark**: Download the actual logo. If the brand has a distinctive logomark (like Notion's blocks), this element should be featured, not replaced with generic geometry.",
+    "rationale": "The model used generic colorful blocks because the skill didn't explicitly require extracting and using signature UI elements and the actual logo/logomark as mandatory visual components."
+  },
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic colorful blocks and standard productivity messaging. Notion's actual visual identity (monochromatic, minimalist, the specific Notion logo, the sidebar, the slash command, the specific block types) is absent.",
+      "improvement": "Incorporate Notion's actual brand elements: black/white/gray palette, the iconic Notion logo blocks, recognizable UI elements like the sidebar or page structure, or reference specific features like databases, toggles, or linked pages that distinguish Notion from competitors."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Do NOT:**\n- Infer visual identity from text descriptions\n- Assume design patterns based on industry\n- Use text content as substitute for visual analysis\n- Hallucinate brand colors, fonts, or design language\n- Use `bars-n-tone.mp4` or any placeholder media in the final composition — use brand-color backgrounds, canvas animations, or actual product footage URLs instead",
+    "cause": "missing",
+    "proposedChange": "**Do NOT:**\n- Infer visual identity from text descriptions\n- Assume design patterns based on industry\n- Use text content as substitute for visual analysis\n- Hallucinate brand colors, fonts, or design language\n- Use `bars-n-tone.mp4` or any placeholder media in the final composition — use brand-color backgrounds, canvas animations, or actual product footage URLs instead\n- **Replace brand-specific visual elements with generic abstractions** (e.g., using colorful blocks instead of Notion's actual monochromatic block icons, or generic checkmarks instead of a brand's actual UI components). If the brand has a recognizable visual language, the video must use it, not an abstracted version of it.",
+    "rationale": "The model substituted generic colorful blocks for Notion's specific visual identity because there was no explicit prohibition against replacing brand elements with generic abstractions."
+  },
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The tagline 'Everything scattered' → 'One place for all' → 'Get organized' is generic workspace copy that could be used by Coda, Monday, Airtable, or Asana without modification.",
+      "improvement": "Use Notion-specific language or concepts: 'Wikis, docs, and projects' or 'Build any workflow' or reference the 'connected workspace' positioning. The text should contain at least one Notion-specific truth."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\", \"zero config\", \"batteries included\"\n- Payment/fintech brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\", \"invisible infrastructure\", \"end-to-end payments\"\n- Design tools: \"design and code together\", \"design faster\", \"multiplayer design\", \"browser-based\", \"files keep you apart\"\n- Workspace/productivity tools: \"fragmented tools → unified workspace\", \"all-in-one\", \"where work happens\", \"write, plan, organize\"",
+    "cause": "missing",
+    "proposedChange": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\", \"zero config\", \"batteries included\"\n- Payment/fintech brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\", \"invisible infrastructure\", \"end-to-end payments\"\n- Design tools: \"design and code together\", \"design faster\", \"multiplayer design\", \"browser-based\", \"files keep you apart\"\n- Workspace/productivity tools: \"fragmented tools → unified workspace\", \"all-in-one\", \"where work happens\", \"write, plan, organize\", **\"everything in one place\", \"one place for all\", \"get organized\", \"scattered → organized\"** — these are category-level promises, not brand truths\n\n**Text must pass the substitution test**: Before finalizing any headline or tagline, ask: \"Could a direct competitor use this exact text without changing it?\" If yes, rewrite it to include a brand-specific term, feature name, or concept (e.g., 'Build it in blocks' for Notion, 'Ship with git push' for Vercel).",
+    "rationale": "The model used generic 'scattered → one place → organized' messaging because the skill's false differentiator list didn't include these specific workspace clichés, and there was no explicit substitution test requiring brand-specific language in video text."
+  }
+]

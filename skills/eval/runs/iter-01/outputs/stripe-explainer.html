@@ -1,0 +1,286 @@
+<ef-configuration api-host="https://api.editframe.com" media-engine="local">
+  <ef-timegroup mode="sequence" overlap="1s" class="w-[1920px] h-[1080px] bg-black">
+    
+    <!-- Scene 1: The Problem (0s-8s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 1s fade-out var(--ef-transition-out-start) both">
+      <canvas id="chaos-canvas" class="absolute inset-0 size-full"></canvas>
+      <ef-text class="absolute bottom-16 left-16 text-white text-5xl font-bold"
+        style="animation: 0.8s enter-up both 2s">
+        Payments shouldn't be this hard
+      </ef-text>
+    </ef-timegroup>
+
+    <!-- Scene 2: Without Friction (9s-17s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 1s fade-in both">
+      <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" class="absolute inset-0 size-full object-cover opacity-40"></ef-video>
+      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
+      <ef-text split="word" class="absolute top-32 left-16 text-white text-6xl font-bold max-w-4xl"
+        style="animation: 0.6s word-in both; animation-delay: calc(var(--ef-word-index) * 100ms)">
+        What if payments just worked?
+      </ef-text>
+      <div class="absolute bottom-16 left-16 w-1 h-64 bg-gradient-to-b from-blue-500 via-blue-400 to-transparent opacity-60"></div>
+    </ef-timegroup>
+
+    <!-- Scene 3: The Platform (18s-28s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 1s fade-out var(--ef-transition-out-start) both">
+      <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" class="absolute inset-0 size-full object-cover opacity-30"></ef-video>
+      <div class="absolute inset-0 bg-black/50"></div>
+      
+      <!-- Three capability boxes that appear sequentially -->
+      <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full px-16 flex justify-between gap-8">
+        <div class="flex-1 bg-blue-600/20 border border-blue-500/40 rounded-lg p-8 backdrop-blur"
+          style="animation: 0.7s box-in both 0.2s">
+          <div class="text-blue-400 text-4xl font-bold mb-4">Accept</div>
+          <ef-text class="text-white/70 text-lg">Payments from anywhere, any method</ef-text>
+        </div>
+        <div class="flex-1 bg-blue-600/20 border border-blue-500/40 rounded-lg p-8 backdrop-blur"
+          style="animation: 0.7s box-in both 0.5s">
+          <div class="text-blue-400 text-4xl font-bold mb-4">Send</div>
+          <ef-text class="text-white/70 text-lg">Payouts to anyone, anywhere</ef-text>
+        </div>
+        <div class="flex-1 bg-blue-600/20 border border-blue-500/40 rounded-lg p-8 backdrop-blur"
+          style="animation: 0.7s box-in both 0.8s">
+          <div class="text-blue-400 text-4xl font-bold mb-4">Manage</div>
+          <ef-text class="text-white/70 text-lg">Your entire business online</ef-text>
+        </div>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 4: Scale (29s-38s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full flex items-center justify-center" style="animation: 1s fade-in both">
+      <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" class="absolute inset-0 size-full object-cover opacity-20"></ef-video>
+      <div class="absolute inset-0 bg-gradient-to-r from-black via-transparent to-black"></div>
+      
+      <canvas id="growth-canvas" class="absolute inset-0 size-full"></canvas>
+      
+      <div class="absolute inset-0 flex flex-col items-center justify-center gap-4">
+        <ef-text split="word" class="text-white text-7xl font-bold text-center"
+          style="animation: 0.7s word-in both 1s; animation-delay: calc(1s + var(--ef-word-index) * 120ms)">
+          Built for scale
+        </ef-text>
+        <ef-text class="text-blue-300 text-2xl mt-4"
+          style="animation: 0.6s enter-up both 2.2s">
+          Millions of transactions. Zero friction.
+        </ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 5: Security & Trust (39s-47s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 1s fade-out var(--ef-transition-out-start) both">
+      <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" class="absolute inset-0 size-full object-cover opacity-25"></ef-video>
+      <div class="absolute inset-0 bg-black/60"></div>
+      
+      <div class="absolute top-1/3 left-1/2 transform -translate-x-1/2 text-center">
+        <div class="text-6xl mb-8" style="animation: 0.8s pulse-glow both 0.5s; animation-iteration-count: 3">🔒</div>
+        <ef-text split="char" class="text-white text-4xl font-bold"
+          style="animation: 0.2s char-in both; animation-delay: calc(var(--ef-word-index) * 40ms)">
+          Enterprise security
+        </ef-text>
+        <ef-text class="text-white/60 text-xl mt-6 max-w-2xl"
+          style="animation: 0.6s enter-up both 1.2s">
+          PCI Level 1 compliance. Real-time fraud detection. Your data is protected.
+        </ef-text>
+      </div>
+    </ef-timegroup>
+
+    <!-- Scene 6: Developer Experience (48s-56s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full" style="animation: 1s fade-in both">
+      <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" class="absolute inset-0 size-full object-cover opacity-20"></ef-video>
+      <div class="absolute inset-0 bg-gradient-to-b from-black/80 to-black/40"></div>
+      
+      <div class="absolute top-16 left-16 font-mono text-sm text-blue-300 max-w-2xl"
+        style="animation: 0.5s code-in both 0.5s; line-height: 1.8">
+        <div>stripe.charges.create({</div>
+        <div class="ml-8 text-green-400">amount: 1999,</div>
+        <div class="ml-8 text-green-400">currency: 'usd',</div>
+        <div class="ml-8 text-green-400">source: 'tok_visa'</div>
+        <div>})</div>
+      </div>
+      
+      <ef-text class="absolute bottom-16 left-16 text-white text-3xl font-bold"
+        style="animation: 0.7s enter-up both 1.2s">
+        Simple. Powerful. Instant.
+      </ef-text>
+    </ef-timegroup>
+
+    <!-- Scene 7: Call to Action (57s-60s) -->
+    <ef-timegroup mode="contain" class="absolute w-full h-full flex flex-col items-center justify-center" style="animation: 1s fade-in both">
+      <ef-video src="https://assets.editframe.com/bars-n-tone.mp4" class="absolute inset-0 size-full object-cover opacity-15"></ef-video>
+      <div class="absolute inset-0 bg-black/70"></div>
+      
+      <ef-text split="word" class="text-white text-6xl font-bold text-center mb-8"
+        style="animation: 0.6s word-in both; animation-delay: calc(var(--ef-word-index) * 100ms)">
+        Start accepting payments today
+      </ef-text>
+      
+      <div class="px-12 py-4 border-2 border-blue-500 text-blue-400 text-2xl font-semibold rounded"
+        style="animation: 0.8s button-glow both 1.5s">
+        stripe.com
+      </div>
+    </ef-timegroup>
+
+  </ef-timegroup>
+</ef-configuration>
+
+<style>
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+
+  @keyframes word-in {
+    from {
+      transform: translateY(30px) scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes char-in {
+    from {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes enter-up {
+    from {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes box-in {
+    from {
+      transform: translateY(40px) scale(0.9);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  @keyframes code-in {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes button-glow {
+    from {
+      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+      transform: scale(0.95);
+    }
+    to {
+      box-shadow: 0 0 20px 10px rgba(59, 130, 246, 0);
+      transform: scale(1);
+    }
+  }
+</style>
+
+<script>
+  // Chaos canvas for Scene 1
+  const chaosCanvas = document.getElementById('chaos-canvas');
+  if (chaosCanvas) {
+    const chaosGroup = chaosCanvas.closest('ef-timegroup');
+    chaosGroup.initializer = (instance) => {
+      return instance.addFrameTask((timeMs, durationMs) => {
+        const ctx = chaosCanvas.getContext('2d');
+        const w = chaosCanvas.offsetWidth;
+        const h = chaosCanvas.offsetHeight;
+        const progress = timeMs / durationMs;
+
+        chaosCanvas.width = w;
+        chaosCanvas.height = h;
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Draw increasingly tangled bezier curves showing chaos
+        const lineCount = Math.floor(progress * 40);
+        
+        for (let i = 0; i < lineCount; i++) {
+          const seed = i * 73.5;
+          const startX = (Math.sin(seed) * 0.5 + 0.5) * w;
+          const startY = (Math.cos(seed * 0.7) * 0.5 + 0.5) * h;
+          const cp1X = (Math.sin(seed + timeMs * 0.001) * 0.5 + 0.5) * w;
+          const cp1Y = (Math.cos(seed * 1.3 + timeMs * 0.0008) * 0.5 + 0.5) * h;
+          const cp2X = (Math.sin(seed * 2.1 + timeMs * 0.0012) * 0.5 + 0.5) * w;
+          const cp2Y = (Math.cos(seed * 1.7 + timeMs * 0.001) * 0.5 + 0.5) * h;
+          const endX = (Math.sin(seed * 3 + timeMs * 0.0015) * 0.5 + 0.5) * w;
+          const endY = (Math.cos(seed * 2.3 + timeMs * 0.0011) * 0.5 + 0.5) * h;
+
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          ctx.bezierCurveTo(cp1X, cp1Y, cp2X, cp2Y, endX, endY);
+          ctx.strokeStyle = `rgba(59, 130, 246, ${0.3 + progress * 0.4})`;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      });
+    };
+  }
+
+  // Growth canvas for Scene 4
+  const growthCanvas = document.getElementById('growth-canvas');
+  if (growthCanvas) {
+    const growthGroup = growthCanvas.closest('ef-timegroup');
+    growthGroup.initializer = (instance) => {
+      return instance.addFrameTask((timeMs, durationMs) => {
+        const ctx = growthCanvas.getContext('2d');
+        const w = growthCanvas.offsetWidth;
+        const h = growthCanvas.offsetHeight;
+        const progress = timeMs / durationMs;
+
+        growthCanvas.width = w;
+        growthCanvas.height = h;
+
+        ctx.clearRect(0, 0, w, h);
+
+        const cx = w / 2;
+        const cy = h / 2;
+        const maxRadius = Math.min(w, h) * 0.4;
+
+        // Concentric circles expanding
+        for (let ring = 0; ring < 5; ring++) {
+          const ringProgress = Math.max(0, Math.min(1, progress * 1.2 - ring * 0.15));
+          const radius = (ring + 1) * (maxRadius / 5) * ringProgress;
+          const opacity = Math.max(0, 0.6 - ringProgress * 0.4);
+
+          ctx.beginPath();
+          ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(59, 130, 246, ${opacity})`;
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
+
+        // Radiating lines
+        const lineCount = Math.floor(progress * 12);
+        for (let i = 0; i < lineCount; i++) {
+          const

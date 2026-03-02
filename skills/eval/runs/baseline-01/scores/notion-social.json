@@ -1,0 +1,65 @@
+{
+  "taskId": "notion-social",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:00:10.720Z",
+  "scores": {
+    "motion": {
+      "score": 3,
+      "rationale": "CSS animations are present throughout and intentional—text splitting with stagger delays, floating elements, slide-ins, and pulse effects. However, motion remains decorative rather than structural. No --ef-progress usage, no addFrameTask, and the animations don't carry meaning beyond visual polish.",
+      "evidence": "Text split with stagger: `split=\"char\"` with `animation-delay: calc(var(--ef-word-index) * 30ms)`. Floating icons: `animation: 0.7s float-in both 0.4s`. Scene 3 features: `animation: 0.5s slide-in-left both 0.3s`. CTA button: `animation: 0.4s pulse-scale both`. All are standard entrance animations."
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "The composition uses Notion's purple/violet brand colors and references general product capabilities (docs, tasks, databases). But the messaging is generic productivity-tool language. 'One workspace,' 'write & collaborate,' 'plan & organize' could describe Coda, Monday, or any competitor.",
+      "evidence": "Generic messaging: 'Notes everywhere,' 'Docs scattered across apps,' 'ONE WORKSPACE,' 'Your all-in-one workspace.' Features listed as 'Docs, notes, wikis' and 'Tasks, databases, views' are category descriptors, not Notion-specific. No mention of blocks, linked databases, or Notion's actual structural innovation."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc attempts frustration (scattered tools) → relief (one workspace) → understanding (features) → motivation (CTA). The progression is traceable but formulaic. Scene 2's visual metaphor of floating elements converging is the strongest shift; other transitions are predictable.",
+      "evidence": "Scene 1: 'Notes everywhere / Docs scattered across apps' (problem state). Scene 2: 'ONE WORKSPACE' with converging icons (solution reveal). Scene 3: Feature list (information dump). Scene 4: 'Used by millions of teams / Start Free' (social proof + CTA). Standard problem-solution-CTA pattern."
+    },
+    "point_of_view": {
+      "score": 1,
+      "rationale": "The composition follows the exact template: problem → solution → features → CTA. There's no non-obvious choice or authorial perspective. The 'chaos' animation on Scene 1's text hints at a concept (disorder → order) but isn't developed or committed to throughout.",
+      "evidence": "Structure is maximally predictable. The only potential perspective—that Notion transforms chaos into coherence—appears once in `char-in-chaos` animation name but the composition doesn't build on this. No visual or structural choice reveals why someone would choose Notion specifically over alternatives."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Four scenes for 15 seconds is reasonable. However, Scene 3 (feature list) feels like padding—it restates what Scene 2 already visualized through icons and adds no new viewer state. The feature list format is generic and could be cut, letting Scene 2 breathe longer.",
+      "evidence": "Scene 2 already shows icons for notes (📝), tasks (✓), data (📊), goals (🎯). Scene 3 then lists 'Write & Collaborate,' 'Plan & Organize,' 'Connect Everything'—essentially the same information in text form. This redundancy weakens the arc rather than building it."
+    }
+  },
+  "overall": 2.4,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses only category-generic language ('one workspace,' 'docs, notes, wikis') that any productivity tool could claim. No Notion-specific concepts appear.",
+      "improvement": "Reference Notion's actual differentiators: the block-based system, linked databases, or the specific way templates and views work. Show a recognizable Notion UI pattern or mention a specific use case that only Notion enables."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "critical",
+      "observation": "The video follows a predictable problem-solution-features-CTA template with no authorial perspective. The 'chaos to order' concept hinted in the first animation isn't developed.",
+      "improvement": "Commit to a specific angle: Is Notion about building a 'second brain'? About making teams think in systems? Choose one truth about Notion and let it shape every scene's structure and visual language."
+    },
+    {
+      "dimension": "motion",
+      "severity": "major",
+      "observation": "Animations are decorative entrances (fade-in, slide-in, float-in) rather than structural. Motion doesn't reinforce the message about organization and connection.",
+      "improvement": "Use motion to demonstrate the concept: scattered elements that literally organize themselves into a Notion-style hierarchy. Use --ef-progress to show continuous connection between ideas. Make the animation itself demonstrate what Notion does."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "The feature list scene (Scene 3) delivers information without changing how the viewer feels. It's a pause in the emotional arc.",
+      "improvement": "Replace the static feature list with a demonstration of transformation—show actual work getting easier, or a visual metaphor of complexity becoming simple. Make the viewer feel capability, not just understand features."
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "Scene 3 repeats information from Scene 2 in a less compelling format (text list vs. visual icons).",
+      "improvement": "Cut Scene 3 and extend Scene 2 to show the icons animating into relationship with each other—demonstrating connection rather than listing it. Use the reclaimed time to strengthen the CTA scene."
+    }
+  ]
+}

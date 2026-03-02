@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "omission",
+      "severity": "major",
+      "observation": "Scene 5 is a feature checklist that restates Scene 3's value proposition without advancing the viewer's understanding. Both scenes communicate 'Supabase gives you everything in one place.'",
+      "improvement": "Merge Scene 5 content into Scene 3 or Scene 4, or replace Scene 5 with a concrete demonstration—show a real product being built, a dashboard view, or deployment in action. Use the 6 seconds to deepen rather than repeat."
+    },
+    "skillFile": "skills/skills/brand-video-generator/references/editing.md",
+    "currentText": "**It restates what the previous scene already established.** Two scenes that leave the viewer in the same emotional state are one scene too many. The second one is emphasizing, not progressing.",
+    "cause": "wrong_priority",
+    "proposedChange": "Add to Phase 3: Scene Planning in SKILL.md, immediately after the scene template, a new enforcement rule:\n\n**Redundancy gate (run after completing all scenes):** For each scene after Scene 2, complete this sentence: 'This scene adds _______ that no previous scene contained.' If the answer is a restatement of an earlier scene's value proposition (e.g., 'unified platform,' 'all-in-one,' 'everything you need'), the scene is redundant. Either merge it into the earlier scene or replace it with a concrete demonstration (real UI, live deployment, measurable outcome). Feature checklists that restate benefits already communicated are the most common form of redundancy—cut them or convert them to demonstrations.",
+    "rationale": "The editing guidance exists but is in a separate reference file; placing an explicit redundancy check directly in the scene planning phase would have caught Scene 5 restating Scene 3's value proposition before the composition was finalized."
+  },
+  {
+    "taskId": "supabase-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The 'problem' scenes (1-2) describe generic backend pain points that apply to any BaaS competitor. 'Spinning up servers, managing databases, writing authentication' is the pitch for Firebase, PlanetScale, Neon, etc.",
+      "improvement": "Ground the problem in Supabase's specific origin story or target user. Reference the 'Firebase alternative' positioning directly, or show migration pain from a specific legacy stack. Make the problem statement as specific as the solution."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Scene 1 specificity gate**: The opening scene is most vulnerable to category-generic visuals. Before writing Scene 1, answer: \"What would a competitor's video show for this same concept?\" If your planned visual could appear in that competitor's video unchanged, it is not specific enough.",
+    "cause": "present_wrong",
+    "proposedChange": "Replace the Scene 1 specificity gate with an expanded version that covers both visuals AND problem framing:\n\n**Scene 1-2 specificity gate (opening scenes):** The opening scenes are most vulnerable to category-generic content—both visually AND narratively. Before writing Scenes 1-2, answer:\n\n1. **Visual test**: \"What would a competitor's video show for this same concept?\" If your planned visual could appear in that competitor's video unchanged, it is not specific enough.\n\n2. **Problem statement test**: \"Could this problem description appear on a competitor's homepage?\" Generic pain points like 'spinning up servers, managing databases, writing authentication' describe the entire BaaS category. Instead, ground the problem in:\n   - This brand's specific origin story or founding insight\n   - A named competitor being replaced (e.g., 'Firebase alternative' positioning)\n   - A specific user persona's workflow with named tools (e.g., 'the Postgres → Prisma → Vercel → Auth0 stack')\n   - The exact moment of frustration this product was created to eliminate\n\nThe problem must be as specific as the solution. If the problem is generic, the solution will feel interchangeable.",
+    "rationale": "The existing specificity gate only addresses visuals, not narrative problem framing; expanding it to explicitly require specific problem statements would have prevented the generic 'spinning up servers' pain points that apply to any BaaS."
+  }
+]

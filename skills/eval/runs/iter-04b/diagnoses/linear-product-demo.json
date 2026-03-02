@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "linear-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "Opening and closing copy are generic SaaS language: 'Work gets lost in noise', 'Ship faster. Think clearer.' These phrases could appear in any project management tool's marketing.",
+      "improvement": "Use Linear-specific language and concepts. Reference actual Linear features like Cycles, Roadmaps, or the command palette (Cmd+K). Show the actual UI idioms that make Linear distinctive rather than abstract representations."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\"\n- Payment brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\"\n- Design tools: \"design and code together\", \"design faster\", \"real-time collaboration\"",
+    "cause": "missing",
+    "proposedChange": "Add after the existing false differentiators list:\n\n- Project management/productivity tools: \"ship faster\", \"work gets lost\", \"noise\", \"focus\", \"think clearer\", \"streamline workflow\", \"stay organized\"\n\n**For product-demo videos specifically:** Generic problem/solution language is not allowed. Reference the product's actual named features, UI elements, and interaction patterns. For Linear: Cycles, Roadmaps, Projects, command palette (Cmd+K), keyboard-first navigation, issue statuses, SLAs. For any product-demo: identify 3-5 named features from the actual product and ensure at least one appears in every scene.",
+    "rationale": "The model used generic productivity language because the false differentiators list didn't explicitly flag project management clichés, and there was no requirement to use actual product feature names in product-demo videos."
+  },
+  {
+    "taskId": "linear-product-demo",
+    "feedbackItem": {
+      "dimension": "viewer_state",
+      "severity": "major",
+      "observation": "The problem → solution → CTA arc follows a standard template. The viewer state changes are predictable: 'I have a problem' → 'This solves it' → 'I should try it.'",
+      "improvement": "Earn the state change by making the problem viscerally felt - perhaps showing the actual pain of context-switching between tools, or the cognitive load of too many options. The chaos canvas is too abstract to create genuine frustration."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "- `product-demo`: Show the product in action — real UI screenshots if available, or styled HTML/CSS representations of the actual interface if not. Canvas animations for abstract mechanics only (data flow, request handling). Feature density: one demonstrable feature per scene — not a list.",
+    "cause": "present_wrong",
+    "proposedChange": "- `product-demo`: Show the product in action — real UI screenshots if available, or styled HTML/CSS representations of the actual interface if not. Canvas animations for abstract mechanics only (data flow, request handling). Feature density: one demonstrable feature per scene — not a list.\n\n  **Problem scenes in product-demos must show the actual pain, not an abstraction of it.** A canvas animation of \"chaos\" is too removed from the user's lived experience. Instead: show the specific screens, notifications, or workflows that create the problem. If Linear solves issue management chaos, show a realistic representation of 47 Slack notifications, 12 browser tabs, 3 competing tools — the actual visual environment users escape from. The viewer should recognize their own screen, not appreciate an artistic interpretation of stress.",
+    "rationale": "The model created an abstract chaos canvas because the guidance allowed 'Canvas animations for abstract mechanics' without specifying that problem scenes need concrete, recognizable pain rather than artistic abstraction."
+  }
+]

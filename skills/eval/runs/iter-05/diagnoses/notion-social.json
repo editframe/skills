@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The canvas visualizations show generic representations (rectangles for documents, circles for database nodes) rather than anything recognizable as Notion's distinctive interface—no block handles, no sidebar, no page icons, no actual Notion UI elements.",
+      "improvement": "Use Notion's actual visual language: render recognizable Notion page icons, show the sidebar structure, display actual block types (toggles, callouts, databases), or use Notion's specific color palette and iconography from their brand."
+    },
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "currentText": "**Canvas API Opportunities** (use `frameTask` for generative graphics):\n- Particle systems (energy, activity)\n- Bezier curves (chaos, complexity, connections)\n- Grid multiplication (scale, quantity)\n- Orbital motion (energy, dynamism)\n- Shape morphing (transformation)",
+    "cause": "present_wrong",
+    "proposedChange": "**Canvas API Opportunities** (use `frameTask` for generative graphics):\n- Particle systems (energy, activity)\n- Bezier curves (chaos, complexity, connections)\n- Grid multiplication (scale, quantity)\n- Orbital motion (energy, dynamism)\n- Shape morphing (transformation)\n\n**CRITICAL: Product-demo and brand videos must use recognizable product visuals.**\nGeneric shapes (rectangles for documents, circles for nodes) are not product visuals—they're clip art. Before drawing anything:\n1. Identify the product's signature UI elements (e.g., Notion's block handles, sidebar, page icons; Linear's issue cards; Figma's canvas with multiplayer cursors)\n2. Render those specific elements, not abstract representations\n3. If you cannot identify distinctive UI, use styled HTML/CSS mockups of the actual interface instead of canvas\n\nA canvas animation of \"rectangles representing documents\" is decoration. A canvas animation of Notion's actual page tree with toggle blocks expanding is product visualization.",
+    "rationale": "The current guidance lists abstract canvas patterns without requiring the model to use the actual product's visual language, leading to generic rectangles/circles instead of Notion's distinctive UI elements."
+  },
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The 'fragmented tools → unified workspace' narrative is the default positioning for every productivity tool. Notion, Coda, Monday, Airtable all claim this same territory.",
+      "improvement": "Find Notion's specific angle—perhaps emphasize that it's built on blocks (composability), or that it enables custom systems without code, or that it's wiki-first (institutional memory). The form should reflect something only true of Notion."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\"\n- Payment brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\"\n- Design tools: \"design and code together\", \"design faster\", \"real-time collaboration\"",
+    "cause": "missing",
+    "proposedChange": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Trusted by thousands of companies\"\n- Developer/API brands: \"instant deploys\", \"edge functions\", \"OAuth built in\", \"REST API\", \"100ms response times\", \"99.99% uptime\"\n- Payment brands: \"one platform\", \"payment chaos solved\", \"global payments\", \"secure transactions\"\n- Design tools: \"design and code together\", \"design faster\", \"real-time collaboration\"\n- Productivity/workspace tools: \"unified workspace\", \"all your tools in one place\", \"replaces scattered tools\", \"single source of truth\", \"fragmented → unified\"\n\n**Productivity tool specifics to look for instead:**\n- Notion: blocks as primitive (composability), wiki-first (institutional memory), templates as culture\n- Coda: docs that act like apps, formulas everywhere\n- Linear: opinionated workflow, keyboard-first, zero configuration\n- Monday/Asana: workflow automation, status-board visualization",
+    "rationale": "The false differentiators list omits productivity tools entirely, so the model treats 'fragmented tools → unified workspace' as a valid differentiator when it's actually the category default shared by Notion, Coda, Monday, and Airtable."
+  }
+]

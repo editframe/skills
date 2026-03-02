@@ -1,0 +1,16 @@
+[
+  {
+    "taskId": "linear-product-demo",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The issue cards show generic engineering problems ('API Rate Limiting', 'Webhook Delivery Failure') rather than demonstrating what makes Linear's issue structure distinctive—cycles, projects, or Linear's specific workflow states.",
+      "improvement": "Show Linear's actual UI patterns: the cycle progress bar, the keyboard shortcut hints appearing on hover, or the distinctive way Linear links issues to projects. Reference real Linear terminology like 'Triage', 'Backlog', or their status workflow."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**Video type determines visual strategy:**\n- `product-demo`: Show the actual product UI. Canvas animations are a fallback for non-visual concepts only. Feature density: one demonstrable feature per scene — not a list.",
+    "cause": "present_wrong",
+    "proposedChange": "**Video type determines visual strategy:**\n- `product-demo`: Show the actual product UI with its distinctive elements—not generic representations. Identify what makes this product's interface visually unique (unique UI patterns, specific terminology, distinctive workflows, characteristic interaction hints). A product demo that shows generic cards/panels instead of the product's actual visual vocabulary is a failed demo. Feature density: one demonstrable feature per scene — not a list.\n  - **Anti-pattern**: Showing generic 'issue cards' or 'task items' when the product has distinctive UI elements (progress indicators, keyboard hints, specific status workflows, proprietary terminology).\n  - **Required**: Name 3+ UI elements unique to this product before designing any scene.",
+    "rationale": "The current guidance says to 'show the actual product UI' but doesn't specify that generic representations of common UI patterns (like issue cards) fail this requirement—the model needs explicit instruction to identify and use product-specific visual vocabulary."
+  }
+]

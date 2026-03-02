@@ -1,0 +1,58 @@
+[
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The chaos-to-unity visual metaphor could apply to any all-in-one workspace tool. The rotating rectangles and convergence animation are category-generic.",
+      "improvement": "Use Notion-specific visual language: the distinctive block structure, the emoji usage, the database views, or the slash-command interaction. Show recognizable Notion UI elements fragmenting and unifying rather than abstract shapes."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "| Chaos/Complexity | Tangled bezier curves | What does chaos *look like for this product's users specifically*? |",
+    "cause": "present_wrong",
+    "proposedChange": "| Chaos/Complexity | Tangled bezier curves, rotating abstract shapes | What does chaos *look like for this product's users specifically*? For workspace tools: show their actual fragmented UI (scattered tabs, disconnected apps, email/chat/docs chaos) — not abstract shapes. |",
+    "rationale": "The model used rotating rectangles converging, which is exactly the abstract shape pattern the table should warn against — adding explicit guidance that workspace tools must show actual fragmented UIs would have prevented this."
+  },
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "The chaos-to-unity visual metaphor could apply to any all-in-one workspace tool. The rotating rectangles and convergence animation are category-generic.",
+      "improvement": "Use Notion-specific visual language: the distinctive block structure, the emoji usage, the database views, or the slash-command interaction. Show recognizable Notion UI elements fragmenting and unifying rather than abstract shapes."
+    },
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "currentText": "**The motion must be semantically connected to the specific product.** Generic particles or bezier curves say nothing. The form of the animation should demonstrate what is true about this brand and false about others:",
+    "cause": "missing",
+    "proposedChange": "**The motion must be semantically connected to the specific product.** Generic particles or bezier curves say nothing. Abstract shapes (rectangles, circles, polygons) converging or organizing are equally generic — they visualize 'unity' without showing *this product's* unity. The form of the animation should demonstrate what is true about this brand and false about others. For products with distinctive UI patterns (blocks, cards, components), use recognizable fragments of that UI rather than geometric abstractions:",
+    "rationale": "The model created abstract rectangles converging — this explicit warning against geometric abstractions for products with distinctive UI would have forced use of Notion's block structure."
+  },
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The 'fragmentation is the enemy' POV is the default category perspective shared by every productivity consolidation tool.",
+      "improvement": "Find a Notion-specific truth: perhaps that blocks are thoughts, that structure emerges rather than being imposed, or that personal and team knowledge belong together. The composition should express why Notion's approach to unity differs from competitors."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"",
+    "cause": "missing",
+    "proposedChange": "**False differentiators — these describe every competitor too, ignore them:**\n- \"Real-time collaboration\", \"easy to use\", \"powerful\", \"fast\", \"reliable\", \"all-in-one\"\n- \"Helps teams work better\", \"saves time\", \"increases productivity\"\n- \"Consolidates your tools\", \"everything in one place\", \"reduces fragmentation\", \"unified workspace\"\n- Workspace/productivity brands: \"fragmentation is the enemy\" is the category default — find what's specific about *how* this product unifies (blocks vs. pages vs. databases vs. folders)",
+    "rationale": "The model adopted 'fragmentation is the enemy' as its POV — explicitly listing consolidation/fragmentation language as a false differentiator for workspace tools would have forced the model to find Notion's specific approach."
+  },
+  {
+    "taskId": "notion-social",
+    "feedbackItem": {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The 'fragmentation is the enemy' POV is the default category perspective shared by every productivity consolidation tool.",
+      "improvement": "Find a Notion-specific truth: perhaps that blocks are thoughts, that structure emerges rather than being imposed, or that personal and team knowledge belong together. The composition should express why Notion's approach to unity differs from competitors."
+    },
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "currentText": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content.",
+    "cause": "present_wrong",
+    "proposedChange": "**4. What formal choice does answer #1 force on this video?**\n\nThe brand truth must determine the video's structure — not just its content. A POV about the *category problem* (fragmentation, chaos, slowness) is not a brand truth — it's what every competitor also believes. The answer must be about *this brand's specific approach* to solving it.\n\nNot: \"Tools are fragmented, so I'll show chaos becoming order\" (category POV).\nYes: \"Notion treats everything as composable blocks, so the video itself is built from blocks that rearrange\" (brand-specific formal constraint).",
+    "rationale": "The model's POV was about the category problem (fragmentation) rather than Notion's specific approach — adding an explicit example distinguishing category POV from brand-specific POV would have prevented this."
+  }
+]

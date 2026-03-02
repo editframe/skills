@@ -1,0 +1,188 @@
+[
+  {
+    "skillFile": "skills/skills/brand-video-generator/SKILL.md",
+    "changes": [
+      {
+        "taskId": "linear-product-demo",
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "missing",
+        "currentText": "**You MUST use browser tools to load the actual website before any analysis.**\n\n1. Navigate to the URL with your available browser tools\n2. Take screenshots of homepage and key pages\n3. Inspect CSS to extract exact color hex codes\n4. Download logo and brand assets (3-5 minimum)",
+        "proposedChange": "Add after the existing browser tool requirements:\n\n**Asset Sourcing Requirements:**\n\n1. **Product footage**: Capture actual product UI through screenshots or screen recordings. Never use placeholder/test pattern video for product demos.\n2. **Metrics and claims**: Only use statistics that appear on the actual website or are verifiable. If a metric cannot be sourced, either omit it or frame it symbolically (e.g., 'faster resolution' not '1.2s average').\n3. **If product footage is unavailable**: State this limitation explicitly and propose alternatives (stylized mockups, abstract representations clearly labeled as conceptual) rather than substituting placeholder content.",
+        "rationale": "The model used bars-and-tone placeholders because there was no explicit prohibition against placeholder content for product demos, and no requirement to source or verify metrics from the actual website."
+      },
+      {
+        "taskId": "linear-product-demo",
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+        "proposedChange": "Add after the Phase 1 Brand Analysis section, before Phase 2:\n\n### Phase 1.5: Competitive Differentiation (MANDATORY for product-demo videos)\n\nFor product demos, generic feature claims fail the specificity test. Before proceeding:\n\n**1. List the product's unique concepts or terminology** (not features every competitor has):\n- What named workflows, features, or concepts does this product introduce that competitors don't have?\n- Example: Linear has \"Cycles\" (time-boxed work periods), \"Triage\" (inbox for new issues), automatic issue grouping\n\n**2. Identify the opinionated stance:**\n- What does this product refuse to do that competitors do?\n- What workflow does it enforce that others leave optional?\n\n**3. Name specific integrations or technical differentiators:**\n- Not \"integrates with tools\" but \"bi-directional GitHub sync that auto-closes issues from PRs\"\n\n**If you can only list features that any competitor also claims (speed, ease of use, collaboration), you have not done enough research. Return to the website and look for their 'Why [Product]' or comparison pages.**",
+        "rationale": "The skill required specificity but didn't provide guidance on HOW to find product-specific differentiators, leading to generic claims that could apply to any productivity tool."
+      },
+      {
+        "taskId": "stripe-explainer",
+        "dimension": "point_of_view",
+        "severity": "critical",
+        "cause": "missing",
+        "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+        "proposedChange": "After the Phase 0 section, add a new subsection:\n\n**Phase 0.5: Form Follows Philosophy**\n\nThe brand's core philosophy must dictate the video's form, not just its content.\n\nFor each brand, ask: **What formal qualities would make this video impossible to attribute to a competitor?**\n\n- A developer-tools company → code should appear on screen; the video should feel like documentation\n- A design-forward brand → the video itself must exemplify their design principles\n- A speed-focused product → pacing must be faster than industry standard\n\n**Test**: Describe your video's formal approach. If a competitor could use the same approach, you haven't found the brand's form yet.\n\nExamples:\n- Stripe: Code snippets as primary visual element, terminal aesthetic, minimalist transitions—because Stripe believes infrastructure should be invisible and elegant\n- Apple: Slow reveals, negative space, product as sole focus—because Apple believes in singular attention\n- Duolingo: Mascot-driven, playful motion, gamified progress—because learning should feel like play",
+        "rationale": "The current Phase 0 asks about brand truths but doesn't require translating those truths into formal/structural video decisions, allowing generic templates to persist."
+      },
+      {
+        "taskId": "stripe-explainer",
+        "dimension": "specificity",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)",
+        "proposedChange": "Replace the Visual Identity section with:\n\n**Visual Identity:**\n- Color palette with exact hex codes\n- Typography (fonts and personality)\n- Design language (minimal, bold, playful, etc.)\n- Visual motifs (shapes, icons, image style)\n- **Signature UI patterns**: What does their product interface look like? (dashboards, terminals, editors)\n- **Product-specific visuals**: What actual products/features should appear? List 3-5 by name.\n\n**Product Inventory (MANDATORY):**\nList the brand's actual named products, features, or services that could appear in the video. Generic feature descriptions (\"fast payments\", \"easy integration\") are not acceptable—use the brand's own terminology.\n\nExample for Stripe: Radar (fraud detection), Atlas (incorporation), Connect (marketplace payments), Terminal (in-person), Billing (subscriptions)",
+        "rationale": "The skill asks for visual identity but not product-specific inventory, allowing the model to describe generic category features rather than the brand's actual named offerings."
+      },
+      {
+        "taskId": "stripe-explainer",
+        "dimension": "omission",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**Scene budget**: Before writing individual scenes, commit to a total scene count and justify it. More scenes is not more impact. The minimum number of scenes that achieves the viewer-state change from Phase 0 is the right number.",
+        "proposedChange": "Expand the Scene budget section to:\n\n**Scene budget**: Before writing individual scenes, commit to a total scene count and justify it. More scenes is not more impact. The minimum number of scenes that achieves the viewer-state change from Phase 0 is the right number.\n\n**Duration budget per scene type:**\n- Opening hook: 3-5 seconds maximum\n- Problem statement: 5-8 seconds (merge with hook if possible)\n- Feature/benefit scenes: 4-6 seconds each; animation should be continuous, not segmented\n- CTA/closing: 8-12 seconds maximum (one clear action, no repetition)\n\n**Dead time audit**: After planning scenes, identify any moment where nothing is animating or changing. If a scene has >2 seconds of static content, either add meaningful motion or cut the duration. Decorative animations that don't advance understanding count as dead time.",
+        "rationale": "The skill mentions scene budgeting abstractly but provides no concrete duration guidance, allowing excessive CTA scenes and dead time between animations."
+      },
+      {
+        "taskId": "figma-brand-awareness",
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "present_wrong",
+        "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+        "proposedChange": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nNot: \"Real-time collaboration\" or \"work together seamlessly\" (every SaaS tool claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"\nYes: \"Their multiplayer cursors show real names and faces, making collaboration feel like being in the same room.\"\n\n**For software products specifically**: Name the unique UI elements, specific features, or distinctive interactions. If the feature description could appear on a competitor's marketing page, it's not specific enough.",
+        "rationale": "The existing example doesn't warn against generic feature claims like 'real-time collaboration' which are commodity descriptions across SaaS—adding explicit software-specific guidance would force the model to identify Figma-specific elements like Auto Layout, Components, or the distinctive cursor avatars."
+      },
+      {
+        "taskId": "figma-brand-awareness",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**2. What would be lost if this video never existed?**\n\nNot: \"People wouldn't know about the product\" (that's true of any video).\nYes: \"Nobody would see the contrast between how chaotic their industry is and how calm their workflow actually is.\"",
+        "proposedChange": "**2. What would be lost if this video never existed?**\n\nNot: \"People wouldn't know about the product\" (that's true of any video).\nNot: \"People wouldn't see how it improves collaboration\" (that's a category claim, not a perspective).\nYes: \"Nobody would see the contrast between how chaotic their industry is and how calm their workflow actually is.\"\n\n**3. What is this brand's philosophical stance that competitors reject?**\n\nEvery strong brand has an opinion that others in their space would disagree with. Find it.\n\nNot: \"Design should be easy\" (no one argues against this).\nYes: \"Design is not a handoff—it's a continuous conversation between designers and developers.\"\nYes: \"The file should be the single source of truth, not a snapshot to be exported.\"\n\nThis stance determines the video's structure. If the stance is \"design as shared language,\" the video must make viewers *experience* shared understanding, not just assert that collaboration is good.",
+        "rationale": "The Phase 0 questions don't force identification of a philosophical stance that differentiates the brand—adding this question would prevent the model from defaulting to generic 'old way vs new way' templates and instead commit to Figma's specific worldview about design as infrastructure or shared language."
+      },
+      {
+        "taskId": "vercel-launch",
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "wrong_priority",
+        "currentText": "**You MUST use browser tools to load the actual website before any analysis.**\n\n1. Navigate to the URL with your available browser tools\n2. Take screenshots of homepage and key pages\n3. Inspect CSS to extract exact color hex codes\n4. Download logo and brand assets (3-5 minimum)",
+        "proposedChange": "Add immediately after the existing browser tools section:\n\n**Asset Replacement is Mandatory**\n\nPlaceholder assets (bars-n-tone.mp4, stock footage, generic gradients) are NEVER acceptable in final compositions. For every visual element:\n1. Use actual brand assets downloaded from the website\n2. If video footage unavailable, use Canvas API to generate brand-specific visuals\n3. Match exact brand colors (hex codes from CSS inspection), not approximate alternatives\n4. If you cannot source or generate brand-appropriate assets, STOP and report what's missing.\n\n**Common violation:** Using blue accent colors for brands that use different palettes. Using dark gradients for brands with minimal/white aesthetics.",
+        "rationale": "The model used placeholder video and generic blue/dark styling instead of Vercel's black/white minimal brand because the skill emphasizes extracting brand assets but doesn't explicitly forbid placeholder substitution in the final output."
+      },
+      {
+        "taskId": "vercel-launch",
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "present_wrong",
+        "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+        "proposedChange": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nNot: \"They have fast deploys and preview URLs\" (table stakes for the category).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"\nYes: \"They invented ISR and own the Next.js framework that defines React deployment.\"\n\n**Table stakes test:** If every serious competitor in the category also offers this feature, it's not a differentiator. Name what they invented, own, or do philosophically differently.",
+        "rationale": "The example shows generic vs specific origin stories but doesn't warn against citing category-standard features as differentiators, which led the model to treat 'preview URLs, instant deploys' as unique to Vercel."
+      },
+      {
+        "taskId": "vercel-launch",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "present_wrong",
+        "currentText": "**2. What would be lost if this video never existed?**\n\nNot: \"People wouldn't know about the product\" (that's true of any video).\nYes: \"Nobody would see the contrast between how chaotic their industry is and how calm their workflow actually is.\"",
+        "proposedChange": "**2. What would be lost if this video never existed?**\n\nNot: \"People wouldn't know about the product\" (that's true of any video).\nNot: \"Nobody would see the chaos-to-order transformation\" (this is a generic narrative template).\nYes: \"Nobody would see the contrast between how chaotic their industry is and how calm their workflow actually is.\"\n\n**Narrative template test:** If your answer is a common video structure (problem→solution, old→new, chaos→order), you haven't found specificity yet. What SPECIFIC chaos? What SPECIFIC order? Name the actual artifacts: config files, CI pipelines, cold starts, dashboard screens.",
+        "rationale": "The 'Yes' example in the current text actually uses the same chaos-to-order template the model used; adding an explicit warning against generic narrative structures would force concrete specificity."
+      },
+      {
+        "taskId": "vercel-launch",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "**Visual Metaphor Quick Reference:**\n\n| Concept | Visual Approach | Motion Style |\n|---------|----------------|--------------|\n| Chaos/Complexity | Tangled lines, scattered elements | Chaotic bezier curves |",
+        "proposedChange": "Add a new row and note after the table:\n\n| Concept | Visual Approach | Motion Style |\n|---------|----------------|--------------|\n| Chaos/Complexity | Tangled lines, scattered elements | Chaotic bezier curves |\n| **Specific Chaos** | Named artifacts: config files, error logs, CLI output, actual UI screenshots | Elements should be recognizable to the target audience |\n\n**Abstraction warning:** Generic 'chaos' (red lines, random shapes) communicates nothing. Show the ACTUAL pain: a real YAML file, a real error message, a real slow-loading dashboard. If viewers can't name what they're seeing, it's not specific enough.",
+        "rationale": "The visual metaphor table offers 'tangled lines' for chaos without requiring domain-specific imagery, which led to abstract red bezier curves instead of recognizable developer pain points like config files or CI pipelines."
+      },
+      {
+        "taskId": "notion-social",
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "wrong_priority",
+        "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+        "proposedChange": "Add immediately after the Phase 0 example:\n\n**CRITICAL: Product Mechanics Test**\nFor software/product brands, your specificity answer MUST include a concrete product mechanic. Ask: \"What does the user literally do in this product that they cannot do elsewhere?\"\n\nNot: \"They help teams collaborate\" (every tool claims this).\nNot: \"One workspace for everything\" (category-level positioning).\nYes: \"Everything is a block that can be nested, linked, or transformed into a database view.\"\n\nIf your answer could appear on a competitor's homepage, it is not specific enough.",
+        "rationale": "The model fell back to category-level positioning ('one workspace') because Phase 0 examples focused on origin stories rather than requiring identification of specific product mechanics that differentiate the brand."
+      },
+      {
+        "taskId": "notion-social",
+        "dimension": "point_of_view",
+        "severity": "critical",
+        "cause": "missing",
+        "currentText": "**3. What should the viewer feel at the last frame that they didn't feel at the first frame?**\n\nThis is a feeling, not a fact. \"Informed\" is not a feeling. \"Like this problem is finally solved\" is a feeling.",
+        "proposedChange": "Add after the Phase 0 section, before Phase 1:\n\n**Phase 0.5: Authorial Angle (MANDATORY)**\n\nYour video must have a point of view—a specific claim about why this product matters that shapes every creative decision.\n\nAnswer: \"This video argues that [brand] is really about ____________.\"\n\nNot: \"Notion is really about productivity\" (too broad).\nNot: \"Notion is really about organizing your work\" (what the product does, not a perspective).\nYes: \"Notion is really about giving everyone the power to build their own tools.\"\nYes: \"Notion is really about making structure feel like freedom.\"\n\nThis angle becomes your filter: every scene must either establish, develop, or pay off this argument. If a scene doesn't serve the angle, cut it.\n\n**The angle test**: If your video could work equally well for a competitor by changing the logo, you don't have an angle.",
+        "rationale": "The model produced a generic problem-solution-CTA template because no phase required committing to an authorial perspective that would constrain and unify the creative approach."
+      },
+      {
+        "taskId": "supabase-product-demo",
+        "dimension": "specificity",
+        "severity": "critical",
+        "cause": "missing",
+        "currentText": "**Visual Assets:**\n- List each asset: [name] - [type] - [source: website/Canvas API/generate]",
+        "proposedChange": "**Visual Assets:**\n- List each asset: [name] - [type] - [source: website/Canvas API/generate]\n\n**CRITICAL: No Placeholder Media**\nNever use generic placeholder videos (bars-n-tone, stock footage, etc.) in final compositions. Every visual must be:\n- Captured from the actual product (screenshots, screen recordings)\n- Downloaded from the brand's website\n- Generated specifically for this brand via Canvas API\n\nIf you cannot obtain product-specific footage, explicitly note what recordings are needed and where to capture them (e.g., 'Record: Dashboard view showing real-time sync at supabase.com/dashboard').",
+        "rationale": "The skill never explicitly prohibited placeholder media, so the model defaulted to bars-n-tone throughout instead of specifying actual product footage requirements."
+      },
+      {
+        "taskId": "supabase-product-demo",
+        "dimension": "point_of_view",
+        "severity": "critical",
+        "cause": "wrong_priority",
+        "currentText": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"",
+        "proposedChange": "**1. What is true about this brand that would be false about any competitor?**\n\nNot: \"They focus on quality and customer service\" (every brand claims this).\nYes: \"They were founded by two researchers who spent eight years on a single problem before launching.\"\n\n**This answer must appear in the video's form, not just its words.** If Supabase's truth is 'open-source Firebase alternative with Postgres underneath,' the video must show SQL and auto-generated APIs side by side—not just say 'open source' over generic footage.",
+        "rationale": "Phase 0 asks for specificity but doesn't require the unique positioning to manifest in visual form; adding this instruction would force the model to show Postgres-first philosophy rather than just stating it."
+      },
+      {
+        "taskId": "supabase-product-demo",
+        "dimension": "motion",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "- Canvas animations (particle systems, bezier curves, etc. — specify `frameTask` logic)",
+        "proposedChange": "- Canvas animations (particle systems, bezier curves, etc. — specify `frameTask` logic)\n\n**Implementation requirement:** When specifying a Canvas animation, provide the complete `addFrameTask` callback code inline in the scene plan. Do not reference empty canvas elements without implementation. Example:\n```\nscene.addFrameTask((t, d) => {\n  // actual drawing code here\n});\n```",
+        "rationale": "The model declared a #chaos-canvas element but left it empty because the skill only says to 'specify frameTask logic' without requiring the actual implementation code be provided."
+      }
+    ]
+  },
+  {
+    "skillFile": "skills/skills/brand-video-generator/references/composition-patterns.md",
+    "changes": [
+      {
+        "taskId": "linear-product-demo",
+        "dimension": "point_of_view",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "For concepts that can't be shown with video — data, systems, processes, abstractions — `addFrameTask` gives access to the canvas for per-frame generative graphics.",
+        "proposedChange": "Add after the Procedural Canvas section:\n\n---\n\n## Canvas Animation Must Be Literal, Not Decorative\n\nCanvas animations should visualize the actual concept, not create abstract atmosphere.\n\n**Wrong approach:**\n- \"Chaos\" = random lines moving chaotically\n- \"Speed\" = particles moving fast\n- \"Organization\" = geometric patterns\n\n**Right approach:**\n- \"Issue tracking chaos\" = scattered rectangles (representing issues) with disconnected lines, then animating into organized columns (representing a board view)\n- \"Fast resolution\" = timeline showing issue cards moving from 'open' to 'closed' states rapidly\n- \"Real-time sync\" = two cursor icons moving on the same card simultaneously\n\n**The test:** Can a viewer who doesn't read the text understand what product category this is from the animation alone? If the same animation could represent \"email productivity\" or \"file management\" or \"project tracking\" equally well, it's decorative, not communicative.",
+        "rationale": "The skill showed canvas animation examples but didn't require that animations be semantically connected to the specific product concept, allowing decorative abstractions that communicate nothing specific about the product."
+      },
+      {
+        "taskId": "notion-social",
+        "dimension": "motion",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "## Word-by-Word Title Reveal\n\nText that builds itself word by word focuses attention on the message as it forms.",
+        "proposedChange": "Add a new section after \"## Word-by-Word Title Reveal\" section:\n\n---\n\n## Concept-as-Motion (Structural Animation)\n\nThe most powerful motion doesn't decorate—it demonstrates. Instead of animating text onto screen, animate the concept the text describes.\n\n**Pattern**: If the message is about transformation, organization, or connection, the animation itself should perform that transformation.\n\n```html live\n<ef-timegroup mode=\"fixed\" duration=\"6s\" class=\"w-[720px] h-[400px] bg-slate-900 overflow-hidden\">\n  <!-- Scattered elements that organize themselves -->\n  <div class=\"item absolute text-white text-lg bg-slate-700 px-3 py-1 rounded\"\n    style=\"top: 20%; left: 10%; animation: 3s organize both; --target-x: 50px; --target-y: 100px\">Notes</div>\n  <div class=\"item absolute text-white text-lg bg-slate-700 px-3 py-1 rounded\"\n    style=\"top: 60%; left: 70%; animation: 3s organize 0.2s both; --target-x: 50px; --target-y: 140px\">Tasks</div>\n  <div class=\"item absolute text-white text-lg bg-slate-700 px-3 py-1 rounded\"\n    style=\"top: 40%; left: 40%; animation: 3s organize 0.4s both; --target-x: 50px; --target-y: 180px\">Docs</div>\n  <!-- Container that fades in as destination -->\n  <div class=\"absolute left-[40px] top-[80px] w-48 h-36 border-2 border-white/30 rounded-lg\"\n    style=\"animation: 1s fade-in 1.5s both\"></div>\n</ef-timegroup>\n<style>\n  @keyframes organize {\n    0%   { transform: translate(0, 0) rotate(calc(var(--ef-seed) * 20deg - 10deg)); }\n    100% { transform: translate(var(--target-x), var(--target-y)) rotate(0deg); left: 0; top: 0; }\n  }\n  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }\n</style>\n```\n\n**What motion adds:** The animation IS the argument. Viewers see chaos become order, not just read about it. Use `--ef-progress` to drive continuous transformations that demonstrate your concept over time.\n\n**When to use:** Whenever your message involves transformation, connection, organization, or process. The motion should be what you'd show if you couldn't use any words.",
+        "rationale": "The model used generic entrance animations because composition-patterns.md only showed decorative patterns (fade-in, slide-up) without a pattern for making motion demonstrate the product concept itself."
+      }
+    ]
+  },
+  {
+    "skillFile": "skills/skills/brand-video-generator/references/editing.md",
+    "changes": [
+      {
+        "taskId": "supabase-product-demo",
+        "dimension": "omission",
+        "severity": "major",
+        "cause": "missing",
+        "currentText": "",
+        "proposedChange": "Create the file `skills/skills/brand-video-generator/references/editing.md` with:\n\n# Editing: What to Cut\n\n## The Repetition Test\nBefore finalizing scenes, read only the VIEWER STATE AT END for each scene in sequence. If two scenes end with the viewer in the same state, one of them is redundant.\n\n**Cut the weaker scene.** Redistribute its time to scenes that do unique work.\n\n## Trust Signal Placement\nGeneric trust signals ('thousands of customers', 'enterprise-ready', 'scalable') add nothing unless made specific. Either:\n- Show a recognizable logo with a concrete metric ('Discord: 4M concurrent connections')\n- Cut the trust signal entirely\n\nNever end a scene with vague reassurance that could apply to any product.",
+        "rationale": "The SKILL.md references 'references/editing.md' for 'what to cut' but the file doesn't exist; creating it with specific guidance on repetition and weak trust signals would have flagged Scene 5 for removal."
+      }
+    ]
+  }
+]

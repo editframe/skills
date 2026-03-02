@@ -1,0 +1,65 @@
+{
+  "taskId": "supabase-product-demo",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-02-26T23:10:22.953Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural with text splitting, staggered word animations using --ef-word-index, and procedural canvas animations. The addFrameTask implementations for complexity visualization and grid backgrounds show intentional time-based animation. However, the motion doesn't fully carry meaning that text cannot.",
+      "evidence": "Text splitting with stagger: `split=\"word\"` with `animation-delay: calc(var(--ef-word-index) * 100ms)`. Canvas animations in Scene 2: `const progress = info.percentComplete; const lineCount = Math.floor(progress * 40);` for complexity visualization. Scene 7 grid: `ctx.strokeStyle = \\`rgba(16, 185, 129, ${0.1 + progress * 0.15})\\``"
+    },
+    "specificity": {
+      "score": 2,
+      "rationale": "The composition mentions Supabase-specific features (PostgreSQL, OAuth, Edge Functions, Row-level security, MIT license) but these are listed generically. The emerald color palette hints at Supabase's brand, but no actual Supabase assets, screenshots, or distinctive visual identity elements are used. Any Firebase alternative could substitute with minimal changes.",
+      "evidence": "Generic placeholder videos: `src=\"https://assets.editframe.com/bars-n-tone.mp4\"` used repeatedly. Feature list could apply to many BaaS: 'PostgreSQL Database', 'Authentication', 'Storage', 'Edge Functions'. No Supabase logo, dashboard screenshots, or actual product imagery. The tagline 'Open source Firebase alternative' is the only truly differentiating claim."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The arc traces problem → solution → features → CTA. Scenes 1-2 establish frustration with complexity, Scene 3 introduces relief/hope, Scenes 4-6 build confidence through features, Scene 7 appeals to developer identity, Scene 8 prompts action. The shifts are traceable but formulaic.",
+      "evidence": "Problem state: 'Building APIs shouldn't be this hard' with complexity canvas visualization. Solution relief: 'Meet Supabase' with scale-in animation and emerald glow. Feature confidence: numbered features '01 PostgreSQL Database', '02 Authentication'. Developer identity: 'BUILT FOR DEVELOPERS'. The arc exists but follows standard product demo structure."
+    },
+    "point_of_view": {
+      "score": 2,
+      "rationale": "The composition implies a perspective that developer experience matters and consolidation beats fragmentation, but doesn't commit to it. The complexity visualization in Scene 2 is a non-obvious choice that hints at a perspective, but it's not fully developed or connected to Supabase's specific philosophy.",
+      "evidence": "The complexity canvas drawing tangled lines is an authorial choice: `ctx.quadraticCurveTo(...)` creating chaos. The 'Everything. One dashboard.' message implies consolidation as philosophy. But the execution retreats to standard feature listing rather than demonstrating this unified vision structurally."
+    },
+    "omission": {
+      "score": 3,
+      "rationale": "Most scenes earn their place in the narrative arc. However, Scene 6 (Storage & Edge) feels like it exists to check boxes rather than advance understanding. Scenes 4 and 5 follow identical structures, creating some redundancy. The video could function with one fewer feature scene.",
+      "evidence": "Scenes 4-5 have mirrored structures: both use gradient overlays, numbered features, same animation patterns, left/right positioning. Scene 6 introduces two features quickly with emoji icons `📦` `⚙️` - feels compressed and obligatory. Scene 7 'BUILT FOR DEVELOPERS' partially repeats Scene 3's developer-focused messaging."
+    }
+  },
+  "overall": 2.8,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "critical",
+      "observation": "The composition uses generic placeholder videos (bars-n-tone.mp4) throughout and contains no actual Supabase visual assets, logo, dashboard screenshots, or distinctive brand elements.",
+      "improvement": "Include actual Supabase dashboard footage, the distinctive green Supabase logo, real code snippets showing the supabase-js client, or screen recordings of the table editor. Show what makes Supabase visually distinctive from competitors."
+    },
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "Feature claims like 'Production-ready Postgres in seconds' and 'OAuth built in' are generic statements that could describe Neon, PlanetScale, Auth0, or Firebase.",
+      "improvement": "Demonstrate Supabase-specific advantages: show the auto-generated REST/GraphQL APIs, the real-time subscription syntax `supabase.from('table').on('INSERT', callback)`, or the unique row-level security policy syntax that distinguishes Supabase's approach."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "major",
+      "observation": "The composition hedges between 'simplicity through consolidation' and 'feature checklist.' The complexity visualization suggests a perspective but the middle scenes retreat to standard feature enumeration.",
+      "improvement": "Commit to the consolidation thesis throughout. Instead of listing features separately, show them working together - a single code example that touches database, auth, and storage simultaneously. Make the 'one platform' claim structural, not just verbal."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "The state changes follow a predictable product demo arc (problem → solution → features → CTA) without surprising the viewer or creating genuine emotional contrast.",
+      "improvement": "Add a moment of earned wonder - perhaps show how few lines of code accomplish what traditionally requires hundreds. Create contrast by showing the 'before' complexity more viscerally or the 'after' simplicity more dramatically."
+    },
+    {
+      "dimension": "omission",
+      "severity": "minor",
+      "observation": "Scenes 4 and 5 use identical structural patterns (gradient overlay, numbered feature, three text blocks) creating visual redundancy that dilutes impact.",
+      "improvement": "Consolidate database and auth into a single scene showing them working together, or give each a truly distinct visual treatment that reflects the nature of that feature (e.g., auth could show user flow, database could show schema)."
+    }
+  ]
+}

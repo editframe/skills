@@ -1,0 +1,59 @@
+{
+  "taskId": "linear-product-demo",
+  "model": "anthropic/claude-haiku-4-5",
+  "timestamp": "2026-03-02T19:45:40.124Z",
+  "scores": {
+    "motion": {
+      "score": 4,
+      "rationale": "Motion is structural and purposeful. The composition uses addFrameTask for procedural canvas animation, text splitting with stagger delays using --ef-word-index, and coordinated animation sequences that build meaning across scenes.",
+      "evidence": "Scene 1 uses `split=\"word\"` with `animation-delay: calc(var(--ef-word-index) * 100ms)`. The chaos canvas uses `instance.addFrameTask((info) => { const progress = info.ownCurrentTimeMs / info.durationMs; ... })` to draw bezier curves that increase with progress. Scene 2 has sequenced reveals: `revealFromLeft 0.3s`, `scaleIn 0.6s`, `revealFromRight 0.9s` showing issue state progression."
+    },
+    "specificity": {
+      "score": 3,
+      "rationale": "Several Linear-specific truths are visible: the opinionated three-state workflow philosophy, keyboard navigation hints, and the distinctive dark aesthetic. However, the issue card design and claims could apply to other project management tools.",
+      "evidence": "The comment 'Opinionated flow = issues progress through defined states' reflects Linear's actual philosophy. The keyboard hint `press J to navigate` is Linear-specific. Issue states (Backlog → Active → Completed) match Linear's model. But 'FEAT-421' format and general claims like '3x faster issue triage' are generic."
+    },
+    "viewer_state": {
+      "score": 3,
+      "rationale": "The three-scene arc produces traceable shifts: frustration (chaos) → clarity (linear flow) → aspiration (shipping faster). The progression is formulaic but functional.",
+      "evidence": "Scene 1 creates tension with 'Issues that sit in review forever' paired with chaotic canvas. Scene 2 resolves with 'Opinionated flow' and clean state cards. Scene 3 pivots to outcome: 'Your team ships faster.' The arc is Problem → Solution → Result, which is standard but the chaos visualization in Scene 1 does create genuine unease."
+    },
+    "point_of_view": {
+      "score": 3,
+      "rationale": "There's a clear perspective: workflow ambiguity is the enemy, and opinionation is the cure. This is expressed through form (chaos canvas vs. ordered cards) not just words. However, it doesn't go deeper than Linear's own marketing position.",
+      "evidence": "The comment states the perspective explicitly: 'issues progress through defined states, no ambiguous \"in review forever\"'. The visual contrast between Scene 1's bezier chaos and Scene 2's ordered card progression embodies this argument. The perspective is 'constraint liberates.'"
+    },
+    "omission": {
+      "score": 4,
+      "rationale": "Three scenes, each with a distinct function. No redundancy visible. The 30-second constraint is filled without padding.",
+      "evidence": "Scene 1 (0-10s): establish problem. Scene 2 (10-20s): demonstrate solution mechanism. Scene 3 (20-30s): project outcome. Each scene adds new information. The only potential excess is the dual CTA buttons and '3x faster' metric in Scene 3, which slightly dilutes focus."
+    }
+  },
+  "overall": 3.4,
+  "feedback": [
+    {
+      "dimension": "specificity",
+      "severity": "major",
+      "observation": "Issue card examples use generic identifiers ('FEAT-421', 'Alex', 'Implement WebSocket reconnection logic') that could appear in any PM tool demo.",
+      "improvement": "Use Linear-specific visual elements: their actual keyboard shortcut overlay style, the cycle number system, priority indicators with their exact iconography, or reference real Linear customer workflows (e.g., Vercel, Ramp)."
+    },
+    {
+      "dimension": "specificity",
+      "severity": "minor",
+      "observation": "The '3x faster issue triage' metric appears fabricated and generic.",
+      "improvement": "Use a specific, verifiable claim from Linear's actual case studies or remove the metric entirely—the visual argument is stronger without unsubstantiated numbers."
+    },
+    {
+      "dimension": "viewer_state",
+      "severity": "minor",
+      "observation": "The transition from Scene 2 to Scene 3 is abrupt. Viewer moves from understanding the mechanism to being asked to act without experiencing the emotional payoff of the solved problem.",
+      "improvement": "Add a beat showing the *feeling* of completion—perhaps the issue card animating to Done state with a satisfying flourish, letting the viewer experience the reward before the outcome claims."
+    },
+    {
+      "dimension": "point_of_view",
+      "severity": "minor",
+      "observation": "The perspective ('opinionation solves chaos') is Linear's marketing position restated, not a compositional insight about Linear.",
+      "improvement": "Go deeper: why does Linear's specific form of opinionation work when others' fails? The video could show what Linear *doesn't* include (no custom fields maze, no status proliferation) as evidence of the perspective."
+    }
+  ]
+}
