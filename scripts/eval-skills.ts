@@ -78,12 +78,16 @@ function ensureDirs() {
   }
 }
 
-function loadTasks() {
+function loadConfig() {
   const raw = JSON.parse(readFileSync(join(EVAL_DIR, "tasks.json"), "utf8"))
   let tasks = raw.tasks as any[]
   if (TASK_FILTER) tasks = tasks.filter((t: any) => TASK_FILTER.includes(t.id))
   if (SKIP_HELD_OUT) tasks = tasks.filter((t: any) => !t.held_out)
-  return tasks
+  return {
+    tasks,
+    generateSkillPaths: raw.generateSkills as string[],
+    diagnoseSkillPaths: raw.diagnoseSkills as string[],
+  }
 }
 
 function loadSkillContent(): Record<string, string> {
@@ -105,7 +109,7 @@ function loadSkillContent(): Record<string, string> {
 // ─── Step 1: GENERATE ────────────────────────────────────────────────────────
 // Direct API call with skill content pre-loaded in the system prompt.
 
-async function generate(task: any, skillContents: Record<string, string>): Promise<string> {
+async function generate(task: any, skillContents: Record<string, string>, generateSkillPaths: string[]): Promise<string> {
   const outputPath = join(OUTPUTS_DIR, `${task.id}.html`)
 
   if (existsSync(outputPath)) {
@@ -115,11 +119,8 @@ async function generate(task: any, skillContents: Record<string, string>): Promi
 
   log(`  [generate] ${task.id} via ${GENERATOR_MODEL}`)
 
-  // Inject all discovered skill files — SKILL.md files first, then references
-  const skillDump = [
-    ...Object.keys(skillContents).filter((p) => p.endsWith("SKILL.md")),
-    ...Object.keys(skillContents).filter((p) => !p.endsWith("SKILL.md")),
-  ]
+  const skillDump = generateSkillPaths
+    .filter((p) => skillContents[p])
     .map((p) => `=== ${p} ===\n${skillContents[p]}`)
     .join("\n\n")
 
@@ -210,6 +211,7 @@ async function diagnose(
   task: any,
   evalResult: EvalResult,
   skillContents: Record<string, string>,
+  diagnoseSkillPaths: string[],
 ): Promise<Diagnosis[]> {
   const diagPath = join(DIAGNOSES_DIR, `${task.id}.json`)
 
@@ -230,8 +232,11 @@ async function diagnose(
 
   log(`  [diagnose] ${task.id} (${criticalFeedback.length} items) via ${EVALUATOR_MODEL_ID}`)
 
-  // Pass all discovered skill files to the diagnose step
-  const prompt = buildDiagnosePrompt(criticalFeedback, skillContents, task)
+  // Use the configured diagnose skill subset
+  const diagnoseSkills = Object.fromEntries(
+    diagnoseSkillPaths.filter((p) => skillContents[p]).map((p) => [p, skillContents[p]]),
+  )
+  const prompt = buildDiagnosePrompt(criticalFeedback, diagnoseSkills, task)
 
   const response = await anthropic.messages.create({
     model: EVALUATOR_MODEL_ID.replace("anthropic/", ""),
@@ -382,18 +387,18 @@ async function main() {
   ensureDirs()
   log(`\n=== eval-skills run: ${RUN_ID} ===\n`)
 
-  const tasks = loadTasks()
+  const { tasks, generateSkillPaths, diagnoseSkillPaths } = loadConfig()
   log(`Tasks: ${tasks.map((t: any) => t.id).join(", ")}\n`)
 
   const skillContents = loadSkillContent()
-  log(`Loaded ${Object.keys(skillContents).length} skill files\n`)
+  log(`Loaded ${Object.keys(skillContents).length} skill files (${generateSkillPaths.length} for generate, ${diagnoseSkillPaths.length} for diagnose)\n`)
 
   const results = await Promise.all(
     tasks.map(async (task) => {
       log(`\n── ${task.id} ──────────────────────────────`)
 
       log("Step 1: Generate")
-      const composition = await generate(task, skillContents)
+      const composition = await generate(task, skillContents, generateSkillPaths)
 
       log("Step 2: Evaluate")
       const evalResult = await evaluate(task, composition)
@@ -401,7 +406,7 @@ async function main() {
       let diagnoses: Diagnosis[] = []
       if (!task.held_out) {
         log("Step 3: Diagnose")
-        diagnoses = await diagnose(task, evalResult, skillContents)
+        diagnoses = await diagnose(task, evalResult, skillContents, diagnoseSkillPaths)
       } else {
         log("Step 3: Diagnose [skipped — held-out task]")
       }
