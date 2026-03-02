@@ -12,6 +12,7 @@ import {
   FileText,
   Cpu,
   ChartBar,
+  ChartLine,
   WebhooksLogo,
   File,
   Image,
@@ -180,6 +181,7 @@ const adminNavGroups: NavGroup[] = [
       { to: "/admin/api_keys", Icon: Key, label: "API Keys" },
       { to: "/admin/webhooks", Icon: WebhooksLogo, label: "Webhooks" },
       { to: "/admin/api-traffic", Icon: ChartBar, label: "API Traffic" },
+      { to: "/admin/telemetry", Icon: ChartLine, label: "Telemetry" },
     ],
   },
   {

@@ -112,6 +112,7 @@ const routes = [
     route("logtool", "routes/admin/logtool.tsx"),
     route("scheduler", "routes/admin/scheduler.tsx"),
     route("api-traffic", "routes/admin/api-traffic.tsx"),
+    route("telemetry", "routes/admin/telemetry.tsx"),
     route("create-user", "routes/admin/create-user.tsx"),
     route("search-orgs", "routes/admin/search-orgs.ts"),
     route("queues/:name", "routes/admin/queue.tsx", [
