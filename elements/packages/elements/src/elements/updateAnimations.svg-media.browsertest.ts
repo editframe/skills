@@ -51,7 +51,10 @@ describe("EFTimegroup - SVG SMIL autoplay prevention", () => {
     svg.setAttribute("width", "100");
     svg.setAttribute("height", "100");
     const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    const animate = document.createElementNS("http://www.w3.org/2000/svg", "animate");
+    const animate = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "animate",
+    );
     animate.setAttribute("attributeName", "x");
     animate.setAttribute("from", "0");
     animate.setAttribute("to", "100");
@@ -72,7 +75,10 @@ describe("EFTimegroup - SVG SMIL autoplay prevention", () => {
 
     document.body.appendChild(timegroup);
 
-    assert.isTrue(svg.animationsPaused(), "SVG SMIL should be paused immediately on connect, before any frame fires");
+    assert.isTrue(
+      svg.animationsPaused(),
+      "SVG SMIL should be paused immediately on connect, before any frame fires",
+    );
   });
 
   test("SVG animations are paused when inserted into a connected ef-timegroup", async () => {
@@ -89,9 +95,14 @@ describe("EFTimegroup - SVG SMIL autoplay prevention", () => {
 
     // Wait for slotchange to fire (microtask) and then one more microtask for any
     // handler work, plus one rAF to ensure no paint sneaks through before the pause
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => resolve()),
+    );
 
-    assert.isTrue(svg.animationsPaused(), "SVG SMIL should be paused before the first paint after insertion");
+    assert.isTrue(
+      svg.animationsPaused(),
+      "SVG SMIL should be paused before the first paint after insertion",
+    );
   });
 });
 
@@ -128,7 +139,10 @@ describe("updateAnimations - SVG SMIL", () => {
     updateAnimations(timegroup);
 
     // After updateAnimations, SVG animations should be paused
-    assert.isTrue(svg.animationsPaused(), "SVG animations should be paused after updateAnimations");
+    assert.isTrue(
+      svg.animationsPaused(),
+      "SVG animations should be paused after updateAnimations",
+    );
   });
 
   test("seeks SVG SMIL to the correct time proportional to current position", () => {
@@ -163,7 +177,12 @@ describe("updateAnimations - SVG SMIL", () => {
 
     // SVG currentTime is in seconds; 1000ms → 1s
     const svgTime = svg.getCurrentTime();
-    assert.approximately(svgTime, 1.0, 0.01, "SVG current time should be 1.0s for 1000ms timeline position");
+    assert.approximately(
+      svgTime,
+      1.0,
+      0.01,
+      "SVG current time should be 1.0s for 1000ms timeline position",
+    );
   });
 
   test("seeks SVG SMIL to zero at start of timeline", () => {
@@ -180,7 +199,12 @@ describe("updateAnimations - SVG SMIL", () => {
     timegroup.currentTimeMs = 0;
     updateAnimations(timegroup);
 
-    assert.approximately(svg.getCurrentTime(), 0, 0.01, "SVG time should be 0 at timeline start");
+    assert.approximately(
+      svg.getCurrentTime(),
+      0,
+      0.01,
+      "SVG time should be 0 at timeline start",
+    );
   });
 
   test("seeks SVG SMIL in a nested temporal element", () => {
@@ -188,7 +212,9 @@ describe("updateAnimations - SVG SMIL", () => {
     timegroup.setAttribute("mode", "fixed");
     timegroup.setAttribute("duration", "4000ms");
 
-    const child = document.createElement("test-temporal-svg") as TestTemporalSvg;
+    const child = document.createElement(
+      "test-temporal-svg",
+    ) as TestTemporalSvg;
     child.setDuration(4000);
     child.setAttribute("duration", "4000ms");
 
@@ -204,7 +230,12 @@ describe("updateAnimations - SVG SMIL", () => {
 
     // The child's ownCurrentTimeMs at 2000ms should be 2000ms → 2.0s for SVG
     const svgTime = svg.getCurrentTime();
-    assert.approximately(svgTime, 2.0, 0.01, "SVG in nested element should be seeked to child's own time");
+    assert.approximately(
+      svgTime,
+      2.0,
+      0.01,
+      "SVG in nested element should be seeked to child's own time",
+    );
   });
 
   test("handles multiple SVG elements in the subtree", () => {
@@ -227,8 +258,18 @@ describe("updateAnimations - SVG SMIL", () => {
 
     assert.isTrue(svg1.animationsPaused(), "First SVG should be paused");
     assert.isTrue(svg2.animationsPaused(), "Second SVG should be paused");
-    assert.approximately(svg1.getCurrentTime(), 1.5, 0.01, "First SVG should be at 1.5s");
-    assert.approximately(svg2.getCurrentTime(), 1.5, 0.01, "Second SVG should be at 1.5s");
+    assert.approximately(
+      svg1.getCurrentTime(),
+      1.5,
+      0.01,
+      "First SVG should be at 1.5s",
+    );
+    assert.approximately(
+      svg2.getCurrentTime(),
+      1.5,
+      0.01,
+      "Second SVG should be at 1.5s",
+    );
   });
 });
 
@@ -251,7 +292,10 @@ describe("updateAnimations - media elements", () => {
     timegroup.currentTimeMs = 2000;
     updateAnimations(timegroup);
 
-    assert.isTrue(video.paused, "video should be paused after updateAnimations");
+    assert.isTrue(
+      video.paused,
+      "video should be paused after updateAnimations",
+    );
   });
 
   test("seeks <video> currentTime to match timeline position in seconds", () => {
@@ -267,7 +311,12 @@ describe("updateAnimations - media elements", () => {
     updateAnimations(timegroup);
 
     // 2500ms → 2.5s
-    assert.approximately(video.currentTime, 2.5, 0.01, "video currentTime should be 2.5s for 2500ms position");
+    assert.approximately(
+      video.currentTime,
+      2.5,
+      0.01,
+      "video currentTime should be 2.5s for 2500ms position",
+    );
   });
 
   test("seeks <audio> currentTime to match timeline position in seconds", () => {
@@ -282,7 +331,12 @@ describe("updateAnimations - media elements", () => {
     timegroup.currentTimeMs = 1000;
     updateAnimations(timegroup);
 
-    assert.approximately(audio.currentTime, 1.0, 0.01, "audio currentTime should be 1.0s for 1000ms position");
+    assert.approximately(
+      audio.currentTime,
+      1.0,
+      0.01,
+      "audio currentTime should be 1.0s for 1000ms position",
+    );
   });
 
   test("seeks multiple media elements in the subtree", () => {
@@ -299,8 +353,18 @@ describe("updateAnimations - media elements", () => {
     timegroup.currentTimeMs = 3000;
     updateAnimations(timegroup);
 
-    assert.approximately(video.currentTime, 3.0, 0.01, "video should be at 3.0s");
-    assert.approximately(audio.currentTime, 3.0, 0.01, "audio should be at 3.0s");
+    assert.approximately(
+      video.currentTime,
+      3.0,
+      0.01,
+      "video should be at 3.0s",
+    );
+    assert.approximately(
+      audio.currentTime,
+      3.0,
+      0.01,
+      "audio should be at 3.0s",
+    );
   });
 
   test("uses the containing temporal element own time for media inside a child temporal", () => {
@@ -311,12 +375,16 @@ describe("updateAnimations - media elements", () => {
     const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
     timegroup.setAttribute("mode", "sequence");
 
-    const first = document.createElement("test-temporal-svg") as TestTemporalSvg;
+    const first = document.createElement(
+      "test-temporal-svg",
+    ) as TestTemporalSvg;
     first.setDuration(2000);
     first.setAttribute("duration", "2000ms");
     timegroup.appendChild(first);
 
-    const second = document.createElement("test-temporal-svg") as TestTemporalSvg;
+    const second = document.createElement(
+      "test-temporal-svg",
+    ) as TestTemporalSvg;
     second.setDuration(4000);
     second.setAttribute("duration", "4000ms");
     const video = document.createElement("video");
@@ -329,6 +397,11 @@ describe("updateAnimations - media elements", () => {
     updateAnimations(timegroup);
 
     // second.currentTimeMs = 3000 - 2000 = 1000ms → 1.0s
-    assert.approximately(video.currentTime, 1.0, 0.01, "video inside child element should use child's own time (1000ms)");
+    assert.approximately(
+      video.currentTime,
+      1.0,
+      0.01,
+      "video inside child element should use child's own time (1000ms)",
+    );
   });
 });
