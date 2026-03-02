@@ -64,6 +64,14 @@ Without an intentional arc, videos feel flat or confusing.
 - Scale visualization: don't just state the percentage — show it spatially (a bar filling completely vs. partially)
 - Animation escalation: the reveal scene should have MORE visual energy than preceding scenes, not the same
 
+**Landing the reveal with magnitude:** A percentage or mechanism alone doesn't create emotional impact—scale does. When revealing a counter-normative claim, the final beat must concretize the magnitude:
+- Cumulative totals: '$X million since founding', 'Y acres protected', 'Z tons diverted'
+- Specific outcomes: Name the grants, the land parcels, the species, the communities
+- Temporal scale: Show accumulation over time (counter ticking, map filling, timeline extending)
+- Human/environmental anchors: One protected watershed beats 'environmental causes'; one employee grant story beats 'employee programs'
+
+The test: Does the viewer leave with a number or image they could repeat to someone else? If the reveal is abstract ('100% goes to causes'), the arc informs but doesn't land.
+
 ---
 
 ### 2. The Transformation Arc
@@ -470,9 +478,11 @@ Short videos (social, TikTok, Instagram) cannot sustain a traditional three-act 
 **The shift must be causally earned, not just sequenced.** The viewer must understand WHY they moved from state A to state B. For community brands: show the mechanism of participation (your feedback → this ingredient). For transformation brands: show the before/after contrast in the same frame or object. A logo landing is not a resolution unless something in the video built toward it. Test: cover the logo — does the final scene still feel like arrival? If not, the arc is unearned.
 
 **Concreteness requirement for abstract claims:** When the emotional arc involves abstract concepts (listening, community, co-creation), each beat must contain at least one concrete artifact:
-- Beat 1 (establishing state): Show specific text, quotes, or named inputs — not abstract representations of 'feedback' or 'voices'
-- Beat 2 (friction/surprise): Show the specific constraint or choice that makes this brand's response non-generic — the thing they did that most brands wouldn't
-- Beat 3 (resolution): Show the specific output those inputs created — a named product, a visible change, a concrete result
+- Beat 1 (establishing state): Show **verbatim text** from real customer requests, reviews, or community posts. 'Dots representing feedback' fails—the viewer must be able to read actual words they might have written themselves.
+- Beat 2 (friction/surprise): Name the specific constraint or tradeoff the brand made. 'We listened' is abstract; 'We combined 847 requests for a tinted moisturizer with SPF into one formula' is concrete.
+- Beat 3 (resolution): The reveal must be **identifiable without the brand name**. If 'G Suit' means nothing to the viewer, the scene has no payoff. Either show the product visually (recognizable packaging) or explain what it is in the same beat.
+
+**The viewer state test for community arcs:** At the reveal moment, ask: would the viewer feel 'that's MY feedback that made this' or just 'feedback in general made this'? The first is emotional; the second is intellectual. Abstract-to-abstract arcs (dots → product name) always produce the second.
 
 Abstract-to-abstract arcs (dots representing feedback → dots converging) fail the viewer state test because no specific information anchors the emotional shift.
 

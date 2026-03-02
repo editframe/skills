@@ -76,11 +76,25 @@ PROCESS: Iterate systematically
 - Plan for **audio sync** when applicable
 - Account for **export format** constraints
 
+## Editframe Implementation
+
+Motion principles map to specific Editframe mechanisms. Always check [0-editframe.md](references/0-editframe.md) first — it translates every concept to actual syntax.
+
+| Motion concept | Editframe mechanism |
+|---------------|---------------------|
+| Easing / physics | CSS `animation-timing-function` + `@keyframes` |
+| Stagger | `ef-text split="word"` + `--ef-word-index` CSS var |
+| Progress-driven | `--ef-progress` CSS var (0–1, updates every frame) |
+| Per-frame procedural | `addFrameTask((ownCurrentTimeMs, durationMs) => {})` on timegroup |
+| Exit timing | `--ef-transition-out-start` CSS var |
+| Scene overlap | `overlap="1s"` on parent `ef-timegroup[mode="sequence"]` |
+
+**`addFrameTask` rules:** callback must be a pure function of `ownCurrentTimeMs` — no `Date.now()`, no `Math.random()`. Renders must be deterministic.
+
 ## Quick Reference
 
 For detailed tables and patterns, see:
-- **Editframe implementation** (start here): [0-editframe.md](references/0-editframe.md)
+- **Editframe implementation**: [0-editframe.md](references/0-editframe.md)
 - **Material properties & durations**: [2-physics-model.md](references/2-physics-model.md)
 - **Stagger delays & patterns**: [3-attention.md](references/3-attention.md)
-- **Common animation patterns**: [2-physics-model.md](references/2-physics-model.md)
 - **Iteration workflow**: [4-process.md](references/4-process.md)

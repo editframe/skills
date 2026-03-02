@@ -15,6 +15,33 @@ Build video compositions with HTML web components (`<ef-timegroup>`, `<ef-video>
 
 Web component attributes use kebab-case (`sourcein`, `auto-init`). React props use camelCase (`sourceIn`, `autoInit`). Each element reference documents both.
 
+## Before opening any reference file, answer:
+
+**1. HTML or React?**
+- HTML/web components — kebab-case attributes, works in any HTML file
+- React — camelCase props, requires `TimelineRoot` wrapper (see [references/timeline-root.md](references/timeline-root.md))
+
+**2. What's the core structure?**
+Every composition is a tree of `ef-timegroup` containers. Pick a mode:
+- `mode="sequence"` — children play one after another (scenes)
+- `mode="fixed"` — children play simultaneously for a set `duration`
+- `mode="contain"` — expands to fit children
+
+**3. What does the user need?**
+
+| Need | Reference |
+|------|-----------|
+| Arrange clips in sequence | [timegroup](references/timegroup.md), [sequencing](references/sequencing.md) |
+| Animate text | [text](references/text.md), [css-variables](references/css-variables.md) |
+| Video/audio/image | [video](references/video.md), [audio](references/audio.md), [image](references/image.md) |
+| Per-frame canvas animation | [scripting](references/scripting.md) |
+| Scene transitions | [transitions](references/transitions.md) |
+| Captions/subtitles | [captions](references/captions.md) |
+| Export to MP4 | [render-to-video](references/render-to-video.md) or use `editframe-cli` |
+| Cloud rendering | [render-api](references/render-api.md) |
+
+**The single gate:** Does the composition have explicit dimensions (`w-[1920px] h-[1080px]` or equivalent) on the root timegroup? If not, the renderer has nothing to frame against — add them before anything else.
+
 ## Quick Start
 
 <!-- html-only -->

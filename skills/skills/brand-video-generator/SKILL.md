@@ -85,6 +85,8 @@ If [X] is already on their homepage, the composition is illustration, not argume
 - Their specific technical decision that shaped the product's architecture
 - Their specific philosophy made visible in a product choice competitors didn't make
 
+**For payments APIs specifically**: 'Unified API' is category-level. Valid angles include: built unified from day one (vs. acquired-and-integrated competitors), developer-first design philosophy (documentation as product), specific mission statements ('increase GDP of the internet'), or the decision to expose primitives rather than hide complexity. State which architectural philosophy the video will argue.
+
 Rewrite until the angle fails the substitute test.
 
 **Category trap**: "fragmentation is bad, unification is good" is a category-level narrative any competitor can use. "This specific brand's unification works because [architectural reason no competitor has]" is a brand angle. If the argument could be the headline of a competitor's ad campaign, dig deeper.

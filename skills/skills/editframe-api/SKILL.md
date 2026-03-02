@@ -13,6 +13,17 @@ metadata:
 
 JavaScript/TypeScript client for Editframe's video rendering API. Render videos from HTML compositions, upload and process media files, and manage authenticated access to CDN resources.
 
+## Before you start
+
+**API key required.** All calls need a valid API key passed to `new Client(key)` or via `EDITFRAME_API_KEY` env var. Without it, every call returns 401.
+
+- Get a key: Editframe dashboard → API Keys → Create
+- Missing key at runtime → `Client` constructor throws; handle this before making any API calls
+
+**Rate limits:** The API is rate-limited per API key. For bulk operations (uploading many files, creating many renders), add delays between requests or implement retry with exponential backoff on 429 responses.
+
+**Browser vs server:** `Client` is for server-side use only — never expose your API key to browsers. For browser-side media access, use URL signing (`createURLToken`) instead.
+
 ## Quick Start
 
 ```typescript

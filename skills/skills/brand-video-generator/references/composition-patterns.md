@@ -138,15 +138,23 @@ A `<canvas>` element without a complete `addFrameTask` script is a broken compos
 3. If approaching output length limits, STOP and either: (a) simplify the canvas animation, (b) replace with CSS animation, or (c) merge the scene's content into an adjacent scene
 4. Never leave a canvas scene with placeholder or incomplete code — delete the scene entirely rather than ship broken motion
 5. **Output token awareness**: If you have generated more than 3,000 tokens of HTML/script content, STOP before adding any new canvas scene. Canvas scripts average 400–600 tokens. Incomplete scripts render as blank screens.
-6. **Verification step**: Before outputting the closing `</script>` tag, confirm the `addFrameTask` callback has: (a) a complete function body, (b) closing `});` for the callback, (c) closing `});` for the addFrameTask call.
+6. **Verification step**: Before outputting the closing `</script>` tag, confirm the `addFrameTask` callback has: (a) a complete function body, (b) closing `});` for the callback, (c) closing `});` for the addFrameTask call. **Run this verification IMMEDIATELY after writing each canvas script, before starting the next scene.** Do not batch-verify at the end—by then, output limits may already be exceeded.
 
-**Output limit rule:** If a composition has 4+ canvas scenes, verify each script is complete before adding another. A video with 3 working canvas scenes is better than 4 scenes where one is broken.
+**Scene 1 canvas completion rule:** Scene 1 establishes the video's visual authority. If Scene 1 contains a canvas element, its `addFrameTask` script MUST be verified complete (all closing braces, full function body) before writing ANY subsequent scene. A truncated Scene 1 canvas breaks the entire video's argument. If approaching output limits before Scene 1's canvas is complete, simplify the canvas animation or replace it with CSS animation—do not proceed to Scene 2 with incomplete Scene 1 code.
 
 For concepts that can't be shown with video — data, systems, processes, abstractions — `addFrameTask` gives access to the canvas for per-frame generative graphics. The animation is a pure function of time, so it's fully scrubbable and renderable.
 
 **The motion must demonstrate something true about this product that is false about competitors.** Ask: what unit does this product operate on? Show that unit moving. These examples illustrate the thinking pattern — apply the same logic to the brand you're working with:
 
-**Visual specificity requirement — including problem scenes:** The canvas animation must depict elements that are visually identifiable as belonging to this specific brand, even when showing problems or pain points. Generic 'chaos' or 'frustration' imagery (tangled curves, scattered nodes, visual noise) fails the specificity test just as badly as generic solution imagery. If you cannot identify a brand-specific visual element to animate, use the brand's actual logo as the animated element.
+### Brand visual vocabulary extraction
+
+**Before generating any visual element, extract and document:**
+1. **Typography**: The brand's actual typefaces (not system fonts). If unknown, note 'typography unverified' and use only the brand name in a neutral sans-serif.
+2. **Product shapes**: Iconic silhouettes the audience recognizes (e.g., a specific bottle shape, packaging form, device outline). These become the visual primitives for canvas animations.
+3. **Photography style**: The brand's tonal register (dewy/matte, warm/cool, high-contrast/soft).
+4. **Community artifacts**: Specific touchpoints the audience would recognize (a signature mirror, a named platform, recurring phrases from their content).
+
+**If you cannot identify at least two of these four elements, stop and ask the user before proceeding.** Generic brand colors + abstract shapes is never acceptable—even a correct hex code applied to dots or gradients fails the substitute test. Generic 'chaos' or 'frustration' imagery (tangled curves, scattered nodes, visual noise) fails the specificity test just as badly as generic solution imagery. If you cannot identify a brand-specific visual element to animate, use the brand's actual logo as the animated element.
 
 For problem/pain scenes specifically:
 - Do NOT use abstract representations of chaos (bezier tangles, particle explosions, visual noise)
@@ -170,7 +178,7 @@ For problem/pain scenes specifically:
 
 **The substitute test**: Replace the brand name. Could this exact visual appear in a competitor's video unchanged? If yes, the visual fails and must be redesigned with brand-specific elements.
 
-- Payments API (unified object model): the same core object threads through every product in the suite → show one object that every system touches simultaneously rather than a pipeline. Speed is generic; the shared object is the differentiator. **Scale metrics must be earned by first showing the mechanism. Show the object flowing through checkout → risk → connect → billing in one continuous motion, THEN reveal the scale that architecture enabled. A metric stated before the architecture is demonstrated is an unsupported claim.**
+- Payments API (unified object model): the same core object threads through every product in the suite → show one object that every system touches simultaneously rather than a pipeline. Speed is generic; the shared object is the differentiator. **Name the actual objects**: PaymentIntent, Customer, Subscription, Price. Show the real field structure (`payment_intent.id`, `customer.id`) appearing identically across Checkout, Billing, Connect. Generic 'unified object' claims without the actual API vocabulary fail the specificity test—a developer should recognize their daily tooling. **Scale metrics must be earned by first showing the mechanism. Show the object flowing through checkout → risk → connect → billing in one continuous motion, THEN reveal the scale that architecture enabled. A metric stated before the architecture is demonstrated is an unsupported claim.**
 
   **Beyond unification — what THIS payments API does differently:** Unification is table stakes. Every aggregator claims it. The canvas must show what happens INSIDE the unified layer that competitors cannot replicate:
   - Fraud/risk: Show the risk scoring happening in real-time as the object flows — not a label, a live computation
@@ -180,7 +188,7 @@ For problem/pain scenes specifically:
 
   The test: swap in a competing payments brand. Would the animation still work? If yes, it's not specific enough.
 
-  **Problem-state specificity for payments APIs**: Do NOT show generic fintech pain points (payment processing, payouts, fraud detection, reporting). These describe every competitor. Instead show the specific pre-API architecture: multiple vendor SDKs with incompatible object models (a transaction object in one SDK ≠ an account object in another ≠ a score object in a third), the middleware translation layer developers had to build, or the actual code comparison (50 lines of vendor-specific glue code vs. 3 lines). The pain must be the pain this API specifically eliminated, not the category's general friction.
+  **Problem-state specificity for payments APIs**: Do NOT show generic fintech pain points (payment processing, payouts, fraud detection, reporting). These describe every competitor. Instead show the specific pre-API architecture with **real field name conflicts**: Square's `transaction_id` vs PayPal's `capture_id` vs Braintree's `sale_id`—the actual naming inconsistencies developers must map between. Show the middleware translation layer: `if (provider === 'square') { id = resp.transaction_id } else if (provider === 'paypal') { id = resp.capture_id }`. The pain must be code a developer has actually written, not abstract 'different object models' language.
 
   **Solution-state visual requirements for payments APIs**: The solution scene MUST include at least one of: (1) actual code showing the API's syntax elegance (the brand's actual SDK method calls and object names vs. competitor verbosity), (2) the distinctive Dashboard UI aesthetic (the specific card layouts, the typography, the data visualization style), (3) recognizable customer logos that this specific API powers, or (4) the branded visual identity beyond just colors (the brand's particular visual treatments, illustration style, or documentation aesthetic). Generic API response JSON or abstract 'unified platform' diagrams fail the substitute test — any payments company could use them.
 
