@@ -58,7 +58,7 @@ Before any analysis, answer these four questions. Generic answers are disqualify
 
 The answer must be something structural or foundational — a decision, a relationship, a material fact about how the brand works or what it is. Not a marketing position (which can be copied) but a truth (which cannot).
 
-**This answer must directly appear in the composition.** If your answer is "Glossier launched from Into The Gloss blog and user submissions," then Into The Gloss must be named or shown. If your answer is "they use real customer photos," specific customer attributions must appear. A philosophical reference to the truth without visual evidence is not specific enough.
+**This answer must directly appear in the composition as a visual element, not just inform the tone.** If your answer is "Glossier launched from Into The Gloss blog and user submissions," then Into The Gloss must be named or shown — either as literal text ("@[username] via Into The Gloss"), a screenshot of the blog interface, or a specific referenced submission. The brand truth cannot be satisfied by abstract visual qualities (soft, pink, minimal) that embody the philosophy — it requires concrete artifacts that would be false for competitors. If your answer is "they use real customer photos," specific customer attributions must appear. A philosophical reference to the truth without visual evidence is not specific enough.
 
 Not specific enough:
 - "They focus on quality and customer service" (every brand claims this)
@@ -95,6 +95,12 @@ This is a feeling, not a fact. "Informed" is not a feeling. Name the specific em
 **4. What formal choice does answer #1 force on this video?**
 
 The brand truth must determine the video's **structure** — not just its content. If the truth could be dropped into any template without changing the template, it isn't constraining anything.
+
+**Single-argument rule:** The video may only make ONE argument. List all potential value propositions from Phase 1, then DELETE all but one. The surviving argument must be the one that follows directly from answer #1. If you find yourself listing multiple benefits (speed AND simplicity AND power), you have not committed to a point of view.
+
+**Form-follows-argument test:** State your single argument as: "This video argues that [X] by showing [Y]." If [Y] could illustrate a different argument, the form is not embodying the argument. Rewrite until the visual approach is inseparable from the claim.
+
+Example (Linear): "This video argues that opinionated constraints enable speed by showing decisions being removed scene by scene until only the essential action remains." The structure (subtraction) is the argument (constraints enable). You cannot swap the argument without changing the structure.
 
 *Structure follows truth — by category:*
 
@@ -263,16 +269,28 @@ A real differentiator is something that, if true about this brand, would be surp
 3. **Asset Inventory**: What visual assets are available? What can you create with Canvas API?
 4. **Text Ratio**: Estimate % of screen time that's primarily text. If >50%, justify why this needs to be video.
 
-Move the Visual Metaphor Quick Reference table from Phase 2.5 into Phase 3: Scene Planning, and add this enforcement rule immediately before the scene template:
+**Scene 1 specificity gate**: The opening scene is most vulnerable to category-generic visuals. Before writing Scene 1, answer: "What would a competitor's video show for this same concept?" If your planned visual could appear in that competitor's video unchanged, it is not specific enough.
 
-**Scene 1 specificity gate**: The opening scene is most vulnerable to category-generic visuals. Before writing Scene 1, answer: "What would a competitor's video show for this same concept?" If your planned visual could appear in that competitor's video unchanged, it is not specific enough. For product-demos specifically:
+**Scene 1 emotional entry point**: The first scene must create emotional *tension*, not state a value. Generic value statements ('Every choice matters', 'Quality you can trust', 'Built for you') create no viewer state change because they ask nothing of the viewer. Instead, open with:
+- A concrete image of the problem the brand opposes (not abstract particles — show recognizable waste, friction, or pain)
+- A specific contrast that makes the viewer uncomfortable before the brand appears
+- Something the viewer must *react to* before they can be informed
+
+The test: Does the viewer feel differently 3 seconds in than at frame 1? If the answer is 'they now know what the brand believes' — that's information, not state change. State change requires discomfort, recognition, surprise, or tension first. For product-demos specifically:
 - Do NOT open with abstract 'chaos' visualizations (tangled lines, scattered nodes, etc.)
 - DO open with a recognizable pain point from this product's actual competitive landscape (e.g., for Linear: screenshot-style mockups of Jira's notification hell, Asana's nested project chaos, or the Slack-Jira-Notion tab-switching dance)
 - The first 3 seconds must show something only THIS brand's users would recognize as their specific problem
 
-**Visual Metaphor Quick Reference:**
+**Product-demo specificity requirement (MANDATORY for product-demo videos):**
 
-These are starting points, not answers. The right-hand column is a generic default — replace it with something specific to this brand before using it.
+For `product-demo` video type, every scene MUST include at least one of:
+- Actual product UI elements (screenshots, styled HTML representations of the real interface)
+- Product-specific terminology from the website (feature names, menu items, keyboard shortcuts)
+- Interface patterns unique to this product (Linear's command palette Cmd+K, Figma's multiplayer cursors, Stripe's dashboard structure)
+
+Generic productivity concepts (kanban boards, unified workspace, real-time collaboration) are PROHIBITED unless shown through the product's actual interface. The test: could this visual appear in Asana, Monday, or Jira unchanged? If yes, it fails.
+
+Before writing any scene for a product-demo, list 3 specific UI elements or feature names from the analyzed website that will appear in that scene.
 
 | Concept | Generic default (avoid) | What to find instead |
 |---------|------------------------|----------------------|
@@ -309,6 +327,7 @@ For each scene, use this template:
 Scene [N]: [Name] ([start]s-[end]s)
 - VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]
 - VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]
+- STATE DISTINCTNESS CHECK: [Name one emotion/state from this scene that was NOT available in any previous scene. If you cannot name one, this scene is redundant — either cut it or redesign it to produce a unique state.]
 - STATE CHANGE MECHANISM: [What specific technique creates the shift? Options: contrast (before/after, with/without), surprise (expectation subverted), scale revelation (one thing revealed as many), effort elimination (50 lines → 1 line). If the mechanism is 'demonstration' or 'showing how it works', the scene is informational, not transformational — rewrite it.]
 - PRIMARY VISUAL: [Main visual element - NOT just text]
 - MOTION/ANIMATION: [How it moves, what animates, specific CSS or frameTask approach]
@@ -318,6 +337,8 @@ Scene [N]: [Name] ([start]s-[end]s)
 ```
 
 **The viewer-state test**: If VIEWER STATE AT START and VIEWER STATE AT END are the same, the scene is not doing work. Cut it or change it until it does.
+
+**Adjacent-scene emotional register test**: No two consecutive scenes may target the same emotional register (e.g., both aiming for 'confidence' or 'trust'). After writing each scene's VIEWER STATE AT END, check: does it name the same feeling as the previous scene's end state? If so, one scene is redundant OR one must shift to a different register (e.g., Scene 4 ends with 'confidence in capability' → Scene 5 must move to 'curiosity about unexpected applications' or 'urgency to act', not 'deeper confidence').
 
 **Example:**
 

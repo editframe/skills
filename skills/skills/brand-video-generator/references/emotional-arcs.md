@@ -448,3 +448,19 @@ Music should move from tense to calm
 | Surprise | Expecting | Surprised | Delighted | Creative brands |
 | Reassurance | Anxious | Understanding | Calm | Healthcare, finance |
 | Momentum | Static | Moving | Accelerating | Growth platforms |
+
+## Short-Form Arc Compression (15-30s)
+
+Short videos (social, TikTok, Instagram) cannot sustain a traditional three-act arc. Instead, compress to a **two-beat structure**:
+
+**Beat 1 (0-60% of duration):** Establish one emotional state clearly — recognition, desire, tension, or curiosity.
+**Beat 2 (60-100% of duration):** Shift to a contrasting state — belonging, release, revelation, or action.
+
+The shift must be felt, not just stated. At 15s, you have time for exactly one emotional movement. At 30s, you might have two movements but not three.
+
+**Anti-pattern for short-form:** Three scenes that all deliver the same soft/aspirational register. This produces a mood without an arc. Even a 15s video needs internal contrast — the last 5 seconds should feel different from the first 5 seconds.
+
+**Social-specific registers:**
+- Recognition → Desire (show me, then make me want it)
+- Curiosity → Satisfaction (hook, then payoff)
+- Intimacy → Belonging (personal, then communal)
