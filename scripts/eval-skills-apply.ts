@@ -12,7 +12,7 @@
  */
 
 import { spawnSync } from "node:child_process"
-import { readFileSync, existsSync } from "node:fs"
+import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs"
 import { join } from "node:path"
 import * as readline from "node:readline"
 
@@ -27,9 +27,10 @@ const flag = (name: string) => {
 }
 const hasFlag = (name: string) => args.includes(name)
 
-const RUN_ID  = flag("--run-id")
-const YES_ALL = hasFlag("--yes")
-const DRY_RUN = hasFlag("--dry-run")
+const RUN_ID    = flag("--run-id")
+const YES_ALL   = hasFlag("--yes")
+const DRY_RUN   = hasFlag("--dry-run")
+const NO_VERIFY = hasFlag("--no-verify")
 
 if (!RUN_ID) {
   console.error("Error: --run-id is required")
@@ -93,7 +94,29 @@ Make only this specific, minimal change. Do not rewrite surrounding content.`
     { encoding: "utf8", stdio: ["inherit", "inherit", "inherit"] },
   )
 
-  return result.status === 0
+  if (result.status === 0) return true
+
+  // Fallback: direct text substitution when opencode is unavailable or fails
+  console.log("  [fallback] opencode failed — attempting direct text substitution")
+
+  if (!change.currentText) {
+    // No anchor text — append proposed change to end of file
+    const existing = readFileSync(absolutePath, "utf8")
+    writeFileSync(absolutePath, existing.trimEnd() + "\n\n" + change.proposedChange + "\n")
+    console.log("  [fallback] Appended proposed change to end of file")
+    return true
+  }
+
+  const content = readFileSync(absolutePath, "utf8")
+  if (!content.includes(change.currentText)) {
+    console.error(`  [fallback] currentText not found in ${skillFile} — cannot apply`)
+    return false
+  }
+
+  const updated = content.replace(change.currentText, change.proposedChange)
+  writeFileSync(absolutePath, updated)
+  console.log("  [fallback] Direct substitution applied")
+  return true
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -169,13 +192,75 @@ async function main() {
   hr()
   console.log(`\nDone. Applied: ${applied}  Skipped: ${skipped}`)
 
-  if (applied > 0 && !DRY_RUN) {
-    console.log("\nNext steps:")
-    console.log("  1. Review the changes: git diff")
-    console.log("  2. Re-run eval to measure improvement:")
-    console.log(`       npx tsx scripts/eval-skills.ts --run-id ${RUN_ID}-verify`)
-    console.log("  3. Commit if scores improved: git add -p && git commit")
+  if (applied > 0 && !DRY_RUN && !NO_VERIFY) {
+    const verifyRunId = `${RUN_ID}-verify`
+    console.log(`\nRe-running eval to measure improvement (run: ${verifyRunId})...`)
+    hr()
+
+    const evalResult = spawnSync(
+      "npx",
+      ["tsx", join(__dirname, "eval-skills.ts"), "--run-id", verifyRunId, "--skip-held-out"],
+      { encoding: "utf8", stdio: ["inherit", "inherit", "inherit"], cwd: ROOT_DIR },
+    )
+
+    if (evalResult.status !== 0) {
+      console.error("\nVerification eval failed — check output above.")
+    } else {
+      printScoreDelta(RUN_ID!, verifyRunId)
+    }
+  } else if (applied > 0 && !DRY_RUN && NO_VERIFY) {
+    console.log("\nSkipping verification (--no-verify). To verify manually:")
+    console.log(`  npx tsx scripts/eval-skills.ts --run-id ${RUN_ID}-verify --skip-held-out`)
   }
+}
+
+// ─── Score delta ─────────────────────────────────────────────────────────────
+
+function printScoreDelta(baseRunId: string, verifyRunId: string) {
+  const baseScoresDir   = join(RUNS_DIR, baseRunId,   "scores")
+  const verifyScoresDir = join(RUNS_DIR, verifyRunId, "scores")
+
+  if (!existsSync(baseScoresDir) || !existsSync(verifyScoresDir)) return
+
+  const baseFiles   = readdirSync(baseScoresDir).filter((f) => f.endsWith(".json"))
+  const verifyFiles = new Set(readdirSync(verifyScoresDir).filter((f) => f.endsWith(".json")))
+
+  console.log("\n─── Score Delta ────────────────────────────────────────────────────────")
+  console.log("Task                          Before  After   Delta")
+  console.log("────────────────────────────────────────────────────────────────────────")
+
+  let totalBefore = 0
+  let totalAfter  = 0
+  let count       = 0
+
+  for (const file of baseFiles) {
+    if (!verifyFiles.has(file)) continue
+
+    const before = JSON.parse(readFileSync(join(baseScoresDir,   file), "utf8"))
+    const after  = JSON.parse(readFileSync(join(verifyScoresDir, file), "utf8"))
+
+    const delta = after.overall - before.overall
+    const sign  = delta >= 0 ? "+" : ""
+    const label = (before.taskId ?? file.replace(".json", "")).padEnd(30)
+
+    console.log(`${label}  ${before.overall}/5   ${after.overall}/5   ${sign}${delta.toFixed(1)}`)
+    totalBefore += before.overall
+    totalAfter  += after.overall
+    count++
+  }
+
+  if (count > 0) {
+    const avgBefore = Math.round((totalBefore / count) * 10) / 10
+    const avgAfter  = Math.round((totalAfter  / count) * 10) / 10
+    const avgDelta  = avgAfter - avgBefore
+    const sign      = avgDelta >= 0 ? "+" : ""
+    console.log("────────────────────────────────────────────────────────────────────────")
+    console.log(`${"Average".padEnd(30)}  ${avgBefore}/5   ${avgAfter}/5   ${sign}${avgDelta.toFixed(1)}`)
+  }
+
+  console.log("")
+  console.log("Review changes: git diff")
+  console.log("Commit if improved: git add -p && git commit")
 }
 
 main().catch((err) => {

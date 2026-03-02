@@ -115,20 +115,11 @@ async function generate(task: any, skillContents: Record<string, string>): Promi
 
   log(`  [generate] ${task.id} via ${GENERATOR_MODEL}`)
 
-  // Pre-load the most relevant skill files into the system prompt
-  const generateSkillPaths = [
-    "skills/skills/composition/SKILL.md",
-    "skills/skills/composition/references/getting-started.md",
-    "skills/skills/composition/references/scripting.md",
-    "skills/skills/composition/references/css-variables.md",
-    "skills/skills/composition/references/text.md",
-    "skills/skills/motion-design/SKILL.md",
-    "skills/skills/motion-design/references/0-editframe.md",
-    "skills/skills/brand-video-generator/SKILL.md",
-    "skills/skills/brand-video-generator/references/composition-patterns.md",
+  // Inject all discovered skill files — SKILL.md files first, then references
+  const skillDump = [
+    ...Object.keys(skillContents).filter((p) => p.endsWith("SKILL.md")),
+    ...Object.keys(skillContents).filter((p) => !p.endsWith("SKILL.md")),
   ]
-  const skillDump = generateSkillPaths
-    .filter((p) => skillContents[p])
     .map((p) => `=== ${p} ===\n${skillContents[p]}`)
     .join("\n\n")
 
@@ -191,7 +182,7 @@ async function evaluate(task: any, composition: string): Promise<EvalResult> {
   const parsed = JSON.parse(jsonMatch[0])
   const scores = parsed.scores
   const overall =
-    Object.values(scores).reduce((sum: number, d: any) => sum + d.score, 0) /
+    (Object.values(scores) as any[]).reduce((sum: number, d: any) => sum + d.score, 0) /
     Object.keys(scores).length
 
   const result: EvalResult = {
@@ -239,20 +230,8 @@ async function diagnose(
 
   log(`  [diagnose] ${task.id} (${criticalFeedback.length} items) via ${EVALUATOR_MODEL_ID}`)
 
-  const relevantSkills: Record<string, string> = {}
-  const relevantPaths = [
-    "skills/skills/composition/SKILL.md",
-    "skills/skills/composition/references/getting-started.md",
-    "skills/skills/brand-video-generator/SKILL.md",
-    "skills/skills/brand-video-generator/references/composition-patterns.md",
-    "skills/skills/motion-design/SKILL.md",
-    "skills/skills/motion-design/references/0-editframe.md",
-  ]
-  for (const path of relevantPaths) {
-    if (skillContents[path]) relevantSkills[path] = skillContents[path]
-  }
-
-  const prompt = buildDiagnosePrompt(criticalFeedback, relevantSkills, task)
+  // Pass all discovered skill files to the diagnose step
+  const prompt = buildDiagnosePrompt(criticalFeedback, skillContents, task)
 
   const response = await anthropic.messages.create({
     model: EVALUATOR_MODEL_ID.replace("anthropic/", ""),
@@ -264,7 +243,19 @@ async function diagnose(
   const jsonMatch = text.match(/\[[\s\S]*\]/)
   if (!jsonMatch) throw new Error(`No JSON array in diagnose response for ${task.id}`)
 
-  const diagnoses: Diagnosis[] = JSON.parse(jsonMatch[0]).map((d: any, i: number) => ({
+  const raw: any[] = JSON.parse(jsonMatch[0])
+
+  // Validate feedbackIndex values — reject responses that misalign
+  for (const [i, d] of raw.entries()) {
+    const idx = d.feedbackIndex
+    if (idx !== undefined && (typeof idx !== "number" || idx < 0 || idx >= criticalFeedback.length)) {
+      throw new Error(
+        `diagnose response for ${task.id}[${i}] has feedbackIndex=${idx} but only ${criticalFeedback.length} feedback item(s)`,
+      )
+    }
+  }
+
+  const diagnoses: Diagnosis[] = raw.map((d: any, i: number) => ({
     taskId: task.id,
     feedbackItem: criticalFeedback[d.feedbackIndex ?? i],
     skillFile: d.skillFile,
@@ -281,23 +272,55 @@ async function diagnose(
 
 // ─── Consolidate proposals ───────────────────────────────────────────────────
 
+const SEVERITY_RANK: Record<string, number> = { critical: 2, major: 1, minor: 0 }
+
 function consolidateProposals(allDiagnoses: Diagnosis[]) {
-  const byFile: Record<string, Diagnosis[]> = {}
+  // Group by skillFile then by currentText to deduplicate same-passage proposals
+  const byFile: Record<string, Map<string, any>> = {}
+
   for (const d of allDiagnoses) {
-    if (!byFile[d.skillFile]) byFile[d.skillFile] = []
-    byFile[d.skillFile].push(d)
+    if (!byFile[d.skillFile]) byFile[d.skillFile] = new Map()
+
+    const key = d.currentText.trim()
+    const existing = byFile[d.skillFile].get(key)
+    const severity = d.feedbackItem?.severity ?? "minor"
+    const dimension = d.feedbackItem?.dimension
+    const rationale = (d as any).rationale ?? ""
+
+    if (!existing) {
+      byFile[d.skillFile].set(key, {
+        taskIds: [d.taskId],
+        dimension,
+        severity,
+        cause: d.cause,
+        currentText: d.currentText,
+        proposedChange: d.proposedChange,
+        rationale,
+      })
+    } else {
+      // Merge: keep highest severity, accumulate task IDs and rationales
+      existing.taskIds.push(d.taskId)
+      if (SEVERITY_RANK[severity] > SEVERITY_RANK[existing.severity]) {
+        existing.severity = severity
+        existing.dimension = dimension
+        existing.proposedChange = d.proposedChange
+      }
+      if (rationale && !existing.rationale.includes(rationale)) {
+        existing.rationale += ` Also: ${rationale}`
+      }
+    }
   }
 
-  const proposals = Object.entries(byFile).map(([file, diags]) => ({
+  const proposals = Object.entries(byFile).map(([file, changeMap]) => ({
     skillFile: file,
-    changes: diags.map((d) => ({
-      taskId: d.taskId,
-      dimension: d.feedbackItem?.dimension,
-      severity: d.feedbackItem?.severity,
-      cause: d.cause,
-      currentText: d.currentText,
-      proposedChange: d.proposedChange,
-      rationale: (d as any).rationale ?? "",
+    changes: Array.from(changeMap.values()).map((c) => ({
+      taskIds: c.taskIds,
+      dimension: c.dimension,
+      severity: c.severity,
+      cause: c.cause,
+      currentText: c.currentText,
+      proposedChange: c.proposedChange,
+      rationale: c.rationale,
     })),
   }))
 
@@ -340,7 +363,8 @@ function writeSummary(tasks: any[], results: EvalResult[], proposals: any[]) {
       `\n${p.skillFile} (${p.changes.length} change${p.changes.length === 1 ? "" : "s"})`,
     )
     for (const c of p.changes) {
-      lines.push(`  [${c.severity?.toUpperCase()} ${c.dimension}] ${c.rationale}`)
+      const taskLabel = c.taskIds ? c.taskIds.join(", ") : (c as any).taskId ?? ""
+      lines.push(`  [${c.severity?.toUpperCase()} ${c.dimension}] (${taskLabel}) ${c.rationale}`)
     }
   }
 
@@ -364,27 +388,30 @@ async function main() {
   const skillContents = loadSkillContent()
   log(`Loaded ${Object.keys(skillContents).length} skill files\n`)
 
-  const allEvalResults: EvalResult[] = []
-  const allDiagnoses: Diagnosis[] = []
+  const results = await Promise.all(
+    tasks.map(async (task) => {
+      log(`\n── ${task.id} ──────────────────────────────`)
 
-  for (const task of tasks) {
-    log(`\n── ${task.id} ──────────────────────────────`)
+      log("Step 1: Generate")
+      const composition = await generate(task, skillContents)
 
-    log("Step 1: Generate")
-    const composition = await generate(task, skillContents)
+      log("Step 2: Evaluate")
+      const evalResult = await evaluate(task, composition)
 
-    log("Step 2: Evaluate")
-    const evalResult = await evaluate(task, composition)
-    allEvalResults.push(evalResult)
+      let diagnoses: Diagnosis[] = []
+      if (!task.held_out) {
+        log("Step 3: Diagnose")
+        diagnoses = await diagnose(task, evalResult, skillContents)
+      } else {
+        log("Step 3: Diagnose [skipped — held-out task]")
+      }
 
-    if (!task.held_out) {
-      log("Step 3: Diagnose")
-      const diagnoses = await diagnose(task, evalResult, skillContents)
-      allDiagnoses.push(...diagnoses)
-    } else {
-      log("Step 3: Diagnose [skipped — held-out task]")
-    }
-  }
+      return { evalResult, diagnoses }
+    }),
+  )
+
+  const allEvalResults = results.map((r) => r.evalResult)
+  const allDiagnoses   = results.flatMap((r) => r.diagnoses)
 
   log("\n── Consolidating proposals ──────────────────")
   const proposals = consolidateProposals(allDiagnoses)
