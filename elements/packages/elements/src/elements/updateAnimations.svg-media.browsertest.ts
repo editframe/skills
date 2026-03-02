@@ -46,11 +46,10 @@ beforeEach(() => {
 // ============================================================================
 
 describe("EFTimegroup - SVG SMIL autoplay prevention", () => {
-  test("SVG animations are paused immediately when ef-timegroup connects to DOM", async () => {
+  function makeSvgWithAnimation(): SVGSVGElement {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("width", "100");
     svg.setAttribute("height", "100");
-
     const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     const animate = document.createElementNS("http://www.w3.org/2000/svg", "animate");
     animate.setAttribute("attributeName", "x");
@@ -60,17 +59,39 @@ describe("EFTimegroup - SVG SMIL autoplay prevention", () => {
     animate.setAttribute("repeatCount", "indefinite");
     rect.appendChild(animate);
     svg.appendChild(rect);
+    return svg;
+  }
+
+  test("SVG animations are paused immediately when ef-timegroup connects to DOM", () => {
+    const svg = makeSvgWithAnimation();
 
     const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
     timegroup.setAttribute("mode", "fixed");
     timegroup.setAttribute("duration", "2000ms");
     timegroup.appendChild(svg);
 
-    // Append to DOM — this triggers connectedCallback
     document.body.appendChild(timegroup);
 
-    // No awaiting, no updateAnimations call — SVG must already be paused
     assert.isTrue(svg.animationsPaused(), "SVG SMIL should be paused immediately on connect, before any frame fires");
+  });
+
+  test("SVG animations are paused when inserted into a connected ef-timegroup", async () => {
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.setAttribute("mode", "fixed");
+    timegroup.setAttribute("duration", "2000ms");
+    document.body.appendChild(timegroup);
+
+    // Wait for Lit's first update so the shadow slot and slotchange listener exist
+    await timegroup.updateComplete;
+
+    const svg = makeSvgWithAnimation();
+    timegroup.appendChild(svg);
+
+    // Wait for slotchange to fire (microtask) and then one more microtask for any
+    // handler work, plus one rAF to ensure no paint sneaks through before the pause
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+    assert.isTrue(svg.animationsPaused(), "SVG SMIL should be paused before the first paint after insertion");
   });
 });
 
