@@ -88,16 +88,21 @@ ${change.proposedChange}
 
 Make only this specific, minimal change. Do not rewrite surrounding content.`
 
-  const result = spawnSync(
-    "opencode",
-    ["run", "--model", "anthropic/claude-opus-4-5", "--dir", ROOT_DIR, applyPrompt],
-    { encoding: "utf8", stdio: ["inherit", "inherit", "inherit"] },
-  )
+  // Check if opencode is available before attempting to use it
+  const whichResult = spawnSync("which", ["opencode"], { encoding: "utf8" })
+  const opencodeAvailable = whichResult.status === 0
 
-  if (result.status === 0) return true
+  if (opencodeAvailable) {
+    const result = spawnSync(
+      "opencode",
+      ["run", "--model", "anthropic/claude-opus-4-5", "--dir", ROOT_DIR, applyPrompt],
+      { encoding: "utf8", stdio: ["inherit", "inherit", "inherit"], timeout: 120_000 },
+    )
+    if (result.status === 0) return true
+  }
 
   // Fallback: direct text substitution when opencode is unavailable or fails
-  console.log("  [fallback] opencode failed — attempting direct text substitution")
+  console.log("  [fallback] applying via direct text substitution")
 
   if (!change.currentText) {
     // No anchor text — append proposed change to end of file

@@ -58,6 +58,8 @@ Before any analysis, answer these four questions. Generic answers are disqualify
 
 The answer must be something structural or foundational — a decision, a relationship, a material fact about how the brand works or what it is. Not a marketing position (which can be copied) but a truth (which cannot).
 
+**This answer must directly appear in the composition.** If your answer is "Glossier launched from Into The Gloss blog and user submissions," then Into The Gloss must be named or shown. If your answer is "they use real customer photos," specific customer attributions must appear. A philosophical reference to the truth without visual evidence is not specific enough.
+
 Not specific enough:
 - "They focus on quality and customer service" (every brand claims this)
 - "They're authentic and community-driven" (every DTC brand says this)
@@ -182,6 +184,19 @@ Extract from the loaded website **and any other material you can access** (socia
 - Visual motifs: What recurring shapes, textures, or compositional choices appear across materials? (Soft grain on every photo? Hard diagonal compositions? Close-up skin texture? Abstract geometric patterns?)
 - Photography style: Do people appear? If so, how — models or real people, posed or candid, diverse or singular aesthetic? This is a primary brand signal.
 
+**Brand-Specific Visual Assets (MANDATORY):**
+Before proceeding to creative brief, identify and note:
+- The brand's logo form and any signature visual element
+- 3-5 product shots or hero images from the website
+- Any proprietary visual elements (icons, patterns, illustrations unique to this brand)
+
+These must appear in the final composition. Generic visual representations (mountain silhouettes for outdoor brands, abstract lines for tech brands, gradient backgrounds) are prohibited unless they are literally the brand's own design language extracted from their materials. If brand-specific assets are limited, use:
+- The actual logo (animated or static)
+- Color-blocked backgrounds using exact brand hex codes
+- Real screenshots or footage from the brand's existing video content
+
+Canvas animations must depict brand-specific elements (the actual logo shape, actual product silhouettes, actual UI patterns) — not category-generic abstractions.
+
 **Voice & Messaging:**
 - Tone (friendly, authoritative, urgent, intimate, clinical, irreverent)
 - Target audience: demographic signals from photography, copy register, and social content
@@ -249,6 +264,13 @@ A real differentiator is something that, if true about this brand, would be surp
 3. **Asset Inventory**: What visual assets are available? What can you create with Canvas API?
 4. **Text Ratio**: Estimate % of screen time that's primarily text. If >50%, justify why this needs to be video.
 
+Move the Visual Metaphor Quick Reference table from Phase 2.5 into Phase 3: Scene Planning, and add this enforcement rule immediately before the scene template:
+
+**Scene 1 specificity gate**: The opening scene is most vulnerable to category-generic visuals. Before writing Scene 1, answer: "What would a competitor's video show for this same concept?" If your planned visual could appear in that competitor's video unchanged, it is not specific enough. For product-demos specifically:
+- Do NOT open with abstract 'chaos' visualizations (tangled lines, scattered nodes, etc.)
+- DO open with a recognizable pain point from this product's actual competitive landscape (e.g., for Linear: screenshot-style mockups of Jira's notification hell, Asana's nested project chaos, or the Slack-Jira-Notion tab-switching dance)
+- The first 3 seconds must show something only THIS brand's users would recognize as their specific problem
+
 **Visual Metaphor Quick Reference:**
 
 These are starting points, not answers. The right-hand column is a generic default — replace it with something specific to this brand before using it.
@@ -256,6 +278,7 @@ These are starting points, not answers. The right-hand column is a generic defau
 | Concept | Generic default (avoid) | What to find instead |
 |---------|------------------------|----------------------|
 | Chaos/Complexity | Tangled bezier curves | What does chaos *look like for this product's users specifically*? |
+| Collaboration | Converging dots, connecting lines | What does collaboration look like *in this product's actual interface*? (e.g., Figma: named cursors on a shared canvas) |
 | Order/Simplicity | Grid layouts, organized patterns | What does resolution look like *in this product's own UI or workflow*? |
 | Scale | Grid multiplication | What unit does this brand scale — requests, users, lines of code? Show that unit. |
 | Speed | Motion blur, streaking lines | What is the before/after latency that this brand eliminates? Show the gap. |
@@ -287,6 +310,7 @@ For each scene, use this template:
 Scene [N]: [Name] ([start]s-[end]s)
 - VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]
 - VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]
+- STATE CHANGE MECHANISM: [What specific technique creates the shift? Options: contrast (before/after, with/without), surprise (expectation subverted), scale revelation (one thing revealed as many), effort elimination (50 lines → 1 line). If the mechanism is 'demonstration' or 'showing how it works', the scene is informational, not transformational — rewrite it.]
 - PRIMARY VISUAL: [Main visual element - NOT just text]
 - MOTION/ANIMATION: [How it moves, what animates, specific CSS or frameTask approach]
 - VISUAL METAPHOR: [What concept this shows visually]
@@ -323,6 +347,12 @@ Scene 2: The Problem (4s-9s)
 
 **Visual Assets:**
 - List each asset: [name] - [type] - [source: website/Canvas API/generate]
+
+**Specificity requirement for assets:**
+- At least one named product must appear (not category — the actual product name from the website)
+- At least one specific brand origin element (founding story detail, named community platform, specific location)
+- User/community content must reference real sources (e.g., "placeholder for @username submission" or "Into The Gloss reader photo") — not generic "real people" claims
+- If the brand has a known origin story (blog, founder story, community), it must be referenced visually, not just philosophically
 
 **Motion Graphics:**
 - Text animations (style, timing, specific CSS animation or `split` attribute)
