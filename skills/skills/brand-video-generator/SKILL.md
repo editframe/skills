@@ -96,6 +96,10 @@ This is a feeling, not a fact. "Informed" is not a feeling. Name the specific em
 
 The brand truth must determine the video's **structure** — not just its content. If the truth could be dropped into any template without changing the template, it isn't constraining anything.
 
+**Structure means mechanics, not just narrative order.** If the brand truth is about speed, the video's transitions and timing must feel fast — not just claim fastness in text. If the truth is about keyboard-first interaction, actual keystrokes should trigger scene changes or UI reveals. If the truth is about simplicity through removal, scenes should subtract elements rather than add them. The formal constraint must be visible in HOW the video moves, not just WHAT it shows.
+
+**Anti-pattern:** Stating 'keyboard-first speed' as the POV but using standard crossfades and mouse-hover UI demonstrations. The form contradicts the claim.
+
 **Single-argument rule:** The video may only make ONE argument. List all potential value propositions from Phase 1, then DELETE all but one. The surviving argument must be the one that follows directly from answer #1. If you find yourself listing multiple benefits (speed AND simplicity AND power), you have not committed to a point of view.
 
 **Form-follows-argument test:** State your single argument as: "This video argues that [X] by showing [Y]." If [Y] could illustrate a different argument, the form is not embodying the argument. Rewrite until the visual approach is inseparable from the claim.
@@ -284,13 +288,24 @@ The test: Does the viewer feel differently 3 seconds in than at frame 1? If the 
 **Product-demo specificity requirement (MANDATORY for product-demo videos):**
 
 For `product-demo` video type, every scene MUST include at least one of:
-- Actual product UI elements (screenshots, styled HTML representations of the real interface)
-- Product-specific terminology from the website (feature names, menu items, keyboard shortcuts)
-- Interface patterns unique to this product (Linear's command palette Cmd+K, Figma's multiplayer cursors, Stripe's dashboard structure)
+- Actual product UI elements that NO competitor has (not generic patterns like command palettes or kanban boards)
+- Product-specific CONCEPTS from the website — not just UI chrome but the mental models (Linear: Cycles, Roadmaps, Git-linked issues; Figma: Components with variants, Auto Layout; Stripe: unified Charge object across products)
+- Named features or views that exist only in this product
+
+**The competitor substitution test:** If you replaced the brand name and colors, could this scene appear in Asana, Notion, Height, or Shortcut unchanged? If yes, the scene fails. A command palette is generic. A command palette that shows 'Move to Cycle' or 'Link GitHub PR' is Linear-specific.
+
+Before writing any scene, list 3 concepts from the analyzed website that competitors genuinely lack — not just UI patterns they all share.
 
 Generic productivity concepts (kanban boards, unified workspace, real-time collaboration) are PROHIBITED unless shown through the product's actual interface. The test: could this visual appear in Asana, Monday, or Jira unchanged? If yes, it fails.
 
-Before writing any scene for a product-demo, list 3 specific UI elements or feature names from the analyzed website that will appear in that scene.
+Before writing any scene for a product-demo, list 3 concepts from the analyzed website that competitors genuinely lack — not just UI patterns they all share.
+
+**Human representation requirement:** When the brand truth involves real people, community, or faces (Phase 0 Q1), abstract human representations (emoji, stick figures, silhouettes, generic avatars) are PROHIBITED. Use:
+- `ef-image` with actual photography (user-submitted content, brand photography, or stock that matches the brand's photographic style)
+- `ef-video` clips showing real faces
+- At minimum, stylized portraits that show individual human features (skin, expressions, unique characteristics)
+
+The test: would a viewer looking at this scene say "those are real people" or "those are placeholders for people"? If the latter, the visual fails the brand truth. Community-built brands cannot be represented by abstractions of humans.
 
 | Concept | Generic default (avoid) | What to find instead |
 |---------|------------------------|----------------------|
@@ -329,16 +344,20 @@ Scene [N]: [Name] ([start]s-[end]s)
 - VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]
 - STATE DISTINCTNESS CHECK: [Name one emotion/state from this scene that was NOT available in any previous scene. If you cannot name one, this scene is redundant — either cut it or redesign it to produce a unique state.]
 - STATE CHANGE MECHANISM: [What specific technique creates the shift? Options: contrast (before/after, with/without), surprise (expectation subverted), scale revelation (one thing revealed as many), effort elimination (50 lines → 1 line). If the mechanism is 'demonstration' or 'showing how it works', the scene is informational, not transformational — rewrite it.]
+- PROOF REQUIREMENT: [If this scene makes a claim (monetary, impact, or structural), what concrete evidence is shown? Claims require: specific numbers, visual documentation, or named sources. A claim stated without visible proof fails the viewer-state shift — skepticism cannot convert to belief through assertion alone. List the specific proof element that will appear on screen.]
 - PRIMARY VISUAL: [Main visual element - NOT just text]
 - MOTION/ANIMATION: [How it moves, what animates, specific CSS or frameTask approach]
 - VISUAL METAPHOR: [What concept this shows visually]
 - Text: [Minimal - only if essential]
 - JUSTIFICATION: [Why does this scene exist? What would be lost without it?]
+- REDUNDANCY CHECK: [List every text element in this scene. Do any two communicate the same idea? If yes, cut one. The visual should carry meaning that text reinforces, not duplicates.]
 ```
 
 **The viewer-state test**: If VIEWER STATE AT START and VIEWER STATE AT END are the same, the scene is not doing work. Cut it or change it until it does.
 
-**Adjacent-scene emotional register test**: No two consecutive scenes may target the same emotional register (e.g., both aiming for 'confidence' or 'trust'). After writing each scene's VIEWER STATE AT END, check: does it name the same feeling as the previous scene's end state? If so, one scene is redundant OR one must shift to a different register (e.g., Scene 4 ends with 'confidence in capability' → Scene 5 must move to 'curiosity about unexpected applications' or 'urgency to act', not 'deeper confidence').
+**Adjacent-scene emotional register test**: No two consecutive scenes may target the same emotional register (e.g., both aiming for 'confidence' or 'trust'). After writing each scene's VIEWER STATE AT END, check: does it name the same feeling as the previous scene's end state? If so, one scene is redundant OR one must shift to a different register.
+
+**Feature sequence must build, not enumerate**: When showing multiple product features, they must form a progressive revelation — each feature building on what the previous established. NOT: Auth → Edge Functions → Ecosystem (parallel list). YES: Auth establishes security → Edge Functions show what you can now build because of that security → Ecosystem shows what becomes possible when you combine them. The test: can you reorder the feature scenes without loss? If yes, they are a list, not an argument. Restructure so each scene's impact depends on the previous scene having landed.
 
 **Example:**
 
@@ -424,6 +443,10 @@ After all scenes, add:
 
 ## Completeness Check (before finalizing)
 
+- **Output integrity**: If the composition code would exceed output limits, explicitly state 'Composition continues in next response' and split cleanly at a scene boundary. Never output partial JavaScript functions or unclosed HTML tags.
+- **Scene count verification**: Count the scenes in your plan. Count the scenes in your composition. They must match.
+- **Duration verification**: Sum the durations of all scenes. The total must match the target duration from the brief.
+- **Truncation check**: The composition must end with a complete closing tag structure (`</ef-timegroup>`, `</script>`, `</style>`). If your output is approaching length limits, prioritize completing all scenes over adding detail to early scenes.
 - Every scene in the plan is represented in the HTML
 - No canvas element is present without a corresponding `addFrameTask` script
 - The last scene is fully written — it does not trail off mid-sentence

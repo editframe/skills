@@ -128,6 +128,13 @@ Still photography becomes temporal through slow motion. A 0.8% scale change per 
 
 ## Procedural Canvas (frameTask)
 
+**CRITICAL: A `<canvas>` element without a complete `addFrameTask` script is a broken composition that renders nothing.** Before including any canvas element:
+1. Write the COMPLETE script first, including the full `addFrameTask` callback
+2. Test that the script closes all braces and has no truncation
+3. If you cannot complete the script, use CSS animations instead
+
+Incomplete scripts (truncated variable names, missing closing braces, commented placeholders) are worse than no script — they produce a blank frame where motion was promised.
+
 For concepts that can't be shown with video — data, systems, processes, abstractions — `addFrameTask` gives access to the canvas for per-frame generative graphics. The animation is a pure function of time, so it's fully scrubbable and renderable.
 
 **The motion must demonstrate something true about this product that is false about competitors.** Ask: what unit does this product operate on? Show that unit moving. These examples illustrate the thinking pattern — apply the same logic to the brand you're working with:
@@ -199,8 +206,6 @@ If you could swap the brand name and the canvas animation would still make sense
 ```
 
 **What motion adds:** The particle system is the argument. The concept being communicated — energy, activity, distributed processing, whatever — is visible in the form of the animation, not just stated in text over a stock video.
-
-**A `<canvas>` element with no `<script>` is a broken composition.** If you include a canvas, you must include the `addFrameTask` implementation. If you are not going to write the script, use a CSS animation instead.
 
 ---
 
