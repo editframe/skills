@@ -23,6 +23,17 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# The telecine sync commits and deploys HEAD:telecine to production.
+# Running from any branch other than main risks deploying an incomplete
+# telecine tree that is missing changes already on main.
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$CURRENT_BRANCH" != "main" ]; then
+  echo "error: push-skills must be run from main (current branch: $CURRENT_BRANCH)"
+  echo "The telecine sync deploys HEAD:telecine to production -- running from a"
+  echo "feature branch will overwrite production with an incomplete tree."
+  exit 1
+fi
+
 BUILD_DIR="$PROJECT_ROOT/skills/skills-generated"
 
 # Clean and generate LLM-optimized skills
