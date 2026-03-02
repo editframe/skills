@@ -185,17 +185,16 @@ Extract from the loaded website **and any other material you can access** (socia
 - Photography style: Do people appear? If so, how — models or real people, posed or candid, diverse or singular aesthetic? This is a primary brand signal.
 
 **Brand-Specific Visual Assets (MANDATORY):**
-Before proceeding to creative brief, identify and note:
-- The brand's logo form and any signature visual element
-- 3-5 product shots or hero images from the website
-- Any proprietary visual elements (icons, patterns, illustrations unique to this brand)
 
-These must appear in the final composition. Generic visual representations (mountain silhouettes for outdoor brands, abstract lines for tech brands, gradient backgrounds) are prohibited unless they are literally the brand's own design language extracted from their materials. If brand-specific assets are limited, use:
-- The actual logo (animated or static)
-- Color-blocked backgrounds using exact brand hex codes
-- Real screenshots or footage from the brand's existing video content
+*If browser tools are available:* Download the brand logo, 3-5 product shots, and any proprietary visual elements. These must be used directly in the composition — no substitutes.
 
-Canvas animations must depict brand-specific elements (the actual logo shape, actual product silhouettes, actual UI patterns) — not category-generic abstractions.
+*If working from training knowledge only (no live browser):* Do not fabricate assets or use abstract placeholders. Instead:
+- Use exact brand hex codes for all backgrounds and color elements
+- Describe the brand's known visual vocabulary in CSS/canvas (e.g., Glossier's milky white + blush pink palette, their serifed wordmark, minimal product photography style)
+- Reference named brand artifacts in text elements (specific product names, campaign slogans, community channels the brand is known for)
+- Canvas animations must reference brand-specific forms — the actual logo geometry, known product shapes, known UI patterns — not generic category shapes
+
+In both cases: generic visual representations (mountain silhouettes for outdoor brands, abstract dots for tech brands, generic gradients) are prohibited unless they are literally the brand's own design language. The test: could this element appear unchanged in a competitor's video? If yes, replace it.
 
 **Voice & Messaging:**
 - Tone (friendly, authoritative, urgent, intimate, clinical, irreverent)
