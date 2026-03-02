@@ -11,7 +11,6 @@ import { createReadStream } from "node:fs";
 import path from "node:path";
 
 import express from "express";
-import cors from "cors";
 import mime from "mime-types";
 import morgan from "morgan";
 import { trace } from "@opentelemetry/api";
@@ -22,48 +21,33 @@ import {
   storageProvider,
 } from "@/util/storageProvider.server";
 import { createRequestHandler } from "@react-router/express";
-
-const ALLOWED_ORIGINS = [
-  "https://editframe.dev",
-  "https://www.editframe.dev",
-  "https://editframe.com",
-  "https://www.editframe.com",
-  "http://localhost:3000",
-  "http://localhost:3001",
-];
+import { isOriginAllowed } from "./cors";
 
 export const app = express();
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin) {
-        // Allow requests with no origin (e.g., mobile apps, Postman)
-        callback(null, true);
-        return;
-      }
+app.use((req, res, next) => {
+  const origin = req.headers.origin ?? null;
+  const path = req.path;
 
-      // Check exact matches
-      if (ALLOWED_ORIGINS.includes(origin)) {
-        callback(null, true);
-        return;
-      }
+  if (!isOriginAllowed(origin, path)) {
+    res.status(403).end();
+    return;
+  }
 
-      // In development, allow any *.localhost domain and Docker-internal origins
-      if (
-        process.env.NODE_ENV === "development" &&
-        (origin.match(/^https?:\/\/[^:]+\.localhost(:\d+)?$/) ||
-          origin.match(/^https?:\/\/web(:\d+)?$/))
-      ) {
-        callback(null, true);
-        return;
-      }
+  if (origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  }
 
-      callback(new Error("Not allowed by CORS"));
-    },
-    credentials: true,
-  }),
-);
+  if (req.method === "OPTIONS") {
+    res.setHeader("Access-Control-Allow-Methods", "GET,HEAD,PUT,PATCH,POST,DELETE");
+    res.setHeader("Access-Control-Allow-Headers", req.headers["access-control-request-headers"] ?? "");
+    res.status(204).end();
+    return;
+  }
+
+  next();
+});
 
 morgan.token("host", (req) => req.get("host") || "");
 app.use(
