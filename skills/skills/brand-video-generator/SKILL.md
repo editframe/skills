@@ -203,6 +203,8 @@ Extract from the loaded website **and any other material you can access** (socia
 - Describe the brand's known visual vocabulary in CSS/canvas (e.g., Glossier's milky white + blush pink palette, their serifed wordmark, minimal product photography style)
 - Reference named brand artifacts in text elements (specific product names, campaign slogans, community channels the brand is known for)
 - Canvas animations must reference brand-specific forms — the actual logo geometry, known product shapes, known UI patterns — not generic category shapes
+- **Named visual marks are mandatory**: If the brand has a recognizable logo silhouette (Patagonia's Fitzroy peak, Apple's apple, Nike's swoosh), that silhouette must appear as actual geometry in canvas animations or as an SVG/image element. Generic shapes (circles, rectangles, abstract curves) are never acceptable when the brand has a known mark.
+- **Sub-brand programs have their own identity**: If featuring a specific program (e.g., Patagonia's Worn Wear, Apple's Trade In), research and use that program's specific visual marks, not the parent brand's general identity.
 
 In both cases: generic visual representations (mountain silhouettes for outdoor brands, abstract dots for tech brands, generic gradients) are prohibited unless they are literally the brand's own design language. The test: could this element appear unchanged in a competitor's video? If yes, replace it.
 
@@ -292,6 +294,13 @@ For `product-demo` video type, every scene MUST include at least one of:
 - Product-specific CONCEPTS from the website — not just UI chrome but the mental models (Linear: Cycles, Roadmaps, Git-linked issues; Figma: Components with variants, Auto Layout; Stripe: unified Charge object across products)
 - Named features or views that exist only in this product
 
+**For developer/API products specifically:** Generic product labels ('Secure payments', 'Intelligent risk') are PROHIBITED. Instead show:
+- Actual code snippets with the product's real API syntax (e.g., `stripe.charges.create({amount: 2000, currency: 'usd'})`)
+- The product's recognizable UI components (Stripe's Checkout modal, Dashboard graphs, Radar rules interface)
+- Real terminal output, JSON responses, or SDK patterns that developers would recognize
+
+The test: would a developer looking at this scene immediately know it's [this product] and not a competitor's API? If not, the visual fails.
+
 **The competitor substitution test:** If you replaced the brand name and colors, could this scene appear in Asana, Notion, Height, or Shortcut unchanged? If yes, the scene fails. A command palette is generic. A command palette that shows 'Move to Cycle' or 'Link GitHub PR' is Linear-specific.
 
 Before writing any scene, list 3 concepts from the analyzed website that competitors genuinely lack — not just UI patterns they all share.
@@ -300,12 +309,13 @@ Generic productivity concepts (kanban boards, unified workspace, real-time colla
 
 Before writing any scene for a product-demo, list 3 concepts from the analyzed website that competitors genuinely lack — not just UI patterns they all share.
 
-**Human representation requirement:** When the brand truth involves real people, community, or faces (Phase 0 Q1), abstract human representations (emoji, stick figures, silhouettes, generic avatars) are PROHIBITED. Use:
+**Human representation requirement:** When the brand truth involves real people, community, or faces (Phase 0 Q1), abstract human representations (emoji, stick figures, silhouettes, generic avatars, **colored circles, geometric shapes representing faces**) are PROHIBITED. Use:
 - `ef-image` with actual photography (user-submitted content, brand photography, or stock that matches the brand's photographic style)
 - `ef-video` clips showing real faces
 - At minimum, stylized portraits that show individual human features (skin, expressions, unique characteristics)
+- **For canvas animations: texture, skin tones, facial feature outlines, or recognizable product shapes—never abstract geometric primitives claiming to represent humans**
 
-The test: would a viewer looking at this scene say "those are real people" or "those are placeholders for people"? If the latter, the visual fails the brand truth. Community-built brands cannot be represented by abstractions of humans.
+The test: would a viewer looking at this scene say "those are real people" or "those are placeholders for people"? If the latter, the visual fails the brand truth. Community-built brands cannot be represented by abstractions of humans. **A pink circle is not a face. A 'skin tone' gradient is not skin. The representation must contain recognizable human elements or product-specific visual language.**
 
 | Concept | Generic default (avoid) | What to find instead |
 |---------|------------------------|----------------------|
@@ -344,6 +354,7 @@ Scene [N]: [Name] ([start]s-[end]s)
 - VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]
 - STATE DISTINCTNESS CHECK: [Name one emotion/state from this scene that was NOT available in any previous scene. If you cannot name one, this scene is redundant — either cut it or redesign it to produce a unique state.]
 - STATE CHANGE MECHANISM: [What specific technique creates the shift? Options: contrast (before/after, with/without), surprise (expectation subverted), scale revelation (one thing revealed as many), effort elimination (50 lines → 1 line). If the mechanism is 'demonstration' or 'showing how it works', the scene is informational, not transformational — rewrite it.]
+- COMPETITOR DIFFERENTIATION CHECK (Scene 1 only): [List the specific competitor pain points being shown. If the visual could appear in a competitor's own marketing unchanged, rewrite. Name the exact UI elements, workflow patterns, or friction points that are unique to the problem THIS product solves. Generic category concepts fail this check — show the specific complexity that the product deliberately removes.]
 - PROOF REQUIREMENT: [If this scene makes a claim (monetary, impact, or structural), what concrete evidence is shown? Claims require: specific numbers, visual documentation, or named sources. A claim stated without visible proof fails the viewer-state shift — skepticism cannot convert to belief through assertion alone. List the specific proof element that will appear on screen.]
 - PRIMARY VISUAL: [Main visual element - NOT just text]
 - MOTION/ANIMATION: [How it moves, what animates, specific CSS or frameTask approach]
@@ -356,6 +367,13 @@ Scene [N]: [Name] ([start]s-[end]s)
 **The viewer-state test**: If VIEWER STATE AT START and VIEWER STATE AT END are the same, the scene is not doing work. Cut it or change it until it does.
 
 **Adjacent-scene emotional register test**: No two consecutive scenes may target the same emotional register (e.g., both aiming for 'confidence' or 'trust'). After writing each scene's VIEWER STATE AT END, check: does it name the same feeling as the previous scene's end state? If so, one scene is redundant OR one must shift to a different register.
+
+**Structural repetition test (MANDATORY for sequences of 3+ similar elements):** If you have three or more scenes with the same visual structure (e.g., all showing a shape + text label), they MUST differ in emotional function:
+- Scene N: Establish (viewer learns the pattern)
+- Scene N+1: Complicate or contrast (introduce tension, doubt, or variation)
+- Scene N+2: Resolve or transform (payoff that justifies the sequence)
+
+Identical visual structure with identical emotional function = redundant. Compress to one scene or differentiate their emotional work.
 
 **Feature sequence must build, not enumerate**: When showing multiple product features, they must form a progressive revelation — each feature building on what the previous established. NOT: Auth → Edge Functions → Ecosystem (parallel list). YES: Auth establishes security → Edge Functions show what you can now build because of that security → Ecosystem shows what becomes possible when you combine them. The test: can you reorder the feature scenes without loss? If yes, they are a list, not an argument. Restructure so each scene's impact depends on the previous scene having landed.
 
@@ -376,9 +394,20 @@ Scene 2: The Problem (4s-9s)
 
 **Scene budget**: `floor(duration_seconds / 10)` is your maximum scene count. A 30s video gets 3 scenes. A 60s video gets 6. Start at the minimum and add only if the viewer-state arc requires it — not because you have things to say.
 
-**Scene form variation**: No two adjacent scenes may use the same structural form (e.g., two consecutive scenes that are both "canvas animation + text overlay" or both "bullet list + headline"). Each scene should make a different visual move.
+**Duration-to-content ratio**: No scene should exceed 15% of total duration unless it contains continuous visual motion (canvas animation, video footage, or complex CSS sequences). A 7-second scene in a 30-second video (23%) that contains only two text strings is a structural failure. Either:
+- Fill the duration with motion that earns it
+- Cut the scene entirely and distribute its content elsewhere
+- Merge it with the preceding scene as an overlay
+
+CTA scenes are especially vulnerable to this failure. A CTA does not need its own scene if the previous scene can hold the CTA as a text overlay during its final seconds.
+
+**Scene form variation (MANDATORY)**: No two adjacent scenes may use the same structural form (e.g., two consecutive scenes that are both "canvas animation + text overlay" or both "bullet list + headline"). Each scene should make a different visual move.
+
+**Feature consolidation rule**: When multiple product features share the same structural relationship to a core concept (e.g., 'Product X uses the Charge object', 'Product Y uses the Charge object'), they MUST be consolidated into a SINGLE scene showing the relationship visually (e.g., multiple products radiating from or connected to the central concept) rather than repeated as separate scenes with identical structure. Three scenes that each show '[Product] → [Same Benefit]' is a list, not an argument—combine them into one visual that shows the unified architecture.
 
 **Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: "Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?" If the latter, rewrite the scene or cut it. The structural constraint is the whole point — if it's not visible in scene 2, it won't be visible in scene 5 either.
+
+**Claim-vs-form contradiction check (MANDATORY):** If a scene's TEXT claims authenticity, realness, or community, the scene's VISUALS must prove that claim through form. Abstract geometry + text saying 'real skin' is a contradiction—the form (abstraction) contradicts the claim (realness). The test: cover the text. Does the visual alone communicate the claim? If a pink circle doesn't read as 'real skin' without the label, the form is failing the content. Either change the visual to prove the claim (show actual skin texture, real faces, product on real person) or change the claim to match what the visual actually communicates.
 
 ---
 

@@ -148,6 +148,13 @@ For problem/pain scenes specifically:
 - Example (Linear): Show Jira's specific notification overwhelm, the Asana nested-project maze, or the Slack-ping-about-the-Jira-ticket pattern
 - The test: would a user of the OLD workflow immediately recognize this as their specific pain? If the pain could apply to any tool in the category, it's not specific enough.
 
+**For environmental/waste problem scenes:**
+- Do NOT show abstract shapes or particles representing waste
+- DO show recognizable objects being discarded: garment silhouettes with visible textures (fleece, denim, puffer quilting), product shapes the audience owns
+- The visual must create discomfort, not aesthetic abstraction. A beautiful gradient with text saying 'gear ends up here' creates no emotional weight. Show the actual pile, the actual landfill texture, the actual garment being thrown away.
+- Example (Patagonia): Show a recognizable Patagonia jacket silhouette (the distinctive shoulder yoke, the chest pocket placement) crumpled or falling into a heap. The viewer should think 'that's my jacket.'
+- The test: does the viewer feel a pang of recognition/guilt, or do they observe an information graphic? If the latter, the scene fails.
+
 **Anti-pattern:** Drawing category-generic imagery (mountains for outdoor, circuits for tech, leaves for sustainability, tangled lines for 'complexity') instead of brand-specific imagery. The test: could this exact canvas animation appear in a competitor's video without modification? If yes, it fails.
 
 - Stripe (unified object model): the same `charge` object threads through Checkout, Radar, Connect, and Billing → show one object that every system touches simultaneously rather than a pipeline. Speed is generic; the shared object is Stripe's.
@@ -163,6 +170,8 @@ If you could swap the brand name and the canvas animation would still make sense
 
 **When showing chaos or pain, make it viscerally uncomfortable — not aesthetically pleasing.** A beautiful tangle of purple bezier curves communicates "elegant complexity." To communicate "I live in this every day and it's exhausting," the visual needs to be overwhelming: too many elements, too fast, overlapping in a way that makes the eye unable to rest. Chaos animations that look designed signal that the problem is aesthetic, not real.
 
+**CRITICAL: Canvas animations MUST use addFrameTask, never requestAnimationFrame.** The `requestAnimationFrame` API runs on wall-clock time and will not sync with the composition timeline during rendering. All procedural animation must be driven by `ownCurrentTimeMs` from the addFrameTask callback.
+
 ```html
 <ef-timegroup mode="fixed" duration="6s" id="canvas-scene" class="w-[720px] h-[400px] bg-slate-900">
   <canvas id="particles" class="absolute inset-0 size-full"></canvas>
@@ -175,7 +184,8 @@ If you could swap the brand name and the canvas animation would still make sense
   const canvas = document.getElementById('particles');
   const ctx = canvas.getContext('2d');
 
-  tg.addFrameTask((ownCurrentTimeMs, durationMs) => {
+  tg.addFrameTask((info) => {
+    const { ownCurrentTimeMs, durationMs } = info;
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
     const progress = ownCurrentTimeMs / durationMs;
@@ -264,6 +274,32 @@ A continuous background (music, ambient video, or canvas) while foreground conte
 ```
 
 **What motion adds:** The continuous background creates continuity. The foreground entrances and exits create rhythm. Together they produce a sense of a video that lives in one world, not a sequence of separate moments.
+
+---
+
+## Visual Language Consistency
+
+Once you establish a visual technique (canvas animations, a particular motion style, a color treatment), maintain it through the final scene. Reverting to simpler techniques at the end breaks the viewer's engagement at the moment it should peak.
+
+**Anti-pattern:** Three scenes of sophisticated canvas animation followed by a final scene with static text and basic CSS fades. The CTA scene should be a culmination, not a retreat.
+
+**Better:** If scenes 1-3 use orbital particle systems, Scene 4 should show those particles converging into the logo or final message. The motion vocabulary established early must resolve, not disappear.
+
+```html
+<!-- Wrong: Canvas scenes → static text CTA -->
+<ef-timegroup mode="fixed" duration="7s">
+  <ef-text class="text-6xl">Design together</ef-text>  <!-- Breaks visual momentum -->
+</ef-timegroup>
+
+<!-- Right: Canvas animation continues through CTA -->
+<ef-timegroup mode="fixed" duration="7s" id="finale">
+  <canvas id="finale-canvas" class="absolute inset-0"></canvas>
+  <ef-text class="absolute bottom-8 text-4xl">Design together</ef-text>
+</ef-timegroup>
+<script>
+  // Particles from previous scene converge into logo position
+</script>
+```
 
 ---
 
