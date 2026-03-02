@@ -1339,6 +1339,14 @@ export class EFTimegroup
     // and PlaybackController.hostConnected tried to initialize, causing concurrent seeks.
     super.connectedCallback();
 
+    // Immediately pause all SVG SMIL clocks in the subtree.
+    // The SMIL clock starts as soon as an SVG enters a document, before any
+    // frame loop fires. Pausing here prevents visible autoplay between
+    // connectedCallback and the first updateAnimations call.
+    for (const svg of this.querySelectorAll("svg")) {
+      svg.pauseAnimations();
+    }
+
     // Skip re-initialization when being moved for canvas preview capture.
     // EFTemporal.connectedCallback (super) already guards its own logic;
     // we guard the EFTimegroup-specific parts here (initializer, child

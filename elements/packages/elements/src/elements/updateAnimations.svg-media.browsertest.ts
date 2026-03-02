@@ -42,6 +42,39 @@ beforeEach(() => {
 });
 
 // ============================================================================
+// SVG SMIL — eager pause on connect
+// ============================================================================
+
+describe("EFTimegroup - SVG SMIL autoplay prevention", () => {
+  test("SVG animations are paused immediately when ef-timegroup connects to DOM", async () => {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("width", "100");
+    svg.setAttribute("height", "100");
+
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    const animate = document.createElementNS("http://www.w3.org/2000/svg", "animate");
+    animate.setAttribute("attributeName", "x");
+    animate.setAttribute("from", "0");
+    animate.setAttribute("to", "100");
+    animate.setAttribute("dur", "2s");
+    animate.setAttribute("repeatCount", "indefinite");
+    rect.appendChild(animate);
+    svg.appendChild(rect);
+
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.setAttribute("mode", "fixed");
+    timegroup.setAttribute("duration", "2000ms");
+    timegroup.appendChild(svg);
+
+    // Append to DOM — this triggers connectedCallback
+    document.body.appendChild(timegroup);
+
+    // No awaiting, no updateAnimations call — SVG must already be paused
+    assert.isTrue(svg.animationsPaused(), "SVG SMIL should be paused immediately on connect, before any frame fires");
+  });
+});
+
+// ============================================================================
 // SVG SMIL
 // ============================================================================
 
