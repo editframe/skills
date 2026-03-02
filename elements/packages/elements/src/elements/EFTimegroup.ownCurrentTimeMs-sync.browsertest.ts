@@ -163,7 +163,6 @@ describe("ownCurrentTimeMs sync — FRAMEGEN_BRIDGE (headless rendering)", () =>
   });
 
   afterEach(() => {
-    // @ts-expect-error
     delete window.FRAMEGEN_BRIDGE;
   });
 
