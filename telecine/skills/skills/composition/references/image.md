@@ -49,6 +49,10 @@ import { Image } from "@editframe/react";
 ```
 <!-- /react-only -->
 
+## Asset Paths
+
+Place files in `src/assets/` and reference them as `/assets/filename`. The dev server serves these directly — do not use bundler imports (`import url from "./photo.jpg?url"`), which will not display in preview or render.
+
 ## Basic Usage
 
 <!-- html-only -->

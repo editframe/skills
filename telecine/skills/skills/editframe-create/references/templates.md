@@ -1,6 +1,6 @@
 ---
 title: Templates
-description: Available Editframe project templates — plain HTML, React, and more — and the file structure each template provides.
+description: Available Editframe project templates — motion-first starters, React, and demo compositions.
 type: reference
 nav:
   parent: "Reference"
@@ -14,6 +14,14 @@ prerequisites: ["getting-started"]
 # Templates
 
 Available templates when running `npm create @editframe`.
+
+## animejs
+
+Anime.js integration demo showing text stagger, timeline animation, WAAPI, and SVG motion paths — all connected to Editframe's composition timeline via `addFrameTask`.
+
+This is the best starting point for animation-first compositions. `addFrameTask` is the mechanism for synchronizing any external animation library with the Editframe render pipeline, so the animation is fully scrubbable and frame-accurate when rendered to video.
+
+**Dependencies:** `@editframe/elements`, `@editframe/cli`, `@editframe/vite-plugin`, `animejs`, `tailwindcss`, `vite`
 
 ## html
 
@@ -55,7 +63,7 @@ my-project/
 
 ## simple-demo
 
-HTML demo with sample assets and CSS animations. Good starting point to see elements in action.
+HTML demo with sample assets and CSS animations. Good for seeing elements in action.
 
 ## card-poetry
 
@@ -64,10 +72,6 @@ HTML demo with card assets (images, audio, captions), waveform visualization, an
 ## react-demo
 
 React version of the card-poetry demo using `@editframe/react` components and the `useTimingInfo` hook.
-
-## animejs
-
-AnimeJS integration demo showing text stagger, timeline animation, WAAPI, and SVG motion paths integrated with Editframe's timeline via `addFrameTask`.
 
 ## Common Structure
 
