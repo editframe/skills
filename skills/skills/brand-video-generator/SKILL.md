@@ -187,21 +187,26 @@ Extract from the loaded website **and any other material you can access** (socia
 
 **After intake, extract:**
 
-**Visual Identity:**
-- Color palette with exact hex codes (from CSS inspection if on website, or from visual estimation of photography)
-- Typography (fonts and personality — clinical, handwritten, geometric, humanist?)
+**Visual Identity (MANDATORY - composition will fail brand test without these):**
+- Color palette with exact hex codes (from CSS inspection). List PRIMARY brand color, SECONDARY color, and ACCENT color separately. These hex codes MUST appear in the final composition's CSS.
+- Typography: font family names AND weight/style variants used. If the brand uses a custom typeface, note it and specify the closest web-safe fallback.
 - Design language — the adjective that describes the brand's visual register (clinical precision, warm grain, maximalist energy, austere minimalism, playful chaos)
+- **Brand-specific UI elements**: List 3+ visual elements that are UNIQUE to this brand (dashboard components, logo geometry, iconography style, button shapes, specific gradient directions). These elements MUST appear in the composition.
+- **Scale/social proof markers**: Extract specific numbers from the website (customers, transactions, volume) that can be displayed. 'Millions of businesses' is better than no number but worse than '3.5 million businesses.'
 - Visual motifs: What recurring shapes, textures, or compositional choices appear across materials? (Soft grain on every photo? Hard diagonal compositions? Close-up skin texture? Abstract geometric patterns?)
 - Photography style: Do people appear? If so, how — models or real people, posed or candid, diverse or singular aesthetic? This is a primary brand signal.
+
+**Composition brand-fit test**: Before finalizing, verify: (1) brand hex codes appear in CSS, (2) at least one brand-specific UI element is rendered, (3) any stated metrics match the website.
 
 **Brand-Specific Visual Assets (MANDATORY):**
 
 *If browser tools are available:* Download the brand logo, 3-5 product shots, and any proprietary visual elements. These must be used directly in the composition — no substitutes.
 
 *If working from training knowledge only (no live browser):* Do not fabricate assets or use abstract placeholders. Instead:
-- Use exact brand hex codes for all backgrounds and color elements
+- Use exact brand hex codes for all backgrounds and color elements — these MUST be sourced from the actual brand's public style guide, logo files, or verifiable documentation. Do not approximate colors based on memory or visual impression. If you cannot verify the exact hex codes, state this explicitly and use only black/white until confirmed. For example, Figma's brand colors are #F24E1E (orange-red), #FF7262 (coral), #A259FF (purple), #1ABCFE (blue), #0ACF83 (green) — but even this must be verified against current brand guidelines before use.
 - Describe the brand's known visual vocabulary in CSS/canvas (e.g., Glossier's milky white + blush pink palette, their serifed wordmark, minimal product photography style)
-- Reference named brand artifacts in text elements (specific product names, campaign slogans, community channels the brand is known for)
+- Reference SPECIFIC NAMED PRODUCTS by name in text and visual elements (e.g., Glossier: 'Cloud Paint in Dusk', 'Boy Brow in Brown', 'Balm Dotcom' — not generic 'blush' or 'brow gel'). Include the brand's actual taglines or campaign copy verbatim.
+- Reference specific community artifacts by name (e.g., 'Into The Gloss', '@glossier submissions') — never use placeholder tokens like '@reader_1' or '@user_name'. Either use a real referenced source or design the scene to not require attribution.
 - Canvas animations must reference brand-specific forms — the actual logo geometry, known product shapes, known UI patterns — not generic category shapes
 - **Named visual marks are mandatory**: If the brand has a recognizable logo silhouette (Patagonia's Fitzroy peak, Apple's apple, Nike's swoosh), that silhouette must appear as actual geometry in canvas animations or as an SVG/image element. Generic shapes (circles, rectangles, abstract curves) are never acceptable when the brand has a known mark.
 - **Sub-brand programs have their own identity**: If featuring a specific program (e.g., Patagonia's Worn Wear, Apple's Trade In), research and use that program's specific visual marks, not the parent brand's general identity.
@@ -282,6 +287,8 @@ A real differentiator is something that, if true about this brand, would be surp
 - A specific contrast that makes the viewer uncomfortable before the brand appears
 - Something the viewer must *react to* before they can be informed
 
+**Duration requirement for problem establishment**: The problem state must be shown long enough for the viewer to *feel* it, not just register it. Minimum 5-8 seconds for any problem/pain scene. A 2-second problem scene followed by 28 seconds of solution means the viewer never experiences the contrast — they're told about it rather than feeling it. The transformation arc requires the 'before' state to be inhabited, not just labeled.
+
 The test: Does the viewer feel differently 3 seconds in than at frame 1? If the answer is 'they now know what the brand believes' — that's information, not state change. State change requires discomfort, recognition, surprise, or tension first. For product-demos specifically:
 - Do NOT open with abstract 'chaos' visualizations (tangled lines, scattered nodes, etc.)
 - DO open with a recognizable pain point from this product's actual competitive landscape (e.g., for Linear: screenshot-style mockups of Jira's notification hell, Asana's nested project chaos, or the Slack-Jira-Notion tab-switching dance)
@@ -309,11 +316,16 @@ Generic productivity concepts (kanban boards, unified workspace, real-time colla
 
 Before writing any scene for a product-demo, list 3 concepts from the analyzed website that competitors genuinely lack — not just UI patterns they all share.
 
-**Human representation requirement:** When the brand truth involves real people, community, or faces (Phase 0 Q1), abstract human representations (emoji, stick figures, silhouettes, generic avatars, **colored circles, geometric shapes representing faces**) are PROHIBITED. Use:
-- `ef-image` with actual photography (user-submitted content, brand photography, or stock that matches the brand's photographic style)
-- `ef-video` clips showing real faces
-- At minimum, stylized portraits that show individual human features (skin, expressions, unique characteristics)
-- **For canvas animations: texture, skin tones, facial feature outlines, or recognizable product shapes—never abstract geometric primitives claiming to represent humans**
+**Human representation requirement:** When the brand truth involves real people, community, or faces (Phase 0 Q1), abstract human representations (emoji, stick figures, silhouettes, generic avatars, **colored circles, geometric shapes representing faces, gradient blobs, soft organic shapes**) are PROHIBITED.
+
+**The visual must prove the claim, not symbolize it.** If the argument is 'real skin,' show texture. If the argument is 'community,' show distinguishable individuals. A pink circle or beige gradient is not a face—it is a placeholder that contradicts the authenticity claim.
+
+**When actual photography is unavailable:**
+- Use canvas to draw recognizable facial features (eyes, nose, mouth outlines) with variation between individuals
+- Or use the product itself as the visual subject (the tube, the swatch on skin-toned canvas) rather than representing people abstractly
+- Or reframe the argument: if you cannot show real people, do not claim community—claim something you can visually prove (minimalism, product design, texture)
+
+**Form-content coherence test:** Cover the text. Does the visual alone communicate 'real people' or 'authenticity'? If a pink circle doesn't read as a person without a label, the form is failing. Redesign until the visual proves the claim without text assistance.
 
 The test: would a viewer looking at this scene say "those are real people" or "those are placeholders for people"? If the latter, the visual fails the brand truth. Community-built brands cannot be represented by abstractions of humans. **A pink circle is not a face. A 'skin tone' gradient is not skin. The representation must contain recognizable human elements or product-specific visual language.**
 
@@ -354,6 +366,7 @@ Scene [N]: [Name] ([start]s-[end]s)
 - VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]
 - STATE DISTINCTNESS CHECK: [Name one emotion/state from this scene that was NOT available in any previous scene. If you cannot name one, this scene is redundant — either cut it or redesign it to produce a unique state.]
 - STATE CHANGE MECHANISM: [What specific technique creates the shift? Options: contrast (before/after, with/without), surprise (expectation subverted), scale revelation (one thing revealed as many), effort elimination (50 lines → 1 line). If the mechanism is 'demonstration' or 'showing how it works', the scene is informational, not transformational — rewrite it.]
+- ESCALATION CHECK (for scenes 2+ only): [How does this scene's emotional intensity or stakes INCREASE from the previous scene? If the answer is 'it doesn't' or 'it's the same level,' either cut this scene or introduce a complication. Flat sequences are prohibited. Options for escalation: higher stakes (what happens if this fails?), larger scale (one → many), deeper consequence (surface → core), contrast introduction (the opposite case). A scene that maintains the same register as the previous scene is redundant.]
 - COMPETITOR DIFFERENTIATION CHECK (Scene 1 only): [List the specific competitor pain points being shown. If the visual could appear in a competitor's own marketing unchanged, rewrite. Name the exact UI elements, workflow patterns, or friction points that are unique to the problem THIS product solves. Generic category concepts fail this check — show the specific complexity that the product deliberately removes.]
 - PROOF REQUIREMENT: [If this scene makes a claim (monetary, impact, or structural), what concrete evidence is shown? Claims require: specific numbers, visual documentation, or named sources. A claim stated without visible proof fails the viewer-state shift — skepticism cannot convert to belief through assertion alone. List the specific proof element that will appear on screen.]
 - PRIMARY VISUAL: [Main visual element - NOT just text]
@@ -368,10 +381,17 @@ Scene [N]: [Name] ([start]s-[end]s)
 
 **Adjacent-scene emotional register test**: No two consecutive scenes may target the same emotional register (e.g., both aiming for 'confidence' or 'trust'). After writing each scene's VIEWER STATE AT END, check: does it name the same feeling as the previous scene's end state? If so, one scene is redundant OR one must shift to a different register.
 
-**Structural repetition test (MANDATORY for sequences of 3+ similar elements):** If you have three or more scenes with the same visual structure (e.g., all showing a shape + text label), they MUST differ in emotional function:
-- Scene N: Establish (viewer learns the pattern)
-- Scene N+1: Complicate or contrast (introduce tension, doubt, or variation)
-- Scene N+2: Resolve or transform (payoff that justifies the sequence)
+**Structural repetition test (MANDATORY for sequences of 3+ similar elements):** If you have three or more scenes—or three or more elements within a single scene—with the same visual structure (e.g., all showing a face transition, all showing a product swatch), they MUST differ in emotional function:
+- Element/Scene 1: Establish (viewer learns the pattern)
+- Element/Scene 2: Complicate or contrast (introduce tension, variation, or progression—e.g., show application, show a different state)
+- Element/Scene 3: Resolve or transform (payoff that justifies the sequence—e.g., show result, show confidence)
+
+**This applies within scenes, not just across scenes.** Three identical face reveals in one scene with no differentiation is the same failure as three identical scenes.
+
+**Progression examples for face sequences:**
+- Before → During → After (skin state changes)
+- Doubt → Discovery → Confidence (emotional state changes)
+- One → Many → Community (scale changes)
 
 Identical visual structure with identical emotional function = redundant. Compress to one scene or differentiate their emotional work.
 
@@ -403,7 +423,11 @@ CTA scenes are especially vulnerable to this failure. A CTA does not need its ow
 
 **Scene form variation (MANDATORY)**: No two adjacent scenes may use the same structural form (e.g., two consecutive scenes that are both "canvas animation + text overlay" or both "bullet list + headline"). Each scene should make a different visual move.
 
-**Feature consolidation rule**: When multiple product features share the same structural relationship to a core concept (e.g., 'Product X uses the Charge object', 'Product Y uses the Charge object'), they MUST be consolidated into a SINGLE scene showing the relationship visually (e.g., multiple products radiating from or connected to the central concept) rather than repeated as separate scenes with identical structure. Three scenes that each show '[Product] → [Same Benefit]' is a list, not an argument—combine them into one visual that shows the unified architecture.
+**Structural repetition prohibition (MANDATORY before scene planning):** Before writing scenes, list all product features/sub-products that share the same relationship to the core concept. If 3+ items share identical structural relationships (e.g., 'Product A uses X', 'Product B uses X', 'Product C uses X'), you are PROHIBITED from creating separate scenes for each. Instead:
+- Create ONE scene showing the unified relationship (all products connected to X simultaneously)
+- Or create a SEQUENCE where each product transforms the previous state (not restates it)
+
+The test: if scenes 2, 3, 4, and 5 could be reordered without the viewer noticing, they are a list, not an argument. Lists get one scene. Arguments get sequences.
 
 **Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: "Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?" If the latter, rewrite the scene or cut it. The structural constraint is the whole point — if it's not visible in scene 2, it won't be visible in scene 5 either.
 
@@ -473,8 +497,7 @@ After all scenes, add:
 ## Completeness Check (before finalizing)
 
 - **Output integrity**: If the composition code would exceed output limits, explicitly state 'Composition continues in next response' and split cleanly at a scene boundary. Never output partial JavaScript functions or unclosed HTML tags.
-- **Scene count verification**: Count the scenes in your plan. Count the scenes in your composition. They must match.
-- **Duration verification**: Sum the durations of all scenes. The total must match the target duration from the brief.
+- **Scene title-to-content verification**: For each scene, verify that the scene title accurately describes what the scene actually shows. If a scene is titled 'Feature X' but contains CTA content, either rename the scene to match its content ('Call to Action') or replace the content to match the title (actually demonstrate Feature X). Mislabeled scenes indicate either unfulfilled intent or copy-paste errors from templates.
 - **Truncation check**: The composition must end with a complete closing tag structure (`</ef-timegroup>`, `</script>`, `</style>`). If your output is approaching length limits, prioritize completing all scenes over adding detail to early scenes.
 - Every scene in the plan is represented in the HTML
 - No canvas element is present without a corresponding `addFrameTask` script

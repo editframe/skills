@@ -172,6 +172,45 @@ If you could swap the brand name and the canvas animation would still make sense
 
 **CRITICAL: Canvas animations MUST use addFrameTask, never requestAnimationFrame.** The `requestAnimationFrame` API runs on wall-clock time and will not sync with the composition timeline during rendering. All procedural animation must be driven by `ownCurrentTimeMs` from the addFrameTask callback.
 
+**Canvas animations must evolve to match narrative phases.** A canvas that looks the same at second 1 and second 25 is not supporting the story — it's decoration. Before writing any canvas `addFrameTask`, map the narrative phases to distinct visual states:
+
+```
+Narrative phase    | Time range | Canvas visual state
+-------------------|------------|--------------------
+Problem/isolation  | 0-8s       | Single element, muted, sparse
+Transition         | 8-12s      | Elements begin appearing
+Resolution/energy  | 12-25s     | Full activity, vibrant
+CTA                | 25-30s     | Resolve to final state
+```
+
+The `addFrameTask` callback receives `ownCurrentTimeMs` — use it to branch visual behavior:
+
+```javascript
+tg.addFrameTask((info) => {
+  const { ownCurrentTimeMs, durationMs } = info;
+  const progress = ownCurrentTimeMs / durationMs;
+
+  // Phase 1: Isolation (0-27%)
+  if (progress < 0.27) {
+    // Draw single cursor, muted colors
+  }
+  // Phase 2: First companion appears (27-40%)
+  else if (progress < 0.40) {
+    // Add second cursor
+  }
+  // Phase 3: Full collaboration (40-83%)
+  else if (progress < 0.83) {
+    // All cursors active, vibrant
+  }
+  // Phase 4: Resolve (83-100%)
+  else {
+    // Settle into final composition
+  }
+});
+```
+
+**Anti-pattern:** A canvas animation where all elements are present from frame 1, contradicting a narrative that claims transformation. If the text says 'you start alone,' the canvas must show alone first.
+
 ```html
 <ef-timegroup mode="fixed" duration="6s" id="canvas-scene" class="w-[720px] h-[400px] bg-slate-900">
   <canvas id="particles" class="absolute inset-0 size-full"></canvas>
