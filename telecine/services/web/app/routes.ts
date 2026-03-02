@@ -171,10 +171,11 @@ const routes = [
     ]),
   ]),
 
+  v1.route("/api/v1/telemetry", "telemetry.ts"),
+
   layout("api/v1/layout.ts", [
     ...v1.prefix("/api/v1", [
     v1.route("/organization", "organization.ts"),
-    v1.route("/telemetry", "telemetry.ts"),
     v1.route("/test_webhook", "test_webhook.ts"),
 
     ...v1.prefix("/image_files", [
