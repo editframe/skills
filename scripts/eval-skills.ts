@@ -56,6 +56,7 @@ const EVALUATOR_MODEL_ID = flag("--evaluator-model")  ?? "anthropic/claude-opus-
 const TASK_FILTER        = flag("--tasks")?.split(",") ?? null
 const SKIP_HELD_OUT      = hasFlag("--skip-held-out")
 const RUN_ID             = flag("--run-id") ?? new Date().toISOString().replace(/[:.]/g, "-")
+const TASKS_FILE         = flag("--tasks-file") ?? join(EVAL_DIR, "tasks.json")
 
 const RUN_DIR       = join(RUNS_DIR, RUN_ID)
 const OUTPUTS_DIR   = join(RUN_DIR, "outputs")
@@ -79,7 +80,7 @@ function ensureDirs() {
 }
 
 function loadConfig() {
-  const raw = JSON.parse(readFileSync(join(EVAL_DIR, "tasks.json"), "utf8"))
+  const raw = JSON.parse(readFileSync(TASKS_FILE, "utf8"))
   let tasks = raw.tasks as any[]
   if (TASK_FILTER) tasks = tasks.filter((t: any) => TASK_FILTER.includes(t.id))
   if (SKIP_HELD_OUT) tasks = tasks.filter((t: any) => !t.held_out)
