@@ -55,27 +55,54 @@ The agent should read the issue description to understand requirements before st
 
 ```bash
 # List unstarted issues assigned to you (default)
-linear issue list
+# --sort is required: manual or priority (NOT "updated")
+linear issue list --sort priority
 
 # List issues in a specific state
-linear issue list -s started
-linear issue list -s backlog
-linear issue list --all-states
+linear issue list -s started --sort priority
+linear issue list -s backlog --sort priority
+linear issue list --all-states --sort priority
 
 # List issues for all assignees
-linear issue list -A
+linear issue list -A --sort priority
 
 # List unassigned issues
-linear issue list -U
+linear issue list -U --sort priority
 
-# Filter by project
-linear issue list --project "Project Name"
+# Filter by project -- requires exact name match; use GraphQL if not found
+linear issue list --project "Project Name" --sort priority --team ENG
 
-# Filter by team (if not your default)
-linear issue list --team OPS
+# Filter by team (required if no .linear.toml in repo)
+linear issue list --team ENG --sort priority
 
 # Limit results
-linear issue list --limit 10
+linear issue list --limit 10 --sort priority
+```
+
+### List issues in a project via GraphQL (preferred for project browsing)
+
+The CLI `--project` filter is fragile (exact name match, requires team). Use GraphQL instead:
+
+```bash
+# First find the project ID
+linear api <<'GRAPHQL'
+query {
+  projects(first: 50) {
+    nodes { id name }
+  }
+}
+GRAPHQL
+
+# Then fetch its issues
+linear api <<'GRAPHQL'
+query {
+  project(id: "<id>") {
+    issues(first: 50) {
+      nodes { identifier title state { name } assignee { name } priority }
+    }
+  }
+}
+GRAPHQL
 ```
 
 ### Free-text search via GraphQL
@@ -108,6 +135,8 @@ GRAPHQL
 
 ```bash
 # Mark as started (sets state to "In Progress")
+# NOTE: linear issue update fails with "Could not determine team key from issue ID"
+# for non-standard prefixes (e.g. EF2-123). Use GraphQL mutation instead (see below).
 linear issue update ENG-123 -s started
 
 # Update title or description
@@ -119,6 +148,34 @@ linear issue comment add ENG-123 -b "Started implementation"
 
 # For multi-line markdown comments, use a file
 linear issue comment add ENG-123 --body-file /tmp/comment.md
+```
+
+### Update issue state via GraphQL (when CLI update fails)
+
+```bash
+# Find the state ID first
+linear api <<'GRAPHQL'
+query {
+  workflowStates(filter: { name: { eq: "Done" } }) {
+    nodes { id name team { key } }
+  }
+}
+GRAPHQL
+
+# Then update one or more issues in a single mutation
+linear api <<'GRAPHQL'
+mutation {
+  issueUpdate(id: "EF2-123", input: { stateId: "<state-id>" }) { success }
+}
+GRAPHQL
+
+# Batch update multiple issues
+linear api <<'GRAPHQL'
+mutation {
+  a: issueUpdate(id: "EF2-436", input: { stateId: "<state-id>" }) { success }
+  b: issueUpdate(id: "EF2-435", input: { stateId: "<state-id>" }) { success }
+}
+GRAPHQL
 ```
 
 ## Creating Issues
