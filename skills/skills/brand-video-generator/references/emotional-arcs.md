@@ -58,6 +58,12 @@ Without an intentional arc, videos feel flat or confusing.
 
 **Timing mistake**: Cutting to the solution before the problem scene reaches peak intensity. If using an accumulation animation (waste piling, errors mounting), hold the scene 1-2 seconds past the visual climax. The viewer needs to sit in discomfort before relief is offered. Quantifying the problem with specific numbers ('11 million tons/year', '85% ends up in landfill') deepens the initial state and makes the transition to hope feel earned rather than rushed.
 
+**Reveal scenes require contrast setup:** When a scene contains a surprising or counter-normative claim (e.g., '100% of profits donated'), the previous scene must establish the norm being violated. Show what competitors/industry typically does FIRST, then reveal the difference. Visual techniques for earned reveals:
+- Numeric contrast: show industry average before the brand's number
+- Visual pause: insert a 0.5-1s beat of stillness before the reveal text animates
+- Scale visualization: don't just state the percentage — show it spatially (a bar filling completely vs. partially)
+- Animation escalation: the reveal scene should have MORE visual energy than preceding scenes, not the same
+
 ---
 
 ### 2. The Transformation Arc
@@ -457,6 +463,14 @@ Short videos (social, TikTok, Instagram) cannot sustain a traditional three-act 
 
 **Beat 1 (0-60% of duration):** Establish one emotional state clearly — recognition, desire, tension, or curiosity.
 **Beat 2 (60-100% of duration):** Shift to a contrasting state — belonging, release, revelation, or action.
+
+**The shift must be causally earned, not just sequenced.** The viewer must understand WHY they moved from state A to state B. For community brands: show the mechanism of participation (your feedback → this ingredient). For transformation brands: show the before/after contrast in the same frame or object. A logo landing is not a resolution unless something in the video built toward it. Test: cover the logo — does the final scene still feel like arrival? If not, the arc is unearned.
+
+**Concreteness requirement for abstract claims:** When the emotional arc involves abstract concepts (listening, community, co-creation), each beat must contain at least one concrete artifact:
+- Beat 1 (establishing state): Show specific text, quotes, or named inputs — not abstract representations of 'feedback' or 'voices'
+- Beat 2 (resolution): Show the specific output those inputs created — a named product, a visible change, a concrete result
+
+Abstract-to-abstract arcs (dots representing feedback → dots converging) fail the viewer state test because no specific information anchors the emotional shift.
 
 The shift must be felt, not just stated. At 15s, you have time for exactly one emotional movement. At 30s, you might have two movements but not three.
 

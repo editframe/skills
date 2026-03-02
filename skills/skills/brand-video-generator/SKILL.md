@@ -6,31 +6,21 @@ order: 50
 license: MIT
 metadata:
   author: editframe
-  version: "1.0"
+  version: "2.0"
 ---
 
 # Brand Video Generator
 
-Transform a brand's website into a strategic video composition plan.
-
-## Quick Start
-
-Provide a website URL and video objective. The skill will:
-1. Establish what makes this video specific and unrepeatable
-2. Analyze brand visual identity (colors, typography, design language)
-3. Analyze brand voice and messaging tone
-4. Synthesize a creative brief
-5. Plan scene-by-scene video structure with viewer-state tracking
-6. Specify asset and motion requirements
+Transform a brand's website into a video composition plan that could not have been made for any other brand.
 
 ## Input
 
 - **URL**: Brand website to analyze
 - **Video Type**: `launch` | `product-demo` | `explainer` | `brand-awareness` | `social`
-- **Duration Target**: `15s` | `30s` | `60s` | `90s` (optional, will recommend if not specified)
-- **Platform**: `web` | `instagram` | `tiktok` | `youtube` | `linkedin` (optional, affects format recommendations)
+- **Duration Target**: `15s` | `30s` | `60s` | `90s` (optional)
+- **Platform**: `web` | `instagram` | `tiktok` | `youtube` | `linkedin` (optional)
 
-## CRITICAL: Tool Usage Requirements
+## CRITICAL: Browser Access Required
 
 **You MUST use browser tools to load the actual website before any analysis.**
 
@@ -39,421 +29,210 @@ Provide a website URL and video objective. The skill will:
 3. Inspect CSS to extract exact color hex codes
 4. Download logo and brand assets (3-5 minimum)
 
-**Do NOT:**
-- Infer visual identity from text descriptions
-- Assume design patterns based on industry
-- Use text content as substitute for visual analysis
-- Hallucinate brand colors, fonts, or design language
-- Use `bars-n-tone.mp4` or any placeholder media in the final composition — use brand-color backgrounds, canvas animations, or actual product footage URLs instead
+**Do NOT** infer visual identity from text descriptions, assume design patterns from industry, or hallucinate brand colors, fonts, or design language.
 
 **If you cannot access the website with browser tools, STOP and report this.**
 
-## Process
+---
 
-### Phase 0: Specificity Gate (MANDATORY — do this before touching the website)
+## The Protocol
 
-Before any analysis, answer these four questions. Generic answers are disqualifying — if you can substitute another brand's name and the answer still holds, your answer is not specific enough.
-
-**1. What is true about this brand that would be false about any competitor?**
-
-The answer must be something structural or foundational — a decision, a relationship, a material fact about how the brand works or what it is. Not a marketing position (which can be copied) but a truth (which cannot).
-
-**This answer must directly appear in the composition as a visual element, not just inform the tone.** If your answer is "Glossier launched from Into The Gloss blog and user submissions," then Into The Gloss must be named or shown — either as literal text ("@[username] via Into The Gloss"), a screenshot of the blog interface, or a specific referenced submission. The brand truth cannot be satisfied by abstract visual qualities (soft, pink, minimal) that embody the philosophy — it requires concrete artifacts that would be false for competitors. If your answer is "they use real customer photos," specific customer attributions must appear. A philosophical reference to the truth without visual evidence is not specific enough.
-
-Not specific enough:
-- "They focus on quality and customer service" (every brand claims this)
-- "They're authentic and community-driven" (every DTC brand says this)
-- "They pioneered multiplayer design" (competitors have since copied this — it no longer differentiates)
-
-Specific enough — by category:
-
-*Software/developer tools*: "Their entire product is built on a single unified object model — a Charge in Radar is the same Charge in Connect and Billing; no translation layer." | "They removed the 'new file' concept entirely — there are no Figma files, only URLs."
-
-*Consumer/lifestyle*: "They launched with no advertising — only photos submitted by real customers, which meant the product had to be worth photographing before it could be marketed." | "Every product is tested by the founder on herself for a minimum of 6 months before it ships."
-
-*Physical goods / apparel*: "They don't sell seasons — they sell repairs. Their website has a 'Worn Wear' section that earns revenue from used items." | "The product is designed to be returned in the same bag it arrived in, zero-waste, no box."
-
-*Food / beverage*: "They publish their supply chain — not as a PR move, but because the flavor is different depending on which farm and which harvest, and they name the farm on the bag."
-
-**Temporal test**: Could a well-funded competitor truthfully claim the same thing next year? If yes, dig deeper. The answer you're looking for is structural — something that would take years to replicate, not months.
-
-**2. What would be lost if this video never existed?**
-
-Not: "People wouldn't know about the product" (that's true of any video).
-Yes (SaaS): "Nobody would see the contrast between how chaotic their industry is and how calm their workflow actually is."
-Yes (consumer): "Nobody would see that this product exists because of one specific community — and that the community came first."
-Yes (apparel): "Nobody would see that the brand's entire supply chain is a design decision, not just a supply chain."
-
-**3. What should the viewer feel at the last frame that they didn't feel at the first frame?**
-
-This is a feeling, not a fact. "Informed" is not a feeling. Name the specific emotional movement:
-- SaaS: "Like this problem is finally solved" | "Like building again is possible"
-- Consumer beauty: "Like they already belong to something before they've bought anything"
-- Apparel: "Like buying less is somehow an act of defiance they want to be part of"
-- Food: "Like they've been eating anonymous food their whole life and just found out it has a name"
-
-**4. What formal choice does answer #1 force on this video?**
-
-The brand truth must determine the video's **structure** — not just its content. If the truth could be dropped into any template without changing the template, it isn't constraining anything.
-
-**Structure means mechanics, not just narrative order.** If the brand truth is about speed, the video's transitions and timing must feel fast — not just claim fastness in text. If the truth is about keyboard-first interaction, actual keystrokes should trigger scene changes or UI reveals. If the truth is about simplicity through removal, scenes should subtract elements rather than add them. The formal constraint must be visible in HOW the video moves, not just WHAT it shows.
-
-**Anti-pattern:** Stating 'keyboard-first speed' as the POV but using standard crossfades and mouse-hover UI demonstrations. The form contradicts the claim.
-
-**Single-argument rule:** The video may only make ONE argument. List all potential value propositions from Phase 1, then DELETE all but one. The surviving argument must be the one that follows directly from answer #1. If you find yourself listing multiple benefits (speed AND simplicity AND power), you have not committed to a point of view.
-
-**Form-follows-argument test:** State your single argument as: "This video argues that [X] by showing [Y]." If [Y] could illustrate a different argument, the form is not embodying the argument. Rewrite until the visual approach is inseparable from the claim.
-
-Example (Linear): "This video argues that opinionated constraints enable speed by showing decisions being removed scene by scene until only the essential action remains." The structure (subtraction) is the argument (constraints enable). You cannot swap the argument without changing the structure.
-
-*Structure follows truth — by category:*
-
-Software: "Linear is opinionated — it removes decisions. So each scene removes one element until only the essential thing remains." | "Stripe's product is invisible when working. So the video shows the product by showing its absence — everything working without friction."
-
-Consumer/lifestyle: "Glossier's brand is made of user faces, not product shots. So the video is structured as a handoff — each face passes the screen to the next, as if the product is passing between real people." | "The brand's truth is that no one looks like the models — so the structure is the absence of the usual model shot."
-
-Physical goods: "The brand's truth is repair over replacement. So the video structure is reversal — damaged → restored — and every scene runs against the usual product-fantasy direction."
-
-The answer to this question is your point of view. If you cannot identify a structural consequence of the brand truth, you have not found the real truth yet.
-
-**If you cannot answer all four with specific, non-transferable answers, ask the user for more context before proceeding.**
-
-The answers to Phase 0 determine the form of the video. Return to them at every subsequent phase.
+Execute these eight operations in order. Each operation constrains the next. Return to earlier operations if a later one fails.
 
 ---
 
-### Phase 0.5: Genre Determination (MANDATORY — before website analysis)
+### Operation 1: DERIVE the structural truth
 
-The video type given as input (`launch`, `product-demo`, `explainer`, `brand-awareness`, `social`) is a **functional objective**, not a genre. Genre is the formal language the video speaks — and it must match the brand's category, audience, and sensibility. Getting genre wrong produces a video that is technically correct but tonally alien.
+**Find one thing that is true about this brand that would be false about any competitor.**
 
-**The genre question**: Given what you already know about this brand from Phase 0, what is the appropriate *formal register* for this video?
+The answer must be:
+- **Structural or foundational** — a decision, a relationship, a material fact about how the brand works. Not a marketing position (which can be copied) but a truth (which cannot).
+- **Architecturally specific** — For technical products, identify the core design decision that shapes everything else. Examples: 'A payments API treats every financial operation as a programmable API object with the same interface — payment intents, subscriptions, and invoices share a design philosophy.' 'A browser-native design tool's multiplayer is not a feature — the file format assumes multiple simultaneous editors.' The truth should explain WHY the product works the way it does, not WHAT it does.
+- **Temporal test**: Could a well-funded competitor truthfully claim the same thing next year? If yes, dig deeper.
+- **Substitute test**: Swap the brand name. Does the answer still hold? If yes, it's not specific enough.
+
+**This truth must appear in the composition as a concrete visual artifact, not just inform the tone.** If you cannot point to a specific element in the composition that would be false about a competitor, the truth has not been operationalized.
+
+**Authorial perspective**: After identifying the structural truth, identify what the video will say about it that the brand does not say about itself. The brand's own marketing already states their positioning. Your composition must add a perspective the brand hasn't articulated:
+
+- **What tension or vulnerability does this truth create?** (e.g., a brand whose product is invisible infrastructure creates dependency the customer can't see)
+- **What does this truth reveal about the audience?** (e.g., what does it say about a user community that they built the brand before the brand existed?)
+- **What industry norm does this truth contradict or expose?** (e.g., a repair-first brand's approach implicitly argues that all other apparel brands design for disposal)
+
+**The perspective test**: State your authorial angle in one sentence: "This video argues [X] which this brand's own marketing never says because [Y]." If you cannot complete this sentence, you are illustrating, not interpreting.
+
+*If you cannot identify a non-transferable structural truth, ask the user for more context before proceeding.*
+
+---
+
+### Operation 2: CONSTRAIN the form
+
+**What does the structural truth force on the video's mechanics — not just its content?**
+
+The brand truth must determine the video's **structure**. "Structure" means timing, motion mechanics, and compositional logic — not narrative order or subject matter.
+
+- If the truth is about *removal*, scenes must subtract elements — not add them.
+- If the truth is about *speed*, transitions must feel fast — not claim fastness in text.
+- If the truth is about *unification*, the same visual element must appear across multiple contexts within the video — not separate scenes claiming unity.
+- If the truth is about *community*, real people must be present — abstract shapes cannot represent faces.
+
+**State the formal constraint as a rule visible in motion**: "Because [truth], this video [does X mechanically]."
+
+**Single-argument rule**: The video may make only ONE argument. State it as: "This video argues [X] by showing [Y]." If [Y] could illustrate a different argument, the form is not embodying the argument. Rewrite until the visual approach is inseparable from the claim.
+
+*If you cannot identify a structural consequence of the brand truth, you have not found the real truth yet. Return to Operation 1.*
+
+---
+
+### Operation 3: SELECT the genre
+
+**The video type given as input is a functional objective, not a genre.** Genre is the formal language the video speaks.
 
 **Step 1: Classify the brand's primary appeal mode**
 
-- **Rational appeal** — the product is chosen for what it *does*. Audience is evaluating capabilities, price, or fit. (Developer tools, B2B SaaS, financial services, medical)
-- **Sensory/aesthetic appeal** — the product is chosen for how it *feels* or *looks*. Audience is seeking identity, mood, or experience. (Cosmetics, fashion, food, fragrance, interiors)
-- **Community/identity appeal** — the product is chosen for *who else uses it*. Audience is seeking belonging or self-expression. (Lifestyle brands, streetwear, music, fitness culture)
-- **Mixed** — both rational and one of the above (e.g., a premium running shoe: rational performance claims + identity appeal)
+- **Rational appeal** — product chosen for what it *does* (developer tools, B2B SaaS, financial services)
+- **Sensory/aesthetic appeal** — product chosen for how it *feels* or *looks* (cosmetics, fashion, food, interiors)
+- **Community/identity appeal** — product chosen for *who else uses it* (lifestyle brands, fitness, music, culture)
+- **Mixed** — rational + one of the above
 
-**Step 2: Determine appropriate genre from appeal mode + video objective**
+**Step 2: Derive the genre from appeal mode + objective**
 
-Do not default to the genre you most often produce. Derive it from the combination.
+Do not default to the genre you most often produce. Derive it.
 
-| Appeal mode | Objective | Appropriate genre |
+| Appeal mode | Objective | Genre |
 |---|---|---|
-| Rational | Product demo / explainer | Feature demonstration, problem-solution, UI walkthrough |
+| Rational | Demo / explainer | Feature demonstration, problem-solution, UI walkthrough |
 | Rational | Launch / awareness | Announcement, reveal, proof-of-concept |
 | Sensory/aesthetic | Awareness / social | Mood film, visual essay, texture reel |
-| Sensory/aesthetic | Product | Product poetry — the object in motion, no narration |
+| Sensory/aesthetic | Product | Product poetry — object in motion, no narration |
 | Community/identity | Awareness | Community portrait, faces film, cultural artifact |
-| Community/identity | Social | Participatory/UGC-style, duet-ready, trend-adjacent |
-| Mixed | Any | Hybrid: lead with sensory, resolve with rational — or vice versa depending on where in the funnel |
+| Community/identity | Social | Participatory/UGC-style, trend-adjacent |
+| Mixed | Any | Hybrid: lead with the dominant appeal mode |
 
-**Step 3: Verify genre fitness against Phase 0 answers**
+**Step 3: Verify genre coherence with the formal constraint from Operation 2.**
 
-The chosen genre must be compatible with the Phase 0 formal constraint. If Phase 0 Q4 says "the structure is absence — everything working without friction," a loud announcement-style genre is wrong even if the objective is a launch. Revise the genre or revise the constraint until they cohere.
+The genre must be compatible with the mechanical constraint. If they conflict, revise one until they cohere.
 
-**Anti-patterns by appeal mode:**
+*Output: one sentence — genre name + reasoning.*
 
-*Rational brands choosing sensory genre*: A B2B data pipeline company producing a wordless mood film confuses its audience. They came to evaluate, not feel. Give them something to evaluate.
-
-*Sensory/aesthetic brands choosing rational genre*: A teen skincare brand producing a feature-list explainer with voiceover and UI screenshots kills the mood. The product is a feeling — make the video feel like that.
-
-*Community brands erasing the community*: A streetwear brand producing a polished product-showcase with no people in it has removed the only thing that differentiates it.
-
-**Output of this phase**: One sentence stating the genre and the reasoning.
-
-Example: "Mood film — Glossier's appeal is sensory/community, the objective is brand awareness for Instagram, and the Phase 0 truth (brand built from user faces, not product shots) forces a community-portrait structure. A product demo would be genre-wrong."
-
-Example: "Problem-solution explainer — Stripe's appeal is rational (developers evaluating infrastructure), the objective is a 60s explainer for web, and the Phase 0 truth (invisible product, absence of friction) is best expressed by contrasting a world with friction against one without."
-
-See [references/genre-selection.md](references/genre-selection.md) for a full genre palette with formal characteristics and appropriate contexts.
+See [references/genre-selection.md](references/genre-selection.md) for a full palette with formal characteristics.
 
 ---
 
-### Phase 1: Brand Analysis
+### Operation 4: INTAKE the brand's visual vocabulary
 
-Extract from the loaded website **and any other material you can access** (social channels, existing video, press, packaging). The website is the minimum — brands whose primary communication is visual (consumer, lifestyle, fashion, food) often reveal more on Instagram or TikTok than on their homepage.
+Extract from the website AND all accessible materials (social channels, existing video, packaging). For sensory/aesthetic and community brands, Instagram or TikTok often reveals more than the homepage.
 
-**Material intake — gather from all accessible sources:**
+**Collect:**
 
-*Website*: Homepage, product pages, About page — extract visual identity, messaging hierarchy, and tone.
+- **Exact hex codes** for primary, secondary, and accent colors — from CSS inspection, not estimation. These hex codes MUST appear in the final composition's CSS. Category-generic palettes (earth tones for sustainability, blue for tech) are prohibited unless they are the brand's documented colors.
+- **Typography** — font family names and weight/style variants actually used.
+- **Visual register** — the adjective that describes the brand's visual language (clinical precision, warm grain, maximalist energy, austere minimalism).
+- **Brand-specific visual elements** — 3+ elements unique to this brand that must appear in the composition: logo geometry, UI components, iconography, packaging forms, photographic style.
+- **Named products and features** — List specific product names (not category descriptions) that must be referenced. For a payments API: the actual API objects and specific sub-products by their official names, proprietary terminology. Generic category terms ('fraud detection', 'subscriptions') are prohibited when branded names exist.
+- **Verifiable metrics** — Extract actual numbers from the website that only this brand could claim. '700M+ API requests daily' is specific; 'millions of transactions' is generic. If no specific metrics are found, note this gap and ask the user.
+- **Known marks** — if the brand has a recognizable logo silhouette or product shape, that form must appear in canvas animations, not a generic category shape.
+- **Photography register** — do people appear? Models or real people, posed or candid? This is a primary brand signal.
+- **Specific numbers** — extract actual metrics from the website for use in compositions.
 
-*Social channels* (if accessible via browser tools): What does the brand's Instagram/TikTok grid look like? What is the ratio of product shots to people shots to lifestyle shots? What is the cadence — polished campaign imagery, or raw UGC-style content? This reveals the brand's actual visual register, which often differs from the website.
+**If working from training knowledge only (no live browser):**
+- Use verifiable brand hex codes only — if uncertain, state this and use black/white until confirmed.
+- Reference specific named products by their actual names — not category descriptions.
+- Reference specific community artifacts by their actual names — no placeholder handles (@user, @reader, @customer are prohibited).
+- Draw logo and product forms from their actual geometry — `fillRect()` for clothing or organic forms is prohibited.
 
-*Existing brand video* (if available on website or YouTube): What genre does the brand already use? What is the editing tempo? Is there narration? Music-forward or dialogue-forward? Existing brand video is a strong signal — either match it (brand consistency) or deliberately depart from it (if the brief calls for something new).
-
-*Packaging / physical materials* (if shown): For physical goods brands, the packaging design is often the densest visual identity signal. Color, material texture, typography choices here are more precise than any website could be.
-
-**After intake, extract:**
-
-**Visual Identity (MANDATORY - composition will fail brand test without these):**
-- Color palette with exact hex codes (from CSS inspection). List PRIMARY brand color, SECONDARY color, and ACCENT color separately. These hex codes MUST appear in the final composition's CSS.
-- Typography: font family names AND weight/style variants used. If the brand uses a custom typeface, note it and specify the closest web-safe fallback.
-- Design language — the adjective that describes the brand's visual register (clinical precision, warm grain, maximalist energy, austere minimalism, playful chaos)
-- **Brand-specific UI elements**: List 3+ visual elements that are UNIQUE to this brand (dashboard components, logo geometry, iconography style, button shapes, specific gradient directions). These elements MUST appear in the composition.
-- **Scale/social proof markers**: Extract specific numbers from the website (customers, transactions, volume) that can be displayed. 'Millions of businesses' is better than no number but worse than '3.5 million businesses.'
-- Visual motifs: What recurring shapes, textures, or compositional choices appear across materials? (Soft grain on every photo? Hard diagonal compositions? Close-up skin texture? Abstract geometric patterns?)
-- Photography style: Do people appear? If so, how — models or real people, posed or candid, diverse or singular aesthetic? This is a primary brand signal.
-
-**Composition brand-fit test**: Before finalizing, verify: (1) brand hex codes appear in CSS, (2) at least one brand-specific UI element is rendered, (3) any stated metrics match the website.
-
-**Brand-Specific Visual Assets (MANDATORY):**
-
-*If browser tools are available:* Download the brand logo, 3-5 product shots, and any proprietary visual elements. These must be used directly in the composition — no substitutes.
-
-*If working from training knowledge only (no live browser):* Do not fabricate assets or use abstract placeholders. Instead:
-- Use exact brand hex codes for all backgrounds and color elements — these MUST be sourced from the actual brand's public style guide, logo files, or verifiable documentation. Do not approximate colors based on memory or visual impression. **Category-generic 'sustainable' palettes (earth tones, amber, sage, slate) are prohibited unless they are the brand's actual documented colors.** For example, Patagonia's brand colors are not generic earth tones but specific documented values from their style guide. If you cannot verify the exact hex codes, state this explicitly and use only black/white until confirmed. For example, Figma's brand colors are #F24E1E (orange-red), #FF7262 (coral), #A259FF (purple), #1ABCFE (blue), #0ACF83 (green) — but even this must be verified against current brand guidelines before use.
-- Describe the brand's known visual vocabulary in CSS/canvas (e.g., Glossier's milky white + blush pink palette, their serifed wordmark, minimal product photography style)
-- Reference SPECIFIC NAMED PRODUCTS by name in text and visual elements (e.g., Glossier: 'Cloud Paint in Dusk', 'Boy Brow in Brown', 'Balm Dotcom' — not generic 'blush' or 'brow gel'). Include the brand's actual taglines or campaign copy verbatim.
-- Reference specific community artifacts by name (e.g., 'Into The Gloss', '@glossier submissions') — never use placeholder tokens like '@reader_1', '@user_name', '@reader', or any variation with generic words. If you cannot name a real source, either design the scene to not require attribution (use 'from our community' without fake handles) or redesign the POV to not depend on community proof you cannot demonstrate. Generic placeholder handles (@user, @reader, @customer) are categorically prohibited — they are worse than no attribution because they signal fabrication.
-- Canvas animations must reference brand-specific forms — the actual logo geometry, known product shapes, known UI patterns — not generic category shapes
-- **Named visual marks are mandatory**: If the brand has a recognizable logo silhouette (Patagonia's Fitzroy peak, Apple's apple, Nike's swoosh), that silhouette must appear as actual geometry in canvas animations or as an SVG/image element. Generic shapes (circles, rectangles, abstract curves) are never acceptable when the brand has a known mark.
-- **Sub-brand programs have their own identity**: If featuring a specific program (e.g., Patagonia's Worn Wear, Apple's Trade In), research and use that program's specific visual marks, not the parent brand's general identity.
-
-In both cases: generic visual representations (mountain silhouettes for outdoor brands, abstract dots for tech brands, generic gradients) are prohibited unless they are literally the brand's own design language. The test: could this element appear unchanged in a competitor's video? If yes, replace it.
-
-**Voice & Messaging:**
-- Tone (friendly, authoritative, urgent, intimate, clinical, irreverent)
-- Target audience: demographic signals from photography, copy register, and social content
-- Core value propositions — **strip category-level claims** (see below)
-- Emotional positioning: What does the brand want the viewer to feel *about themselves* after encountering the brand? (Empowered, seen, aspirational, smart, part of something)
-
-**False differentiators — these describe every competitor too, ignore them:**
-- "Real-time collaboration", "easy to use", "powerful", "fast", "reliable", "all-in-one"
-- "Helps teams work better", "saves time", "increases productivity"
-- "Trusted by thousands of companies"
-- Developer/API brands: "instant deploys", "edge functions", "OAuth built in", "REST API", "100ms response times", "99.99% uptime", "zero config", "batteries included"
-- Payment/fintech brands: "one platform", "payment chaos solved", "global payments", "secure transactions", "invisible infrastructure", "end-to-end payments"
-- Design tools: "design and code together", "design faster", "multiplayer design", "browser-based", "files keep you apart"
-- Workspace/productivity tools: "fragmented tools → unified workspace", "all-in-one", "where work happens", "write, plan, organize"
-- Deployment platforms: "deploy on every git push", "preview URLs", "instant deploys", "global CDN", "serverless", "zero config deploys", "git push → live", "instant rollback", "edge network"
-- Backend-as-a-service: "fragmented backend → unified platform", "Firebase alternative", "open source", "integrated platform", "one backend for everything"
-- Consumer beauty/skincare: "clean ingredients", "dermatologist-tested", "for all skin types", "cruelty-free", "no harsh chemicals", "glow", "your skin but better"
-- Lifestyle/apparel: "sustainable", "made with care", "designed for real life", "premium quality", "built to last", "timeless style", "wear it your way"
-- Food/beverage: "real ingredients", "no artificial anything", "small batch", "crafted with love", "farm to table", "ethically sourced", "better for you"
-- Fitness/wellness: "feel your best", "stronger every day", "your journey", "science-backed", "community-driven", "transform your body"
-
-**The brand's marketing tagline is never the answer.** Your job is to find the structural truth underneath — what the brand *does architecturally* more than what it *claims in copy*.
-
-For developer brands: what does this product ask developers to give up? (conventions, configurations, files) — that trade-off is usually the actual truth.
-For design tools: what workflow step did this product eliminate that all predecessors required?
-For workspace tools: what is the specific unit of information this product invented? (Notion's block, Coda's formula, Linear's issue)
-
-A real differentiator is something that, if true about this brand, would be surprising or false about most competitors.
-
-**Content Hierarchy:**
-- Hero message (H1, above-fold)
-- Supporting points (2-3 key benefits)
-- Social proof (testimonials, metrics)
-- Primary CTA
+**Composition brand-fit test**: Verify before finalizing: (1) brand hex codes appear in CSS, (2) at least one brand-specific UI element or visual mark is rendered, (3) any stated metrics match the website.
 
 ---
 
-### Phase 2: Creative Brief
+### Operation 5: PLAN the viewer state arc
 
-**Video Objective:**
-- Primary goal (awareness, education, conversion)
-- Key takeaway for viewer
+**Before writing scenes, plan the emotional journey as a sequence of state changes.**
 
-**Message Structure:**
-- Opening hook (3 seconds) — what earns the next 3 seconds?
-- Core message (one sentence)
-- Emotional arc (start → middle → end feeling from Phase 0)
-- **Point of view** (Phase 0 answer #4): What structural/formal constraint does the brand truth impose? Name the constraint and explain how it will be visible in scene structure.
-- Call-to-action — **must embody the PoV, not revert to generic marketing language.** "Try it free" abandons a perspective. A CTA that follows from the structural constraint ("Ship the thing you just built" for Vercel, "Close the issue" for Linear) maintains it.
+A state change is not a topic change. The viewer must *feel differently* — not just *know more*.
 
-**Visual Treatment:**
-- Pacing (fast/medium/slow)
-- Motion style (snappy/smooth)
-- Color usage (how to apply brand palette)
-- Overall mood (match brand personality)
+1. Define the **initial state**: What does the viewer feel at frame 1? (skepticism, indifference, mild curiosity — not awareness of the brand)
 
----
+   **Viscerality test for problem states**: If the initial state involves frustration or pain, the scene must SHOW the friction, not declare it. 'You need a backend' is a declaration. A developer staring at three terminal windows, each failing differently, is shown frustration. The viewer must recognize their own experience, not be told about a category of experience.
 
-### Phase 2.5: Video Worthiness Assessment (MANDATORY)
+2. Define the **final state**: What do they feel at the last frame that they didn't feel at the first? (Name the specific emotion — not "informed")
+3. Define the **minimum path** between them: What is the fewest number of distinct state changes required to get from initial to final?
 
-**Before planning scenes, answer these:**
+**Scene budget**: `floor(duration_seconds / 10)` is your maximum. A 15s video gets 1-2 scenes. A 30s video gets 3. A 60s video gets 6. For videos ≤20s: can this be told in 2 scenes? If you have more, collapse before planning.
 
-1. **Visual Metaphors**: List 5+ specific visual metaphors you'll use (not just text)
-2. **Motion Justification**: What will motion/animation add that static images cannot?
-3. **Asset Inventory**: What visual assets are available? What can you create with Canvas API?
-4. **Text Ratio**: Estimate % of screen time that's primarily text. If >50%, justify why this needs to be video.
+**Every planned state must be:**
+- **Felt, not registered** — "they now know what the brand does" is information, not state change. State change requires discomfort, recognition, surprise, or desire.
+- **Escalating** — each successive state must have higher stakes or deeper consequence than the previous. Flat sequences are prohibited.
+- **Distinct** — if two adjacent states could be described with the same feeling word, collapse them.
 
-**Scene 1 specificity gate**: The opening scene is most vulnerable to category-generic visuals. Before writing Scene 1, answer: "What would a competitor's video show for this same concept?" If your planned visual could appear in that competitor's video unchanged, it is not specific enough.
-
-**Scene 1 emotional entry point**: The first scene must create emotional *tension*, not state a value. Generic value statements ('Every choice matters', 'Quality you can trust', 'Built for you') create no viewer state change because they ask nothing of the viewer. Instead, open with:
-- A concrete image of the problem the brand opposes (not abstract particles — show recognizable waste, friction, or pain)
-- A specific contrast that makes the viewer uncomfortable before the brand appears
-- Something the viewer must *react to* before they can be informed
-
-**Duration requirement for problem establishment**: The problem state must be shown long enough for the viewer to *feel* it, not just register it. Minimum 5-8 seconds for any problem/pain scene. A 2-second problem scene followed by 28 seconds of solution means the viewer never experiences the contrast — they're told about it rather than feeling it. **Canvas animations depicting accumulation (waste piling, complexity growing, problems mounting) must reach visual peak intensity before the scene cuts—not mid-build.** If the animation requires 8 seconds to reach full impact, the scene must be at least 9-10 seconds. Time the scene cut to the moment after the viewer feels maximum discomfort, not before. The transformation arc requires the 'before' state to be inhabited, not just labeled.
-
-**Product showcase consolidation rule**: If multiple scenes exist primarily to display products (swatches, SKUs, packaging), they MUST be consolidated into ONE scene unless each scene produces a categorically different viewer state (e.g., 'awareness of range' vs 'desire for specific item' vs 'trust in quality'). Two scenes that both produce 'here are the products' are redundant regardless of which products they show.
-
-The test: Does the viewer feel differently 3 seconds in than at frame 1? If the answer is 'they now know what the brand believes' — that's information, not state change. State change requires discomfort, recognition, surprise, or tension first. For product-demos specifically:
-- Do NOT open with abstract 'chaos' visualizations (tangled lines, scattered nodes, etc.)
-- DO open with a recognizable pain point from this product's actual competitive landscape (e.g., for Linear: screenshot-style mockups of Jira's notification hell, Asana's nested project chaos, or the Slack-Jira-Notion tab-switching dance)
-- The first 3 seconds must show something only THIS brand's users would recognize as their specific problem
-
-**Product-demo specificity requirement (MANDATORY for product-demo videos):**
-
-For `product-demo` video type, every scene MUST include at least one of:
-- Actual product UI elements that NO competitor has (not generic patterns like command palettes or kanban boards)
-- Product-specific CONCEPTS from the website — not just UI chrome but the mental models (Linear: Cycles, Roadmaps, Git-linked issues; Figma: Components with variants, Auto Layout; Stripe: unified Charge object across products)
-- Named features or views that exist only in this product
-
-**For developer/API products specifically:** Generic product labels ('Secure payments', 'Intelligent risk') are PROHIBITED. Instead show:
-- Actual code snippets with the product's real API syntax (e.g., `stripe.charges.create({amount: 2000, currency: 'usd'})`)
-- The product's recognizable UI components (Stripe's Checkout modal, Dashboard graphs, Radar rules interface)
-- Real terminal output, JSON responses, or SDK patterns that developers would recognize
-
-The test: would a developer looking at this scene immediately know it's [this product] and not a competitor's API? If not, the visual fails.
-
-**The competitor substitution test:** If you replaced the brand name and colors, could this scene appear in Asana, Notion, Height, or Shortcut unchanged? If yes, the scene fails. A command palette is generic. A command palette that shows 'Move to Cycle' or 'Link GitHub PR' is Linear-specific.
-
-Before writing any scene, list 3 concepts from the analyzed website that competitors genuinely lack — not just UI patterns they all share.
-
-Generic productivity concepts (kanban boards, unified workspace, real-time collaboration) are PROHIBITED unless shown through the product's actual interface. The test: could this visual appear in Asana, Monday, or Jira unchanged? If yes, it fails.
-
-Before writing any scene for a product-demo, list 3 concepts from the analyzed website that competitors genuinely lack — not just UI patterns they all share.
-
-**Human representation requirement:** When the brand truth involves real people, community, or faces (Phase 0 Q1), abstract human representations (emoji, stick figures, silhouettes, generic avatars, **colored circles, geometric shapes representing faces, gradient blobs, soft organic shapes**) are PROHIBITED.
-
-**The visual must prove the claim, not symbolize it.** If the argument is 'real skin,' show texture. If the argument is 'community,' show distinguishable individuals. A pink circle or beige gradient is not a face—it is a placeholder that contradicts the authenticity claim.
-
-**When actual photography is unavailable:**
-- Use canvas to draw recognizable facial features (eyes, nose, mouth outlines) with variation between individuals
-- Or use the product itself as the visual subject (the tube, the swatch on skin-toned canvas) rather than representing people abstractly
-- Or reframe the argument: if you cannot show real people, do not claim community—claim something you can visually prove (minimalism, product design, texture)
-
-**Form-content coherence test:** Cover the text. Does the visual alone communicate 'real people' or 'authenticity'? If a pink circle doesn't read as a person without a label, the form is failing. Redesign until the visual proves the claim without text assistance.
-
-The test: would a viewer looking at this scene say "those are real people" or "those are placeholders for people"? If the latter, the visual fails the brand truth. Community-built brands cannot be represented by abstractions of humans. **A pink circle is not a face. A 'skin tone' gradient is not skin. The representation must contain recognizable human elements or product-specific visual language.**
-
-| Concept | Generic default (avoid) | What to find instead |
-|---------|------------------------|----------------------|
-| Chaos/Complexity | Tangled bezier curves | What does chaos *look like for this product's users specifically*? |
-| Collaboration | Converging dots, connecting lines | What does collaboration look like *in this product's actual interface*? (e.g., Figma: named cursors on a shared canvas) |
-| Order/Simplicity | Grid layouts, organized patterns | What does resolution look like *in this product's own UI or workflow*? |
-| Scale | Grid multiplication | What unit does this brand scale — requests, users, lines of code? Show that unit. |
-| Speed | Motion blur, streaking lines | What is the before/after latency that this brand eliminates? Show the gap. |
-| Growth | Upward arrows | What grows that is specific to this brand — is it a number, a graph, a team? |
-| Connection | Network nodes | What specific things connect through this product that didn't connect before? |
-| Transformation | Before/after morph | What is the named "before" state the brand's own users describe using? |
-
-**Canvas API Opportunities** (use `frameTask` for generative graphics):
-- Particle systems (energy, activity)
-- Bezier curves (chaos, complexity, connections)
-- Grid multiplication (scale, quantity)
-- Orbital motion (energy, dynamism)
-- Shape morphing (transformation)
-
-**Video type determines visual strategy:**
-- `product-demo`: Show the product in action — real UI screenshots if available, or styled HTML/CSS representations of the actual interface if not. Canvas animations for abstract mechanics only (data flow, request handling). Feature density: one demonstrable feature per scene — not a list.
-- `explainer`: Metaphor allowed, but must be product-specific (see false differentiators). Each scene explains one thing.
-- `brand-awareness` / `social` / `launch`: Metaphor and emotion over features. One image, one feeling, one motion.
-
-**Quality Gate**: If you cannot identify 5+ visual elements that justify video format, reconsider your approach.
+**For the opening state specifically**: The first scene must create tension, not state a value. The viewer must react to something before they can be informed.
 
 ---
 
-### Phase 3: Scene Planning
+### Operation 6: SEQUENCE the scenes
 
-For each scene, use this template:
+**Map scenes to state transitions. Each scene is responsible for exactly one state change.**
+
+For each scene, complete this template:
 
 ```
 Scene [N]: [Name] ([start]s-[end]s)
 - VIEWER STATE AT START: [What does the viewer feel/think/know entering this scene?]
 - VIEWER STATE AT END:   [What has changed? What do they feel/think/know now?]
-- STATE DISTINCTNESS CHECK: [Name one emotion/state from this scene that was NOT available in any previous scene. If you cannot name one, this scene is redundant — either cut it or redesign it to produce a unique state.]
-- ADJACENT SCENE REGISTER CHECK (scenes 2+ only): [Does this scene's END state duplicate the previous scene's END state? If both end with 'product appreciation' or 'brand familiarity', one must be cut or redesigned. Name the previous scene's end state and confirm this one differs categorically.]
-- STATE CHANGE MECHANISM: [What specific technique creates the shift? Options: contrast (before/after, with/without), surprise (expectation subverted), scale revelation (one thing revealed as many), effort elimination (50 lines → 1 line). If the mechanism is 'demonstration' or 'showing how it works', the scene is informational, not transformational — rewrite it.]
-- ESCALATION CHECK (for scenes 2+ only): [How does this scene's emotional intensity or stakes INCREASE from the previous scene? If the answer is 'it doesn't' or 'it's the same level,' either cut this scene or introduce a complication. Flat sequences are prohibited. Options for escalation: higher stakes (what happens if this fails?), larger scale (one → many), deeper consequence (surface → core), contrast introduction (the opposite case). A scene that maintains the same register as the previous scene is redundant.]
-- CLAIM DEMONSTRATION CHECK (for architectural/structural claims): [If this scene claims the product has a property (unified, everywhere, consistent, simple), what VISUAL EVIDENCE proves it? A label stating the claim without visual proof fails. Show the SAME element appearing in 3+ contexts, or the mechanism in action—not the outcome metric.]
-- COMPETITOR DIFFERENTIATION CHECK (Scene 1 only): [List the specific competitor pain points being shown. If the visual could appear in a competitor's own marketing unchanged, rewrite. Name the exact UI elements, workflow patterns, or friction points that are unique to the problem THIS product solves. Generic category concepts fail this check — show the specific complexity that the product deliberately removes.]
-- PROOF REQUIREMENT: [If this scene makes a claim (monetary, impact, or structural), what concrete evidence is shown? Claims require: specific numbers, visual documentation, or named sources. A claim stated without visible proof fails the viewer-state shift — skepticism cannot convert to belief through assertion alone. **Statistics alone are not proof—they are assertions. To prove scale, show the mechanism that enabled it. A number like '3.5 million businesses' creates no felt understanding unless the viewer sees WHY that number is possible. For architectural claims ('unified object made this possible'), the architecture must be visualized in action—show one object flowing through multiple systems, not the outcome metric.** List the specific proof element that will appear on screen, and verify it demonstrates causation, not just correlation.]
-- PRIMARY VISUAL: [Main visual element - NOT just text]
-- MOTION/ANIMATION: [How it moves, what animates, specific CSS or frameTask approach]
+- STATE DISTINCTNESS CHECK: [One emotion/state from this scene not available in any prior scene. If none, this scene is redundant — cut or redesign.]
+- ADJACENT SCENE REGISTER CHECK (scenes 2+): [Previous scene's end state. Confirm this scene's end state is categorically different.]
+- STATE CHANGE MECHANISM: [The specific technique: contrast, surprise, scale revelation, effort elimination. 'Demonstration' or 'showing how it works' = informational, not transformational — rewrite.]
+- ESCALATION CHECK (scenes 2+): [How do stakes or intensity INCREASE from the previous scene?]
+- CLAIM DEMONSTRATION CHECK (for structural claims): [If claiming a property (unified, fast, everywhere), what visual evidence proves it? Show the mechanism in action — not the outcome metric.]
+- COMPETITOR DIFFERENTIATION CHECK (Scene 1): [Could this visual appear in a competitor's own marketing unchanged? If yes, rewrite. Name the specific pain this brand's users would recognize that no other brand's users would.]
+- PROOF REQUIREMENT: [Evidence for any claim. Statistics alone are not proof — show the mechanism that made the number possible. Causation, not correlation.]
+- PRIMARY VISUAL: [Main visual element — not just text]
+- MOTION/ANIMATION: [How it moves; specific CSS or frameTask approach]
 - VISUAL METAPHOR: [What concept this shows visually]
-- Text: [Minimal - only if essential]
+- Text: [Minimal — only if essential]
 - JUSTIFICATION: [Why does this scene exist? What would be lost without it?]
-- REDUNDANCY CHECK: [List every text element in this scene. Do any two communicate the same idea? If yes, cut one. The visual should carry meaning that text reinforces, not duplicates.]
+- REDUNDANCY CHECK: [Every text element. Do any two communicate the same idea? Cut one.]
 ```
 
-**The viewer-state test**: If VIEWER STATE AT START and VIEWER STATE AT END are the same, the scene is not doing work. Cut it or change it until it does.
+**After all scenes, write the PoV trace**: Restate the formal constraint from Operation 2. For each scene, one sentence explaining how its structure follows from that constraint. If a scene cannot be traced, cut or rewrite it.
 
-**Structural repetition test (MANDATORY for sequences of 3+ similar elements):** If you have three or more scenes—or three or more elements within a single scene—with the same visual structure (e.g., all showing a face transition, all showing a product swatch), they MUST differ in emotional function:
-- Element/Scene 1: Establish (viewer learns the pattern)
-- Element/Scene 2: Complicate or contrast (introduce tension, variation, or progression—e.g., show application, show a different state)
-- Element/Scene 3: Resolve or transform (payoff that justifies the sequence—e.g., show result, show confidence)
-
-**This applies within scenes, not just across scenes.** Three identical face reveals in one scene with no differentiation is the same failure as three identical scenes.
-
-**Progression examples for face sequences:**
-- Before → During → After (skin state changes)
-- Doubt → Discovery → Confidence (emotional state changes)
-- One → Many → Community (scale changes)
-
-Identical visual structure with identical emotional function = redundant. Compress to one scene or differentiate their emotional work.
-
-**Feature sequence must build, not enumerate**: When showing multiple product features, they must form a progressive revelation — each feature building on what the previous established. NOT: Auth → Edge Functions → Ecosystem (parallel list). YES: Auth establishes security → Edge Functions show what you can now build because of that security → Ecosystem shows what becomes possible when you combine them. The test: can you reorder the feature scenes without loss? If yes, they are a list, not an argument. Restructure so each scene's impact depends on the previous scene having landed.
-
-**Example:**
-
-```
-Scene 2: The Problem (4s-9s)
-- VIEWER STATE AT START: Curious but skeptical — another infrastructure tool?
-- VIEWER STATE AT END:   Recognized — this is the exact chaos they live with every day
-- PRIMARY VISUAL: Canvas animation — 50 tangled bezier curves accumulating in real-time
-- MOTION/ANIMATION: frameTask draws curves frame by frame, each adding complexity;
-                    speed increases toward the end to convey overwhelm
-- VISUAL METAPHOR: Infrastructure complexity made visible
-- Text: "Managing infrastructure is chaos" (appears after curves fill the screen)
-- JUSTIFICATION: The accumulating chaos is the exact feeling the product resolves.
-                 Static image cannot show accumulation. Text alone cannot show it.
-```
-
-**Scene budget**: `floor(duration_seconds / 10)` is your maximum scene count. A 15s video gets 1-2 scenes. A 30s video gets 3 scenes. A 60s video gets 6. **For videos under 20 seconds, you are likely over-scened if you have more than 2 distinct scenes.** Start at the minimum and add only if the viewer-state arc requires it — not because you have things to say.
-
-**Short-form efficiency rule (≤20s)**: At 15 seconds, every scene must earn at minimum 5 seconds of screen time. Four scenes in 15 seconds means ~3.75s average per scene—this is almost always too fragmented. Before planning a short-form video, ask: can this be told in 2 scenes? If the answer involves collapsing 'product display' scenes, do that first.
-
-**Duration-to-content ratio**: No scene should exceed 15% of total duration unless it contains continuous visual motion (canvas animation, video footage, or complex CSS sequences). A 7-second scene in a 30-second video (23%) that contains only two text strings is a structural failure. Either:
-- Fill the duration with motion that earns it
-- Cut the scene entirely and distribute its content elsewhere
-- Merge it with the preceding scene as an overlay
-
-CTA scenes are especially vulnerable to this failure. A CTA does not need its own scene if the previous scene can hold the CTA as a text overlay during its final seconds.
-
-**Scene form variation (MANDATORY)**: No two adjacent scenes may use the same structural form (e.g., two consecutive scenes that are both "canvas animation + text overlay" or both "bullet list + headline"). Each scene should make a different visual move.
-
-**Structural repetition prohibition (MANDATORY before scene planning):** Before writing scenes, list all product features/sub-products that share the same relationship to the core concept. If 3+ items share identical structural relationships (e.g., 'Product A uses X', 'Product B uses X', 'Product C uses X'), you are PROHIBITED from creating separate scenes for each. Instead:
-- Create ONE scene showing the unified relationship (all products connected to X simultaneously)
-- Or create a SEQUENCE where each product transforms the previous state (not restates it)
-
-The test: if scenes 2, 3, 4, and 5 could be reordered without the viewer noticing, they are a list, not an argument. Lists get one scene. Arguments get sequences.
-
-**Per-scene PoV check**: Each scene must visibly follow from Phase 0 answer #4. After writing each scene, ask: "Does this scene's structure exist because of the specific brand truth I identified, or would it appear in any video of this type?" If the latter, rewrite the scene or cut it. The structural constraint is the whole point — if it's not visible in scene 2, it won't be visible in scene 5 either.
-
-**Claim-vs-form contradiction check (MANDATORY):** If a scene's TEXT claims authenticity, realness, or community, the scene's VISUALS must prove that claim through form. Abstract geometry + text saying 'real skin' is a contradiction—the form (abstraction) contradicts the claim (realness). The test: cover the text. Does the visual alone communicate the claim? If a pink circle doesn't read as 'real skin' without the label, the form is failing the content. Either change the visual to prove the claim (show actual skin texture, real faces, product on real person) or change the claim to match what the visual actually communicates.
+**Sequencing rules:**
+- No two adjacent scenes may use the same structural form (canvas + text overlay, canvas + text overlay = same form — prohibited).
+- If 3+ items share the same structural relationship to a core concept, they must be consolidated into one scene showing the unified relationship — not enumerated as separate scenes.
+- Feature sequences must build causally — each scene's impact must depend on the previous scene having landed. If scenes can be reordered without loss, they are a list, not an argument.
+- Problem/pain scenes must run long enough for the viewer to inhabit the state — minimum 5-8s. Canvas accumulation animations must reach visual peak before the scene cuts.
 
 ---
 
-### Phase 4: Asset Requirements
+### Operation 7: PROVE each claim visually
 
-**Visual Assets:**
-- List each asset: [name] - [type] - [source: website/Canvas API/generate]
+**Visual form must demonstrate, not assert.**
 
-**Specificity requirement for assets:**
-- At least one named product must appear (not category — the actual product name from the website)
-- At least one specific brand origin element (founding story detail, named community platform, specific location)
-- User/community content must reference real sources (e.g., "placeholder for @username submission" or "Into The Gloss reader photo") — not generic "real people" claims
-- If the brand has a known origin story (blog, founder story, community), it must be referenced visually, not just philosophically
+For every claim in the composition:
+- **Structural claims** (unified, everywhere, consistent): show the same element appearing in multiple distinct contexts — not text stating the property.
+- **Scale claims** (millions of users, transactions): show the mechanism that enabled that scale first — not the number alone.
+- **Community claims** (real people, authentic): show actual human features, named individuals, or specific artifacts — not geometric abstractions. A circle is not a face.
+- **Authenticity claims** (real skin, honest ingredients): the visual must communicate the claim without the text. Cover the text. Does the image alone prove it? If not, redesign.
 
-**Motion Graphics:**
-- Text animations (style, timing, specific CSS animation or `split` attribute)
-- Canvas animations — **write the actual `addFrameTask` implementation**, not a description. A declared `<canvas>` element with no script is a broken composition. See `references/composition-patterns.md` for a complete example.
-- Transitions (type, duration, CSS keyframes)
+**The substitute test applied to every scene**: Replace the brand name and colors. Could this scene appear in a competitor's video unchanged? If yes, the scene is decorating a generic concept, not proving a specific truth.
+
+---
+
+### Operation 8: ASSEMBLE the composition
+
+Plan assets and implement the composition.
+
+**Assets:**
+- Visual: list each with source (website download / Canvas API / generate)
+- At least one named product must appear (not category — the actual product name)
+- At least one brand-specific visual mark must be rendered
+- **Specificity floor for social/community brands:** For brands whose truth involves customer co-creation or community feedback, the composition MUST include at least one of: (1) a specific product name that resulted from customer input, (2) a verbatim customer quote or paraphrased real feedback, (3) a specific campaign, reformulation, or launch tied to the brand's listening practice. 'Customer feedback' as an abstract concept is prohibited — show the specific artifact that feedback created.
+
+**Implementation:**
+- Canvas animations: use `addFrameTask`, never `requestAnimationFrame`. The callback receives an `info` object: `(info) => { const { ownCurrentTimeMs, durationMs } = info; }`.
+- Canvas animations must evolve with the narrative — the visual state at second 1 must differ from second 20. See [references/composition-patterns.md](references/composition-patterns.md).
+- Text animations: specify CSS animation or `split` attribute.
+- A `<canvas>` element with no `addFrameTask` script is a broken composition.
 
 **Audio:**
 - Music mood/tempo
@@ -461,70 +240,33 @@ The test: if scenes 2, 3, 4, and 5 could be reordered without the viewer noticin
 
 ---
 
-## Output Format
+## Completeness Check (before outputting)
 
-### 1. Specificity Answers (Phase 0)
-- What's unique: [non-transferable truth]
-- What would be lost: [specific absence]
-- Viewer feeling arc: [feeling at frame 1] → [feeling at last frame]
-
-### 2. Brand Analysis
-- Colors: [hex codes]
-- Typography: [fonts]
-- Design: [style]
-- Tone: [voice]
-
-### 3. Creative Brief
-- Objective: [goal]
-- Duration: [length]
-- Core message: [one sentence]
-- Scene count: [N scenes — justified]
-
-### 4. Video Worthiness
-- Visual metaphors: [list 5+]
-- Motion justification: [why video?]
-- Text ratio: [%]
-
-### 5. Scene Breakdown
-[Use Phase 3 template for each scene, including viewer-state fields]
-
-After all scenes, add:
-**PoV trace**: Restate Phase 0 answer #4 and show one sentence per scene explaining how each scene's structure follows from it. If any scene cannot be traced, rewrite or cut it.
-
-### 6. Assets
-- Visual: [list with sources]
-- Motion: [animations/effects with implementation notes]
-- Audio: [music mood]
-
----
-
-## Completeness Check (before finalizing)
-
-- **Output integrity**: If the composition code would exceed output limits, explicitly state 'Composition continues in next response' and split cleanly at a scene boundary. Never output partial JavaScript functions or unclosed HTML tags.
-- **Scene title-to-content verification**: For each scene, verify that the scene title accurately describes what the scene actually shows. If a scene is titled 'Feature X' but contains CTA content, either rename the scene to match its content ('Call to Action') or replace the content to match the title (actually demonstrate Feature X). Mislabeled scenes indicate either unfulfilled intent or copy-paste errors from templates.
-- **Truncation check**: The composition must end with a complete closing tag structure (`</ef-timegroup>`, `</script>`, `</style>`). If your output is approaching length limits, prioritize completing all scenes over adding detail to early scenes.
-- Every scene in the plan is represented in the HTML
-- No canvas element is present without a corresponding `addFrameTask` script
-- The last scene is fully written — it does not trail off mid-sentence
-- The PoV trace is complete — every scene can be traced to Phase 0 Q4
-- The CTA does not read as generic marketing ("Try it free", "Get started", "Learn more") — it follows from the structural constraint
+- Scene count in plan matches scene count in HTML
+- Scene durations sum to target duration
+- Each scene title describes what the scene actually shows
+- No canvas element without a complete `addFrameTask` script
+- Output ends with complete closing tags (`</ef-timegroup>`, `</script>`, `</style>`)
+- PoV trace is complete — every scene traces to the formal constraint from Operation 2
+- CTA follows from the formal constraint — not generic marketing language
+- If the composition would exceed output limits, split at a scene boundary and state this explicitly
 
 ---
 
 ## Key Principles
 
-- **Specificity over comprehensiveness**: One true thing beats five generic things
-- **Viewer state is the measure**: Each scene must change how the viewer feels or thinks
-- **Show, don't tell**: Use visual metaphors, not text slides
-- **Motion must add meaning**: Animation should enhance understanding, not just decorate
-- **The minimum that works**: Cut any scene that doesn't change viewer state
+- **The form is the argument** — if the video's visual structure could hold a different brand's truth, it is not specific enough
+- **State change, not information transfer** — scenes exist to change how the viewer feels, not what they know
+- **Prove, don't assert** — every claim requires a visual demonstration of the mechanism
+- **One argument** — a video that makes multiple claims makes none
 
-## Reference Files (Optional)
+## Reference Files
 
-- [references/visual-metaphors.md](references/visual-metaphors.md) - Visual metaphor library
-- [references/video-archetypes.md](references/video-archetypes.md) - Industry patterns
-- [references/video-fundamentals.md](references/video-fundamentals.md) - Transitions, arcs, brand basics
-- [references/editing.md](references/editing.md) - What to cut and when to stop
-- [references/genre-selection.md](references/genre-selection.md) - Full genre palette with formal characteristics and appropriate contexts
-
-
+- [references/brand-examples.md](references/brand-examples.md) — Category-specific examples of structural truths, false differentiators, and visual specificity by vertical
+- [references/composition-patterns.md](references/composition-patterns.md) — Canvas animation patterns, frameTask API, visual language consistency
+- [references/genre-selection.md](references/genre-selection.md) — Full genre palette with formal characteristics
+- [references/emotional-arcs.md](references/emotional-arcs.md) — Emotional arc patterns by video type
+- [references/visual-metaphors.md](references/visual-metaphors.md) — Visual metaphor library
+- [references/video-archetypes.md](references/video-archetypes.md) — Industry patterns
+- [references/video-fundamentals.md](references/video-fundamentals.md) — Transitions, arcs, brand basics
+- [references/editing.md](references/editing.md) — What to cut and when to stop
