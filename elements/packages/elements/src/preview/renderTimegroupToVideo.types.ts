@@ -37,12 +37,7 @@ export interface RenderToVideoOptions {
   customWritableStream?: WritableStream<Uint8Array>;
   progressPreviewInterval?: number;
   canvasMode?: "native" | "foreignObject";
-  /**
-   * API token (`ef_...`) for telemetry reporting. Omitting this skips the
-   * client-side telemetry beacon, which is a violation of the Editframe SDK
-   * License Agreement. Not required when called from the CLI render path,
-   * which handles telemetry from Node.js.
-   */
+  /** API token (`ef_...`) to associate telemetry with an org. Omitting sends anonymous telemetry. */
   telemetryToken?: string;
   /** Override the telemetry endpoint (defaults to https://editframe.com). */
   telemetryEndpoint?: string;

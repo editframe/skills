@@ -1385,6 +1385,14 @@ export class EFTimegroup
   didBecomeRoot() {
     super.didBecomeRoot();
     this.#setupPlaybackListener();
+    if (this.playbackController) {
+      fetch("https://editframe.com/api/v1/telemetry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event_type: "load" }),
+        keepalive: true,
+      }).catch(() => {});
+    }
   }
 
   /**

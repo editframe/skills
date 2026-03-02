@@ -1,13 +1,17 @@
 import { db } from "@/sql-client.server";
 import { logger } from "@/logging";
-import { apiIdentityContext } from "~/middleware/context";
+import { maybeIdentityContext } from "~/middleware/context";
 import type { Route } from "./+types/telemetry";
+
+const VALID_EVENT_TYPES = ["render", "load"] as const;
+type EventType = (typeof VALID_EVENT_TYPES)[number];
 
 const VALID_RENDER_PATHS = ["client", "cli", "server"] as const;
 type RenderPath = (typeof VALID_RENDER_PATHS)[number];
 
 interface TelemetryPayload {
-  render_path: RenderPath;
+  event_type: EventType;
+  render_path?: RenderPath;
   duration_ms?: number;
   width?: number;
   height?: number;
@@ -30,15 +34,44 @@ function parsePayload(raw: unknown): TelemetryPayload {
     throw new Response("Invalid JSON body", { status: 400 });
   }
   const obj = raw as Record<string, unknown>;
-  const render_path = obj["render_path"];
-  if (!render_path || !VALID_RENDER_PATHS.includes(render_path as RenderPath)) {
+
+  // Determine event_type: explicit value takes precedence, render_path implies "render"
+  const rawEventType = obj["event_type"];
+  const rawRenderPath = obj["render_path"];
+
+  let event_type: EventType;
+  if (rawEventType !== undefined) {
+    if (!VALID_EVENT_TYPES.includes(rawEventType as EventType)) {
+      throw new Response(
+        `event_type must be one of: ${VALID_EVENT_TYPES.join(", ")}`,
+        { status: 400 },
+      );
+    }
+    event_type = rawEventType as EventType;
+  } else if (rawRenderPath !== undefined) {
+    event_type = "render";
+  } else {
     throw new Response(
-      `render_path is required and must be one of: ${VALID_RENDER_PATHS.join(", ")}`,
+      "event_type or render_path is required",
       { status: 400 },
     );
   }
+
+  // Validate render_path when provided
+  let render_path: RenderPath | undefined;
+  if (rawRenderPath !== undefined) {
+    if (!VALID_RENDER_PATHS.includes(rawRenderPath as RenderPath)) {
+      throw new Response(
+        `render_path must be one of: ${VALID_RENDER_PATHS.join(", ")}`,
+        { status: 400 },
+      );
+    }
+    render_path = rawRenderPath as RenderPath;
+  }
+
   return {
-    render_path: render_path as RenderPath,
+    event_type,
+    render_path,
     duration_ms: typeof obj["duration_ms"] === "number" ? obj["duration_ms"] : undefined,
     width: typeof obj["width"] === "number" ? obj["width"] : undefined,
     height: typeof obj["height"] === "number" ? obj["height"] : undefined,
@@ -57,7 +90,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     throw new Response("Method Not Allowed", { status: 405 });
   }
 
-  const session = context.get(apiIdentityContext);
+  const session = context.get(maybeIdentityContext);
 
   let body: unknown;
   try {
@@ -75,9 +108,10 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     await db
       .insertInto("telemetry.events")
       .values({
-        org_id: session.oid,
-        api_key_id: session.cid,
-        render_path: payload.render_path,
+        org_id: session?.oid ?? null,
+        api_key_id: session?.cid ?? null,
+        event_type: payload.event_type,
+        render_path: payload.render_path ?? null,
         duration_ms: payload.duration_ms ?? null,
         width: payload.width ?? null,
         height: payload.height ?? null,
