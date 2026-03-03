@@ -91,9 +91,9 @@ const WelcomeVideo = ({ user }) => (
               },
             ].map((item, i) => (
               <div key={i} className="bg-white/5 border border-white/10 p-6">
-                <div className="text-3xl mb-3">{item.icon}</div>
-                <h3 className="text-sm font-bold uppercase tracking-wider mb-2">{item.title}</h3>
-                <p className="text-xs text-white/60 leading-relaxed">{item.desc}</p>
+                <div className="text-3xl mb-3 text-white">{item.icon}</div>
+                <h3 className="text-sm font-bold uppercase tracking-wider mb-2 text-white">{item.title}</h3>
+                <p className="text-xs text-white/80 leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </div>
