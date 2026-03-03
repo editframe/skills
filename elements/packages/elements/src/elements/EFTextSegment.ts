@@ -11,10 +11,10 @@ export class EFTextSegment extends EFTemporal(LitElement) {
   static styles = [
     css`
       :host {
-        display: inline;
-      }
-      :host([data-animated]) {
         display: inline-block;
+      }
+      :host([data-whitespace]) {
+        display: inline;
       }
       :host([data-line-segment]) {
         display: block;

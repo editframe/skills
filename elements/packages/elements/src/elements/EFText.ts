@@ -281,19 +281,9 @@ export class EFText extends EFTemporal(LitElement) {
     this.#lastPropagatedAnimation = fingerprint;
 
     const hasAnimation = animationName && animationName !== "none";
-    const isLineMode = this.split === "line";
 
     for (const segment of segments) {
       if (hasAnimation) {
-        // Mark non-whitespace segments so shadow DOM rule promotes them to inline-block
-        // for transform support. Using an attribute (not inline style) so it survives the
-        // visibility system's removeProperty("display") calls.
-        // Whitespace-only segments must stay inline — inline-block creates a new block
-        // formatting context that collapses the space to zero width.
-        const isWhitespace = /^\s+$/.test(segment.segmentText || "");
-        if (!isLineMode && !isWhitespace) {
-          segment.setAttribute("data-animated", "");
-        }
         for (const prop of animationPropsToPropagate) {
           let value = computed.getPropertyValue(prop);
           if (prop === "animation-fill-mode" && value === "none") {
@@ -302,7 +292,6 @@ export class EFText extends EFTemporal(LitElement) {
           segment.style.setProperty(prop, value);
         }
       } else {
-        segment.removeAttribute("data-animated");
         for (const prop of animationPropsToPropagate) {
           segment.style.removeProperty(prop);
         }
@@ -505,6 +494,10 @@ export class EFText extends EFTemporal(LitElement) {
             segment.setAttribute("data-line-segment", "true");
           }
 
+          if (/^\s+$/.test(segmentText)) {
+            segment.setAttribute("data-whitespace", "");
+          }
+
           // Mark as created to avoid being picked up as template
           segment.setAttribute("data-segment-created", "true");
 
@@ -554,6 +547,10 @@ export class EFText extends EFTemporal(LitElement) {
         // Set data attribute for line mode to enable block display
         if (this.split === "line") {
           segment.setAttribute("data-line-segment", "true");
+        }
+
+        if (/^\s+$/.test(segmentText)) {
+          segment.setAttribute("data-whitespace", "");
         }
 
         // Mark as created to avoid being picked up as template
@@ -639,14 +636,6 @@ export class EFText extends EFTemporal(LitElement) {
     // after propagation to avoid being cleared.
     if (useTemplate) {
       for (const segment of this.segments) {
-        // propagateAnimationToSegments() removes data-animated when ef-text has no
-        // animation (its else-branch). Restore it for non-whitespace segments so the
-        // :host([data-animated]) shadow rule promotes them to inline-block, which is
-        // required for CSS transforms to work.
-        if (!/^\s+$/.test(segment.segmentText)) {
-          segment.setAttribute("data-animated", "");
-        }
-
         const computedFill = window
           .getComputedStyle(segment)
           .getPropertyValue("animation-fill-mode");

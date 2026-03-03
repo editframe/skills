@@ -1837,27 +1837,18 @@ describe("EFText", () => {
       }
     });
 
-    test("template-path segments get data-animated so transforms work", async () => {
-      createTestStyle(`
-        @keyframes test-slide-up {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .tmpl-slide {
-          animation: test-slide-up 0.5s ease-out;
-          animation-delay: var(--ef-stagger-offset);
-        }
-      `);
-
+    test("word segments are inline-block and whitespace segments are inline", async () => {
+      // Word segments must be inline-block so CSS transforms work.
+      // Whitespace segments must stay inline or they collapse to zero width.
+      // This must hold for both propagation-path and template-path animations.
       const timegroup = document.createElement("ef-timegroup");
       timegroup.duration = "5s";
       const text = document.createElement("ef-text");
       text.split = "word";
-      text.setAttribute("stagger", "100ms");
       text.duration = "3s";
 
       const tmpl = document.createElement("template");
-      tmpl.innerHTML = `<ef-text-segment class="tmpl-slide"></ef-text-segment>`;
+      tmpl.innerHTML = `<ef-text-segment></ef-text-segment>`;
       text.appendChild(tmpl);
       text.appendChild(document.createTextNode("ONE TWO"));
 
@@ -1869,16 +1860,22 @@ describe("EFText", () => {
       const segments = await text.whenSegmentsReady();
       await Promise.all(segments.map((seg) => seg.updateComplete));
       await new Promise((resolve) => requestAnimationFrame(resolve));
-      await new Promise((resolve) => requestAnimationFrame(resolve));
 
       const wordSegments = segments.filter(
         (seg) => !/^\s+$/.test(seg.segmentText),
       );
+      const spaceSegments = segments.filter((seg) =>
+        /^\s+$/.test(seg.segmentText),
+      );
+
       expect(wordSegments.length).toBe(2);
+      expect(spaceSegments.length).toBeGreaterThan(0);
 
       for (const seg of wordSegments) {
-        expect(seg.hasAttribute("data-animated")).toBe(true);
         expect(window.getComputedStyle(seg).display).toBe("inline-block");
+      }
+      for (const seg of spaceSegments) {
+        expect(window.getComputedStyle(seg).display).toBe("inline");
       }
     });
 
