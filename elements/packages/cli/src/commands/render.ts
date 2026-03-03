@@ -22,9 +22,9 @@ declare global {
 
 const log = debug("ef:cli:render");
 
-async function sendTelemetry(
+export async function sendTelemetry(
   efRenderHost: string,
-  token: string,
+  token: string | undefined,
   payload: Record<string, unknown>,
 ): Promise<void> {
   try {
@@ -32,7 +32,7 @@ async function sendTelemetry(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        ...(token && { Authorization: `Bearer ${token}` }),
       },
       body: JSON.stringify(payload),
     });
@@ -82,12 +82,6 @@ program
   .action(async (directory = ".", options) => {
     const programOpts = program.opts();
     const token: string | undefined = programOpts.token || process.env.EF_TOKEN;
-    if (!token) {
-      process.stderr.write(
-        "Error: API token is required for rendering. Set EF_TOKEN or use --token.\n",
-      );
-      process.exit(1);
-    }
     const efRenderHost: string =
       programOpts.efRenderHost ||
       process.env.EF_RENDER_HOST ||
@@ -301,7 +295,7 @@ program
                 }
 
                 // Send telemetry (fire-and-forget)
-                void sendTelemetry(efRenderHost, token!, {
+                void sendTelemetry(efRenderHost, token, {
                   render_path: "cli",
                   duration_ms: renderDurationMs,
                   ...(renderInfo?.width != null && { width: renderInfo.width }),
