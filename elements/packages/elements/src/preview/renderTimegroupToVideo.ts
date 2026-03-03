@@ -718,7 +718,9 @@ export async function renderTimegroupToVideo(
       const efImageCount = timegroup.querySelectorAll("ef-image").length;
       const efCaptionsCount = timegroup.querySelectorAll("ef-captions").length;
       const efTextCount = timegroup.querySelectorAll("ef-text").length;
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
       if (options.telemetryToken) {
         headers["Authorization"] = `Bearer ${options.telemetryToken}`;
       }
