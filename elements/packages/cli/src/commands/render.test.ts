@@ -9,9 +9,13 @@ describe("sendTelemetry", () => {
   let capturedAuthHeader: string | null | undefined;
 
   beforeAll(() => {
+    process.env.EF_TELEMETRY_ENABLED = "true";
     server.listen();
   });
-  afterAll(() => server.close());
+  afterAll(() => {
+    delete process.env.EF_TELEMETRY_ENABLED;
+    server.close();
+  });
   afterEach(() => {
     server.resetHandlers();
     capturedAuthHeader = undefined;
