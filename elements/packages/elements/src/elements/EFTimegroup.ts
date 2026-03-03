@@ -1391,7 +1391,8 @@ export class EFTimegroup
       hostname === "editframe.com" || hostname.endsWith(".editframe.com");
     if (
       this.playbackController &&
-      typeof process !== "undefined" && process.env.EF_TELEMETRY_ENABLED === "true" &&
+      typeof process !== "undefined" &&
+      process.env.EF_TELEMETRY_ENABLED === "true" &&
       !isEditframeDomain
     ) {
       fetch("https://editframe.com/api/v1/telemetry", {
