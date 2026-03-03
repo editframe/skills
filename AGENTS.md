@@ -26,4 +26,6 @@ Do not replace user's stated goals with simpler ones just because they are hard 
 
 When using a skill from .skills/internal/ and user feedback reveals the skill was wrong, incomplete, or led to a suboptimal result, update the skill with the generalized lesson before finishing the task. Integrate improvements into existing structure -- don't append. Keep skills terse and general.
 
+Skills have one source of truth: .skills/internal/. The directories .opencode/skills/, .cursor/skills/, and .claude/skills/ are generated sync targets -- never edit them directly. After editing .skills/internal/, always run `npm run skills:sync` and commit all changed files.
+
 Do your work in a dedicated git worktree, not in the main worktree. See the monorepo-setup-worktrees skill for how to create and manage worktrees. The exception is when running deployments from main.
