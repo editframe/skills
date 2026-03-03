@@ -1385,7 +1385,15 @@ export class EFTimegroup
   didBecomeRoot() {
     super.didBecomeRoot();
     this.#setupPlaybackListener();
-    if (this.playbackController) {
+    const hostname =
+      typeof window !== "undefined" ? window.location.hostname : "";
+    const isEditframeDomain =
+      hostname === "editframe.com" || hostname.endsWith(".editframe.com");
+    if (
+      this.playbackController &&
+      process.env.EF_TELEMETRY_ENABLED === "true" &&
+      !isEditframeDomain
+    ) {
       fetch("https://editframe.com/api/v1/telemetry", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

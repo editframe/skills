@@ -709,8 +709,7 @@ export async function renderTimegroupToVideo(
 
     await output!.finalize();
 
-    // Report telemetry (fire-and-forget, anonymous)
-    {
+    if (process.env.EF_TELEMETRY_ENABLED === "true") {
       const elapsedMs = Math.round(performance.now() - renderStartTime);
       const endpoint = options.telemetryEndpoint ?? "https://editframe.com";
       const efMediaCount =

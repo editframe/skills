@@ -27,6 +27,7 @@ export async function sendTelemetry(
   token: string | undefined,
   payload: Record<string, unknown>,
 ): Promise<void> {
+  if (process.env.EF_TELEMETRY_ENABLED !== "true") return;
   try {
     await fetch(`${efRenderHost}/api/v1/telemetry`, {
       method: "POST",

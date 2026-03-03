@@ -73,6 +73,7 @@ export const cloudrun = new gcp.cloudrunv2.Service(
               `https://${DEPLOYED_DOMAIN}/v1/graphql`,
             ),
             envFromValue("NODE_ENV", "production"),
+            envFromValue("EF_TELEMETRY_ENABLED", "true"),
             envFromValue("ENABLE_ALL_FEATURES", "false"),
             envFromValue("UPLOAD_TO_BUCKET", "true"),
             envFromValue("GCLOUD_TRACE_EXPORT", "true"),
