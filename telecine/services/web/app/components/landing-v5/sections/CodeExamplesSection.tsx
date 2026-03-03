@@ -19,7 +19,7 @@ export function CodeExamplesSection() {
             {'{'}
           </div>
           <div>
-            <h2 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tighter uppercase mb-4">
+            <h2 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tighter uppercase mb-4 text-white">
               Just<br />Code
             </h2>
             <p className="text-xl text-white/70 max-w-xl">
