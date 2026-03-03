@@ -1837,6 +1837,51 @@ describe("EFText", () => {
       }
     });
 
+    test("template-path segments get data-animated so transforms work", async () => {
+      createTestStyle(`
+        @keyframes test-slide-up {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .tmpl-slide {
+          animation: test-slide-up 0.5s ease-out;
+          animation-delay: var(--ef-stagger-offset);
+        }
+      `);
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.setAttribute("stagger", "100ms");
+      text.duration = "3s";
+
+      const tmpl = document.createElement("template");
+      tmpl.innerHTML = `<ef-text-segment class="tmpl-slide"></ef-text-segment>`;
+      text.appendChild(tmpl);
+      text.appendChild(document.createTextNode("ONE TWO"));
+
+      timegroup.appendChild(text);
+      document.body.appendChild(timegroup);
+      testElements.push(timegroup);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((seg) => seg.updateComplete));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      const wordSegments = segments.filter(
+        (seg) => !/^\s+$/.test(seg.segmentText),
+      );
+      expect(wordSegments.length).toBe(2);
+
+      for (const seg of wordSegments) {
+        expect(seg.hasAttribute("data-animated")).toBe(true);
+        expect(window.getComputedStyle(seg).display).toBe("inline-block");
+      }
+    });
+
     test("new segments from content change get current animation", async () => {
       createTestStyle(`
         @keyframes test-fade {

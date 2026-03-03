@@ -639,6 +639,14 @@ export class EFText extends EFTemporal(LitElement) {
     // after propagation to avoid being cleared.
     if (useTemplate) {
       for (const segment of this.segments) {
+        // propagateAnimationToSegments() removes data-animated when ef-text has no
+        // animation (its else-branch). Restore it for non-whitespace segments so the
+        // :host([data-animated]) shadow rule promotes them to inline-block, which is
+        // required for CSS transforms to work.
+        if (!/^\s+$/.test(segment.segmentText)) {
+          segment.setAttribute("data-animated", "");
+        }
+
         const computedFill = window
           .getComputedStyle(segment)
           .getPropertyValue("animation-fill-mode");
