@@ -167,7 +167,7 @@ Use `split="word"` to animate each word independently with stagger delays.
     }
 
     .fade-in {
-      animation: fadeIn 0.5s ease-out forwards;
+      animation: fadeIn 0.5s ease-out;
       animation-delay: var(--ef-stagger-offset);
     }
   </style>
@@ -209,7 +209,7 @@ Use `split="char"` for character-level effects.
     }
 
     .char-slide {
-      animation: charSlide 0.3s ease-out forwards;
+      animation: charSlide 0.3s ease-out;
       animation-delay: var(--ef-stagger-offset);
     }
   </style>
@@ -240,7 +240,7 @@ Use `split="line"` for line-based animations.
     }
 
     .line-reveal {
-      animation: lineReveal 0.6s ease-out forwards;
+      animation: lineReveal 0.6s ease-out;
       animation-delay: var(--ef-stagger-offset);
       display: block;
     }
@@ -274,7 +274,7 @@ Use `registerAnimations()` to define reusable animation styles globally.
         }
 
         .bounce-in {
-          animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+          animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
           animation-delay: var(--ef-stagger-offset);
         }
       `);
@@ -320,12 +320,12 @@ Different easing functions create different animation feels.
     }
 
     .scale-in {
-      animation: scaleIn 0.4s forwards;
+      animation: scaleIn 0.4s;
       animation-delay: var(--ef-stagger-offset);
     }
 
     .scale-bounce {
-      animation: scaleIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+      animation: scaleIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
       animation-delay: var(--ef-stagger-offset);
     }
   </style>
@@ -369,7 +369,7 @@ Control the delay between segments to create different rhythms.
     }
 
     .pop-in {
-      animation: popIn 0.4s ease-out forwards;
+      animation: popIn 0.4s ease-out;
       animation-delay: var(--ef-stagger-offset);
     }
   </style>
@@ -405,7 +405,7 @@ The `--ef-seed` CSS variable provides deterministic randomness per segment.
     }
 
     .random-slide {
-      animation: randomSlide 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation: randomSlide 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
       animation-delay: var(--ef-stagger-offset);
     }
   </style>
@@ -443,13 +443,13 @@ Create multiple segments for each text unit by using multiple `ef-text-segment` 
       position: absolute;
       color: #3b82f6;
       filter: blur(4px);
-      animation: shadowSlide 0.6s ease-out forwards;
+      animation: shadowSlide 0.6s ease-out;
       animation-delay: var(--ef-stagger-offset);
     }
 
     .segment-main {
       position: relative;
-      animation: mainSlide 0.6s ease-out forwards;
+      animation: mainSlide 0.6s ease-out;
       animation-delay: var(--ef-stagger-offset);
     }
 
