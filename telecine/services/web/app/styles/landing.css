@@ -90,23 +90,6 @@ body {
   outline-offset: 2px;
 }
 
-/* Skip to content link */
-.skip-to-content {
-  position: absolute;
-  top: -40px;
-  left: 0;
-  background: var(--ink-black);
-  color: var(--paper-cream);
-  padding: 8px 16px;
-  text-decoration: none;
-  font-weight: bold;
-  z-index: 100;
-}
-
-.skip-to-content:focus {
-  top: 0;
-}
-
 /* ━━ Hero Trailer Keyframes ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 /* Scene crossfade */

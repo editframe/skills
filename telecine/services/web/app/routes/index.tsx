@@ -40,12 +40,9 @@ export default function IndexPage() {
 
   return (
     <div className="min-h-screen bg-[var(--paper-cream)] text-[var(--ink-black)]">
-      <a href="#main-content" className="skip-to-content">
-        Skip to content
-      </a>
       <Navigation />
 
-      <main id="main-content">
+      <main>
         <RenderQueueProvider>
           <HeroSection />
           <ClientOnly>
