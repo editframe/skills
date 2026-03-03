@@ -664,6 +664,14 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
         }
       }
 
+      try {
+        const audioContext = new AudioContext({ latencyHint: "playback" });
+        audioContext.resume();
+        this.targetTemporal.playbackController.setPendingAudioContext(audioContext);
+      } catch (error) {
+        console.warn("Failed to create/resume AudioContext synchronously:", error);
+      }
+
       this.targetTemporal.playbackController.play();
     }
 

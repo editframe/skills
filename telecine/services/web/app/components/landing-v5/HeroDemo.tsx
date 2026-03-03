@@ -1757,7 +1757,7 @@ function HeroDemoContent() {
 }
 
 /* ━━ Main Component ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-export function HeroDemo() {
+export function HeroDemo({ autoPlay = false }: { autoPlay?: boolean }) {
   const id = useId();
   const previewId = `hero-demo-${id}`;
   const previewRef = useRef<HTMLElement>(null);
@@ -1766,6 +1766,12 @@ export function HeroDemo() {
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    if (isClient && autoPlay && previewRef.current) {
+      (previewRef.current as any).play();
+    }
+  }, [isClient, autoPlay]);
 
   return (
     <div className="w-full relative">

@@ -35,17 +35,9 @@ export function Navigation() {
               Dashboard
             </Link>
           ) : (
-            <>
-              <Link to="/auth/login" className="hidden md:inline-flex px-4 py-2 text-sm font-bold uppercase tracking-wider hover:bg-[var(--poster-gold)] transition-colors">
-                Sign in
-              </Link>
-              <Link
-                to="/auth/register"
-                className="hidden md:inline-flex px-5 py-2 bg-[var(--poster-red)] text-white text-sm font-bold uppercase tracking-wider hover:bg-[var(--poster-blue)] transition-colors"
-              >
-                Get Early Access
-              </Link>
-            </> 
+            <Link to="/auth/login" className="hidden md:inline-flex px-4 py-2 text-sm font-bold uppercase tracking-wider hover:bg-[var(--poster-gold)] transition-colors">
+              Sign in
+            </Link>
           )}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -73,13 +65,6 @@ export function Navigation() {
                 <LandingNavLink to="/auth/login" onClick={() => setMobileMenuOpen(false)}>
                   Sign in
                 </LandingNavLink>
-                <Link
-                  to="/auth/register"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-4 py-3 bg-[var(--poster-red)] text-white text-sm font-bold uppercase tracking-wider text-center hover:bg-[var(--poster-blue)] transition-colors"
-                >
-                  Get Early Access
-                </Link>
               </>
             )}
           </div>

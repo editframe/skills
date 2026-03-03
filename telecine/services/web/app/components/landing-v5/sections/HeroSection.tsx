@@ -29,10 +29,6 @@ export function HeroSection() {
             <div className="w-0 h-0 border-l-[12px] border-l-[var(--poster-gold)] border-y-[7px] border-y-transparent" />
             <div className="w-0 h-0 border-l-[8px] border-l-[var(--poster-blue)] border-y-[5px] border-y-transparent" />
           </div>
-
-          <p className="text-lg text-[var(--warm-gray)] max-w-lg mx-auto leading-relaxed">
-            Declarative HTML + CSS that renders to video. Script it, or use React. Instant preview. Parallel rendering at scale.
-          </p>
         </div>
 
         {/* Demo — preview-dominant, full width */}
@@ -42,7 +38,7 @@ export function HeroSection() {
           <div className="relative">
             {demoPending ? (
               <Suspense fallback={<HeroDemoPoster />}>
-                <HeroDemo />
+                <HeroDemo autoPlay />
               </Suspense>
             ) : (
               <button
@@ -52,7 +48,7 @@ export function HeroSection() {
                 aria-label="Play Editframe demo"
               >
                 <HeroDemoPoster />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity">
                   <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
                     <svg className="w-7 h-7 text-[var(--poster-red)] ml-1" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M8 5v14l11-7z" />
@@ -66,15 +62,15 @@ export function HeroSection() {
 
         {/* CLI + CTAs */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <div className="bg-[var(--ink-black)] dark:bg-[#1a1a1a] px-5 py-3 font-mono text-sm flex items-center gap-3 border-2 border-[var(--poster-red)]">
+          <div className="bg-[var(--poster-red)] px-5 py-3 font-mono text-sm flex items-center gap-3">
             <span>
-              <span className="text-[var(--poster-gold)]">$</span>
+              <span className="text-white/70">$</span>
               <span className="text-white ml-2">npm create @editframe@latest</span>
             </span>
             <button
               type="button"
               onClick={() => navigator.clipboard?.writeText("npm create @editframe@latest")}
-              className="text-white/60 hover:text-white transition-colors flex-shrink-0 flex items-center gap-1.5 text-xs font-sans uppercase tracking-wider"
+              className="text-white/70 hover:text-white transition-colors flex-shrink-0 flex items-center gap-1.5 text-xs font-sans uppercase tracking-wider"
               aria-label="Copy npm create @editframe@latest command"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">

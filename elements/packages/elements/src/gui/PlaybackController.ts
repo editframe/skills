@@ -79,6 +79,7 @@ export class PlaybackController implements ReactiveController {
   #playbackWrapTimeSeconds = 0; // The AudioContext time when we wrapped
 
   #seekAbortController: AbortController | null = null;
+  #hasConnected = false;
 
   constructor(host: PlaybackHost) {
     this.#host = host;
@@ -278,6 +279,8 @@ export class PlaybackController implements ReactiveController {
   #removed = false;
 
   hostConnected(): void {
+    const isReconnect = this.#hasConnected;
+    this.#hasConnected = true;
     // Defer all operations to avoid blocking during initialization
     // This prevents deadlocks when many timegroups are initializing simultaneously
     requestAnimationFrame(() => {
@@ -288,9 +291,9 @@ export class PlaybackController implements ReactiveController {
           return;
         }
 
-        if (this.#playing) {
+        if (this.#playing && isReconnect) {
           this.startPlayback();
-        } else {
+        } else if (!this.#playing) {
           this.#initializeTime();
         }
       });
