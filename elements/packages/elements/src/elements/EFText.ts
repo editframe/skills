@@ -633,6 +633,21 @@ export class EFText extends EFTemporal(LitElement) {
     this.#lastPropagatedAnimation = "";
     this.propagateAnimationToSegments();
 
+    // For template-path segments: their animation comes from a class, not from ef-text.
+    // propagateAnimationToSegments() is a no-op when ef-text has no animation, but its
+    // else-branch removes all animation inline styles — so we apply the fill-mode default
+    // after propagation to avoid being cleared.
+    if (useTemplate) {
+      for (const segment of this.segments) {
+        const computedFill = window
+          .getComputedStyle(segment)
+          .getPropertyValue("animation-fill-mode");
+        if (computedFill === "none" || computedFill === "") {
+          segment.style.setProperty("animation-fill-mode", "backwards");
+        }
+      }
+    }
+
     // Segments will pause their own animations in connectedCallback
     // Lit will automatically update them when they're connected to the DOM
     // Ensure segments are updated after being connected

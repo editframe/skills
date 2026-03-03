@@ -1746,6 +1746,97 @@ describe("EFText", () => {
       }
     });
 
+    test("template-path segments default fill-mode to backwards when unset", async () => {
+      createTestStyle(`
+        @keyframes test-fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .tmpl-fade {
+          animation: test-fade-in 0.5s ease-out;
+          animation-delay: var(--ef-stagger-offset);
+        }
+      `);
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.setAttribute("stagger", "100ms");
+      text.duration = "3s";
+
+      // Template path: animation lives on the segment class, not on ef-text
+      const tmpl = document.createElement("template");
+      tmpl.innerHTML = `<ef-text-segment class="tmpl-fade"></ef-text-segment>`;
+      text.appendChild(tmpl);
+      text.appendChild(document.createTextNode("ONE TWO THREE"));
+
+      timegroup.appendChild(text);
+      document.body.appendChild(timegroup);
+      testElements.push(timegroup);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((seg) => seg.updateComplete));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      const wordSegments = segments.filter(
+        (seg) => !/^\s+$/.test(seg.segmentText),
+      );
+      expect(wordSegments.length).toBe(3);
+
+      // Implementation sets fill-mode on inline style, so check inline style directly
+      for (const seg of wordSegments) {
+        expect(seg.style.animationFillMode).toBe("backwards");
+      }
+    });
+
+    test("template-path segments preserve explicit fill-mode forwards", async () => {
+      createTestStyle(`
+        @keyframes test-fade-out {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+        .tmpl-fade-out {
+          animation: test-fade-out 0.5s ease-out forwards;
+          animation-delay: var(--ef-stagger-offset);
+        }
+      `);
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.setAttribute("stagger", "100ms");
+      text.duration = "3s";
+
+      const tmpl = document.createElement("template");
+      tmpl.innerHTML = `<ef-text-segment class="tmpl-fade-out"></ef-text-segment>`;
+      text.appendChild(tmpl);
+      text.appendChild(document.createTextNode("ONE TWO"));
+
+      timegroup.appendChild(text);
+      document.body.appendChild(timegroup);
+      testElements.push(timegroup);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((seg) => seg.updateComplete));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      const wordSegments = segments.filter(
+        (seg) => !/^\s+$/.test(seg.segmentText),
+      );
+      expect(wordSegments.length).toBe(2);
+
+      // Explicit forwards should not be overridden — check computed value
+      for (const seg of wordSegments) {
+        expect(window.getComputedStyle(seg).animationFillMode).toBe("forwards");
+      }
+    });
+
     test("new segments from content change get current animation", async () => {
       createTestStyle(`
         @keyframes test-fade {
