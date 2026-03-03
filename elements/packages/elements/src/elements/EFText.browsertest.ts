@@ -1626,6 +1626,126 @@ describe("EFText", () => {
       }
     });
 
+    test("defaults fill-mode to backwards when animation-fill-mode is unset", async () => {
+      createTestStyle(`
+        @keyframes test-fade {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `);
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.textContent = "ONE TWO THREE";
+      text.setAttribute("stagger", "100ms");
+      text.duration = "3s";
+
+      // Intentionally do NOT set animation-fill-mode
+      text.style.animationName = "test-fade";
+      text.style.animationDuration = "0.4s";
+
+      timegroup.appendChild(text);
+      document.body.appendChild(timegroup);
+      testElements.push(timegroup);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((seg) => seg.updateComplete));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      const wordSegments = segments.filter(
+        (seg) => !/^\s+$/.test(seg.segmentText),
+      );
+      expect(wordSegments.length).toBe(3);
+
+      for (const seg of wordSegments) {
+        expect(seg.style.animationFillMode).toBe("backwards");
+      }
+    });
+
+    test("preserves explicit animation-fill-mode: forwards", async () => {
+      createTestStyle(`
+        @keyframes test-fade-out {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+      `);
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.textContent = "ONE TWO";
+      text.setAttribute("stagger", "100ms");
+      text.duration = "3s";
+
+      text.style.animationName = "test-fade-out";
+      text.style.animationDuration = "0.4s";
+      text.style.animationFillMode = "forwards";
+
+      timegroup.appendChild(text);
+      document.body.appendChild(timegroup);
+      testElements.push(timegroup);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((seg) => seg.updateComplete));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      const wordSegments = segments.filter(
+        (seg) => !/^\s+$/.test(seg.segmentText),
+      );
+      expect(wordSegments.length).toBe(2);
+
+      for (const seg of wordSegments) {
+        expect(seg.style.animationFillMode).toBe("forwards");
+      }
+    });
+
+    test("preserves explicit animation-fill-mode: both", async () => {
+      createTestStyle(`
+        @keyframes test-fade {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `);
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.textContent = "ONE TWO";
+      text.setAttribute("stagger", "100ms");
+      text.duration = "3s";
+
+      text.style.animationName = "test-fade";
+      text.style.animationDuration = "0.4s";
+      text.style.animationFillMode = "both";
+
+      timegroup.appendChild(text);
+      document.body.appendChild(timegroup);
+      testElements.push(timegroup);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((seg) => seg.updateComplete));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      const wordSegments = segments.filter(
+        (seg) => !/^\s+$/.test(seg.segmentText),
+      );
+      expect(wordSegments.length).toBe(2);
+
+      for (const seg of wordSegments) {
+        expect(seg.style.animationFillMode).toBe("both");
+      }
+    });
+
     test("new segments from content change get current animation", async () => {
       createTestStyle(`
         @keyframes test-fade {

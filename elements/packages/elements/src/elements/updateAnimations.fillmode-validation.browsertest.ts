@@ -3,7 +3,6 @@ import "./EFTimegroup.js";
 import type { EFTimegroup } from "./EFTimegroup.js";
 
 beforeEach(() => {
-  (window as any).__EDITFRAME_FILL_MODE_WARNINGS__ = true;
   // Clean up DOM
   while (document.body.children.length) {
     document.body.children[0]?.remove();
@@ -14,11 +13,10 @@ describe("Animation Fill-Mode Validation", () => {
   test("warns about delayed animation without backwards fill-mode", async () => {
     const warnings: string[] = [];
     const originalLog = console.log;
-    const originalGroup = console.group;
+    const originalGroup = console.groupCollapsed;
     const originalGroupEnd = console.groupEnd;
 
-    // Capture console output
-    console.group = (message: string) => {
+    console.groupCollapsed = (message: string) => {
       warnings.push(message);
     };
     console.log = (message: string) => {
@@ -76,7 +74,7 @@ describe("Animation Fill-Mode Validation", () => {
     } finally {
       // Restore console
       console.log = originalLog;
-      console.group = originalGroup;
+      console.groupCollapsed = originalGroup;
       console.groupEnd = originalGroupEnd;
     }
   });
@@ -84,11 +82,10 @@ describe("Animation Fill-Mode Validation", () => {
   test("warns about fade-in animation without backwards fill-mode", async () => {
     const warnings: string[] = [];
     const originalLog = console.log;
-    const originalGroup = console.group;
+    const originalGroup = console.groupCollapsed;
     const originalGroupEnd = console.groupEnd;
 
-    // Capture console output
-    console.group = (message: string) => {
+    console.groupCollapsed = (message: string) => {
       warnings.push(message);
     };
     console.log = (message: string) => {
@@ -142,7 +139,7 @@ describe("Animation Fill-Mode Validation", () => {
       document.head.removeChild(style);
     } finally {
       console.log = originalLog;
-      console.group = originalGroup;
+      console.groupCollapsed = originalGroup;
       console.groupEnd = originalGroupEnd;
     }
   });
@@ -150,10 +147,10 @@ describe("Animation Fill-Mode Validation", () => {
   test("does not warn when backwards fill-mode is present", async () => {
     const warnings: string[] = [];
     const originalLog = console.log;
-    const originalGroup = console.group;
+    const originalGroup = console.groupCollapsed;
     const originalGroupEnd = console.groupEnd;
 
-    console.group = (message: string) => {
+    console.groupCollapsed = (message: string) => {
       warnings.push(message);
     };
     console.log = (message: string) => {
@@ -205,7 +202,72 @@ describe("Animation Fill-Mode Validation", () => {
       document.head.removeChild(style);
     } finally {
       console.log = originalLog;
-      console.group = originalGroup;
+      console.groupCollapsed = originalGroup;
+      console.groupEnd = originalGroupEnd;
+    }
+  });
+
+  test("warns without __EDITFRAME_FILL_MODE_WARNINGS__ flag", async () => {
+    // Warnings must fire in dev without requiring the manual flag
+    delete (window as any).__EDITFRAME_FILL_MODE_WARNINGS__;
+
+    const warnings: string[] = [];
+    const originalLog = console.log;
+    const originalGroup = console.groupCollapsed;
+    const originalGroupEnd = console.groupEnd;
+
+    console.groupCollapsed = (message: string) => {
+      warnings.push(message);
+    };
+    console.log = (message: string) => {
+      warnings.push(message);
+    };
+    console.groupEnd = () => {};
+
+    try {
+      const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "5s");
+      document.body.appendChild(timegroup);
+
+      const div = document.createElement("div");
+      div.textContent = "Test";
+
+      const style = document.createElement("style");
+      style.textContent = `
+        @keyframes test-fade-ungated {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .ungated-animation {
+          animation: test-fade-ungated 1s 500ms;
+        }
+      `;
+      document.head.appendChild(style);
+
+      div.classList.add("ungated-animation");
+      timegroup.appendChild(div);
+
+      await timegroup.updateComplete;
+
+      timegroup.currentTimeMs = 100;
+      await timegroup.updateComplete;
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const hasWarning = warnings.some(
+        (w) => typeof w === "string" && w.includes("Fill-Mode Warning"),
+      );
+
+      assert.isTrue(
+        hasWarning,
+        "Should warn about missing fill-mode without needing __EDITFRAME_FILL_MODE_WARNINGS__",
+      );
+
+      document.head.removeChild(style);
+    } finally {
+      console.log = originalLog;
+      console.groupCollapsed = originalGroup;
       console.groupEnd = originalGroupEnd;
     }
   });

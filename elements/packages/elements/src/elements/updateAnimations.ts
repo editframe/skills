@@ -901,11 +901,7 @@ const validateAnimationFillMode = (
     // Silently skip keyframe analysis if it fails
   }
 
-  if (
-    warnings.length > 0 &&
-    typeof window !== "undefined" &&
-    (window as any).__EDITFRAME_FILL_MODE_WARNINGS__
-  ) {
+  if (warnings.length > 0 && typeof window !== "undefined") {
     console.groupCollapsed(
       "%c🎬 Editframe Animation Fill-Mode Warning",
       "color: #f59e0b; font-weight: bold",

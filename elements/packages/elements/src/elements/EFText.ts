@@ -295,7 +295,11 @@ export class EFText extends EFTemporal(LitElement) {
           segment.setAttribute("data-animated", "");
         }
         for (const prop of animationPropsToPropagate) {
-          segment.style.setProperty(prop, computed.getPropertyValue(prop));
+          let value = computed.getPropertyValue(prop);
+          if (prop === "animation-fill-mode" && value === "none") {
+            value = "backwards";
+          }
+          segment.style.setProperty(prop, value);
         }
       } else {
         segment.removeAttribute("data-animated");
