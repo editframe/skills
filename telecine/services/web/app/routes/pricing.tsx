@@ -331,7 +331,7 @@ export default function PricingPage() {
                   className="absolute -bottom-2 -right-2 w-full h-full"
                   style={{ backgroundColor: metric.color }}
                 />
-                <div className="relative bg-white dark:bg-[#1a1a1a] text-[var(--ink-black)] dark:text-white border-4 border-[var(--ink-black)] dark:border-white/20 p-6">
+                <div className="relative bg-white dark:bg-[#1a1a1a] text-[var(--ink-black)] dark:text-white border-4 border-[var(--ink-black)] dark:border-white/20 p-6 h-full">
                   <div
                     className="font-black text-lg uppercase tracking-tight mb-3"
                     style={{ color: metric.color }}
