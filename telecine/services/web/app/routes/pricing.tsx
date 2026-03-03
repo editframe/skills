@@ -331,22 +331,22 @@ export default function PricingPage() {
                   className="absolute -bottom-2 -right-2 w-full h-full"
                   style={{ backgroundColor: metric.color }}
                 />
-                <div className="relative bg-white/5 border-4 border-white/20 p-6">
+                <div className="relative bg-white dark:bg-[#1a1a1a] text-[var(--ink-black)] dark:text-white border-4 border-[var(--ink-black)] dark:border-white/20 p-6">
                   <div
                     className="font-black text-lg uppercase tracking-tight mb-3"
                     style={{ color: metric.color }}
                   >
                     {metric.name}
                   </div>
-                  <p className="text-sm text-white/60 leading-relaxed mb-4">
+                  <p className="text-sm text-[var(--warm-gray)] leading-relaxed mb-4">
                     {metric.description}
                   </p>
                   <div className="space-y-1.5">
                     {metric.rates.map(({ label, sublabel, rate }) => (
                       <div key={label} className="flex justify-between items-baseline text-sm">
                         <span className="flex items-baseline gap-1.5">
-                          <span className="text-white/80 font-black text-sm uppercase tracking-tight">{label}</span>
-                          {sublabel && <span className="text-white/35 text-xs">{sublabel}</span>}
+                          <span className="font-black text-sm uppercase tracking-tight">{label}</span>
+                          {sublabel && <span className="text-[var(--warm-gray)] text-xs">{sublabel}</span>}
                         </span>
                         <span className="font-black tabular-nums" style={{ color: metric.color }}>{rate}</span>
                       </div>
