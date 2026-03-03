@@ -18,7 +18,7 @@ This monorepo has three deployment paths:
 | Script | Purpose |
 |---|---|
 | `scripts/push-telecine` | Push telecine to remote |
-| `scripts/push-telecine --wait` | Push + poll CI until deploy completes |
+| `scripts/push-telecine --wait` | Push + poll CI — may latch onto a previously completed run; prefer push then `wait-for-telecine-action` |
 | `scripts/push-elements` | Push elements to remote |
 | `scripts/push-elements --wait` | Push + poll CI until release completes |
 | `scripts/push-skills` | Generate + push skills to remote |
@@ -33,7 +33,7 @@ This monorepo has three deployment paths:
 
 | Action | Command |
 |---|---|
-| Push telecine to remote | `scripts/push-telecine` (or `--wait`) |
+| Push telecine to remote | `scripts/push-telecine && scripts/wait-for-telecine-action` |
 | Push telecine to branch | `scripts/push-telecine --branch feature` |
 | Deploy specific services manually | `telecine/scripts/build-and-push web scheduler-go` |
 | Deploy all services manually | `telecine/scripts/build-and-push-all` |
