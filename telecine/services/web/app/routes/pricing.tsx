@@ -357,12 +357,7 @@ export default function PricingPage() {
             ))}
           </div>
 
-          <div className="mt-12 text-center">
-            <p className="text-sm text-white/40">
-              High Client-Side rendering volume does not trigger payment
-              requirements — eligibility is determined by company size only.
-            </p>
-          </div>
+
         </div>
       </section>
 
