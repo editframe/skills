@@ -71,6 +71,9 @@ export const buildViteConfig = () => {
               ),
             }
           : {}),
+        "process.env.EF_TELEMETRY_ENABLED": JSON.stringify(
+          process.env.EF_TELEMETRY_ENABLED ?? "",
+        ),
       },
       resolve: { 
         alias: viteAliases,

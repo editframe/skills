@@ -1385,7 +1385,10 @@ export class EFTimegroup
   didBecomeRoot() {
     super.didBecomeRoot();
     this.#setupPlaybackListener();
-    if (this.playbackController) {
+    if (
+      this.playbackController &&
+      process.env.EF_TELEMETRY_ENABLED === "true"
+    ) {
       fetch("https://editframe.com/api/v1/telemetry", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
