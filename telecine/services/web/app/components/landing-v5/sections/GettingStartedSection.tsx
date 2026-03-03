@@ -18,7 +18,7 @@ export function GettingStartedSection() {
       <div className="relative max-w-7xl mx-auto px-6">
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
           <div>
-            <h2 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tighter uppercase mb-4">
+            <h2 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tighter uppercase mb-4 text-[var(--ink-black)] dark:text-white">
               Zero to video
             </h2>
             <p className="text-2xl font-black tracking-tighter uppercase text-[var(--poster-red)] mb-8">
@@ -40,7 +40,7 @@ export function GettingStartedSection() {
                     {step.num}
                   </div>
                   <div>
-                    <h3 className="font-bold uppercase tracking-wider text-sm mb-1">{step.title}</h3>
+                    <h3 className="font-bold uppercase tracking-wider text-sm mb-1 text-[var(--ink-black)] dark:text-white">{step.title}</h3>
                     <p className="text-sm text-[var(--warm-gray)]">{step.desc}</p>
                   </div>
                 </div>

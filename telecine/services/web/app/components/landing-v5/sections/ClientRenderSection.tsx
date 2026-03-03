@@ -15,7 +15,7 @@ export function ClientRenderSection() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left - Content */}
           <div>
-            <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase mb-6">
+            <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase mb-6 text-white">
               Render in<br />the browser
             </h2>
             
@@ -26,7 +26,7 @@ export function ClientRenderSection() {
               <div className="w-4 h-1 bg-white/40" />
             </div>
             
-            <p className="text-xl text-white/80 mb-8 leading-relaxed">
+            <p className="text-xl text-white/90 mb-8 leading-relaxed">
               Export video directly in the browser. No upload. No server queue. 
               Full quality MP4 rendered on the client using WebCodecs.
             </p>
@@ -43,7 +43,7 @@ export function ClientRenderSection() {
                   </div>
                   <div>
                     <h3 className="font-bold uppercase tracking-wider text-sm">{item.title}</h3>
-                    <p className="text-sm text-white/70">{item.desc}</p>
+                    <p className="text-sm text-white/90">{item.desc}</p>
                   </div>
                 </div>
               ))}
@@ -58,15 +58,15 @@ export function ClientRenderSection() {
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-[var(--poster-green)]" />
-                <span className="text-white/70">Browser: H.264, VP9, AV1 (browser-dependent)</span>
+                <span className="text-white/90">Browser: H.264, VP9, AV1 (browser-dependent)</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-[var(--poster-green)]" />
-                <span className="text-white/70">Cloud: H.264, H.265, VP9, AV1 — full codec support</span>
+                <span className="text-white/90">Cloud: H.264, H.265, VP9, AV1 — full codec support</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-[var(--poster-green)]" />
-                <span className="text-white/70">Up to 4K resolution</span>
+                <span className="text-white/90">Up to 4K resolution</span>
               </div>
             </div>
           </div>

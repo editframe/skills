@@ -34,10 +34,10 @@ export function PlaygroundSection() {
               </div>
             </div>
             <div>
-              <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase">
+              <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase text-white">
                 Works everywhere
               </h2>
-              <p className="text-lg text-white/70 mt-2">
+              <p className="text-lg text-white/90 mt-2">
                 Custom elements that run in any framework or vanilla HTML. No build step. No account required.
               </p>
             </div>

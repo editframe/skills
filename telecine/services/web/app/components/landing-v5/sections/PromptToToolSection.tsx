@@ -58,7 +58,7 @@ export function PromptToToolSection() {
       <div className="relative max-w-7xl mx-auto px-6">
         {/* Header */}
         <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-5xl md:text-7xl font-black tracking-tighter uppercase mb-4">
+          <h2 className="text-3xl sm:text-5xl md:text-7xl font-black tracking-tighter uppercase mb-4 text-white">
             Prompt it
           </h2>
           <div className="flex justify-center items-center gap-2 mb-6">
@@ -66,7 +66,7 @@ export function PromptToToolSection() {
             <div className="w-12 h-2 bg-white/70" />
             <div className="w-8 h-2 bg-white/40" />
           </div>
-          <p className="text-xl text-white/80 max-w-2xl mx-auto">
+          <p className="text-xl text-white/90 max-w-2xl mx-auto">
             Skills are documentation your agent can use as tools.
             Describe what you want. Get working code.
           </p>
@@ -84,7 +84,7 @@ export function PromptToToolSection() {
                   <div className="w-3 h-3 rounded-full bg-[var(--poster-red)]" />
                   <div className="w-3 h-3 rounded-full bg-[var(--poster-gold)]" />
                   <div className="w-3 h-3 rounded-full bg-[var(--poster-green)]" />
-                  <span className="ml-3 text-white/40 text-xs font-mono uppercase tracking-wider">prompt</span>
+                  <span className="ml-3 text-white/70 text-xs font-mono uppercase tracking-wider">prompt</span>
                 </div>
 
                 {/* Prompt Content */}

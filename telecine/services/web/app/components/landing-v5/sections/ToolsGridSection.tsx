@@ -25,7 +25,7 @@ export function ToolsGridSection() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase">
+            <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase text-[var(--ink-black)] dark:text-white">
               Built from prompts
             </h2>
           </div>

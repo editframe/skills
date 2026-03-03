@@ -21,7 +21,7 @@ export function ArchitectureSection() {
 
       <div className="relative max-w-7xl mx-auto px-6">
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tighter uppercase mb-6">
+          <h2 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tighter uppercase mb-6 text-[var(--ink-black)] dark:text-white">
             Under the hood
           </h2>
           <div className="flex justify-center gap-1 mb-6">

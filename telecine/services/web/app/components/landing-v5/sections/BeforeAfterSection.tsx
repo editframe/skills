@@ -12,7 +12,7 @@ export function BeforeAfterSection() {
 
       <div className="relative max-w-7xl mx-auto px-6">
         <div className="flex items-center gap-6 mb-16">
-          <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase">
+          <h2 className="text-5xl md:text-6xl font-black tracking-tighter uppercase text-[var(--ink-black)] dark:text-white">
             Before
           </h2>
           {/* Arrow between words - the transformation */}
