@@ -32,8 +32,8 @@ const tiers = [
       "Commercial use permitted",
       "Community support",
     ],
-    cta: "Get started",
-    ctaHref: "/auth/register",
+    cta: "No sign up needed — Get Started",
+    ctaHref: "https://editframe.com/skills",
   },
   {
     name: "Team",
@@ -278,7 +278,7 @@ export default function PricingPage() {
                     ))}
                   </div>
 
-                  {tier.ctaHref.startsWith("mailto:") ? (
+                  {tier.ctaHref.startsWith("mailto:") || tier.ctaHref.startsWith("http") ? (
                     <a
                       href={tier.ctaHref}
                       className="block text-center px-6 py-3 font-bold text-sm uppercase tracking-wider transition-all border-2 border-[var(--ink-black)] dark:border-white hover:bg-[var(--ink-black)] hover:text-white dark:hover:bg-white dark:hover:text-black"
