@@ -1,6 +1,6 @@
 @import "./fonts.css";
 @import "./typography.css";
-@import "@editframe/elements/elements.css";
+@import "@editframe/elements/styles.css";
 
 @tailwind base;
 @tailwind components;
