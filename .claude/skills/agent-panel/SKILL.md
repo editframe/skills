@@ -1,134 +1,133 @@
 ---
 name: agent-panel
-description: GUI→code bridge for Editframe workbench. ef-edit CustomEvent system, selector path building, prompt generation, and EFAgentPanel API. Use when building GUI editors that need to sync visual edits back to source code, or when working with the EFWorkbench agent panel.
+description: Workbench agent panel system — ef-edit CustomEvent pipeline, registry roll-up, selector grouping, and element property schema. Use when adding new GUI edit capture points, expanding the inspector schema, or continuing development of the EFAgentPanel feature.
 ---
 
-# Agent Panel (GUI→Code Bridge)
+# Agent Panel
 
-EFWorkbench includes a built-in **Agent Sync** right-column panel that accumulates visual edits made in the GUI and generates a structured, copy-able prompt for coding agents (Claude Code, Cursor, Copilot, etc.).
+The `EFAgentPanel` captures `ef-edit` CustomEvents dispatched whenever a user makes a meaningful composition edit in the GUI, deduplicates them by element+property via a keyed registry, groups them by selector, and renders a copy-able coding-agent prompt.
 
-## Architecture
+## Worktree & Commands
+
+- **Worktree**: `/Users/collin/Editframe/editframe-agent-panel` (branch: `agent-panel`)
+- **Source root**: `elements/packages/elements/src/gui/`
+- **Unit tests** (vitest, Node): `RUNNER_CONTAINER=$(cd /Users/collin/Editframe/editframe-agent-panel/elements && scripts/docker-compose ps -q runner) && docker exec "$RUNNER_CONTAINER" npx vitest --config vitest.config.ts run 'pattern'`
+- **Browser tests** (vitest + Chromium): `cd /Users/collin/Editframe/editframe-agent-panel/elements && scripts/browsertest 'pattern'`
+
+## Event Pipeline
 
 ```
-EFCanvas (drag/resize/rotate)
-  └── dispatchEvent(createEditCustomEvent(editEvent))  [bubbles, composed]
-        ↑ bubbles through DOM
-EFWorkbench.addEventListener('ef-edit', handler)
-  └── agentPanel.addEdit(e.detail)
-        ↓
-EFAgentPanel accumulates edits → buildAgentPrompt() → Copy button
+GUI interaction (canvas drag, inspector change, trim drag, loop toggle)
+  └─ component.dispatchEvent(createEditCustomEvent(editEvent))
+       └─ [bubbles: true, composed: true]
+            └─ EFWorkbench listener → agentPanel.addEdit(event)
+                 └─ Map<editChangeKey, EditEvent> registry (deduplicates)
+                      └─ groupEditsBySelector() → buildAgentPrompt() → copy button
 ```
 
-## EditEvent Type
+`EFWorkbench` registers `addEventListener('ef-edit', ...)` on itself — because `ef-edit` bubbles and is composed, any component in any slot (timeline, hierarchy, canvas) can dispatch it without special routing.
+
+## Key Types (`editEvents.ts`)
 
 ```ts
+// EditEvent — what the panel accumulates
 interface EditEvent {
-  operation: EditOperation;        // moved | resized | rotated
-  description: string;             // "Moved 'Hello' right 120px. New position: left 553px, top 191px."
-  selector: string;                // CSS path from composition root to element
-  elementHtml: string;             // cleaned outerHTML (runtime attrs stripped)
+  operation: EditOperation;
+  description: string;   // human sentence
+  selector: string;      // CSS path from composition root
+  elementHtml: string;   // cleaned outerHTML snippet
   timestamp: number;
 }
 
+// Operation union — extend here when adding new interaction types
 type EditOperation =
-  | { type: "element-moved";   elementId, tagName, label, fromX, fromY, toX, toY }
-  | { type: "element-resized"; elementId, tagName, label, x, y, width, height }
-  | { type: "element-rotated"; elementId, tagName, label, rotation }
+  | { type: "element-property-changed"; elementId; tagName; label; property; oldValue; newValue }
+  | { type: "element-moved";   elementId; tagName; label; fromX; fromY; toX; toY }
+  | { type: "element-resized"; elementId; tagName; label; x; y; width; height }
+  | { type: "element-rotated"; elementId; tagName; label; rotation }
 ```
 
-## Dispatching ef-edit
+Registry key format — determines deduplication:
+- Property change: `selector::prop:propName`
+- Move/resize/rotate: `selector::move`, `selector::resize`, `selector::rotate`
+
+## Pattern: Adding a New ef-edit Dispatch Point
 
 ```ts
-import { createEditCustomEvent, buildSelectorPath, getElementHtml, buildEditDescription } from './editEvents.js';
+import {
+  createEditCustomEvent, buildSelectorPath, getElementHtml,
+  buildEditDescription, type ElementPropertyChangedOperation,
+} from "../../editEvents.js";
 
-const editEvent: EditEvent = {
-  operation: { type: "element-moved", ... },
-  description: buildEditDescription(operation),
-  selector: buildSelectorPath(element),
-  elementHtml: getElementHtml(element),
-  timestamp: Date.now(),
+const oldValue = element.someProperty;
+element.someProperty = newValue;
+
+const op: ElementPropertyChangedOperation = {
+  type: "element-property-changed",
+  elementId: el.id,
+  tagName: el.tagName.toLowerCase(),
+  label: el.textContent?.trim().slice(0, 30) || el.id || el.tagName.toLowerCase(),
+  property: "attr-name",   // attribute name as used in HTML source
+  oldValue,
+  newValue,
 };
-element.dispatchEvent(createEditCustomEvent(editEvent));
-// CustomEvent "ef-edit" with { bubbles: true, composed: true }
+this.dispatchEvent(createEditCustomEvent({
+  operation: op,
+  description: buildEditDescription(op),
+  selector: buildSelectorPath(el),
+  elementHtml: getElementHtml(el),
+  timestamp: Date.now(),
+}));
 ```
 
-## Listening from outside the workbench
+`buildPropertyEditEvent(element, property, oldValue, newValue)` in `EFInspector.ts` is a shorter form for simple property edits.
+
+## What is Currently Wired
+
+- **Canvas move/resize/rotate** — `EFOverlayItem.ts`, dispatched on pointer-up / bounds-change-end / rotation-change-end
+- **Inspector property edits** — `EFInspector.ts`, dispatched on every committed control change
+- **Trim drag end** — `TrackItem.handleTrimChangeEnd()`, dispatched when `trim-change-end` fires; pre-drag values captured in `handleTrimChange` via `#preTrimValues`
+- **Loop toggle** — `EFTimeline.handleToggleLoop()`, dispatches with old/new boolean
+
+## What is NOT Wired (intentional)
+
+- Playback controls (play/pause/seek) — playback state, not composition content
+- Pan-zoom / zoom level — display only
+- Toolbar settings (presentation mode, stats, render mode) — display only
+- Hierarchy reorder — `EFHierarchy` dispatches `hierarchy-reorder`; would need a new `ElementReorderedOperation` type; not yet implemented
+
+## Shadow DOM Event Routing Gotcha
+
+`trim-change-end` bubbles with `composed: true` from `EFTrimHandles`. `TrackItem.render()` binds `@trim-change-end` on the `ef-trim-handles` element. **`EFVideoTrack` overrides `render()` entirely and provides its own `ef-trim-handles` binding.** Any future track subclass that overrides `render()` and includes `ef-trim-handles` must bind **both** `@trim-change` and `@trim-change-end` — the base `TrackItem.render()` handlers are not inherited when `render()` is overridden.
+
+## Element Property Schema (`elementPropertySchema.ts`)
+
+Static descriptors drive the inspector UI. Register new element types at the bottom via `SCHEMA_REGISTRY`. Use the factory functions:
+
+- `timeDescriptor(attr, label, opts)` — time values (stored as `${ms}ms` attributes)
+- `enumDescriptor(attr, label, options, condition?)`
+- `boolDescriptor(attr, label, condition?)`
+- `numberDescriptor(attr, label, opts)`
+- `stringDescriptor(attr, label)`
+
+Elements with no registry entry are invisible to the inspector. Check `elementPropertySchema.test.ts` for the test pattern.
+
+## Testing ef-edit Events
+
+**Unit tests** (Node/vitest): use for `editEvents.ts` helpers — `editChangeKey`, `rollUpEdits`, `groupEditsBySelector`, `buildAgentPrompt`.
+
+**Browser tests** (Chromium/vitest): required for any test involving DOM events or shadow DOM.
+
+For trim ef-edit, dispatch `trim-change-end` directly on the `ef-trim-handles` host element — do not try to simulate full pointer events through shadow DOM layers, as pointer capture mechanics are unreliable in test environments:
 
 ```ts
-workbench.addEventListener('ef-edit', (e: CustomEvent<EditEvent>) => {
-  console.log(e.detail.selector);   // e.g. "ef-timegroup#intro > h1"
-  console.log(e.detail.description);
-});
+const trimHandles = track.shadowRoot?.querySelector("ef-trim-handles");
+trimHandles?.dispatchEvent(new CustomEvent("trim-change-end", {
+  detail: { elementId: video.id, type: "start" },
+  bubbles: true, composed: true,
+}));
 ```
 
-## buildSelectorPath()
+For loop ef-edit, click the loop button via `shadowRoot.querySelector("button[title='Loop']").click()`.
 
-Builds a CSS selector path from the element up to (but not including) the nearest infrastructure tag.
-
-**INFRASTRUCTURE_TAGS** (traversal stops here): `HTML`, `BODY`, `EF-CONFIGURATION`, `EF-WORKBENCH`, `EF-PAN-ZOOM`, `EF-CANVAS`, `EF-OVERLAY-LAYER`
-
-**Auto-generated ID detection**: if `id` contains 8+ consecutive digits (e.g. `h1-0-1772586648532-xyz`), it's considered auto-generated and omitted. `nth-of-type(n)` is used when multiple siblings share a tag.
-
-```ts
-buildSelectorPath(element)
-// Input:  element inside ef-workbench > ef-canvas > ef-timegroup#intro > h1
-// Output: "ef-timegroup#intro > h1"
-```
-
-## getElementHtml()
-
-Strips runtime-only attributes before returning a truncated outerHTML:
-
-- `style="..."` — removed (positions are in the operation payload)
-- `data-element-id="..."` — runtime selection ID
-- `data-selected="..."` — selection state
-- `id="..."` containing 8+ digits — auto-generated runtime IDs
-
-```ts
-getElementHtml(element, maxLength = 300)
-// Returns cleaned outerHTML, truncated at maxLength
-```
-
-## buildAgentPrompt()
-
-Formats accumulated edits as a structured prompt:
-
-```
-The following edits were made to this video composition in the GUI editor.
-Please update the source code to apply these changes.
-Note: an element shown in the GUI may be generated by a loop or template...
-
-1. Moved 'Hello World' (H1#title) right 120px. New position: left 553px, top 191px.
-   Find: ef-timegroup#intro > h1
-   Source: <h1 id="title">Hello World</h1>
-```
-
-## EFAgentPanel API
-
-The panel is always-visible as the third column (`280px`) of EFWorkbench's 3-column grid layout.
-
-```ts
-agentPanel.addEdit(event: EditEvent): void   // append to queue (called by EFWorkbench)
-agentPanel.clearEdits(): void                // reset queue
-```
-
-The panel is created internally by EFWorkbench. External consumers only need to listen for `ef-edit` events if they want to intercept edits.
-
-## File Locations
-
-```
-elements/packages/elements/src/gui/
-├── EFAgentPanel.ts    # Lit component — accumulates edits, renders list + copy button
-├── editEvents.ts      # EditEvent types, buildSelectorPath, getElementHtml,
-                       #   buildAgentPrompt, createEditCustomEvent
-```
-
-## Event source in EFCanvas
-
-Three interaction endpoints dispatch `ef-edit`:
-
-| Trigger | Location in EFCanvas.ts |
-|---------|------------------------|
-| Drag end | `handlePointerUp` — after clearing drag state |
-| Resize end | `bounds-change-end` listener on EFTransformHandles |
-| Rotation end | `rotation-change-end` listener on EFTransformHandles |
+Listen at `document` level — `ef-edit` is `bubbles: true, composed: true`, so it propagates from any component to `document`.
