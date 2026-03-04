@@ -962,11 +962,12 @@ const mapAndSetAnimationTime = (
 
   // If before delay, show initial keyframe state (0% of animation)
   if (adjustedTime < 0) {
-    // Before delay: show initial keyframe state
-    // For CSS animations with delay > 0, currentTime includes the delay, so set to elementTime
-    // For CSS animations with delay = 0, currentTime is just animation progress, so set to 0
+    // Before delay: show initial keyframe state.
+    // For CSS animations with delay > 0, currentTime is in "absolute timeline time"
+    // (delay period + animation progress). Subtracting the stagger offset shifts
+    // each segment's delay window so they enter their animation at different times.
     if (timing.delay > 0) {
-      animation.currentTime = elementTime;
+      animation.currentTime = elementTime - (effectiveDelay - timing.delay);
     } else {
       animation.currentTime = 0;
     }
@@ -989,8 +990,9 @@ const mapAndSetAnimationTime = (
     // - If timing.delay > 0: currentTime includes the delay (absolute timeline time)
     // - If timing.delay === 0: currentTime is just animation progress (0 to duration)
     if (timing.delay > 0) {
-      // Completed: currentTime should be delay + completed animation time (absolute timeline time)
-      animation.currentTime = effectiveDelay + completedAnimationTime;
+      // Completed: anchor to timing.delay (not effectiveDelay) so all segments land at
+      // the same final keyframe regardless of their individual stagger offsets.
+      animation.currentTime = timing.delay + completedAnimationTime;
     } else {
       // Completed: currentTime should be just the completed animation time (animation progress)
       animation.currentTime = completedAnimationTime;
@@ -1010,16 +1012,17 @@ const mapAndSetAnimationTime = (
     const { direction, delay } = timing;
 
     if (delay > 0) {
-      // CSS animation with delay: currentTime is absolute timeline time
+      // CSS animation with delay: currentTime is in "absolute timeline time" (delay + progress).
+      // Anchor to timing.delay (the CSS base delay) rather than effectiveDelay so that the
+      // stagger offset shifts each segment's window without cancelling out.
+      const staggerShift = effectiveDelay - timing.delay;
       const isAlternateWithDelay =
         (direction === "alternate" || direction === "alternate-reverse") &&
         effectiveDelay > 0;
       if (isAlternateWithDelay && currentIteration === 0) {
-        // For alternate direction iteration 0 with delay, use elementTime directly
-        animation.currentTime = elementTime;
+        animation.currentTime = elementTime - staggerShift;
       } else {
-        // For other cases with delay, currentTime should be delay + animation time (absolute timeline time)
-        animation.currentTime = effectiveDelay + animationTime;
+        animation.currentTime = timing.delay + animationTime;
       }
     } else {
       // CSS animation with delay = 0: currentTime is just animation progress

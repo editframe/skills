@@ -1428,9 +1428,9 @@ describe.skip("updateAnimations", () => {
 
       updateAnimations(element);
 
-      // Before delay: currentTime should be at absolute timeline time (233.33ms)
-      // This ensures the animation is "caught up" with the delay
-      assert.approximately(animation.currentTime as number, 233.33, 1);
+      // Before delay: stagger shifts currentTime by -staggerOffset so each segment's
+      // delay window is offset. elementTime=233.33, staggerOffset=100 → currentTime=133.33
+      assert.approximately(animation.currentTime as number, 133.33, 1);
 
       // Set element time to after effective delay
       // Use frame-aligned value: frame 11 at 30fps = 366.67ms
@@ -1451,15 +1451,12 @@ describe.skip("updateAnimations", () => {
 
       updateAnimations(element);
 
-      // Verify stagger offset is being applied
-      // effectiveDelay should be 200 + 100 = 300ms
-      // For normal direction: adjustedTime = 366.67 - 300 = 66.67ms
-      // rawIterationTime = 66.67 % 500 = 66.67ms
-      // Animation time = rawIterationTime = 66.67ms
-      // currentTime should be absolute timeline time: effectiveDelay (300) + animationTime (66.67) = 366.67ms
+      // effectiveDelay = 200 + 100 = 300ms
+      // adjustedTime = 366.67 - 300 = 66.67ms
+      // animationTime = 66.67ms
+      // currentTime = timing.delay + animationTime = 200 + 66.67 = 266.67ms
       const animationTime = animation.currentTime as number;
-      // Check that stagger is applied - currentTime should be absolute timeline time (366.67ms)
-      assert.approximately(animationTime, 366.67, 1);
+      assert.approximately(animationTime, 266.67, 1);
     });
 
     test("stagger offset does not affect visibility timing", async () => {
@@ -1607,9 +1604,10 @@ describe.skip("updateAnimations", () => {
 
       updateAnimations(element);
 
-      // Should be at cumulative time: 1016.67ms (iteration 1, 16.67ms into it)
-      // currentTime should be absolute timeline time: effectiveDelay (250) + animationTime (1016.67) = 1266.67ms
-      assert.approximately(animation.currentTime as number, 1266.67, 1);
+      // adjustedTime = 1266.67 - 250 = 1016.67ms → iteration 1, 16.67ms in
+      // cumulativeAnimationTime = 1 * 1000 + 16.67 = 1016.67ms
+      // currentTime = timing.delay + animationTime = 100 + 1016.67 = 1116.67ms
+      assert.approximately(animation.currentTime as number, 1116.67, 1);
     });
 
     test("stagger offset works with alternate direction", async () => {
@@ -1667,9 +1665,9 @@ describe.skip("updateAnimations", () => {
 
       updateAnimations(element);
 
-      // Animation time should be 50ms
-      // currentTime should be absolute timeline time: effectiveDelay (350) + animationTime (50) = 400ms
-      assert.approximately(animation.currentTime as number, 400, 1);
+      // adjustedTime = 400 - 350 = 50ms → animationTime = 50ms
+      // currentTime = timing.delay + animationTime = 300 + 50 = 350ms
+      assert.approximately(animation.currentTime as number, 350, 1);
     });
 
     test("stagger offset with CSS animation delay=0 uses animation progress, not absolute timeline time", async () => {

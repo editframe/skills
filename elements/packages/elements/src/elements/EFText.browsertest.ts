@@ -778,6 +778,70 @@ describe("EFText", () => {
       expect(segments.length).toBe(3);
     });
 
+    test("segments with base CSS delay stagger independently", async () => {
+      // Regression: when animation has a non-zero CSS base delay, the formula
+      // effectiveDelay + (elementTime - effectiveDelay) collapses to elementTime
+      // for every segment, making all segments show the same keyframe regardless
+      // of their individual stagger offsets.
+      createTestStyle(`
+        @keyframes bounce {
+          from { transform: translateY(0); }
+          to { transform: translateY(-40px); }
+        }
+        .stagger-bounce {
+          animation: bounce 1s ease-out 200ms both;
+        }
+      `);
+
+      const timegroup = document.createElement("ef-timegroup") as any;
+      timegroup.setAttribute("mode", "fixed");
+      timegroup.setAttribute("duration", "5000ms");
+      document.body.appendChild(timegroup);
+      testElements.push(timegroup);
+
+      const seg0 = document.createElement("ef-text-segment") as any;
+      seg0.segmentText = "A";
+      seg0.segmentIndex = 0;
+      seg0.segmentStartMs = 0;
+      seg0.segmentEndMs = 5000;
+      seg0.staggerOffsetMs = 0;
+      seg0.classList.add("stagger-bounce");
+      timegroup.appendChild(seg0);
+
+      const seg1 = document.createElement("ef-text-segment") as any;
+      seg1.segmentText = "B";
+      seg1.segmentIndex = 1;
+      seg1.segmentStartMs = 0;
+      seg1.segmentEndMs = 5000;
+      seg1.staggerOffsetMs = 100;
+      seg1.classList.add("stagger-bounce");
+      timegroup.appendChild(seg1);
+
+      await seg0.updateComplete;
+      await seg1.updateComplete;
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      // Seek to 500ms — well into both animations (base delay 200ms, so both active)
+      timegroup.currentTimeMs = 500;
+      await timegroup.seekTask.taskComplete;
+
+      const anim0 = seg0.getAnimations()[0];
+      const anim1 = seg1.getAnimations()[0];
+      expect(anim0).toBeDefined();
+      expect(anim1).toBeDefined();
+
+      // seg0: effectiveDelay=200, animationTime=500-200=300, currentTime=200+300=500... BUG
+      // seg1: effectiveDelay=300, animationTime=500-300=200, currentTime=300+200=500... BUG
+      // Correct: seg1 should lag seg0 by 100ms (its stagger offset)
+      // seg0: currentTime = 500 - 0   = 500 → keyframe at 300ms into 1s anim (delay=200ms)
+      // seg1: currentTime = 500 - 100 = 400 → keyframe at 200ms into 1s anim
+      const time0 = anim0.currentTime as number;
+      const time1 = anim1.currentTime as number;
+      expect(time1).toBeLessThan(time0);
+      expect(time0 - time1).toBeCloseTo(100, 0);
+    });
+
     test("animations are found and can be controlled", async () => {
       createTestStyle(`
         @keyframes bounce-in {
