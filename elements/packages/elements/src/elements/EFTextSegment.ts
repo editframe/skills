@@ -3,9 +3,6 @@ import { customElement, property } from "lit/decorators.js";
 import { EFTemporal } from "./EFTemporal.ts";
 import { EFText } from "./EFText.js";
 
-// Global registry for animation stylesheets shared across all text segments
-const globalAnimationSheets = new Map<string, CSSStyleSheet>();
-
 @customElement("ef-text-segment")
 export class EFTextSegment extends EFTemporal(LitElement) {
   static styles = [
@@ -25,67 +22,6 @@ export class EFTextSegment extends EFTemporal(LitElement) {
       }
     `,
   ];
-
-  /**
-   * Registers animation styles that should be shared across all text segments.
-   * This is the correct way to inject animation styles for segments - not via innerHTML.
-   *
-   * @param id Unique identifier for this stylesheet (e.g., "my-animations")
-   * @param cssText The CSS rules to inject
-   *
-   * @example
-   * EFTextSegment.registerAnimations("bounceIn", `
-   *   @keyframes bounceIn {
-   *     from { transform: scale(0); }
-   *     to { transform: scale(1); }
-   *   }
-   *   .bounce-in {
-   *     animation: bounceIn 0.5s ease-out;
-   *   }
-   * `);
-   */
-  static registerAnimations(id: string, cssText: string): void {
-    if (globalAnimationSheets.has(id)) {
-      // Already registered
-      return;
-    }
-
-    const sheet = new CSSStyleSheet();
-    sheet.replaceSync(cssText);
-    globalAnimationSheets.set(id, sheet);
-
-    // Apply to all existing instances
-    document.querySelectorAll("ef-text-segment").forEach((segment) => {
-      if (segment.shadowRoot) {
-        const adoptedSheets = segment.shadowRoot.adoptedStyleSheets;
-        if (!adoptedSheets.includes(sheet)) {
-          segment.shadowRoot.adoptedStyleSheets = [...adoptedSheets, sheet];
-        }
-      }
-    });
-  }
-
-  /**
-   * Unregisters previously registered animation styles.
-   *
-   * @param id The identifier of the stylesheet to remove
-   */
-  static unregisterAnimations(id: string): void {
-    const sheet = globalAnimationSheets.get(id);
-    if (!sheet) {
-      return;
-    }
-
-    globalAnimationSheets.delete(id);
-
-    // Remove from all existing instances
-    document.querySelectorAll("ef-text-segment").forEach((segment) => {
-      if (segment.shadowRoot) {
-        segment.shadowRoot.adoptedStyleSheets =
-          segment.shadowRoot.adoptedStyleSheets.filter((s) => s !== sheet);
-      }
-    });
-  }
 
   render() {
     // Set CSS variables in render() to ensure they're always set
