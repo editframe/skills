@@ -2202,6 +2202,42 @@ describe("EFText", () => {
       }
     });
 
+    test("whitespace segments have white-space:pre to survive flex blockification", async () => {
+      // When ef-text has display:flex (Tailwind), CSS blockifies direct children to display:block.
+      // A display:block element with white-space:normal collapses a space-only text node
+      // to a zero-height, zero-width line box (CSS spec: line box with only collapsible
+      // whitespace has zero height). white-space:pre on :host([data-whitespace]) prevents this.
+      const container = document.createElement("div");
+      container.style.cssText = "position:absolute;top:0;left:0;width:800px;font:bold 24px monospace;";
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.textContent = "HELLO WORLD";
+      text.duration = "3s";
+
+      timegroup.appendChild(text);
+      container.appendChild(timegroup);
+      document.body.appendChild(container);
+      testElements.push(container);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((s) => s.updateComplete));
+      await new Promise((r) => requestAnimationFrame(r));
+
+      const spaceSeg = segments.find((s) => /^\s+$/.test(s.segmentText));
+      expect(spaceSeg).toBeDefined();
+
+      const whiteSpace = window.getComputedStyle(spaceSeg!).whiteSpace;
+      expect(
+        whiteSpace,
+        `whitespace segment must have white-space:pre — without it, display:block collapses space to 0×0 in flex containers (got: "${whiteSpace}")`,
+      ).toBe("pre");
+    });
+
     test("whitespace segment occupies layout space: M starts after A+space, not immediately after A", async () => {
       // Directly verifies the user-visible bug: "A M" renders as "AM" (M at A's right edge).
       // No animation — confirms the space segment contributes layout width at all.

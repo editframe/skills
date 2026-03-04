@@ -12,6 +12,7 @@ export class EFTextSegment extends EFTemporal(LitElement) {
       }
       :host([data-whitespace]) {
         display: inline;
+        white-space: pre;
       }
       :host([data-line-segment]) {
         display: block;
