@@ -4,6 +4,7 @@ title: Motion Design
 description: Professional motion graphics for video content — animations, transitions, title sequences, and time-based visual design for video production.
 order: 40
 license: MIT
+status: draft
 metadata:
   author: editframe
   version: "2.0"

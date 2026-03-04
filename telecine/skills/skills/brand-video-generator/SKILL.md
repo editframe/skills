@@ -2,6 +2,7 @@
 name: brand-video-generator
 title: Brand Video Generator
 description: Generate video compositions from brand websites or descriptions. Produces an inspectable creative brief before generating HTML.
+status: draft
 order: 50
 license: MIT
 metadata:
