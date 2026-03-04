@@ -2166,7 +2166,8 @@ describe("EFText", () => {
       `);
 
       const container = document.createElement("div");
-      container.style.cssText = "position:relative;width:800px;font:bold 20px/1.4 sans-serif;";
+      container.style.cssText =
+        "position:relative;width:800px;font:bold 20px/1.4 sans-serif;";
 
       const timegroup = document.createElement("ef-timegroup");
       timegroup.duration = "5s";
@@ -2208,7 +2209,8 @@ describe("EFText", () => {
       // to a zero-height, zero-width line box (CSS spec: line box with only collapsible
       // whitespace has zero height). white-space:pre on :host([data-whitespace]) prevents this.
       const container = document.createElement("div");
-      container.style.cssText = "position:absolute;top:0;left:0;width:800px;font:bold 24px monospace;";
+      container.style.cssText =
+        "position:absolute;top:0;left:0;width:800px;font:bold 24px monospace;";
 
       const timegroup = document.createElement("ef-timegroup");
       timegroup.duration = "5s";
@@ -2242,7 +2244,8 @@ describe("EFText", () => {
       // Directly verifies the user-visible bug: "A M" renders as "AM" (M at A's right edge).
       // No animation — confirms the space segment contributes layout width at all.
       const container = document.createElement("div");
-      container.style.cssText = "position:absolute;top:0;left:0;font:24px monospace;white-space:nowrap;";
+      container.style.cssText =
+        "position:absolute;top:0;left:0;font:24px monospace;white-space:nowrap;";
 
       const timegroup = document.createElement("ef-timegroup");
       timegroup.duration = "5s";
@@ -2297,7 +2300,8 @@ describe("EFText", () => {
       `);
 
       const container = document.createElement("div");
-      container.style.cssText = "position:absolute;top:0;left:0;font:bold 40px/1 monospace;white-space:nowrap;";
+      container.style.cssText =
+        "position:absolute;top:0;left:0;font:bold 40px/1 monospace;white-space:nowrap;";
 
       const timegroup = document.createElement("ef-timegroup");
       timegroup.duration = "5s";
@@ -2354,7 +2358,8 @@ describe("EFText", () => {
       `);
 
       const container = document.createElement("div");
-      container.style.cssText = "position:absolute;top:0;left:0;width:800px;font:bold 20px/1.4 sans-serif;white-space:nowrap;";
+      container.style.cssText =
+        "position:absolute;top:0;left:0;width:800px;font:bold 20px/1.4 sans-serif;white-space:nowrap;";
 
       const timegroup = document.createElement("ef-timegroup");
       timegroup.duration = "5s";
