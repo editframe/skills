@@ -273,6 +273,26 @@ describe(`<ef-timegroup mode="contain">`, () => {
     );
     assert.equal(timegroup.durationMs, 7_000);
   });
+
+  test("duration updates when child ef-text duration changes", async () => {
+    const timegroup = renderTimegroup(
+      html`
+        <ef-timegroup mode="contain">
+          <ef-text duration="10s">Hello</ef-text>
+        </ef-timegroup>
+      `,
+    );
+    await timegroup.updateComplete;
+
+    assert.equal(timegroup.durationMs, 10_000);
+
+    const text = timegroup.querySelector("ef-text")!;
+    text.setAttribute("duration", "3s");
+    await text.updateComplete;
+    await timegroup.updateComplete;
+
+    assert.equal(timegroup.durationMs, 3_000);
+  });
 });
 
 describe("startTimeMs", () => {

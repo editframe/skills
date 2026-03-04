@@ -1,7 +1,8 @@
 import { css, html, LitElement, type PropertyValueMap } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { durationConverter } from "./durationConverter.js";
-import { EFTemporal } from "./EFTemporal.js";
+import { EFTemporal, flushStartTimeMsCache } from "./EFTemporal.js";
+import { flushSequenceDurationCache } from "./EFTimegroup.js";
 
 import { evaluateEasing } from "./easingUtils.js";
 import type { EFTextSegment } from "./EFTextSegment.js";
@@ -233,6 +234,13 @@ export class EFText extends EFTemporal(LitElement) {
     ) {
       this.emitContentChange("content");
       this.splitText();
+    }
+
+    if (changedProperties.has("_durationMs") && this.parentTimegroup) {
+      flushSequenceDurationCache();
+      flushStartTimeMsCache();
+      this.parentTimegroup.requestUpdate("durationMs");
+      this.parentTimegroup.requestUpdate("currentTime");
     }
   }
 
