@@ -37,7 +37,7 @@ FitScale
 - Overlap is 495ms (15 frames at 30fps). Each scene fades in/out over this window.
 - Total duration with overlaps: ~51.3s.
 - DUR values = voice duration + buffer. Buffer gives the scene visual breathing room beyond the VO.
-- All animations are CSS-only, driven by `animationDelay` relative to each scene's local timeline. Use `animation-fill-mode: both` always (see css-animations skill).
+- All animations are CSS-only, driven by `animationDelay` relative to each scene's local timeline. Set fill-mode on non-ef-text elements as needed (see css-animations skill); ef-text handles it automatically.
 
 ## Voiceover Script
 
@@ -155,7 +155,7 @@ Each scene is a function (`SceneTitle`, `SceneAuthor`, etc.) returning a `Timegr
 
 Common patterns:
 - `sceneStyle(d)` applies crossfade in/out via CSS animation
-- Visual animations use `animationDelay` for stagger/sequencing, always with `fill-mode: both`
+- Visual animations use `animationDelay` for stagger/sequencing; ef-text auto-defaults fill-mode, plain elements need explicit fill-mode
 - `CompositionCanvas` wraps R3F Three.js content (particles in SceneStream)
 - `<Text split="char">` for per-character stagger animations
 

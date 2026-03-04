@@ -470,6 +470,65 @@ elements/packages/react/src/gui/
 └── ...                   # All components have React wrappers
 ```
 
+## Agent Panel & ef-edit Event System
+
+EFWorkbench includes a built-in right-column **Agent Sync panel** (`ef-agent-panel`) that accumulates GUI edits and generates a copyable prompt for coding agents.
+
+### How it works
+
+1. When a user drags, resizes, or rotates an element in EFCanvas, the canvas dispatches an `ef-edit` CustomEvent with `bubbles: true, composed: true`.
+2. EFWorkbench listens for `ef-edit` on itself (event bubbles up), then calls `agentPanel.addEdit(event.detail)`.
+3. The panel accumulates edits, renders a list, and exposes a "Copy Prompt" button.
+
+### ef-edit event payload (EditEvent)
+
+```ts
+interface EditEvent {
+  operation: ElementMovedOperation | ElementResizedOperation | ElementRotatedOperation;
+  description: string;   // human-readable sentence
+  selector: string;      // CSS path stopping at infrastructure tags
+  elementHtml: string;   // cleaned outerHTML (runtime attrs stripped)
+  timestamp: number;
+}
+```
+
+### Dispatching ef-edit
+
+```ts
+import { createEditCustomEvent } from './editEvents.js';
+element.dispatchEvent(createEditCustomEvent(editEvent));
+```
+
+### Listening from outside
+
+```ts
+// Bubbles + composed — listen on workbench or any ancestor
+workbench.addEventListener('ef-edit', (e: CustomEvent<EditEvent>) => {
+  console.log(e.detail.description, e.detail.selector);
+});
+```
+
+### Selector path rules
+
+- `buildSelectorPath()` walks up the DOM stopping at INFRASTRUCTURE_TAGS (`ef-canvas`, `ef-workbench`, `ef-pan-zoom`, etc.)
+- Auto-generated IDs (containing 8+ digits) are omitted; nth-of-type is used instead
+- `getElementHtml()` strips `style`, `data-element-id`, `data-selected`, and auto-generated ids from outerHTML
+
+### Agent panel API
+
+```ts
+agentPanel.addEdit(editEvent: EditEvent): void   // called by EFWorkbench
+agentPanel.clearEdits(): void
+```
+
+### File locations
+
+```
+elements/packages/elements/src/gui/
+├── EFAgentPanel.ts    # Lit component for the panel
+├── editEvents.ts      # EditEvent types, buildSelectorPath, buildAgentPrompt
+```
+
 ## Sandboxes
 
 Test individual components:
