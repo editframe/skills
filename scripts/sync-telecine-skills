@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_ROOT="$SCRIPT_DIR/.."
+
+cd "$PROJECT_ROOT"
+
+rsync -a --delete "$PROJECT_ROOT/skills/skills/" "$PROJECT_ROOT/telecine/skills/skills/"
+
+if ! git diff --quiet telecine/skills/; then
+  git add telecine/skills/
+  git commit -m "sync skills into telecine subtree"
+else
+  echo "telecine/skills already up to date"
+fi

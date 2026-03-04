@@ -27,6 +27,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+"$SCRIPT_DIR/sync-telecine-skills"
+
 git fetch telecine "$BRANCH" 2>/dev/null || true
 
 TREE=$(git rev-parse HEAD:telecine)
