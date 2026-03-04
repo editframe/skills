@@ -291,6 +291,16 @@ export class EFText extends EFTemporal(LitElement) {
     const hasAnimation = animationName && animationName !== "none";
 
     for (const segment of segments) {
+      // Whitespace segments are layout spacers — they must not receive animation.
+      // Animating them (especially with opacity/transform keyframes and backwards
+      // fill-mode) causes spaces to visually collapse between animated words/chars.
+      if (segment.hasAttribute("data-whitespace")) {
+        for (const prop of animationPropsToPropagate) {
+          segment.style.removeProperty(prop);
+        }
+        continue;
+      }
+
       if (hasAnimation) {
         for (const prop of animationPropsToPropagate) {
           let value = computed.getPropertyValue(prop);
@@ -644,6 +654,7 @@ export class EFText extends EFTemporal(LitElement) {
     // after propagation to avoid being cleared.
     if (useTemplate) {
       for (const segment of this.segments) {
+        if (segment.hasAttribute("data-whitespace")) continue;
         const computedFill = window
           .getComputedStyle(segment)
           .getPropertyValue("animation-fill-mode");

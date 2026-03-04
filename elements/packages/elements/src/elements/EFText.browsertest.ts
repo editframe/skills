@@ -2155,4 +2155,530 @@ describe("EFText", () => {
       });
     }
   });
+
+  describe("space preservation during staggered animation", () => {
+    test("whitespace segments do not receive animation propagation", async () => {
+      createTestStyle(`
+        @keyframes ws-anim-test {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `);
+
+      const container = document.createElement("div");
+      container.style.cssText = "position:relative;width:800px;font:bold 20px/1.4 sans-serif;";
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.textContent = "HELLO WORLD";
+      text.setAttribute("stagger", "200ms");
+      text.duration = "3s";
+      text.style.animationName = "ws-anim-test";
+      text.style.animationDuration = "0.5s";
+      text.style.animationFillMode = "both";
+
+      timegroup.appendChild(text);
+      container.appendChild(timegroup);
+      document.body.appendChild(container);
+      testElements.push(container);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((s) => s.updateComplete));
+      await new Promise((r) => requestAnimationFrame(r));
+
+      const spaceSegments = segments.filter((s) => /^\s+$/.test(s.segmentText));
+      expect(spaceSegments.length).toBeGreaterThan(0);
+
+      for (const seg of spaceSegments) {
+        const animName = seg.style.getPropertyValue("animation-name");
+        expect(
+          animName,
+          `whitespace segment should not have animation-name set (got: "${animName}")`,
+        ).toBe("");
+      }
+    });
+
+    test("whitespace segments have white-space:pre to survive flex blockification", async () => {
+      // When ef-text has display:flex (Tailwind), CSS blockifies direct children to display:block.
+      // A display:block element with white-space:normal collapses a space-only text node
+      // to a zero-height, zero-width line box (CSS spec: line box with only collapsible
+      // whitespace has zero height). white-space:pre on :host([data-whitespace]) prevents this.
+      const container = document.createElement("div");
+      container.style.cssText = "position:absolute;top:0;left:0;width:800px;font:bold 24px monospace;";
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.textContent = "HELLO WORLD";
+      text.duration = "3s";
+
+      timegroup.appendChild(text);
+      container.appendChild(timegroup);
+      document.body.appendChild(container);
+      testElements.push(container);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((s) => s.updateComplete));
+      await new Promise((r) => requestAnimationFrame(r));
+
+      const spaceSeg = segments.find((s) => /^\s+$/.test(s.segmentText));
+      expect(spaceSeg).toBeDefined();
+
+      const whiteSpace = window.getComputedStyle(spaceSeg!).whiteSpace;
+      expect(
+        whiteSpace,
+        `whitespace segment must have white-space:pre — without it, display:block collapses space to 0×0 in flex containers (got: "${whiteSpace}")`,
+      ).toBe("pre");
+    });
+
+    test("whitespace segment occupies layout space: M starts after A+space, not immediately after A", async () => {
+      // Directly verifies the user-visible bug: "A M" renders as "AM" (M at A's right edge).
+      // No animation — confirms the space segment contributes layout width at all.
+      const container = document.createElement("div");
+      container.style.cssText = "position:absolute;top:0;left:0;font:24px monospace;white-space:nowrap;";
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.textContent = "A M";
+      text.duration = "3s";
+      // No animation, no stagger
+
+      timegroup.appendChild(text);
+      container.appendChild(timegroup);
+      document.body.appendChild(container);
+      testElements.push(container);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((s) => s.updateComplete));
+      await new Promise((r) => requestAnimationFrame(r));
+
+      timegroup.currentTimeMs = 1500;
+      await new Promise((r) => requestAnimationFrame(r));
+
+      const aSeg = segments.find((s) => s.segmentText === "A");
+      const mSeg = segments.find((s) => s.segmentText === "M");
+      const spaceSeg = segments.find((s) => /^\s+$/.test(s.segmentText));
+      expect(aSeg).toBeDefined();
+      expect(mSeg).toBeDefined();
+      expect(spaceSeg).toBeDefined();
+
+      const aRect = aSeg!.getBoundingClientRect();
+      const mRect = mSeg!.getBoundingClientRect();
+      const spaceRect = spaceSeg!.getBoundingClientRect();
+
+      expect(
+        spaceRect.width,
+        `space segment must have positive width (got ${spaceRect.width}px) — space has zero layout size`,
+      ).toBeGreaterThan(0);
+
+      expect(
+        mRect.left,
+        `M left (${mRect.left.toFixed(1)}) must be greater than A right (${aRect.right.toFixed(1)}) — space has zero layout contribution`,
+      ).toBeGreaterThan(aRect.right);
+    });
+
+    test("word-split staggered animation leaves a pixel gap between words at all seek points", async () => {
+      createTestStyle(`
+        @keyframes ws-layout-test {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `);
+
+      const container = document.createElement("div");
+      container.style.cssText = "position:absolute;top:0;left:0;font:bold 40px/1 monospace;white-space:nowrap;";
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.textContent = "HELLO WORLD";
+      text.setAttribute("stagger", "500ms");
+      text.duration = "3s";
+      text.style.animationName = "ws-layout-test";
+      text.style.animationDuration = "0.3s";
+      text.style.animationFillMode = "both";
+
+      timegroup.appendChild(text);
+      container.appendChild(timegroup);
+      document.body.appendChild(container);
+      testElements.push(container);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((s) => s.updateComplete));
+      await new Promise((r) => requestAnimationFrame(r));
+
+      const helloSeg = segments.find((s) => s.segmentText === "HELLO");
+      const worldSeg = segments.find((s) => s.segmentText === "WORLD");
+      expect(helloSeg).toBeDefined();
+      expect(worldSeg).toBeDefined();
+
+      // Check at multiple seek points including before WORLD's animation begins
+      for (const seekMs of [0, 200, 400, 500, 1000, 2000]) {
+        timegroup.currentTimeMs = seekMs;
+        await new Promise((r) => requestAnimationFrame(r));
+
+        const helloRect = helloSeg!.getBoundingClientRect();
+        const worldRect = worldSeg!.getBoundingClientRect();
+        const gap = worldRect.left - helloRect.right;
+
+        expect(
+          gap,
+          `at t=${seekMs}ms: gap between HELLO (right=${helloRect.right.toFixed(1)}) and WORLD (left=${worldRect.left.toFixed(1)}) is ${gap.toFixed(1)}px — space collapsed`,
+        ).toBeGreaterThan(2);
+      }
+    });
+
+    test("whitespace segments remain opaque during opacity-based staggered animation", async () => {
+      // This is the direct visual regression: with animation propagated to whitespace segments
+      // and fill-mode:backwards, the space renders at opacity:0 before/during its animation
+      // delay, making spaces visually disappear between words.
+      createTestStyle(`
+        @keyframes ws-opacity-test {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `);
+
+      const container = document.createElement("div");
+      container.style.cssText = "position:absolute;top:0;left:0;width:800px;font:bold 20px/1.4 sans-serif;white-space:nowrap;";
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.textContent = "HELLO WORLD";
+      text.setAttribute("stagger", "500ms");
+      text.duration = "3s";
+      text.style.animationName = "ws-opacity-test";
+      text.style.animationDuration = "0.3s";
+      text.style.animationFillMode = "both";
+
+      timegroup.appendChild(text);
+      container.appendChild(timegroup);
+      document.body.appendChild(container);
+      testElements.push(container);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((s) => s.updateComplete));
+      await new Promise((r) => requestAnimationFrame(r));
+
+      const spaceSegment = segments.find((s) => /^\s+$/.test(s.segmentText));
+      expect(spaceSegment).toBeDefined();
+
+      // At time 0, WORLD hasn't started yet (stagger=500ms puts it at delay=500ms).
+      // With old code, the space segment also had animation-fill-mode:backwards and
+      // animation-name set, so it would be at opacity:0 (from keyframe).
+      timegroup.currentTimeMs = 0;
+      await new Promise((r) => requestAnimationFrame(r));
+
+      const opacity = window.getComputedStyle(spaceSegment!).opacity;
+      expect(
+        opacity,
+        `whitespace segment opacity should be 1 at t=0 (was: ${opacity}) — backwards fill-mode was making spaces invisible`,
+      ).toBe("1");
+    });
+
+    test("whitespace segments are not hidden during word-split staggered animation", async () => {
+      createTestStyle(`
+        @keyframes space-test-fade {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `);
+
+      const container = document.createElement("div");
+      container.style.cssText =
+        "position:relative;width:800px;font:bold 20px/1.4 sans-serif;";
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.textContent = "HELLO WORLD";
+      text.setAttribute("stagger", "200ms");
+      text.duration = "3s";
+      text.style.animationName = "space-test-fade";
+      text.style.animationDuration = "0.3s";
+      text.style.animationFillMode = "both";
+
+      timegroup.appendChild(text);
+      container.appendChild(timegroup);
+      document.body.appendChild(container);
+      testElements.push(container);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((s) => s.updateComplete));
+      await new Promise((r) => requestAnimationFrame(r));
+
+      const spaceSegments = segments.filter((s) => /^\s+$/.test(s.segmentText));
+      expect(spaceSegments.length).toBeGreaterThan(0);
+
+      const seekPoints = [0, 500, 1000, 1500, 2000, 2500];
+      for (const seekMs of seekPoints) {
+        timegroup.currentTimeMs = seekMs;
+        await new Promise((r) => requestAnimationFrame(r));
+
+        for (const seg of spaceSegments) {
+          const display = seg.style.display;
+          expect(
+            display,
+            `space segment should not be display:none at ${seekMs}ms (got: ${display})`,
+          ).not.toBe("none");
+        }
+      }
+    });
+
+    test("word-split staggered animation preserves visual gap between words", async () => {
+      createTestStyle(`
+        @keyframes space-gap-fade {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `);
+
+      const container = document.createElement("div");
+      container.style.cssText =
+        "position:absolute;top:0;left:0;width:800px;font:bold 20px/1.4 sans-serif;white-space:nowrap;";
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.textContent = "HELLO WORLD";
+      text.setAttribute("stagger", "200ms");
+      text.duration = "3s";
+      text.style.animationName = "space-gap-fade";
+      text.style.animationDuration = "0.3s";
+      text.style.animationFillMode = "both";
+
+      timegroup.appendChild(text);
+      container.appendChild(timegroup);
+      document.body.appendChild(container);
+      testElements.push(container);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((s) => s.updateComplete));
+      await new Promise((r) => requestAnimationFrame(r));
+
+      const helloSeg = segments.find((s) => s.segmentText === "HELLO");
+      const worldSeg = segments.find((s) => s.segmentText === "WORLD");
+      expect(helloSeg).toBeDefined();
+      expect(worldSeg).toBeDefined();
+
+      // Seek to a point where animation has progressed (past duration)
+      timegroup.currentTimeMs = 2500;
+      await new Promise((r) => requestAnimationFrame(r));
+
+      const helloRect = helloSeg!.getBoundingClientRect();
+      const worldRect = worldSeg!.getBoundingClientRect();
+
+      // HELLO and WORLD must have a layout gap between them — the space segment must
+      // contribute to inline layout even during animation.
+      expect(
+        worldRect.left,
+        `WORLD left edge (${worldRect.left.toFixed(1)}) must be greater than HELLO right edge (${helloRect.right.toFixed(1)}) — space segment collapsed`,
+      ).toBeGreaterThan(helloRect.right);
+    });
+
+    test("whitespace segment bounding rect has positive width during animation (no zero-width collapse)", async () => {
+      createTestStyle(`
+        @keyframes scaleIn {
+          0% { transform: scale(0); }
+          100% { transform: scale(1); }
+        }
+        .scale-in {
+          animation: scaleIn 0.5s ease-out;
+        }
+      `);
+
+      const container = document.createElement("div");
+      container.style.cssText =
+        "position:absolute;top:0;left:0;width:800px;font:bold 24px/1.4 sans-serif;white-space:nowrap;";
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.textContent = "HELLO WORLD";
+      text.setAttribute("stagger", "200ms");
+      text.duration = "3s";
+
+      const tmpl = document.createElement("template");
+      tmpl.innerHTML = `<ef-text-segment class="scale-in"></ef-text-segment>`;
+      text.appendChild(tmpl);
+
+      timegroup.appendChild(text);
+      container.appendChild(timegroup);
+      document.body.appendChild(container);
+      testElements.push(container);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((s) => s.updateComplete));
+      await new Promise((r) => requestAnimationFrame(r));
+
+      const spaceSegments = segments.filter((s) => /^\s+$/.test(s.segmentText));
+      expect(spaceSegments.length).toBeGreaterThan(0);
+
+      // Seek to t=0 — animation fill-mode backwards means segments are at from state
+      timegroup.currentTimeMs = 0;
+      await new Promise((r) => requestAnimationFrame(r));
+
+      // The space segment itself must have positive width — transform:scale(0) must not
+      // collapse the inline layout box of the whitespace segment.
+      for (const seg of spaceSegments) {
+        const rect = seg.getBoundingClientRect();
+        expect(
+          rect.width,
+          `space segment width should be > 0 at t=0 even with scale(0) animation (got: ${rect.width})`,
+        ).toBeGreaterThan(0);
+      }
+
+      // Also verify at animation completion
+      timegroup.currentTimeMs = 2500;
+      await new Promise((r) => requestAnimationFrame(r));
+
+      const helloSeg = segments.find((s) => s.segmentText === "HELLO");
+      const worldSeg = segments.find((s) => s.segmentText === "WORLD");
+      const helloRect = helloSeg!.getBoundingClientRect();
+      const worldRect = worldSeg!.getBoundingClientRect();
+      expect(worldRect.left).toBeGreaterThan(helloRect.right);
+    });
+
+    test("word-split with transform animation preserves visual gap between words (template path)", async () => {
+      createTestStyle(`
+        @keyframes bounceInTest {
+          0% { transform: scale(0.6) rotate(-10deg); }
+          50% { transform: scale(1.05) rotate(-3deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+        .bounce-in-test {
+          animation: 0.3s ease-out 0s 1 normal none running bounceInTest;
+        }
+      `);
+
+      const container = document.createElement("div");
+      container.style.cssText =
+        "position:absolute;top:0;left:0;width:800px;font:bold 20px/1.4 sans-serif;white-space:nowrap;";
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+
+      const text = document.createElement("ef-text");
+      text.split = "word";
+      text.textContent = "HELLO WORLD";
+      text.setAttribute("stagger", "200ms");
+      text.duration = "3s";
+
+      const tmpl = document.createElement("template");
+      tmpl.innerHTML = `<ef-text-segment class="bounce-in-test"></ef-text-segment>`;
+      text.appendChild(tmpl);
+
+      timegroup.appendChild(text);
+      container.appendChild(timegroup);
+      document.body.appendChild(container);
+      testElements.push(container);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((s) => s.updateComplete));
+      await new Promise((r) => requestAnimationFrame(r));
+
+      const helloSeg = segments.find((s) => s.segmentText === "HELLO");
+      const worldSeg = segments.find((s) => s.segmentText === "WORLD");
+      expect(helloSeg).toBeDefined();
+      expect(worldSeg).toBeDefined();
+
+      // Seek to mid-duration
+      timegroup.currentTimeMs = 2500;
+      await new Promise((r) => requestAnimationFrame(r));
+
+      const helloRect = helloSeg!.getBoundingClientRect();
+      const worldRect = worldSeg!.getBoundingClientRect();
+
+      expect(
+        worldRect.left,
+        `WORLD left (${worldRect.left.toFixed(1)}) must exceed HELLO right (${helloRect.right.toFixed(1)}) — space collapsed by transform animation`,
+      ).toBeGreaterThan(helloRect.right);
+    });
+
+    test("char-split staggered animation preserves visual gap between words", async () => {
+      createTestStyle(`
+        @keyframes char-gap-fade {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `);
+
+      const container = document.createElement("div");
+      container.style.cssText =
+        "position:absolute;top:0;left:0;width:800px;font:bold 20px/1.4 sans-serif;white-space:nowrap;";
+
+      const timegroup = document.createElement("ef-timegroup");
+      timegroup.duration = "5s";
+
+      const text = document.createElement("ef-text");
+      text.split = "char";
+      text.textContent = "HI THERE";
+      text.setAttribute("stagger", "50ms");
+      text.duration = "3s";
+      text.style.animationName = "char-gap-fade";
+      text.style.animationDuration = "0.3s";
+      text.style.animationFillMode = "both";
+
+      timegroup.appendChild(text);
+      container.appendChild(timegroup);
+      document.body.appendChild(container);
+      testElements.push(container);
+
+      await text.updateComplete;
+      const segments = await text.whenSegmentsReady();
+      await Promise.all(segments.map((s) => s.updateComplete));
+      await new Promise((r) => requestAnimationFrame(r));
+
+      // Find the space segment between HI and THERE
+      const spaceSegment = segments.find((s) => s.segmentText === " ");
+      expect(spaceSegment).toBeDefined();
+
+      // Find last char of "HI" and first char of "THERE"
+      const iSeg = segments.find((s) => s.segmentText === "I");
+      const tSeg = segments.find((s) => s.segmentText === "T");
+      expect(iSeg).toBeDefined();
+      expect(tSeg).toBeDefined();
+
+      // Seek to a point where animation has progressed
+      timegroup.currentTimeMs = 2500;
+      await new Promise((r) => requestAnimationFrame(r));
+
+      const iRect = iSeg!.getBoundingClientRect();
+      const tRect = tSeg!.getBoundingClientRect();
+
+      // There must be a layout gap between 'I' and 'T' for the space
+      expect(
+        tRect.left,
+        `'T' left edge (${tRect.left.toFixed(1)}) must be greater than 'I' right edge (${iRect.right.toFixed(1)}) — space between words collapsed`,
+      ).toBeGreaterThan(iRect.right);
+    });
+  });
 });
