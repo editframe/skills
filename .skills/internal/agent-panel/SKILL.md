@@ -9,10 +9,22 @@ The `EFAgentPanel` captures `ef-edit` CustomEvents dispatched whenever a user ma
 
 ## Worktree & Commands
 
-- **Worktree**: `/Users/collin/Editframe/editframe-agent-panel` (branch: `agent-panel`)
-- **Source root**: `elements/packages/elements/src/gui/`
-- **Unit tests** (vitest, Node): `RUNNER_CONTAINER=$(cd /Users/collin/Editframe/editframe-agent-panel/elements && scripts/docker-compose ps -q runner) && docker exec "$RUNNER_CONTAINER" npx vitest --config vitest.config.ts run 'pattern'`
-- **Browser tests** (vitest + Chromium): `cd /Users/collin/Editframe/editframe-agent-panel/elements && scripts/browsertest 'pattern'`
+The feature lives on branch `agent-panel`. Find the worktree:
+
+```bash
+git worktree list | grep agent-panel
+```
+
+All paths below are relative to that worktree root. Source is under `elements/packages/elements/src/gui/`.
+
+```bash
+# Unit tests (vitest, Node)
+RUNNER_CONTAINER=$(cd elements && scripts/docker-compose ps -q runner)
+docker exec "$RUNNER_CONTAINER" npx vitest --config vitest.config.ts run 'pattern'
+
+# Browser tests (vitest + Chromium)
+cd elements && scripts/browsertest 'pattern'
+```
 
 ## Event Pipeline
 
@@ -82,19 +94,22 @@ this.dispatchEvent(createEditCustomEvent({
 
 `buildPropertyEditEvent(element, property, oldValue, newValue)` in `EFInspector.ts` is a shorter form for simple property edits.
 
-## What is Currently Wired
+## Finding Current Dispatch Points
 
-- **Canvas move/resize/rotate** — `EFOverlayItem.ts`, dispatched on pointer-up / bounds-change-end / rotation-change-end
-- **Inspector property edits** — `EFInspector.ts`, dispatched on every committed control change
-- **Trim drag end** — `TrackItem.handleTrimChangeEnd()`, dispatched when `trim-change-end` fires; pre-drag values captured in `handleTrimChange` via `#preTrimValues`
-- **Loop toggle** — `EFTimeline.handleToggleLoop()`, dispatches with old/new boolean
+```bash
+# Every call site that produces an ef-edit event
+rg 'createEditCustomEvent' elements/packages/elements/src/
+
+# Track subclasses that override render() — each must bind @trim-change-end
+rg 'override render' elements/packages/elements/src/gui/timeline/tracks/
+
+# Registered element schemas
+rg 'SCHEMA_REGISTRY' elements/packages/elements/src/gui/elementPropertySchema.ts
+```
 
 ## What is NOT Wired (intentional)
 
-- Playback controls (play/pause/seek) — playback state, not composition content
-- Pan-zoom / zoom level — display only
-- Toolbar settings (presentation mode, stats, render mode) — display only
-- Hierarchy reorder — `EFHierarchy` dispatches `hierarchy-reorder`; would need a new `ElementReorderedOperation` type; not yet implemented
+Playback controls (play/pause/seek), pan-zoom/zoom level, and toolbar settings are display-only state — they should not produce `ef-edit` events. Hierarchy reorder (`hierarchy-reorder` from `EFHierarchy`) would require a new `ElementReorderedOperation` type; not yet implemented.
 
 ## Shadow DOM Event Routing Gotcha
 
