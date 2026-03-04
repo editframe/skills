@@ -1,5 +1,5 @@
 ---
-name: agent-panel
+name: ef-agent-panel
 description: Workbench agent panel system — ef-edit CustomEvent pipeline, registry roll-up, selector grouping, and element property schema. Use when adding new GUI edit capture points, expanding the inspector schema, or continuing development of the EFAgentPanel feature.
 ---
 
