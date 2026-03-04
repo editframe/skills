@@ -7,25 +7,6 @@ description: Workbench agent panel system — ef-edit CustomEvent pipeline, regi
 
 The `EFAgentPanel` captures `ef-edit` CustomEvents dispatched whenever a user makes a meaningful composition edit in the GUI, deduplicates them by element+property via a keyed registry, groups them by selector, and renders a copy-able coding-agent prompt.
 
-## Worktree & Commands
-
-The feature lives on branch `agent-panel`. Find the worktree:
-
-```bash
-git worktree list | grep agent-panel
-```
-
-All paths below are relative to that worktree root. Source is under `elements/packages/elements/src/gui/`.
-
-```bash
-# Unit tests (vitest, Node)
-RUNNER_CONTAINER=$(cd elements && scripts/docker-compose ps -q runner)
-docker exec "$RUNNER_CONTAINER" npx vitest --config vitest.config.ts run 'pattern'
-
-# Browser tests (vitest + Chromium)
-cd elements && scripts/browsertest 'pattern'
-```
-
 ## Event Pipeline
 
 ```
