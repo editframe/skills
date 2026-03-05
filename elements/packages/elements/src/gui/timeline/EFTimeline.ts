@@ -908,6 +908,7 @@ export class EFTimeline extends TWMixin(LitElement) {
 
   #durationChangeTarget?: Element;
   #durationChangeHandler = () => this.requestUpdate();
+  #previousTargetTemporal: TemporalMixinInterface | null = null;
 
   protected willUpdate(changedProperties: PropertyValues): void {
     // Setup TargetController for canvas target
@@ -1012,11 +1013,19 @@ export class EFTimeline extends TWMixin(LitElement) {
       changedProperties.has("targetElement") ||
       changedProperties.has("target")
     ) {
-      this.setupTargetObserver();
       // Reset selection listener to ensure we're listening to the right canvas
       this.removeSelectionListener();
       this.selectionChangeHandler = undefined;
       this.setupSelectionListener();
+    }
+
+    // Re-attach observer/durationchange listener whenever targetTemporal changes,
+    // regardless of which property triggered the update (selection changes, controlTarget
+    // changes, canvas activation, etc. all can silently change targetTemporal).
+    const currentTargetTemporal = this.targetTemporal;
+    if (currentTargetTemporal !== this.#previousTargetTemporal) {
+      this.#previousTargetTemporal = currentTargetTemporal;
+      this.setupTargetObserver();
     }
 
     if (this.tracksScrollRef.value && !this.scrollHandler) {
