@@ -866,6 +866,10 @@ export class EFTimeline extends TWMixin(LitElement) {
     this.removeScrollListener();
     this.removeKeyboardListener();
     this.targetObserver?.disconnect();
+    if (this.#durationChangeTarget) {
+      this.#durationChangeTarget.removeEventListener("durationchange", this.#durationChangeHandler);
+      this.#durationChangeTarget = undefined;
+    }
     this.resizeObserver?.disconnect();
     // Unsubscribe from playback controller
     this.unsubscribeFromPlaybackController();
@@ -884,6 +888,10 @@ export class EFTimeline extends TWMixin(LitElement) {
   private setupTargetObserver(): void {
     // Always disconnect from previous target first
     this.targetObserver?.disconnect();
+    if (this.#durationChangeTarget) {
+      this.#durationChangeTarget.removeEventListener("durationchange", this.#durationChangeHandler);
+      this.#durationChangeTarget = undefined;
+    }
 
     const target = this.targetTemporal;
     if (target && target instanceof Element) {
@@ -893,8 +901,13 @@ export class EFTimeline extends TWMixin(LitElement) {
         subtree: true, // watch entire subtree
         attributes: true, // attribute changes
       });
+      target.addEventListener("durationchange", this.#durationChangeHandler);
+      this.#durationChangeTarget = target;
     }
   }
+
+  #durationChangeTarget?: Element;
+  #durationChangeHandler = () => this.requestUpdate();
 
   protected willUpdate(changedProperties: PropertyValues): void {
     // Setup TargetController for canvas target

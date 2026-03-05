@@ -522,6 +522,11 @@ export class EFTimegroup
     this.emitContentChange(detail?.reason ?? "content");
   };
 
+  #childDurationChangeHandler = () => {
+    durationCache.delete(this);
+    this.requestUpdate();
+  };
+
   #recomputeAggregateReadyState(): void {
     const children = shallowGetTemporalElements(this);
     if (children.length === 0) {
@@ -569,6 +574,10 @@ export class EFTimegroup
           "contentchange",
           this.#childContentChangeHandler,
         );
+        child.removeEventListener(
+          "durationchange",
+          this.#childDurationChangeHandler,
+        );
       }
     }
 
@@ -582,6 +591,10 @@ export class EFTimegroup
         child.addEventListener(
           "contentchange",
           this.#childContentChangeHandler,
+        );
+        child.addEventListener(
+          "durationchange",
+          this.#childDurationChangeHandler,
         );
       }
     }
@@ -1447,6 +1460,7 @@ export class EFTimegroup
 
     if (this.#previousDurationMs !== this.durationMs) {
       this.#previousDurationMs = this.durationMs;
+      this.dispatchEvent(new CustomEvent("durationchange", { bubbles: true, composed: true }));
       // Render clones are sequenced via seekForRender — don't trigger autonomous re-renders.
       // This prevents FrameController.abort() from interrupting an in-progress seekForRender.
       if (!this.hasAttribute("data-no-playback-controller")) {
@@ -1472,6 +1486,10 @@ export class EFTimegroup
       child.removeEventListener(
         "contentchange",
         this.#childContentChangeHandler,
+      );
+      child.removeEventListener(
+        "durationchange",
+        this.#childDurationChangeHandler,
       );
     }
     this.#trackedChildren.clear();

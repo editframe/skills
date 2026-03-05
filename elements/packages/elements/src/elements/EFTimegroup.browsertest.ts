@@ -295,6 +295,44 @@ describe(`<ef-timegroup mode="contain">`, () => {
   });
 });
 
+describe("durationchange event", () => {
+  test("emits durationchange when durationMs changes", async () => {
+    const timegroup = renderTimegroup(
+      html`<ef-timegroup mode="fixed" duration="5s"></ef-timegroup>`,
+    );
+    await timegroup.updateComplete;
+
+    const events: Event[] = [];
+    timegroup.addEventListener("durationchange", (e) => events.push(e));
+
+    timegroup.setAttribute("duration", "10s");
+    await timegroup.updateComplete;
+
+    assert.equal(events.length, 1);
+  });
+
+  test("durationchange bubbles up through ancestor timegroups", async () => {
+    const root = renderTimegroup(
+      html`
+        <ef-timegroup id="root" mode="contain">
+          <ef-timegroup id="child" mode="fixed" duration="5s"></ef-timegroup>
+        </ef-timegroup>
+      `,
+    );
+    await root.updateComplete;
+
+    const rootEvents: Event[] = [];
+    root.addEventListener("durationchange", (e) => rootEvents.push(e));
+
+    const child = root.querySelector("#child") as EFTimegroup;
+    child.setAttribute("duration", "10s");
+    await child.updateComplete;
+    await root.updateComplete;
+
+    assert.ok(rootEvents.length >= 1, "root should receive bubbled durationchange");
+  });
+});
+
 describe("startTimeMs", () => {
   test("is computed relative to the root time group", async () => {
     const timegroup = renderTimegroup(

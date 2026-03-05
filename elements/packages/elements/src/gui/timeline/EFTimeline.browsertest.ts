@@ -803,6 +803,43 @@ describe("EFTimeline", () => {
       // 10000ms * 0.1 px/ms = 1000px + 200px hierarchy width = 1200px
       expect(tracksContent.style.minWidth).toBe("1200px");
     });
+
+    test("updates layout when target durationMs changes via child change", async () => {
+      const root = document.createElement("ef-timegroup") as EFTimegroup;
+      const rootId = nextId();
+      root.id = rootId;
+      root.setAttribute("mode", "contain");
+      document.body.appendChild(root);
+
+      const child = document.createElement("ef-timegroup") as EFTimegroup;
+      child.setAttribute("mode", "fixed");
+      child.setAttribute("duration", "5s");
+      root.appendChild(child);
+
+      const timeline = document.createElement("ef-timeline") as EFTimeline;
+      timeline.controlTarget = rootId;
+      timeline.pixelsPerMs = 0.1;
+      timeline.style.width = "800px";
+      timeline.style.height = "400px";
+      document.body.appendChild(timeline);
+
+      await root.updateComplete;
+      await timeline.updateComplete;
+
+      const tracksContent = timeline.shadowRoot?.querySelector(
+        ".tracks-content",
+      ) as HTMLElement;
+      // 5000ms * 0.1 px/ms = 500px + 200px hierarchy = 700px
+      expect(tracksContent.style.minWidth).toBe("700px");
+
+      child.setAttribute("duration", "20s");
+      await child.updateComplete;
+      await root.updateComplete;
+      await timeline.updateComplete;
+
+      // 20000ms * 0.1 px/ms = 2000px + 200px hierarchy = 2200px
+      expect(tracksContent.style.minWidth).toBe("2200px");
+    });
   });
 
   describe("playhead", () => {
