@@ -769,6 +769,17 @@ export function renderTimegroupToCanvas(
   let lastTimeMs = -1;
   let disposed = false;
 
+  // Invalidate lastTimeMs when composition structure or attributes change so
+  // refresh() re-renders even when currentTimeMs hasn't changed (e.g. paused edits).
+  const compositionObserver = new MutationObserver(() => {
+    if (!rendering) lastTimeMs = -1;
+  });
+  compositionObserver.observe(timegroup, {
+    attributes: true,
+    childList: true,
+    subtree: true,
+  });
+
   // Create RenderContext for caching across refresh calls (foreignObject only)
   const renderContext = new RenderContext();
 
@@ -1003,6 +1014,7 @@ export function renderTimegroupToCanvas(
   const dispose = (): void => {
     if (disposed) return;
     disposed = true;
+    compositionObserver.disconnect();
     frameController.abort();
     renderContext.dispose();
 

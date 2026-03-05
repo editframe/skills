@@ -5,7 +5,7 @@
  * verifying observable outputs (return values, side effects) not implementation details.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import {
   resetRenderState,
   getRenderState,
@@ -16,8 +16,11 @@ import {
   ContentNotReadyError,
   loadImageFromDataUri,
   captureTimegroupAtTime,
+  renderTimegroupToCanvas,
 } from "./renderTimegroupToCanvas.js";
+import { FrameController } from "./FrameController.js";
 import "../elements/EFTimegroup.js";
+import "../elements/EFText.js";
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
 
 describe("getRenderState", () => {
@@ -388,5 +391,61 @@ describe("cache metrics", () => {
 
     const metrics2 = getCacheMetrics();
     expect(metrics2.inlineImageCacheHits).toBe(7);
+  });
+});
+
+describe("canvas preview lastTimeMs guard", () => {
+  let preview: ReturnType<typeof renderTimegroupToCanvas> | null = null;
+  let timegroup: EFTimegroup | null = null;
+
+  beforeEach(async () => {
+    await customElements.whenDefined("ef-timegroup");
+  });
+
+  afterEach(() => {
+    preview?.dispose();
+    preview = null;
+    timegroup?.remove();
+    timegroup = null;
+    vi.restoreAllMocks();
+  });
+
+  it("skips refresh when called twice at same time, re-renders after invalidation", async () => {
+    timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.style.cssText = "width:200px;height:150px;";
+    document.body.append(timegroup);
+    await timegroup.updateComplete;
+
+    // Track calls to FrameController.prototype.renderFrame from the canvas preview.
+    // We use a unique per-instance counter by patching the prototype before creating preview.
+    let renderFrameCallCount = 0;
+    const origRenderFrame = FrameController.prototype.renderFrame;
+    FrameController.prototype.renderFrame = function (...args) {
+      renderFrameCallCount++;
+      return origRenderFrame.apply(this, args as Parameters<typeof origRenderFrame>);
+    };
+
+    try {
+      preview = renderTimegroupToCanvas(timegroup);
+
+      // Wait for initial refresh to settle
+      await new Promise((r) => setTimeout(r, 50));
+      const countAfterInit = renderFrameCallCount;
+      expect(countAfterInit).toBeGreaterThan(0);
+
+      // Second refresh at same time should be blocked by lastTimeMs guard
+      await preview.refresh();
+      expect(renderFrameCallCount).toBe(countAfterInit);
+
+      // Change an attribute on the timegroup — MutationObserver should reset lastTimeMs
+      timegroup.setAttribute("duration", "5s");
+      await new Promise((r) => setTimeout(r, 0));
+
+      // Now refresh() should bypass the guard and re-render
+      await preview.refresh();
+      expect(renderFrameCallCount).toBeGreaterThan(countAfterInit);
+    } finally {
+      FrameController.prototype.renderFrame = origRenderFrame;
+    }
   });
 });

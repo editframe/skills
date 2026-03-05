@@ -1049,9 +1049,8 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
     override updated(changedProperties: Map<PropertyKey, unknown>): void {
       super.updated?.(changedProperties);
 
-      // Re-render the current frame when source-mapping or trim properties
-      // change (the timeline-to-source mapping is different, so the visible
-      // frame changes even though currentTimeMs hasn't).
+      // Re-render the current frame when source-mapping, trim, offset, or duration
+      // properties change (the visible frame changes even though currentTimeMs hasn't).
       // Also render the initial frame when a standalone root becomes ready.
       const sourceChanged =
         changedProperties.has("_sourceInMs") ||
@@ -1063,8 +1062,10 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
         changedProperties.has("contentReadyState") &&
         changedProperties.get("contentReadyState") !== "ready" &&
         this.contentReadyState === "ready";
+      const offsetChanged = changedProperties.has("_offsetMs");
+      const durationChanged = changedProperties.has("_durationMs");
 
-      if (sourceChanged || trimChanged || becameReady) {
+      if (sourceChanged || trimChanged || becameReady || offsetChanged || durationChanged) {
         // Render clones are sequenced via seekForRender — don't trigger autonomous re-renders,
         // which would abort the in-progress seekForRender FrameController signal.
         const isRenderClone = this.rootTimegroup?.hasAttribute(

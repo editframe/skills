@@ -4,7 +4,7 @@ import {
   render as litRender,
   type TemplateResult,
 } from "lit";
-import { assert, beforeEach, describe, test } from "vitest";
+import { assert, beforeEach, describe, test, vi } from "vitest";
 import { EFTimegroup, flushSequenceDurationCache } from "./EFTimegroup.js";
 import "./EFTimegroup.js";
 import { customElement } from "lit/decorators/custom-element.js";
@@ -1545,5 +1545,47 @@ describe("contentReadyState aggregation", () => {
 
     assert.include(reasons, "bounds");
     tg.remove();
+  });
+});
+
+describe("preview sync on paused edits", () => {
+  test("calls requestFrameRender on root when child offset changes", async () => {
+    const tg = document.createElement("ef-timegroup") as EFTimegroup;
+    const child = document.createElement("test-temporal");
+    child.setAttribute("duration", "5s");
+    tg.append(child);
+    document.body.append(tg);
+    await tg.updateComplete;
+    await child.updateComplete;
+    await tg.updateComplete;
+
+    const spy = vi.spyOn(tg, "requestFrameRender");
+    child.setAttribute("offset", "1s");
+    await child.updateComplete;
+    await tg.updateComplete;
+
+    assert.isTrue(spy.mock.calls.length > 0, "requestFrameRender should be called when child offset changes");
+    tg.remove();
+    spy.mockRestore();
+  });
+
+  test("calls requestFrameRender on root when child duration changes", async () => {
+    const tg = document.createElement("ef-timegroup") as EFTimegroup;
+    const child = document.createElement("ef-text") as EFTemporal;
+    child.setAttribute("duration", "5s");
+    tg.append(child);
+    document.body.append(tg);
+    await tg.updateComplete;
+    await child.updateComplete;
+    await tg.updateComplete;
+
+    const spy = vi.spyOn(tg, "requestFrameRender");
+    child.setAttribute("duration", "3s");
+    await child.updateComplete;
+    await tg.updateComplete;
+
+    assert.isTrue(spy.mock.calls.length > 0, "requestFrameRender should be called when child duration changes");
+    tg.remove();
+    spy.mockRestore();
   });
 });

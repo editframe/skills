@@ -223,9 +223,10 @@ export class EFText extends EFTemporal(LitElement) {
     this.animationObserver?.disconnect();
   }
 
-  protected updated(
+  protected override updated(
     changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>,
   ): void {
+    super.updated(changedProperties);
     if (
       changedProperties.has("split") ||
       changedProperties.has("staggerMs") ||
