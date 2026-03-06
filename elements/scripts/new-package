@@ -78,6 +78,7 @@ const pkg = {
     "./package.json": "./package.json",
   },
   publishConfig: {
+    access: "public",
     exports: {
       ".": {
         import: {

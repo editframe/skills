@@ -14,4 +14,4 @@ else
 fi
 
 echo "Publishing with npm tag: $NPM_TAG"
-npm publish --tag "$NPM_TAG" --workspaces
+npm publish --tag "$NPM_TAG" --access public --workspaces
