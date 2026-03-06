@@ -1065,7 +1065,13 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       const offsetChanged = changedProperties.has("_offsetMs");
       const durationChanged = changedProperties.has("_durationMs");
 
-      if (sourceChanged || trimChanged || becameReady || offsetChanged || durationChanged) {
+      if (
+        sourceChanged ||
+        trimChanged ||
+        becameReady ||
+        offsetChanged ||
+        durationChanged
+      ) {
         // Render clones are sequenced via seekForRender — don't trigger autonomous re-renders,
         // which would abort the in-progress seekForRender FrameController signal.
         const isRenderClone = this.rootTimegroup?.hasAttribute(

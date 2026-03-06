@@ -9,7 +9,11 @@ import { EFTimegroup, flushSequenceDurationCache } from "./EFTimegroup.js";
 import "./EFTimegroup.js";
 import { customElement } from "lit/decorators/custom-element.js";
 import { ContextMixin } from "../gui/ContextMixin.js";
-import { EFTemporal, resetTemporalCache, TemporalMixinInterface } from "./EFTemporal.js";
+import {
+  EFTemporal,
+  resetTemporalCache,
+  TemporalMixinInterface,
+} from "./EFTemporal.js";
 // Need workbench to make workbench wrapping occurs
 import "../gui/EFWorkbench.js";
 // Import EF_INTERACTIVE to allow controlling it in tests
@@ -329,7 +333,10 @@ describe("durationchange event", () => {
     await child.updateComplete;
     await root.updateComplete;
 
-    assert.ok(rootEvents.length >= 1, "root should receive bubbled durationchange");
+    assert.ok(
+      rootEvents.length >= 1,
+      "root should receive bubbled durationchange",
+    );
   });
 });
 
@@ -1564,14 +1571,18 @@ describe("preview sync on paused edits", () => {
     await child.updateComplete;
     await tg.updateComplete;
 
-    assert.isTrue(spy.mock.calls.length > 0, "requestFrameRender should be called when child offset changes");
+    assert.isTrue(
+      spy.mock.calls.length > 0,
+      "requestFrameRender should be called when child offset changes",
+    );
     tg.remove();
     spy.mockRestore();
   });
 
   test("calls requestFrameRender on root when child duration changes", async () => {
     const tg = document.createElement("ef-timegroup") as EFTimegroup;
-    const child = document.createElement("ef-text") as unknown as HTMLElement & TemporalMixinInterface;
+    const child = document.createElement("ef-text") as unknown as HTMLElement &
+      TemporalMixinInterface;
     child.setAttribute("duration", "5s");
     tg.append(child);
     document.body.append(tg);
@@ -1584,7 +1595,10 @@ describe("preview sync on paused edits", () => {
     await child.updateComplete;
     await tg.updateComplete;
 
-    assert.isTrue(spy.mock.calls.length > 0, "requestFrameRender should be called when child duration changes");
+    assert.isTrue(
+      spy.mock.calls.length > 0,
+      "requestFrameRender should be called when child duration changes",
+    );
     tg.remove();
     spy.mockRestore();
   });

@@ -867,7 +867,10 @@ export class EFTimeline extends TWMixin(LitElement) {
     this.removeKeyboardListener();
     this.targetObserver?.disconnect();
     if (this.#durationChangeTarget) {
-      this.#durationChangeTarget.removeEventListener("durationchange", this.#durationChangeHandler);
+      this.#durationChangeTarget.removeEventListener(
+        "durationchange",
+        this.#durationChangeHandler,
+      );
       this.#durationChangeTarget = undefined;
     }
     this.resizeObserver?.disconnect();
@@ -889,7 +892,10 @@ export class EFTimeline extends TWMixin(LitElement) {
     // Always disconnect from previous target first
     this.targetObserver?.disconnect();
     if (this.#durationChangeTarget) {
-      this.#durationChangeTarget.removeEventListener("durationchange", this.#durationChangeHandler);
+      this.#durationChangeTarget.removeEventListener(
+        "durationchange",
+        this.#durationChangeHandler,
+      );
       this.#durationChangeTarget = undefined;
     }
 

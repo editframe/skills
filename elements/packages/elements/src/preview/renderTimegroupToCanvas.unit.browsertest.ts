@@ -422,7 +422,10 @@ describe("canvas preview lastTimeMs guard", () => {
     const origRenderFrame = FrameController.prototype.renderFrame;
     FrameController.prototype.renderFrame = function (...args) {
       renderFrameCallCount++;
-      return origRenderFrame.apply(this, args as Parameters<typeof origRenderFrame>);
+      return origRenderFrame.apply(
+        this,
+        args as Parameters<typeof origRenderFrame>,
+      );
     };
 
     try {

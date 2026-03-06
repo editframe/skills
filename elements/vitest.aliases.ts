@@ -11,13 +11,20 @@ function stripJsoncComments(input: string): string {
     if (input[i] === '"') {
       const start = i++;
       while (i < input.length) {
-        if (input[i] === "\\") { i += 2; continue; }
+        if (input[i] === "\\") {
+          i += 2;
+          continue;
+        }
         if (input[i++] === '"') break;
       }
       out += input.slice(start, i);
     } else if (input[i] === "/" && input[i + 1] === "*") {
       i += 2;
-      while (i < input.length - 1 && !(input[i] === "*" && input[i + 1] === "/")) i++;
+      while (
+        i < input.length - 1 &&
+        !(input[i] === "*" && input[i + 1] === "/")
+      )
+        i++;
       i += 2;
     } else if (input[i] === "/" && input[i + 1] === "/") {
       while (i < input.length && input[i] !== "\n") i++;
