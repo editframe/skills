@@ -67,13 +67,15 @@ jobs:
         run: ./scripts/docker-compose run --rm ci-runner npx vitest --config vitest.config.browser.ts --run
 
       - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
         run: |
           if [[ "${{ github.ref_name }}" == *"beta"* ]]; then
             NPM_TAG="beta"
           else
             NPM_TAG="latest"
           fi
-          npm publish --tag "$NPM_TAG" --access public --workspaces
+          npm publish --tag "$NPM_TAG" --access public --provenance --workspaces
 
       - name: Generate TypeDoc
         run: |
