@@ -9,7 +9,7 @@ import { EFTimegroup, flushSequenceDurationCache } from "./EFTimegroup.js";
 import "./EFTimegroup.js";
 import { customElement } from "lit/decorators/custom-element.js";
 import { ContextMixin } from "../gui/ContextMixin.js";
-import { EFTemporal, resetTemporalCache } from "./EFTemporal.js";
+import { EFTemporal, resetTemporalCache, TemporalMixinInterface } from "./EFTemporal.js";
 // Need workbench to make workbench wrapping occurs
 import "../gui/EFWorkbench.js";
 // Import EF_INTERACTIVE to allow controlling it in tests
@@ -1571,7 +1571,7 @@ describe("preview sync on paused edits", () => {
 
   test("calls requestFrameRender on root when child duration changes", async () => {
     const tg = document.createElement("ef-timegroup") as EFTimegroup;
-    const child = document.createElement("ef-text") as EFTemporal;
+    const child = document.createElement("ef-text") as unknown as HTMLElement & TemporalMixinInterface;
     child.setAttribute("duration", "5s");
     tg.append(child);
     document.body.append(tg);
