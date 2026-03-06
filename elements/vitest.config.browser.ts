@@ -1,8 +1,7 @@
 // import "tsconfig-paths/register";
-import { readdirSync, readFileSync } from "node:fs";
-import * as path from "node:path";
 import type { UserConfig } from "vite";
 import { defineConfig } from "vitest/config";
+import { getAliasesFromTsconfig } from "./vitest.aliases.ts";
 import { playwright } from "@vitest/browser-playwright";
 import { recordReplayProxyPlugin } from "./packages/elements/test/recordReplayProxyPlugin.js";
 import { TEST_SERVER_PORT } from "./packages/elements/test/constants.js";
@@ -116,24 +115,6 @@ const browserMode: ViteTestBrowserMode =
 
 const config = resolveTestConfiguration(browserMode);
 log("resolved test configuration", config);
-
-function getPackageAliases(): Record<string, string> {
-  const packagesDir = path.join(__dirname, "packages");
-  const aliases: Record<string, string> = {};
-  for (const dir of readdirSync(packagesDir)) {
-    try {
-      const pkg = JSON.parse(
-        readFileSync(path.join(packagesDir, dir, "package.json"), "utf-8"),
-      );
-      if (typeof pkg.name === "string" && pkg.name.startsWith("@editframe/")) {
-        aliases[pkg.name] = path.join(packagesDir, dir, "src");
-      }
-    } catch {
-      // no package.json — skip
-    }
-  }
-  return aliases;
-}
 
 export default defineConfig(async () => {
   log("VITEST_BROWSER_MODE", process.env.VITEST_BROWSER_MODE);
@@ -272,10 +253,7 @@ export default defineConfig(async () => {
   return {
     plugins,
     resolve: {
-      alias: {
-        ...getPackageAliases(),
-        TEST: path.resolve(__dirname, "test"),
-      },
+      alias: getAliasesFromTsconfig(),
     },
     // Pre-bundle Three.js and other deps that get discovered late and cause reloads
     optimizeDeps: {
