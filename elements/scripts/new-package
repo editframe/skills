@@ -1,0 +1,152 @@
+#!/usr/bin/env node
+// Creates a new @editframe/<name> workspace package and registers it in tsconfig.json.
+// Usage: scripts/new-package <name>
+//   name: package name with or without @editframe/ prefix (e.g. "captions" or "@editframe/captions")
+
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const root = join(__dirname, "..");
+
+const rawName = process.argv[2];
+if (!rawName) {
+  console.error("Usage: scripts/new-package <name>");
+  process.exit(1);
+}
+
+const packageName = rawName.startsWith("@editframe/")
+  ? rawName
+  : `@editframe/${rawName}`;
+const dirName = packageName.replace("@editframe/", "");
+const packageDir = join(root, "packages", dirName);
+
+if (existsSync(packageDir)) {
+  console.error(`Package directory already exists: packages/${dirName}`);
+  process.exit(1);
+}
+
+// Read current workspace version
+const { version } = JSON.parse(
+  readFileSync(join(root, "package.json"), "utf-8"),
+);
+
+// Create directory structure
+mkdirSync(join(packageDir, "src"), { recursive: true });
+
+// src/index.ts
+writeFileSync(join(packageDir, "src", "index.ts"), "export {};\n");
+
+// package.json
+const pkg = {
+  name: packageName,
+  version,
+  description: "",
+  repository: {
+    type: "git",
+    url: "https://github.com/editframe/elements.git",
+    directory: `packages/${dirName}`,
+  },
+  type: "module",
+  scripts: {
+    typecheck: "tsc --noEmit",
+    build: "tsdown",
+    "build:watch": "tsdown --watch",
+  },
+  author: "",
+  license: "UNLICENSED",
+  devDependencies: {
+    "@types/node": "^22.0.0",
+    typescript: "^5.9.3",
+  },
+  main: "./dist/index.js",
+  module: "./dist/index.js",
+  types: "./dist/index.d.ts",
+  exports: {
+    ".": {
+      import: {
+        types: "./dist/index.d.ts",
+        default: "./dist/index.js",
+      },
+    },
+    "./package.json": "./package.json",
+  },
+  publishConfig: {
+    exports: {
+      ".": {
+        import: {
+          types: "./dist/index.d.ts",
+          default: "./dist/index.js",
+        },
+      },
+      "./package.json": "./package.json",
+    },
+  },
+};
+
+writeFileSync(
+  join(packageDir, "package.json"),
+  JSON.stringify(pkg, null, 2) + "\n",
+);
+
+// tsconfig.json
+writeFileSync(
+  join(packageDir, "tsconfig.json"),
+  JSON.stringify(
+    {
+      include: ["src/**/*.ts"],
+      extends: "../../tsconfig.json",
+    },
+    null,
+    2,
+  ) + "\n",
+);
+
+// tsdown.config.ts
+writeFileSync(
+  join(packageDir, "tsdown.config.ts"),
+  `import { defineConfig } from "tsdown";
+import { createTsdownConfig } from "../tsdown.config.base.ts";
+
+export default defineConfig(createTsdownConfig());
+`,
+);
+
+// Register in root tsconfig.json paths
+// tsconfig.json uses JSONC (has block comments), so we use string insertion
+const tsconfigPath = join(root, "tsconfig.json");
+const tsconfig = readFileSync(tsconfigPath, "utf-8");
+const newPathEntry = `      "${packageName}": ["./packages/${dirName}/src/index.ts"],\n`;
+const marker = `      "TEST/*": ["./test/*"]`;
+
+if (!tsconfig.includes(marker)) {
+  console.error(
+    'Could not locate "TEST/*" anchor in tsconfig.json paths — add the path entry manually.',
+  );
+} else if (tsconfig.includes(`"${packageName}"`)) {
+  console.error(
+    `${packageName} already present in tsconfig.json paths — skipping.`,
+  );
+} else {
+  writeFileSync(tsconfigPath, tsconfig.replace(marker, newPathEntry + marker));
+  console.error(`Registered ${packageName} in tsconfig.json paths.`);
+}
+
+console.error(`
+Created packages/${dirName}:
+  src/index.ts
+  package.json
+  tsconfig.json
+  tsdown.config.ts
+
+Next steps:
+  1. Run: ./scripts/npm install
+  2. Implement src/index.ts
+  3. Add dependencies to packages/${dirName}/package.json as needed
+`);
