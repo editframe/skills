@@ -1,5 +1,5 @@
-import { readFile, writeFile } from "node:fs/promises";
-import { createWriteStream } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { createWriteStream, mkdirSync } from "node:fs";
 import path from "node:path";
 import { program } from "commander";
 import debug from "debug";
@@ -9,6 +9,7 @@ import {
   spawnViteServer,
   type SpawnedViteServer,
 } from "../utils/spawnViteServer.js";
+import { patchFragmentedMp4 } from "../utils/patchFragmentedMp4.js";
 import { StreamTargetChunk } from "mediabunny";
 import { withProfiling } from "../utils/profileRender.js";
 import { VERSION } from "../VERSION.js";
@@ -114,6 +115,7 @@ program
 
     let renderUrl: string;
     let viteServer: SpawnedViteServer | null = null;
+    let renderStarted = false;
 
     try {
       // Determine URL to render
@@ -154,16 +156,19 @@ program
               outputPath: options.profileOutput,
             },
             async () => {
+              // Ensure output directory exists
+              mkdirSync(path.dirname(outputPath), { recursive: true });
+
               // Open output file for streaming writes
               const outputStream = createWriteStream(outputPath);
               let chunkCount = 0;
               let totalBytes = 0;
 
-              // Expose chunk handler - writes directly to file
+              // Expose chunk handler - writes through the stream in order
               await page.exposeFunction(
                 "onRenderChunk",
                 (chunk: StreamTargetChunk) => {
-                  writeFile(outputPath, chunk.data, { flag: "a" });
+                  outputStream.write(Buffer.from(chunk.data));
                   chunkCount++;
                   totalBytes += chunk.data.length;
                   log(
@@ -245,6 +250,8 @@ program
               );
 
               // Render with streaming
+              renderStarted = true;
+              let renderInfo: any = null;
               try {
                 const renderOptions: any = {
                   fps,
@@ -265,8 +272,8 @@ program
                 }, renderOptions);
                 const renderDurationMs = Date.now() - renderStartTime;
 
-                // Collect render info for telemetry
-                const renderInfo = await page.evaluate(async () => {
+                // Collect render info for telemetry and moov patching
+                renderInfo = await page.evaluate(async () => {
                   try {
                     return await window.EF_RENDER!.getRenderInfo();
                   } catch {
@@ -319,10 +326,8 @@ program
                 throw error;
               }
 
-              // Close the output stream
+              // Close the output stream and wait for all chunks to flush
               outputStream.end();
-
-              // Wait for stream to finish
               await new Promise<void>((resolve, reject) => {
                 outputStream.on("finish", () => {
                   log(
@@ -332,12 +337,18 @@ program
                 });
                 outputStream.on("error", reject);
               });
+
+              if (renderInfo?.durationMs) {
+                await patchFragmentedMp4(outputPath, renderInfo.durationMs);
+              }
             },
           );
         },
       );
     } catch (error) {
-      initSpinner.fail("Initialization failed");
+      if (!renderStarted) {
+        initSpinner.fail("Initialization failed");
+      }
       throw error;
     }
 

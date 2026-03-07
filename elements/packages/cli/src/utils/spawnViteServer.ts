@@ -22,6 +22,7 @@ export async function spawnViteServer(
 
     const viteProcess = spawn("npx", ["vite", "dev"], {
       cwd: directory,
+      shell: true,
       stdio: "pipe", // Capture output to detect when ready
       env: {
         ...process.env,
