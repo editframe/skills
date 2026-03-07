@@ -134,6 +134,7 @@ const SERIALIZED_STYLE_PROPERTIES = [
   "fontVariant",
   "textAlign",
   "textDecoration",
+  "textShadow",
   "textTransform",
   "letterSpacing",
   "wordSpacing",
@@ -269,9 +270,10 @@ function serializeComputedStyles(
       finalValue = "visible";
     }
 
-    // Skip clipPath - clones always render without clip-path
-    // (source may have clip-path: inset(100%) from proxy mode)
-    if (prop === "clipPath") {
+    // Skip the proxy-mode sentinel value: inset(100%) hides the element
+    // off-screen while keeping it in the layout. All other clip-path values
+    // are legitimate visual effects and must be preserved.
+    if (prop === "clipPath" && value === "inset(100%)") {
       continue;
     }
 
