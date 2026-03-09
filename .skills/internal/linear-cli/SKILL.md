@@ -51,6 +51,39 @@ linear issue url ENG-123
 
 The agent should read the issue description to understand requirements before starting implementation.
 
+## Task Lifecycle
+
+**On start**: Move the issue to "In Progress" immediately when beginning implementation.
+
+```bash
+linear issue update ENG-123 -s started
+# or via GraphQL if CLI fails (see Updating Issues below)
+```
+
+**On merge to main / release / deploy**: Move to "In Review" and add a comment summarizing what was done. Do not wait for a PR — we merge directly.
+
+```bash
+# 1. Move to In Review (use GraphQL -- CLI state names vary)
+linear api <<'GRAPHQL'
+query {
+  workflowStates(filter: { name: { eq: "In Review" } }) {
+    nodes { id name team { key } }
+  }
+}
+GRAPHQL
+
+linear api <<'GRAPHQL'
+mutation {
+  issueUpdate(id: "ENG-123", input: { stateId: "<state-id>" }) { success }
+}
+GRAPHQL
+
+# 2. Add a comment
+linear issue comment add ENG-123 -b "Merged to main. <one-line summary of what changed>"
+```
+
+The comment should be a single sentence describing what was implemented or fixed, not a list of commits.
+
 ## Searching and Listing Issues
 
 ```bash
