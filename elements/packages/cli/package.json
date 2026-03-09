@@ -38,7 +38,8 @@
     "vite": "npm:rolldown-vite@^7.1.15",
     "mediabunny": "^1.31.1",
     "tar": "^7.1.0",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "codem-isoboxer": "^0.3.9"
   },
   "types": "./dist/index.d.ts",
   "exports": {

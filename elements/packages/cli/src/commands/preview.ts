@@ -13,6 +13,7 @@ program
 
     spawn("npx", ["vite", "dev"], {
       cwd: resolvedProjectDir,
+      shell: true,
       stdio: "inherit",
     });
   });
