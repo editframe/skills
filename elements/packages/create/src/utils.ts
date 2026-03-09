@@ -71,9 +71,7 @@ export async function installDependencies(
  * Install AI agent skills by copying bundled skill files into the project.
  * Writes to both .claude/skills/ and .agents/skills/ for broad agent compatibility.
  */
-export async function installAgentSkills(
-  projectDir: string,
-): Promise<boolean> {
+export async function installAgentSkills(projectDir: string): Promise<boolean> {
   try {
     process.stderr.write(chalk.bold("\nInstalling AI agent skills...\n\n"));
 

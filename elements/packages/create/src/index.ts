@@ -170,7 +170,8 @@ async function main() {
   const templateName = cliTemplate || answers.templateName || templates[0];
 
   // Determine if skills should be installed
-  const installSkills = !skipSkills && (nonInteractive || answers.installSkills !== false);
+  const installSkills =
+    !skipSkills && (nonInteractive || answers.installSkills !== false);
 
   const targetDir = path.join(process.cwd(), directoryName);
   const templateDir = path.join(__dirname, "templates", templateName);
