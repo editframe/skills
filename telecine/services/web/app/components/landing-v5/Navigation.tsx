@@ -21,7 +21,7 @@ export function Navigation() {
         <Link to="/" className="flex items-center">
           <span className="text-xl font-black tracking-tighter uppercase">editframe</span>
         </Link>
-        <div className="hidden md:flex items-center gap-1">
+        <div className="max-md:hidden flex items-center gap-1">
           <LandingNavLink to="/skills">Docs & Skills</LandingNavLink>
           <LandingNavLink to="/pricing">Pricing</LandingNavLink>
         </div>
@@ -35,7 +35,7 @@ export function Navigation() {
               Dashboard
             </Link>
           ) : (
-            <Link to="/auth/login" className="hidden md:inline-flex px-4 py-2 text-sm font-bold uppercase tracking-wider hover:bg-[var(--poster-gold)] transition-colors">
+            <Link to="/auth/login" className="max-md:hidden inline-flex px-4 py-2 text-sm font-bold uppercase tracking-wider hover:bg-[var(--poster-gold)] transition-colors">
               Sign in
             </Link>
           )}
