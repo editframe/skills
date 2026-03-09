@@ -161,8 +161,9 @@ describe("EFScrubber", () => {
     });
 
     // Dispatch on the HOST element directly (not on the shadow .scrubber div).
-    // This simulates a click landing in the taller hit-area container (e.g. the
-    // h-12 div in HeroDemo) that misses the tiny visual scrubber bar.
+    // This simulates a click that lands within ef-scrubber's bounds but outside
+    // the smaller shadow bar (e.g. the 1px top/bottom gap between a 6px host
+    // and a 4px shadow bar).
     const pointerDown = new PointerEvent("pointerdown", {
       clientX: rect.left + rect.width * 0.5,
       clientY: rect.top + rect.height * 0.5,

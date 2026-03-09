@@ -2,7 +2,6 @@ import { consume } from "@lit/context";
 import { css, html, LitElement } from "lit";
 import {
   customElement,
-  eventOptions,
   property,
   state,
 } from "lit/decorators.js";
@@ -322,8 +321,7 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
     }
   }
 
-  @eventOptions({ passive: false, capture: false })
-  private handlePointerDown(e: PointerEvent) {
+  private handlePointerDown = (e: PointerEvent) => {
     const scrubberEl = this.scrubberRef.value || this._scrubberElement;
     if (!scrubberEl) return;
 
@@ -341,7 +339,7 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
       console.warn("Failed to set pointer capture:", err);
     }
     this.updateProgress(e);
-  }
+  };
 
   private boundHandlePointerMove = (e: PointerEvent) => {
     if (this.isMoving && e.pointerId === this.capturedPointerId) {
@@ -390,10 +388,6 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
       e.preventDefault();
       e.stopPropagation();
     }
-  };
-
-  private boundHandlePointerDown = (e: PointerEvent) => {
-    this.handlePointerDown(e);
   };
 
   render() {
@@ -498,7 +492,7 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
     });
     this.addEventListener(
       "pointerdown",
-      this.boundHandlePointerDown as EventListener,
+      this.handlePointerDown as EventListener,
       { passive: false },
     );
   }
@@ -517,7 +511,7 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
     this.removeEventListener("contextmenu", this.boundHandleContextMenu);
     this.removeEventListener(
       "pointerdown",
-      this.boundHandlePointerDown as EventListener,
+      this.handlePointerDown as EventListener,
     );
   }
 }

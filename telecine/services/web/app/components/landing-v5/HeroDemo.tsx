@@ -1779,7 +1779,7 @@ export function HeroDemo({ autoPlay = false }: { autoPlay?: boolean }) {
         <div className="relative" style={{ aspectRatio: "16/9" }}>
           {isClient ? (
             <div
-              className="absolute inset-0 cursor-pointer"
+              className="absolute inset-0"
               onClick={() => {
                 const preview = previewRef.current as any;
                 if (!preview) return;
@@ -1795,6 +1795,7 @@ export function HeroDemo({ autoPlay = false }: { autoPlay?: boolean }) {
                 ref={previewRef as any}
                 loop
                 className="block w-full h-full"
+                style={{ cursor: "pointer" }}
               >
                 <TimelineRoot id={previewId} component={HeroDemoContent} />
               </Preview>
