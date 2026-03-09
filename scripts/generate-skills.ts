@@ -179,6 +179,7 @@ interface SourceFrontmatter {
   };
   skill?: boolean;
   status?: string;
+  llm?: boolean;
 }
 
 // --- API to prose conversion ---
@@ -241,9 +242,9 @@ function generateSkillFile(sourcePath: string, outputPath: string) {
     return;
   }
 
-  // Skip draft files
-  if (attributes.status === "draft") {
-    console.log(`  Skipping (status: draft): ${sourcePath}`);
+  // Skip files explicitly excluded from LLM publishing
+  if (attributes.llm === false) {
+    console.log(`  Skipping (llm: false): ${sourcePath}`);
     return;
   }
 
@@ -311,13 +312,13 @@ function generateSkillFile(sourcePath: string, outputPath: string) {
 }
 
 function generateSkillsRecursive(sourceDir: string, outputDir: string) {
-  // Check if this directory's SKILL.md marks it as draft
+  // Check if this directory's SKILL.md is explicitly excluded from LLM publishing
   const skillMdPath = join(sourceDir, "SKILL.md");
   if (existsSync(skillMdPath)) {
     const content = readFileSync(skillMdPath, "utf8");
     const parsed = parseFrontmatter(content);
-    if (parsed.attributes.status === "draft") {
-      console.log(`Skipping draft skill: ${sourceDir}`);
+    if (parsed.attributes.llm === false) {
+      console.log(`Skipping skill (llm: false): ${sourceDir}`);
       return;
     }
   }
