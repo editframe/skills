@@ -226,6 +226,7 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
   private scrubberRef = createRef<HTMLElement>();
   private _scrubberElement?: HTMLElement;
   private capturedPointerId: number | null = null;
+  private _wasPlayingBeforeScrub = false;
 
   private updateProgress(e: PointerEvent) {
     const scrubberEl = this.scrubberRef.value || this._scrubberElement;
@@ -338,6 +339,12 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
       // setPointerCapture may fail in some cases, continue anyway
       console.warn("Failed to set pointer capture:", err);
     }
+
+    if (this.playing && this.context) {
+      this._wasPlayingBeforeScrub = true;
+      this.context.pause();
+    }
+
     this.updateProgress(e);
   };
 
@@ -364,6 +371,10 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
       if (this.isScrubbingRef) {
         this.isScrubbingRef.current = false;
       }
+      if (this._wasPlayingBeforeScrub) {
+        this._wasPlayingBeforeScrub = false;
+        this.context?.play();
+      }
     }
   };
 
@@ -379,6 +390,10 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
       this.isMoving = false;
       if (this.isScrubbingRef) {
         this.isScrubbingRef.current = false;
+      }
+      if (this._wasPlayingBeforeScrub) {
+        this._wasPlayingBeforeScrub = false;
+        this.context?.play();
       }
     }
   };
