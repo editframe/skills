@@ -125,7 +125,7 @@ function LiveDemo({ code }: { code: string }) {
 
 // --- Skills that show source-only for html live blocks (no live rendering) ---
 
-const SOURCE_ONLY_SKILLS = new Set(["editor-gui"]);
+const SOURCE_ONLY_SKILLS = new Set(["editframe-editor-gui"]);
 
 // --- SkillsPreBlock: Detects html live blocks and mermaid diagrams ---
 

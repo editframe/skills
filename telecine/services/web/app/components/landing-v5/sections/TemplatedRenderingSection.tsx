@@ -96,7 +96,7 @@ export function TemplatedRenderingSection() {
             to="/skills"
             className="inline-flex items-center px-8 py-4 bg-black dark:bg-white text-[var(--poster-gold)] dark:text-[#3a2e1a] font-bold text-sm uppercase tracking-wider hover:bg-[var(--ink-black)] dark:hover:bg-white/90 transition-colors shadow-poster-hard"
           >
-            Explore docs & skills
+            Explore docs
             <svg className="ml-3 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>

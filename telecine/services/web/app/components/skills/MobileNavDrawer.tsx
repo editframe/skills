@@ -91,7 +91,7 @@ export function MobileNavDrawer({
         >
           <div className="flex-shrink-0 px-4 pt-5 pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
             <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-              Skills
+              Docs
             </span>
           </div>
           <div className="flex-1 overflow-y-auto py-2">
@@ -146,7 +146,7 @@ export function MobileNavDrawer({
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                 </svg>
-                All Skills
+                All Docs
               </button>
             </div>
             {activeSkillData && (

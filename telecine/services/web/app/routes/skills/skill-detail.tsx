@@ -62,7 +62,7 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
 
   // Extract API metadata from frontmatter
   const apiMetadata = (parsed.frontmatter as any)?.api || null;
-  const description = (parsed.frontmatter as any)?.description || null;
+  const description = skillContent.frontmatter?.description || null;
 
   const skillTitle = allSkills.find((s: { name: string }) => s.name === skillName)?.title || skillName;
 
@@ -201,7 +201,7 @@ export default function SkillDetail({ loaderData }: Route.ComponentProps) {
                   to="/skills"
                   className="hover:text-gray-900 dark:hover:text-white transition-colors"
                 >
-                  Skills
+                  Docs
                 </Link>
                 <span className="text-gray-400 dark:text-gray-600">/</span>
                 <Link

@@ -32,7 +32,7 @@ app.post("/webhooks/editframe", async (req, res) => {
   const signature = req.headers["x-webhook-signature"];
   const payload = req.body;
 
-  // TODO: Verify signature (see Step 3)
+  // Signature verification added in Step 3
 
   console.log("Webhook received:", payload.topic);
 

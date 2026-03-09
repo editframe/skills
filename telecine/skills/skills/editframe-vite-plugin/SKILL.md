@@ -72,4 +72,3 @@ export default defineConfig({
 - [references/local-assets.md](references/local-assets.md) — Local image and caption serving
 - [references/file-api.md](references/file-api.md) — File API endpoints
 - [references/visual-testing.md](references/visual-testing.md) — Visual regression testing with Vitest
-```

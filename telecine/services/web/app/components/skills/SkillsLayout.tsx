@@ -55,7 +55,7 @@ export function SkillsLayout({
                 to="/skills"
                 className="text-xs md:text-sm font-bold uppercase tracking-wider text-gray-900 dark:text-gray-100 hover:text-red-600 dark:hover:text-red-400 transition-colors hidden sm:inline"
               >
-                Skills
+                Docs
               </Link>
             </div>
             <div className="flex items-center gap-3 md:gap-6">
