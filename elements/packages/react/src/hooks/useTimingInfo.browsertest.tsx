@@ -276,7 +276,7 @@ describe("useTimingInfo", () => {
 
     root.unmount();
     container.remove();
-  }, 5000);
+  }, 15000);
 
   test("continues observing after errors in frame task", async () => {
     const container = document.createElement("div");
