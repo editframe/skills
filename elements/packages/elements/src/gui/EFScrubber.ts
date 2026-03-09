@@ -528,6 +528,10 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
       "pointerdown",
       this.handlePointerDown as EventListener,
     );
+    if (this._wasPlayingBeforeScrub) {
+      this._wasPlayingBeforeScrub = false;
+      this.context?.play();
+    }
   }
 }
 

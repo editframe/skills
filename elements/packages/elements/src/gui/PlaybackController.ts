@@ -514,16 +514,16 @@ export class PlaybackController implements ReactiveController {
   }
 
   private async stopPlayback() {
+    if (this.#playbackAnimationFrameRequest) {
+      cancelAnimationFrame(this.#playbackAnimationFrameRequest);
+      this.#playbackAnimationFrameRequest = null;
+    }
     if (this.#playbackAudioContext) {
       if (this.#playbackAudioContext.state !== "closed") {
         await this.#playbackAudioContext.close();
       }
     }
-    if (this.#playbackAnimationFrameRequest) {
-      cancelAnimationFrame(this.#playbackAnimationFrameRequest);
-    }
     this.#playbackAudioContext = null;
-    this.#playbackAnimationFrameRequest = null;
     this.#pendingAudioContext = null;
   }
 

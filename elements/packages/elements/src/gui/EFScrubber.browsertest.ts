@@ -309,6 +309,57 @@ describe("EFScrubber", () => {
     expect(playFn).not.toHaveBeenCalled();
   });
 
+  test("resumes playback when disconnected mid-scrub", async () => {
+    const container = document.createElement("div");
+    container.style.width = "200px";
+    container.style.height = "20px";
+    document.body.appendChild(container);
+    testElements.push(container);
+
+    const scrubber = document.createElement("ef-scrubber") as EFScrubber;
+    scrubber.setAttribute("duration-ms", "5000");
+    scrubber.setAttribute("current-time-ms", "1000");
+    container.appendChild(scrubber);
+    testElements.push(scrubber);
+
+    await scrubber.updateComplete;
+
+    const pauseFn = vi.fn();
+    const playFn = vi.fn();
+    const mockContext = {
+      playing: true,
+      currentTimeMs: 1000,
+      durationMs: 5000,
+      play: playFn,
+      pause: pauseFn,
+    };
+
+    (scrubber as any).contextFromParent = mockContext;
+    (scrubber as any).playing = true;
+    await scrubber.updateComplete;
+
+    const scrubberBar = scrubber.shadowRoot!.querySelector(
+      ".scrubber",
+    ) as HTMLElement;
+    const rect = scrubberBar.getBoundingClientRect();
+
+    scrubberBar.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        clientX: rect.left + rect.width * 0.5,
+        clientY: rect.top + rect.height * 0.5,
+        pointerId: 1,
+        bubbles: true,
+      }),
+    );
+    await scrubber.updateComplete;
+
+    expect(pauseFn).toHaveBeenCalledOnce();
+
+    container.removeChild(scrubber);
+
+    expect(playFn).toHaveBeenCalledOnce();
+  });
+
   test("shows raw scrub preview when scrubbing with zoom", async () => {
     const container = document.createElement("div");
     container.style.width = "20px";
