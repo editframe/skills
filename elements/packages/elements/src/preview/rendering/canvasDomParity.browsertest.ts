@@ -26,7 +26,10 @@ async function captureBothPaths(
   tg: EFTimegroup,
   w: number,
   h: number,
-): Promise<{ foreignCanvas: HTMLCanvasElement; nativeCanvas: HTMLCanvasElement }> {
+): Promise<{
+  foreignCanvas: HTMLCanvasElement;
+  nativeCanvas: HTMLCanvasElement;
+}> {
   const dataUri = await captureTimelineToDataUri(tg, w, h, {
     canvasScale: 1,
     timeMs: 0,
@@ -68,9 +71,15 @@ describe("canvas/DOM parity: foreignObject vs native", () => {
     await tg.updateComplete;
 
     const { foreignCanvas, nativeCanvas } = await captureBothPaths(tg, W, H);
-    await expectCanvasesToMatch(foreignCanvas, nativeCanvas, TEST_NAME, "mr1-text-shadow-inline", {
-      acceptableDiffPercentage: 0.5,
-    });
+    await expectCanvasesToMatch(
+      foreignCanvas,
+      nativeCanvas,
+      TEST_NAME,
+      "mr1-text-shadow-inline",
+      {
+        acceptableDiffPercentage: 0.5,
+      },
+    );
     tg.remove();
   }, 30000);
 
@@ -102,9 +111,15 @@ describe("canvas/DOM parity: foreignObject vs native", () => {
     await tg.updateComplete;
 
     const { foreignCanvas, nativeCanvas } = await captureBothPaths(tg, W, H);
-    await expectCanvasesToMatch(foreignCanvas, nativeCanvas, TEST_NAME, "mr2-text-shadow-keyframes", {
-      acceptableDiffPercentage: 0.5,
-    });
+    await expectCanvasesToMatch(
+      foreignCanvas,
+      nativeCanvas,
+      TEST_NAME,
+      "mr2-text-shadow-keyframes",
+      {
+        acceptableDiffPercentage: 0.5,
+      },
+    );
     tg.remove();
   }, 30000);
 
@@ -129,9 +144,15 @@ describe("canvas/DOM parity: foreignObject vs native", () => {
     await tg.updateComplete;
 
     const { foreignCanvas, nativeCanvas } = await captureBothPaths(tg, W, H);
-    await expectCanvasesToMatch(foreignCanvas, nativeCanvas, TEST_NAME, "mr3-clip-path-inline", {
-      acceptableDiffPercentage: 0.5,
-    });
+    await expectCanvasesToMatch(
+      foreignCanvas,
+      nativeCanvas,
+      TEST_NAME,
+      "mr3-clip-path-inline",
+      {
+        acceptableDiffPercentage: 0.5,
+      },
+    );
     tg.remove();
   }, 30000);
 
@@ -159,9 +180,15 @@ describe("canvas/DOM parity: foreignObject vs native", () => {
     await tg.updateComplete;
 
     const { foreignCanvas, nativeCanvas } = await captureBothPaths(tg, W, H);
-    await expectCanvasesToMatch(foreignCanvas, nativeCanvas, TEST_NAME, "mr4-clip-path-keyframes", {
-      acceptableDiffPercentage: 0.5,
-    });
+    await expectCanvasesToMatch(
+      foreignCanvas,
+      nativeCanvas,
+      TEST_NAME,
+      "mr4-clip-path-keyframes",
+      {
+        acceptableDiffPercentage: 0.5,
+      },
+    );
     tg.remove();
   }, 30000);
 
@@ -225,9 +252,15 @@ describe("canvas/DOM parity: foreignObject vs native", () => {
     await tg.updateComplete;
 
     const { foreignCanvas, nativeCanvas } = await captureBothPaths(tg, CW, CH);
-    await expectCanvasesToMatch(foreignCanvas, nativeCanvas, TEST_NAME, "mr5-rave-composition", {
-      acceptableDiffPercentage: 2.0,
-    });
+    await expectCanvasesToMatch(
+      foreignCanvas,
+      nativeCanvas,
+      TEST_NAME,
+      "mr5-rave-composition",
+      {
+        acceptableDiffPercentage: 2.0,
+      },
+    );
     container.remove();
   }, 60000);
 });
