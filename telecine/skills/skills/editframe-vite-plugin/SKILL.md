@@ -1,5 +1,5 @@
 ---
-name: vite-plugin
+name: editframe-vite-plugin
 description: Vite integration for Editframe development with local video transcoding, asset serving, file API endpoints, and visual regression testing.
 status: draft
 license: PROPRIETARY

@@ -492,8 +492,8 @@ canvas.addEventListener('selectionchange', (e) => {
 
 ## Related
 
-- [Trim Handles](/skills/editor-gui/trim-handles) - Trim handle component
-- [Transform Handles](/skills/editor-gui/transform-handles) - Transform handle component
-- [Dial](/skills/editor-gui/dial) - Rotary dial input
-- [Hierarchy](/skills/editor-gui/hierarchy) - Hierarchy panel component
-- [Timeline](/skills/editor-gui/timeline) - Timeline editor component
+- [Trim Handles](/skills/editframe-editor-gui/trim-handles) - Trim handle component
+- [Transform Handles](/skills/editframe-editor-gui/transform-handles) - Transform handle component
+- [Dial](/skills/editframe-editor-gui/dial) - Rotary dial input
+- [Hierarchy](/skills/editframe-editor-gui/hierarchy) - Hierarchy panel component
+- [Timeline](/skills/editframe-editor-gui/timeline) - Timeline editor component

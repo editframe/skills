@@ -1,5 +1,5 @@
 ---
-name: webhooks
+name: editframe-webhooks
 title: Webhooks
 description: Webhook notifications for render completion and file processing events. Configure endpoints, verify HMAC signatures, and handle real-time status payloads.
 order: 35

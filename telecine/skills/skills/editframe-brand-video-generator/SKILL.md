@@ -1,5 +1,5 @@
 ---
-name: brand-video-generator
+name: editframe-brand-video-generator
 title: Brand Video Generator
 description: Generate video compositions from brand websites or descriptions. Produces an inspectable creative brief before generating HTML.
 status: draft
@@ -16,18 +16,24 @@ Two-pass pipeline. First produce an inspectable brief. Then generate the composi
 
 ---
 
+## Step 0 — Fetch the brand (do this first, before anything else)
+
+**If a URL is supplied**: immediately fetch it with WebFetch or your browser tool — before reading any further instructions, before thinking about the brief, before any other action. Extract exact hex codes from the page's CSS. Download or note 3–5 brand assets (logo, product screenshots, key imagery). Do not proceed until you have done this.
+
+**If you cannot access the URL**: stop here. Report the failure and ask whether to proceed from a text description instead.
+
+**If only a text description is supplied**: ask the user for anything critical that's missing — specific product names, hex codes, recognizable visual marks — before generating the brief.
+
+Do not infer colors or visual language from memory or text descriptions of a site. Only exact values from the live page are acceptable.
+
+---
+
 ## Input
 
 - **Brand**: URL or text description
 - **Video Type**: `launch` | `product-demo` | `explainer` | `brand-awareness` | `social`
 - **Duration**: `15s` | `30s` | `60s` | `90s` (optional)
 - **Platform**: `web` | `instagram` | `tiktok` | `youtube` | `linkedin` (optional)
-
-**If a URL is supplied**: you MUST load it with browser tools before doing anything else. Extract exact hex codes from CSS. Download 3–5 brand assets. Do not infer colors or visual language from text descriptions of the site.
-
-**If only a text description is supplied**: use it as the brand knowledge source. Ask the user for anything critical that's missing — specific product names, hex codes, recognizable visual marks — before generating the brief. Do not fabricate statistics or claims not present in the description or your verifiable training knowledge. If a specific number would strengthen the brief but you cannot verify it, note the gap rather than invent it.
-
-**If you cannot access a supplied URL with browser tools**: stop, report this, and ask whether to proceed from a text description instead.
 
 ---
 

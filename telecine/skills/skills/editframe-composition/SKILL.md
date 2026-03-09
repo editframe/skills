@@ -1,5 +1,5 @@
 ---
-name: composition
+name: editframe-composition
 title: Video Composition
 description: Create video compositions with Editframe using HTML web components or React. Supports video, audio, images, text, captions, transitions, and cloud rendering.
 order: 10

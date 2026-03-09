@@ -1,5 +1,5 @@
 ---
-name: editor-gui
+name: editframe-editor-gui
 title: Editor Toolkit
 description: Build video editing interfaces with Editframe's GUI components. Assemble timeline, scrubber, filmstrip, preview, playback controls, and transform handles.
 order: 15

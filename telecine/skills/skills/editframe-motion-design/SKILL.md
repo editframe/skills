@@ -1,5 +1,5 @@
 ---
-name: motion-design
+name: editframe-motion-design
 title: Motion Design
 description: Professional motion graphics for video content — animations, transitions, title sequences, and time-based visual design for video production.
 order: 40
