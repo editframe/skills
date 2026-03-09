@@ -1,3 +1,6 @@
+import { cp, mkdir, readdir } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { execa } from "execa";
 import chalk from "chalk";
 
@@ -65,41 +68,34 @@ export async function installDependencies(
 }
 
 /**
- * Install AI agent skills using the ai-agent-skills CLI.
+ * Install AI agent skills by copying bundled skill files into the project.
+ * Writes to both .claude/skills/ and .agents/skills/ for broad agent compatibility.
  */
 export async function installAgentSkills(
   projectDir: string,
-  agent: string,
 ): Promise<boolean> {
   try {
-    process.stderr.write(
-      chalk.bold(`\nInstalling AI agent skills for ${agent}...\n\n`),
-    );
+    process.stderr.write(chalk.bold("\nInstalling AI agent skills...\n\n"));
 
-    const agentFlag = agent === "all" ? [] : ["--agent", agent];
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const skillsSource = path.join(__dirname, "skills");
+    const skills = await readdir(skillsSource);
 
-    await execa(
-      "npx",
-      ["ai-agent-skills", "install", "editframe/skills", ...agentFlag],
-      {
-        cwd: projectDir,
-        stdout: "inherit",
-        stderr: "inherit",
-      },
-    );
+    for (const destBase of [".claude/skills", ".agents/skills"]) {
+      await mkdir(path.join(projectDir, destBase), { recursive: true });
+      for (const skill of skills) {
+        await cp(
+          path.join(skillsSource, skill),
+          path.join(projectDir, destBase, skill),
+          { recursive: true },
+        );
+      }
+    }
 
-    process.stderr.write(
-      chalk.green(`\n✓ Agent skills installed for ${agent}!\n`),
-    );
+    process.stderr.write(chalk.green("\n✓ AI agent skills installed!\n"));
     return true;
   } catch (error) {
     process.stderr.write(chalk.yellow("\n⚠ Failed to install agent skills\n"));
-    process.stderr.write(chalk.dim("You can install manually:\n"));
-    process.stderr.write(
-      chalk.cyan(
-        `  npx ai-agent-skills install editframe/skills --agent ${agent}\n\n`,
-      ),
-    );
     return false;
   }
 }

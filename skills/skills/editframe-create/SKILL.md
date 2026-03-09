@@ -11,6 +11,12 @@ metadata:
 
 # Create Editframe Project
 
+## When to use this skill
+
+**Only use this skill to create a brand-new project from scratch.**
+
+If you are already inside an Editframe project (i.e. the current directory has a `package.json` that depends on `@editframe/elements` or `@editframe/react`, or there is an `index.html` with `<ef-timegroup>`), do **not** run `npm create @editframe`. Edit the existing files instead and use the `editframe-composition` skill.
+
 ## Which template?
 
 | If you want to... | Use |
@@ -26,22 +32,19 @@ metadata:
 ## Quick Start
 
 ```bash
-npm create @editframe
-```
-
-Follow the prompts to pick a template and project name. Or skip prompts:
-
-```bash
 npm create @editframe -- html -d my-project -y
 cd my-project
-npm start
 ```
 
-This opens a live preview. Edit `index.html` to build your composition, then render to video:
+Then edit `index.html` to build your composition and render to video:
 
 ```bash
 npx editframe render -o output.mp4
 ```
+
+## Agent workflow note
+
+Do **not** run `npm start` in an agent context — it starts a long-running dev server that will block execution. Use `npx editframe render` directly to produce output.
 
 ## Templates
 
@@ -52,12 +55,9 @@ npx editframe render -o output.mp4
 - `card-poetry` — HTML card animation demo with audio
 - `animejs` — AnimeJS integration demo (best reference for `addFrameTask` pattern)
 
-## Getting Started
-
-- [references/getting-started.md](references/getting-started.md) — Zero to rendered video
-
 ## Reference
 
+- [references/getting-started.md](references/getting-started.md) — Zero to rendered video
 - [references/templates.md](references/templates.md) — Template details and project structure
 - [references/agent-skills.md](references/agent-skills.md) — AI agent skills installation
 
@@ -65,6 +65,6 @@ npx editframe render -o output.mp4
 
 After creating a project, learn to build compositions:
 
-- **HTML/Web Components**: See the `elements-composition` skill
-- **React**: See the `react-composition` skill
+- **HTML/Web Components**: See the `editframe-composition` skill
+- **React**: See the `editframe-composition` skill
 - **CLI tools**: See the `editframe-cli` skill for rendering, previewing, and more

@@ -28,15 +28,7 @@ cd my-video
 npm install
 ```
 
-### Step 3: Preview
-
-```bash
-npm start
-```
-
-This launches a live preview at `http://localhost:4321`. You'll see the starter composition.
-
-### Step 4: Edit the Composition
+### Step 3: Edit the Composition
 
 Open `index.html`. The composition is defined with Editframe elements inside an `ef-timegroup`:
 
@@ -48,9 +40,9 @@ Open `index.html`. The composition is defined with Editframe elements inside an 
 </ef-timegroup>
 ```
 
-Changes appear instantly in the preview.
+To preview during development, run `npm start` in a separate terminal (starts a live server at `http://localhost:4321`). In agent workflows, skip this and render directly.
 
-### Step 5: Render to Video
+### Step 4: Render to Video
 
 ```bash
 npx editframe render -o my-video.mp4
@@ -60,6 +52,5 @@ The CLI renders your composition frame-by-frame and outputs an MP4 file.
 
 ## What's Next
 
-- Add video, audio, images — see the `elements-composition` skill
-- Use React components — see the `react-composition` skill
+- Add video, audio, images — see the `editframe-composition` skill
 - Explore CLI options — see the `editframe-cli` skill

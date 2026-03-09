@@ -12,7 +12,6 @@ import {
   installAgentSkills,
   getStartCommand,
 } from "./utils.js";
-import { getAgentChoices } from "./detectAgent.js";
 
 function showHelp(templates: string[]) {
   const usage = `
@@ -23,7 +22,6 @@ ${chalk.bold("Options:")}
   -d, --directory <name>    Project directory name
   --skip-install           Skip dependency installation
   --skip-skills            Skip agent skills installation
-  --agent <name>           Specify AI agent (cursor, claude, vscode, etc.)
   -y, --yes                Skip all prompts, use defaults
   -h, --help               Show this help message
 
@@ -38,7 +36,7 @@ ${chalk.bold("Examples:")}
   npm create @editframe -- react
 
   ${chalk.dim("# Full non-interactive")}
-  npm create @editframe -- react -d my-app --agent cursor -y
+  npm create @editframe -- react -d my-app -y
 
   ${chalk.dim("# Skip auto-installation")}
   npm create @editframe -- react --skip-install --skip-skills
@@ -83,9 +81,6 @@ async function main() {
         type: "boolean",
         default: false,
       },
-      agent: {
-        type: "string",
-      },
       yes: {
         type: "boolean",
         short: "y",
@@ -106,7 +101,6 @@ async function main() {
   const cliDirectory = values.directory;
   const skipInstall = values.skipInstall;
   const skipSkills = values.skipSkills;
-  const cliAgent = values.agent;
   const nonInteractive = values.yes;
 
   // Validate template if provided
@@ -149,23 +143,12 @@ async function main() {
   }
 
   // Ask about agent skills upfront (unless skipped via CLI)
-  if (!skipSkills && !cliAgent && !nonInteractive) {
-    // Get agent choices sorted by detection
-    const agentChoices = await getAgentChoices();
-
+  if (!skipSkills && !nonInteractive) {
     promptQuestions.push({
       type: "confirm",
       name: "installSkills",
       message: "Install AI agent skills for better coding assistance?",
       initial: true,
-    });
-
-    promptQuestions.push({
-      type: (_prev, values) => (values.installSkills ? "select" : null),
-      name: "agent",
-      message: "Which AI coding agent are you using?",
-      choices: agentChoices,
-      initial: 0,
     });
   }
 
@@ -186,13 +169,8 @@ async function main() {
   const directoryName = cliDirectory || answers.directoryName || "my-project";
   const templateName = cliTemplate || answers.templateName || templates[0];
 
-  // Determine agent selection from CLI or prompts
-  let selectedAgent = cliAgent || answers.agent;
-
-  // Default to cursor in non-interactive mode if skills not skipped
-  if (!skipSkills && !selectedAgent && nonInteractive) {
-    selectedAgent = "cursor";
-  }
+  // Determine if skills should be installed
+  const installSkills = !skipSkills && (nonInteractive || answers.installSkills !== false);
 
   const targetDir = path.join(process.cwd(), directoryName);
   const templateDir = path.join(__dirname, "templates", templateName);
@@ -233,9 +211,9 @@ async function main() {
     depsInstalled = await installDependencies(targetDir);
   }
 
-  // Install agent skills if an agent was selected
-  if (!skipSkills && selectedAgent && selectedAgent !== "skip") {
-    skillsInstalled = await installAgentSkills(targetDir, selectedAgent);
+  // Install agent skills unless skipped
+  if (installSkills) {
+    skillsInstalled = await installAgentSkills(targetDir);
   }
 
   // Success message
@@ -246,9 +224,7 @@ async function main() {
   }
 
   if (skillsInstalled) {
-    process.stderr.write(
-      chalk.green(`✓ Agent skills installed (${selectedAgent})\n`),
-    );
+    process.stderr.write(chalk.green("✓ AI agent skills installed\n"));
   }
 
   process.stderr.write(chalk.bold("\nYour project is ready! 🎉\n\n"));
@@ -266,15 +242,12 @@ async function main() {
   // Skills info
   if (skillsInstalled) {
     process.stderr.write(chalk.bold("\nAI Agent Skills installed:\n"));
-    process.stderr.write(
-      chalk.dim("  • elements-composition - HTML/Web Components\n"),
-    );
-    process.stderr.write(
-      chalk.dim("  • react-composition - React components\n"),
-    );
-    process.stderr.write(
-      chalk.dim("  • motion-design - Animation principles\n"),
-    );
+    process.stderr.write(chalk.dim("  • editframe-composition\n"));
+    process.stderr.write(chalk.dim("  • editframe-motion-design\n"));
+    process.stderr.write(chalk.dim("  • editframe-brand-video-generator\n"));
+    process.stderr.write(chalk.dim("  • editframe-editor-gui\n"));
+    process.stderr.write(chalk.dim("  • editframe-vite-plugin\n"));
+    process.stderr.write(chalk.dim("  • editframe-webhooks\n"));
 
     process.stderr.write(chalk.bold("\nTry asking your AI agent:\n"));
     process.stderr.write(

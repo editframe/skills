@@ -15,6 +15,10 @@ export default defineConfig(
         from: "src/templates",
         to: "dist/templates",
       },
+      {
+        from: "src/skills",
+        to: "dist/skills",
+      },
     ],
     hooks: {
       async onSuccess() {

@@ -9,22 +9,16 @@
   },
   "plugins": [
     {
-      "name": "elements-composition",
+      "name": "editframe-composition",
       "description": "Create video compositions with Editframe Elements",
       "source": "./",
-      "skills": ["./skills/elements-composition"]
+      "skills": ["./skills/editframe-composition"]
     },
     {
-      "name": "react-composition",
-      "description": "Create video compositions with @editframe/react React wrappers",
-      "source": "./",
-      "skills": ["./skills/react-composition"]
-    },
-    {
-      "name": "motion-design",
+      "name": "editframe-motion-design",
       "description": "Professional motion graphics principles and animation techniques",
       "source": "./",
-      "skills": ["./skills/motion-design"]
+      "skills": ["./skills/editframe-motion-design"]
     }
   ]
 }
