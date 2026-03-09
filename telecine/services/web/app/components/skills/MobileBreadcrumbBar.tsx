@@ -122,9 +122,9 @@ export function MobileBreadcrumbBar({
   return (
     <div className="lg:hidden sticky top-0 z-20 bg-white dark:bg-[#0a0a0a] border-b border-black/[0.06] dark:border-white/[0.08] px-4 py-2.5">
       <div className="flex items-center gap-1.5 min-w-0">
-        {/* "Skills" segment — always a dropdown to switch skills */}
+        {/* "Docs" segment — always a dropdown to switch docs */}
         <BreadcrumbSegment
-          label="Skills"
+          label="Docs"
           items={skillItems}
           isLast={!currentSkill}
           to="/skills"

@@ -25,7 +25,7 @@ export function FooterSection() {
           <div>
             <h3 className="font-bold text-sm uppercase tracking-wider mb-4 text-white">Product</h3>
             <ul className="space-y-3">
-              <li><Link to="/skills" className="text-sm text-white/80 hover:text-white transition-colors">Docs & Skills</Link></li>
+              <li><Link to="/skills" className="text-sm text-white/80 hover:text-white transition-colors">Docs</Link></li>
               <li><Link to="/pricing" className="text-sm text-white/80 hover:text-white transition-colors">Pricing</Link></li>
             </ul>
           </div>

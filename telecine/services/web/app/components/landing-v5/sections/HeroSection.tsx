@@ -84,7 +84,7 @@ export function HeroSection() {
             to="/skills"
             className="inline-flex items-center justify-center px-8 py-3 border-2 border-[var(--ink-black)] dark:border-white font-bold text-sm uppercase tracking-wider hover:bg-[var(--ink-black)] hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
           >
-            Docs & Skills
+            Docs
           </Link>
         </div>
       </div>

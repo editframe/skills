@@ -54,29 +54,29 @@ const buffer = await response.arrayBuffer();
 
 ## Function Index
 
-### Renders
-- `createRender(client, payload)` → `CreateRenderResult` — Create a render job from HTML composition
-- `uploadRender(client, renderId, fileStream)` → `Promise<void>` — Upload pre-rendered video file
-- `getRenderProgress(client, id)` → `CompletionIterator` — Stream render progress via SSE
-- `getRenderInfo(client, id)` → `LookupRenderByMd5Result` — Get render metadata
-- `lookupRenderByMd5(client, md5)` → `LookupRenderByMd5Result | null` — Find existing render by hash
-- `downloadRender(client, id)` → `Response` — Download completed render
+### [Renders](references/renders.md)
+- [`createRender(client, payload)`](references/renders.md) → `CreateRenderResult` — Create a render job from HTML composition
+- [`uploadRender(client, renderId, fileStream)`](references/renders.md) → `Promise<void>` — Upload pre-rendered video file
+- [`getRenderProgress(client, id)`](references/renders.md) → `CompletionIterator` — Stream render progress via SSE
+- [`getRenderInfo(client, id)`](references/renders.md) → `LookupRenderByMd5Result` — Get render metadata
+- [`lookupRenderByMd5(client, md5)`](references/renders.md) → `LookupRenderByMd5Result | null` — Find existing render by hash
+- [`downloadRender(client, id)`](references/renders.md) → `Response` — Download completed render
 
-### Files (Unified API)
-- `createFile(client, payload)` → `CreateFileResult` — Register a file (video, image, or caption)
-- `uploadFile(client, uploadDetails, fileStream)` → `IteratorWithPromise<UploadChunkEvent>` — Upload file content with progress
-- `getFileDetail(client, id)` → `FileDetail` — Get file metadata and tracks
-- `lookupFileByMd5(client, md5)` → `LookupFileByMd5Result | null` — Find existing file by hash
-- `deleteFile(client, id)` → `{ success: boolean }` — Delete a file
-- `getFileProcessingProgress(client, id)` → `ProgressIterator` — Stream processing progress for video files
-- `transcribeFile(client, id, options?)` → `TranscribeFileResult` — Start audio transcription
-- `getFileTranscription(client, id)` → `FileTranscriptionResult | null` — Get transcription status
+### [Files (Unified API)](references/files.md)
+- [`createFile(client, payload)`](references/files.md) → `CreateFileResult` — Register a file (video, image, or caption)
+- [`uploadFile(client, uploadDetails, fileStream)`](references/files.md) → `IteratorWithPromise<UploadChunkEvent>` — Upload file content with progress
+- [`getFileDetail(client, id)`](references/files.md) → `FileDetail` — Get file metadata and tracks
+- [`lookupFileByMd5(client, md5)`](references/files.md) → `LookupFileByMd5Result | null` — Find existing file by hash
+- [`deleteFile(client, id)`](references/files.md) → `{ success: boolean }` — Delete a file
+- [`getFileProcessingProgress(client, id)`](references/files.md) → `ProgressIterator` — Stream processing progress for video files
+- [`transcribeFile(client, id, options?)`](references/files.md) → `TranscribeFileResult` — Start audio transcription
+- [`getFileTranscription(client, id)`](references/files.md) → `FileTranscriptionResult | null` — Get transcription status
 
-### Node.js Helpers
-- `upload(client, filePath)` → `{ file, uploadIterator }` — Upload a file from disk (auto-detects type)
+### [Node.js Helpers](references/files.md)
+- [`upload(client, filePath)`](references/files.md) → `{ file, uploadIterator }` — Upload a file from disk (auto-detects type)
 
-### URL Signing
-- `createURLToken(client, url)` → `string` — Generate signed JWT for browser access to media endpoints
+### [URL Signing](references/url-signing.md)
+- [`createURLToken(client, url)`](references/url-signing.md) → `string` — Generate signed JWT for browser access to media endpoints
 
 ## Unified Files API
 
@@ -122,3 +122,16 @@ If your application renders Editframe compositions in a browser, you need URL si
 URL signing creates short-lived, scoped tokens that authorize the browser to access specific media URLs. Set up a server route that calls `createURLToken`, then configure `<ef-configuration signingURL="/your-route">` in your frontend.
 
 See [references/url-signing.md](references/url-signing.md) for implementation details and integration with elements-composition and react-composition.
+
+## Reference
+
+- [references/getting-started.md](references/getting-started.md) — Render your first video in under 5 minutes
+- [references/authentication.md](references/authentication.md) — API keys, Client class, server vs. browser patterns
+- [references/renders.md](references/renders.md) — createRender, getRenderProgress, downloadRender
+- [references/files.md](references/files.md) — Unified files API: createFile, uploadFile, getFileDetail
+- [references/url-signing.md](references/url-signing.md) — Signed JWT tokens for browser media access
+- [references/media-pipeline.md](references/media-pipeline.md) — Video processing pipeline and file states
+- [references/image-files.md](references/image-files.md) — Uploading and referencing image files
+- [references/caption-files.md](references/caption-files.md) — Uploading caption/subtitle files
+- [references/transcription.md](references/transcription.md) — Audio transcription via WhisperX
+- [references/unprocessed-files.md](references/unprocessed-files.md) — Legacy unprocessed file endpoints

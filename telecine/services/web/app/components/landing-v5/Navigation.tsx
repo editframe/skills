@@ -22,7 +22,7 @@ export function Navigation() {
           <span className="text-xl font-black tracking-tighter uppercase">editframe</span>
         </Link>
         <div className="max-md:hidden flex items-center gap-1">
-          <LandingNavLink to="/skills">Docs & Skills</LandingNavLink>
+          <LandingNavLink to="/skills">Docs</LandingNavLink>
           <LandingNavLink to="/pricing">Pricing</LandingNavLink>
         </div>
         <div className="flex items-center gap-3">
@@ -54,7 +54,7 @@ export function Navigation() {
         <div className="md:hidden border-t-2 border-[var(--ink-black)] dark:border-white bg-[var(--paper-cream)]">
           <div className="px-6 py-4 flex flex-col gap-2">
             <LandingNavLink to="/skills" onClick={() => setMobileMenuOpen(false)}>
-              Docs & Skills
+              Docs
             </LandingNavLink>
             <LandingNavLink to="/pricing" onClick={() => setMobileMenuOpen(false)}>
               Pricing
