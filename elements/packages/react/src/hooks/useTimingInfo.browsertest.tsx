@@ -248,7 +248,11 @@ describe("useTimingInfo", () => {
 
     for (let i = 0; i < numFrames; i++) {
       const targetTime = i * MS_PER_FRAME;
-      await timegroup.seek(targetTime);
+      try {
+        await timegroup.seek(targetTime);
+      } catch (e) {
+        if ((e as Error).name !== "AbortError") throw e;
+      }
       await new Promise((resolve) => setTimeout(resolve, MS_PER_FRAME));
     }
 
