@@ -1,14 +1,14 @@
 import { readFile, writeFile, unlink } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ISOBoxer from "codem-isoboxer";
 
-const fragFixture = new URL(
+const fragFixture = resolve(
+  __dirname,
   "../../../../test-assets/frame-count.frag.mp4",
-  import.meta.url,
-).pathname;
+);
 
 describe("patchMoovDuration", () => {
   it("sets mvhd.duration from durationMs using the file's timescale", async () => {
