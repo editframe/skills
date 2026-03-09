@@ -3,6 +3,7 @@ import React from "react";
 import { createComponent } from "../hooks/create-element";
 
 export interface ScrubberProps {
+  target?: string;
   orientation?: "horizontal" | "vertical";
   currentTimeMs?: number;
   durationMs?: number;

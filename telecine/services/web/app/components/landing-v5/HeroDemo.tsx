@@ -1778,7 +1778,18 @@ export function HeroDemo({ autoPlay = false }: { autoPlay?: boolean }) {
       <div className="bg-[#0a0a0a] border-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
         <div className="relative" style={{ aspectRatio: "16/9" }}>
           {isClient ? (
-            <div className="absolute inset-0">
+            <div
+              className="absolute inset-0 cursor-pointer"
+              onClick={() => {
+                const preview = previewRef.current as any;
+                if (!preview) return;
+                if (preview.playing) {
+                  preview.pause();
+                } else {
+                  preview.play();
+                }
+              }}
+            >
               <Preview
                 id={previewId}
                 ref={previewRef as any}
@@ -1830,7 +1841,7 @@ export function HeroDemo({ autoPlay = false }: { autoPlay?: boolean }) {
 
               <div className="flex-1 px-4 h-12 flex items-center border-l-2 border-[var(--ink-black)] dark:border-white">
                 <Scrubber
-                  {...{ target: previewId } as any}
+                  target={previewId}
                   className="w-full h-1.5 bg-white/20 cursor-pointer [&::part(progress)]:bg-[var(--poster-red)] [&::part(handle)]:bg-white [&::part(handle)]:w-3 [&::part(handle)]:h-3"
                 />
               </div>

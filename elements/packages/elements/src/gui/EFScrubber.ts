@@ -392,6 +392,10 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
     }
   };
 
+  private boundHandlePointerDown = (e: PointerEvent) => {
+    this.handlePointerDown(e);
+  };
+
   render() {
     const duration = this.effectiveDurationMs;
     const currentTime = this.effectiveCurrentTimeMs;
@@ -492,6 +496,11 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
     this.addEventListener("contextmenu", this.boundHandleContextMenu, {
       passive: false,
     });
+    this.addEventListener(
+      "pointerdown",
+      this.boundHandlePointerDown as EventListener,
+      { passive: false },
+    );
   }
 
   disconnectedCallback() {
@@ -506,6 +515,10 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
       this.boundHandlePointerCancel as EventListener,
     );
     this.removeEventListener("contextmenu", this.boundHandleContextMenu);
+    this.removeEventListener(
+      "pointerdown",
+      this.boundHandlePointerDown as EventListener,
+    );
   }
 }
 

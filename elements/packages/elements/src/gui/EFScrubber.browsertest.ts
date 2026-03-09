@@ -131,6 +131,52 @@ describe("EFScrubber", () => {
     expect(parseFloat(progress.style.width)).toBeGreaterThan(0);
   });
 
+  test("handles pointerdown on host element (not just shadow .scrubber)", async () => {
+    const container = document.createElement("div");
+    container.style.width = "200px";
+    container.style.height = "48px";
+    document.body.appendChild(container);
+    testElements.push(container);
+
+    const scrubber = document.createElement("ef-scrubber");
+    scrubber.setAttribute("duration-ms", "5000");
+    scrubber.setAttribute("current-time-ms", "0");
+    scrubber.style.width = "100%";
+    scrubber.style.height = "100%";
+    container.appendChild(scrubber);
+    testElements.push(scrubber);
+
+    await scrubber.updateComplete;
+
+    const scrubberBar = scrubber.shadowRoot?.querySelector(
+      ".scrubber",
+    ) as HTMLElement;
+    expect(scrubberBar).toBeTruthy();
+
+    const rect = scrubberBar.getBoundingClientRect();
+
+    let seekFired = false;
+    scrubber.addEventListener("seek", () => {
+      seekFired = true;
+    });
+
+    // Dispatch on the HOST element directly (not on the shadow .scrubber div).
+    // This simulates a click landing in the taller hit-area container (e.g. the
+    // h-12 div in HeroDemo) that misses the tiny visual scrubber bar.
+    const pointerDown = new PointerEvent("pointerdown", {
+      clientX: rect.left + rect.width * 0.5,
+      clientY: rect.top + rect.height * 0.5,
+      pointerId: 1,
+      bubbles: true,
+      composed: true,
+    });
+    scrubber.dispatchEvent(pointerDown);
+
+    await scrubber.updateComplete;
+
+    expect(seekFired).toBe(true);
+  });
+
   test("supports zoom scale for vertical timeline mode", async () => {
     const container = document.createElement("div");
     container.style.width = "20px";
