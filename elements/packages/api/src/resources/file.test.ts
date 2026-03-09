@@ -367,9 +367,7 @@ describe("File", () => {
         ),
       );
 
-      await expect(
-        getFileTranscription(client, "test-id"),
-      ).rejects.toThrowError(
+      await expect(getFileTranscription(client, "test-id")).rejects.toThrowError(
         "Failed to get file transcription test-id 500 Internal Server Error",
       );
     });

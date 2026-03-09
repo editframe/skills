@@ -55,27 +55,21 @@ describe("Text React component", () => {
       </Preview>,
     );
 
-    const textEl = await vi.waitUntil(
-      () => container.querySelector("ef-text"),
-      { timeout: 3000 },
-    );
+    const textEl = await vi.waitUntil(() => container.querySelector("ef-text"), { timeout: 3000 });
 
     expect(textEl).toBeTruthy();
 
     // Wait for segments
-    await vi.waitUntil(
-      () => textEl!.querySelectorAll("ef-text-segment").length > 0,
-      { timeout: 3000 },
-    );
+    await vi.waitUntil(() => textEl!.querySelectorAll("ef-text-segment").length > 0, {
+      timeout: 3000,
+    });
 
     // Wait for propagation
     await new Promise((resolve) => requestAnimationFrame(resolve));
     await new Promise((resolve) => requestAnimationFrame(resolve));
 
     const segments = Array.from(textEl!.querySelectorAll("ef-text-segment"));
-    const wordSegments = segments.filter(
-      (seg) => !/^\s+$/.test((seg as any).segmentText),
-    );
+    const wordSegments = segments.filter((seg) => !/^\s+$/.test((seg as any).segmentText));
 
     expect(wordSegments.length).toBe(2);
 
@@ -107,29 +101,20 @@ describe("Text React component", () => {
     root.render(
       <Preview id="test-preview-2">
         <Timegroup mode="contain" duration="5s">
-          <Text
-            split="char"
-            staggerMs={50}
-            duration="3s"
-            className="react-slide-anim"
-          >
+          <Text split="char" staggerMs={50} duration="3s" className="react-slide-anim">
             ABC
           </Text>
         </Timegroup>
       </Preview>,
     );
 
-    const textEl = await vi.waitUntil(
-      () => container.querySelector("ef-text"),
-      { timeout: 3000 },
-    );
+    const textEl = await vi.waitUntil(() => container.querySelector("ef-text"), { timeout: 3000 });
 
     expect(textEl).toBeTruthy();
 
-    await vi.waitUntil(
-      () => textEl!.querySelectorAll("ef-text-segment").length > 0,
-      { timeout: 3000 },
-    );
+    await vi.waitUntil(() => textEl!.querySelectorAll("ef-text-segment").length > 0, {
+      timeout: 3000,
+    });
 
     await new Promise((resolve) => requestAnimationFrame(resolve));
     await new Promise((resolve) => requestAnimationFrame(resolve));
@@ -175,23 +160,17 @@ describe("Text React component", () => {
       </Preview>,
     );
 
-    const textEl = await vi.waitUntil(
-      () => container.querySelector("ef-text"),
-      { timeout: 3000 },
-    );
+    const textEl = await vi.waitUntil(() => container.querySelector("ef-text"), { timeout: 3000 });
 
-    await vi.waitUntil(
-      () => textEl!.querySelectorAll("ef-text-segment").length > 0,
-      { timeout: 3000 },
-    );
+    await vi.waitUntil(() => textEl!.querySelectorAll("ef-text-segment").length > 0, {
+      timeout: 3000,
+    });
 
     await new Promise((resolve) => requestAnimationFrame(resolve));
     await new Promise((resolve) => requestAnimationFrame(resolve));
 
     const segments = Array.from(textEl!.querySelectorAll("ef-text-segment"));
-    const wordSegments = segments.filter(
-      (seg) => !/^\s+$/.test((seg as any).segmentText),
-    );
+    const wordSegments = segments.filter((seg) => !/^\s+$/.test((seg as any).segmentText));
 
     for (const seg of wordSegments) {
       expect((seg as HTMLElement).style.animationDelay).toBe("");

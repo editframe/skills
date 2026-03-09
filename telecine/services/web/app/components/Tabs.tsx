@@ -9,9 +9,7 @@ export const Tabs = ({ tabs }: { tabs: { name: string; link: string }[] }) => {
         <Link
           key={tab.link}
           to={tab.link}
-          className={`${
-            tab.link === activeTab ? "text-martinique-600" : "text-gray-700"
-          }`}
+          className={`${tab.link === activeTab ? "text-martinique-600" : "text-gray-700"}`}
         >
           {tab.name}
         </Link>

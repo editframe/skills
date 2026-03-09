@@ -70,10 +70,8 @@ async function renderElementToImage(
 
   // Get element dimensions
   const computedStyle = getComputedStyle(element);
-  const width =
-    options.width ?? (parseFloat(computedStyle.width) || DEFAULT_WIDTH);
-  const height =
-    options.height ?? (parseFloat(computedStyle.height) || DEFAULT_HEIGHT);
+  const width = options.width ?? (parseFloat(computedStyle.width) || DEFAULT_WIDTH);
+  const height = options.height ?? (parseFloat(computedStyle.height) || DEFAULT_HEIGHT);
 
   // Create render context for caching
   const renderContext = options.renderContext ?? new RenderContext();

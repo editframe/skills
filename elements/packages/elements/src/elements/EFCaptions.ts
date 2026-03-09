@@ -203,12 +203,8 @@ export class EFCaptions
 
   activeWordContainers = this.getElementsByTagName("ef-captions-active-word");
   segmentContainers = this.getElementsByTagName("ef-captions-segment");
-  beforeActiveWordContainers = this.getElementsByTagName(
-    "ef-captions-before-active-word",
-  );
-  afterActiveWordContainers = this.getElementsByTagName(
-    "ef-captions-after-active-word",
-  );
+  beforeActiveWordContainers = this.getElementsByTagName("ef-captions-before-active-word");
+  afterActiveWordContainers = this.getElementsByTagName("ef-captions-after-active-word");
 
   // Cache for intrinsicDurationMs to avoid expensive O(n) recalculation every frame
   #cachedIntrinsicDurationMs: number | undefined | null = null; // null = not computed, undefined = no duration
@@ -238,9 +234,7 @@ export class EFCaptions
     }
     const targetSrc = this.targetElement.src;
     // Normalize the path: remove leading slash and any double slashes
-    let normalizedSrc = targetSrc.startsWith("/")
-      ? targetSrc.slice(1)
-      : targetSrc;
+    let normalizedSrc = targetSrc.startsWith("/") ? targetSrc.slice(1) : targetSrc;
     normalizedSrc = normalizedSrc.replace(/^\/+/, "");
     // Use production API format for local files
     return `/api/v1/assets/captions?src=${encodeURIComponent(normalizedSrc)}`;
@@ -316,10 +310,7 @@ export class EFCaptions
         try {
           return JSON.parse(scriptElement.textContent) as Caption;
         } catch (error) {
-          console.error(
-            `Failed to parse captions from script #${this.captionsScript}:`,
-            error,
-          );
+          console.error(`Failed to parse captions from script #${this.captionsScript}:`, error);
         }
       }
     }
@@ -333,10 +324,7 @@ export class EFCaptions
         if (error instanceof DOMException && error.name === "AbortError") {
           throw error;
         }
-        console.error(
-          `Failed to load captions from ${this.captionsSrc}:`,
-          error,
-        );
+        console.error(`Failed to load captions from ${this.captionsSrc}:`, error);
       }
     }
 
@@ -346,8 +334,7 @@ export class EFCaptions
       if (transcriptionPath) {
         try {
           const response = await this.fetch(transcriptionPath, { signal });
-          this.#transcriptionData =
-            (await response.json()) as GetISOBMFFFileTranscriptionResult;
+          this.#transcriptionData = (await response.json()) as GetISOBMFFFileTranscriptionResult;
           signal?.throwIfAborted();
 
           // Load fragment for current time
@@ -366,14 +353,10 @@ export class EFCaptions
     return null;
   }
 
-  async #loadTranscriptionFragment(
-    signal?: AbortSignal,
-  ): Promise<Caption | null> {
+  async #loadTranscriptionFragment(signal?: AbortSignal): Promise<Caption | null> {
     if (!this.#transcriptionData) return null;
 
-    const fragmentIndex = Math.floor(
-      this.ownCurrentTimeMs / this.#transcriptionData.work_slice_ms,
-    );
+    const fragmentIndex = Math.floor(this.ownCurrentTimeMs / this.#transcriptionData.work_slice_ms);
     const fragmentPath = `${this.apiHost}/api/v1/transcriptions/${this.#transcriptionData.id}/fragments/${fragmentIndex}`;
 
     try {
@@ -398,8 +381,7 @@ export class EFCaptions
    */
   getFrameState(_timeMs: number): FrameState {
     // Check if captions data is loaded
-    const hasData =
-      this.#captionsDataLoaded && this.#captionsDataValue !== null;
+    const hasData = this.#captionsDataLoaded && this.#captionsDataValue !== null;
 
     return {
       needsPreparation: !hasData,
@@ -441,9 +423,7 @@ export class EFCaptions
     this.loadCaptionsData().catch(() => {});
 
     // Try to get target element safely
-    const target = this.targetSelector
-      ? this.#findElementById(this.targetSelector)
-      : null;
+    const target = this.targetSelector ? this.#findElementById(this.targetSelector) : null;
     if (target && (target instanceof EFAudio || target instanceof EFVideo)) {
       new CrossUpdateController(target, this);
     }
@@ -494,9 +474,7 @@ export class EFCaptions
     }
   }
 
-  protected updated(
-    changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>,
-  ): void {
+  protected updated(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     // Set up root timegroup controller if rootTimegroup is now available
     if (this.rootTimegroup && !this.#rootTimegroupUpdateController) {
       this.#rootTimegroupUpdateController = {
@@ -513,13 +491,8 @@ export class EFCaptions
     }
 
     // Clean up controller if rootTimegroup changed
-    if (
-      changedProperties.has("rootTimegroup") &&
-      this.#rootTimegroupUpdateController
-    ) {
-      const oldRootTimegroup = changedProperties.get("rootTimegroup") as
-        | EFTimegroup
-        | undefined;
+    if (changedProperties.has("rootTimegroup") && this.#rootTimegroupUpdateController) {
+      const oldRootTimegroup = changedProperties.get("rootTimegroup") as EFTimegroup | undefined;
       if (oldRootTimegroup && oldRootTimegroup !== this.rootTimegroup) {
         oldRootTimegroup.removeController(this.#rootTimegroupUpdateController);
         this.#rootTimegroupUpdateController = undefined;
@@ -585,8 +558,7 @@ export class EFCaptions
 
     // Find the current segment
     const currentSegment = captionsData.segments.find(
-      (segment) =>
-        currentTimeSec >= segment.start && currentTimeSec < segment.end,
+      (segment) => currentTimeSec >= segment.start && currentTimeSec < segment.end,
     );
 
     for (const wordContainer of this.activeWordContainers) {
@@ -615,13 +587,11 @@ export class EFCaptions
     // Process context for both word and segment cases
     if (currentWord && currentSegment) {
       const segmentWords = captionsData.word_segments.filter(
-        (word) =>
-          word.start >= currentSegment.start && word.end <= currentSegment.end,
+        (word) => word.start >= currentSegment.start && word.end <= currentSegment.end,
       );
 
       const currentWordIndex = segmentWords.findIndex(
-        (word) =>
-          word.start === currentWord.start && word.end === currentWord.end,
+        (word) => word.start === currentWord.start && word.end === currentWord.end,
       );
 
       if (currentWordIndex !== -1) {
@@ -645,8 +615,7 @@ export class EFCaptions
       }
     } else if (currentSegment) {
       const segmentWords = captionsData.word_segments.filter(
-        (word) =>
-          word.start >= currentSegment.start && word.end <= currentSegment.end,
+        (word) => word.start >= currentSegment.start && word.end <= currentSegment.end,
       );
 
       const firstWord = segmentWords[0];
@@ -663,9 +632,7 @@ export class EFCaptions
           container.segmentText = allWords; // Sets textContent directly
         }
       } else {
-        const allCompletedWords = segmentWords
-          .map((w) => w.text.trim())
-          .join(" ");
+        const allCompletedWords = segmentWords.map((w) => w.text.trim()).join(" ");
 
         for (const container of this.beforeActiveWordContainers) {
           container.segmentText = allCompletedWords; // Sets textContent directly
@@ -687,9 +654,7 @@ export class EFCaptions
   }
 
   get targetElement() {
-    const target = this.targetSelector
-      ? this.#findElementById(this.targetSelector)
-      : null;
+    const target = this.targetSelector ? this.#findElementById(this.targetSelector) : null;
     if (target instanceof EFAudio || target instanceof EFVideo) {
       return target;
     }
@@ -749,25 +714,16 @@ export class EFCaptions
     }
 
     let result: number;
-    if (
-      captionsData.segments.length === 0 &&
-      captionsData.word_segments.length === 0
-    ) {
+    if (captionsData.segments.length === 0 && captionsData.word_segments.length === 0) {
       result = 0;
     } else {
       const maxSegmentEnd =
         captionsData.segments.length > 0
-          ? captionsData.segments.reduce(
-              (max, s) => (s.end > max ? s.end : max),
-              0,
-            )
+          ? captionsData.segments.reduce((max, s) => (s.end > max ? s.end : max), 0)
           : 0;
       const maxWordEnd =
         captionsData.word_segments.length > 0
-          ? captionsData.word_segments.reduce(
-              (max, w) => (w.end > max ? w.end : max),
-              0,
-            )
+          ? captionsData.word_segments.reduce((max, w) => (w.end > max ? w.end : max), 0)
           : 0;
 
       result = Math.max(maxSegmentEnd, maxWordEnd) * 1000;
@@ -778,11 +734,7 @@ export class EFCaptions
   }
 
   get hasOwnDuration(): boolean {
-    return !!(
-      this.captionsData ||
-      this.captionsScript ||
-      this.#captionsDataValue
-    );
+    return !!(this.captionsData || this.captionsScript || this.#captionsDataValue);
   }
 }
 

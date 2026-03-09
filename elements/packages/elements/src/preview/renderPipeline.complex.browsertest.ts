@@ -40,8 +40,7 @@ function createComplexComposition(): EFTimegroup {
     const bgCanvas = document.createElement("canvas");
     bgCanvas.width = W;
     bgCanvas.height = H;
-    bgCanvas.style.cssText =
-      "width:100%;height:100%;position:absolute;top:0;left:0;";
+    bgCanvas.style.cssText = "width:100%;height:100%;position:absolute;top:0;left:0;";
     const ctx = bgCanvas.getContext("2d")!;
     const grad = ctx.createLinearGradient(0, 0, W, H);
     grad.addColorStop(0, `hsl(${scene * 45},60%,40%)`);
@@ -59,8 +58,7 @@ function createComplexComposition(): EFTimegroup {
     titleText.setAttribute("split", "word");
     titleText.setAttribute("stagger", "100ms");
     titleText.setAttribute("duration", "3s");
-    titleText.className =
-      "absolute top-8 left-0 right-0 text-center text-white text-3xl font-bold";
+    titleText.className = "absolute top-8 left-0 right-0 text-center text-white text-3xl font-bold";
     titleText.style.cssText =
       "position:absolute;top:30px;left:0;right:0;text-align:center;color:white;font-size:32px;font-weight:bold;";
     const tmpl = document.createElement("template");
@@ -68,9 +66,7 @@ function createComplexComposition(): EFTimegroup {
     seg.style.cssText = "opacity:0;animation:fadeIn 0.4s ease-out forwards;";
     tmpl.content.appendChild(seg);
     titleText.appendChild(tmpl);
-    titleText.appendChild(
-      document.createTextNode(`Scene ${scene + 1} Title Text`),
-    );
+    titleText.appendChild(document.createTextNode(`Scene ${scene + 1} Title Text`));
     sc.appendChild(titleText);
 
     // Subtitle text with char split
@@ -85,9 +81,7 @@ function createComplexComposition(): EFTimegroup {
     seg2.style.cssText = "opacity:0;animation:slideIn 0.3s ease-out forwards;";
     tmpl2.content.appendChild(seg2);
     subText.appendChild(tmpl2);
-    subText.appendChild(
-      document.createTextNode(`Subtitle for scene number ${scene + 1}`),
-    );
+    subText.appendChild(document.createTextNode(`Subtitle for scene number ${scene + 1}`));
     sc.appendChild(subText);
 
     // Image overlay (inline SVG data URI)
@@ -136,8 +130,7 @@ function createComplexComposition(): EFTimegroup {
     "src",
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect fill='%233b82f6' width='40' height='40' rx='4'/%3E%3Ctext x='20' y='26' font-family='system-ui' font-size='10' font-weight='bold' fill='white' text-anchor='middle'%3EEF%3C/text%3E%3C/svg%3E",
   );
-  brandImg.style.cssText =
-    "position:absolute;left:12px;top:10px;width:40px;height:40px;";
+  brandImg.style.cssText = "position:absolute;left:12px;top:10px;width:40px;height:40px;";
   infoBar.appendChild(brandImg);
 
   const barText = document.createElement("ef-text");
@@ -150,9 +143,7 @@ function createComplexComposition(): EFTimegroup {
   segBar.style.cssText = "opacity:0;animation:fadeIn 0.4s ease-out forwards;";
   tmplBar.content.appendChild(segBar);
   barText.appendChild(tmplBar);
-  barText.appendChild(
-    document.createTextNode("Complex Composition Profiling Test"),
-  );
+  barText.appendChild(document.createTextNode("Complex Composition Profiling Test"));
   infoBar.appendChild(barText);
 
   root.appendChild(infoBar);

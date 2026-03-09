@@ -36,9 +36,7 @@ describe("EFImage", () => {
       image.setAttribute("asset-id", id);
       preview.appendChild(image);
       document.body.appendChild(preview);
-      expect(image.assetPath()).toBe(
-        `https://editframe.com/api/v1/files/${id}`,
-      );
+      expect(image.assetPath()).toBe(`https://editframe.com/api/v1/files/${id}`);
       preview.remove();
     });
 
@@ -71,16 +69,14 @@ describe("EFImage", () => {
   describe("durationMs", () => {
     test("Can be set on element directly", () => {
       const image = document.createElement("ef-image");
-      image.src =
-        "https://editframe.com/api/v1/image_files/550e8400-e29b-41d4-a716-446655440000";
+      image.src = "https://editframe.com/api/v1/image_files/550e8400-e29b-41d4-a716-446655440000";
       image.duration = "1s";
       expect(image.durationMs).toBe(1000);
     });
 
     test("Can be set through setAttribute", () => {
       const image = document.createElement("ef-image");
-      image.src =
-        "https://editframe.com/api/v1/image_files/550e8400-e29b-41d4-a716-446655440000";
+      image.src = "https://editframe.com/api/v1/image_files/550e8400-e29b-41d4-a716-446655440000";
       image.setAttribute("duration", "1s");
       expect(image.durationMs).toBe(1000);
     });
@@ -106,9 +102,7 @@ describe("EFImage", () => {
     test("routes local file src through assets image endpoint", () => {
       const image = document.createElement("ef-image");
       image.src = "local-image.jpg";
-      expect(image.assetPath()).toBe(
-        "/api/v1/assets/image?src=local-image.jpg",
-      );
+      expect(image.assetPath()).toBe("/api/v1/assets/image?src=local-image.jpg");
     });
 
     test("file-id takes priority over src", () => {
@@ -119,16 +113,13 @@ describe("EFImage", () => {
       document.body.appendChild(preview);
       image.src = "https://example.com/image.jpg";
       image.assetId = "test-asset-id";
-      expect(image.assetPath()).toBe(
-        "https://api.test.com/api/v1/files/test-asset-id",
-      );
+      expect(image.assetPath()).toBe("https://api.test.com/api/v1/files/test-asset-id");
       preview.remove();
     });
 
     test("cross-origin src routes through assets endpoint to prevent canvas CORS taint", () => {
       const image = document.createElement("ef-image");
-      image.src =
-        "https://storage.googleapis.com/editframe-assets-7ac794b/1080-cat.jpeg";
+      image.src = "https://storage.googleapis.com/editframe-assets-7ac794b/1080-cat.jpeg";
       expect(image.assetPath()).toBe(
         "/api/v1/assets/image?src=https%3A%2F%2Fstorage.googleapis.com%2Feditframe-assets-7ac794b%2F1080-cat.jpeg",
       );

@@ -61,18 +61,13 @@ describe("Unprocessed File", () => {
           filename: "test-file",
           byte_size: 1024 * 1024,
         }),
-      ).rejects.toThrowError(
-        "Failed to create unprocessed file 500 Internal Server Error",
-      );
+      ).rejects.toThrowError("Failed to create unprocessed file 500 Internal Server Error");
     });
 
     test("Returns json data from the http response", async () => {
       server.use(
         http.post("http://localhost/api/v1/unprocessed_files", () =>
-          HttpResponse.json(
-            { testResponse: "test" },
-            { status: 200, statusText: "OK" },
-          ),
+          HttpResponse.json({ testResponse: "test" }, { status: 200, statusText: "OK" }),
         ),
       );
 
@@ -90,9 +85,8 @@ describe("Unprocessed File", () => {
     test("Throws when server responds with an error", async () => {
       server.use(
         UploadMustContinue(),
-        http.post(
-          "http://localhost/api/v1/unprocessed_files/test-file/upload",
-          () => HttpResponse.text("Internal Server Error", { status: 500 }),
+        http.post("http://localhost/api/v1/unprocessed_files/test-file/upload", () =>
+          HttpResponse.text("Internal Server Error", { status: 500 }),
         ),
       );
 
@@ -110,9 +104,8 @@ describe("Unprocessed File", () => {
     test("Succeeds when server returns a success", async () => {
       server.use(
         UploadMustContinue(),
-        http.post(
-          "http://localhost/api/v1/unprocessed_files/test-file/upload",
-          () => HttpResponse.json({}, { status: 201 }),
+        http.post("http://localhost/api/v1/unprocessed_files/test-file/upload", () =>
+          HttpResponse.json({}, { status: 201 }),
         ),
       );
 
@@ -161,9 +154,7 @@ describe("Unprocessed File", () => {
         ),
       );
 
-      await expect(
-        lookupUnprocessedFileByMd5(client, "test-md5"),
-      ).rejects.toThrowError(
+      await expect(lookupUnprocessedFileByMd5(client, "test-md5")).rejects.toThrowError(
         "Failed to lookup unprocessed file by md5 test-md5 500 Internal Server Error",
       );
     });

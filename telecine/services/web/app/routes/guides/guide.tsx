@@ -90,7 +90,10 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
   const description = post.frontmatter.meta.find(
     (m) => m.name === "description",
   )?.content;
-  return [{ title: `${title} | Editframe` }, { name: "description", content: description }];
+  return [
+    { title: `${title} | Editframe` },
+    { name: "description", content: description },
+  ];
 };
 
 export default function GuidePage() {

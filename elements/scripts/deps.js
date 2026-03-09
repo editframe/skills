@@ -33,10 +33,8 @@ const createDependencyGraph = async () => {
     if (seen.has(packageName)) return; // Prevent infinite loops
     seen.add(packageName);
 
-    const dependencies =
-      workspacePackages[packageName]?.packageJson.dependencies;
-    const devDependencies =
-      workspacePackages[packageName]?.packageJson.devDependencies;
+    const dependencies = workspacePackages[packageName]?.packageJson.dependencies;
+    const devDependencies = workspacePackages[packageName]?.packageJson.devDependencies;
     if (!dependencies) return;
 
     if (!dependencyGraph[packageName]) {
@@ -89,9 +87,7 @@ const generateMermaidFile = (dependencyGraph, outputPath) => {
 
 // Function to update dependencies to the latest version in the workspace
 const updateDependenciesToLatest = async (workspacePackages) => {
-  for (const [pkgName, { packageJson, packagePath }] of Object.entries(
-    workspacePackages,
-  )) {
+  for (const [pkgName, { packageJson, packagePath }] of Object.entries(workspacePackages)) {
     console.error(`Updating dependencies for ${pkgName}`);
     const dependencies = packageJson.dependencies || {};
 
@@ -114,9 +110,7 @@ const topologicalSort = (graph) => {
 
   const visit = (node, ancestors = new Set()) => {
     if (ancestors.has(node)) {
-      throw new Error(
-        `Circular dependency detected: ${[...ancestors, node].join(" -> ")}`,
-      );
+      throw new Error(`Circular dependency detected: ${[...ancestors, node].join(" -> ")}`);
     }
 
     if (!visited.has(node)) {
@@ -138,18 +132,9 @@ const topologicalSort = (graph) => {
 };
 
 const updateTemplateDependencies = async () => {
-  const templates = await readdir(
-    join(process.cwd(), "packages", "create", "src", "templates"),
-  );
+  const templates = await readdir(join(process.cwd(), "packages", "create", "src", "templates"));
   for (const template of templates) {
-    const dirPath = join(
-      process.cwd(),
-      "packages",
-      "create",
-      "src",
-      "templates",
-      template,
-    );
+    const dirPath = join(process.cwd(), "packages", "create", "src", "templates", template);
     const stats = await stat(dirPath);
     if (stats.isDirectory() === false) continue;
 
@@ -176,9 +161,7 @@ const updateTemplateDependencies = async () => {
 const command = process.argv[2];
 switch (command) {
   case "update-dependencies": {
-    console.error(
-      "Updating dependencies to the latest version in the workspace...",
-    );
+    console.error("Updating dependencies to the latest version in the workspace...");
     const workspacePackages = await getWorkspacePackages();
     await updateDependenciesToLatest(workspacePackages);
     await updateTemplateDependencies();

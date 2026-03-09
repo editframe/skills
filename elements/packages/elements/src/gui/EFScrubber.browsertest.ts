@@ -110,9 +110,7 @@ describe("EFScrubber", () => {
 
     await scrubber.updateComplete;
 
-    const scrubberBar = scrubber.shadowRoot?.querySelector(
-      ".scrubber",
-    ) as HTMLElement;
+    const scrubberBar = scrubber.shadowRoot?.querySelector(".scrubber") as HTMLElement;
     expect(scrubberBar).toBeTruthy();
 
     const rect = scrubberBar.getBoundingClientRect();
@@ -148,9 +146,7 @@ describe("EFScrubber", () => {
 
     await scrubber.updateComplete;
 
-    const scrubberBar = scrubber.shadowRoot?.querySelector(
-      ".scrubber",
-    ) as HTMLElement;
+    const scrubberBar = scrubber.shadowRoot?.querySelector(".scrubber") as HTMLElement;
     expect(scrubberBar).toBeTruthy();
 
     const rect = scrubberBar.getBoundingClientRect();
@@ -197,9 +193,7 @@ describe("EFScrubber", () => {
 
     await scrubber.updateComplete;
 
-    const playhead = scrubber.shadowRoot?.querySelector(
-      ".playhead",
-    ) as HTMLElement;
+    const playhead = scrubber.shadowRoot?.querySelector(".playhead") as HTMLElement;
     expect(playhead).toBeTruthy();
     const leftValue = playhead.style.left;
     expect(leftValue).toMatch(/^\d+px$/);
@@ -234,9 +228,7 @@ describe("EFScrubber", () => {
     (scrubber as any).playing = true;
     await scrubber.updateComplete;
 
-    const scrubberBar = scrubber.shadowRoot!.querySelector(
-      ".scrubber",
-    ) as HTMLElement;
+    const scrubberBar = scrubber.shadowRoot!.querySelector(".scrubber") as HTMLElement;
     const rect = scrubberBar.getBoundingClientRect();
 
     scrubberBar.dispatchEvent(
@@ -286,9 +278,7 @@ describe("EFScrubber", () => {
     (scrubber as any).playing = false;
     await scrubber.updateComplete;
 
-    const scrubberBar = scrubber.shadowRoot!.querySelector(
-      ".scrubber",
-    ) as HTMLElement;
+    const scrubberBar = scrubber.shadowRoot!.querySelector(".scrubber") as HTMLElement;
     const rect = scrubberBar.getBoundingClientRect();
 
     scrubberBar.dispatchEvent(
@@ -339,9 +329,7 @@ describe("EFScrubber", () => {
     (scrubber as any).playing = true;
     await scrubber.updateComplete;
 
-    const scrubberBar = scrubber.shadowRoot!.querySelector(
-      ".scrubber",
-    ) as HTMLElement;
+    const scrubberBar = scrubber.shadowRoot!.querySelector(".scrubber") as HTMLElement;
     const rect = scrubberBar.getBoundingClientRect();
 
     scrubberBar.dispatchEvent(

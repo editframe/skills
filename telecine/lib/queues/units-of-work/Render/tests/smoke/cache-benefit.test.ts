@@ -65,7 +65,7 @@ describe("Bundle Cache Benefit", { timeout: 60000 }, () => {
         <div class="w-full h-full bg-red-500"></div>
       </ef-timegroup>
     `;
-    
+
     const result = await render(differentHTML, {
       testAgent,
       electronRpc,

@@ -19,7 +19,9 @@ import type { Route } from "./+types/update-password";
 
 const schema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
-  password_confirmation: z.string().min(8, "Password must be at least 8 characters"),
+  password_confirmation: z
+    .string()
+    .min(8, "Password must be at least 8 characters"),
   reset_token: z.string(),
 });
 

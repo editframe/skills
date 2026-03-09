@@ -122,9 +122,7 @@ export class CaptionLayer extends ExtendedModel(
         .map((word) => {
           const current = this.isCurrentWord(word);
           return html`<span
-            style="${cssAttributesAsCSS(
-              current ? this.activeWordCSS : this.wordCSS,
-            )}"
+            style="${cssAttributesAsCSS(current ? this.activeWordCSS : this.wordCSS)}"
           >
             ${word.text}
           </span>`;

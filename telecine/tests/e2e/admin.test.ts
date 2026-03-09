@@ -29,9 +29,7 @@ describe("admin dashboard", () => {
     await page.getByRole("button", { name: "Continue" }).click();
     await page.getByRole("button", { name: "Finish setup" }).click();
 
-    await playwrightExpect(
-      page.getByText(`Welcome ${email}`),
-    ).toBeVisible();
+    await playwrightExpect(page.getByText(`Welcome ${email}`)).toBeVisible();
 
     await waitForEmail(
       user.email_address,
@@ -42,8 +40,6 @@ describe("admin dashboard", () => {
       .click();
 
     await page.goto("/admin");
-    await playwrightExpect(
-      page.getByText(`Welcome ${email}`),
-    ).toBeVisible();
+    await playwrightExpect(page.getByText(`Welcome ${email}`)).toBeVisible();
   });
 });

@@ -18,8 +18,7 @@ export function detectChrome(): ChromeDetectionResult {
 
   if (osPlatform === "darwin") {
     // macOS: Check for Google Chrome.app
-    const chromePath =
-      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+    const chromePath = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
     if (existsSync(chromePath)) {
       return { found: true, path: chromePath };
     }
@@ -73,28 +72,15 @@ export function detectChrome(): ChromeDetectionResult {
 
     return {
       found: false,
-      error:
-        "Chrome not found. Install with: apt-get install google-chrome-stable",
+      error: "Chrome not found. Install with: apt-get install google-chrome-stable",
     };
   }
 
   if (osPlatform === "win32") {
     // Windows: Check common installation paths
     const possiblePaths = [
-      path.join(
-        process.env.LOCALAPPDATA || "",
-        "Google",
-        "Chrome",
-        "Application",
-        "chrome.exe",
-      ),
-      path.join(
-        process.env.PROGRAMFILES || "",
-        "Google",
-        "Chrome",
-        "Application",
-        "chrome.exe",
-      ),
+      path.join(process.env.LOCALAPPDATA || "", "Google", "Chrome", "Application", "chrome.exe"),
+      path.join(process.env.PROGRAMFILES || "", "Google", "Chrome", "Application", "chrome.exe"),
       path.join(
         process.env["PROGRAMFILES(X86)"] || "",
         "Google",

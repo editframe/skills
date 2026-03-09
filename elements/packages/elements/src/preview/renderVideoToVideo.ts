@@ -23,10 +23,7 @@ import {
   type AudioCodec,
 } from "mediabunny";
 import type { EFVideo } from "../elements/EFVideo.js";
-import {
-  NoSupportedAudioCodecError,
-  RenderCancelledError,
-} from "./renderTimegroupToVideo.js";
+import { NoSupportedAudioCodecError, RenderCancelledError } from "./renderTimegroupToVideo.js";
 import type { RenderToVideoOptions } from "./renderTimegroupToVideo.types.js";
 import { logger } from "./logger.js";
 
@@ -80,9 +77,7 @@ async function resolveVideoConfig(
   const intrinsicDurationMs = video.intrinsicDurationMs;
 
   if (!intrinsicDurationMs || intrinsicDurationMs <= 0) {
-    throw new Error(
-      "Video has no intrinsic duration. Ensure the media engine is loaded.",
-    );
+    throw new Error("Video has no intrinsic duration. Ensure the media engine is loaded.");
   }
 
   const effectiveDurationMs = intrinsicDurationMs - trimStartMs - trimEndMs;
@@ -93,12 +88,9 @@ async function resolveVideoConfig(
     );
   }
 
-  const startMs =
-    options.fromMs !== undefined ? Math.max(0, options.fromMs) : 0;
+  const startMs = options.fromMs !== undefined ? Math.max(0, options.fromMs) : 0;
   const endMs =
-    options.toMs !== undefined
-      ? Math.min(options.toMs, effectiveDurationMs)
-      : effectiveDurationMs;
+    options.toMs !== undefined ? Math.min(options.toMs, effectiveDurationMs) : effectiveDurationMs;
   const renderDurationMs = endMs - startMs;
 
   if (renderDurationMs <= 0) {
@@ -219,10 +211,7 @@ async function selectAudioCodec(
       logger.warn(`[selectAudioCodec] Check failed for ${codec}:`, e);
     }
   }
-  const availableCodecs = await getEncodableAudioCodecs(
-    undefined,
-    encodingOptions,
-  );
+  const availableCodecs = await getEncodableAudioCodecs(undefined, encodingOptions);
   throw new NoSupportedAudioCodecError(preferredCodecs, availableCodecs);
 }
 
@@ -284,10 +273,7 @@ export async function renderVideoToVideo(
   } | null = null;
   let useStreaming = false;
 
-  const encodingCanvas = new OffscreenCanvas(
-    config.videoWidth,
-    config.videoHeight,
-  );
+  const encodingCanvas = new OffscreenCanvas(config.videoWidth, config.videoHeight);
   const encodingCtx = encodingCanvas.getContext(
     "2d",
     hasFilter || hasOpacity ? { willReadFrequently: true } : undefined,
@@ -344,14 +330,11 @@ export async function renderVideoToVideo(
 
   if (config.includeAudio) {
     try {
-      const selectedCodec = await selectAudioCodec(
-        config.preferredAudioCodecs,
-        {
-          numberOfChannels: 2,
-          sampleRate: 48000,
-          bitrate: config.audioBitrate,
-        },
-      );
+      const selectedCodec = await selectAudioCodec(config.preferredAudioCodecs, {
+        numberOfChannels: 2,
+        sampleRate: 48000,
+        bitrate: config.audioBitrate,
+      });
       const audioConfig: AudioEncodingConfig = {
         codec: selectedCodec,
         bitrate: config.audioBitrate,
@@ -359,10 +342,7 @@ export async function renderVideoToVideo(
       audioSource = new AudioBufferSource(audioConfig);
       output.addAudioTrack(audioSource);
     } catch (e) {
-      logger.warn(
-        "[renderVideoToVideo] Audio codec selection failed, rendering without audio:",
-        e,
-      );
+      logger.warn("[renderVideoToVideo] Audio codec selection failed, rendering without audio:", e);
     }
   }
 
@@ -396,8 +376,7 @@ export async function renderVideoToVideo(
     for (let frameIndex = 0; frameIndex < config.totalFrames; frameIndex++) {
       checkCancelled();
 
-      const timelineTimeMs =
-        config.startMs + frameIndex * config.frameDurationMs;
+      const timelineTimeMs = config.startMs + frameIndex * config.frameDurationMs;
       const sourceTimeMs = timelineTimeMs + config.trimStartMs;
       const timestampS = (frameIndex * config.frameDurationMs) / 1000;
 
@@ -435,19 +414,10 @@ export async function renderVideoToVideo(
       totalEncodeMs += performance.now() - encodeStart;
 
       // Render audio in chunks
-      if (
-        audioSource &&
-        timelineTimeMs >= lastRenderedAudioEndMs + audioChunkDurationMs
-      ) {
-        const chunkEndMs = Math.min(
-          timelineTimeMs + audioChunkDurationMs,
-          config.endMs,
-        );
+      if (audioSource && timelineTimeMs >= lastRenderedAudioEndMs + audioChunkDurationMs) {
+        const chunkEndMs = Math.min(timelineTimeMs + audioChunkDurationMs, config.endMs);
         try {
-          const audioBuffer = await video.renderAudio(
-            lastRenderedAudioEndMs,
-            chunkEndMs,
-          );
+          const audioBuffer = await video.renderAudio(lastRenderedAudioEndMs, chunkEndMs);
           if (audioBuffer && audioBuffer.length > 0) {
             await audioSource.add(audioBuffer);
           }
@@ -458,18 +428,8 @@ export async function renderVideoToVideo(
       }
 
       // Progress preview thumbnail
-      if (
-        thumbCanvas &&
-        thumbCtx &&
-        frameIndex % config.progressPreviewInterval === 0
-      ) {
-        thumbCtx.drawImage(
-          encodingCanvas as any,
-          0,
-          0,
-          thumbCanvas.width,
-          thumbCanvas.height,
-        );
+      if (thumbCanvas && thumbCtx && frameIndex % config.progressPreviewInterval === 0) {
+        thumbCtx.drawImage(encodingCanvas as any, 0, 0, thumbCanvas.width, thumbCanvas.height);
       }
 
       // Progress reporting
@@ -498,10 +458,7 @@ export async function renderVideoToVideo(
     // Render remaining audio
     if (audioSource && lastRenderedAudioEndMs < config.endMs) {
       try {
-        const audioBuffer = await video.renderAudio(
-          lastRenderedAudioEndMs,
-          config.endMs,
-        );
+        const audioBuffer = await video.renderAudio(lastRenderedAudioEndMs, config.endMs);
         if (audioBuffer && audioBuffer.length > 0) {
           await audioSource.add(audioBuffer);
         }

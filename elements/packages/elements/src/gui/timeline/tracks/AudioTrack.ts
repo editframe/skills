@@ -5,10 +5,7 @@ import { createRef, ref } from "lit/directives/ref.js";
 import { EFAudio } from "../../../elements/EFAudio.js";
 import { TrackItem } from "./TrackItem.js";
 import { extractWaveformData, type WaveformData } from "./waveformUtils.js";
-import {
-  timelineStateContext,
-  type TimelineState,
-} from "../timelineStateContext.js";
+import { timelineStateContext, type TimelineState } from "../timelineStateContext.js";
 
 /** Padding in pixels to render beyond visible area (for smooth scrolling) */
 const VIRTUAL_RENDER_PADDING_PX = 100;
@@ -98,10 +95,7 @@ export class EFAudioTrack extends TrackItem {
     this._isLoading = true;
 
     try {
-      const waveformData = await extractWaveformData(
-        audio,
-        this.#abortController.signal,
-      );
+      const waveformData = await extractWaveformData(audio, this.#abortController.signal);
 
       if (waveformData) {
         this._waveformData = waveformData;
@@ -181,18 +175,12 @@ export class EFAudioTrack extends TrackItem {
     const positionInfo = this.#getTrackPositionInfo();
     if (!positionInfo) return;
 
-    const {
-      trackStartPx,
-      trackWidthPx,
-      viewportScrollLeft,
-      viewportWidth,
-      pixelsPerMs,
-    } = positionInfo;
+    const { trackStartPx, trackWidthPx, viewportScrollLeft, viewportWidth, pixelsPerMs } =
+      positionInfo;
 
     // Calculate visible region in absolute pixels (with padding for smooth scrolling)
     const visibleLeftPx = viewportScrollLeft - VIRTUAL_RENDER_PADDING_PX;
-    const visibleRightPx =
-      viewportScrollLeft + viewportWidth + VIRTUAL_RENDER_PADDING_PX;
+    const visibleRightPx = viewportScrollLeft + viewportWidth + VIRTUAL_RENDER_PADDING_PX;
 
     // Track boundaries in absolute pixels
     const trackEndPx = trackStartPx + trackWidthPx;
@@ -208,10 +196,7 @@ export class EFAudioTrack extends TrackItem {
     // Calculate the intersection: what part of the track is visible
     // All coordinates are now relative to the track's left edge (0 = track start)
     const visibleStartInTrack = Math.max(0, visibleLeftPx - trackStartPx);
-    const visibleEndInTrack = Math.min(
-      trackWidthPx,
-      visibleRightPx - trackStartPx,
-    );
+    const visibleEndInTrack = Math.min(trackWidthPx, visibleRightPx - trackStartPx);
     const visibleWidthPx = visibleEndInTrack - visibleStartInTrack;
 
     if (visibleWidthPx <= 0) return;
@@ -348,8 +333,7 @@ export class EFAudioTrack extends TrackItem {
     // Observe size changes
     this.#resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        this.#hostHeight =
-          entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height;
+        this.#hostHeight = entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height;
         this.#scheduleRender();
       }
     });

@@ -137,7 +137,10 @@ export const createFragmentJobs = (
     }
 
     jobs.push({
-      queue: updatedRender.backend === "gpu" ? RenderFragmentGpuQueue.name : RenderFragmentQueue.name,
+      queue:
+        updatedRender.backend === "gpu"
+          ? RenderFragmentGpuQueue.name
+          : RenderFragmentQueue.name,
       orgId: updatedRender.org_id,
       workflowId: updatedRender.id,
       jobId: `${updatedRender.id}-${fragmentId}`,

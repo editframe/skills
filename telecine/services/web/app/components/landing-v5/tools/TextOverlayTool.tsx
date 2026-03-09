@@ -23,76 +23,95 @@ import { ExportButton } from "../ExportButton";
 const VIDEO_SRC = "https://assets.editframe.com/bars-n-tone.mp4";
 
 const POSITIONS = [
-  { id: 'top-left', label: '↖', classes: 'top-4 left-4 text-left' },
-  { id: 'top-center', label: '↑', classes: 'top-4 inset-x-4 text-center' },
-  { id: 'top-right', label: '↗', classes: 'top-4 right-4 text-right' },
-  { id: 'center-left', label: '←', classes: 'top-1/2 left-4 -translate-y-1/2 text-left' },
-  { id: 'center', label: '●', classes: 'top-1/2 inset-x-4 -translate-y-1/2 text-center' },
-  { id: 'center-right', label: '→', classes: 'top-1/2 right-4 -translate-y-1/2 text-right' },
-  { id: 'bottom-left', label: '↙', classes: 'bottom-4 left-4 text-left' },
-  { id: 'bottom-center', label: '↓', classes: 'bottom-4 inset-x-4 text-center' },
-  { id: 'bottom-right', label: '↘', classes: 'bottom-4 right-4 text-right' },
+  { id: "top-left", label: "↖", classes: "top-4 left-4 text-left" },
+  { id: "top-center", label: "↑", classes: "top-4 inset-x-4 text-center" },
+  { id: "top-right", label: "↗", classes: "top-4 right-4 text-right" },
+  {
+    id: "center-left",
+    label: "←",
+    classes: "top-1/2 left-4 -translate-y-1/2 text-left",
+  },
+  {
+    id: "center",
+    label: "●",
+    classes: "top-1/2 inset-x-4 -translate-y-1/2 text-center",
+  },
+  {
+    id: "center-right",
+    label: "→",
+    classes: "top-1/2 right-4 -translate-y-1/2 text-right",
+  },
+  { id: "bottom-left", label: "↙", classes: "bottom-4 left-4 text-left" },
+  {
+    id: "bottom-center",
+    label: "↓",
+    classes: "bottom-4 inset-x-4 text-center",
+  },
+  { id: "bottom-right", label: "↘", classes: "bottom-4 right-4 text-right" },
 ] as const;
 
 const FONT_SIZES = [
-  { id: 'small', label: 'S', classes: 'text-sm' },
-  { id: 'medium', label: 'M', classes: 'text-xl' },
-  { id: 'large', label: 'L', classes: 'text-3xl' },
+  { id: "small", label: "S", classes: "text-sm" },
+  { id: "medium", label: "M", classes: "text-xl" },
+  { id: "large", label: "L", classes: "text-3xl" },
 ] as const;
 
 const SPLITS = [
-  { id: 'word', label: 'Word' },
-  { id: 'char', label: 'Char' },
-  { id: 'line', label: 'Line' },
+  { id: "word", label: "Word" },
+  { id: "char", label: "Char" },
+  { id: "line", label: "Line" },
 ] as const;
 
 const ANIMATIONS = [
-  { id: 'none', label: 'None' },
-  { id: 'fade', label: 'Fade', name: 'title-fade', duration: '0.4s' },
-  { id: 'slide', label: 'Slide', name: 'title-slide', duration: '0.4s' },
-  { id: 'scale', label: 'Scale', name: 'title-scale', duration: '0.3s' },
+  { id: "none", label: "None" },
+  { id: "fade", label: "Fade", name: "title-fade", duration: "0.4s" },
+  { id: "slide", label: "Slide", name: "title-slide", duration: "0.4s" },
+  { id: "scale", label: "Scale", name: "title-scale", duration: "0.3s" },
 ] as const;
 
 const SPEEDS = [
-  { id: 'slow', label: 'Slow', staggerMs: 150 },
-  { id: 'medium', label: 'Medium', staggerMs: 80 },
-  { id: 'fast', label: 'Fast', staggerMs: 40 },
+  { id: "slow", label: "Slow", staggerMs: 150 },
+  { id: "medium", label: "Medium", staggerMs: 80 },
+  { id: "fast", label: "Fast", staggerMs: 40 },
 ] as const;
 
 const btnClass = (active: boolean, accent?: boolean) =>
   `flex-1 py-2 text-xs font-bold border-2 transition-colors ${
     active
       ? accent
-        ? 'bg-[var(--poster-gold)] text-black border-black dark:border-white'
-        : 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white'
-      : 'bg-white dark:bg-[#111] text-black dark:text-white border-black dark:border-white hover:bg-neutral-100 dark:hover:bg-[#222]'
+        ? "bg-[var(--poster-gold)] text-black border-black dark:border-white"
+        : "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white"
+      : "bg-white dark:bg-[#111] text-black dark:text-white border-black dark:border-white hover:bg-neutral-100 dark:hover:bg-[#222]"
   }`;
 
 function TextOverlayTool() {
   const id = useId();
   const previewId = `title-card-${id}`;
   const previewRef = useRef<HTMLElement>(null);
-  
-  const [textContent, setTextContent] = useState('YOUR TEXT HERE');
-  const [position, setPosition] = useState('bottom-center');
-  const [fontSize, setFontSize] = useState('medium');
-  const [split, setSplit] = useState('word');
-  const [animation, setAnimation] = useState('fade');
-  const [speed, setSpeed] = useState('medium');
 
-  const positionClasses = POSITIONS.find(p => p.id === position)?.classes ?? POSITIONS[7].classes;
-  const fontSizeClasses = FONT_SIZES.find(f => f.id === fontSize)?.classes ?? FONT_SIZES[1].classes;
-  const animationConfig = ANIMATIONS.find(a => a.id === animation);
-  const staggerMs = SPEEDS.find(s => s.id === speed)?.staggerMs ?? 80;
+  const [textContent, setTextContent] = useState("YOUR TEXT HERE");
+  const [position, setPosition] = useState("bottom-center");
+  const [fontSize, setFontSize] = useState("medium");
+  const [split, setSplit] = useState("word");
+  const [animation, setAnimation] = useState("fade");
+  const [speed, setSpeed] = useState("medium");
 
-  const animationStyle = animationConfig && 'name' in animationConfig
-    ? {
-        animationName: animationConfig.name,
-        animationDuration: animationConfig.duration,
-        animationTimingFunction: 'ease-out',
-        animationFillMode: 'both' as const,
-      }
-    : undefined;
+  const positionClasses =
+    POSITIONS.find((p) => p.id === position)?.classes ?? POSITIONS[7].classes;
+  const fontSizeClasses =
+    FONT_SIZES.find((f) => f.id === fontSize)?.classes ?? FONT_SIZES[1].classes;
+  const animationConfig = ANIMATIONS.find((a) => a.id === animation);
+  const staggerMs = SPEEDS.find((s) => s.id === speed)?.staggerMs ?? 80;
+
+  const animationStyle =
+    animationConfig && "name" in animationConfig
+      ? {
+          animationName: animationConfig.name,
+          animationDuration: animationConfig.duration,
+          animationTimingFunction: "ease-out",
+          animationFillMode: "both" as const,
+        }
+      : undefined;
 
   return (
     <div className="border-4 border-black dark:border-white bg-white dark:bg-[#1a1a1a]">
@@ -110,74 +129,88 @@ function TextOverlayTool() {
           to { opacity: 1; transform: scale(1); }
         }
       `}</style>
-      
+
       {/* Header */}
       <div className="px-4 py-3 bg-black">
         <h3 className="text-xs font-bold tracking-widest text-white uppercase">
           Title Card
         </h3>
       </div>
-      
+
       {/* Preview */}
       <div className="bg-neutral-900 aspect-video">
-        <Preview id={previewId} ref={previewRef as any} loop className="w-full h-full">
+        <Preview
+          id={previewId}
+          ref={previewRef as any}
+          loop
+          className="w-full h-full"
+        >
           <Timegroup mode="contain" className="w-full h-full relative">
-            <Video 
-              src={VIDEO_SRC}
-              className="size-full object-cover"
-            />
-            <Text 
+            <Video src={VIDEO_SRC} className="size-full object-cover" />
+            <Text
               key={`${animation}-${split}-${speed}`}
-              split={animation !== 'none' ? split as 'word' | 'char' | 'line' : undefined}
-              staggerMs={animation !== 'none' ? staggerMs : undefined}
-              easing={animation !== 'none' ? "ease-out" : undefined}
+              split={
+                animation !== "none"
+                  ? (split as "word" | "char" | "line")
+                  : undefined
+              }
+              staggerMs={animation !== "none" ? staggerMs : undefined}
+              easing={animation !== "none" ? "ease-out" : undefined}
               className={`absolute ${positionClasses} ${fontSizeClasses} font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]`}
               style={animationStyle}
             >
-              {textContent || 'YOUR TEXT HERE'}
+              {textContent || "YOUR TEXT HERE"}
             </Text>
           </Timegroup>
         </Preview>
       </div>
-      
+
       {/* Playback Controls */}
       <div className="border-t-4 border-black dark:border-white">
         <div className="flex items-center">
           <TogglePlay target={previewId}>
-            <button 
-              slot="pause" 
+            <button
+              slot="pause"
               className="w-12 h-12 flex items-center justify-center bg-[var(--poster-red)] hover:brightness-90 transition-all"
             >
-              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <svg
+                className="w-4 h-4 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
               </svg>
             </button>
-            <button 
-              slot="play" 
+            <button
+              slot="play"
               className="w-12 h-12 flex items-center justify-center bg-[var(--poster-blue)] hover:brightness-90 transition-all"
             >
-              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <svg
+                className="w-4 h-4 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path d="M8 5v14l11-7z" />
               </svg>
             </button>
           </TogglePlay>
-          
+
           <div className="flex-1 px-4 h-12 flex items-center border-l-4 border-black dark:border-white bg-neutral-100 dark:bg-[#252525]">
-            <Scrubber 
+            <Scrubber
               target={previewId}
               className="w-full h-2 bg-neutral-300 cursor-pointer [&::part(progress)]:bg-black [&::part(handle)]:bg-black [&::part(handle)]:w-4 [&::part(handle)]:h-4 [&::part(handle)]:rounded-none"
             />
           </div>
-          
+
           <div className="px-3 border-l-4 border-black dark:border-white h-12 flex items-center bg-neutral-100 dark:bg-[#252525]">
-            <TimeDisplay 
-              target={previewId} 
+            <TimeDisplay
+              target={previewId}
               className="text-xs text-black dark:text-white font-mono font-bold tabular-nums"
             />
           </div>
         </div>
       </div>
-      
+
       {/* Controls */}
       <div className="border-t-4 border-black dark:border-white p-4 space-y-4">
         {/* Text Input */}
@@ -193,7 +226,7 @@ function TextOverlayTool() {
             className="w-full px-3 py-2 border-2 border-black dark:border-white bg-white dark:bg-[#111] text-black dark:text-white font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[var(--poster-blue)] focus:ring-offset-2"
           />
         </div>
-        
+
         {/* Split - What are the pieces? */}
         <div>
           <label className="block text-[10px] font-bold tracking-widest text-black dark:text-white uppercase mb-2">
@@ -266,7 +299,7 @@ function TextOverlayTool() {
               ))}
             </div>
           </div>
-          
+
           {/* Position Grid */}
           <div>
             <label className="block text-[10px] font-bold tracking-widest text-black dark:text-white uppercase mb-2">
@@ -279,8 +312,8 @@ function TextOverlayTool() {
                   onClick={() => setPosition(p.id)}
                   className={`aspect-square flex items-center justify-center text-xs font-bold border-2 transition-colors ${
                     position === p.id
-                      ? 'bg-[var(--poster-gold)] text-black border-black dark:border-white'
-                      : 'bg-white dark:bg-[#111] text-black dark:text-white border-black dark:border-white hover:bg-neutral-100 dark:hover:bg-[#222]'
+                      ? "bg-[var(--poster-gold)] text-black border-black dark:border-white"
+                      : "bg-white dark:bg-[#111] text-black dark:text-white border-black dark:border-white hover:bg-neutral-100 dark:hover:bg-[#222]"
                   }`}
                 >
                   {p.label}
@@ -289,9 +322,11 @@ function TextOverlayTool() {
             </div>
           </div>
         </div>
-        
+
         <ExportButton
-          getTarget={() => previewRef.current?.querySelector("ef-timegroup") as HTMLElement}
+          getTarget={() =>
+            previewRef.current?.querySelector("ef-timegroup") as HTMLElement
+          }
           name="Text Overlay"
           fileName="text-overlay.mp4"
           renderOpts={{ includeAudio: true }}

@@ -20,11 +20,7 @@ function stripJsoncComments(input: string): string {
       out += input.slice(start, i);
     } else if (input[i] === "/" && input[i + 1] === "*") {
       i += 2;
-      while (
-        i < input.length - 1 &&
-        !(input[i] === "*" && input[i + 1] === "/")
-      )
-        i++;
+      while (i < input.length - 1 && !(input[i] === "*" && input[i + 1] === "/")) i++;
       i += 2;
     } else if (input[i] === "/" && input[i + 1] === "/") {
       while (i < input.length && input[i] !== "\n") i++;
@@ -45,9 +41,7 @@ function stripJsoncComments(input: string): string {
  * TEST/* is mapped to the test/ directory as the TEST prefix.
  */
 export function getAliasesFromTsconfig(): Record<string, string> {
-  const raw = stripJsoncComments(
-    readFileSync(path.join(__dirname, "tsconfig.json"), "utf-8"),
-  );
+  const raw = stripJsoncComments(readFileSync(path.join(__dirname, "tsconfig.json"), "utf-8"));
   const { compilerOptions } = JSON.parse(raw);
   const paths: Record<string, string[]> = compilerOptions?.paths ?? {};
   const aliases: Record<string, string> = {};

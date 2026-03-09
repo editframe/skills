@@ -2,7 +2,10 @@ import { data, redirect } from "react-router";
 import { useNavigation } from "react-router";
 import z from "zod";
 import { formFor } from "../../formFor";
-import { createEmailPasswordSessionCookie, createLoginHeaders } from "@/util/session";
+import {
+  createEmailPasswordSessionCookie,
+  createLoginHeaders,
+} from "@/util/session";
 import { registerUserWithPassword } from "~/registerUserWithPassword.server";
 import { useSearchParams } from "react-router";
 import { Link } from "react-router";

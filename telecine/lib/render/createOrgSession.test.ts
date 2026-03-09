@@ -53,31 +53,49 @@ vi.mock("@/util/getStorageKeyForPath", () => ({
 describe("createOrgSession MIME type detection", () => {
   test("getMimeTypeFromPath detects MIME types for common file paths", () => {
     // Test the paths that getStorageKeyForPath returns
-    expect(getMimeTypeFromPath("video2/org123/id456/track-1.mp4")).toBe("video/mp4");
-    expect(getMimeTypeFromPath("video2/org123/id456/track-2.m4s")).toBe("video/iso.segment");
-    expect(getMimeTypeFromPath("video2/org123/id101/captions.json")).toBe("application/json");
-    
+    expect(getMimeTypeFromPath("video2/org123/id456/track-1.mp4")).toBe(
+      "video/mp4",
+    );
+    expect(getMimeTypeFromPath("video2/org123/id456/track-2.m4s")).toBe(
+      "video/iso.segment",
+    );
+    expect(getMimeTypeFromPath("video2/org123/id101/captions.json")).toBe(
+      "application/json",
+    );
+
     // Image files use "data" without extension - should return null
     expect(getMimeTypeFromPath("video2/org123/id789/data")).toBeNull();
-    
+
     // Fallback to application/octet-stream for unknown extensions
     expect(getMimeTypeFromPath("video2/org123/id999/unknown.xyz")).toBeNull();
   });
 
   test("MIME type detection handles paths with query parameters", () => {
-    expect(getMimeTypeFromPath("video2/org123/id456/track-1.mp4?range=0-1000")).toBe("video/mp4");
-    expect(getMimeTypeFromPath("video2/org123/id101/captions.json?version=1")).toBe("application/json");
+    expect(
+      getMimeTypeFromPath("video2/org123/id456/track-1.mp4?range=0-1000"),
+    ).toBe("video/mp4");
+    expect(
+      getMimeTypeFromPath("video2/org123/id101/captions.json?version=1"),
+    ).toBe("application/json");
   });
 
   test("MIME type detection works for all supported file types used in createOrgSession", () => {
     // Video tracks (ISO BMFF)
-    expect(getMimeTypeFromPath("video2/org123/id456/track-0.mp4")).toBe("video/mp4");
-    expect(getMimeTypeFromPath("video2/org123/id456/track-1.m4s")).toBe("video/iso.segment");
-    
+    expect(getMimeTypeFromPath("video2/org123/id456/track-0.mp4")).toBe(
+      "video/mp4",
+    );
+    expect(getMimeTypeFromPath("video2/org123/id456/track-1.m4s")).toBe(
+      "video/iso.segment",
+    );
+
     // Caption files
-    expect(getMimeTypeFromPath("video2/org123/id456/captions.json")).toBe("application/json");
-    
+    expect(getMimeTypeFromPath("video2/org123/id456/captions.json")).toBe(
+      "application/json",
+    );
+
     // Fragment indexes
-    expect(getMimeTypeFromPath("video2/org123/id456/tracks.json")).toBe("application/json");
+    expect(getMimeTypeFromPath("video2/org123/id456/tracks.json")).toBe(
+      "application/json",
+    );
   });
 });

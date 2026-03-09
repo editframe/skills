@@ -95,4 +95,3 @@ title: Test
     expect(result.headings).toEqual([]);
   });
 });
-

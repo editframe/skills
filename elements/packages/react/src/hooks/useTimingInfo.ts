@@ -37,10 +37,7 @@ class CurrentTimeController implements ReactiveController {
 
     const { ownCurrentTimeMs, durationMs } = this.host;
 
-    if (
-      ownCurrentTimeMs !== this.#lastOwnCurrentTimeMs ||
-      durationMs !== this.#lastDurationMs
-    ) {
+    if (ownCurrentTimeMs !== this.#lastOwnCurrentTimeMs || durationMs !== this.#lastDurationMs) {
       this.#lastOwnCurrentTimeMs = ownCurrentTimeMs;
       this.#lastDurationMs = durationMs;
       this.#updateReactState();
@@ -75,10 +72,7 @@ export const useTimingInfo = (
       throw new Error("Timegroup ref not set");
     }
 
-    const controller = new CurrentTimeController(
-      timegroupRef.current,
-      setTimeInfo,
-    );
+    const controller = new CurrentTimeController(timegroupRef.current, setTimeInfo);
 
     if (timegroupRef.current.isConnected) {
       controller.hostConnected();

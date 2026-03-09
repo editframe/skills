@@ -161,15 +161,12 @@ export interface VideoTrackFragmentIndex {
   segments: Array<TrackSegment>;
 }
 
-export type TrackFragmentIndex =
-  | AudioTrackFragmentIndex
-  | VideoTrackFragmentIndex;
+export type TrackFragmentIndex = AudioTrackFragmentIndex | VideoTrackFragmentIndex;
 
 const buildProbeArgs = (options: { showPackets?: boolean }) => {
   const streamEntries =
     "stream=index,codec_name,codec_long_name,codec_type,codec_tag_string,codec_tag,profile,level,width,height,coded_width,coded_height,r_frame_rate,avg_frame_rate,time_base,start_pts,start_time,duration_ts,duration,bit_rate,sample_fmt,sample_rate,channels,channel_layout,bits_per_sample,initial_padding,disposition";
-  const packetEntries =
-    "packet=stream_index,pts,pts_time,dts,dts_time,duration,pos,flags";
+  const packetEntries = "packet=stream_index,pts,pts_time,dts,dts_time,duration,pos,flags";
 
   return [
     "-v",
@@ -185,14 +182,8 @@ const buildProbeArgs = (options: { showPackets?: boolean }) => {
 };
 
 class FFProbeRunner {
-  static async probePath(
-    absolutePath: string,
-    includePackets: boolean,
-  ): Promise<any> {
-    const args = [
-      ...buildProbeArgs({ showPackets: includePackets }),
-      absolutePath,
-    ];
+  static async probePath(absolutePath: string, includePackets: boolean): Promise<any> {
+    const args = [...buildProbeArgs({ showPackets: includePackets }), absolutePath];
     log("Probing", "ffprobe", args);
 
     const probe = spawn("ffprobe", args, { stdio: ["ignore", "pipe", "pipe"] });
@@ -220,10 +211,7 @@ class FFProbeRunner {
     return JSON.parse(stdout);
   }
 
-  static async probeStream(
-    stream: Readable,
-    includePackets: boolean,
-  ): Promise<any> {
+  static async probeStream(stream: Readable, includePackets: boolean): Promise<any> {
     const probe = spawn(
       "ffprobe",
       ["-i", "-", ...buildProbeArgs({ showPackets: includePackets })],
@@ -321,16 +309,14 @@ abstract class ProbeBase {
     return (
       this.format.format_name !== "mp4" ||
       this.data.streams.some(
-        (stream) =>
-          stream.codec_type !== "audio" && stream.codec_type !== "video",
+        (stream) => stream.codec_type !== "audio" && stream.codec_type !== "video",
       )
     );
   }
 
   get hasNonAudioOrVideoStreams() {
     return this.data.streams.some(
-      (stream) =>
-        stream.codec_type !== "audio" && stream.codec_type !== "video",
+      (stream) => stream.codec_type !== "audio" && stream.codec_type !== "video",
     );
   }
 
@@ -359,10 +345,7 @@ abstract class ProbeBase {
   }
 
   get startTimeOffsetMs(): number | undefined {
-    if (
-      this.data.format.start_time &&
-      Number(this.data.format.start_time) !== 0
-    ) {
+    if (this.data.format.start_time && Number(this.data.format.start_time) !== 0) {
       return Number(this.data.format.start_time) * 1000;
     }
     const videoStream = this.videoStreams[0];
@@ -555,15 +538,11 @@ abstract class ProbeBase {
     // Create single-track MP4 with proper fragmentation
     // Use conforming stream system to handle codec compatibility
     const codecOptions =
-      isAudioTrack && this.mustReencodeAudio
-        ? this.ffmpegAudioOutputOptions
-        : ["-c", "copy"];
+      isAudioTrack && this.mustReencodeAudio ? this.ffmpegAudioOutputOptions : ["-c", "copy"];
 
     // Filter out SEI NAL units (type 6) for video tracks
     // These can cause WebCodecs VideoDecoder to hang or crash in some browsers/Electron
-    const bitstreamFilter = isVideoTrack
-      ? ["-bsf:v", "filter_units=remove_types=6"]
-      : [];
+    const bitstreamFilter = isVideoTrack ? ["-bsf:v", "filter_units=remove_types=6"] : [];
 
     const ffmpegArgs = [
       ...this.ffmpegAudioInputOptions,
@@ -613,8 +592,7 @@ abstract class ProbeBase {
     const aspectRatio = videoStream.height / videoStream.width;
     const targetHeight = Math.round(targetWidth * aspectRatio);
     // Ensure height is even (required for H.264)
-    const scrubHeight =
-      targetHeight % 2 === 0 ? targetHeight : targetHeight + 1;
+    const scrubHeight = targetHeight % 2 === 0 ? targetHeight : targetHeight + 1;
 
     // Parse frame rate from r_frame_rate (e.g., "30/1" or "30000/1001")
     const [fpsNum, fpsDen] = videoStream.r_frame_rate.split("/").map(Number);
@@ -732,8 +710,7 @@ export class PacketProbe extends ProbeBase {
       throw new Error("No audio stream found");
     }
     return truncateDecimal(
-      ((stream.duration_ts ?? 0) - (stream.start_pts ?? 0)) /
-        (this.audioTimebase?.den ?? 0),
+      ((stream.duration_ts ?? 0) - (stream.start_pts ?? 0)) / (this.audioTimebase?.den ?? 0),
       5,
     );
   }
@@ -743,9 +720,7 @@ export class PacketProbe extends ProbeBase {
     if (!videoStream) {
       return [];
     }
-    const videoPackets = this.packets.filter(
-      (packet) => packet.stream_index === videoStream.index,
-    );
+    const videoPackets = this.packets.filter((packet) => packet.stream_index === videoStream.index);
 
     const frameRate = videoStream.r_frame_rate;
     const [num, den] = frameRate.split("/").map(Number);

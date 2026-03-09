@@ -33,22 +33,30 @@ function LearningPathNav({
   if (!currentRef || !currentRef.track) return null;
 
   const trackRefs = allRefs
-    .filter(ref => ref.track === currentRef.track)
+    .filter((ref) => ref.track === currentRef.track)
     .sort((a, b) => (a.track_step ?? 999) - (b.track_step ?? 999));
 
-  const currentIndex = trackRefs.findIndex(ref => ref.name === currentRef.name);
+  const currentIndex = trackRefs.findIndex(
+    (ref) => ref.name === currentRef.name,
+  );
   const prevRef = currentIndex > 0 ? trackRefs[currentIndex - 1] : null;
-  const nextRef = currentIndex < trackRefs.length - 1 ? trackRefs[currentIndex + 1] : null;
+  const nextRef =
+    currentIndex < trackRefs.length - 1 ? trackRefs[currentIndex + 1] : null;
 
-  const progress = trackRefs.length > 0 ? ((currentIndex + 1) / trackRefs.length) * 100 : 0;
+  const progress =
+    trackRefs.length > 0 ? ((currentIndex + 1) / trackRefs.length) * 100 : 0;
 
   return (
     <div className="mt-12 pt-8 border-t border-black/10 dark:border-white/10">
       {/* Progress bar */}
       <div className="mb-4">
         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
-          <span className="font-medium">{currentRef.track_title || "Learning Path"}</span>
-          <span>Step {currentIndex + 1} of {trackRefs.length}</span>
+          <span className="font-medium">
+            {currentRef.track_title || "Learning Path"}
+          </span>
+          <span>
+            Step {currentIndex + 1} of {trackRefs.length}
+          </span>
         </div>
         <div className="h-1.5 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
           <div
@@ -65,10 +73,16 @@ function LearningPathNav({
             to={`/skills/${skillName}/${prevRef.name}`}
             className="flex items-center gap-2 p-3 rounded border border-gray-200 dark:border-gray-700 hover:border-blue-600 dark:hover:border-blue-400 hover:bg-blue-600/5 dark:hover:bg-blue-500/5 transition-colors group"
           >
-            <span className="text-gray-400 dark:text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400">←</span>
+            <span className="text-gray-400 dark:text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+              ←
+            </span>
             <div className="flex-1 min-w-0">
-              <div className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-0.5">Previous</div>
-              <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{prevRef.title}</div>
+              <div className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-0.5">
+                Previous
+              </div>
+              <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                {prevRef.title}
+              </div>
             </div>
           </Link>
         ) : (
@@ -81,10 +95,16 @@ function LearningPathNav({
             className="flex items-center gap-2 p-3 rounded border border-gray-200 dark:border-gray-700 hover:border-blue-600 dark:hover:border-blue-400 hover:bg-blue-600/5 dark:hover:bg-blue-500/5 transition-colors group text-right"
           >
             <div className="flex-1 min-w-0">
-              <div className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-0.5">Next</div>
-              <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{nextRef.title}</div>
+              <div className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-0.5">
+                Next
+              </div>
+              <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                {nextRef.title}
+              </div>
             </div>
-            <span className="text-gray-400 dark:text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400">→</span>
+            <span className="text-gray-400 dark:text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+              →
+            </span>
           </Link>
         ) : null}
       </div>
@@ -128,7 +148,11 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
   let referenceContent: string | null;
   if (sectionSlug) {
     // Load specific section
-    referenceContent = getSkillReferenceSection(skillName, refName, sectionSlug);
+    referenceContent = getSkillReferenceSection(
+      skillName,
+      refName,
+      sectionSlug,
+    );
   } else {
     // Load root or full file
     referenceContent = getSkillReference(skillName, refName);
@@ -143,15 +167,19 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
   const referencesMeta = getSkillReferencesMeta(skillName);
   const allSkills = getSkillNames();
   const allNavTrees: Record<string, NavNode[]> = Object.fromEntries(
-    allSkills.map((s) => [s.name, getSkillNavTree(s.name)])
+    allSkills.map((s) => [s.name, getSkillNavTree(s.name)]),
   );
 
   // Extract API metadata from frontmatter
   const apiMetadata = (parsed.frontmatter as any)?.api || null;
   const description = (parsed.frontmatter as any)?.description || null;
 
-  const skillTitle = allSkills.find((s: { name: string }) => s.name === skillName)?.title || skillName;
-  const referenceTitle = referencesMeta.find((r: { name: string }) => r.name === referenceParam)?.title || referenceParam;
+  const skillTitle =
+    allSkills.find((s: { name: string }) => s.name === skillName)?.title ||
+    skillName;
+  const referenceTitle =
+    referencesMeta.find((r: { name: string }) => r.name === referenceParam)
+      ?.title || referenceParam;
 
   return {
     skillName,
@@ -171,14 +199,24 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
 
 export default function ReferenceDetail({ loaderData }: Route.ComponentProps) {
   useTheme();
-  const { skillName, skillTitle, referenceName, referenceTitle, content, navTree, referencesMeta, allSkills, allNavTrees, apiMetadata } =
-    loaderData;
+  const {
+    skillName,
+    skillTitle,
+    referenceName,
+    referenceTitle,
+    content,
+    navTree,
+    referencesMeta,
+    allSkills,
+    allNavTrees,
+    apiMetadata,
+  } = loaderData;
   const { code } = content;
   const MDXAsComponent = React.useMemo(() => getMDXComponent(code), [code]);
 
   // Scroll to top when navigating between pages
   React.useEffect(() => {
-    const mainElement = document.querySelector('main[data-skills-main]');
+    const mainElement = document.querySelector("main[data-skills-main]");
     if (mainElement) {
       mainElement.scrollTop = 0;
     }
@@ -200,7 +238,10 @@ export default function ReferenceDetail({ loaderData }: Route.ComponentProps) {
         />
 
         {/* Main content - clean white reading surface */}
-        <main className="overflow-y-auto bg-white dark:bg-[#0a0a0a]" data-skills-main>
+        <main
+          className="overflow-y-auto bg-white dark:bg-[#0a0a0a]"
+          data-skills-main
+        >
           <MobileBreadcrumbBar
             allSkills={allSkills}
             currentSkill={skillName}
@@ -277,7 +318,11 @@ export default function ReferenceDetail({ loaderData }: Route.ComponentProps) {
 
             {/* Learning path navigation */}
             <LearningPathNav
-              currentRef={referencesMeta.find((r: SkillReference) => r.name === referenceName) || null}
+              currentRef={
+                referencesMeta.find(
+                  (r: SkillReference) => r.name === referenceName,
+                ) || null
+              }
               allRefs={referencesMeta}
               skillName={skillName}
             />

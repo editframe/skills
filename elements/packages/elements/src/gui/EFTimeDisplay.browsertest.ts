@@ -33,9 +33,7 @@ const renderTimeDisplay = (result: TemplateResult) => {
 
 describe("EFTimeDisplay", () => {
   test("shows 0:00 / 0:00 when context is null", async () => {
-    const { timeDisplay } = renderTimeDisplay(
-      html`<ef-time-display></ef-time-display>`,
-    );
+    const { timeDisplay } = renderTimeDisplay(html`<ef-time-display></ef-time-display>`);
     await timeDisplay.updateComplete;
 
     const timeText = timeDisplay.shadowRoot?.textContent?.trim();
@@ -54,11 +52,7 @@ describe("EFTimeDisplay", () => {
     await timeDisplay.updateComplete;
 
     const timeText = timeDisplay.shadowRoot?.textContent?.trim();
-    assert.equal(
-      timeText,
-      "0:00 / 0:05",
-      "Should work with real timegroup context",
-    );
+    assert.equal(timeText, "0:00 / 0:05", "Should work with real timegroup context");
   });
 
   test("handles undefined currentTimeMs gracefully", async () => {
@@ -73,11 +67,7 @@ describe("EFTimeDisplay", () => {
     await timeDisplay.updateComplete;
 
     const timeText = timeDisplay.shadowRoot?.textContent?.trim();
-    assert.equal(
-      timeText,
-      "0:00 / 0:05",
-      "Should show 0:00 when currentTimeMs is undefined",
-    );
+    assert.equal(timeText, "0:00 / 0:05", "Should show 0:00 when currentTimeMs is undefined");
   });
 
   test("handles NaN currentTimeMs gracefully", async () => {
@@ -93,11 +83,7 @@ describe("EFTimeDisplay", () => {
     await timeDisplay.updateComplete;
 
     const timeText = timeDisplay.shadowRoot?.textContent?.trim();
-    assert.equal(
-      timeText,
-      "0:00 / 0:05",
-      "Should show 0:00 when currentTimeMs is NaN",
-    );
+    assert.equal(timeText, "0:00 / 0:05", "Should show 0:00 when currentTimeMs is NaN");
   });
 
   test("formats time correctly with valid values", async () => {
@@ -140,9 +126,7 @@ describe("EFTimeDisplay", () => {
     mockTimegroup.setAttribute("duration", "125s"); // 2:05
 
     context.currentTimeMs = 75000; // 75 seconds = 1:15
-    await vi.waitUntil(
-      () => timeDisplay.shadowRoot?.textContent?.trim() === "1:15 / 2:05",
-    );
+    await vi.waitUntil(() => timeDisplay.shadowRoot?.textContent?.trim() === "1:15 / 2:05");
   });
 
   // Skip - failing due to timing/assertion issues. Needs investigation.
@@ -194,9 +178,7 @@ describe("EFTimeDisplay", () => {
 
     await timegroup.updateComplete;
     await timeDisplay.updateComplete;
-    await vi.waitUntil(
-      () => timeDisplay.shadowRoot?.textContent?.trim() === "0:00 / 0:00",
-    );
+    await vi.waitUntil(() => timeDisplay.shadowRoot?.textContent?.trim() === "0:00 / 0:00");
   });
 
   // Skip - failing due to timing/assertion issues. Needs investigation.
@@ -218,13 +200,12 @@ describe("EFTimeDisplay", () => {
     assert.equal(timeText, "0:01 / 0:10");
 
     // Move to a different context (using renderTimeDisplay to get proper TestContext)
-    const { timeDisplay: newTimeDisplay, container: newContainer } =
-      renderTimeDisplay(
-        html`<ef-preview>
+    const { timeDisplay: newTimeDisplay, container: newContainer } = renderTimeDisplay(
+      html`<ef-preview>
         <ef-timegroup mode="fixed" duration="10s"></ef-timegroup>
         <ef-time-display></ef-time-display>
       </ef-preview>`,
-      );
+    );
 
     const newContext = newTimeDisplay.closest("ef-preview")!;
 

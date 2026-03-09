@@ -57,9 +57,7 @@ describe("URL Token Deduplication", () => {
       );
       document.body.appendChild(container);
 
-      const videos = container.querySelectorAll(
-        "ef-video",
-      ) as NodeListOf<EFVideo>;
+      const videos = container.querySelectorAll("ef-video") as NodeListOf<EFVideo>;
       const workbench = container.querySelector("ef-workbench") as any;
 
       await workbench.updateComplete;
@@ -150,12 +148,8 @@ describe("URL Token Deduplication", () => {
       `;
       document.body.appendChild(container);
 
-      const videos = container.querySelectorAll(
-        "ef-video",
-      ) as NodeListOf<EFVideo>;
-      const workbenches = container.querySelectorAll(
-        "ef-workbench",
-      ) as NodeListOf<any>;
+      const videos = container.querySelectorAll("ef-video") as NodeListOf<EFVideo>;
+      const workbenches = container.querySelectorAll("ef-workbench") as NodeListOf<any>;
 
       await Promise.all(Array.from(workbenches).map((w) => w.updateComplete));
       await Promise.all(Array.from(videos).map((v) => v.updateComplete));
@@ -181,9 +175,7 @@ describe("URL Token Deduplication", () => {
     }
   });
 
-  test("concurrent token requests are properly deduplicated globally", async ({
-    expect,
-  }) => {
+  test("concurrent token requests are properly deduplicated globally", async ({ expect }) => {
     // This test simulates the race condition where multiple elements initialize simultaneously
     const originalFetch = window.fetch;
     const tokenRequests: { url: string; body: any; timestamp: number }[] = [];
@@ -320,8 +312,7 @@ describe("URL Token Deduplication", () => {
       // Create exactly the scenario the user described: 10 identical videos on one page
       const videoElements = Array.from(
         { length: 10 },
-        (_, i) =>
-          `<ef-video src="http://example.com/user-video.mp4" id="video-${i}"></ef-video>`,
+        (_, i) => `<ef-video src="http://example.com/user-video.mp4" id="video-${i}"></ef-video>`,
       ).join("\n");
 
       container.innerHTML = `

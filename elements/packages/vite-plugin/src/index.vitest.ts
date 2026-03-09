@@ -62,11 +62,7 @@ function getSnapshotDir(root: string, testName: string): string {
   return path.resolve(root, "test", "__snapshots__", testName);
 }
 
-function getSnapshotPaths(
-  root: string,
-  testName: string,
-  snapshotName: string,
-) {
+function getSnapshotPaths(root: string, testName: string, snapshotName: string) {
   const dir = getSnapshotDir(root, testName);
   return {
     dir,
@@ -159,13 +155,10 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
 
               try {
                 Buffer.concat(requestChunks);
-                log(
-                  "Returning mock token response (no signing server in CI/cache-only mode)",
-                );
+                log("Returning mock token response (no signing server in CI/cache-only mode)");
                 returnMockResponse();
               } catch (error) {
-                const errorMessage =
-                  error instanceof Error ? error.message : String(error);
+                const errorMessage = error instanceof Error ? error.message : String(error);
                 log(`Error handling URL signing request: ${errorMessage}`);
                 console.error("[Vite Plugin] URL signing error:", errorMessage);
                 returnMockResponse();
@@ -189,11 +182,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
               }>(req);
 
               const { testName, snapshotName, dataUrl, isBaseline } = body;
-              const paths = getSnapshotPaths(
-                options.root,
-                testName,
-                snapshotName,
-              );
+              const paths = getSnapshotPaths(options.root, testName, snapshotName);
 
               await mkdir(paths.dir, { recursive: true });
 
@@ -237,11 +226,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
                 acceptableDiffPercentage = 1.0,
               } = body;
 
-              const paths = getSnapshotPaths(
-                options.root,
-                testName,
-                snapshotName,
-              );
+              const paths = getSnapshotPaths(options.root, testName, snapshotName);
 
               await mkdir(paths.dir, { recursive: true });
 
@@ -258,12 +243,10 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
               }
 
               log(`Comparing ${paths.actual} against ${paths.baseline}`);
-              const result = await odiffCompare(
-                paths.baseline,
-                paths.actual,
-                paths.diff,
-                { threshold, antialiasing },
-              );
+              const result = await odiffCompare(paths.baseline, paths.actual, paths.diff, {
+                threshold,
+                antialiasing,
+              });
 
               if (result.match) {
                 res.writeHead(200, { "Content-Type": "application/json" });
@@ -353,12 +336,10 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
 
               log(`Comparing two images: ${image1Path} vs ${image2Path}`);
 
-              const result = await odiffCompare(
-                image1Path,
-                image2Path,
-                diffPath,
-                { threshold, antialiasing: true },
-              );
+              const result = await odiffCompare(image1Path, image2Path, diffPath, {
+                threshold,
+                antialiasing: true,
+              });
 
               if (result.match) {
                 res.writeHead(200, { "Content-Type": "application/json" });

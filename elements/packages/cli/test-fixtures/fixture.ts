@@ -7,10 +7,7 @@ import { expect } from "vitest";
 import type { SyncStatusInfo } from "../src/operations/syncAssetsDirectory/SyncStatus.js";
 import { syncAssetDirectory } from "../src/operations/syncAssetsDirectory.js";
 
-export const fixture = async (
-  fixture: string,
-  name: string,
-): Promise<Fixture> => {
+export const fixture = async (fixture: string, name: string): Promise<Fixture> => {
   const originalPath = join(__dirname, fixture);
   const content = await readFile(originalPath);
   return {
@@ -94,21 +91,13 @@ export const withFixtures = async (
     },
     generateTrack: async (fixture, trackId: number) => {
       await mkdir(join(cacheDir, fixture.md5), { recursive: true });
-      const filePath = join(
-        cacheDir,
-        fixture.md5,
-        `${fixture.name}.track-${trackId}.mp4`,
-      );
+      const filePath = join(cacheDir, fixture.md5, `${fixture.name}.track-${trackId}.mp4`);
       await writeFile(filePath, fixture.content);
       return filePath;
     },
     generateTrackFragmentIndex: async (fixture) => {
       await mkdir(join(cacheDir, fixture.md5), { recursive: true });
-      const filePath = join(
-        cacheDir,
-        fixture.md5,
-        `${fixture.name}.tracks.json`,
-      );
+      const filePath = join(cacheDir, fixture.md5, `${fixture.name}.tracks.json`);
       await writeFile(
         filePath,
         JSON.stringify({
@@ -119,11 +108,7 @@ export const withFixtures = async (
     },
     generateCaptions: async (fixture) => {
       await mkdir(join(cacheDir, fixture.md5), { recursive: true });
-      const filePath = join(
-        cacheDir,
-        fixture.md5,
-        `${fixture.name}.captions.json`,
-      );
+      const filePath = join(cacheDir, fixture.md5, `${fixture.name}.captions.json`);
       await writeFile(
         filePath,
         JSON.stringify({

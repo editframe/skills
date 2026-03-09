@@ -18,7 +18,9 @@ export const loader: LoaderFunction = () => {
   for (const skill of skills) {
     lines.push(`## ${skill.title}`);
     lines.push("");
-    lines.push(`- [${skill.title}](${BASE_URL}/skills/${skill.name}.md): ${skill.description}`);
+    lines.push(
+      `- [${skill.title}](${BASE_URL}/skills/${skill.name}.md): ${skill.description}`,
+    );
 
     const refs = getSkillReferencesMeta(skill.name).filter(
       (r) => !r.name.includes("~"),

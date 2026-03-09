@@ -22,7 +22,9 @@ export interface PlaybackTestResult {
 /**
  * Validate MP4 file structure and metadata
  */
-export function validateMP4(videoPathOrBuffer: string | Buffer): MP4ValidationResult {
+export function validateMP4(
+  videoPathOrBuffer: string | Buffer,
+): MP4ValidationResult {
   const result: MP4ValidationResult = {
     isValid: false,
     hasVideoTrack: false,
@@ -39,7 +41,7 @@ export function validateMP4(videoPathOrBuffer: string | Buffer): MP4ValidationRe
     // If buffer, check for MP4 signature
     if (Buffer.isBuffer(videoPathOrBuffer)) {
       const buffer = videoPathOrBuffer;
-      
+
       // Check for ftyp box (MP4 signature)
       if (buffer.length < 8) {
         result.errors.push("Buffer too small to be valid MP4");
@@ -57,7 +59,9 @@ export function validateMP4(videoPathOrBuffer: string | Buffer): MP4ValidationRe
       }
 
       // Check for required boxes
-      const hasMovBox = buffer.includes(Buffer.from("moov")) || buffer.includes(Buffer.from("moof"));
+      const hasMovBox =
+        buffer.includes(Buffer.from("moov")) ||
+        buffer.includes(Buffer.from("moof"));
       const hasMdatBox = buffer.includes(Buffer.from("mdat"));
 
       if (!hasMovBox) {
@@ -68,7 +72,7 @@ export function validateMP4(videoPathOrBuffer: string | Buffer): MP4ValidationRe
       }
 
       result.isValid = ftypCheck && hasMovBox && hasMdatBox;
-      
+
       // Can't get detailed info from buffer without writing to file
       // So just return basic validation
       return result;
@@ -89,9 +93,7 @@ export function validateMP4(videoPathOrBuffer: string | Buffer): MP4ValidationRe
     }
 
     // Check for video track
-    const videoStream = data.streams.find(
-      (s: any) => s.codec_type === "video",
-    );
+    const videoStream = data.streams.find((s: any) => s.codec_type === "video");
     if (videoStream) {
       result.hasVideoTrack = true;
       result.width = videoStream.width || 0;
@@ -108,9 +110,7 @@ export function validateMP4(videoPathOrBuffer: string | Buffer): MP4ValidationRe
     }
 
     // Check for audio track
-    const audioStream = data.streams.find(
-      (s: any) => s.codec_type === "audio",
-    );
+    const audioStream = data.streams.find((s: any) => s.codec_type === "audio");
     if (audioStream) {
       result.hasAudioTrack = true;
     }
@@ -142,15 +142,17 @@ export function validateMP4(videoPathOrBuffer: string | Buffer): MP4ValidationRe
 export function testPlayback(videoPath: string): PlaybackTestResult {
   try {
     // Try to decode a few frames to verify playback works
-    execSync(
-      `ffmpeg -v error -i "${videoPath}" -t 1 -f null - 2>&1`,
-      { encoding: "utf8", stdio: "pipe" },
-    );
+    execSync(`ffmpeg -v error -i "${videoPath}" -t 1 -f null - 2>&1`, {
+      encoding: "utf8",
+      stdio: "pipe",
+    });
 
     // Get duration
     const output = execSync(
       `ffprobe -v quiet -print_format json -show_format "${videoPath}"`,
-      { encoding: "utf8" },
+      {
+        encoding: "utf8",
+      },
     );
     const data = JSON.parse(output);
     const duration = parseFloat(data.format?.duration || "0");
@@ -261,9 +263,7 @@ export function validateDurationMetadata(videoPath: string): {
       result.movieDuration = duration / timescale;
     }
 
-    result.difference = Math.abs(
-      result.movieDuration - result.ffprobeDuration,
-    );
+    result.difference = Math.abs(result.movieDuration - result.ffprobeDuration);
 
     // Allow 0.1s tolerance
     result.isConsistent = result.difference < 0.1;

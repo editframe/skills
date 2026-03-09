@@ -39,9 +39,7 @@ describe.skip("EFTogglePlay - AudioContext Resume", () => {
         container,
       );
 
-      const timegroup = container.querySelector(
-        "#test-timegroup",
-      ) as EFTimegroup;
+      const timegroup = container.querySelector("#test-timegroup") as EFTimegroup;
       const toggle = container.querySelector("#toggle") as EFTogglePlay;
 
       await timegroup.updateComplete;
@@ -53,14 +51,10 @@ describe.skip("EFTogglePlay - AudioContext Resume", () => {
       });
 
       expect(timegroup.playbackController).toBeTruthy();
-      const playbackController =
-        timegroup.playbackController as PlaybackController;
+      const playbackController = timegroup.playbackController as PlaybackController;
 
       // Spy on setPendingAudioContext to verify it's called
-      const setPendingSpy = vi.spyOn(
-        playbackController,
-        "setPendingAudioContext",
-      );
+      const setPendingSpy = vi.spyOn(playbackController, "setPendingAudioContext");
 
       // Initially should not be playing
       expect(toggle.playing).toBe(false);
@@ -104,9 +98,7 @@ describe.skip("EFTogglePlay - AudioContext Resume", () => {
         container,
       );
 
-      const timegroup = container.querySelector(
-        "#test-timegroup",
-      ) as EFTimegroup;
+      const timegroup = container.querySelector("#test-timegroup") as EFTimegroup;
       const toggle = container.querySelector("#toggle") as EFTogglePlay;
 
       await timegroup.updateComplete;
@@ -117,8 +109,7 @@ describe.skip("EFTogglePlay - AudioContext Resume", () => {
         timeout: 1000,
       });
 
-      const playbackController =
-        timegroup.playbackController as PlaybackController;
+      const playbackController = timegroup.playbackController as PlaybackController;
 
       // Create a test AudioContext and set it as pending
       const testContext = new AudioContext({ latencyHint: "playback" });
@@ -149,19 +140,16 @@ describe.skip("EFTogglePlay - AudioContext Resume", () => {
     },
   );
 
-  test(
-    "handles missing playbackController gracefully",
-    { timeout: 1000 },
-    async () => {
-      const warnings: string[] = [];
-      const originalWarn = console.warn;
-      console.warn = (...args) => {
-        warnings.push(args.join(" "));
-        originalWarn(...args);
-      };
+  test("handles missing playbackController gracefully", { timeout: 1000 }, async () => {
+    const warnings: string[] = [];
+    const originalWarn = console.warn;
+    console.warn = (...args) => {
+      warnings.push(args.join(" "));
+      originalWarn(...args);
+    };
 
-      render(
-        html`
+    render(
+      html`
           <ef-preview id="test-preview">
             <ef-video src="test_audio.mp4"></ef-video>
           </ef-preview>
@@ -169,31 +157,28 @@ describe.skip("EFTogglePlay - AudioContext Resume", () => {
             <button slot="play">Play</button>
           </ef-toggle-play>
         `,
-        container,
-      );
+      container,
+    );
 
-      const toggle = container.querySelector("#toggle") as EFTogglePlay;
-      await toggle.updateComplete;
+    const toggle = container.querySelector("#toggle") as EFTogglePlay;
+    await toggle.updateComplete;
 
-      // Wait for context to connect (efContext should be set)
-      await vi.waitUntil(() => toggle.efContext !== null, {
-        timeout: 1000,
-      });
+    // Wait for context to connect (efContext should be set)
+    await vi.waitUntil(() => toggle.efContext !== null, {
+      timeout: 1000,
+    });
 
-      // Click toggle - should not throw even if playbackController is not directly accessible
-      // (it goes through ContextMixin which handles async resolution)
-      toggle.click();
+    // Click toggle - should not throw even if playbackController is not directly accessible
+    // (it goes through ContextMixin which handles async resolution)
+    toggle.click();
 
-      // Should not have warnings about AudioContext creation failure
-      // (because getPlaybackController returns null for ContextMixin)
-      const audioContextWarnings = warnings.filter((w) =>
-        w.includes("AudioContext"),
-      );
-      expect(audioContextWarnings.length).toBe(0);
+    // Should not have warnings about AudioContext creation failure
+    // (because getPlaybackController returns null for ContextMixin)
+    const audioContextWarnings = warnings.filter((w) => w.includes("AudioContext"));
+    expect(audioContextWarnings.length).toBe(0);
 
-      console.warn = originalWarn;
-    },
-  );
+    console.warn = originalWarn;
+  });
 
   test(
     "preserves gapless playback timing with pre-resumed context",
@@ -212,9 +197,7 @@ describe.skip("EFTogglePlay - AudioContext Resume", () => {
         container,
       );
 
-      const timegroup = container.querySelector(
-        "#test-timegroup",
-      ) as EFTimegroup;
+      const timegroup = container.querySelector("#test-timegroup") as EFTimegroup;
       const toggle = container.querySelector("#toggle") as EFTogglePlay;
 
       await timegroup.updateComplete;

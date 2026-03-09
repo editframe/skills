@@ -14,10 +14,7 @@ export class ScrubInputCache {
   // Changed from Map<number> to Map<string> to include src in key
   #cache = new Map<string, BufferedSeekingInput>();
   #urlCache = new Map<string, BufferedSeekingInput>();
-  #pendingBySegment = new Map<
-    string,
-    Promise<BufferedSeekingInput | undefined>
-  >();
+  #pendingBySegment = new Map<string, Promise<BufferedSeekingInput | undefined>>();
   #pendingByUrl = new Map<string, Promise<BufferedSeekingInput | undefined>>();
   #maxCacheSize = 5;
 

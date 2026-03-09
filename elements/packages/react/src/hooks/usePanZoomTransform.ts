@@ -14,9 +14,7 @@ import React, { useEffect, useState } from "react";
  * // transform.scale, transform.x, transform.y
  */
 export function usePanZoomTransform(
-  panZoomRef: React.RefObject<
-    (EventTarget & { scale: number; x: number; y: number }) | null
-  >,
+  panZoomRef: React.RefObject<(EventTarget & { scale: number; x: number; y: number }) | null>,
 ): PanZoomTransform {
   const [transform, setTransform] = useState<PanZoomTransform>({
     scale: 1,

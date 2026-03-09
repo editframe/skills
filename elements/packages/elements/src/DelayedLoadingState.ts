@@ -17,10 +17,7 @@ export class DelayedLoadingState {
   private currentMessage = "";
   private onStateChange?: (isLoading: boolean, message: string) => void;
 
-  constructor(
-    delayMs = 250,
-    onStateChange?: (isLoading: boolean, message: string) => void,
-  ) {
+  constructor(delayMs = 250, onStateChange?: (isLoading: boolean, message: string) => void) {
     this.loadingDelayMs = delayMs;
     this.onStateChange = onStateChange;
   }
@@ -28,11 +25,7 @@ export class DelayedLoadingState {
   /**
    * Start a delayed loading operation
    */
-  startLoading(
-    operationId: string,
-    message: string,
-    options: LoadingOptions = {},
-  ): void {
+  startLoading(operationId: string, message: string, options: LoadingOptions = {}): void {
     const isBackground = options.background || false;
 
     // Clear existing timeout for this operation if it exists

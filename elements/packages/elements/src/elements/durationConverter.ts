@@ -1,8 +1,7 @@
 import { parseTimeToMs } from "./parseTimeToMs.js";
 
 export const durationConverter = {
-  fromAttribute: (value: string | null) =>
-    value === null ? null : parseTimeToMs(value),
+  fromAttribute: (value: string | null) => (value === null ? null : parseTimeToMs(value)),
   toAttribute: (value: number | null) => (value === null ? null : `${value}s`),
 };
 
@@ -17,8 +16,7 @@ const positiveDurationConverter = (error: string) => {
       }
       return parseTimeToMs(value);
     },
-    toAttribute: (value: number | null) =>
-      value === null ? null : `${value}s`,
+    toAttribute: (value: number | null) => (value === null ? null : `${value}s`),
   };
 };
 

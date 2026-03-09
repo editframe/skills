@@ -23,9 +23,7 @@ describe("password reset security", () => {
       });
     };
 
-    const realResponse = await sendReset(
-      `existing-${Date.now()}@example.org`,
-    );
+    const realResponse = await sendReset(`existing-${Date.now()}@example.org`);
     const fakeResponse = await sendReset(
       `definitely-not-real-${Date.now()}@example.org`,
     );

@@ -9,36 +9,43 @@
 function PerformanceMetrics() {
   const metrics = [
     {
-      value: '< 50ms',
-      label: 'Preview latency',
-      context: 'Seek-to-display time',
-      color: 'var(--poster-red)',
+      value: "< 50ms",
+      label: "Preview latency",
+      context: "Seek-to-display time",
+      color: "var(--poster-red)",
     },
     {
-      value: '120 fps',
-      label: 'Encoding speed',
-      context: '1080p H.264',
-      color: 'var(--poster-blue)',
+      value: "120 fps",
+      label: "Encoding speed",
+      context: "1080p H.264",
+      color: "var(--poster-blue)",
     },
     {
-      value: '10,000+',
-      label: 'Videos per hour',
-      context: 'Cloud rendering',
-      color: 'var(--poster-gold)',
+      value: "10,000+",
+      label: "Videos per hour",
+      context: "Cloud rendering",
+      color: "var(--poster-gold)",
     },
     {
-      value: '99.9%',
-      label: 'Uptime SLA',
-      context: 'Enterprise tier',
-      color: 'var(--poster-green)',
+      value: "99.9%",
+      label: "Uptime SLA",
+      context: "Enterprise tier",
+      color: "var(--poster-green)",
     },
   ];
-  
+
   return (
     <div className="space-y-3">
       {metrics.map((metric, i) => (
-        <div key={i} className="flex items-center gap-4 p-4 border-l-4" style={{ borderColor: metric.color }}>
-          <div className="text-3xl font-black tracking-tighter" style={{ color: metric.color }}>
+        <div
+          key={i}
+          className="flex items-center gap-4 p-4 border-l-4"
+          style={{ borderColor: metric.color }}
+        >
+          <div
+            className="text-3xl font-black tracking-tighter"
+            style={{ color: metric.color }}
+          >
             {metric.value}
           </div>
           <div>

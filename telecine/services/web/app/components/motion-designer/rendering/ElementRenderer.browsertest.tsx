@@ -238,9 +238,7 @@ describe("ElementRenderer", () => {
         },
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -261,9 +259,7 @@ describe("ElementRenderer", () => {
         textContent: "Test Text",
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -280,9 +276,7 @@ describe("ElementRenderer", () => {
         },
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -299,9 +293,7 @@ describe("ElementRenderer", () => {
         },
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -318,9 +310,7 @@ describe("ElementRenderer", () => {
         },
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -337,9 +327,7 @@ describe("ElementRenderer", () => {
         },
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -356,9 +344,7 @@ describe("ElementRenderer", () => {
         },
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="test-id-123"]`,
@@ -386,9 +372,7 @@ describe("ElementRenderer", () => {
         textContent: null,
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -411,9 +395,7 @@ describe("ElementRenderer", () => {
       mockUseElementStyles.mockReturnValue({ styles: { color: "red" } });
       mockUseElementProps.mockReturnValue({ props: {}, textContent: null });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -434,9 +416,7 @@ describe("ElementRenderer", () => {
       mockUseElementStyles.mockReturnValue({ styles: {} });
       mockUseElementProps.mockReturnValue({ props: {}, textContent: null });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -460,9 +440,7 @@ describe("ElementRenderer", () => {
         textContent: null,
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -501,9 +479,7 @@ describe("ElementRenderer", () => {
         textContent: null,
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -534,9 +510,7 @@ describe("ElementRenderer", () => {
         textContent: null,
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -573,9 +547,7 @@ describe("ElementRenderer", () => {
         textContent: null,
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -627,12 +599,7 @@ describe("ElementRenderer", () => {
       parent.style.width = "200px";
       document.body.appendChild(parent);
 
-      render(
-        <ElementRenderer
-          element={childElement}
-          state={state}
-        />,
-      );
+      render(<ElementRenderer element={childElement} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${childElement.id}"]`,
@@ -661,9 +628,7 @@ describe("ElementRenderer", () => {
         animation: "fade 1s ease 0s both paused",
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const styleElement = document.getElementById(
         `animation-styles-${element.id}`,
@@ -689,9 +654,7 @@ describe("ElementRenderer", () => {
         '\n[data-element-id="test-element-1"] ef-text-segment {\n  animation: test-anim;\n}',
       );
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const styleElement = document.getElementById(
         `animation-styles-${element.id}`,
@@ -717,9 +680,7 @@ describe("ElementRenderer", () => {
         animation: "fade 1s ease 0s both paused",
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const styleElement = document.getElementById(
         `animation-styles-${element.id}`,
@@ -746,9 +707,7 @@ describe("ElementRenderer", () => {
 
       mockGenerateAnimationStyle.mockReturnValue({ animation: "none" });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const styleElement = document.getElementById(
         `animation-styles-${element.id}`,
@@ -769,9 +728,7 @@ describe("ElementRenderer", () => {
       mockCreateAnimationKey.mockReturnValue("anim-key-123");
       mockGenerateAnimationStyle.mockReturnValue({ animation: "fade 1s" });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const styleElement = document.getElementById(
         `animation-styles-test-id-456`,
@@ -796,9 +753,7 @@ describe("ElementRenderer", () => {
         },
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -821,7 +776,7 @@ describe("ElementRenderer", () => {
 
       render(
         <div onClick={parentHandler}>
-          <ElementRenderer element={element} state={state}  />
+          <ElementRenderer element={element} state={state} />
         </div>,
       );
 
@@ -850,9 +805,7 @@ describe("ElementRenderer", () => {
         },
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -876,7 +829,7 @@ describe("ElementRenderer", () => {
 
       render(
         <div onClick={parentHandler}>
-          <ElementRenderer element={element} state={state}  />
+          <ElementRenderer element={element} state={state} />
         </div>,
       );
 
@@ -909,9 +862,7 @@ describe("ElementRenderer", () => {
         textContent: "Hello World",
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       // Component key affects React reconciliation, verify element renders
       const rendered = document.querySelector(
@@ -929,9 +880,7 @@ describe("ElementRenderer", () => {
         },
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(`[data-element-id="div-123"]`);
       expect(rendered).toBeTruthy();
@@ -953,9 +902,7 @@ describe("ElementRenderer", () => {
         textContent: "Test Content",
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -978,9 +925,7 @@ describe("ElementRenderer", () => {
         textContent: "Div Content",
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -1010,12 +955,7 @@ describe("ElementRenderer", () => {
         },
       });
 
-      render(
-        <ElementRenderer
-          element={parentElement}
-          state={state}
-        />,
-      );
+      render(<ElementRenderer element={parentElement} state={state} />);
 
       const parent = document.querySelector(
         `[data-element-id="${parentElement.id}"]`,
@@ -1042,12 +982,7 @@ describe("ElementRenderer", () => {
         },
       });
 
-      render(
-        <ElementRenderer
-          element={parentElement}
-          state={state}
-        />,
-      );
+      render(<ElementRenderer element={parentElement} state={state} />);
 
       const parent = document.querySelector(
         `[data-element-id="${parentElement.id}"]`,
@@ -1085,12 +1020,7 @@ describe("ElementRenderer", () => {
         },
       });
 
-      render(
-        <ElementRenderer
-          element={parentElement}
-          state={state}
-        />,
-      );
+      render(<ElementRenderer element={parentElement} state={state} />);
 
       const parent = document.querySelector(
         `[data-element-id="${parentElement.id}"]`,
@@ -1123,12 +1053,7 @@ describe("ElementRenderer", () => {
         },
       });
 
-      render(
-        <ElementRenderer
-          element={parentElement}
-          state={state}
-        />,
-      );
+      render(<ElementRenderer element={parentElement} state={state} />);
 
       // Verify hooks were called for child element
       expect(mockUseElementStyles).toHaveBeenCalledWith(childElement, state);
@@ -1146,9 +1071,7 @@ describe("ElementRenderer", () => {
         },
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -1168,9 +1091,7 @@ describe("ElementRenderer", () => {
 
       mockUseElementProps.mockReturnValue({ props: {}, textContent: null });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -1190,9 +1111,7 @@ describe("ElementRenderer", () => {
       mockGenerateAnimationStyles.mockReturnValue(null);
       mockGenerateAnimationStyle.mockReturnValue(null);
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const styleElement = document.getElementById(
         `animation-styles-${element.id}`,
@@ -1222,9 +1141,7 @@ describe("ElementRenderer", () => {
         animation: "anim1 1s, anim2 1s",
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const styleElement = document.getElementById(
         `animation-styles-${element.id}`,
@@ -1248,9 +1165,7 @@ describe("ElementRenderer", () => {
         },
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -1279,9 +1194,7 @@ describe("ElementRenderer", () => {
       );
       mockGenerateAnimationStyle.mockReturnValue({ animation: "test 1s" });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const styleElement = document.getElementById(
         `animation-styles-${element.id}`,
@@ -1307,9 +1220,7 @@ describe("ElementRenderer", () => {
       mockCreateAnimationKey.mockReturnValue("stable-key-123");
       mockGenerateAnimationStyle.mockReturnValue({ animation: "test 1s" });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       expect(mockCreateAnimationKey).toHaveBeenCalledWith(element);
       const styleElement = document.getElementById(
@@ -1380,9 +1291,7 @@ describe("ElementRenderer", () => {
         textContent: null,
       });
 
-      render(
-        <ElementRenderer element={element} state={state} />,
-      );
+      render(<ElementRenderer element={element} state={state} />);
 
       const rendered = document.querySelector(
         `[data-element-id="${element.id}"]`,
@@ -1525,10 +1434,7 @@ describe("ElementRenderer", () => {
       });
 
       const { container } = render(
-        <ElementRenderer
-          element={videoElement}
-          state={state}
-        />,
+        <ElementRenderer element={videoElement} state={state} />,
       );
 
       // Check that ef-fit-scale wrapper exists
@@ -1584,10 +1490,7 @@ describe("ElementRenderer", () => {
       });
 
       const { container } = render(
-        <ElementRenderer
-          element={videoElement}
-          state={state}
-        />,
+        <ElementRenderer element={videoElement} state={state} />,
       );
 
       // Check that ef-fit-scale wrapper does NOT exist
@@ -1632,10 +1535,7 @@ describe("ElementRenderer", () => {
       });
 
       const { container } = render(
-        <ElementRenderer
-          element={videoElement}
-          state={state}
-        />,
+        <ElementRenderer element={videoElement} state={state} />,
       );
 
       // Check that ef-fit-scale wrapper does NOT exist
@@ -1690,10 +1590,7 @@ describe("ElementRenderer", () => {
       });
 
       const { container } = render(
-        <ElementRenderer
-          element={videoElement}
-          state={state}
-        />,
+        <ElementRenderer element={videoElement} state={state} />,
       );
 
       // Check that ef-fit-scale wrapper exists

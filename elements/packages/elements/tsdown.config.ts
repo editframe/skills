@@ -12,10 +12,7 @@ const inlineCssPlugin = (): Plugin => ({
   name: "inline-css",
   resolveId(source, importer) {
     if (source.endsWith(".css?inline") && importer) {
-      const resolved = path.resolve(
-        path.dirname(importer),
-        source.replace("?inline", ""),
-      );
+      const resolved = path.resolve(path.dirname(importer), source.replace("?inline", ""));
       return { id: `${resolved}?inline`, external: false };
     }
     return null;
@@ -28,14 +25,11 @@ const inlineCssPlugin = (): Plugin => ({
       // Process through Tailwind if it contains @tailwind directives
       if (css.includes("@tailwind")) {
         const _srcDir = path.resolve(path.dirname(filePath));
-        const configPath = path.resolve(
-          path.dirname(filePath),
-          "../../tailwind.config.ts",
+        const configPath = path.resolve(path.dirname(filePath), "../../tailwind.config.ts");
+        const result = await postcss([tailwindcss({ config: configPath }), autoprefixer()]).process(
+          css,
+          { from: filePath },
         );
-        const result = await postcss([
-          tailwindcss({ config: configPath }),
-          autoprefixer(),
-        ]).process(css, { from: filePath });
 
         return `export default ${JSON.stringify(result.css)}`;
       }

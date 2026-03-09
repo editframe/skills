@@ -112,7 +112,8 @@ const UploadProgress = ({
     <div className="flex flex-col gap-1 w-full min-w-[6rem]">
       <ProgressBar percent={percent} color="bg-blue-600" />
       <span className="text-[10px] text-slate-500 dark:text-slate-400">
-        <ByteSizeDisplay bytes={nextByte} /> / <ByteSizeDisplay bytes={byteSize} />
+        <ByteSizeDisplay bytes={nextByte} /> /{" "}
+        <ByteSizeDisplay bytes={byteSize} />
       </span>
     </div>
   );
@@ -199,9 +200,7 @@ export const Progress: ContentBlock<{
 
   if (status === "failed") {
     return (
-      <span className="text-[10px] text-red-600 dark:text-red-400">
-        Failed
-      </span>
+      <span className="text-[10px] text-red-600 dark:text-red-400">Failed</span>
     );
   }
 

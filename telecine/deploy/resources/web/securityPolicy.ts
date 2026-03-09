@@ -26,7 +26,8 @@ export const securityPolicy = new gcp.compute.SecurityPolicy(
           },
           banDurationSec: 600,
         },
-        description: "Rate-based ban on /auth/* — 1000 req/min per IP, 10-min ban on breach",
+        description:
+          "Rate-based ban on /auth/* — 1000 req/min per IP, 10-min ban on breach",
       },
       {
         priority: 2147483647,

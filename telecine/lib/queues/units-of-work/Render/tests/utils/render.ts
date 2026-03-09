@@ -2,13 +2,19 @@ import path from "node:path";
 import { writeFile, mkdir, access } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { createElectronRPC, type ElectronRPC } from "../../ElectronRPCClient";
-import { bundleTestTemplate, type TestBundleInfo } from "../../test-utils/html-bundler";
+import {
+  bundleTestTemplate,
+  type TestBundleInfo,
+} from "../../test-utils/html-bundler";
 import { createAssetsMetadataBundle } from "../../shared/assetMetadata";
 import { makeTestAgent } from "TEST/util/test";
 import type { Selectable } from "kysely";
 import type { TestAgent } from "TEST/util/test";
 
-export type RenderMode = "server" | "browser-full-video" | "browser-frame-by-frame";
+export type RenderMode =
+  | "server"
+  | "browser-full-video"
+  | "browser-frame-by-frame";
 export type CanvasMode = "native" | "foreignObject";
 
 export interface DetailedFrameTiming {
@@ -29,10 +35,10 @@ export interface RenderTimingBreakdown {
   createAssetsBundle?: number;
   electronRpcCreate?: number;
   electronRpcTerminate?: number;
-  
+
   // Rendering phase
   renderFragment?: number;
-  
+
   // Detailed per-frame timing (for frame-by-frame mode)
   perFrameTiming?: {
     count: number;
@@ -49,7 +55,7 @@ export interface RenderTimingBreakdown {
     maxFrameMs: number;
     totalFramesMs: number;
   };
-  
+
   // Browser-side timing (for browser modes)
   browserSideTiming?: {
     cloneTotal?: number;
@@ -60,7 +66,7 @@ export interface RenderTimingBreakdown {
     serializeTotal?: number;
     encodeTotal?: number;
   };
-  
+
   // IPC overhead
   ipcOverhead?: {
     calls: number;
@@ -68,10 +74,10 @@ export interface RenderTimingBreakdown {
     avgMs: number;
     totalBytesTransferred?: number;
   };
-  
+
   // Cleanup phase
   writeFile?: number;
-  
+
   total: number;
 }
 
@@ -122,7 +128,7 @@ export function getSharedOutputDir(): string {
  * Cache for bundled HTML templates.
  * Key: template hash
  * Value: bundle info
- * 
+ *
  * This cache persists across tests in the same run, avoiding
  * redundant Vite/Rolldown compilations for identical HTML.
  */
@@ -137,12 +143,12 @@ let bundleCacheMisses = 0;
 /**
  * Simple, focused render function for tests.
  * Takes HTML, renders to video, returns result.
- * 
+ *
  * Supports multiple rendering strategies:
  * - server (default): Electron offscreen rendering (fastest, most reliable)
  * - browser-full-video: Browser-based rendering with mediabunny encoder
  * - browser-frame-by-frame: Browser captures frames, FFmpeg encodes
- * 
+ *
  * Canvas modes (for browser strategies):
  * - native: Uses native canvas 2D rendering
  * - foreignObject: Uses SVG foreignObject (supports CSS better)
@@ -154,12 +160,15 @@ export async function render(
   const startTime = performance.now();
   const renderMode = options.renderMode ?? "server";
   const canvasMode = options.canvasMode ?? "foreignObject";
-  
+
   // Route to appropriate render function based on mode
-  if (renderMode === "browser-full-video" || renderMode === "browser-frame-by-frame") {
+  if (
+    renderMode === "browser-full-video" ||
+    renderMode === "browser-frame-by-frame"
+  ) {
     return renderWithBrowser(html, options, renderMode, canvasMode);
   }
-  
+
   // Default server rendering (Electron offscreen)
   return renderWithServer(html, options);
 }
@@ -178,22 +187,26 @@ async function renderWithBrowser(
   const width = options.width ?? 640;
   const height = options.height ?? 360;
   const fps = options.fps ?? 30;
-  const testAgent = options.testAgent ?? await getOrCreateTestAgent();
-  
+  const testAgent = options.testAgent ?? (await getOrCreateTestAgent());
+
   // Use provided electronRpc or create a new one
   const electronRpc = options.electronRpc;
   if (!electronRpc) {
-    throw new Error("electronRpc is required for browser rendering strategies. Create it in beforeAll() and pass it to render().");
+    throw new Error(
+      "electronRpc is required for browser rendering strategies. Create it in beforeAll() and pass it to render().",
+    );
   }
-  
+
   // Dynamically import browser render functions to avoid initialization errors
-  const { renderWithBrowserFullVideo, renderWithBrowserFrameByFrame } = await import("../../test-utils/browser-render");
-  
+  const { renderWithBrowserFullVideo, renderWithBrowserFrameByFrame } =
+    await import("../../test-utils/browser-render");
+
   try {
-    const renderFn = renderMode === "browser-full-video" 
-      ? renderWithBrowserFullVideo
-      : renderWithBrowserFrameByFrame;
-    
+    const renderFn =
+      renderMode === "browser-full-video"
+        ? renderWithBrowserFullVideo
+        : renderWithBrowserFrameByFrame;
+
     const renderFnStart = performance.now();
     const result = await renderFn({
       html,
@@ -205,36 +218,66 @@ async function renderWithBrowser(
       testTitle: options.testName ?? "smoke-test",
     });
     timing.renderFragment = performance.now() - renderFnStart;
-    
+
     // Retrieve detailed timing data for frame-by-frame mode
     if (renderMode === "browser-frame-by-frame") {
       try {
         // Include canvasMode in renderId to make it unique per render strategy
         const renderId = `test-${result.templateHash}-${canvasMode}`;
-        const detailedTiming = await electronRpc.rpc.call("getBrowserFrameTiming", {
-          renderId,
-        });
-        
+        const detailedTiming = await electronRpc.rpc.call(
+          "getBrowserFrameTiming",
+          {
+            renderId,
+          },
+        );
+
         // Clear the timing data from RPC server's memory
         await electronRpc.rpc.call("clearBrowserFrameTiming", {
           renderId,
         });
-        
+
         // Aggregate timing statistics
         if (detailedTiming && detailedTiming.length > 0) {
           const allFrames = detailedTiming.flatMap((seg: any) => seg.frames);
           if (allFrames.length > 0) {
-            const avgClone = allFrames.reduce((sum: number, f: any) => sum + f.cloneMs, 0) / allFrames.length;
-            const avgSeek = allFrames.reduce((sum: number, f: any) => sum + f.seekMs, 0) / allFrames.length;
-            const avgRender = allFrames.reduce((sum: number, f: any) => sum + f.renderMs, 0) / allFrames.length;
-            const avgCapture = allFrames.reduce((sum: number, f: any) => sum + f.captureMs, 0) / allFrames.length;
-            const avgCanvas = allFrames.reduce((sum: number, f: any) => sum + f.canvasMs, 0) / allFrames.length;
-            const avgBlob = allFrames.reduce((sum: number, f: any) => sum + f.blobMs, 0) / allFrames.length;
-            const avgSerialize = allFrames.reduce((sum: number, f: any) => sum + f.serializeMs, 0) / allFrames.length;
-            const avgIpcRoundTrip = allFrames.reduce((sum: number, f: any) => sum + f.ipcRoundTripMs, 0) / allFrames.length;
-            const avgIpcOverhead = allFrames.reduce((sum: number, f: any) => sum + f.ipcOverheadMs, 0) / allFrames.length;
-            const totalDataSize = allFrames.reduce((sum: number, f: any) => sum + f.jpegSize, 0);
-            
+            const avgClone =
+              allFrames.reduce((sum: number, f: any) => sum + f.cloneMs, 0) /
+              allFrames.length;
+            const avgSeek =
+              allFrames.reduce((sum: number, f: any) => sum + f.seekMs, 0) /
+              allFrames.length;
+            const avgRender =
+              allFrames.reduce((sum: number, f: any) => sum + f.renderMs, 0) /
+              allFrames.length;
+            const avgCapture =
+              allFrames.reduce((sum: number, f: any) => sum + f.captureMs, 0) /
+              allFrames.length;
+            const avgCanvas =
+              allFrames.reduce((sum: number, f: any) => sum + f.canvasMs, 0) /
+              allFrames.length;
+            const avgBlob =
+              allFrames.reduce((sum: number, f: any) => sum + f.blobMs, 0) /
+              allFrames.length;
+            const avgSerialize =
+              allFrames.reduce(
+                (sum: number, f: any) => sum + f.serializeMs,
+                0,
+              ) / allFrames.length;
+            const avgIpcRoundTrip =
+              allFrames.reduce(
+                (sum: number, f: any) => sum + f.ipcRoundTripMs,
+                0,
+              ) / allFrames.length;
+            const avgIpcOverhead =
+              allFrames.reduce(
+                (sum: number, f: any) => sum + f.ipcOverheadMs,
+                0,
+              ) / allFrames.length;
+            const totalDataSize = allFrames.reduce(
+              (sum: number, f: any) => sum + f.jpegSize,
+              0,
+            );
+
             timing.perFrameTiming = {
               count: allFrames.length,
               avgCloneMs: avgClone,
@@ -245,25 +288,53 @@ async function renderWithBrowser(
               avgSerializeMs: avgSerialize,
               avgBlobMs: avgBlob,
               avgIpcTransferMs: avgIpcOverhead,
-              minFrameMs: Math.min(...allFrames.map((f: any) => f.totalCaptureMs)),
-              maxFrameMs: Math.max(...allFrames.map((f: any) => f.totalCaptureMs)),
-              totalFramesMs: allFrames.reduce((sum: number, f: any) => sum + f.totalCaptureMs, 0),
+              minFrameMs: Math.min(
+                ...allFrames.map((f: any) => f.totalCaptureMs),
+              ),
+              maxFrameMs: Math.max(
+                ...allFrames.map((f: any) => f.totalCaptureMs),
+              ),
+              totalFramesMs: allFrames.reduce(
+                (sum: number, f: any) => sum + f.totalCaptureMs,
+                0,
+              ),
             };
-            
+
             timing.ipcOverhead = {
               calls: allFrames.length,
-              totalMs: allFrames.reduce((sum: number, f: any) => sum + f.ipcOverheadMs, 0),
+              totalMs: allFrames.reduce(
+                (sum: number, f: any) => sum + f.ipcOverheadMs,
+                0,
+              ),
               avgMs: avgIpcOverhead,
               totalBytesTransferred: totalDataSize,
             };
-            
+
             timing.browserSideTiming = {
-              cloneTotal: allFrames.reduce((sum: number, f: any) => sum + f.cloneMs, 0),
-              seekTotal: allFrames.reduce((sum: number, f: any) => sum + f.seekMs, 0),
-              renderTotal: allFrames.reduce((sum: number, f: any) => sum + f.renderMs, 0),
-              captureTotal: allFrames.reduce((sum: number, f: any) => sum + f.captureMs, 0),
-              canvasTotal: allFrames.reduce((sum: number, f: any) => sum + f.canvasMs, 0),
-              serializeTotal: allFrames.reduce((sum: number, f: any) => sum + f.serializeMs, 0),
+              cloneTotal: allFrames.reduce(
+                (sum: number, f: any) => sum + f.cloneMs,
+                0,
+              ),
+              seekTotal: allFrames.reduce(
+                (sum: number, f: any) => sum + f.seekMs,
+                0,
+              ),
+              renderTotal: allFrames.reduce(
+                (sum: number, f: any) => sum + f.renderMs,
+                0,
+              ),
+              captureTotal: allFrames.reduce(
+                (sum: number, f: any) => sum + f.captureMs,
+                0,
+              ),
+              canvasTotal: allFrames.reduce(
+                (sum: number, f: any) => sum + f.canvasMs,
+                0,
+              ),
+              serializeTotal: allFrames.reduce(
+                (sum: number, f: any) => sum + f.serializeMs,
+                0,
+              ),
             };
           }
         }
@@ -271,27 +342,31 @@ async function renderWithBrowser(
         console.warn("Failed to retrieve detailed timing data:", error);
       }
     }
-    
+
     // Save to nested output directory: testName/strategyName/output.mp4
     const writeStart = performance.now();
     const baseOutputDir = options.outputDir || SHARED_OUTPUT_DIR;
-    
+
     // Extract test name and create strategy-specific subdirectory
     const testName = extractTestName(options.testName);
-    const strategyName = canvasMode ? `${renderMode}-${canvasMode}` : renderMode;
+    const strategyName = canvasMode
+      ? `${renderMode}-${canvasMode}`
+      : renderMode;
     const outputDir = path.join(baseOutputDir, testName, strategyName);
     await mkdir(outputDir, { recursive: true });
-    
+
     const videoPath = path.join(outputDir, "output.mp4");
     await writeFile(videoPath, result.finalVideoBuffer);
     timing.writeFile = performance.now() - writeStart;
-    
+
     const renderTimeMs = performance.now() - startTime;
     timing.total = renderTimeMs;
 
     // Write performance data alongside video
     const numFrames = Math.ceil((result.renderInfo.durationMs / 1000) * fps);
-    const avgFrameTimeMs = timing.renderFragment ? timing.renderFragment / numFrames : 0;
+    const avgFrameTimeMs = timing.renderFragment
+      ? timing.renderFragment / numFrames
+      : 0;
     const perfData = {
       testName: options.testName,
       renderMode,
@@ -338,12 +413,12 @@ async function renderWithServer(
   const timing: RenderTimingBreakdown = { total: 0 };
 
   // Use provided test agent or create default one
-  const testAgent = options.testAgent ?? await getOrCreateTestAgent();
+  const testAgent = options.testAgent ?? (await getOrCreateTestAgent());
 
   // Use provided electronRpc or create a new one (for backward compatibility)
   let electronRpc = options.electronRpc;
   let shouldCloseRpc = false;
-  
+
   if (!electronRpc) {
     const rpcStart = performance.now();
     electronRpc = await createElectronRPC();
@@ -403,13 +478,13 @@ async function renderWithServer(
     // Save to nested output directory: testName/strategyName/output.mp4
     const writeStart = performance.now();
     const baseOutputDir = options.outputDir || SHARED_OUTPUT_DIR;
-    
+
     // Extract test name and create strategy-specific subdirectory
     const testName = extractTestName(options.testName);
     const strategyName = "server";
     const outputDir = path.join(baseOutputDir, testName, strategyName);
     await mkdir(outputDir, { recursive: true });
-    
+
     const videoPath = path.join(outputDir, "output.mp4");
     await writeFile(videoPath, videoBuffer);
     timing.writeFile = performance.now() - writeStart;
@@ -419,7 +494,9 @@ async function renderWithServer(
 
     // Write performance data alongside video
     const numFrames = Math.ceil((renderInfo.durationMs / 1000) * fps);
-    const avgFrameTimeMs = timing.renderFragment ? timing.renderFragment / numFrames : 0;
+    const avgFrameTimeMs = timing.renderFragment
+      ? timing.renderFragment / numFrames
+      : 0;
     const perfData = {
       testName: options.testName,
       renderMode: "server",
@@ -473,13 +550,13 @@ function sanitizeFilename(name: string): string {
  */
 function extractTestName(fullTestName?: string): string {
   if (!fullTestName) return "test";
-  
+
   // Remove common prefixes and suffixes
   const cleaned = fullTestName
     .replace(/^elements-smoke-/, "")
     .replace(/-server$/, "")
     .replace(/-browser-.*$/, "");
-  
+
   return sanitizeFilename(cleaned);
 }
 
@@ -497,7 +574,7 @@ async function getOrCreateTestAgent(): Promise<Selectable<TestAgent>> {
 
 /**
  * Bundle HTML template with caching.
- * 
+ *
  * Computes hash once, checks cache, bundles if needed.
  * Passes pre-computed hash to bundleTestTemplate to avoid double-hashing.
  */
@@ -511,19 +588,24 @@ async function getCachedOrBundleTemplate(
     .update(html)
     .digest("hex")
     .substring(0, 16);
-  
+
   // Check cache - simple Map lookup, no file I/O
   const cached = bundleCache.get(templateHash);
   if (cached) {
     bundleCacheHits++;
     return cached;
   }
-  
+
   // Cache miss - bundle with pre-computed hash to avoid re-hashing
   bundleCacheMisses++;
-  const bundleInfo = await bundleTestTemplate(html, testFilePath, testTitle, templateHash);
+  const bundleInfo = await bundleTestTemplate(
+    html,
+    testFilePath,
+    testTitle,
+    templateHash,
+  );
   bundleCache.set(templateHash, bundleInfo);
-  
+
   return bundleInfo;
 }
 
@@ -534,9 +616,13 @@ export function getBundleCacheStats() {
   return {
     hits: bundleCacheHits,
     misses: bundleCacheMisses,
-    hitRate: bundleCacheHits + bundleCacheMisses > 0 
-      ? (bundleCacheHits / (bundleCacheHits + bundleCacheMisses) * 100).toFixed(1) + '%'
-      : 'N/A',
+    hitRate:
+      bundleCacheHits + bundleCacheMisses > 0
+        ? (
+            (bundleCacheHits / (bundleCacheHits + bundleCacheMisses)) *
+            100
+          ).toFixed(1) + "%"
+        : "N/A",
     cacheSize: bundleCache.size,
   };
 }
@@ -563,7 +649,7 @@ export async function renderStill(
   height: number;
   templateHash: string;
 }> {
-  const testAgent = options.testAgent ?? await getOrCreateTestAgent();
+  const testAgent = options.testAgent ?? (await getOrCreateTestAgent());
   const electronRpc = await createElectronRPC();
 
   try {
@@ -603,8 +689,8 @@ export async function renderStill(
     const outputDir = options.outputDir || SHARED_OUTPUT_DIR;
     await mkdir(outputDir, { recursive: true });
 
-    const filename = options.testName 
-      ? `${sanitizeFilename(options.testName)}.${format}` 
+    const filename = options.testName
+      ? `${sanitizeFilename(options.testName)}.${format}`
       : `still.${format}`;
     const imagePath = path.join(outputDir, filename);
     await writeFile(imagePath, imageBuffer);

@@ -36,7 +36,7 @@ export function useKeyboardShortcut({
         const modifierPressed = event.metaKey || event.ctrlKey;
         const shiftMatch = shiftKey ? event.shiftKey : !event.shiftKey;
         const altMatch = altKey ? event.altKey : !event.altKey;
-        
+
         if (modifierPressed && shiftMatch && altMatch) {
           if (preventDefault) {
             event.preventDefault();
@@ -67,4 +67,3 @@ export function useKeyboardShortcut({
     };
   }, [key, metaKey, ctrlKey, shiftKey, altKey, onPress, preventDefault]);
 }
-

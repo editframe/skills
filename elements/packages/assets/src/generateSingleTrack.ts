@@ -7,10 +7,7 @@ import { generateFragmentIndex } from "./generateFragmentIndex.js";
 
 const log = debug("ef:generateSingleTrack");
 
-export const generateSingleTrackFromPath = async (
-  absolutePath: string,
-  trackId: number,
-) => {
+export const generateSingleTrackFromPath = async (absolutePath: string, trackId: number) => {
   log(`Generating track ${trackId} for ${absolutePath}`);
 
   const probe = await Probe.probePath(absolutePath);
@@ -19,9 +16,7 @@ export const generateSingleTrackFromPath = async (
   const streamIndex = trackId - 1;
 
   if (streamIndex < 0 || streamIndex >= probe.streams.length) {
-    throw new Error(
-      `Track ${trackId} not found (valid tracks: 1-${probe.streams.length})`,
-    );
+    throw new Error(`Track ${trackId} not found (valid tracks: 1-${probe.streams.length})`);
   }
 
   // Get the track stream from FFmpeg (single track, fragmented MP4)
@@ -50,11 +45,7 @@ export const generateSingleTrackFromPath = async (
   // This will be a single-track index since we're processing isolated track
   // Map the single-track file's track ID 1 to the original multi-track ID
   const trackIdMapping = { 1: trackId }; // Single track 1 -> original trackId
-  const fragmentIndexPromise = generateFragmentIndex(
-    indexStream,
-    undefined,
-    trackIdMapping,
-  );
+  const fragmentIndexPromise = generateFragmentIndex(indexStream, undefined, trackIdMapping);
 
   // End outputStream only after BOTH source ends AND fragment index completes
   fragmentIndexPromise
@@ -91,10 +82,7 @@ export const generateSingleTrackTask = idempotentTask({
 
     // Start fragment index processing immediately (don't wait for stream to end)
     const fragmentIndexPromise = result.fragmentIndex.catch((error) => {
-      console.warn(
-        `Fragment index generation failed for track ${trackId}:`,
-        error,
-      );
+      console.warn(`Fragment index generation failed for track ${trackId}:`, error);
       // Don't fail the stream if fragment index fails
     });
 
@@ -144,25 +132,13 @@ export const generateSingleTrackTask = idempotentTask({
   },
 });
 
-export const generateSingleTrack = async (
-  cacheRoot: string,
-  absolutePath: string,
-  url: string,
-) => {
+export const generateSingleTrack = async (cacheRoot: string, absolutePath: string, url: string) => {
   try {
-    const trackId = new URL(`http://localhost${url}`).searchParams.get(
-      "trackId",
-    );
+    const trackId = new URL(`http://localhost${url}`).searchParams.get("trackId");
     if (trackId === null) {
-      throw new Error(
-        "No trackId provided. It must be specified in the query string: ?trackId=0",
-      );
+      throw new Error("No trackId provided. It must be specified in the query string: ?trackId=0");
     }
-    return await generateSingleTrackTask(
-      cacheRoot,
-      absolutePath,
-      Number(trackId),
-    );
+    return await generateSingleTrackTask(cacheRoot, absolutePath, Number(trackId));
   } catch (error) {
     console.error(error);
     console.trace("Error generating track", error);

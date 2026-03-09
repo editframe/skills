@@ -28,11 +28,17 @@ export async function createOrgSession(
   });
 
   if (orgSession.protocol.isProtocolHandled(PROTOCOL)) {
-    logger.debug({ PROTOCOL, orgId }, "[CREATE_ORG_SESSION] Protocol already handled");
+    logger.debug(
+      { PROTOCOL, orgId },
+      "[CREATE_ORG_SESSION] Protocol already handled",
+    );
     return orgSession;
   }
-  
-  logger.debug({ PROTOCOL, orgId, WEB_HOST, hasBundle: !!assetsBundle }, "[CREATE_ORG_SESSION] Registering protocol handler");
+
+  logger.debug(
+    { PROTOCOL, orgId, WEB_HOST, hasBundle: !!assetsBundle },
+    "[CREATE_ORG_SESSION] Registering protocol handler",
+  );
 
   // Register protocol handler for /api/* URLs
   orgSession.protocol.handle(PROTOCOL, async (request: Request) => {
@@ -47,7 +53,10 @@ export async function createOrgSession(
     // Only handle /api/* requests
     // Accept requests to any host (localhost, web, etc.) to support different environments
     if (!isApiRequest) {
-      logger.debug({ url: request.url }, "[PROTOCOL_HANDLER] Not an API request, returning 404");
+      logger.debug(
+        { url: request.url },
+        "[PROTOCOL_HANDLER] Not an API request, returning 404",
+      );
       return new Response(null, { status: 404 });
     }
 
@@ -66,7 +75,11 @@ export async function createOrgSession(
         : null;
 
       logger.debug(
-        { assetId, hasFragmentIndex: !!fragmentIndex, bundleKeys: Object.keys(assetsBundle.fragmentIndexes) },
+        {
+          assetId,
+          hasFragmentIndex: !!fragmentIndex,
+          bundleKeys: Object.keys(assetsBundle.fragmentIndexes),
+        },
         "[PROTOCOL_HANDLER] Fragment index lookup in bundle",
       );
 
@@ -88,7 +101,7 @@ export async function createOrgSession(
 
     // Fall back to storage file lookup
     const filePath = getStorageKeyForPath(requestUrl.pathname, orgId);
-    
+
     logger.debug(
       { pathname: requestUrl.pathname, filePath, orgId },
       "[PROTOCOL_HANDLER] Falling back to storage lookup",
@@ -100,7 +113,10 @@ export async function createOrgSession(
     );
 
     if (!filePath) {
-      logger.warn({ pathname: requestUrl.pathname }, "[PROTOCOL_HANDLER] No file path found for request");
+      logger.warn(
+        { pathname: requestUrl.pathname },
+        "[PROTOCOL_HANDLER] No file path found for request",
+      );
       return new Response(JSON.stringify({ message: "Bad URL" }), {
         status: 404,
         statusText: "Not Found (bad URL)",
@@ -111,10 +127,17 @@ export async function createOrgSession(
       const rangeHeader = request.headers.get("Range");
 
       if (rangeHeader) {
-        logger.debug({ filePath, range: rangeHeader }, "[PROTOCOL_HANDLER] Serving range request from storage");
+        logger.debug(
+          { filePath, range: rangeHeader },
+          "[PROTOCOL_HANDLER] Serving range request from storage",
+        );
         const range = RangeHeader.parse(rangeHeader);
-        const readStream = await assetProvider.createReadStream(filePath, range);
-        const mimeType = getMimeTypeFromPath(filePath) || "application/octet-stream";
+        const readStream = await assetProvider.createReadStream(
+          filePath,
+          range,
+        );
+        const mimeType =
+          getMimeTypeFromPath(filePath) || "application/octet-stream";
         return new Response(createReadableStreamFromReadable(readStream), {
           status: 206,
           headers: {
@@ -126,7 +149,8 @@ export async function createOrgSession(
 
       logger.debug({ filePath }, "[PROTOCOL_HANDLER] Serving from storage");
       const readStream = await assetProvider.createReadStream(filePath);
-      const mimeType = getMimeTypeFromPath(filePath) || "application/octet-stream";
+      const mimeType =
+        getMimeTypeFromPath(filePath) || "application/octet-stream";
 
       return new Response(createReadableStreamFromReadable(readStream), {
         status: 200,
@@ -135,11 +159,20 @@ export async function createOrgSession(
         },
       });
     } catch (error) {
-      logger.error({ error, filePath, requestUrl: request.url }, "[PROTOCOL_HANDLER] Error reading from storage");
-      return new Response(JSON.stringify({ message: "Internal server error", error: String(error) }), {
-        status: 500,
-        statusText: "Internal Server Error",
-      });
+      logger.error(
+        { error, filePath, requestUrl: request.url },
+        "[PROTOCOL_HANDLER] Error reading from storage",
+      );
+      return new Response(
+        JSON.stringify({
+          message: "Internal server error",
+          error: String(error),
+        }),
+        {
+          status: 500,
+          statusText: "Internal Server Error",
+        },
+      );
     }
   });
 

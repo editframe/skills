@@ -7,20 +7,13 @@ import type { BufferedSeekingInput } from "../BufferedSeekingInput";
  */
 export class MainVideoInputCache {
   #cache = new Map<string, BufferedSeekingInput>();
-  #pendingPromises = new Map<
-    string,
-    Promise<BufferedSeekingInput | undefined>
-  >();
+  #pendingPromises = new Map<string, Promise<BufferedSeekingInput | undefined>>();
   #maxCacheSize = 10; // Keep last 10 main inputs (covers 20 seconds at 2s/segment)
 
   /**
    * Create a cache key that uniquely identifies a segment
    */
-  #getCacheKey(
-    src: string,
-    segmentId: number,
-    renditionId: string | undefined,
-  ): string {
+  #getCacheKey(src: string, segmentId: number, renditionId: string | undefined): string {
     return `${src}:${renditionId || "default"}:${segmentId}`;
   }
 

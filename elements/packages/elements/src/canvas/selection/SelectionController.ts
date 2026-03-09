@@ -87,10 +87,7 @@ export class SelectionController implements ReactiveController {
           controller.selectionModel.updateBoxSelect(x, y);
           queueMicrotask(() => controller.host.requestUpdate());
         },
-        endBoxSelect: (
-          hitTest: (bounds: DOMRect) => string[],
-          addToSelection?: boolean,
-        ) => {
+        endBoxSelect: (hitTest: (bounds: DOMRect) => string[], addToSelection?: boolean) => {
           const fn = hitTest || controller.hitTestFn;
           if (fn) {
             controller.selectionModel.endBoxSelect(fn, addToSelection ?? false);
@@ -114,28 +111,13 @@ export class SelectionController implements ReactiveController {
         getGroupElements: (groupId: string) => {
           return controller.selectionModel.getGroupElements(groupId);
         },
-        addEventListener: (
-          type: "selectionchange",
-          listener: (event: CustomEvent) => void,
-        ) => {
-          controller.selectionModel.addEventListener(
-            type,
-            listener as EventListener,
-          );
+        addEventListener: (type: "selectionchange", listener: (event: CustomEvent) => void) => {
+          controller.selectionModel.addEventListener(type, listener as EventListener);
         },
-        removeEventListener: (
-          type: "selectionchange",
-          listener: (event: CustomEvent) => void,
-        ) => {
-          controller.selectionModel.removeEventListener(
-            type,
-            listener as EventListener,
-          );
+        removeEventListener: (type: "selectionchange", listener: (event: CustomEvent) => void) => {
+          controller.selectionModel.removeEventListener(type, listener as EventListener);
         },
-      } as Omit<
-        SelectionContext,
-        "selectedIds" | "selectionMode" | "boxSelectBounds"
-      >,
+      } as Omit<SelectionContext, "selectedIds" | "selectionMode" | "boxSelectBounds">,
       {
         get(target, prop) {
           if (prop === "selectedIds") {

@@ -29,7 +29,9 @@ vi.mock("@/sql-client.server", () => ({
 }));
 
 import { db } from "@/sql-client.server";
-const mockSelectFrom = (db as unknown as { selectFrom: ReturnType<typeof vi.fn> }).selectFrom;
+const mockSelectFrom = (
+  db as unknown as { selectFrom: ReturnType<typeof vi.fn> }
+).selectFrom;
 
 // Import after mocking
 import {

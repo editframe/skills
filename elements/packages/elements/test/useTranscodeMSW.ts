@@ -55,10 +55,7 @@ export const transcodeMSWHandlers = [
     const sourceUrl = url.searchParams.get("url");
 
     if (!sourceUrl) {
-      return HttpResponse.json(
-        { error: "url parameter is required" },
-        { status: 400 },
-      );
+      return HttpResponse.json({ error: "url parameter is required" }, { status: 400 });
     }
 
     // Return a mock manifest response

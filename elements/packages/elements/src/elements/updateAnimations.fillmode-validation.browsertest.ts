@@ -60,9 +60,7 @@ describe("Animation Fill-Mode Validation", () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Check if warning was logged
-      const hasWarning = warnings.some(
-        (w) => typeof w === "string" && w.includes("backwards"),
-      );
+      const hasWarning = warnings.some((w) => typeof w === "string" && w.includes("backwards"));
 
       assert.isTrue(
         hasWarning,
@@ -126,15 +124,10 @@ describe("Animation Fill-Mode Validation", () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const hasWarning = warnings.some(
-        (w) =>
-          typeof w === "string" &&
-          (w.includes("fade-in") || w.includes("backwards")),
+        (w) => typeof w === "string" && (w.includes("fade-in") || w.includes("backwards")),
       );
 
-      assert.isTrue(
-        hasWarning,
-        "Should warn about fade-in animation without backwards fill-mode",
-      );
+      assert.isTrue(hasWarning, "Should warn about fade-in animation without backwards fill-mode");
 
       document.head.removeChild(style);
     } finally {
@@ -194,10 +187,7 @@ describe("Animation Fill-Mode Validation", () => {
         (w) => typeof w === "string" && w.includes("Fill-Mode Warning"),
       );
 
-      assert.isFalse(
-        hasWarning,
-        "Should not warn when backwards fill-mode is correctly specified",
-      );
+      assert.isFalse(hasWarning, "Should not warn when backwards fill-mode is correctly specified");
 
       document.head.removeChild(style);
     } finally {

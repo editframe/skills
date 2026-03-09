@@ -2,10 +2,7 @@ import { css, html, LitElement } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
 import type { ContextMixinInterface } from "../gui/ContextMixin.ts";
-import type {
-  FrameRenderable,
-  FrameState,
-} from "../preview/FrameController.js";
+import type { FrameRenderable, FrameState } from "../preview/FrameController.js";
 import { TargetController } from "./TargetController.ts";
 
 @customElement("ef-surface")

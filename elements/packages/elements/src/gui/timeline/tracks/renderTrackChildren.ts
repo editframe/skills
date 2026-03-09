@@ -1,9 +1,6 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { EFAudio } from "../../../elements/EFAudio.js";
-import {
-  EFCaptions,
-  EFCaptionsActiveWord,
-} from "../../../elements/EFCaptions.js";
+import { EFCaptions, EFCaptionsActiveWord } from "../../../elements/EFCaptions.js";
 import { EFImage } from "../../../elements/EFImage.js";
 import { EFText } from "../../../elements/EFText.js";
 import { EFTextSegment } from "../../../elements/EFTextSegment.js";
@@ -28,10 +25,7 @@ export function renderTrackChildren(
   useAbsolutePosition = false,
 ): Array<TemplateResult<1> | typeof nothing> {
   return children.map((child) => {
-    if (
-      !skipRootFiltering &&
-      !shouldRenderElement(child, hideSelectors, showSelectors)
-    ) {
+    if (!skipRootFiltering && !shouldRenderElement(child, hideSelectors, showSelectors)) {
       return nothing;
     }
 

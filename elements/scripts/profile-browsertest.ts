@@ -86,16 +86,13 @@ class SourceMapResolver {
 
     let sourceMapUrl = match[1];
     if (!sourceMapUrl.startsWith("http") && !sourceMapUrl.startsWith("data:")) {
-      sourceMapUrl =
-        scriptUrl.substring(0, scriptUrl.lastIndexOf("/") + 1) + sourceMapUrl;
+      sourceMapUrl = scriptUrl.substring(0, scriptUrl.lastIndexOf("/") + 1) + sourceMapUrl;
     }
 
     let sourceMapJson: string | null;
     if (sourceMapUrl.startsWith("data:")) {
       const dataMatch = sourceMapUrl.match(/^data:[^,]*base64,(.*)$/);
-      sourceMapJson = dataMatch
-        ? Buffer.from(dataMatch[1], "base64").toString("utf-8")
-        : null;
+      sourceMapJson = dataMatch ? Buffer.from(dataMatch[1], "base64").toString("utf-8") : null;
     } else {
       sourceMapJson = await this.fetchText(sourceMapUrl);
     }
@@ -191,9 +188,7 @@ Examples:
 
   const wsEndpointPath = path.join(monorepoRoot, ".wsEndpoint.json");
   if (!fs.existsSync(wsEndpointPath)) {
-    console.error(
-      "Browser server not running. Start with: ./scripts/start-host-chrome",
-    );
+    console.error("Browser server not running. Start with: ./scripts/start-host-chrome");
     process.exit(1);
   }
 
@@ -220,9 +215,7 @@ Examples:
   // Monitor for new targets being created
   console.log(`\n⏳ Waiting for Vitest test page to be created...`);
 
-  let vitestTarget:
-    | { targetId: string; type: string; title: string; url: string }
-    | undefined;
+  let vitestTarget: { targetId: string; type: string; title: string; url: string } | undefined;
   let attempts = 0;
   const maxAttempts = 20; // 10 seconds total
 
@@ -240,9 +233,7 @@ Examples:
     };
 
     if (attempts === 1 || attempts % 4 === 0) {
-      console.log(
-        `   Attempt ${attempts}: Found ${targetInfos.length} targets`,
-      );
+      console.log(`   Attempt ${attempts}: Found ${targetInfos.length} targets`);
       for (const target of targetInfos) {
         console.log(`     ${target.type}: ${target.url}`);
       }
@@ -269,17 +260,13 @@ Examples:
     }
 
     if (vitestTarget) {
-      console.log(
-        `✓ Found target after ${attempts * 0.5}s: ${vitestTarget.url}\n`,
-      );
+      console.log(`✓ Found target after ${attempts * 0.5}s: ${vitestTarget.url}\n`);
       break;
     }
   }
 
   if (!vitestTarget) {
-    console.error(
-      `\n❌ Could not find a suitable page to profile after ${maxAttempts * 0.5}s!`,
-    );
+    console.error(`\n❌ Could not find a suitable page to profile after ${maxAttempts * 0.5}s!`);
     await browserCdp.detach();
     browsertest.kill();
     process.exit(1);
@@ -296,9 +283,7 @@ Examples:
   // Use Chrome's default sampling interval of 1000μs (1ms) for more stable sampling
   const samplingIntervalUs = 1000;
   console.log(`🎯 Profiling target: ${vitestTarget.url}`);
-  console.log(
-    `🎬 Starting profiler with ${samplingIntervalUs}μs sampling interval...\n`,
-  );
+  console.log(`🎬 Starting profiler with ${samplingIntervalUs}μs sampling interval...\n`);
 
   // Set up message handling for responses from the target
   let messageId = 1;
@@ -387,9 +372,7 @@ Examples:
   const pollStartTime = Date.now();
   let stopReason = "";
 
-  console.log(
-    `⏳ Polling for stop signal (checking every ${pollInterval}ms)...`,
-  );
+  console.log(`⏳ Polling for stop signal (checking every ${pollInterval}ms)...`);
 
   let pollCount = 0;
   while (true) {
@@ -457,17 +440,13 @@ Examples:
     } catch (e: any) {
       // Page closed or session lost
       stopReason = "CDP session lost or page closed";
-      console.log(
-        `✓ CDP session lost or page closed (poll #${pollCount}, error: ${e.message})`,
-      );
+      console.log(`✓ CDP session lost or page closed (poll #${pollCount}, error: ${e.message})`);
       break;
     }
   }
 
   const profilingDuration = Date.now() - pollStartTime;
-  console.log(
-    `\n⏱️  Profiled for ${(profilingDuration / 1000).toFixed(2)}s (${stopReason})`,
-  );
+  console.log(`\n⏱️  Profiled for ${(profilingDuration / 1000).toFixed(2)}s (${stopReason})`);
 
   // Stop profiling while CDP session is still alive
   try {
@@ -501,14 +480,10 @@ Examples:
 
   // Get final URL
   try {
-    const { targetInfos: finalTargets } = (await browserCdp.send(
-      "Target.getTargets",
-    )) as {
+    const { targetInfos: finalTargets } = (await browserCdp.send("Target.getTargets")) as {
       targetInfos: Array<{ targetId: string; url: string }>;
     };
-    const finalTarget = finalTargets.find(
-      (t) => t.targetId === vitestTarget.targetId,
-    );
+    const finalTarget = finalTargets.find((t) => t.targetId === vitestTarget.targetId);
     finalUrl = finalTarget?.url || vitestTarget.url;
   } catch {
     // Target may be gone
@@ -520,12 +495,8 @@ Examples:
   console.log(`📄 Final page URL: ${finalUrl}`);
 
   if (!profile) {
-    console.log(
-      `\n❌ No profile data captured - session closed before profiling could complete.`,
-    );
-    console.log(
-      `   Try profiling a longer-running test or add delays to keep the page open.`,
-    );
+    console.log(`\n❌ No profile data captured - session closed before profiling could complete.`);
+    console.log(`   Try profiling a longer-running test or add delays to keep the page open.`);
     process.exit(1);
   }
 
@@ -598,10 +569,7 @@ Examples:
   }
 
   // Save profile anyway
-  const fullOutputPath = path.resolve(
-    path.join(monorepoRoot, "elements"),
-    outputPath,
-  );
+  const fullOutputPath = path.resolve(path.join(monorepoRoot, "elements"), outputPath);
   fs.writeFileSync(fullOutputPath, JSON.stringify(profile, null, 2));
   console.log(`\n💾 Profile saved to: ${fullOutputPath}`);
 
@@ -611,11 +579,7 @@ Examples:
     sourceMapResolver = new SourceMapResolver();
 
     console.log(`\n🔍 Running detailed hotspot analysis...`);
-    const analysisData = await printProfileAnalysis(
-      profile,
-      focusFile,
-      wallClockMs,
-    );
+    const analysisData = await printProfileAnalysis(profile, focusFile, wallClockMs);
 
     // Generate markdown report
     const profilesDir = path.join(monorepoRoot, "elements", ".profiles");
@@ -633,11 +597,8 @@ Examples:
 
     // Also run the standard profiling analysis if available
     try {
-      const {
-        analyzeProfile,
-        formatProfileAnalysis,
-        formatProfileAnalysisJSON,
-      } = await import("../packages/elements/src/profiling/index.js");
+      const { analyzeProfile, formatProfileAnalysis, formatProfileAnalysisJSON } =
+        await import("../packages/elements/src/profiling/index.js");
 
       const analysis = analyzeProfile(profile, {
         filterNodeModules: true,
@@ -689,11 +650,7 @@ function findMonorepoRoot(): string | null {
   return null;
 }
 
-async function printProfileAnalysis(
-  profile: CPUProfile,
-  focusFile: string,
-  wallClockMs: number,
-) {
+async function printProfileAnalysis(profile: CPUProfile, focusFile: string, wallClockMs: number) {
   // Calculate self time (hit counts)
   const selfCounts = new Map<number, number>();
   for (const sample of profile.samples) {
@@ -751,16 +708,12 @@ async function printProfileAnalysis(
 
   const sampleIntervalUs =
     profile.timeDeltas.length > 0
-      ? profile.timeDeltas.reduce((a, b) => a + b, 0) /
-        profile.timeDeltas.length
+      ? profile.timeDeltas.reduce((a, b) => a + b, 0) / profile.timeDeltas.length
       : 1000;
   const totalSamples = profile.samples.length;
   const profileTimeMs = (totalSamples * sampleIntervalUs) / 1000;
 
-  const resolvedLocations = new Map<
-    number,
-    { source: string; line: number } | null
-  >();
+  const resolvedLocations = new Map<number, { source: string; line: number } | null>();
   if (sourceMapResolver) {
     for (const node of profile.nodes) {
       if (node.callFrame.url?.startsWith("http")) {
@@ -834,15 +787,9 @@ async function printProfileAnalysis(
     byFileSamples.set(h.file, (byFileSamples.get(h.file) || 0) + h.selfSamples);
   }
 
-  console.log(
-    `\n┌─ TOP 20 FILES BY SELF TIME (time spent in file code itself) ─────────────┐`,
-  );
-  console.log(
-    `│ Rank │  Self Time │  Self % │ Samples │ File                              │`,
-  );
-  console.log(
-    `├──────┼────────────┼─────────┼─────────┼───────────────────────────────────┤`,
-  );
+  console.log(`\n┌─ TOP 20 FILES BY SELF TIME (time spent in file code itself) ─────────────┐`);
+  console.log(`│ Rank │  Self Time │  Self % │ Samples │ File                              │`);
+  console.log(`├──────┼────────────┼─────────┼─────────┼───────────────────────────────────┤`);
   const topFilesBySelf = Array.from(byFileSelf.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, 20);
@@ -853,15 +800,10 @@ async function printProfileAnalysis(
     const timeStr = `${time.toFixed(1)}ms`.padStart(10);
     const pctStr = `${pct}%`.padStart(7);
     const samplesStr = samples.toString().padStart(7);
-    const fileName =
-      file.length > 35 ? "..." + file.slice(-32) : file.padEnd(35);
-    console.log(
-      `│ ${rank} │ ${timeStr} │ ${pctStr} │ ${samplesStr} │ ${fileName} │`,
-    );
+    const fileName = file.length > 35 ? "..." + file.slice(-32) : file.padEnd(35);
+    console.log(`│ ${rank} │ ${timeStr} │ ${pctStr} │ ${samplesStr} │ ${fileName} │`);
   });
-  console.log(
-    `└──────┴────────────┴─────────┴─────────┴───────────────────────────────────┘`,
-  );
+  console.log(`└──────┴────────────┴─────────┴─────────┴───────────────────────────────────┘`);
 
   // Filter to our code (TypeScript files, not node_modules)
   const ourCode = hotspots.filter(
@@ -872,18 +814,10 @@ async function printProfileAnalysis(
   );
 
   if (ourCode.length > 0) {
-    console.log(
-      `\n┌─ TOP 20 FUNCTIONS BY SELF TIME (time in function itself) ─────────────────┐`,
-    );
-    console.log(
-      `│ Rank │  Self Time │  Self % │ Samples │ Function @ Location                │`,
-    );
-    console.log(
-      `├──────┼────────────┼─────────┼─────────┼────────────────────────────────────┤`,
-    );
-    const bySelf = [...ourCode]
-      .sort((a, b) => b.selfTimeMs - a.selfTimeMs)
-      .slice(0, 20);
+    console.log(`\n┌─ TOP 20 FUNCTIONS BY SELF TIME (time in function itself) ─────────────────┐`);
+    console.log(`│ Rank │  Self Time │  Self % │ Samples │ Function @ Location                │`);
+    console.log(`├──────┼────────────┼─────────┼─────────┼────────────────────────────────────┤`);
+    const bySelf = [...ourCode].sort((a, b) => b.selfTimeMs - a.selfTimeMs).slice(0, 20);
     bySelf.forEach((h, idx) => {
       const rank = (idx + 1).toString().padStart(4);
       const timeStr = `${h.selfTimeMs.toFixed(1)}ms`.padStart(10);
@@ -891,29 +825,15 @@ async function printProfileAnalysis(
       const samplesStr = h.selfSamples.toString().padStart(7);
       const location = `${h.functionName} @ ${h.file}:${h.line}`;
       const locationStr =
-        location.length > 40
-          ? location.slice(0, 37) + "..."
-          : location.padEnd(40);
-      console.log(
-        `│ ${rank} │ ${timeStr} │ ${pctStr} │ ${samplesStr} │ ${locationStr} │`,
-      );
+        location.length > 40 ? location.slice(0, 37) + "..." : location.padEnd(40);
+      console.log(`│ ${rank} │ ${timeStr} │ ${pctStr} │ ${samplesStr} │ ${locationStr} │`);
     });
-    console.log(
-      `└──────┴────────────┴─────────┴─────────┴────────────────────────────────────┘`,
-    );
+    console.log(`└──────┴────────────┴─────────┴─────────┴────────────────────────────────────┘`);
 
-    console.log(
-      `\n┌─ TOP 20 FUNCTIONS BY TOTAL TIME (including callees) ──────────────────────┐`,
-    );
-    console.log(
-      `│ Rank │ Total Time │ Total % │ Self Time │ Function @ Location               │`,
-    );
-    console.log(
-      `├──────┼────────────┼─────────┼───────────┼───────────────────────────────────┤`,
-    );
-    const byTotal = [...ourCode]
-      .sort((a, b) => b.totalTimeMs - a.totalTimeMs)
-      .slice(0, 20);
+    console.log(`\n┌─ TOP 20 FUNCTIONS BY TOTAL TIME (including callees) ──────────────────────┐`);
+    console.log(`│ Rank │ Total Time │ Total % │ Self Time │ Function @ Location               │`);
+    console.log(`├──────┼────────────┼─────────┼───────────┼───────────────────────────────────┤`);
+    const byTotal = [...ourCode].sort((a, b) => b.totalTimeMs - a.totalTimeMs).slice(0, 20);
     byTotal.forEach((h, idx) => {
       const rank = (idx + 1).toString().padStart(4);
       const totalStr = `${h.totalTimeMs.toFixed(1)}ms`.padStart(10);
@@ -921,16 +841,10 @@ async function printProfileAnalysis(
       const selfStr = `${h.selfTimeMs.toFixed(1)}ms`.padStart(9);
       const location = `${h.functionName} @ ${h.file}:${h.line}`;
       const locationStr =
-        location.length > 39
-          ? location.slice(0, 36) + "..."
-          : location.padEnd(39);
-      console.log(
-        `│ ${rank} │ ${totalStr} │ ${pctStr} │ ${selfStr} │ ${locationStr} │`,
-      );
+        location.length > 39 ? location.slice(0, 36) + "..." : location.padEnd(39);
+      console.log(`│ ${rank} │ ${totalStr} │ ${pctStr} │ ${selfStr} │ ${locationStr} │`);
     });
-    console.log(
-      `└──────┴────────────┴─────────┴───────────┴───────────────────────────────────┘`,
-    );
+    console.log(`└──────┴────────────┴─────────┴───────────┴───────────────────────────────────┘`);
 
     // Call tree analysis for top hotspot
     if (bySelf.length > 0) {
@@ -939,18 +853,14 @@ async function printProfileAnalysis(
         `\n┌─ CALL TREE FOR TOP HOTSPOT ────────────────────────────────────────────────┐`,
       );
       console.log(
-        `│ ${topHotspot.functionName} @ ${topHotspot.file}:${topHotspot.line}`.padEnd(
-          79,
-        ) + "│",
+        `│ ${topHotspot.functionName} @ ${topHotspot.file}:${topHotspot.line}`.padEnd(79) + "│",
       );
       console.log(
         `│ Self: ${topHotspot.selfTimeMs.toFixed(1)}ms | Total: ${topHotspot.totalTimeMs.toFixed(1)}ms`.padEnd(
           79,
         ) + "│",
       );
-      console.log(
-        `├────────────────────────────────────────────────────────────────────────────┤`,
-      );
+      console.log(`├────────────────────────────────────────────────────────────────────────────┤`);
 
       // Find callers (parents)
       const callers = new Map<number, number>();
@@ -999,41 +909,25 @@ async function printProfileAnalysis(
         }
       }
 
-      console.log(
-        `└────────────────────────────────────────────────────────────────────────────┘`,
-      );
+      console.log(`└────────────────────────────────────────────────────────────────────────────┘`);
     }
 
     // Function call frequency analysis
-    console.log(
-      `\n┌─ MOST FREQUENTLY SAMPLED FUNCTIONS ────────────────────────────────────────┐`,
-    );
-    console.log(
-      `│ Rank │ Samples │ Function @ Location                                      │`,
-    );
-    console.log(
-      `├──────┼─────────┼──────────────────────────────────────────────────────────┤`,
-    );
-    const byFrequency = [...ourCode]
-      .sort((a, b) => b.selfSamples - a.selfSamples)
-      .slice(0, 10);
+    console.log(`\n┌─ MOST FREQUENTLY SAMPLED FUNCTIONS ────────────────────────────────────────┐`);
+    console.log(`│ Rank │ Samples │ Function @ Location                                      │`);
+    console.log(`├──────┼─────────┼──────────────────────────────────────────────────────────┤`);
+    const byFrequency = [...ourCode].sort((a, b) => b.selfSamples - a.selfSamples).slice(0, 10);
     byFrequency.forEach((h, idx) => {
       const rank = (idx + 1).toString().padStart(4);
       const samplesStr = h.selfSamples.toString().padStart(7);
       const location = `${h.functionName} @ ${h.file}:${h.line}`;
       const locationStr =
-        location.length > 58
-          ? location.slice(0, 55) + "..."
-          : location.padEnd(58);
+        location.length > 58 ? location.slice(0, 55) + "..." : location.padEnd(58);
       console.log(`│ ${rank} │ ${samplesStr} │ ${locationStr} │`);
     });
-    console.log(
-      `└──────┴─────────┴──────────────────────────────────────────────────────────┘`,
-    );
+    console.log(`└──────┴─────────┴──────────────────────────────────────────────────────────┘`);
   } else {
-    console.log(
-      `\n⚠️  No TypeScript code found in profile - may be profiling wrong page`,
-    );
+    console.log(`\n⚠️  No TypeScript code found in profile - may be profiling wrong page`);
   }
 
   console.log(`\n${"=".repeat(100)}`);
@@ -1100,15 +994,13 @@ async function generateMarkdownReport(
   markdown += `Self time = time spent executing code in the file itself (not in functions it calls)\n\n`;
   markdown += `| Rank | Self Time | Self % | Samples | File |\n`;
   markdown += `|------|-----------|--------|---------|------|\n`;
-  analysis.topFilesBySelf.forEach(
-    ([file, time]: [string, number], idx: number) => {
-      const pct = ((time / analysis.profileTimeMs) * 100).toFixed(1);
-      const samples = analysis.hotspots
-        .filter((h: any) => h.file === file)
-        .reduce((sum: number, h: any) => sum + h.selfSamples, 0);
-      markdown += `| ${idx + 1} | ${time.toFixed(1)}ms | ${pct}% | ${samples.toLocaleString()} | \`${file}\` |\n`;
-    },
-  );
+  analysis.topFilesBySelf.forEach(([file, time]: [string, number], idx: number) => {
+    const pct = ((time / analysis.profileTimeMs) * 100).toFixed(1);
+    const samples = analysis.hotspots
+      .filter((h: any) => h.file === file)
+      .reduce((sum: number, h: any) => sum + h.selfSamples, 0);
+    markdown += `| ${idx + 1} | ${time.toFixed(1)}ms | ${pct}% | ${samples.toLocaleString()} | \`${file}\` |\n`;
+  });
   markdown += `\n`;
 
   markdown += `## Top 20 Functions by Self Time\n\n`;
@@ -1135,9 +1027,7 @@ async function generateMarkdownReport(
   markdown += `|------|---------|----------|-----------------|----------|----------|\n`;
   byFrequency.forEach((h: any, idx: number) => {
     const avgTimePerSample = (analysis.sampleIntervalUs / 1000).toFixed(3);
-    const samplePct = ((h.selfSamples / analysis.totalSamples) * 100).toFixed(
-      2,
-    );
+    const samplePct = ((h.selfSamples / analysis.totalSamples) * 100).toFixed(2);
     markdown += `| ${idx + 1} | ${h.selfSamples.toLocaleString()} | ${samplePct}% | ${avgTimePerSample}ms | \`${h.functionName}\` | \`${h.file}:${h.line}\` |\n`;
   });
   markdown += `\n`;
@@ -1158,9 +1048,7 @@ async function generateMarkdownReport(
   }
 
   if (bySelf.length >= 3) {
-    const top3Time = bySelf
-      .slice(0, 3)
-      .reduce((sum: number, h: any) => sum + h.selfTimeMs, 0);
+    const top3Time = bySelf.slice(0, 3).reduce((sum: number, h: any) => sum + h.selfTimeMs, 0);
     const top3Pct = ((top3Time / analysis.profileTimeMs) * 100).toFixed(1);
     markdown += `### Top 3 Functions\n\n`;
     markdown += `The top 3 functions account for **${top3Time.toFixed(1)}ms (${top3Pct}%)** of total profile time:\n\n`;

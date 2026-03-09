@@ -43,13 +43,7 @@ export function getCornerPoint(
   const centerY = y + height / 2;
   const localCornerX = x + xMagnitude * width;
   const localCornerY = y + yMagnitude * height;
-  return rotatePoint(
-    centerX,
-    centerY,
-    localCornerX,
-    localCornerY,
-    rotationRadians,
-  );
+  return rotatePoint(centerX, centerY, localCornerX, localCornerY, rotationRadians);
 }
 
 /**

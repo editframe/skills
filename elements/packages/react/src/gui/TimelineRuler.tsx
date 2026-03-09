@@ -16,21 +16,15 @@ const BaseTimelineRuler = createComponent<EFTimelineRuler, {}>({
   elementClass: EFTimelineRuler,
   react: React,
   displayName: "TimelineRuler",
-}) as React.ForwardRefExoticComponent<
-  TimelineRulerProps & React.RefAttributes<EFTimelineRuler>
->;
+}) as React.ForwardRefExoticComponent<TimelineRulerProps & React.RefAttributes<EFTimelineRuler>>;
 
-export const TimelineRuler = React.forwardRef<
-  EFTimelineRuler,
-  TimelineRulerProps
->((props, ref) => {
+export const TimelineRuler = React.forwardRef<EFTimelineRuler, TimelineRulerProps>((props, ref) => {
   const { scrollContainerRef, ...restProps } = props;
   const elementRef = React.useRef<EFTimelineRuler | null>(null);
 
   React.useLayoutEffect(() => {
     if (elementRef.current && scrollContainerRef?.current) {
-      (elementRef.current as any).scrollContainerElement =
-        scrollContainerRef.current;
+      (elementRef.current as any).scrollContainerElement = scrollContainerRef.current;
     } else if (elementRef.current) {
       (elementRef.current as any).scrollContainerElement = null;
     }

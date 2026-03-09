@@ -30,9 +30,7 @@ export const defineWorker = (config: QueueConfig, gpu?: GpuConfig) => {
     ? { "nvidia.com/gpu": "1" }
     : {};
 
-  const nodeSelector = gpu
-    ? { accelerator: gpu.type }
-    : undefined;
+  const nodeSelector = gpu ? { accelerator: gpu.type } : undefined;
 
   return new gcp.cloudrunv2.Service(
     `telecine-worker-${config.name}`,
@@ -43,7 +41,9 @@ export const defineWorker = (config: QueueConfig, gpu?: GpuConfig) => {
       name: `telecine-worker-${config.name}`,
       project: "editframe",
       template: {
-        ...(gpu ? { gpuZonalRedundancyDisabled: gpu.zonalRedundancyDisabled } : {}),
+        ...(gpu
+          ? { gpuZonalRedundancyDisabled: gpu.zonalRedundancyDisabled }
+          : {}),
         scaling: {
           minInstanceCount: config.minWorkerCount,
           maxInstanceCount: config.maxWorkerCount,

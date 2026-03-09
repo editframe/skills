@@ -5,9 +5,7 @@ import { Probe } from "../Probe.js";
 import { generateFragmentIndex } from "../generateFragmentIndex.js";
 import type { TrackFragmentIndex } from "../Probe.js";
 
-export const generateTrackFragmentIndexFromPath = async (
-  absolutePath: string,
-) => {
+export const generateTrackFragmentIndexFromPath = async (absolutePath: string) => {
   const log = debug("ef:generateTrackFragment");
   const probe = await Probe.probePath(absolutePath);
 
@@ -15,14 +13,10 @@ export const generateTrackFragmentIndexFromPath = async (
   if (startTimeOffsetMs !== undefined) {
     log(`Extracted start_time offset: ${startTimeOffsetMs}ms`);
   } else {
-    log(
-      "No format/stream timing offset found - will detect from composition time",
-    );
+    log("No format/stream timing offset found - will detect from composition time");
   }
 
-  log(
-    `Generating track fragment index for ${absolutePath} using single-track approach`,
-  );
+  log(`Generating track fragment index for ${absolutePath} using single-track approach`);
 
   // Process all audio/video streams and scrub track in parallel
   const trackTasks = probe.streams
@@ -34,16 +28,9 @@ export const generateTrackFragmentIndexFromPath = async (
       log(`Processing track ${trackId} (${stream.codec_type})`);
       const trackStream = probe.createTrackReadstream(streamIndex);
       const trackIdMapping = { 0: trackId };
-      return generateFragmentIndex(
-        trackStream,
-        startTimeOffsetMs,
-        trackIdMapping,
-      );
+      return generateFragmentIndex(trackStream, startTimeOffsetMs, trackIdMapping);
     })
-    .filter(
-      (task): task is Promise<Record<number, TrackFragmentIndex>> =>
-        task !== null,
-    );
+    .filter((task): task is Promise<Record<number, TrackFragmentIndex>> => task !== null);
 
   const scrubTask: Promise<Record<number, TrackFragmentIndex> | null> =
     probe.videoStreams.length > 0
@@ -52,11 +39,9 @@ export const generateTrackFragmentIndexFromPath = async (
             log("Generating scrub track fragment index");
             const scrubStream = probe.createScrubTrackReadstream();
             const scrubTrackId = -1;
-            const result = await generateFragmentIndex(
-              scrubStream,
-              startTimeOffsetMs,
-              { 0: scrubTrackId },
-            );
+            const result = await generateFragmentIndex(scrubStream, startTimeOffsetMs, {
+              0: scrubTrackId,
+            });
             log("Scrub track fragment index generated successfully");
             return result;
           } catch (error) {
@@ -66,10 +51,7 @@ export const generateTrackFragmentIndexFromPath = async (
         })()
       : Promise.resolve(null);
 
-  const [trackResults, scrubResult] = await Promise.all([
-    Promise.all(trackTasks),
-    scrubTask,
-  ]);
+  const [trackResults, scrubResult] = await Promise.all([Promise.all(trackTasks), scrubTask]);
 
   const trackFragmentIndexes: Record<number, TrackFragmentIndex> = {};
   for (const result of trackResults) {
@@ -91,10 +73,7 @@ const generateTrackFragmentIndexTask = idempotentTask({
   },
 });
 
-export const generateTrackFragmentIndex = async (
-  cacheRoot: string,
-  absolutePath: string,
-) => {
+export const generateTrackFragmentIndex = async (cacheRoot: string, absolutePath: string) => {
   try {
     return await generateTrackFragmentIndexTask(cacheRoot, absolutePath);
   } catch (error) {

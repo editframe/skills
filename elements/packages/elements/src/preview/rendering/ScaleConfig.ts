@@ -87,10 +87,7 @@ export class ScaleConfig {
 
     // Combine display scale, export scale, and quality multiplier
     // Cap at 1.0 to never upscale beyond natural resolution
-    const optimalScale = Math.min(
-      1.0,
-      displayScale * this.exportScale * this.qualityMultiplier,
-    );
+    const optimalScale = Math.min(1.0, displayScale * this.exportScale * this.qualityMultiplier);
 
     return optimalScale;
   }
@@ -123,11 +120,7 @@ export class ScaleConfig {
    * Create a ScaleConfig from legacy options.
    * Maintains backward compatibility with existing callsites.
    */
-  static fromOptions(
-    width: number,
-    height: number,
-    canvasScale: number,
-  ): ScaleConfig {
+  static fromOptions(width: number, height: number, canvasScale: number): ScaleConfig {
     return new ScaleConfig(width, height, canvasScale);
   }
 }

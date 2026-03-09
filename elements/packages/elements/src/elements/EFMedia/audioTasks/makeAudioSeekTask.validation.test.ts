@@ -7,9 +7,7 @@ import { describe, test } from "vitest";
  * The task is only awaited for synchronization purposes in EFAudio.frameTask.
  */
 describe("makeAudioSeekTask validation", () => {
-  test("audioSeekTask returns undefined and is not used for rendering", ({
-    expect,
-  }) => {
+  test("audioSeekTask returns undefined and is not used for rendering", ({ expect }) => {
     // The task implementation returns undefined (see makeAudioSeekTask.ts)
     // This is intentional - the task is only used for synchronization
 
@@ -18,9 +16,7 @@ describe("makeAudioSeekTask validation", () => {
     expect(true).toBe(true); // Test passes if this file exists and returns undefined
   });
 
-  test("audioSeekTask result is never passed to audio encoder or renderer", ({
-    expect,
-  }) => {
+  test("audioSeekTask result is never passed to audio encoder or renderer", ({ expect }) => {
     // VALIDATION: The audio rendering pipeline uses fetchAudioSpanningTime() which:
     // - Uses mediaEngineTask.taskComplete
     // - Uses audioInitSegmentFetchTask.taskComplete
@@ -35,9 +31,7 @@ describe("makeAudioSeekTask validation", () => {
     expect(true).toBe(true); // Documentation test
   });
 
-  test("audioSeekTask is only used for synchronization in EFAudio.frameTask", ({
-    expect,
-  }) => {
+  test("audioSeekTask is only used for synchronization in EFAudio.frameTask", ({ expect }) => {
     // VERIFICATION: In EFAudio.ts line 49:
     // await this.audioSeekTask.taskComplete;
     //
@@ -47,9 +41,7 @@ describe("makeAudioSeekTask validation", () => {
     expect(true).toBe(true); // Documentation test
   });
 
-  test("audio rendering pipeline uses fetchAudioSpanningTime, not audioSeekTask", ({
-    expect,
-  }) => {
+  test("audio rendering pipeline uses fetchAudioSpanningTime, not audioSeekTask", ({ expect }) => {
     // VERIFICATION: renderTemporalAudio.ts line 65:
     // const audio = await mediaElement.fetchAudioSpanningTime(...)
     //

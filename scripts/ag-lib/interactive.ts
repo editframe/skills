@@ -11,7 +11,7 @@ export async function startInteractivePlanner() {
   // Get or create a default queue
   const queues = queue.listQueues();
   let queueId: string;
-  
+
   if (queues.length === 0) {
     console.log(chalk.cyan("No plan queue found. Creating a new one..."));
     queueId = queue.createQueue("Default Planning Queue");
@@ -44,7 +44,10 @@ Be conversational and helpful. Ask clarifying questions. Help the user think thr
   // Create a chat session
   let chatId: string;
   try {
-    const chatIdOutput = execSync("cursor agent create-chat", { encoding: "utf-8", cwd: workspace });
+    const chatIdOutput = execSync("cursor agent create-chat", {
+      encoding: "utf-8",
+      cwd: workspace,
+    });
     chatId = chatIdOutput.trim();
     console.log(chalk.gray(`Chat ID: ${chatId}\n`));
   } catch (error: any) {
@@ -55,7 +58,7 @@ Be conversational and helpful. Ask clarifying questions. Help the user think thr
   // Set up readline for user input
   const rl = readline.createInterface({
     input: process.stdin,
-    output: process.stdout
+    output: process.stdout,
   });
 
   const question = (prompt: string): Promise<string> => {
@@ -66,24 +69,27 @@ Be conversational and helpful. Ask clarifying questions. Help the user think thr
 
   // First, send initial prompt to start the conversation
   console.log(chalk.gray("Initializing agent...\n"));
-  
+
   let agentOutput = "";
   let agentError = "";
-  
+
   try {
     const args = [
       "agent",
       "--print",
-      "--workspace", workspace,
-      "--model", model,
-      "--resume", chatId,
-      initialPrompt
+      "--workspace",
+      workspace,
+      "--model",
+      model,
+      "--resume",
+      chatId,
+      initialPrompt,
     ];
 
     const proc = spawn("cursor", args, {
       cwd: workspace,
       stdio: ["ignore", "pipe", "pipe"],
-      env: { ...process.env, AG_QUEUE_ID: queueId }
+      env: { ...process.env, AG_QUEUE_ID: queueId },
     });
 
     await new Promise<void>((resolve, reject) => {
@@ -128,7 +134,9 @@ Be conversational and helpful. Ask clarifying questions. Help the user think thr
   try {
     while (true) {
       // Ask user for input
-      const userInput = await question(chalk.yellow("Your feedback (or 'exit' to quit): "));
+      const userInput = await question(
+        chalk.yellow("Your feedback (or 'exit' to quit): "),
+      );
 
       if (userInput.trim().toLowerCase() === "exit") {
         break;
@@ -147,10 +155,13 @@ Be conversational and helpful. Ask clarifying questions. Help the user think thr
         const args = [
           "agent",
           "--print",
-          "--workspace", workspace,
-          "--model", model,
-          "--resume", chatId,
-          userInput
+          "--workspace",
+          workspace,
+          "--model",
+          model,
+          "--resume",
+          chatId,
+          userInput,
         ];
 
         console.log(chalk.gray("Thinking...\n"));
@@ -158,7 +169,7 @@ Be conversational and helpful. Ask clarifying questions. Help the user think thr
         const proc = spawn("cursor", args, {
           cwd: workspace,
           stdio: ["ignore", "pipe", "pipe"],
-          env: { ...process.env, AG_QUEUE_ID: queueId }
+          env: { ...process.env, AG_QUEUE_ID: queueId },
         });
 
         await new Promise<void>((resolve, reject) => {
@@ -174,7 +185,9 @@ Be conversational and helpful. Ask clarifying questions. Help the user think thr
             if (code === 0) {
               resolve();
             } else {
-              reject(new Error(`Agent exited with code ${code}: ${agentError}`));
+              reject(
+                new Error(`Agent exited with code ${code}: ${agentError}`),
+              );
             }
           });
 
@@ -191,10 +204,11 @@ Be conversational and helpful. Ask clarifying questions. Help the user think thr
         } else {
           console.log(chalk.gray("(No response from agent)\n"));
         }
-
       } catch (error: any) {
         console.error(chalk.red(`\nError: ${error.message}`));
-        const continueOnError = await question(chalk.yellow("Continue? (y/n): "));
+        const continueOnError = await question(
+          chalk.yellow("Continue? (y/n): "),
+        );
         if (continueOnError.toLowerCase() !== "y") {
           break;
         }

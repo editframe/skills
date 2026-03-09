@@ -114,10 +114,7 @@ export class EFTextTrack extends TrackItem {
   /**
    * Check if segments can fit individually based on track width
    */
-  #canShowSegmentsIndividually(
-    segments: EFTextSegment[],
-    trackWidthPx: number,
-  ): boolean {
+  #canShowSegmentsIndividually(segments: EFTextSegment[], trackWidthPx: number): boolean {
     if (segments.length === 0) return false;
     // Need at least 20px per segment
     return trackWidthPx >= segments.length * 20;
@@ -125,16 +122,11 @@ export class EFTextTrack extends TrackItem {
 
   render() {
     const text = this.element as EFText;
-    const segments = Array.from(
-      text.querySelectorAll("ef-text-segment"),
-    ) as EFTextSegment[];
+    const segments = Array.from(text.querySelectorAll("ef-text-segment")) as EFTextSegment[];
     const textContent = this.#getTextContent(segments);
     const durationMs = text.durationMs ?? 0;
     const trackWidthPx = durationMs * this.pixelsPerMs;
-    const canShowSegments = this.#canShowSegmentsIndividually(
-      segments,
-      trackWidthPx,
-    );
+    const canShowSegments = this.#canShowSegmentsIndividually(segments, trackWidthPx);
 
     return html`<div style=${styleMap(this.gutterStyles)}>
       <div
@@ -268,8 +260,7 @@ export class EFTextSegmentTrack extends TrackItem {
     const textLocalTimeMs = currentTimeMs - parentText.startTimeMs;
 
     const isCurrentlyActive =
-      textLocalTimeMs >= segment.segmentStartMs &&
-      textLocalTimeMs < segment.segmentEndMs;
+      textLocalTimeMs >= segment.segmentStartMs && textLocalTimeMs < segment.segmentEndMs;
 
     return html`<div style=${styleMap(this.textTrackStyles)}>
       <div class="relative border h-[1.1rem] mb-[1px] w-full" style="background-color: var(--filmstrip-bg); border-color: var(--filmstrip-border);">

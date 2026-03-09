@@ -30,12 +30,9 @@ interface OtlpAttributeValue {
 function convertAttribute(value: unknown): OtlpAttributeValue {
   if (typeof value === "string") return { stringValue: value };
   if (typeof value === "number")
-    return Number.isInteger(value)
-      ? { intValue: value }
-      : { doubleValue: value };
+    return Number.isInteger(value) ? { intValue: value } : { doubleValue: value };
   if (typeof value === "boolean") return { boolValue: value };
-  if (Array.isArray(value))
-    return { arrayValue: { values: value.map(convertAttribute) } };
+  if (Array.isArray(value)) return { arrayValue: { values: value.map(convertAttribute) } };
   return { stringValue: String(value) };
 }
 
@@ -52,10 +49,7 @@ export class BridgeSpanExporter implements SpanExporter {
     this.endpoint = endpoint;
   }
 
-  export(
-    spans: ReadableSpan[],
-    resultCallback: (result: ExportResult) => void,
-  ): void {
+  export(spans: ReadableSpan[], resultCallback: (result: ExportResult) => void): void {
     if (!this.bridge?.exportSpans) {
       resultCallback({ code: ExportResultCode.FAILED });
       return;
@@ -66,12 +60,12 @@ export class BridgeSpanExporter implements SpanExporter {
         resourceSpans: [
           {
             resource: {
-              attributes: Object.entries(
-                spans[0]?.resource?.attributes || {},
-              ).map(([key, value]) => ({
-                key,
-                value: convertAttribute(value),
-              })),
+              attributes: Object.entries(spans[0]?.resource?.attributes || {}).map(
+                ([key, value]) => ({
+                  key,
+                  value: convertAttribute(value),
+                }),
+              ),
             },
             scopeSpans: [
               {
@@ -84,45 +78,33 @@ export class BridgeSpanExporter implements SpanExporter {
                   return {
                     traceId: toHex(ctx.traceId),
                     spanId: toHex(ctx.spanId),
-                    parentSpanId: span.parentSpanId
-                      ? toHex(span.parentSpanId)
-                      : undefined,
+                    parentSpanId: span.parentSpanId ? toHex(span.parentSpanId) : undefined,
                     name: span.name,
                     kind: span.kind,
                     startTimeUnixNano: String(
                       span.startTime[0] * 1_000_000_000 + span.startTime[1],
                     ),
-                    endTimeUnixNano: String(
-                      span.endTime[0] * 1_000_000_000 + span.endTime[1],
-                    ),
-                    attributes: Object.entries(span.attributes).map(
-                      ([key, value]) => ({
-                        key,
-                        value: convertAttribute(value),
-                      }),
-                    ),
+                    endTimeUnixNano: String(span.endTime[0] * 1_000_000_000 + span.endTime[1]),
+                    attributes: Object.entries(span.attributes).map(([key, value]) => ({
+                      key,
+                      value: convertAttribute(value),
+                    })),
                     status: span.status,
                     events: span.events.map((event) => ({
-                      timeUnixNano: String(
-                        event.time[0] * 1_000_000_000 + event.time[1],
-                      ),
+                      timeUnixNano: String(event.time[0] * 1_000_000_000 + event.time[1]),
                       name: event.name,
-                      attributes: Object.entries(event.attributes || {}).map(
-                        ([key, value]) => ({
-                          key,
-                          value: convertAttribute(value),
-                        }),
-                      ),
+                      attributes: Object.entries(event.attributes || {}).map(([key, value]) => ({
+                        key,
+                        value: convertAttribute(value),
+                      })),
                     })),
                     links: span.links.map((link) => ({
                       traceId: toHex(link.context.traceId),
                       spanId: toHex(link.context.spanId),
-                      attributes: Object.entries(link.attributes || {}).map(
-                        ([key, value]) => ({
-                          key,
-                          value: convertAttribute(value),
-                        }),
-                      ),
+                      attributes: Object.entries(link.attributes || {}).map(([key, value]) => ({
+                        key,
+                        value: convertAttribute(value),
+                      })),
                     })),
                   };
                 }),

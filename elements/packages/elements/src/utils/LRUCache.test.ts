@@ -123,21 +123,14 @@ describe("OrderedLRUCache", () => {
   });
 
   test("works with string keys and custom comparator", () => {
-    const cache = new OrderedLRUCache<string, number>(5, (a, b) =>
-      a.localeCompare(b),
-    );
+    const cache = new OrderedLRUCache<string, number>(5, (a, b) => a.localeCompare(b));
 
     cache.set("banana", 2);
     cache.set("apple", 1);
     cache.set("cherry", 3);
     cache.set("date", 4);
 
-    expect(cache.getSortedKeys()).toEqual([
-      "apple",
-      "banana",
-      "cherry",
-      "date",
-    ]);
+    expect(cache.getSortedKeys()).toEqual(["apple", "banana", "cherry", "date"]);
 
     // For strings, findNearestInRange only works for exact matches since we can't calculate string distance
     const nearestExact = cache.findNearestInRange("cherry", "cherry");
@@ -161,12 +154,8 @@ describe("OrderedLRUCache", () => {
     const cache = new OrderedLRUCache<number, string>(5);
     cache.set(10, "ten");
 
-    expect(cache.findNearestInRange(5, 10)).toEqual([
-      { key: 10, value: "ten" },
-    ]); // 5±10 = [-5,15] contains 10
-    expect(cache.findNearestInRange(15, 10)).toEqual([
-      { key: 10, value: "ten" },
-    ]); // 15±10 = [5,25] contains 10
+    expect(cache.findNearestInRange(5, 10)).toEqual([{ key: 10, value: "ten" }]); // 5±10 = [-5,15] contains 10
+    expect(cache.findNearestInRange(15, 10)).toEqual([{ key: 10, value: "ten" }]); // 15±10 = [5,25] contains 10
     expect(cache.findRange(1, 20)).toEqual([{ key: 10, value: "ten" }]);
   });
 

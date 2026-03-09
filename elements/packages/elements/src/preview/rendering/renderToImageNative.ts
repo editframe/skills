@@ -2,11 +2,7 @@
  * Native HTML-in-Canvas rendering using drawElementImage API.
  */
 
-import type {
-  HtmlInCanvasContext,
-  HtmlInCanvasElement,
-  NativeRenderOptions,
-} from "./types.js";
+import type { HtmlInCanvasContext, HtmlInCanvasElement, NativeRenderOptions } from "./types.js";
 import { defaultProfiler } from "../RenderProfiler.js";
 
 /** Track canvases that have been initialized for layoutsubtree (only need to wait once) */

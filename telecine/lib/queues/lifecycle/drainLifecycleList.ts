@@ -12,12 +12,10 @@ import {
   type WorkflowLifecycleMessage,
 } from "./Producer";
 
-type JobGroupKey = `${string}:${"job" | "attempt"}:${"started" | "completed" | "failed"}`;
+type JobGroupKey =
+  `${string}:${"job" | "attempt"}:${"started" | "completed" | "failed"}`;
 
-export async function drainLifecycleList(
-  storage: ValKey,
-  batchSize = 500,
-) {
+export async function drainLifecycleList(storage: ValKey, batchSize = 500) {
   const raw: string[] = [];
   for (let i = 0; i < batchSize; i++) {
     const item = await storage.rpop(LIFECYCLE_LIST_KEY);
@@ -30,7 +28,10 @@ export async function drainLifecycleList(
   const messages: LifecycleMessage[] = raw.map((r) => SuperJSON.parse(r));
 
   const jobGroups: Record<JobGroupKey, JobLifecycleMessage[]> = {};
-  const workflowMessages = new Map<Workflow<unknown>, WorkflowLifecycleMessage[]>();
+  const workflowMessages = new Map<
+    Workflow<unknown>,
+    WorkflowLifecycleMessage[]
+  >();
 
   for (const msg of messages) {
     switch (msg.type) {
@@ -86,7 +87,10 @@ export async function drainLifecycleList(
   const results = await Promise.allSettled(promises);
   for (const result of results) {
     if (result.status === "rejected") {
-      logger.error({ error: result.reason }, "Failed to process lifecycle batch");
+      logger.error(
+        { error: result.reason },
+        "Failed to process lifecycle batch",
+      );
     }
   }
 

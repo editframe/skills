@@ -32,10 +32,7 @@ export default defineConfig({
       plugins: [rollupTsConfigPaths({})],
     },
     emptyOutDir: false,
-    outDir: path.resolve(
-      repoRoot,
-      "lib/queues/units-of-work/Render",
-    ),
+    outDir: path.resolve(repoRoot, "lib/queues/units-of-work/Render"),
     lib: {
       entry: path.resolve(
         repoRoot,

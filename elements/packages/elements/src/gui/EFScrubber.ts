@@ -233,8 +233,7 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
 
     if (this.isTimelineMode) {
       // Timeline mode: use pixel-based positioning with zoom
-      const scrollContainer =
-        this.scrollContainerRef?.current || scrubberEl.parentElement;
+      const scrollContainer = this.scrollContainerRef?.current || scrubberEl.parentElement;
       if (!scrollContainer) return;
 
       const scrollContainerRect = scrollContainer.getBoundingClientRect();
@@ -245,33 +244,21 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
       let pixelOffset = 0;
       if (this.trackContentRef?.current) {
         const trackRect = this.trackContentRef.current.getBoundingClientRect();
-        pixelOffset =
-          trackRect.left -
-          scrollContainerRect.left +
-          scrollContainer.scrollLeft;
+        pixelOffset = trackRect.left - scrollContainerRect.left + scrollContainer.scrollLeft;
       }
 
       const x = e.clientX - scrollContainerRect.left - pixelOffset;
       const pixelPosition = scrollLeft + x;
       const effectiveWidth =
-        this.containerWidth > 0
-          ? this.containerWidth
-          : scrollContainerRect.width;
+        this.containerWidth > 0 ? this.containerWidth : scrollContainerRect.width;
       if (effectiveWidth <= 0) return;
 
-      let rawTime = pixelsToTime(
-        pixelPosition,
-        duration,
-        effectiveWidth,
-        this.zoomScale,
-      );
+      let rawTime = pixelsToTime(pixelPosition, duration, effectiveWidth, this.zoomScale);
       rawTime = Math.max(0, Math.min(rawTime, duration));
 
       // Quantize to frame boundaries if FPS is provided, then clamp to duration
       let quantizedTime =
-        this.fps && this.fps > 0
-          ? quantizeToFrameTimeMs(rawTime, this.fps)
-          : rawTime;
+        this.fps && this.fps > 0 ? quantizeToFrameTimeMs(rawTime, this.fps) : rawTime;
       quantizedTime = Math.max(0, Math.min(quantizedTime, duration));
 
       this.scrubProgress = quantizedTime / duration;
@@ -423,21 +410,13 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
           : 0;
 
       const rawScrubPositionPixels =
-        this.rawScrubTimeMs !== null &&
-        this.rawScrubTimeMs !== undefined &&
-        effectiveWidth > 0
-          ? timeToPixels(
-              this.rawScrubTimeMs,
-              duration,
-              effectiveWidth,
-              this.zoomScale,
-            )
+        this.rawScrubTimeMs !== null && this.rawScrubTimeMs !== undefined && effectiveWidth > 0
+          ? timeToPixels(this.rawScrubTimeMs, duration, effectiveWidth, this.zoomScale)
           : null;
 
       return html`
         ${
-          rawScrubPositionPixels !== null &&
-          rawScrubPositionPixels !== positionPixels
+          rawScrubPositionPixels !== null && rawScrubPositionPixels !== positionPixels
             ? html`<div
               class="raw-preview"
               style="left: ${rawScrubPositionPixels}px"
@@ -464,9 +443,7 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
     } else {
       // Horizontal mode: render progress bar
       const currentProgress = duration > 0 ? currentTime / duration : 0;
-      const displayProgress = this.isMoving
-        ? this.scrubProgress
-        : currentProgress;
+      const displayProgress = this.isMoving ? this.scrubProgress : currentProgress;
 
       return html`
         <div
@@ -485,45 +462,30 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
 
   connectedCallback() {
     super.connectedCallback();
-    window.addEventListener(
-      "pointerup",
-      this.boundHandlePointerUp as EventListener,
-      { passive: false },
-    );
+    window.addEventListener("pointerup", this.boundHandlePointerUp as EventListener, {
+      passive: false,
+    });
     window.addEventListener("pointermove", this.boundHandlePointerMove, {
       passive: false,
     });
-    window.addEventListener(
-      "pointercancel",
-      this.boundHandlePointerCancel as EventListener,
-      { passive: false },
-    );
+    window.addEventListener("pointercancel", this.boundHandlePointerCancel as EventListener, {
+      passive: false,
+    });
     this.addEventListener("contextmenu", this.boundHandleContextMenu, {
       passive: false,
     });
-    this.addEventListener(
-      "pointerdown",
-      this.handlePointerDown as EventListener,
-      { passive: false },
-    );
+    this.addEventListener("pointerdown", this.handlePointerDown as EventListener, {
+      passive: false,
+    });
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    window.removeEventListener(
-      "pointerup",
-      this.boundHandlePointerUp as EventListener,
-    );
+    window.removeEventListener("pointerup", this.boundHandlePointerUp as EventListener);
     window.removeEventListener("pointermove", this.boundHandlePointerMove);
-    window.removeEventListener(
-      "pointercancel",
-      this.boundHandlePointerCancel as EventListener,
-    );
+    window.removeEventListener("pointercancel", this.boundHandlePointerCancel as EventListener);
     this.removeEventListener("contextmenu", this.boundHandleContextMenu);
-    this.removeEventListener(
-      "pointerdown",
-      this.handlePointerDown as EventListener,
-    );
+    this.removeEventListener("pointerdown", this.handlePointerDown as EventListener);
     if (this._wasPlayingBeforeScrub) {
       this._wasPlayingBeforeScrub = false;
       if ((this.context as unknown as Element | null)?.isConnected) {

@@ -88,17 +88,13 @@ for (const [name, pkg] of Object.entries(packages)) {
   for (const importedPackage of foundImports) {
     if (importedPackage.startsWith("node:")) continue;
     if (!allDeps[importedPackage] && importedPackage !== name) {
-      missingDependencies.push(
-        `${name}: missing dependency "${importedPackage}" in package.json`,
-      );
+      missingDependencies.push(`${name}: missing dependency "${importedPackage}" in package.json`);
     }
   }
 }
 
 if (missingDependencies.length) {
-  console.error(
-    `Missing dependencies found:\n${missingDependencies.join("\n")}`,
-  );
+  console.error(`Missing dependencies found:\n${missingDependencies.join("\n")}`);
   process.exit(1);
 } else {
   console.log("All dependencies are properly declared in package.json files");

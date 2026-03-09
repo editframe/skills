@@ -163,10 +163,7 @@ function createMoovBox(durationMs: number): Uint8Array {
   return box;
 }
 
-function createAudioMoovBox(
-  sampleRate: number,
-  durationMs: number,
-): Uint8Array {
+function createAudioMoovBox(sampleRate: number, durationMs: number): Uint8Array {
   const timescale = sampleRate;
   const duration = Math.floor((durationMs * timescale) / 1000);
 
@@ -376,8 +373,7 @@ export class MockJitTranscodingService {
   ): Uint8Array {
     // Align to segment boundaries like real service
     const segmentDuration = type === "audio" ? 15000 : 2000;
-    const alignedStart =
-      Math.floor(startTimeMs / segmentDuration) * segmentDuration;
+    const alignedStart = Math.floor(startTimeMs / segmentDuration) * segmentDuration;
 
     const key = `${url}:${alignedStart}:${quality}:${type}`;
     const clip = this.clips.get(key);
@@ -413,9 +409,7 @@ export async function getCachedMediaElementSourceTestClips(
   let clips = testClipCache.get(cacheKey);
 
   if (!clips) {
-    console.log(
-      `Creating MediaElementSource test clips for ${sourceVideoUrl}...`,
-    );
+    console.log(`Creating MediaElementSource test clips for ${sourceVideoUrl}...`);
     clips = await createMediaElementSourceTestClips(sourceVideoUrl);
     testClipCache.set(cacheKey, clips);
     console.log(`Created ${clips.length} MediaElementSource test clips`);

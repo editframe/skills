@@ -23,10 +23,7 @@ export class CachedFetcher {
     return mediaCache.has(key);
   }
 
-  async fetchArrayBuffer(
-    url: string,
-    signal?: AbortSignal,
-  ): Promise<ArrayBuffer> {
+  async fetchArrayBuffer(url: string, signal?: AbortSignal): Promise<ArrayBuffer> {
     if (signal?.aborted) {
       throw new DOMException("Aborted", "AbortError");
     }
@@ -71,60 +68,48 @@ export class CachedFetcher {
 
         span.setAttribute("cacheHit", false);
 
-        const promise = globalRequestDeduplicator.executeRequest(
-          cacheKey,
-          async () => {
-            try {
-              const response = await this.#fetchFn(url, { headers, signal });
-              const contentType = response.headers.get("content-type");
+        const promise = globalRequestDeduplicator.executeRequest(cacheKey, async () => {
+          try {
+            const response = await this.#fetchFn(url, { headers, signal });
+            const contentType = response.headers.get("content-type");
 
-              if (responseType === "json") {
-                if (
-                  !response.ok ||
-                  (contentType &&
-                    !contentType.includes("application/json") &&
-                    !contentType.includes("text/json"))
-                ) {
-                  const text = await response.clone().text();
-                  if (!response.ok) {
-                    throw new Error(
-                      `Failed to fetch: ${response.status} ${text.substring(0, 100)}`,
-                    );
-                  }
-                  throw new Error(
-                    `Expected JSON but got ${contentType}: ${text.substring(0, 100)}`,
-                  );
-                }
-                try {
-                  return await response.json();
-                } catch (error) {
-                  throw new Error(
-                    `Failed to parse JSON response: ${error instanceof Error ? error.message : String(error)}`,
-                  );
-                }
-              }
-
-              if (!response.ok) {
+            if (responseType === "json") {
+              if (
+                !response.ok ||
+                (contentType &&
+                  !contentType.includes("application/json") &&
+                  !contentType.includes("text/json"))
+              ) {
                 const text = await response.clone().text();
+                if (!response.ok) {
+                  throw new Error(`Failed to fetch: ${response.status} ${text.substring(0, 100)}`);
+                }
+                throw new Error(`Expected JSON but got ${contentType}: ${text.substring(0, 100)}`);
+              }
+              try {
+                return await response.json();
+              } catch (error) {
                 throw new Error(
-                  `Failed to fetch: ${response.status} ${text.substring(0, 100)}`,
+                  `Failed to parse JSON response: ${error instanceof Error ? error.message : String(error)}`,
                 );
               }
-
-              const buffer = await response.arrayBuffer();
-              span.setAttribute("sizeBytes", buffer.byteLength);
-              return buffer;
-            } catch (error) {
-              if (
-                error instanceof DOMException &&
-                error.name === "AbortError"
-              ) {
-                mediaCache.delete(cacheKey);
-              }
-              throw error;
             }
-          },
-        );
+
+            if (!response.ok) {
+              const text = await response.clone().text();
+              throw new Error(`Failed to fetch: ${response.status} ${text.substring(0, 100)}`);
+            }
+
+            const buffer = await response.arrayBuffer();
+            span.setAttribute("sizeBytes", buffer.byteLength);
+            return buffer;
+          } catch (error) {
+            if (error instanceof DOMException && error.name === "AbortError") {
+              mediaCache.delete(cacheKey);
+            }
+            throw error;
+          }
+        });
 
         mediaCache.set(cacheKey, promise);
 
@@ -143,10 +128,7 @@ export class CachedFetcher {
     );
   }
 
-  #handleAbortForCachedRequest<T>(
-    promise: Promise<T>,
-    signal: AbortSignal,
-  ): Promise<T> {
+  #handleAbortForCachedRequest<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
     if (signal.aborted) {
       throw new DOMException("Aborted", "AbortError");
     }

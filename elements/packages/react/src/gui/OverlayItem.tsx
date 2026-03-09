@@ -22,6 +22,4 @@ export const OverlayItem = createComponent<
   events: {
     onPositionChanged: "position-changed",
   },
-}) as React.ForwardRefExoticComponent<
-  OverlayItemProps & React.RefAttributes<EFOverlayItemElement>
->;
+}) as React.ForwardRefExoticComponent<OverlayItemProps & React.RefAttributes<EFOverlayItemElement>>;

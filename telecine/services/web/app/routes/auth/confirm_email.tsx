@@ -4,7 +4,10 @@ import { redirect } from "react-router";
 import type { MetaFunction } from "react-router";
 import { sql } from "kysely";
 import { ErrorMessage } from "~/components/ErrorMessage";
-import { maybeIdentityContext, sessionCookieContext } from "~/middleware/context";
+import {
+  maybeIdentityContext,
+  sessionCookieContext,
+} from "~/middleware/context";
 
 import type { Route } from "./+types/confirm_email";
 

@@ -2,10 +2,14 @@ export function HeroDemoPoster() {
   return (
     <div className="w-full">
       <div className="bg-[#0a0a0a] border-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
-        <div className="relative flex flex-col items-center justify-center" style={{
-          aspectRatio: "16/9",
-          background: "radial-gradient(ellipse 80% 60% at 50% 50%, rgba(21,101,192,0.08) 0%, transparent 70%)",
-        }}>
+        <div
+          className="relative flex flex-col items-center justify-center"
+          style={{
+            aspectRatio: "16/9",
+            background:
+              "radial-gradient(ellipse 80% 60% at 50% 50%, rgba(21,101,192,0.08) 0%, transparent 70%)",
+          }}
+        >
           <span className="text-white text-5xl font-black tracking-tighter leading-[1.1] text-center select-none">
             VIDEO IS A
           </span>
@@ -18,7 +22,11 @@ export function HeroDemoPoster() {
         </div>
         <div className="border-t-4 border-[var(--ink-black)] dark:border-white bg-[#111] flex items-center h-12">
           <div className="w-12 h-12 flex items-center justify-center bg-[var(--poster-blue)]">
-            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-4 h-4 text-white"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path d="M8 5v14l11-7z" />
             </svg>
           </div>

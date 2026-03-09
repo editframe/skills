@@ -1,8 +1,4 @@
-import {
-  upload,
-  getFileProcessingProgress,
-  getFileDetail,
-} from "@editframe/api/node";
+import { upload, getFileProcessingProgress, getFileDetail } from "@editframe/api/node";
 import { program } from "commander";
 import ora from "ora";
 import { getClient } from "../utils/index.js";

@@ -98,12 +98,7 @@ describe("SelectionModel", () => {
     model.updateBoxSelect(50, 50);
     model.endBoxSelect((bounds) => {
       // Mock hit test - return elements within bounds
-      if (
-        bounds.left < 30 &&
-        bounds.top < 30 &&
-        bounds.right > 20 &&
-        bounds.bottom > 20
-      ) {
+      if (bounds.left < 30 && bounds.top < 30 && bounds.right > 20 && bounds.bottom > 20) {
         return ["element-1", "element-2"];
       }
       return [];

@@ -21,7 +21,7 @@ function formatTime(ms: number): string {
 }
 
 export function TrimTool() {
-  const videoId = useId();;
+  const videoId = useId();
   const videoRef = useRef<EFVideo>(null);
   const { intrinsicDurationMs } = useMediaInfo(videoRef);
 
@@ -92,9 +92,7 @@ export function TrimTool() {
                 value={trim}
                 intrinsicDurationMs={totalDuration}
                 seekTarget={videoId}
-                onTrimChange={(event) =>
-                  setTrim(event.detail.value)
-                }
+                onTrimChange={(event) => setTrim(event.detail.value)}
                 className="absolute inset-0"
                 style={
                   {

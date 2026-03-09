@@ -4,11 +4,7 @@ import "../../elements/EFVideo.js";
 import "./EFTimeline.js";
 import type { EFTimeline } from "./EFTimeline.js";
 import type { EFTimegroup } from "../../elements/EFTimegroup.js";
-import {
-  DEFAULT_PIXELS_PER_MS,
-  timeToPx,
-  pixelsPerMsToZoom,
-} from "./timelineStateContext.js";
+import { DEFAULT_PIXELS_PER_MS, timeToPx, pixelsPerMsToZoom } from "./timelineStateContext.js";
 
 let idCounter = 0;
 const nextId = () => `test-${idCounter++}`;
@@ -305,13 +301,10 @@ describe("EFTimeline", () => {
       const reinitTimelineState = timeline.timelineState;
       expect(reinitTimelineState.viewportWidth).toBeGreaterThan(0);
       expect(reinitTimelineState.viewportWidth).not.toBe(800);
-      expect(reinitTimelineState.viewportWidth).toBe(
-        initialTimelineState.viewportWidth,
-      );
+      expect(reinitTimelineState.viewportWidth).toBe(initialTimelineState.viewportWidth);
 
       // Verify ruler has correct content-width after re-selection
-      const reinitRuler =
-        timeline.shadowRoot?.querySelector("ef-timeline-ruler");
+      const reinitRuler = timeline.shadowRoot?.querySelector("ef-timeline-ruler");
       expect(reinitRuler).toBeTruthy();
       const reinitRulerContentWidth = (reinitRuler as any).contentWidth;
       expect(reinitRulerContentWidth).toBeGreaterThan(0);
@@ -338,9 +331,7 @@ describe("EFTimeline", () => {
       await timegroup.updateComplete;
       await timeline.updateComplete;
 
-      const playButton = timeline.shadowRoot?.querySelector(
-        ".control-btn",
-      ) as HTMLElement;
+      const playButton = timeline.shadowRoot?.querySelector(".control-btn") as HTMLElement;
       expect(playButton).toBeTruthy();
 
       const playSpy = vi.spyOn(timegroup, "play");
@@ -374,9 +365,7 @@ describe("EFTimeline", () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
       await timeline.updateComplete;
 
-      const pauseButton = timeline.shadowRoot?.querySelector(
-        ".control-btn",
-      ) as HTMLElement;
+      const pauseButton = timeline.shadowRoot?.querySelector(".control-btn") as HTMLElement;
       expect(pauseButton).toBeTruthy();
 
       const pauseSpy = vi.spyOn(timegroup, "pause");
@@ -451,18 +440,14 @@ describe("EFTimeline", () => {
 
       const initialPixelsPerMs = timeline.pixelsPerMs;
 
-      const zoomInButton = timeline.shadowRoot?.querySelectorAll(
-        ".zoom-btn",
-      )?.[1] as HTMLElement;
+      const zoomInButton = timeline.shadowRoot?.querySelectorAll(".zoom-btn")?.[1] as HTMLElement;
       zoomInButton.click();
       await timeline.updateComplete;
 
       expect(timeline.pixelsPerMs).toBeGreaterThan(initialPixelsPerMs);
 
       const afterZoomIn = timeline.pixelsPerMs;
-      const zoomOutButton = timeline.shadowRoot?.querySelectorAll(
-        ".zoom-btn",
-      )?.[0] as HTMLElement;
+      const zoomOutButton = timeline.shadowRoot?.querySelectorAll(".zoom-btn")?.[0] as HTMLElement;
       zoomOutButton.click();
       await timeline.updateComplete;
 
@@ -490,31 +475,23 @@ describe("EFTimeline", () => {
       await timegroup.updateComplete;
       await timeline.updateComplete;
 
-      const zoomInButton = timeline.shadowRoot?.querySelectorAll(
-        ".zoom-btn",
-      )?.[1] as HTMLElement;
+      const zoomInButton = timeline.shadowRoot?.querySelectorAll(".zoom-btn")?.[1] as HTMLElement;
       for (let i = 0; i < 10; i++) {
         zoomInButton.click();
         await timeline.updateComplete;
       }
 
       // pixelsPerMs at max zoom should be maxZoom * DEFAULT_PIXELS_PER_MS
-      expect(timeline.pixelsPerMs).toBeLessThanOrEqual(
-        2.0 * DEFAULT_PIXELS_PER_MS,
-      );
+      expect(timeline.pixelsPerMs).toBeLessThanOrEqual(2.0 * DEFAULT_PIXELS_PER_MS);
 
-      const zoomOutButton = timeline.shadowRoot?.querySelectorAll(
-        ".zoom-btn",
-      )?.[0] as HTMLElement;
+      const zoomOutButton = timeline.shadowRoot?.querySelectorAll(".zoom-btn")?.[0] as HTMLElement;
       for (let i = 0; i < 10; i++) {
         zoomOutButton.click();
         await timeline.updateComplete;
       }
 
       // pixelsPerMs at min zoom should be minZoom * DEFAULT_PIXELS_PER_MS
-      expect(timeline.pixelsPerMs).toBeGreaterThanOrEqual(
-        0.5 * DEFAULT_PIXELS_PER_MS,
-      );
+      expect(timeline.pixelsPerMs).toBeGreaterThanOrEqual(0.5 * DEFAULT_PIXELS_PER_MS);
     });
 
     test("Ctrl+wheel zooms in and out", async () => {
@@ -537,9 +514,7 @@ describe("EFTimeline", () => {
       // Wait for wheel handler to be set up in updated() lifecycle
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      const tracksScroll = timeline.shadowRoot?.querySelector(
-        ".tracks-scroll",
-      ) as HTMLElement;
+      const tracksScroll = timeline.shadowRoot?.querySelector(".tracks-scroll") as HTMLElement;
       expect(tracksScroll).toBeTruthy();
 
       const initialPixelsPerMs = timeline.pixelsPerMs;
@@ -596,9 +571,7 @@ describe("EFTimeline", () => {
       // Wait for wheel handler to be set up in updated() lifecycle
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      const tracksScroll = timeline.shadowRoot?.querySelector(
-        ".tracks-scroll",
-      ) as HTMLElement;
+      const tracksScroll = timeline.shadowRoot?.querySelector(".tracks-scroll") as HTMLElement;
 
       const initialPixelsPerMs = timeline.pixelsPerMs;
       const rect = tracksScroll.getBoundingClientRect();
@@ -636,9 +609,7 @@ describe("EFTimeline", () => {
       await timegroup.updateComplete;
       await timeline.updateComplete;
 
-      const tracksScroll = timeline.shadowRoot?.querySelector(
-        ".tracks-scroll",
-      ) as HTMLElement;
+      const tracksScroll = timeline.shadowRoot?.querySelector(".tracks-scroll") as HTMLElement;
       expect(tracksScroll).toBeTruthy();
 
       // Scroll to middle of timeline first
@@ -699,9 +670,7 @@ describe("EFTimeline", () => {
       // Wait for wheel handler to be set up in updated() lifecycle
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      const tracksScroll = timeline.shadowRoot?.querySelector(
-        ".tracks-scroll",
-      ) as HTMLElement;
+      const tracksScroll = timeline.shadowRoot?.querySelector(".tracks-scroll") as HTMLElement;
 
       const initialPixelsPerMs = timeline.pixelsPerMs;
 
@@ -742,8 +711,7 @@ describe("EFTimeline", () => {
       expect(timelineRow).toBeTruthy();
 
       // Track component is inside the row's shadow DOM
-      const timegroupTrack =
-        timelineRow?.shadowRoot?.querySelector("ef-timegroup-track");
+      const timegroupTrack = timelineRow?.shadowRoot?.querySelector("ef-timegroup-track");
       expect(timegroupTrack).toBeTruthy();
     });
 
@@ -795,9 +763,7 @@ describe("EFTimeline", () => {
       await timegroup.updateComplete;
       await timeline.updateComplete;
 
-      const tracksContent = timeline.shadowRoot?.querySelector(
-        ".tracks-content",
-      ) as HTMLElement;
+      const tracksContent = timeline.shadowRoot?.querySelector(".tracks-content") as HTMLElement;
       expect(tracksContent).toBeTruthy();
 
       // 10000ms * 0.1 px/ms = 1000px + 200px hierarchy width = 1200px
@@ -826,9 +792,7 @@ describe("EFTimeline", () => {
       await root.updateComplete;
       await timeline.updateComplete;
 
-      const tracksContent = timeline.shadowRoot?.querySelector(
-        ".tracks-content",
-      ) as HTMLElement;
+      const tracksContent = timeline.shadowRoot?.querySelector(".tracks-content") as HTMLElement;
       // 5000ms * 0.1 px/ms = 500px + 200px hierarchy = 700px
       expect(tracksContent.style.minWidth).toBe("700px");
 
@@ -875,9 +839,7 @@ describe("EFTimeline", () => {
       expect(timeline.providedCurrentTime).toBe(5000);
 
       // Playhead should be at 5000ms * 0.1 px/ms = 500px
-      const playhead = timeline.shadowRoot?.querySelector(
-        ".playhead",
-      ) as HTMLElement;
+      const playhead = timeline.shadowRoot?.querySelector(".playhead") as HTMLElement;
       expect(playhead).toBeTruthy();
       expect(playhead.style.left).toBe("500px");
     });
@@ -907,9 +869,7 @@ describe("EFTimeline", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
       await timeline.updateComplete;
 
-      const playhead = timeline.shadowRoot?.querySelector(
-        ".playhead",
-      ) as HTMLElement;
+      const playhead = timeline.shadowRoot?.querySelector(".playhead") as HTMLElement;
       expect(playhead.style.left).toBe("500px");
 
       // Double the zoom
@@ -939,9 +899,7 @@ describe("EFTimeline", () => {
       await timegroup.updateComplete;
       await timeline.updateComplete;
 
-      const tracksScroll = timeline.shadowRoot?.querySelector(
-        ".tracks-scroll",
-      ) as HTMLElement;
+      const tracksScroll = timeline.shadowRoot?.querySelector(".tracks-scroll") as HTMLElement;
       expect(tracksScroll).toBeTruthy();
 
       const hierarchyWidth = 200;
@@ -953,9 +911,7 @@ describe("EFTimeline", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
       await timeline.updateComplete;
 
-      const rulerContent = timeline.shadowRoot?.querySelector(
-        ".ruler-content",
-      ) as HTMLElement;
+      const rulerContent = timeline.shadowRoot?.querySelector(".ruler-content") as HTMLElement;
       expect(rulerContent).toBeTruthy();
 
       const rulerRect = rulerContent.getBoundingClientRect();
@@ -1000,18 +956,12 @@ describe("EFTimeline", () => {
       const tracksScrollRect = tracksScroll.getBoundingClientRect();
       // Use the actual scrollLeft from the DOM, which should match viewportScrollLeft after sync
       const actualScrollLeft = tracksScroll.scrollLeft;
-      const expectedDragX =
-        dragX - tracksScrollRect.left + actualScrollLeft - hierarchyWidth;
-      const expectedDragTimeMs = Math.max(
-        0,
-        expectedDragX / timeline.pixelsPerMs,
-      );
+      const expectedDragX = dragX - tracksScrollRect.left + actualScrollLeft - hierarchyWidth;
+      const expectedDragTimeMs = Math.max(0, expectedDragX / timeline.pixelsPerMs);
 
       // The fix ensures viewportScrollLeft is synced, so the playhead should match the cursor
       // Allow small tolerance for sub-pixel rounding (up to 20ms = 2 pixels at 0.1 px/ms)
-      expect(
-        Math.abs(timegroup.currentTimeMs - expectedDragTimeMs),
-      ).toBeLessThanOrEqual(20);
+      expect(Math.abs(timegroup.currentTimeMs - expectedDragTimeMs)).toBeLessThanOrEqual(20);
 
       const pointerUpEvent = new PointerEvent("pointerup", {
         bubbles: true,
@@ -1141,8 +1091,7 @@ describe("EFTimeline", () => {
       await timegroup.updateComplete;
       await timeline.updateComplete;
 
-      const hierarchyPanel =
-        timeline.shadowRoot?.querySelector(".hierarchy-panel");
+      const hierarchyPanel = timeline.shadowRoot?.querySelector(".hierarchy-panel");
       expect(hierarchyPanel).toBeFalsy();
     });
 
@@ -1202,9 +1151,7 @@ describe("EFTimeline", () => {
       await timeline.updateComplete;
 
       // Container should have tabindex for keyboard focus
-      const container = timeline.shadowRoot?.querySelector(
-        ".timeline-container",
-      ) as HTMLElement;
+      const container = timeline.shadowRoot?.querySelector(".timeline-container") as HTMLElement;
       expect(container).toBeTruthy();
       expect(container.getAttribute("tabindex")).toBe("0");
     });
@@ -1277,8 +1224,7 @@ describe("EFTimeline", () => {
       await timegroup.updateComplete;
       await timeline.updateComplete;
 
-      const frameHighlight =
-        timeline.shadowRoot?.querySelector(".frame-highlight");
+      const frameHighlight = timeline.shadowRoot?.querySelector(".frame-highlight");
       expect(frameHighlight).toBeTruthy();
     });
 
@@ -1302,8 +1248,7 @@ describe("EFTimeline", () => {
       await timegroup.updateComplete;
       await timeline.updateComplete;
 
-      const frameHighlight =
-        timeline.shadowRoot?.querySelector(".frame-highlight");
+      const frameHighlight = timeline.shadowRoot?.querySelector(".frame-highlight");
       expect(frameHighlight).toBeFalsy();
     });
 
@@ -1326,9 +1271,7 @@ describe("EFTimeline", () => {
       await timegroup.updateComplete;
       await timeline.updateComplete;
 
-      const frameHighlight = timeline.shadowRoot?.querySelector(
-        ".frame-highlight",
-      ) as HTMLElement;
+      const frameHighlight = timeline.shadowRoot?.querySelector(".frame-highlight") as HTMLElement;
       expect(frameHighlight).toBeTruthy();
 
       // At 30fps, one frame = 1000/30 ≈ 33.33ms
@@ -1461,12 +1404,8 @@ describe("EFTimeline", () => {
         selectEventDetail = e.detail;
       }) as EventListener);
 
-      const timelineRow = timeline.shadowRoot?.querySelector(
-        "ef-timeline-row",
-      ) as any;
-      const rowLabel = timelineRow?.shadowRoot?.querySelector(
-        ".row-label",
-      ) as HTMLElement;
+      const timelineRow = timeline.shadowRoot?.querySelector("ef-timeline-row") as any;
+      const rowLabel = timelineRow?.shadowRoot?.querySelector(".row-label") as HTMLElement;
 
       rowLabel.click();
       await timeline.updateComplete;
@@ -1507,20 +1446,14 @@ describe("EFTimeline", () => {
 
       expect(Array.from(canvas.selectionContext.selectedIds)).toEqual([]);
 
-      const timelineRow = timeline.shadowRoot?.querySelector(
-        "ef-timeline-row",
-      ) as any;
-      const rowLabel = timelineRow?.shadowRoot?.querySelector(
-        ".row-label",
-      ) as HTMLElement;
+      const timelineRow = timeline.shadowRoot?.querySelector("ef-timeline-row") as any;
+      const rowLabel = timelineRow?.shadowRoot?.querySelector(".row-label") as HTMLElement;
 
       rowLabel.click();
       await timeline.updateComplete;
       await canvas.updateComplete;
 
-      expect(Array.from(canvas.selectionContext.selectedIds)).toEqual([
-        timegroupId,
-      ]);
+      expect(Array.from(canvas.selectionContext.selectedIds)).toEqual([timegroupId]);
     });
   });
 
@@ -1560,9 +1493,7 @@ describe("EFTimeline", () => {
       expect((timeline as any)._editingContext.canInteract()).toBe(true);
 
       // Simulate starting playhead drag
-      const rulerContent = timeline.shadowRoot?.querySelector(
-        ".ruler-content",
-      ) as HTMLElement;
+      const rulerContent = timeline.shadowRoot?.querySelector(".ruler-content") as HTMLElement;
       expect(rulerContent).toBeTruthy();
 
       const pointerDownEvent = new PointerEvent("pointerdown", {
@@ -1629,9 +1560,7 @@ describe("EFTimeline", () => {
         expect((timeline as any)._editingContext.state.mode).toBe("idle");
 
         // Simulate trim handle drag start
-        const startHandle = trimHandles.shadowRoot?.querySelector(
-          ".handle-start",
-        ) as HTMLElement;
+        const startHandle = trimHandles.shadowRoot?.querySelector(".handle-start") as HTMLElement;
         if (startHandle) {
           const pointerDownEvent = new PointerEvent("pointerdown", {
             bubbles: true,

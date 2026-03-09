@@ -30,14 +30,8 @@ import { renderTemporalAudio } from "./renderTemporalAudio.js";
 import { EFTargetable } from "./TargetController.js";
 import { TimegroupController } from "./TimegroupController.js";
 import { updateAnimations } from "./updateAnimations.js";
-import {
-  type ContainerInfo,
-  getContainerInfoFromElement,
-} from "./ContainerInfo.js";
-import {
-  type ElementPositionInfo,
-  getPositionInfoFromElement,
-} from "./ElementPositionInfo.js";
+import { type ContainerInfo, getContainerInfoFromElement } from "./ContainerInfo.js";
+import { type ElementPositionInfo, getPositionInfoFromElement } from "./ElementPositionInfo.js";
 // Import only types - actual function loaded dynamically
 import type { RenderToVideoOptions } from "../preview/renderTimegroupToVideo.types.js";
 import type { PlaybackControllerUpdateEvent } from "../gui/PlaybackController.js";
@@ -148,12 +142,8 @@ const durationCalculationInProgress = new WeakSet<EFTimegroup>();
 
 // Export function to check if a timegroup is currently calculating duration
 // This is used by EFTemporal to prevent calling parent.durationMs during calculation
-export const isTimegroupCalculatingDuration = (
-  timegroup: EFTimegroup | undefined,
-): boolean => {
-  return (
-    timegroup !== undefined && durationCalculationInProgress.has(timegroup)
-  );
+export const isTimegroupCalculatingDuration = (timegroup: EFTimegroup | undefined): boolean => {
+  return timegroup !== undefined && durationCalculationInProgress.has(timegroup);
 };
 
 // Register this function with EFTemporal to break circular dependency
@@ -165,15 +155,8 @@ registerIsTimegroupCalculatingDuration(isTimegroupCalculatingDuration);
  * Determines if a timegroup has its own duration based on its mode.
  * This is the semantic rule: which modes produce independent durations.
  */
-function hasOwnDurationForMode(
-  mode: TimeMode,
-  hasExplicitDuration: boolean,
-): boolean {
-  return (
-    mode === "contain" ||
-    mode === "sequence" ||
-    (mode === "fixed" && hasExplicitDuration)
-  );
+function hasOwnDurationForMode(mode: TimeMode, hasExplicitDuration: boolean): boolean {
+  return mode === "contain" || mode === "sequence" || (mode === "fixed" && hasExplicitDuration);
 }
 
 /**
@@ -231,10 +214,7 @@ function evaluateSequenceDuration(
       return;
     }
     // Prevent infinite loops: skip children that are already calculating their duration
-    if (
-      child instanceof EFTimegroup &&
-      durationCalculationInProgress.has(child)
-    ) {
+    if (child instanceof EFTimegroup && durationCalculationInProgress.has(child)) {
       return;
     }
 
@@ -250,10 +230,7 @@ function evaluateSequenceDuration(
         if (ancestor === timegroup) {
           break;
         }
-        if (
-          ancestor instanceof EFTimegroup &&
-          durationCalculationInProgress.has(ancestor)
-        ) {
+        if (ancestor instanceof EFTimegroup && durationCalculationInProgress.has(ancestor)) {
           // Found a calculating ancestor (not the current timegroup) - skip this child to prevent cycle
           shouldSkip = true;
           break;
@@ -305,10 +282,7 @@ function evaluateContainDuration(
     // This check applies to all timegroup children, not just contain mode, because
     // a sequence-mode child could contain a contain-mode grandchild that
     // eventually references back to the parent through the parent chain
-    if (
-      child instanceof EFTimegroup &&
-      durationCalculationInProgress.has(child)
-    ) {
+    if (child instanceof EFTimegroup && durationCalculationInProgress.has(child)) {
       continue;
     }
 
@@ -324,10 +298,7 @@ function evaluateContainDuration(
         if (ancestor === timegroup) {
           break;
         }
-        if (
-          ancestor instanceof EFTimegroup &&
-          durationCalculationInProgress.has(ancestor)
-        ) {
+        if (ancestor instanceof EFTimegroup && durationCalculationInProgress.has(ancestor)) {
           // Found a calculating ancestor (not the current timegroup) - skip this child to prevent cycle
           shouldSkip = true;
           break;
@@ -368,11 +339,7 @@ function evaluateDurationForMode(
       // Mark this timegroup as calculating duration to prevent infinite loops
       durationCalculationInProgress.add(timegroup);
       try {
-        return evaluateSequenceDuration(
-          timegroup,
-          childTemporals,
-          timegroup.overlapMs,
-        );
+        return evaluateSequenceDuration(timegroup, childTemporals, timegroup.overlapMs);
       } finally {
         // Always remove the marker, even if an error occurs
         durationCalculationInProgress.delete(timegroup);
@@ -393,10 +360,7 @@ function evaluateDurationForMode(
   }
 }
 
-export const shallowGetTimegroups = (
-  element: Element,
-  groups: EFTimegroup[] = [],
-) => {
+export const shallowGetTimegroups = (element: Element, groups: EFTimegroup[] = []) => {
   for (const child of Array.from(element.children)) {
     if (child instanceof EFTimegroup) {
       groups.push(child);
@@ -450,11 +414,7 @@ export const shallowGetTimegroups = (
  * Evaluates the target time for a seek operation.
  * Applies quantization and clamping to determine the valid seek target.
  */
-function evaluateSeekTarget(
-  requestedTime: number,
-  durationMs: number,
-  fps: number,
-): number {
+function evaluateSeekTarget(requestedTime: number, durationMs: number, fps: number): number {
   // Quantize to frame boundaries
   const quantizedTime = quantizeToFrameTimeS(requestedTime, fps);
   // Clamp to valid range [0, duration]
@@ -567,44 +527,24 @@ export class EFTimegroup
 
   #syncChildListeners(): void {
     const currentChildren = new Set(
-      shallowGetTemporalElements(this) as Array<
-        TemporalMixinInterface & HTMLElement
-      >,
+      shallowGetTemporalElements(this) as Array<TemporalMixinInterface & HTMLElement>,
     );
 
     // Remove listeners from children that left
     for (const child of this.#trackedChildren) {
       if (!currentChildren.has(child)) {
-        child.removeEventListener(
-          "readystatechange",
-          this.#childReadyStateHandler,
-        );
-        child.removeEventListener(
-          "contentchange",
-          this.#childContentChangeHandler,
-        );
-        child.removeEventListener(
-          "durationchange",
-          this.#childDurationChangeHandler,
-        );
+        child.removeEventListener("readystatechange", this.#childReadyStateHandler);
+        child.removeEventListener("contentchange", this.#childContentChangeHandler);
+        child.removeEventListener("durationchange", this.#childDurationChangeHandler);
       }
     }
 
     // Add listeners to new children
     for (const child of currentChildren) {
       if (!this.#trackedChildren.has(child)) {
-        child.addEventListener(
-          "readystatechange",
-          this.#childReadyStateHandler,
-        );
-        child.addEventListener(
-          "contentchange",
-          this.#childContentChangeHandler,
-        );
-        child.addEventListener(
-          "durationchange",
-          this.#childDurationChangeHandler,
-        );
+        child.addEventListener("readystatechange", this.#childReadyStateHandler);
+        child.addEventListener("contentchange", this.#childContentChangeHandler);
+        child.addEventListener("durationchange", this.#childDurationChangeHandler);
       }
     }
 
@@ -717,11 +657,7 @@ export class EFTimegroup
   @property({ type: Boolean, reflect: true })
   workbench = false;
 
-  attributeChangedCallback(
-    name: string,
-    old: string | null,
-    value: string | null,
-  ): void {
+  attributeChangedCallback(name: string, old: string | null, value: string | null): void {
     if (name === "mode" && value) {
       this.mode = value as typeof this.mode;
     }
@@ -768,8 +704,7 @@ export class EFTimegroup
   #customFrameTasks: Set<FrameTaskCallback> = new Set();
   #onFrameCallback: FrameTaskCallback | null = null;
   #onFrameCleanup: (() => void) | null = null;
-  #playbackListener: ((event: PlaybackControllerUpdateEvent) => void) | null =
-    null;
+  #playbackListener: ((event: PlaybackControllerUpdateEvent) => void) | null = null;
 
   /**
    * Centralized frame controller for coordinating element rendering.
@@ -789,10 +724,9 @@ export class EFTimegroup
    * Centralized quality upgrade scheduler for coordinating main-quality segment fetching.
    * Lives alongside FrameController to manage background quality upgrades.
    */
-  #qualityUpgradeScheduler: QualityUpgradeScheduler =
-    new QualityUpgradeScheduler({
-      requestFrameRender: () => this.requestFrameRender(),
-    });
+  #qualityUpgradeScheduler: QualityUpgradeScheduler = new QualityUpgradeScheduler({
+    requestFrameRender: () => this.requestFrameRender(),
+  });
 
   /**
    * Get the quality upgrade scheduler for background segment fetching.
@@ -921,11 +855,7 @@ export class EFTimegroup
   @property({ type: Number, attribute: "currenttime" })
   set currentTime(time: number) {
     // Evaluate seek target (quantization and clamping)
-    const seekTarget = evaluateSeekTarget(
-      time,
-      this.durationMs,
-      this.effectiveFps,
-    );
+    const seekTarget = evaluateSeekTarget(time, this.durationMs, this.effectiveFps);
 
     // Delegate to playbackController if available
     if (this.playbackController) {
@@ -995,10 +925,7 @@ export class EFTimegroup
 
         // Process pending seek if it differs from completed seek
         // This jumps directly to wherever the user ended up, skipping intermediates
-        if (
-          this.#pendingSeekTime !== undefined &&
-          this.#pendingSeekTime !== seekTarget
-        ) {
+        if (this.#pendingSeekTime !== undefined && this.#pendingSeekTime !== seekTarget) {
           const pendingTime = this.#pendingSeekTime;
           this.#pendingSeekTime = undefined;
           this.#processingPendingSeek = true;
@@ -1128,17 +1055,12 @@ export class EFTimegroup
 
     // Wait for ef-text elements to have their segments ready
     // ef-text creates segments asynchronously via requestAnimationFrame
-    const textElements = allLitElements.filter(
-      (el) => el.tagName === "EF-TEXT",
-    );
+    const textElements = allLitElements.filter((el) => el.tagName === "EF-TEXT");
     const t4 = performance.now();
     if (textElements.length > 0) {
       await Promise.all(
         textElements.map((el) => {
-          if (
-            "whenSegmentsReady" in el &&
-            typeof el.whenSegmentsReady === "function"
-          ) {
+          if ("whenSegmentsReady" in el && typeof el.whenSegmentsReady === "function") {
             return (el as any).whenSegmentsReady();
           }
           return Promise.resolve();
@@ -1156,19 +1078,16 @@ export class EFTimegroup
     // This replaces the old distributed frameTask system
     // Animation updates are handled via the onAnimationsUpdate callback
     const t5 = performance.now();
-    const frameControllerTiming = await this.#frameController.renderFrame(
-      timeMs,
-      {
-        waitForLitUpdate: false,
-        onAnimationsUpdate: (root) => {
-          updateAnimations(root as typeof this);
-          // CRITICAL: Force style recalculation after updateAnimations sets animation.currentTime
-          // Without this, getComputedStyle may return stale values (e.g., opacity: 0 instead of 1)
-          // Accessing offsetWidth triggers synchronous style recalc
-          void (root as HTMLElement).offsetWidth;
-        },
+    const frameControllerTiming = await this.#frameController.renderFrame(timeMs, {
+      waitForLitUpdate: false,
+      onAnimationsUpdate: (root) => {
+        updateAnimations(root as typeof this);
+        // CRITICAL: Force style recalculation after updateAnimations sets animation.currentTime
+        // Without this, getComputedStyle may return stale values (e.g., opacity: 0 instead of 1)
+        // Accessing offsetWidth triggers synchronous style recalc
+        void (root as HTMLElement).offsetWidth;
       },
-    );
+    });
     const renderFrameMs = performance.now() - t5;
 
     // Execute custom frame tasks registered via addFrameTask()
@@ -1210,10 +1129,7 @@ export class EFTimegroup
         if ("startTimeMs" in child && "endTimeMs" in child) {
           const startMs = (child as any).startTimeMs ?? -Infinity;
           const endMs = (child as any).endTimeMs ?? Infinity;
-          if (
-            endMs > startMs &&
-            (currentTimeMs < startMs || currentTimeMs >= endMs)
-          ) {
+          if (endMs > startMs && (currentTimeMs < startMs || currentTimeMs >= endMs)) {
             continue; // skip entire subtree
           }
         }
@@ -1416,10 +1332,8 @@ export class EFTimegroup
   didBecomeRoot() {
     super.didBecomeRoot();
     this.#setupPlaybackListener();
-    const hostname =
-      typeof window !== "undefined" ? window.location.hostname : "";
-    const isEditframeDomain =
-      hostname === "editframe.com" || hostname.endsWith(".editframe.com");
+    const hostname = typeof window !== "undefined" ? window.location.hostname : "";
+    const isEditframeDomain = hostname === "editframe.com" || hostname.endsWith(".editframe.com");
     if (
       this.playbackController &&
       typeof __EF_TELEMETRY_ENABLED__ !== "undefined" &&
@@ -1446,10 +1360,7 @@ export class EFTimegroup
       // Update userTimeMs during playback time changes
       // Clone-timeline: captures use separate clones, so Prime-timeline updates freely
       // Canvas preview reads userTimeMs to know what to render
-      if (
-        event.property === "currentTimeMs" &&
-        typeof event.value === "number"
-      ) {
+      if (event.property === "currentTimeMs" && typeof event.value === "number") {
         this.#userTimeMs = event.value;
       }
     };
@@ -1478,9 +1389,7 @@ export class EFTimegroup
 
     if (this.#previousDurationMs !== this.durationMs) {
       this.#previousDurationMs = this.durationMs;
-      this.dispatchEvent(
-        new CustomEvent("durationchange", { bubbles: true, composed: true }),
-      );
+      this.dispatchEvent(new CustomEvent("durationchange", { bubbles: true, composed: true }));
       // Render clones are sequenced via seekForRender — don't trigger autonomous re-renders.
       // This prevents FrameController.abort() from interrupting an in-progress seekForRender.
       if (!this.hasAttribute("data-no-playback-controller")) {
@@ -1503,18 +1412,9 @@ export class EFTimegroup
     this.#resizeObserver?.disconnect();
     this.#removePlaybackListener();
     for (const child of this.#trackedChildren) {
-      child.removeEventListener(
-        "readystatechange",
-        this.#childReadyStateHandler,
-      );
-      child.removeEventListener(
-        "contentchange",
-        this.#childContentChangeHandler,
-      );
-      child.removeEventListener(
-        "durationchange",
-        this.#childDurationChangeHandler,
-      );
+      child.removeEventListener("readystatechange", this.#childReadyStateHandler);
+      child.removeEventListener("contentchange", this.#childContentChangeHandler);
+      child.removeEventListener("durationchange", this.#childDurationChangeHandler);
     }
     this.#trackedChildren.clear();
     this.#qualityUpgradeScheduler.dispose();
@@ -1531,12 +1431,9 @@ export class EFTimegroup
    * @returns Promise that resolves when video is downloaded
    * @public
    */
-  async renderToVideo(
-    options?: RenderToVideoOptions,
-  ): Promise<Uint8Array | undefined> {
+  async renderToVideo(options?: RenderToVideoOptions): Promise<Uint8Array | undefined> {
     // Dynamic import - only loads in browser context when actually called
-    const { renderTimegroupToVideo } =
-      await import("../preview/renderTimegroupToVideo.js");
+    const { renderTimegroupToVideo } = await import("../preview/renderTimegroupToVideo.js");
     return renderTimegroupToVideo(this, options);
   }
 
@@ -1561,11 +1458,7 @@ export class EFTimegroup
     const elapsed = performance.now() - startTime;
 
     // Check for async (Promise return) - initializers MUST be synchronous
-    if (
-      result !== undefined &&
-      result !== null &&
-      typeof (result as any).then === "function"
-    ) {
+    if (result !== undefined && result !== null && typeof (result as any).then === "function") {
       throw new Error(
         "Timeline initializer must be synchronous. " +
           "Do not return a Promise from the initializer function.",
@@ -1600,19 +1493,14 @@ export class EFTimegroup
     const originalCaptions = original.querySelectorAll("ef-captions");
     const cloneCaptions = clone.querySelectorAll("ef-captions");
 
-    for (
-      let i = 0;
-      i < originalCaptions.length && i < cloneCaptions.length;
-      i++
-    ) {
+    for (let i = 0; i < originalCaptions.length && i < cloneCaptions.length; i++) {
       const origCap = originalCaptions[i] as any;
       const cloneCap = cloneCaptions[i] as any;
 
       // Copy loaded captions data from any source (JS property, captions-src, script element).
       // The loaded data is stored in unifiedCaptionsDataTask.value after async loading.
       // Setting captionsData on the clone gives it Priority 1, bypassing async loading.
-      const loadedData =
-        origCap.captionsData ?? origCap.unifiedCaptionsDataTask?.value;
+      const loadedData = origCap.captionsData ?? origCap.unifiedCaptionsDataTask?.value;
       if (loadedData) {
         cloneCap.captionsData = loadedData;
       }
@@ -1659,11 +1547,7 @@ export class EFTimegroup
 
     const updatePromises: Promise<any>[] = [];
 
-    for (
-      let i = 0;
-      i < originalSegments.length && i < cloneSegments.length;
-      i++
-    ) {
+    for (let i = 0; i < originalSegments.length && i < cloneSegments.length; i++) {
       const origSeg = originalSegments[i] as any;
       const cloneSeg = cloneSegments[i] as any;
 
@@ -1716,9 +1600,7 @@ export class EFTimegroup
       }
       // Fallback to task if present
       else if (captions.unifiedCaptionsDataTask?.taskComplete) {
-        waitPromises.push(
-          captions.unifiedCaptionsDataTask.taskComplete.catch(() => {}),
-        );
+        waitPromises.push(captions.unifiedCaptionsDataTask.taskComplete.catch(() => {}));
       }
     }
 
@@ -1732,10 +1614,7 @@ export class EFTimegroup
    * Handles both the root timegroup and all nested timegroups recursively.
    * @internal
    */
-  async #copyInitializersToClone(
-    original: EFTimegroup,
-    clone: EFTimegroup,
-  ): Promise<void> {
+  async #copyInitializersToClone(original: EFTimegroup, clone: EFTimegroup): Promise<void> {
     // Copy and execute initializer at this level
     if (original.initializer) {
       clone.initializer = original.initializer;
@@ -1746,12 +1625,8 @@ export class EFTimegroup
     }
 
     // Find all nested timegroups in both original and clone
-    const originalNested = Array.from(
-      original.querySelectorAll("ef-timegroup"),
-    ) as EFTimegroup[];
-    const cloneNested = Array.from(
-      clone.querySelectorAll("ef-timegroup"),
-    ) as EFTimegroup[];
+    const originalNested = Array.from(original.querySelectorAll("ef-timegroup")) as EFTimegroup[];
+    const cloneNested = Array.from(clone.querySelectorAll("ef-timegroup")) as EFTimegroup[];
 
     // Match up nested timegroups by index (they should correspond 1:1)
     for (let i = 0; i < originalNested.length && i < cloneNested.length; i++) {
@@ -1805,16 +1680,11 @@ export class EFTimegroup
     await Promise.all(allLitElements.map((el) => el.updateComplete));
 
     // Wait for text segments
-    const textElements = allLitElements.filter(
-      (el) => el.tagName === "EF-TEXT",
-    );
+    const textElements = allLitElements.filter((el) => el.tagName === "EF-TEXT");
     if (textElements.length > 0) {
       await Promise.all(
         textElements.map((el) => {
-          if (
-            "whenSegmentsReady" in el &&
-            typeof el.whenSegmentsReady === "function"
-          ) {
+          if ("whenSegmentsReady" in el && typeof el.whenSegmentsReady === "function") {
             return (el as any).whenSegmentsReady();
           }
           return Promise.resolve();
@@ -1860,8 +1730,7 @@ export class EFTimegroup
     document.body.appendChild(container);
 
     // Mount the component tree — this produces a live ef-timegroup
-    const { timegroup: actualClone, cleanup: factoryCleanup } =
-      factory(renderTarget);
+    const { timegroup: actualClone, cleanup: factoryCleanup } = factory(renderTarget);
 
     if (!actualClone) {
       throw new Error(
@@ -2011,10 +1880,7 @@ export class EFTimegroup
    */
   async #finalizeRenderClone(actualClone: EFTimegroup): Promise<void> {
     // Set up parent-child relationships for temporal elements
-    const setupParentChildRelationships = (
-      parent: EFTimegroup,
-      root: EFTimegroup,
-    ) => {
+    const setupParentChildRelationships = (parent: EFTimegroup, root: EFTimegroup) => {
       for (const child of parent.children) {
         if (child.tagName === "EF-TIMEGROUP") {
           const childTG = child as EFTimegroup;
@@ -2026,10 +1892,7 @@ export class EFTimegroup
           const temporal = child as TemporalMixinInterface & HTMLElement;
           temporal.parentTimegroup = parent;
           temporal.rootTimegroup = root;
-          if (
-            "lockRootTimegroup" in temporal &&
-            typeof temporal.lockRootTimegroup === "function"
-          ) {
+          if ("lockRootTimegroup" in temporal && typeof temporal.lockRootTimegroup === "function") {
             temporal.lockRootTimegroup();
           }
         } else if (child instanceof Element) {
@@ -2054,10 +1917,7 @@ export class EFTimegroup
           const temporal = child as TemporalMixinInterface & HTMLElement;
           temporal.parentTimegroup = nearestParentTG;
           temporal.rootTimegroup = root;
-          if (
-            "lockRootTimegroup" in temporal &&
-            typeof temporal.lockRootTimegroup === "function"
-          ) {
+          if ("lockRootTimegroup" in temporal && typeof temporal.lockRootTimegroup === "function") {
             temporal.lockRootTimegroup();
           }
         } else if (child instanceof Element) {
@@ -2152,22 +2012,20 @@ export class EFTimegroup
     // Start loading media durations in background, but don't block if already in progress
     // This prevents multiple concurrent calls from creating redundant work
     if (!this.#mediaDurationsPromise) {
-      this.#mediaDurationsPromise = this.#waitForMediaDurations(signal).catch(
-        (err) => {
-          // Re-throw AbortError to propagate cancellation
-          if (err instanceof DOMException && err.name === "AbortError") {
-            this.#mediaDurationsPromise = undefined;
-            throw err;
-          }
-          console.error(
-            `[EFTimegroup] waitForMediaDurations failed for ${this.id || "unnamed"}:`,
-            err,
-          );
-          // Clear promise on error so it can be retried
+      this.#mediaDurationsPromise = this.#waitForMediaDurations(signal).catch((err) => {
+        // Re-throw AbortError to propagate cancellation
+        if (err instanceof DOMException && err.name === "AbortError") {
           this.#mediaDurationsPromise = undefined;
           throw err;
-        },
-      );
+        }
+        console.error(
+          `[EFTimegroup] waitForMediaDurations failed for ${this.id || "unnamed"}:`,
+          err,
+        );
+        // Clear promise on error so it can be retried
+        this.#mediaDurationsPromise = undefined;
+        throw err;
+      });
     }
 
     // If signal is provided and aborted, throw immediately
@@ -2444,10 +2302,7 @@ export class EFTimegroup
 
     // Skip wrapping in test contexts or if explicitly disabled
     // Test contexts and render clones provide their own rendering infrastructure
-    if (
-      this.closest("test-context") !== null ||
-      this.hasAttribute("data-no-workbench")
-    ) {
+    if (this.closest("test-context") !== null || this.hasAttribute("data-no-workbench")) {
       return false;
     }
 
@@ -2460,10 +2315,7 @@ export class EFTimegroup
     // Check URL param to disable workbench (only applies in non-rendering mode)
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      if (
-        params.get("noWorkbench") === "true" ||
-        params.get("no-workbench") === "true"
-      ) {
+      if (params.get("noWorkbench") === "true" || params.get("no-workbench") === "true") {
         return false;
       }
     }
@@ -2562,18 +2414,13 @@ export class EFTimegroup
    * Delegates to shared renderTemporalAudio utility for consistent behavior
    * @internal
    */
-  async renderAudio(
-    fromMs: number,
-    toMs: number,
-    signal?: AbortSignal,
-  ): Promise<AudioBuffer> {
+  async renderAudio(fromMs: number, toMs: number, signal?: AbortSignal): Promise<AudioBuffer> {
     return renderTemporalAudio(this, fromMs, toMs, signal);
   }
 
   async #executeCustomFrameTasks() {
     if (this.#customFrameTasks.size > 0) {
-      const percentComplete =
-        this.durationMs > 0 ? this.ownCurrentTimeMs / this.durationMs : 0;
+      const percentComplete = this.durationMs > 0 ? this.ownCurrentTimeMs / this.durationMs : 0;
       const frameInfo = {
         ownCurrentTimeMs: this.ownCurrentTimeMs,
         currentTimeMs: this.currentTimeMs,
@@ -2583,9 +2430,7 @@ export class EFTimegroup
       };
 
       await Promise.all(
-        Array.from(this.#customFrameTasks).map((callback) =>
-          Promise.resolve(callback(frameInfo)),
-        ),
+        Array.from(this.#customFrameTasks).map((callback) => Promise.resolve(callback(frameInfo))),
       );
     }
   }
@@ -2678,11 +2523,7 @@ export class EFTimegroup
           signal.throwIfAborted();
 
           // Evaluate and apply seek target
-          const newTime = evaluateSeekTarget(
-            targetTime ?? 0,
-            this.durationMs,
-            this.effectiveFps,
-          );
+          const newTime = evaluateSeekTarget(targetTime ?? 0, this.durationMs, this.effectiveFps);
           if (isTracingEnabled()) {
             span.setAttribute("newTime", newTime);
           }

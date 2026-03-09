@@ -84,9 +84,7 @@ describe("doAssetSync", () => {
 
   test("Throws if prepare fails", async () => {
     const fakeSync = buildFakeSync();
-    fakeSync.prepare = vi
-      .fn()
-      .mockReturnValue(Promise.reject(new Error("TEST_ERROR")));
+    fakeSync.prepare = vi.fn().mockReturnValue(Promise.reject(new Error("TEST_ERROR")));
     await expect(collectAsyncGenerator(fakeSync)).rejects.toThrow(
       "Error validating TEST_LABEL: TEST_ERROR",
     );
@@ -94,9 +92,7 @@ describe("doAssetSync", () => {
 
   test("Throws if validate fails", async () => {
     const fakeSync = buildFakeSync();
-    fakeSync.validate = vi
-      .fn()
-      .mockReturnValue(Promise.reject(new Error("TEST_ERROR")));
+    fakeSync.validate = vi.fn().mockReturnValue(Promise.reject(new Error("TEST_ERROR")));
     await expect(collectAsyncGenerator(fakeSync)).rejects.toThrow(
       "Error validating TEST_LABEL: TEST_ERROR",
     );
@@ -104,9 +100,7 @@ describe("doAssetSync", () => {
 
   test("Throws if create fails", async () => {
     const fakeSync = buildFakeSync();
-    fakeSync.create = vi
-      .fn()
-      .mockReturnValue(Promise.reject(new Error("TEST_ERROR")));
+    fakeSync.create = vi.fn().mockReturnValue(Promise.reject(new Error("TEST_ERROR")));
     await expect(collectAsyncGenerator(fakeSync)).rejects.toThrow(
       "Error creating TEST_LABEL: TEST_ERROR",
     );
@@ -114,9 +108,7 @@ describe("doAssetSync", () => {
 
   test("Throws if upload fails", async () => {
     const fakeSync = buildFakeSync();
-    fakeSync.upload = vi
-      .fn()
-      .mockReturnValue(Promise.reject(new Error("TEST_ERROR")));
+    fakeSync.upload = vi.fn().mockReturnValue(Promise.reject(new Error("TEST_ERROR")));
     await expect(collectAsyncGenerator(fakeSync)).rejects.toThrow(
       "Error uploading TEST_LABEL: TEST_ERROR",
     );
@@ -124,9 +116,7 @@ describe("doAssetSync", () => {
 
   test("Throws if markSynced fails", async () => {
     const fakeSync = buildFakeSync();
-    fakeSync.markSynced = vi
-      .fn()
-      .mockReturnValue(Promise.reject(new Error("TEST_ERROR")));
+    fakeSync.markSynced = vi.fn().mockReturnValue(Promise.reject(new Error("TEST_ERROR")));
     await expect(collectAsyncGenerator(fakeSync)).rejects.toThrow(
       "Error marking TEST_LABEL as synced: TEST_ERROR",
     );

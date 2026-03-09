@@ -21,10 +21,7 @@ export interface AssetFunctions {
     absolutePath: string,
     trackUrl: string,
   ) => Promise<{ cachePath: string }>;
-  generateScrubTrack: (
-    cacheRoot: string,
-    absolutePath: string,
-  ) => Promise<{ cachePath: string }>;
+  generateScrubTrack: (cacheRoot: string, absolutePath: string) => Promise<{ cachePath: string }>;
   generateTrackFragmentIndex: (
     cacheRoot: string,
     absolutePath: string,
@@ -94,9 +91,7 @@ export function sendMultipleByteRanges(
   for (const range of ranges) {
     const end = range.offset + range.size - 1;
     if (end >= stats.size) {
-      log(
-        `Requested range ${range.offset}-${end} exceeds file size ${stats.size}`,
-      );
+      log(`Requested range ${range.offset}-${end} exceeds file size ${stats.size}`);
       res.writeHead(416, { "Content-Range": `bytes */${stats.size}` });
       res.end();
       return;
@@ -104,9 +99,7 @@ export function sendMultipleByteRanges(
   }
 
   const totalSize = ranges.reduce((sum, r) => sum + r.size, 0);
-  log(
-    `Streaming ${ranges.length} ranges (${totalSize} total bytes) from ${filePath}`,
-  );
+  log(`Streaming ${ranges.length} ranges (${totalSize} total bytes) from ${filePath}`);
 
   res.writeHead(200, {
     "Content-Type": contentType || "video/mp4",
@@ -212,9 +205,7 @@ export function resolveMediaPath(urlParam: string, root: string): string {
  * Convert fragment index segments to millisecond durations array.
  */
 export function getSegmentDurationsMs(track: TrackFragmentIndex): number[] {
-  return track.segments.map(
-    (segment) => (segment.duration / track.timescale) * 1000,
-  );
+  return track.segments.map((segment) => (segment.duration / track.timescale) * 1000);
 }
 
 /**
@@ -243,12 +234,8 @@ export async function generateLocalJitManifest(
   );
 
   // Find tracks by type rather than by hardcoded index (audio-only files have audio at index 1)
-  const videoTrack = Object.values(fragmentIndex).find(
-    (t) => t.type === "video",
-  );
-  const audioTrack = Object.values(fragmentIndex).find(
-    (t) => t.type === "audio",
-  );
+  const videoTrack = Object.values(fragmentIndex).find((t) => t.type === "video");
+  const audioTrack = Object.values(fragmentIndex).find((t) => t.type === "audio");
   const scrubTrack = fragmentIndex[-1];
 
   const hasVideo = videoTrack?.type === "video";
@@ -257,50 +244,35 @@ export async function generateLocalJitManifest(
   // Get duration from the longest track
   let durationMs = 0;
   if (hasVideo && videoTrack) {
-    durationMs = Math.max(
-      durationMs,
-      (videoTrack.duration / videoTrack.timescale) * 1000,
-    );
+    durationMs = Math.max(durationMs, (videoTrack.duration / videoTrack.timescale) * 1000);
   }
   if (hasAudio && audioTrack) {
-    durationMs = Math.max(
-      durationMs,
-      (audioTrack.duration / audioTrack.timescale) * 1000,
-    );
+    durationMs = Math.max(durationMs, (audioTrack.duration / audioTrack.timescale) * 1000);
   }
   const durationSeconds = durationMs / 1000;
 
   // Get video dimensions from track
-  const width =
-    hasVideo && videoTrack && "width" in videoTrack ? videoTrack.width : 1920;
-  const height =
-    hasVideo && videoTrack && "height" in videoTrack ? videoTrack.height : 1080;
+  const width = hasVideo && videoTrack && "width" in videoTrack ? videoTrack.width : 1920;
+  const height = hasVideo && videoTrack && "height" in videoTrack ? videoTrack.height : 1080;
   const codec = hasVideo && videoTrack ? videoTrack.codec : "avc1.640029";
 
   // Get actual segment durations from fragment index
-  const videoSegmentDurationsMs =
-    hasVideo && videoTrack ? getSegmentDurationsMs(videoTrack) : [];
-  const scrubSegmentDurationsMs = scrubTrack
-    ? getSegmentDurationsMs(scrubTrack)
-    : [];
-  const audioSegmentDurationsMs =
-    hasAudio && audioTrack ? getSegmentDurationsMs(audioTrack) : [];
+  const videoSegmentDurationsMs = hasVideo && videoTrack ? getSegmentDurationsMs(videoTrack) : [];
+  const scrubSegmentDurationsMs = scrubTrack ? getSegmentDurationsMs(scrubTrack) : [];
+  const audioSegmentDurationsMs = hasAudio && audioTrack ? getSegmentDurationsMs(audioTrack) : [];
 
   // Average segment duration for backward compatibility
   const avgVideoSegmentDurationMs =
     videoSegmentDurationsMs.length > 0
-      ? videoSegmentDurationsMs.reduce((a, b) => a + b, 0) /
-        videoSegmentDurationsMs.length
+      ? videoSegmentDurationsMs.reduce((a, b) => a + b, 0) / videoSegmentDurationsMs.length
       : 2000;
   const avgScrubSegmentDurationMs =
     scrubSegmentDurationsMs.length > 0
-      ? scrubSegmentDurationsMs.reduce((a, b) => a + b, 0) /
-        scrubSegmentDurationsMs.length
+      ? scrubSegmentDurationsMs.reduce((a, b) => a + b, 0) / scrubSegmentDurationsMs.length
       : 30000;
   const avgAudioSegmentDurationMs =
     audioSegmentDurationsMs.length > 0
-      ? audioSegmentDurationsMs.reduce((a, b) => a + b, 0) /
-        audioSegmentDurationsMs.length
+      ? audioSegmentDurationsMs.reduce((a, b) => a + b, 0) / audioSegmentDurationsMs.length
       : 2000;
 
   log(
@@ -339,9 +311,7 @@ export async function generateLocalJitManifest(
                 {
                   id: "scrub",
                   width: 320,
-                  height: Math.round(
-                    (320 * (height ?? 1080)) / (width ?? 1920),
-                  ),
+                  height: Math.round((320 * (height ?? 1080)) / (width ?? 1920)),
                   bitrate: 100000,
                   codec: scrubTrack.codec,
                   container: "video/mp4",
@@ -364,10 +334,8 @@ export async function generateLocalJitManifest(
         ? [
             {
               id: "audio",
-              channels:
-                "channel_count" in audioTrack ? audioTrack.channel_count : 2,
-              sampleRate:
-                "sample_rate" in audioTrack ? audioTrack.sample_rate : 48000,
+              channels: "channel_count" in audioTrack ? audioTrack.channel_count : 2,
+              sampleRate: "sample_rate" in audioTrack ? audioTrack.sample_rate : 48000,
               bitrate: 128000,
               codec: audioTrack.codec,
               container: "audio/mp4",
@@ -407,11 +375,7 @@ export function createJitTranscodeMiddleware(
   options: JitMiddlewareOptions,
   assetFunctions: AssetFunctions,
 ) {
-  return async (
-    req: IncomingMessage,
-    res: ServerResponse,
-    next: NextFunction,
-  ) => {
+  return async (req: IncomingMessage, res: ServerResponse, next: NextFunction) => {
     const log = debug("ef:vite-plugin:jit");
 
     if (!req.url?.startsWith("/api/v1/transcode/")) {
@@ -445,10 +409,7 @@ export function createJitTranscodeMiddleware(
     // Handle CORS
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-    res.setHeader(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Authorization",
-    );
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
     if (req.method === "OPTIONS") {
       res.writeHead(204);
@@ -458,9 +419,7 @@ export function createJitTranscodeMiddleware(
 
     try {
       // Parse the path to determine which endpoint
-      const pathMatch = url.pathname.match(
-        /^\/api\/v1\/transcode\/(?:([^/]+)\/)?(.+)$/,
-      );
+      const pathMatch = url.pathname.match(/^\/api\/v1\/transcode\/(?:([^/]+)\/)?(.+)$/);
 
       if (!pathMatch) {
         res.writeHead(404, { "Content-Type": "application/json" });
@@ -474,8 +433,7 @@ export function createJitTranscodeMiddleware(
       if (endpoint === "manifest.json") {
         log(`Generating manifest for ${mediaPath}`);
         const proto =
-          (req.headers["x-forwarded-proto"] as string | undefined) ||
-          url.protocol.replace(":", "");
+          (req.headers["x-forwarded-proto"] as string | undefined) || url.protocol.replace(":", "");
         const baseUrl = `${proto}://${url.host}`;
 
         try {
@@ -506,11 +464,10 @@ export function createJitTranscodeMiddleware(
       }
 
       // Get fragment index first - we need it to determine track IDs
-      const fragmentIndexResult =
-        await assetFunctions.generateTrackFragmentIndex(
-          options.cacheRoot,
-          mediaPath,
-        );
+      const fragmentIndexResult = await assetFunctions.generateTrackFragmentIndex(
+        options.cacheRoot,
+        mediaPath,
+      );
       const fragmentIndex: Record<number, TrackFragmentIndex> = JSON.parse(
         await import("node:fs/promises").then((fs) =>
           fs.readFile(fragmentIndexResult.cachePath, "utf-8"),
@@ -548,11 +505,8 @@ export function createJitTranscodeMiddleware(
       const initMatch = endpoint?.match(/^init\.(mp4|m4s)$/);
       if (initMatch && rendition) {
         const extension = initMatch[1];
-        const contentType =
-          extension === "m4s" ? "video/iso.segment" : "video/mp4";
-        log(
-          `Serving init segment (${extension}) for ${mediaPath}, rendition: ${rendition}`,
-        );
+        const contentType = extension === "m4s" ? "video/iso.segment" : "video/mp4";
+        log(`Serving init segment (${extension}) for ${mediaPath}, rendition: ${rendition}`);
 
         try {
           const trackId = getTrackId(rendition);
@@ -560,10 +514,7 @@ export function createJitTranscodeMiddleware(
           // Generate/get the track file
           let trackTaskResult;
           if (trackId === -1) {
-            trackTaskResult = await assetFunctions.generateScrubTrack(
-              options.cacheRoot,
-              mediaPath,
-            );
+            trackTaskResult = await assetFunctions.generateScrubTrack(options.cacheRoot, mediaPath);
           } else {
             const trackUrl = `/@ef-track/${mediaPath}?trackId=${trackId}`;
             trackTaskResult = await assetFunctions.generateTrack(
@@ -588,13 +539,7 @@ export function createJitTranscodeMiddleware(
           // Stream only the init segment bytes
           const { offset, size } = track.initSegment;
           log(`Init segment: offset=${offset}, size=${size}`);
-          sendByteRange(
-            res,
-            trackTaskResult.cachePath,
-            offset,
-            size,
-            contentType,
-          );
+          sendByteRange(res, trackTaskResult.cachePath, offset, size, contentType);
         } catch (error) {
           log(`Error serving init segment: ${error}`);
           if ((error as NodeJS.ErrnoException).code === "ENOENT") {
@@ -631,10 +576,7 @@ export function createJitTranscodeMiddleware(
           // Generate/get the track file
           let trackTaskResult;
           if (trackId === -1) {
-            trackTaskResult = await assetFunctions.generateScrubTrack(
-              options.cacheRoot,
-              mediaPath,
-            );
+            trackTaskResult = await assetFunctions.generateScrubTrack(options.cacheRoot, mediaPath);
           } else {
             const trackUrl = `/@ef-track/${mediaPath}?trackId=${trackId}`;
             trackTaskResult = await assetFunctions.generateTrack(
@@ -670,8 +612,7 @@ export function createJitTranscodeMiddleware(
             return;
           }
 
-          const contentType =
-            extension === "m4s" ? "video/iso.segment" : "video/mp4";
+          const contentType = extension === "m4s" ? "video/iso.segment" : "video/mp4";
 
           if (includeInit) {
             // .mp4: Stream init segment + media segment (playable file)
@@ -691,16 +632,8 @@ export function createJitTranscodeMiddleware(
           } else {
             // .m4s: Stream only this segment's bytes (moof+mdat)
             const { offset, size } = segment;
-            log(
-              `Media segment ${segmentId}.m4s: offset=${offset}, size=${size}`,
-            );
-            sendByteRange(
-              res,
-              trackTaskResult.cachePath,
-              offset,
-              size,
-              contentType,
-            );
+            log(`Media segment ${segmentId}.m4s: offset=${offset}, size=${size}`);
+            sendByteRange(res, trackTaskResult.cachePath, offset, size, contentType);
           }
         } catch (error) {
           log(`Error serving media segment: ${error}`);

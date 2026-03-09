@@ -48,13 +48,7 @@ describe("createComponent", () => {
     document.body.appendChild(container);
     root = createRoot(container);
 
-    root.render(
-      <PanZoom
-        className="test-class"
-        data-testid="pan-zoom"
-        aria-label="pan zoom"
-      />,
-    );
+    root.render(<PanZoom className="test-class" data-testid="pan-zoom" aria-label="pan zoom" />);
 
     const el = await vi.waitUntil(
       () => container.querySelector("ef-pan-zoom") as EFPanZoom | null,

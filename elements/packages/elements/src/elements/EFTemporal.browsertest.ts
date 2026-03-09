@@ -189,10 +189,7 @@ describe("Temporal Lifecycle", () => {
     const childTimegroup = document.createElement("ef-timegroup");
     parentTimegroup.append(childTimegroup);
     document.body.append(parentTimegroup);
-    await Promise.all([
-      parentTimegroup.updateComplete,
-      childTimegroup.updateComplete,
-    ]);
+    await Promise.all([parentTimegroup.updateComplete, childTimegroup.updateComplete]);
 
     expect(parentTimegroup.isRootTimegroup).toBe(true);
     expect(parentTimegroup.parentTimegroup).toBeUndefined();

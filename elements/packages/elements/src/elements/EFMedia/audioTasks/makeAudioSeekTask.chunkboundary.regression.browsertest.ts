@@ -40,8 +40,7 @@ const test = baseTest.extend<{
     // Create the exact structure from simple-demo.html
     const innerTimegroup = document.createElement("ef-timegroup");
     innerTimegroup.mode = "contain";
-    innerTimegroup.style.cssText =
-      "position: absolute; width: 100%; height: 100%;";
+    innerTimegroup.style.cssText = "position: absolute; width: 100%; height: 100%;";
     innerTimegroup.append(video);
     timegroup.append(innerTimegroup);
     configuration.append(timegroup);

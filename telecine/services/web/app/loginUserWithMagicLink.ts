@@ -48,7 +48,9 @@ export async function getUserEmailAndPasswordByMagicToken(token: string) {
     )
     .where("identity.magic_link_tokens.token", "=", token)
     .where("identity.magic_link_tokens.claimed_at", "is", null)
-    .where(sql<SqlBool>`identity.magic_link_tokens.created_at >= now() - interval '1 hour'`)
+    .where(
+      sql<SqlBool>`identity.magic_link_tokens.created_at >= now() - interval '1 hour'`,
+    )
     .selectAll("identity.email_passwords")
     .select("identity.email_confirmations.confirmed_at")
     .executeTakeFirst();

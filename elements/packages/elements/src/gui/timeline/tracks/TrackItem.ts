@@ -346,8 +346,7 @@ export class TrackItem extends TWMixin(LitElement) {
     const elementId = (this.element as HTMLElement).id || "";
     const trimStartMs = this.element.trimStartMs ?? 0;
     const trimEndMs = this.element.trimEndMs ?? 0;
-    const intrinsicDurationMs =
-      this.element.intrinsicDurationMs ?? this.element.durationMs;
+    const intrinsicDurationMs = this.element.intrinsicDurationMs ?? this.element.durationMs;
 
     const typeColor = this.getElementTypeColor();
 
@@ -371,9 +370,7 @@ export class TrackItem extends TWMixin(LitElement) {
           style=${styleMap({
             ...this.trimPortionStyles,
             height: "var(--timeline-track-height, 22px)",
-            backgroundColor: this.isFocused
-              ? "rgba(59, 130, 246, 0.25)"
-              : "rgba(30, 41, 59, 0.8)",
+            backgroundColor: this.isFocused ? "rgba(59, 130, 246, 0.25)" : "rgba(30, 41, 59, 0.8)",
             borderLeft: `3px solid ${typeColor}`,
           })}
           title="${this.getTooltipText()}"
@@ -402,10 +399,7 @@ export class TrackItem extends TWMixin(LitElement) {
   protected trackController?: ElementTrackController;
 
   update(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>) {
-    if (
-      changedProperties.has("element") &&
-      this.element instanceof LitElement
-    ) {
+    if (changedProperties.has("element") && this.element instanceof LitElement) {
       this.trackController?.remove();
       this.trackController = new ElementTrackController(this.element, this);
     }

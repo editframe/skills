@@ -9,15 +9,10 @@ import { getEncoderWorkerUrl } from "./encoderWorkerInline.js";
 /**
  * Test helper: Wait for worker message with timeout
  */
-function waitForWorkerMessage(
-  worker: Worker,
-  timeout: number = 5000,
-): Promise<MessageEvent> {
+function waitForWorkerMessage(worker: Worker, timeout: number = 5000): Promise<MessageEvent> {
   return new Promise<MessageEvent>((resolve, reject) => {
     const timer = setTimeout(() => {
-      reject(
-        new Error(`Timeout waiting for worker message after ${timeout}ms`),
-      );
+      reject(new Error(`Timeout waiting for worker message after ${timeout}ms`));
     }, timeout);
 
     const handler = (event: MessageEvent) => {
@@ -121,11 +116,7 @@ describe("encoderWorker Script Tests", () => {
       // Wait for initialization
       await waitForWorkerMessage(worker, 1000);
 
-      const bitmap = await createTestImageBitmap(
-        100,
-        100,
-        "rgba(255, 0, 0, 0.5)",
-      );
+      const bitmap = await createTestImageBitmap(100, 100, "rgba(255, 0, 0, 0.5)");
       const taskId = "png-test-456";
 
       worker.postMessage(
@@ -151,11 +142,7 @@ describe("encoderWorker Script Tests", () => {
       await waitForWorkerMessage(worker, 1000);
 
       for (let i = 0; i < 3; i++) {
-        const bitmap = await createTestImageBitmap(
-          50,
-          50,
-          `rgb(${i * 80}, 0, 0)`,
-        );
+        const bitmap = await createTestImageBitmap(50, 50, `rgb(${i * 80}, 0, 0)`);
         const taskId = `multi-test-${i}`;
 
         worker.postMessage(
@@ -267,11 +254,7 @@ describe("encoderWorker Script Tests", () => {
       // Wait for initialization
       await waitForWorkerMessage(worker, 1000);
 
-      const bitmap = await createTestImageBitmap(
-        100,
-        100,
-        "rgba(0, 255, 0, 0.7)",
-      );
+      const bitmap = await createTestImageBitmap(100, 100, "rgba(0, 255, 0, 0.7)");
       const taskId = "png-format-test";
 
       worker.postMessage(
@@ -501,11 +484,7 @@ describe("encoderWorker Script Tests", () => {
       const startTime = performance.now();
 
       for (let i = 0; i < count; i++) {
-        const bitmap = await createTestImageBitmap(
-          100,
-          100,
-          `rgb(${i * 50}, 0, 0)`,
-        );
+        const bitmap = await createTestImageBitmap(100, 100, `rgb(${i * 50}, 0, 0)`);
         const taskId = `rapid-test-${i}`;
 
         worker.postMessage(

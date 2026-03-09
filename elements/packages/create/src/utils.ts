@@ -26,10 +26,7 @@ export function getUserPkgManager(): PackageManager {
  * Run the appropriate install command for the detected package manager.
  * Shows full output to the user so they can see progress.
  */
-async function runInstallCommand(
-  pkgManager: PackageManager,
-  projectDir: string,
-): Promise<void> {
+async function runInstallCommand(pkgManager: PackageManager, projectDir: string): Promise<void> {
   // Show all output directly to user - no hiding behind spinners
   await execa(pkgManager, ["install"], {
     cwd: projectDir,
@@ -41,21 +38,15 @@ async function runInstallCommand(
 /**
  * Install dependencies in the project directory.
  */
-export async function installDependencies(
-  projectDir: string,
-): Promise<boolean> {
+export async function installDependencies(projectDir: string): Promise<boolean> {
   const pkgManager = getUserPkgManager();
 
   try {
-    process.stderr.write(
-      chalk.bold(`\nInstalling dependencies with ${pkgManager}...\n\n`),
-    );
+    process.stderr.write(chalk.bold(`\nInstalling dependencies with ${pkgManager}...\n\n`));
 
     await runInstallCommand(pkgManager, projectDir);
 
-    process.stderr.write(
-      chalk.green("\n✓ Dependencies installed successfully!\n"),
-    );
+    process.stderr.write(chalk.green("\n✓ Dependencies installed successfully!\n"));
 
     return true;
   } catch (error) {
@@ -82,11 +73,9 @@ export async function installAgentSkills(projectDir: string): Promise<boolean> {
     for (const destBase of [".claude/skills", ".agents/skills"]) {
       await mkdir(path.join(projectDir, destBase), { recursive: true });
       for (const skill of skills) {
-        await cp(
-          path.join(skillsSource, skill),
-          path.join(projectDir, destBase, skill),
-          { recursive: true },
-        );
+        await cp(path.join(skillsSource, skill), path.join(projectDir, destBase, skill), {
+          recursive: true,
+        });
       }
     }
 

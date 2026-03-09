@@ -127,16 +127,11 @@ export class EFPanZoom extends LitElement {
     const newTransform = {
       x: updates.x !== undefined ? updates.x : this.x,
       y: updates.y !== undefined ? updates.y : this.y,
-      scale:
-        updates.scale !== undefined
-          ? Math.max(0.1, Math.min(5, updates.scale))
-          : this.scale,
+      scale: updates.scale !== undefined ? Math.max(0.1, Math.min(5, updates.scale)) : this.scale,
     };
 
     const changed =
-      newTransform.x !== this.x ||
-      newTransform.y !== this.y ||
-      newTransform.scale !== this.scale;
+      newTransform.x !== this.x || newTransform.y !== this.y || newTransform.scale !== this.scale;
 
     if (changed) {
       this.x = newTransform.x;
@@ -176,12 +171,7 @@ export class EFPanZoom extends LitElement {
   };
 
   private _onPointerMove = (e: PointerEvent) => {
-    if (
-      !this._isDragging ||
-      !this._dragStartPointerPos ||
-      !this._dragStartTransform
-    )
-      return;
+    if (!this._isDragging || !this._dragStartPointerPos || !this._dragStartTransform) return;
 
     const deltaX = e.clientX - this._dragStartPointerPos.x;
     const deltaY = e.clientY - this._dragStartPointerPos.y;
@@ -330,9 +320,9 @@ export class EFPanZoom extends LitElement {
 
     // Find the first child element to measure
     const contentWrapper = this.shadowRoot?.querySelector(".content-wrapper");
-    const slottedContent = contentWrapper
-      ?.querySelector("slot")
-      ?.assignedElements()[0] as HTMLElement | undefined;
+    const slottedContent = contentWrapper?.querySelector("slot")?.assignedElements()[0] as
+      | HTMLElement
+      | undefined;
 
     if (!slottedContent) return;
 

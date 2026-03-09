@@ -140,11 +140,7 @@ export async function compareSnapshot(
     acceptableDiffPercentage?: number;
   } = {},
 ): Promise<SnapshotComparisonResult> {
-  const {
-    threshold = 0.1,
-    antialiasing = true,
-    acceptableDiffPercentage = 1.0,
-  } = options;
+  const { threshold = 0.1, antialiasing = true, acceptableDiffPercentage = 1.0 } = options;
 
   const response = await fetch("/@ef-compare-snapshot", {
     method: "POST",
@@ -217,9 +213,7 @@ export async function expectCanvasToMatchSnapshot(
       result.diffPercentage !== undefined
         ? `${result.diffPercentage.toFixed(2)}% different`
         : result.error || "comparison failed";
-    throw new Error(
-      `Visual regression detected for ${testName}/${snapshotName}: ${diffInfo}`,
-    );
+    throw new Error(`Visual regression detected for ${testName}/${snapshotName}: ${diffInfo}`);
   }
 }
 
@@ -280,21 +274,13 @@ export async function expectCanvasesToMatch(
     acceptableDiffPercentage?: number;
   } = {},
 ): Promise<void> {
-  const result = await compareTwoCanvases(
-    canvas1,
-    canvas2,
-    testName,
-    comparisonName,
-    options,
-  );
+  const result = await compareTwoCanvases(canvas1, canvas2, testName, comparisonName, options);
 
   if (!result.match) {
     const diffInfo =
       result.diffPercentage !== undefined
         ? `${result.diffPercentage.toFixed(2)}% different`
         : result.error || "comparison failed";
-    throw new Error(
-      `Canvas comparison failed for ${testName}/${comparisonName}: ${diffInfo}`,
-    );
+    throw new Error(`Canvas comparison failed for ${testName}/${comparisonName}: ${diffInfo}`);
   }
 }

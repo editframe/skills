@@ -71,15 +71,9 @@ describe("canvas/DOM parity: foreignObject vs native", () => {
     await tg.updateComplete;
 
     const { foreignCanvas, nativeCanvas } = await captureBothPaths(tg, W, H);
-    await expectCanvasesToMatch(
-      foreignCanvas,
-      nativeCanvas,
-      TEST_NAME,
-      "mr1-text-shadow-inline",
-      {
-        acceptableDiffPercentage: 0.5,
-      },
-    );
+    await expectCanvasesToMatch(foreignCanvas, nativeCanvas, TEST_NAME, "mr1-text-shadow-inline", {
+      acceptableDiffPercentage: 0.5,
+    });
     tg.remove();
   }, 30000);
 
@@ -137,22 +131,15 @@ describe("canvas/DOM parity: foreignObject vs native", () => {
     // White panel clipped to the center horizontal band — top 20% and bottom 40% removed.
     // Without clip-path the entire element is white; with clip-path only the center band shows.
     el.style.cssText =
-      "position:absolute;inset:0;background:white;" +
-      "clip-path:inset(20% 0 40% 0);";
+      "position:absolute;inset:0;background:white;" + "clip-path:inset(20% 0 40% 0);";
     tg.appendChild(el);
     document.body.appendChild(tg);
     await tg.updateComplete;
 
     const { foreignCanvas, nativeCanvas } = await captureBothPaths(tg, W, H);
-    await expectCanvasesToMatch(
-      foreignCanvas,
-      nativeCanvas,
-      TEST_NAME,
-      "mr3-clip-path-inline",
-      {
-        acceptableDiffPercentage: 0.5,
-      },
-    );
+    await expectCanvasesToMatch(foreignCanvas, nativeCanvas, TEST_NAME, "mr3-clip-path-inline", {
+      acceptableDiffPercentage: 0.5,
+    });
     tg.remove();
   }, 30000);
 
@@ -180,15 +167,9 @@ describe("canvas/DOM parity: foreignObject vs native", () => {
     await tg.updateComplete;
 
     const { foreignCanvas, nativeCanvas } = await captureBothPaths(tg, W, H);
-    await expectCanvasesToMatch(
-      foreignCanvas,
-      nativeCanvas,
-      TEST_NAME,
-      "mr4-clip-path-keyframes",
-      {
-        acceptableDiffPercentage: 0.5,
-      },
-    );
+    await expectCanvasesToMatch(foreignCanvas, nativeCanvas, TEST_NAME, "mr4-clip-path-keyframes", {
+      acceptableDiffPercentage: 0.5,
+    });
     tg.remove();
   }, 30000);
 
@@ -202,8 +183,7 @@ describe("canvas/DOM parity: foreignObject vs native", () => {
     const CW = 1920;
     const CH = 1080;
     const container = document.createElement("div");
-    container.style.cssText =
-      "position:fixed;top:0;left:0;pointer-events:none;z-index:-1;";
+    container.style.cssText = "position:fixed;top:0;left:0;pointer-events:none;z-index:-1;";
     container.innerHTML = `
       <ef-timegroup mode="fixed" duration="10s"
         style="width:${CW}px;height:${CH}px;position:relative;overflow:hidden;background:#000;">
@@ -252,15 +232,9 @@ describe("canvas/DOM parity: foreignObject vs native", () => {
     await tg.updateComplete;
 
     const { foreignCanvas, nativeCanvas } = await captureBothPaths(tg, CW, CH);
-    await expectCanvasesToMatch(
-      foreignCanvas,
-      nativeCanvas,
-      TEST_NAME,
-      "mr5-rave-composition",
-      {
-        acceptableDiffPercentage: 2.0,
-      },
-    );
+    await expectCanvasesToMatch(foreignCanvas, nativeCanvas, TEST_NAME, "mr5-rave-composition", {
+      acceptableDiffPercentage: 2.0,
+    });
     container.remove();
   }, 60000);
 });

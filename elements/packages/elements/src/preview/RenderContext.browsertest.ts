@@ -32,9 +32,7 @@ describe("RenderContext", () => {
     test("caches dataURL for element with renderVersion", () => {
       const element = createMockVersionedElement("test-image", 1);
       context.setCachedCanvasDataUrl(element, "data:image/png;base64,abc");
-      expect(context.getCachedCanvasDataUrl(element)).toBe(
-        "data:image/png;base64,abc",
-      );
+      expect(context.getCachedCanvasDataUrl(element)).toBe("data:image/png;base64,abc");
     });
 
     test("returns undefined for different renderVersion", () => {

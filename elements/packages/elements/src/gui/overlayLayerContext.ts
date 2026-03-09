@@ -8,6 +8,6 @@ export interface OverlayLayerCoordinateSpace {
   overlayLayerRect: DOMRect;
 }
 
-export const overlayLayerContext = createContext<
-  OverlayLayerCoordinateSpace | undefined
->(Symbol("overlayLayer"));
+export const overlayLayerContext = createContext<OverlayLayerCoordinateSpace | undefined>(
+  Symbol("overlayLayer"),
+);

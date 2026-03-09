@@ -124,9 +124,7 @@ describe("Canvas Scrub Performance Profile", () => {
     // Allow <=34ms jitter from 30fps frame-boundary quantization.
     const QUANT_JITTER_MS = 34;
     const staleReads = timings.filter(
-      (t, idx) =>
-        idx > 0 &&
-        timings[idx - 1]!.readTimeMs - t.readTimeMs > QUANT_JITTER_MS,
+      (t, idx) => idx > 0 && timings[idx - 1]!.readTimeMs - t.readTimeMs > QUANT_JITTER_MS,
     );
 
     // At least 80% of distinct time values should produce paints
@@ -198,9 +196,7 @@ describe("Canvas Scrub Performance Profile", () => {
     for (let i = 0; i < FRAMES; i++) {
       tg.currentTimeMs = Math.round((i / FRAMES) * 10000);
 
-      const frameStart = await new Promise<number>((resolve) =>
-        requestAnimationFrame(resolve),
-      );
+      const frameStart = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
       frameTimestamps.push(frameStart);
 
       const renderStart = performance.now();

@@ -93,9 +93,8 @@ async function generateJitManifests(
     }
 
     // Import JIT utilities dynamically to avoid circular dependencies
-    const { probeSourceMetadata, generateJitManifest } = await import(
-      "@/render/jit-utils"
-    );
+    const { probeSourceMetadata, generateJitManifest } =
+      await import("@/render/jit-utils");
 
     logger.debug({ sourceUrls }, "Generating JIT manifests for source URLs");
 
@@ -142,8 +141,8 @@ async function generateJitManifests(
 /**
  * Convert fragment index to JIT manifest format.
  * The fragment index contains all the data needed for the native decoder.
- * 
- * @param assetId - The asset ID 
+ *
+ * @param assetId - The asset ID
  * @param fragmentIndex - The fragment index data from ISOBMFF processing
  * @param orgId - The organization ID
  * @param trackUrls - Pre-computed download URLs for each track file
@@ -159,7 +158,7 @@ export function fragmentIndexToJitManifest(
   let audioTrackIndex: any = null;
   let videoTrackId: number | null = null;
   let audioTrackId: number | null = null;
-  
+
   for (const [trackIdStr, track] of Object.entries(fragmentIndex)) {
     const trackId = parseInt(trackIdStr, 10);
     if (track.type === "video" && !videoTrackIndex) {
@@ -181,15 +180,15 @@ export function fragmentIndexToJitManifest(
     if (!track.segments || track.segments.length === 0) {
       return [];
     }
-    
+
     const trackUrl = trackUrls[trackId];
     if (!trackUrl) {
       logger.warn({ trackId, assetId }, "No URL available for track");
       return [];
     }
-    
+
     const timescale = track.timescale || 1;
-    
+
     return track.segments.map((seg: any, index: number) => {
       // Use dts for timing (decode time stamp), fallback to cts if dts not available
       const startTime = seg.dts ?? seg.cts ?? 0;
@@ -209,13 +208,21 @@ export function fragmentIndexToJitManifest(
 
   // Calculate total duration
   const durationMs = Math.max(
-    videoTrackIndex ? (videoTrackIndex.duration / videoTrackIndex.timescale) * 1000 : 0,
-    audioTrackIndex ? (audioTrackIndex.duration / audioTrackIndex.timescale) * 1000 : 0,
+    videoTrackIndex
+      ? (videoTrackIndex.duration / videoTrackIndex.timescale) * 1000
+      : 0,
+    audioTrackIndex
+      ? (audioTrackIndex.duration / audioTrackIndex.timescale) * 1000
+      : 0,
   );
 
   // Use the video track URL as the main source URL (for init segment fetching)
-  const mainTrackUrl = videoTrackId !== null ? trackUrls[videoTrackId] : 
-                       audioTrackId !== null ? trackUrls[audioTrackId] : assetId;
+  const mainTrackUrl =
+    videoTrackId !== null
+      ? trackUrls[videoTrackId]
+      : audioTrackId !== null
+        ? trackUrls[audioTrackId]
+        : assetId;
 
   const manifest: JitManifest = {
     sourceUrl: mainTrackUrl, // Use the track URL as source for byte-range fetching
@@ -237,7 +244,9 @@ export function fragmentIndexToJitManifest(
       height: videoTrackIndex.height,
       initSegment: {
         startByte: videoTrackIndex.initSegment?.offset || 0,
-        endByte: (videoTrackIndex.initSegment?.offset || 0) + (videoTrackIndex.initSegment?.size || 0),
+        endByte:
+          (videoTrackIndex.initSegment?.offset || 0) +
+          (videoTrackIndex.initSegment?.size || 0),
       },
       segments: convertSegments(videoTrackIndex, videoTrackId),
       // Note: extradata will be extracted from init segment when decoder session is created
@@ -255,7 +264,9 @@ export function fragmentIndexToJitManifest(
       sampleRate: audioTrackIndex.sample_rate,
       initSegment: {
         startByte: audioTrackIndex.initSegment?.offset || 0,
-        endByte: (audioTrackIndex.initSegment?.offset || 0) + (audioTrackIndex.initSegment?.size || 0),
+        endByte:
+          (audioTrackIndex.initSegment?.offset || 0) +
+          (audioTrackIndex.initSegment?.size || 0),
       },
       segments: convertSegments(audioTrackIndex, audioTrackId),
     };
@@ -267,7 +278,7 @@ export function fragmentIndexToJitManifest(
 /**
  * Generate JIT manifests for asset-id sources from fragment indexes.
  * Converts the existing fragment index data to JIT manifest format.
- * 
+ *
  * This also fetches signed download URLs for each track file so the
  * native decoder can access them via byte-range requests.
  */
@@ -281,7 +292,10 @@ async function generateJitManifestsForAssetIds(
       return {};
     }
 
-    logger.debug({ assetIds, orgId }, "Converting fragment indexes to JIT manifests");
+    logger.debug(
+      { assetIds, orgId },
+      "Converting fragment indexes to JIT manifests",
+    );
 
     const jitManifests: Record<string, JitManifest> = {};
 
@@ -294,26 +308,46 @@ async function generateJitManifestsForAssetIds(
         }
 
         // Get download URLs for each track file
-        const trackIds = Object.keys(fragmentIndex).map(id => parseInt(id, 10));
+        const trackIds = Object.keys(fragmentIndex).map((id) =>
+          parseInt(id, 10),
+        );
         const trackUrls: Record<number, string> = {};
-        
+
         for (const trackId of trackIds) {
-          const trackPath = isobmffTrackFilePath({ org_id: orgId, id: assetId, track_id: trackId });
+          const trackPath = isobmffTrackFilePath({
+            org_id: orgId,
+            id: assetId,
+            track_id: trackId,
+          });
           try {
             const url = await storageProvider.getDownloadUrl(trackPath);
             trackUrls[trackId] = url;
-            logger.debug({ assetId, trackId, url: url.substring(0, 100) + '...' }, "Got download URL for track");
+            logger.debug(
+              { assetId, trackId, url: url.substring(0, 100) + "..." },
+              "Got download URL for track",
+            );
           } catch (error) {
-            logger.warn({ assetId, trackId, trackPath, error }, "Failed to get download URL for track");
+            logger.warn(
+              { assetId, trackId, trackPath, error },
+              "Failed to get download URL for track",
+            );
           }
         }
 
-        const manifest = fragmentIndexToJitManifest(assetId, fragmentIndex, orgId, trackUrls);
+        const manifest = fragmentIndexToJitManifest(
+          assetId,
+          fragmentIndex,
+          orgId,
+          trackUrls,
+        );
         if (!manifest) {
-          logger.debug({ assetId }, "Could not convert fragment index to JIT manifest");
+          logger.debug(
+            { assetId },
+            "Could not convert fragment index to JIT manifest",
+          );
           continue;
         }
-        
+
         jitManifests[assetId] = manifest;
 
         logger.debug(
@@ -322,12 +356,15 @@ async function generateJitManifestsForAssetIds(
             durationMs: manifest.durationMs,
             videoSegments: manifest.videoTrack?.segments.length,
             audioSegments: manifest.audioTrack?.segments.length,
-            sourceUrl: manifest.sourceUrl?.substring(0, 100) + '...',
+            sourceUrl: manifest.sourceUrl?.substring(0, 100) + "...",
           },
           "Converted fragment index to JIT manifest",
         );
       } catch (error) {
-        logger.warn({ assetId, error }, "Failed to convert fragment index for asset-id");
+        logger.warn(
+          { assetId, error },
+          "Failed to convert fragment index for asset-id",
+        );
       }
     }
 
@@ -341,10 +378,10 @@ async function generateJitManifestsForAssetIds(
 
 /**
  * Create asset metadata bundle for rendering.
- * 
+ *
  * This generates JIT manifests for ALL video sources (both asset-id and URL sources).
  * The native decoder in Electron requires JIT manifests to function.
- * 
+ *
  * Fragment indexes are also included for backwards compatibility with WebCodecs path.
  */
 export async function createAssetsMetadataBundle(
@@ -362,10 +399,7 @@ export async function createAssetsMetadataBundle(
     const mediaAssetIds = extractMediaAssetIds(assets.efMediaSrcs);
     const sourceUrls = extractSourceUrls(assets.efMediaSrcs);
 
-    logger.debug(
-      { mediaAssetIds, sourceUrls },
-      "Extracted media sources",
-    );
+    logger.debug({ mediaAssetIds, sourceUrls }, "Extracted media sources");
 
     // Fetch fragment indexes for asset-id sources (needed for backwards compat)
     const fragmentIndexes = await fetchFragmentIndexes(mediaAssetIds, orgId);
@@ -392,7 +426,8 @@ export async function createAssetsMetadataBundle(
 
     const bundle: AssetsMetadataBundle = {
       fragmentIndexes,
-      jitManifests: Object.keys(jitManifests).length > 0 ? jitManifests : undefined,
+      jitManifests:
+        Object.keys(jitManifests).length > 0 ? jitManifests : undefined,
     };
 
     logger.debug(

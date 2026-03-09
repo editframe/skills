@@ -1,8 +1,5 @@
 import type { TrackFragmentIndex } from "@editframe/assets";
-import type {
-  ManifestResponse,
-  ThumbnailResult,
-} from "../../transcoding/types/index.js";
+import type { ManifestResponse, ThumbnailResult } from "../../transcoding/types/index.js";
 import type { UrlGenerator } from "../../transcoding/utils/UrlGenerator.js";
 import { CachedFetcher, type FetchFn } from "./CachedFetcher.js";
 import {
@@ -17,11 +14,7 @@ import {
   createByteRangeTransport,
   createUrlTransport,
 } from "./SegmentTransport.js";
-import {
-  type TimingModel,
-  createByteRangeTiming,
-  createJitTiming,
-} from "./TimingModel.js";
+import { type TimingModel, createByteRangeTiming, createJitTiming } from "./TimingModel.js";
 
 export interface MediaEngine {
   readonly durationMs: number;
@@ -60,17 +53,11 @@ export function createMediaEngine(
       }
 
       // Use dynamic import to keep ThumbnailExtractor out of initial bundle
-      const { ThumbnailExtractor } =
-        await import("./shared/ThumbnailExtractor.js");
+      const { ThumbnailExtractor } = await import("./shared/ThumbnailExtractor.js");
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       const engine = this as MediaEngine;
       const extractor = new ThumbnailExtractor(engine);
-      return extractor.extractThumbnails(
-        timestamps,
-        track,
-        index.durationMs,
-        signal,
-      );
+      return extractor.extractThumbnails(timestamps, track, index.durationMs, signal);
     },
   };
 }
@@ -105,19 +92,12 @@ export async function fetchFileIndex(
   signal?.throwIfAborted();
 
   const contentType = response.headers.get("content-type");
-  if (
-    !response.ok ||
-    (contentType && !contentType.includes("application/json"))
-  ) {
+  if (!response.ok || (contentType && !contentType.includes("application/json"))) {
     const text = await response.clone().text();
     if (!response.ok) {
-      throw new Error(
-        `Failed to fetch asset index: ${response.status} ${text}`,
-      );
+      throw new Error(`Failed to fetch asset index: ${response.status} ${text}`);
     }
-    throw new Error(
-      `Expected JSON but got ${contentType}: ${text.substring(0, 100)}`,
-    );
+    throw new Error(`Expected JSON but got ${contentType}: ${text.substring(0, 100)}`);
   }
 
   try {
@@ -165,12 +145,9 @@ export async function validateTrackAccess(
         error instanceof Error &&
         (error.message.includes("401") ||
           error.message.includes("UNAUTHORIZED") ||
-          (error.message.includes("Failed to fetch") &&
-            error.message.includes("401")))
+          (error.message.includes("Failed to fetch") && error.message.includes("401")))
       ) {
-        throw new Error(
-          `${track.role} segments require authentication: ${error.message}`,
-        );
+        throw new Error(`${track.role} segments require authentication: ${error.message}`);
       }
     }
   }
@@ -234,15 +211,7 @@ export interface CreateMediaEngineOptions {
 export async function createMediaEngineFromSource(
   opts: CreateMediaEngineOptions,
 ): Promise<MediaEngine | undefined> {
-  const {
-    src,
-    fileId,
-    apiHost,
-    requiredTracks,
-    fetchFn,
-    urlGenerator,
-    signal,
-  } = opts;
+  const { src, fileId, apiHost, requiredTracks, fetchFn, urlGenerator, signal } = opts;
 
   const fetcher = new CachedFetcher(fetchFn);
 
@@ -274,12 +243,7 @@ export async function createMediaEngineFromSource(
     indexData = { type: "manifest", data: manifest, src: manifest.sourceUrl };
   }
 
-  const {
-    index,
-    transport,
-    timing,
-    src: engineSrc,
-  } = buildEngineComponents(indexData, fetcher);
+  const { index, transport, timing, src: engineSrc } = buildEngineComponents(indexData, fetcher);
 
   await validateTrackAccess(transport, index.tracks, requiredTracks, signal);
 

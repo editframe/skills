@@ -23,11 +23,7 @@ function getArg(name: string, defaultValue: string): string {
   const eqIdx = args.findIndex((a) => a.startsWith(`--${name}=`));
   if (eqIdx !== -1) return args[eqIdx]!.split("=")[1]!;
   const flagIdx = args.indexOf(`--${name}`);
-  if (
-    flagIdx !== -1 &&
-    args[flagIdx + 1] &&
-    !args[flagIdx + 1]!.startsWith("--")
-  ) {
+  if (flagIdx !== -1 && args[flagIdx + 1] && !args[flagIdx + 1]!.startsWith("--")) {
     return args[flagIdx + 1]!;
   }
   return defaultValue;
@@ -181,9 +177,7 @@ async function main() {
   console.log(`Native API available: ${nativeAvailable}\n`);
 
   const results: BenchmarkResult[] = [];
-  const modesToTest = nativeAvailable
-    ? RENDER_MODES
-    : (["foreignObject"] as const);
+  const modesToTest = nativeAvailable ? RENDER_MODES : (["foreignObject"] as const);
 
   for (const renderMode of modesToTest) {
     console.log(`\n--- Testing ${renderMode} mode ---\n`);
@@ -214,9 +208,7 @@ async function main() {
     const baseline = modeResults.find((r) => r.scale === 1);
 
     for (const r of modeResults) {
-      const speedup = baseline
-        ? (baseline.avgFrameMs / r.avgFrameMs).toFixed(2) + "x"
-        : "-";
+      const speedup = baseline ? (baseline.avgFrameMs / r.avgFrameMs).toFixed(2) + "x" : "-";
       console.log(
         `${r.renderMode.padEnd(15)} ${r.scale.toFixed(2).padStart(5)}  ` +
           `${r.avgFrameMs.toFixed(1).padStart(7)}  ${r.minFrameMs.toFixed(1).padStart(7)}  ` +

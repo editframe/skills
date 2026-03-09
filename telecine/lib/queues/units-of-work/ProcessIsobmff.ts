@@ -349,7 +349,7 @@ class ProcessISOBMFFExecutor {
 
     return {
       path: localFilePath,
-      md5: file.md5 ?? await md5FilePath(localFilePath),
+      md5: file.md5 ?? (await md5FilePath(localFilePath)),
       byte_size: file.byte_size,
       filename: file.filename,
       dispose: async () => {

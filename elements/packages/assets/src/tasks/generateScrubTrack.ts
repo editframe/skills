@@ -78,8 +78,7 @@ export const generateScrubTrackFromPath = async (absolutePath: string) => {
 
 export const generateScrubTrackTask = idempotentTask({
   label: "scrub-track",
-  filename: (absolutePath: string) =>
-    `${basename(absolutePath)}.scrub-track.mp4`,
+  filename: (absolutePath: string) => `${basename(absolutePath)}.scrub-track.mp4`,
   runner: async (absolutePath: string) => {
     const probe = await Probe.probePath(absolutePath);
 
@@ -103,9 +102,7 @@ export const generateScrubTrackTask = idempotentTask({
 
       progressTimeout = setTimeout(() => {
         if (!finalStream.destroyed) {
-          console.warn(
-            `Progress timeout triggered for scrub track - no activity for 30 seconds`,
-          );
+          console.warn(`Progress timeout triggered for scrub track - no activity for 30 seconds`);
           finalStream.destroy(new Error("Scrub track generation timeout"));
         }
       }, 30000); // 30 second sliding timeout (longer for transcoding)
@@ -145,10 +142,7 @@ export const generateScrubTrackTask = idempotentTask({
   },
 });
 
-export const generateScrubTrack = async (
-  cacheRoot: string,
-  absolutePath: string,
-) => {
+export const generateScrubTrack = async (cacheRoot: string, absolutePath: string) => {
   try {
     return await generateScrubTrackTask(cacheRoot, absolutePath);
   } catch (error) {

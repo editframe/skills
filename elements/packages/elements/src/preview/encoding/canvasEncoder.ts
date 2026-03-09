@@ -65,8 +65,7 @@ function getWorkerPool(): WorkerPool | null {
     _workerPool = null;
     if (!_workerPoolWarningLogged) {
       _workerPoolWarningLogged = true;
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       logger.warn(
         `[canvasEncoder] Failed to create worker pool: ${errorMessage} - using main thread fallback`,
       );
@@ -95,9 +94,7 @@ export async function encodeCanvasesInParallel(
   const workerPool = getWorkerPool();
 
   // Helper to encode a single canvas (with caching)
-  const encodeCanvas = async (
-    canvas: HTMLCanvasElement,
-  ): Promise<CanvasEncodeResult | null> => {
+  const encodeCanvas = async (canvas: HTMLCanvasElement): Promise<CanvasEncodeResult | null> => {
     try {
       if (canvas.width === 0 || canvas.height === 0) {
         return null;
@@ -108,8 +105,7 @@ export async function encodeCanvasesInParallel(
 
       // Check RenderContext cache for static elements (ef-image, ef-waveform)
       if (renderContext && sourceElement) {
-        const cachedDataUrl =
-          renderContext.getCachedCanvasDataUrl(sourceElement);
+        const cachedDataUrl = renderContext.getCachedCanvasDataUrl(sourceElement);
         if (cachedDataUrl) {
           return { canvas, dataUrl: cachedDataUrl, preserveAlpha };
         }
@@ -154,10 +150,7 @@ export async function encodeCanvasesInParallel(
       return { canvas, dataUrl, preserveAlpha };
     } catch (error) {
       // Fallback to main thread if worker encoding fails
-      logger.warn(
-        "[canvasEncoder] Worker encoding failed, using main thread fallback:",
-        error,
-      );
+      logger.warn("[canvasEncoder] Worker encoding failed, using main thread fallback:", error);
       const encoded = encodeCanvasOnMainThread(canvas, canvasScale);
       if (encoded) {
         logger.warn("[canvasEncoder] Main thread fallback succeeded");
@@ -165,10 +158,7 @@ export async function encodeCanvasesInParallel(
       }
 
       // Cross-origin canvas or other error - skip
-      logger.warn(
-        "[canvasEncoder] Main thread encoding also failed, skipping canvas:",
-        error,
-      );
+      logger.warn("[canvasEncoder] Main thread encoding also failed, skipping canvas:", error);
       return null;
     }
   };
@@ -176,9 +166,7 @@ export async function encodeCanvasesInParallel(
   // Encode all canvases in parallel
   const encodingTasks = canvases.map(encodeCanvas);
   const encodedResults = await Promise.all(encodingTasks);
-  const validResults = encodedResults.filter(
-    (r): r is CanvasEncodeResult => r !== null,
-  );
+  const validResults = encodedResults.filter((r): r is CanvasEncodeResult => r !== null);
   return validResults;
 }
 

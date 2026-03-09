@@ -1,10 +1,7 @@
 import { createTestStream } from "TEST/createTestStream.js";
 import { describe, expect, test } from "vitest";
 
-import {
-  StreamEventSource,
-  type StreamEventSourceEventMap,
-} from "./StreamEventSource.js";
+import { StreamEventSource, type StreamEventSourceEventMap } from "./StreamEventSource.js";
 
 const collectEvents = (
   eventSource: StreamEventSource,
@@ -24,10 +21,7 @@ describe("StreamEventSource", () => {
     const { stream, event, end } = createTestStream();
 
     const eventSource = new StreamEventSource(stream, new AbortController());
-    const collectedEvents = collectEvents(eventSource, [
-      "progress",
-      "complete",
-    ]);
+    const collectedEvents = collectEvents(eventSource, ["progress", "complete"]);
     event("progress", { progress: 0.1 });
     event("progress", { progress: 1 });
     event("complete", {});

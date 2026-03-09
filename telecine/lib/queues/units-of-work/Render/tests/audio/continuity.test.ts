@@ -17,7 +17,7 @@ describe("Audio Continuity", () => {
   // See old test suite:
   // - full-render/test-utils/audio-regression.ts
   // - full-render/audio-regression.test.ts
-  
+
   test.skip("placeholder for audio continuity tests", () => {
     expect(true).toBe(true);
   });

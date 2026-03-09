@@ -1,8 +1,5 @@
 import { redirect } from "react-router";
-import {
-  identityContext,
-  adminIdentityContext,
-} from "./context";
+import { identityContext, adminIdentityContext } from "./context";
 import type { Route } from "../+types/root";
 
 /**

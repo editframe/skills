@@ -96,12 +96,8 @@ function createTestTimegroup(
  * rootTimegroup's timeline position, not set directly. Use the timegroup's
  * seek() method to change timeline position.
  */
-function createTestElement(
-  props: Partial<AnimatableElement> = {},
-): AnimatableElement {
-  const element = document.createElement(
-    "test-temporal-element",
-  ) as TestTemporalElement;
+function createTestElement(props: Partial<AnimatableElement> = {}): AnimatableElement {
+  const element = document.createElement("test-temporal-element") as TestTemporalElement;
 
   // Set duration before adding to timegroup to ensure it's respected
   if (props.durationMs !== undefined) {
@@ -231,11 +227,7 @@ describe.skip("updateAnimations", () => {
       await rootTimegroup.waitForMediaDurations();
 
       // Verify element has correct duration
-      assert.equal(
-        element.durationMs,
-        1000,
-        "Element should have duration 1000ms",
-      );
+      assert.equal(element.durationMs, 1000, "Element should have duration 1000ms");
       assert.equal(element.endTimeMs, 1000, "Element should end at 1000ms");
 
       // Set timeline to element's end time
@@ -361,11 +353,7 @@ describe.skip("updateAnimations", () => {
       await rootTimegroup.waitForMediaDurations();
 
       // Verify element has correct duration
-      assert.equal(
-        element.durationMs,
-        600,
-        "Element should have duration 600ms",
-      );
+      assert.equal(element.durationMs, 600, "Element should have duration 600ms");
       assert.equal(element.endTimeMs, 600, "Element should end at 600ms");
 
       // Set timeline to element's end time
@@ -401,11 +389,7 @@ describe.skip("updateAnimations", () => {
       await rootTimegroup.waitForMediaDurations();
 
       // Verify element has correct duration
-      assert.equal(
-        element.durationMs,
-        600,
-        "Element should have duration 600ms",
-      );
+      assert.equal(element.durationMs, 600, "Element should have duration 600ms");
       assert.equal(element.endTimeMs, 600, "Element should end at 600ms");
       // Verify timegroup duration is large enough
       assert.isAtLeast(
@@ -443,11 +427,7 @@ describe.skip("updateAnimations", () => {
 
         const state = evaluateTemporalState(element);
         assert.equal(state.phase, "at-end-boundary");
-        assert.equal(
-          state.isVisible,
-          true,
-          "Root element should be visible at end boundary",
-        );
+        assert.equal(state.isVisible, true, "Root element should be visible at end boundary");
       });
 
       test("elements aligned with composition end are visible at end boundary", async () => {
@@ -911,11 +891,7 @@ describe.skip("updateAnimations", () => {
         // that when we're very close to completion, the precision offset prevents reaching 1000ms
         // Let's use frame 89 (2966.67ms) which gives us 966.67ms, and verify it's < 1000ms
         const animationTime = animation.currentTime as number;
-        assert.isBelow(
-          animationTime,
-          1000,
-          "Animation should not reach iteration completion",
-        );
+        assert.isBelow(animationTime, 1000, "Animation should not reach iteration completion");
         // At 2966.67ms in iteration 2 (forward), animation time is 966.67ms
         assert.approximately(
           animationTime,
@@ -1050,25 +1026,15 @@ describe.skip("updateAnimations", () => {
         "ParentTimegroup should have overlapMs of 200",
       );
       // Verify rootTimegroup is also set
-      assert.equal(
-        element.rootTimegroup,
-        rootTimegroup,
-        "Element should have rootTimegroup set",
-      );
+      assert.equal(element.rootTimegroup, rootTimegroup, "Element should have rootTimegroup set");
 
       updateAnimations(element);
 
       // Element's ownCurrentTimeMs should be 500 (timeline 500 - start 0)
       assert.equal(element.style.getPropertyValue("--ef-progress"), "0.5");
       assert.equal(element.style.getPropertyValue("--ef-duration"), "1000ms");
-      assert.equal(
-        element.style.getPropertyValue("--ef-transition-duration"),
-        "200ms",
-      );
-      assert.equal(
-        element.style.getPropertyValue("--ef-transition-out-start"),
-        "800ms",
-      );
+      assert.equal(element.style.getPropertyValue("--ef-transition-duration"), "200ms");
+      assert.equal(element.style.getPropertyValue("--ef-transition-out-start"), "800ms");
       assert.equal(element.style.display, "");
     });
 
@@ -1181,10 +1147,7 @@ describe.skip("updateAnimations", () => {
 
       updateAnimations(element);
 
-      assert.equal(
-        element.style.getPropertyValue("--ef-transition-duration"),
-        "0ms",
-      );
+      assert.equal(element.style.getPropertyValue("--ef-transition-duration"), "0ms");
     });
   });
 
@@ -1257,21 +1220,14 @@ describe.skip("updateAnimations", () => {
       const childDiv = document.createElement("div");
       parentElement.appendChild(childDiv);
 
-      const childAnimation = childDiv.animate(
-        [{ opacity: 0 }, { opacity: 1 }],
-        {
-          duration: 1000,
-        },
-      );
+      const childAnimation = childDiv.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 1000,
+      });
       childAnimation.play();
 
       updateAnimations(rootTimegroup);
 
-      assert.equal(
-        childAnimation.playState,
-        "paused",
-        "Child animation should be coordinated",
-      );
+      assert.equal(childAnimation.playState, "paused", "Child animation should be coordinated");
     });
 
     test("coordinates animations on deeply nested elements", async () => {
@@ -1297,12 +1253,9 @@ describe.skip("updateAnimations", () => {
       outerDiv.appendChild(innerDiv);
       innerDiv.appendChild(span);
 
-      const spanAnimation = span.animate(
-        [{ color: "red" }, { color: "blue" }],
-        {
-          duration: 600,
-        },
-      );
+      const spanAnimation = span.animate([{ color: "red" }, { color: "blue" }], {
+        duration: 600,
+      });
       spanAnimation.play();
 
       updateAnimations(rootTimegroup);
@@ -1386,14 +1339,8 @@ describe.skip("updateAnimations", () => {
 
       updateAnimations(element);
 
-      assert.equal(
-        element.style.getPropertyValue("--ef-transition-duration"),
-        "0ms",
-      );
-      assert.equal(
-        element.style.getPropertyValue("--ef-transition-out-start"),
-        "1000ms",
-      );
+      assert.equal(element.style.getPropertyValue("--ef-transition-duration"), "0ms");
+      assert.equal(element.style.getPropertyValue("--ef-transition-out-start"), "1000ms");
     });
   });
 
@@ -1438,16 +1385,8 @@ describe.skip("updateAnimations", () => {
       await element.updateComplete;
 
       // Verify staggerOffsetMs is set and accessible
-      assert.equal(
-        (element as any).staggerOffsetMs,
-        100,
-        "staggerOffsetMs should be 100",
-      );
-      assert.equal(
-        element.tagName,
-        "EF-TEXT-SEGMENT",
-        "Element should be EF-TEXT-SEGMENT",
-      );
+      assert.equal((element as any).staggerOffsetMs, 100, "staggerOffsetMs should be 100");
+      assert.equal(element.tagName, "EF-TEXT-SEGMENT", "Element should be EF-TEXT-SEGMENT");
 
       updateAnimations(element);
 
@@ -1815,14 +1754,8 @@ describe.skip("updateAnimations", () => {
 
       // Check computed style for animation delays
       const computedStyle = window.getComputedStyle(element);
-      const animationDelays = computedStyle.animationDelay
-        .split(", ")
-        .map((s) => s.trim());
-      assert.equal(
-        animationDelays.length,
-        2,
-        "Should have 2 animation delays in computed style",
-      );
+      const animationDelays = computedStyle.animationDelay.split(", ").map((s) => s.trim());
+      assert.equal(animationDelays.length, 2, "Should have 2 animation delays in computed style");
 
       // Parse delays from computed style (they might be "1s" and "3s")
       const parseDelay = (delayStr: string): number => {
@@ -1842,9 +1775,7 @@ describe.skip("updateAnimations", () => {
       // CSS animations from 'animation' property might have getTiming().delay === 0,
       // so we need to match by index with computedStyle.animationDelay
       const allAnimations = Array.from(animations);
-      const fadeInAnimationIndex = animationDelays.findIndex(
-        (delay) => parseDelay(delay) === 1000,
-      );
+      const fadeInAnimationIndex = animationDelays.findIndex((delay) => parseDelay(delay) === 1000);
       const fadeOutAnimationIndex = animationDelays.findIndex(
         (delay) => parseDelay(delay) === 3000,
       );
@@ -1869,19 +1800,14 @@ describe.skip("updateAnimations", () => {
       // Verify that getTiming().delay might be 0 for CSS animations (this is the bug scenario)
       // The actual delays are in computedStyle.animationDelay, not getTiming().delay
       const fadeInTiming =
-        fadeInAnimation.effect &&
-        (fadeInAnimation.effect as KeyframeEffect).getTiming();
+        fadeInAnimation.effect && (fadeInAnimation.effect as KeyframeEffect).getTiming();
       const fadeOutTiming =
-        fadeOutAnimation.effect &&
-        (fadeOutAnimation.effect as KeyframeEffect).getTiming();
+        fadeOutAnimation.effect && (fadeOutAnimation.effect as KeyframeEffect).getTiming();
 
       // Log for debugging
       console.log("fadeInAnimation getTiming().delay:", fadeInTiming?.delay);
       console.log("fadeOutAnimation getTiming().delay:", fadeOutTiming?.delay);
-      console.log(
-        "computedStyle.animationDelay:",
-        computedStyle.animationDelay,
-      );
+      console.log("computedStyle.animationDelay:", computedStyle.animationDelay);
 
       // For CSS animations created via the 'animation' property, currentTime includes the delay.
       // So currentTime should be set to the absolute timeline time, not the adjusted time.
@@ -2111,13 +2037,10 @@ describe.skip("updateAnimations", () => {
       const childDiv = document.createElement("div");
       element.appendChild(childDiv);
 
-      const childAnimation = childDiv.animate(
-        [{ opacity: 0 }, { opacity: 1 }],
-        {
-          duration: 800,
-          iterations: 1,
-        },
-      );
+      const childAnimation = childDiv.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 800,
+        iterations: 1,
+      });
       childAnimation.pause();
       childAnimation.currentTime = 0; // Reset to ensure it's not at completion
 
@@ -2275,14 +2198,11 @@ describe.skip("updateAnimations", () => {
       cssElement.classList.add("css-animation");
 
       // Create WAAPI animation with same timing
-      const waapiAnimation = waapiElement.animate(
-        [{ opacity: 0 }, { opacity: 1 }],
-        {
-          duration: 1000,
-          delay: 500,
-          iterations: 1,
-        },
-      );
+      const waapiAnimation = waapiElement.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 1000,
+        delay: 500,
+        iterations: 1,
+      });
       waapiAnimation.pause();
 
       // Wait for CSS animation to be created
@@ -2352,14 +2272,11 @@ describe.skip("updateAnimations", () => {
       cssElement.classList.add("css-animation");
 
       // Create WAAPI animation with same delay
-      const waapiAnimation = waapiElement.animate(
-        [{ opacity: 0 }, { opacity: 1 }],
-        {
-          duration: 1000,
-          delay: 1000,
-          iterations: 1,
-        },
-      );
+      const waapiAnimation = waapiElement.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 1000,
+        delay: 1000,
+        iterations: 1,
+      });
       waapiAnimation.pause();
 
       // Wait for CSS animation to be created
@@ -2532,11 +2449,7 @@ describe.skip("updateAnimations", () => {
 
       // Animation should still be available even though timeline (6s) > animation duration (5s)
       const animations = timegroup.getAnimations({ subtree: true });
-      assert.equal(
-        animations.length,
-        1,
-        "Animation should remain available for scrubbing",
-      );
+      assert.equal(animations.length, 1, "Animation should remain available for scrubbing");
     });
   });
 });

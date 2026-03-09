@@ -18,12 +18,17 @@ const routes = [
   route("/privacy", "routes/privacy.tsx"),
   route("/pricing", "routes/pricing.tsx"),
   route("/docs", "routes/docs-redirect.ts"),
-  route("/docs/*", "routes/docs-redirect.ts", { id: "routes/docs-redirect-wildcard" }),
+  route("/docs/*", "routes/docs-redirect.ts", {
+    id: "routes/docs-redirect-wildcard",
+  }),
   route("/guides/*", "routes/guides-redirect.ts"),
   route("/blog/*", "routes/blog-redirect.ts"),
   route("/react", "routes/react-redirect.ts"),
   route("/tools/*", "routes/tools-redirect.ts"),
-  route("/promote-podcasts-on-social-media", "routes/promote-podcasts-redirect.ts"),
+  route(
+    "/promote-podcasts-on-social-media",
+    "routes/promote-podcasts-redirect.ts",
+  ),
   route("/:uploadType/:id/chunks", "routes/receiveUploadChunk.ts"),
   // route("/jit-preview", "routes/jit-preview.tsx"),
   route("/ef-sign-url", "routes/ef-sign-url.ts"),
@@ -33,7 +38,10 @@ const routes = [
   layout("routes/WithConfiguration.tsx", [
     route("/skills", "routes/skills/catalog.tsx"),
     route("/skills/:skill.md", "routes/skills/skill-detail.md.ts"),
-    route("/skills/:skill/:reference.md", "routes/skills/reference-detail.md.ts"),
+    route(
+      "/skills/:skill/:reference.md",
+      "routes/skills/reference-detail.md.ts",
+    ),
     route("/skills/:skill", "routes/skills/skill-detail.tsx"),
     route("/skills/:skill/:reference", "routes/skills/reference-detail.tsx"),
     route("/demos/motion-designer", "routes/demos/motion-designer.tsx"),
@@ -93,7 +101,9 @@ const routes = [
         ]),
 
         // Renders have special routes for non-typical forms.
-        ...prefix("/renders", [route("new", "routes/resource/renders/new.tsx")]),
+        ...prefix("/renders", [
+          route("new", "routes/resource/renders/new.tsx"),
+        ]),
 
         // Upload route under a non-conflicting prefix (can't be under /files
         // because "files" is a resourceType and would collide with /:resourceType/:id)
@@ -176,88 +186,88 @@ const routes = [
 
   layout("api/v1/layout.ts", [
     ...v1.prefix("/api/v1", [
-    v1.route("/organization", "organization.ts"),
-    v1.route("/test_webhook", "test_webhook.ts"),
+      v1.route("/organization", "organization.ts"),
+      v1.route("/test_webhook", "test_webhook.ts"),
 
-    ...v1.prefix("/image_files", [
-      v1.route("/", "image_files/index.ts"),
-      v1.route("/:id", "image_files/detail.ts"),
-      v1.route("/:id.json", "image_files/detail.json.ts"),
-      v1.route("/md5/:md5", "image_files/md5.ts"),
-      v1.route("/:id/upload", "image_files/upload.ts"),
-      v1.route("/:id/delete", "image_files/delete.ts"),
+      ...v1.prefix("/image_files", [
+        v1.route("/", "image_files/index.ts"),
+        v1.route("/:id", "image_files/detail.ts"),
+        v1.route("/:id.json", "image_files/detail.json.ts"),
+        v1.route("/md5/:md5", "image_files/md5.ts"),
+        v1.route("/:id/upload", "image_files/upload.ts"),
+        v1.route("/:id/delete", "image_files/delete.ts"),
+      ]),
+
+      ...v1.prefix("/isobmff_files", [
+        v1.route("/", "isobmff_files/index.ts"),
+        v1.route("/:id", "isobmff_files/detail.ts"),
+        v1.route("/:id/index", "isobmff_files/indexFile.ts"),
+        v1.route("/:id/index/upload", "isobmff_files/uploadIndex.ts"),
+        v1.route("/:id/transcription", "isobmff_files/transcription.ts"),
+        v1.route("/:id/transcribe", "isobmff_files/transcribe.ts"),
+        v1.route("/:id/delete", "isobmff_files/delete.ts"),
+        v1.route("/md5/:md5", "isobmff_files/md5.ts"),
+      ]),
+
+      ...v1.prefix("/isobmff_tracks", [
+        v1.route("", "isobmff_tracks/create.ts"),
+        v1.route("/:file_id/:track_id", "isobmff_tracks/trackData.ts"),
+        v1.route("/:file_id/:track_id/upload", "isobmff_tracks/upload.ts"),
+        v1.route("/:file_id/:track_id.json", "isobmff_tracks/detail.json.ts"),
+      ]),
+
+      ...v1.prefix("/files", [
+        v1.route("/", "files/index.ts"),
+        v1.route("/:id", "files/detail.ts"),
+        v1.route("/:id/upload", "files/upload.ts"),
+        v1.route("/:id/delete", "files/delete.ts"),
+        v1.route("/:id/index", "files/indexFile.ts"),
+        v1.route("/:id/index/upload", "files/indexUpload.ts"),
+        v1.route("/:id/tracks", "files/trackCreate.ts"),
+        v1.route("/:id/tracks/:trackId", "files/tracks.ts"),
+        v1.route("/:id/tracks/:trackId/upload", "files/trackUpload.ts"),
+        v1.route("/:id/transcribe", "files/transcribe.ts"),
+        v1.route("/:id/transcription", "files/transcription.ts"),
+        v1.route("/:id/progress", "files/progress.ts"),
+        v1.route("/:id/content", "files/content.ts"),
+        v1.route("/md5/:md5", "files/md5.ts"),
+      ]),
+
+      ...v1.prefix("/unprocessed_files", [
+        v1.route("", "unprocessed_files/index.ts"),
+        // TODO: add detail route
+        // v1.route("/:id", "unprocessed_files/detail.ts"),
+        v1.route("/:id/upload", "unprocessed_files/upload.ts"),
+        v1.route("/:id/delete", "unprocessed_files/delete.ts"),
+        v1.route("/:id/isobmff", "unprocessed_files/isobmff.ts"),
+        v1.route("/md5/:md5", "unprocessed_files/md5.ts"),
+      ]),
+
+      ...v1.prefix("/process_isobmff", [
+        v1.route("/:id", "process_isobmff/detail.ts"),
+        v1.route("/:id/progress", "process_isobmff/progress.ts"),
+      ]),
+
+      ...v1.prefix("/renders", [
+        v1.route("", "renders/index.ts"),
+        v1.route("/:id.mp4", "renders/mp4.ts"),
+        v1.route("/:id.png", "renders/png.ts"),
+        v1.route("/:id.jpeg", "renders/jpeg.ts"),
+        v1.route("/:id.webp", "renders/webp.ts"),
+        v1.route("/:id.tgz", "renders/tgz.ts"),
+        v1.route("/:id/progress", "renders/progress.ts"),
+        v1.route("/:id/upload", "renders/upload.ts"),
+        v1.route("/md5/:md5", "renders/md5.ts"),
+        v1.route("/:id", "renders/detail.ts"),
+      ]),
+
+      ...v1.prefix("/transcription", [
+        v1.route("/:id/progress", "transcription/progress.ts"),
+        v1.route("/:id/fragment/:number", "transcription/fragment.ts"),
+      ]),
+
+      v1.route("/url-token", "url-token.ts"),
     ]),
-
-    ...v1.prefix("/isobmff_files", [
-      v1.route("/", "isobmff_files/index.ts"),
-      v1.route("/:id", "isobmff_files/detail.ts"),
-      v1.route("/:id/index", "isobmff_files/indexFile.ts"),
-      v1.route("/:id/index/upload", "isobmff_files/uploadIndex.ts"),
-      v1.route("/:id/transcription", "isobmff_files/transcription.ts"),
-      v1.route("/:id/transcribe", "isobmff_files/transcribe.ts"),
-      v1.route("/:id/delete", "isobmff_files/delete.ts"),
-      v1.route("/md5/:md5", "isobmff_files/md5.ts"),
-    ]),
-
-    ...v1.prefix("/isobmff_tracks", [
-      v1.route("", "isobmff_tracks/create.ts"),
-      v1.route("/:file_id/:track_id", "isobmff_tracks/trackData.ts"),
-      v1.route("/:file_id/:track_id/upload", "isobmff_tracks/upload.ts"),
-      v1.route("/:file_id/:track_id.json", "isobmff_tracks/detail.json.ts"),
-    ]),
-
-    ...v1.prefix("/files", [
-      v1.route("/", "files/index.ts"),
-      v1.route("/:id", "files/detail.ts"),
-      v1.route("/:id/upload", "files/upload.ts"),
-      v1.route("/:id/delete", "files/delete.ts"),
-      v1.route("/:id/index", "files/indexFile.ts"),
-      v1.route("/:id/index/upload", "files/indexUpload.ts"),
-      v1.route("/:id/tracks", "files/trackCreate.ts"),
-      v1.route("/:id/tracks/:trackId", "files/tracks.ts"),
-      v1.route("/:id/tracks/:trackId/upload", "files/trackUpload.ts"),
-      v1.route("/:id/transcribe", "files/transcribe.ts"),
-      v1.route("/:id/transcription", "files/transcription.ts"),
-      v1.route("/:id/progress", "files/progress.ts"),
-      v1.route("/:id/content", "files/content.ts"),
-      v1.route("/md5/:md5", "files/md5.ts"),
-    ]),
-
-    ...v1.prefix("/unprocessed_files", [
-      v1.route("", "unprocessed_files/index.ts"),
-      // TODO: add detail route
-      // v1.route("/:id", "unprocessed_files/detail.ts"),
-      v1.route("/:id/upload", "unprocessed_files/upload.ts"),
-      v1.route("/:id/delete", "unprocessed_files/delete.ts"),
-      v1.route("/:id/isobmff", "unprocessed_files/isobmff.ts"),
-      v1.route("/md5/:md5", "unprocessed_files/md5.ts"),
-    ]),
-
-    ...v1.prefix("/process_isobmff", [
-      v1.route("/:id", "process_isobmff/detail.ts"),
-      v1.route("/:id/progress", "process_isobmff/progress.ts"),
-    ]),
-
-    ...v1.prefix("/renders", [
-      v1.route("", "renders/index.ts"),
-      v1.route("/:id.mp4", "renders/mp4.ts"),
-      v1.route("/:id.png", "renders/png.ts"),
-      v1.route("/:id.jpeg", "renders/jpeg.ts"),
-      v1.route("/:id.webp", "renders/webp.ts"),
-      v1.route("/:id.tgz", "renders/tgz.ts"),
-      v1.route("/:id/progress", "renders/progress.ts"),
-      v1.route("/:id/upload", "renders/upload.ts"),
-      v1.route("/md5/:md5", "renders/md5.ts"),
-      v1.route("/:id", "renders/detail.ts"),
-    ]),
-
-    ...v1.prefix("/transcription", [
-      v1.route("/:id/progress", "transcription/progress.ts"),
-      v1.route("/:id/fragment/:number", "transcription/fragment.ts"),
-    ]),
-
-    v1.route("/url-token", "url-token.ts"),
-  ]),
   ]),
 
   ...hdb.prefix("/hdb", [

@@ -185,9 +185,7 @@ describe.skip("EFFilmstrip", () => {
   }, 1000);
 
   test("should use context-based targeting when nested in ContextMixin", async () => {
-    const wrapper = document.createElement(
-      "test-context-wrapper",
-    ) as TestContextWrapper;
+    const wrapper = document.createElement("test-context-wrapper") as TestContextWrapper;
     document.body.appendChild(wrapper);
 
     const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
@@ -206,25 +204,17 @@ describe.skip("EFFilmstrip", () => {
   }, 1000);
 
   test("should prefer target attribute over context with warning", async () => {
-    const consoleWarnSpy = vi
-      .spyOn(console, "warn")
-      .mockImplementation(() => {});
+    const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-    const wrapper = document.createElement(
-      "test-context-wrapper",
-    ) as TestContextWrapper;
+    const wrapper = document.createElement("test-context-wrapper") as TestContextWrapper;
     document.body.appendChild(wrapper);
 
-    const contextTimegroup = document.createElement(
-      "ef-timegroup",
-    ) as EFTimegroup;
+    const contextTimegroup = document.createElement("ef-timegroup") as EFTimegroup;
     contextTimegroup.setAttribute("mode", "fixed");
     contextTimegroup.setAttribute("duration", "5s");
     wrapper.appendChild(contextTimegroup);
 
-    const targetTimegroup = document.createElement(
-      "ef-timegroup",
-    ) as EFTimegroup;
+    const targetTimegroup = document.createElement("ef-timegroup") as EFTimegroup;
     targetTimegroup.id = nextId();
     targetTimegroup.setAttribute("mode", "fixed");
     targetTimegroup.setAttribute("duration", "10s");
@@ -517,15 +507,11 @@ describe.skip("EFFilmstrip", () => {
       await video.updateComplete;
       await filmstrip.updateComplete;
 
-      const timegroupFilmstrip = filmstrip.shadowRoot?.querySelector(
-        "ef-timegroup-filmstrip",
-      );
+      const timegroupFilmstrip = filmstrip.shadowRoot?.querySelector("ef-timegroup-filmstrip");
       await (timegroupFilmstrip as any)?.updateComplete;
 
-      const videoFilmstrip =
-        timegroupFilmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
-      const htmlFilmstrips =
-        timegroupFilmstrip?.shadowRoot?.querySelectorAll("ef-html-filmstrip");
+      const videoFilmstrip = timegroupFilmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
+      const htmlFilmstrips = timegroupFilmstrip?.shadowRoot?.querySelectorAll("ef-html-filmstrip");
 
       expect(videoFilmstrip).toBeTruthy();
       expect(htmlFilmstrips?.length).toBe(1);
@@ -558,15 +544,11 @@ describe.skip("EFFilmstrip", () => {
       await video.updateComplete;
       await filmstrip.updateComplete;
 
-      const timegroupFilmstrip = filmstrip.shadowRoot?.querySelector(
-        "ef-timegroup-filmstrip",
-      );
+      const timegroupFilmstrip = filmstrip.shadowRoot?.querySelector("ef-timegroup-filmstrip");
       await (timegroupFilmstrip as any)?.updateComplete;
 
-      const videoFilmstrip =
-        timegroupFilmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
-      const htmlFilmstrips =
-        timegroupFilmstrip?.shadowRoot?.querySelectorAll("ef-html-filmstrip");
+      const videoFilmstrip = timegroupFilmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
+      const htmlFilmstrips = timegroupFilmstrip?.shadowRoot?.querySelectorAll("ef-html-filmstrip");
 
       expect(videoFilmstrip).toBeTruthy();
       expect(htmlFilmstrips?.length).toBe(1);
@@ -599,32 +581,24 @@ describe.skip("EFFilmstrip", () => {
       await video.updateComplete;
       await filmstrip.updateComplete;
 
-      const timegroupFilmstrip = filmstrip.shadowRoot?.querySelector(
-        "ef-timegroup-filmstrip",
-      );
+      const timegroupFilmstrip = filmstrip.shadowRoot?.querySelector("ef-timegroup-filmstrip");
       await (timegroupFilmstrip as any)?.updateComplete;
 
-      const videoFilmstrip =
-        timegroupFilmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
-      const htmlFilmstrips =
-        timegroupFilmstrip?.shadowRoot?.querySelectorAll("ef-html-filmstrip");
+      const videoFilmstrip = timegroupFilmstrip?.shadowRoot?.querySelector("ef-video-filmstrip");
+      const htmlFilmstrips = timegroupFilmstrip?.shadowRoot?.querySelectorAll("ef-html-filmstrip");
 
       expect(videoFilmstrip).toBeTruthy();
       expect(htmlFilmstrips?.length).toBe(1);
     }, 1000);
 
     test("should filter recursively in nested timegroups", async () => {
-      const rootTimegroup = document.createElement(
-        "ef-timegroup",
-      ) as EFTimegroup;
+      const rootTimegroup = document.createElement("ef-timegroup") as EFTimegroup;
       rootTimegroup.id = nextId();
       rootTimegroup.setAttribute("mode", "fixed");
       rootTimegroup.setAttribute("duration", "10s");
       document.body.appendChild(rootTimegroup);
 
-      const childTimegroup = document.createElement(
-        "ef-timegroup",
-      ) as EFTimegroup;
+      const childTimegroup = document.createElement("ef-timegroup") as EFTimegroup;
       childTimegroup.setAttribute("mode", "fixed");
       childTimegroup.setAttribute("duration", "5s");
 
@@ -652,8 +626,7 @@ describe.skip("EFFilmstrip", () => {
       await (timeline as any)?.updateComplete;
 
       // Check for waveform tracks anywhere in the timeline
-      const waveformTracks =
-        timeline?.shadowRoot?.querySelectorAll("ef-waveform-track");
+      const waveformTracks = timeline?.shadowRoot?.querySelectorAll("ef-waveform-track");
 
       expect(waveformTracks?.length).toBe(0);
     }, 1000);

@@ -9,7 +9,11 @@ import { logger } from "@/logging";
 import type { Route } from "./+types/upload";
 import { apiIdentityContext } from "~/middleware/context";
 
-export const action = async ({ params: { id }, request, context }: Route.ActionArgs) => {
+export const action = async ({
+  params: { id },
+  request,
+  context,
+}: Route.ActionArgs) => {
   const session = context.get(apiIdentityContext);
   const render = await db
     .selectFrom("video2.renders")

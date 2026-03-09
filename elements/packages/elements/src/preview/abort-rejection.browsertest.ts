@@ -12,9 +12,7 @@ import "../elements/EFTimegroup.js";
 function getApiHost(): string {
   const hostname = window.location.hostname;
   const isLocalhost =
-    hostname === "localhost" ||
-    hostname === "127.0.0.1" ||
-    hostname.endsWith(".localhost");
+    hostname === "localhost" || hostname === "127.0.0.1" || hostname.endsWith(".localhost");
   if (isLocalhost) {
     const port = 4322;
     return `http://main.localhost:${port}`;

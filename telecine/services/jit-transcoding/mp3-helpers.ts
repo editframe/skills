@@ -128,7 +128,9 @@ export async function generateMp3Manifest(mp3Url: string, baseUrl: string) {
   const audioSegmentDurations = calculateSegmentDurations(
     durationMs,
     targetSegmentDurationMs,
-    { mediaType: "audio" },
+    {
+      mediaType: "audio",
+    },
   );
 
   return {

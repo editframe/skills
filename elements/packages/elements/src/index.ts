@@ -11,10 +11,7 @@ export {
 export type { ContainerInfo } from "./elements/ContainerInfo.js";
 export { getContainerInfoFromElement } from "./elements/ContainerInfo.js";
 export type { ElementPositionInfo } from "./elements/ElementPositionInfo.js";
-export {
-  getPositionInfoFromElement,
-  PositionInfoMixin,
-} from "./elements/ElementPositionInfo.js";
+export { getPositionInfoFromElement, PositionInfoMixin } from "./elements/ElementPositionInfo.js";
 export { needsFitScale, elementNeedsFitScale } from "./gui/FitScaleHelpers.js";
 
 import "./elements/EFImage.js";
@@ -104,12 +101,7 @@ import "./gui/tree/EFTreeItem.js";
 
 export { EFTree } from "./gui/tree/EFTree.js";
 export { EFTreeItem } from "./gui/tree/EFTreeItem.js";
-export type {
-  TreeItem,
-  TreeState,
-  TreeActions,
-  TreeContext,
-} from "./gui/tree/treeContext.js";
+export type { TreeItem, TreeState, TreeActions, TreeContext } from "./gui/tree/treeContext.js";
 export { treeContext, collectAllIds } from "./gui/tree/treeContext.js";
 
 import "./gui/EFTogglePlay.js";
@@ -154,18 +146,11 @@ export { EFFocusOverlay } from "./gui/EFFocusOverlay.js";
 
 import "./gui/transformUtils.js";
 
-export {
-  getCornerPoint,
-  getOppositeCorner,
-  rotatePoint,
-} from "./gui/transformUtils.js";
+export { getCornerPoint, getOppositeCorner, rotatePoint } from "./gui/transformUtils.js";
 
 import "./gui/EFTransformHandles.ts";
 
-export {
-  type TransformBounds,
-  EFTransformHandles,
-} from "./gui/EFTransformHandles.ts";
+export { type TransformBounds, EFTransformHandles } from "./gui/EFTransformHandles.ts";
 
 import "./gui/EFResizableBox.ts";
 
@@ -195,11 +180,7 @@ import "./canvas/EFCanvasItem.js";
 export { EFCanvas } from "./canvas/EFCanvas.js";
 export { EFCanvasItem } from "./canvas/EFCanvasItem.js";
 export { CanvasAPI } from "./canvas/api/CanvasAPI.js";
-export type {
-  CanvasElementData,
-  SelectionState,
-  CanvasElementBounds,
-} from "./canvas/api/types.js";
+export type { CanvasElementData, SelectionState, CanvasElementBounds } from "./canvas/api/types.js";
 export { SelectionModel } from "./canvas/selection/SelectionModel.js";
 
 import "./gui/EFOverlayLayer.ts";
@@ -243,11 +224,7 @@ import "./EF_FRAMEGEN.js";
 // Initialize render API
 import "./render/EFRenderAPI.js";
 
-export {
-  getRenderInfo,
-  RenderInfoSchema,
-  type RenderInfo,
-} from "./getRenderInfo.js";
+export { getRenderInfo, RenderInfoSchema, type RenderInfo } from "./getRenderInfo.js";
 export { getRenderData } from "./render/getRenderData.js";
 // Export types only - actual render functions are loaded dynamically by EFTimegroup
 export type {

@@ -1,18 +1,24 @@
-import { createContext, useContext, useRef, type RefObject, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useRef,
+  type RefObject,
+  type ReactNode,
+} from "react";
 
 interface PanZoomHandle {
   scale: number;
   reset(): void;
 }
 
-const PanZoomContext = createContext<RefObject<PanZoomHandle | null> | null>(null);
+const PanZoomContext = createContext<RefObject<PanZoomHandle | null> | null>(
+  null,
+);
 
 export function PanZoomProvider({ children }: { children: ReactNode }) {
   const ref = useRef<PanZoomHandle | null>(null);
   return (
-    <PanZoomContext.Provider value={ref}>
-      {children}
-    </PanZoomContext.Provider>
+    <PanZoomContext.Provider value={ref}>{children}</PanZoomContext.Provider>
   );
 }
 

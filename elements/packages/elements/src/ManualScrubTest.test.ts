@@ -44,13 +44,7 @@ describe("Manual Scrubbing Functionality", () => {
       // Draw frame to canvas
       const ctx = mockCanvasElement.getContext("2d");
       if (ctx && frame.format !== null) {
-        ctx.drawImage(
-          frame,
-          0,
-          0,
-          mockCanvasElement.width,
-          mockCanvasElement.height,
-        );
+        ctx.drawImage(frame, 0, 0, mockCanvasElement.width, mockCanvasElement.height);
       }
     }
 
@@ -84,10 +78,7 @@ describe("Manual Scrubbing Functionality", () => {
     });
 
     const shouldUseScrub = mockScrubTrackManager.shouldUseScrub(seekToMs);
-    const isFastSeeking = mockScrubTrackManager.isFastSeeking(
-      lastSeekTimeMs,
-      seekToMs,
-    );
+    const isFastSeeking = mockScrubTrackManager.isFastSeeking(lastSeekTimeMs, seekToMs);
 
     if (shouldUseScrub || isFastSeeking) {
       const scrubFrame = await mockScrubTrackManager.getScrubFrame(seekToMs);
@@ -107,10 +98,7 @@ describe("Manual Scrubbing Functionality", () => {
     mockScrubTrackManager.isFastSeeking.mockReturnValue(false);
 
     const shouldUseScrubCase2 = mockScrubTrackManager.shouldUseScrub(seekToMs);
-    const isFastSeekingCase2 = mockScrubTrackManager.isFastSeeking(
-      lastSeekTimeMs,
-      seekToMs,
-    );
+    const isFastSeekingCase2 = mockScrubTrackManager.isFastSeeking(lastSeekTimeMs, seekToMs);
 
     if (!(shouldUseScrubCase2 || isFastSeekingCase2)) {
       mockScrubTrackManager.recordCacheHit();

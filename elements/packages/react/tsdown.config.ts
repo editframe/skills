@@ -12,10 +12,7 @@ const inlineCssPlugin = (): Plugin => ({
   name: "inline-css",
   resolveId(source, importer) {
     if (source.endsWith(".css?inline") && importer) {
-      const resolved = path.resolve(
-        path.dirname(importer),
-        source.replace("?inline", ""),
-      );
+      const resolved = path.resolve(path.dirname(importer), source.replace("?inline", ""));
       return { id: `${resolved}?inline`, external: false };
     }
     return null;

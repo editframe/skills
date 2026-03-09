@@ -118,9 +118,7 @@ describe("ContextMixin.fetch CORS behavior", () => {
       text: () => Promise.resolve("ok"),
     });
 
-    await element.fetch(
-      "https://editframe.dev/api/v1/transcode/manifest.json?url=test",
-    );
+    await element.fetch("https://editframe.dev/api/v1/transcode/manifest.json?url=test");
 
     const call = mockFetch.mock.calls[0]!;
     expect(call[1]?.credentials).toBeUndefined();
@@ -150,13 +148,9 @@ describe("ContextMixin.fetch CORS behavior", () => {
       text: () => Promise.resolve("ok"),
     });
 
-    await element.fetch(
-      "https://editframe.dev/api/v1/transcode/manifest.json?url=test",
-    );
+    await element.fetch("https://editframe.dev/api/v1/transcode/manifest.json?url=test");
 
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("editframe.dev"),
-    );
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("editframe.dev"));
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("signing"));
 
     warnSpy.mockRestore();
@@ -175,13 +169,8 @@ describe.skip("ContextMixin", () => {
     let originalFetch: any;
 
     // Helper to create a JWT token with specific expiration time
-    const createJWTToken = (
-      expirationMs: number,
-      issuedAtMs?: number,
-    ): string => {
-      const iat = issuedAtMs
-        ? Math.floor(issuedAtMs / 1000)
-        : Math.floor(Date.now() / 1000);
+    const createJWTToken = (expirationMs: number, issuedAtMs?: number): string => {
+      const iat = issuedAtMs ? Math.floor(issuedAtMs / 1000) : Math.floor(Date.now() / 1000);
       const header = btoa(JSON.stringify({ typ: "JWT", alg: "HS256" }));
       const payload = btoa(
         JSON.stringify({
@@ -233,13 +222,10 @@ describe.skip("ContextMixin", () => {
 
       await element.fetch("https://example.com/media.mp4");
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        "https://test.com/api/v1/url-token",
-        {
-          method: "POST",
-          body: JSON.stringify({ url: "https://example.com/media.mp4" }),
-        },
-      );
+      expect(mockFetch).toHaveBeenCalledWith("https://test.com/api/v1/url-token", {
+        method: "POST",
+        body: JSON.stringify({ url: "https://example.com/media.mp4" }),
+      });
 
       expect(mockFetch).toHaveBeenCalledWith("https://example.com/media.mp4", {
         headers: {
@@ -321,13 +307,10 @@ describe.skip("ContextMixin", () => {
       // Should call signing URL twice
       expect(mockFetch).toHaveBeenCalledTimes(4); // 2 signing + 2 media requests
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        "https://test.com/api/v1/url-token",
-        {
-          method: "POST",
-          body: JSON.stringify({ url: "https://example.com/media.mp4" }),
-        },
-      );
+      expect(mockFetch).toHaveBeenCalledWith("https://test.com/api/v1/url-token", {
+        method: "POST",
+        body: JSON.stringify({ url: "https://example.com/media.mp4" }),
+      });
 
       expect(mockFetch).toHaveBeenCalledWith("https://example.com/media.mp4", {
         headers: {
@@ -486,16 +469,13 @@ describe.skip("ContextMixin", () => {
       expect(mockFetch).toHaveBeenCalledTimes(4);
 
       // Verify the signing request used base URL + params format
-      expect(mockFetch).toHaveBeenCalledWith(
-        "https://test.com/api/v1/url-token",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            url: "https://editframe.com/api/v1/transcode",
-            params: { url: sourceUrl },
-          }),
-        },
-      );
+      expect(mockFetch).toHaveBeenCalledWith("https://test.com/api/v1/url-token", {
+        method: "POST",
+        body: JSON.stringify({
+          url: "https://editframe.com/api/v1/transcode",
+          params: { url: sourceUrl },
+        }),
+      });
 
       // All segment requests should use the same token
       expect(mockFetch).toHaveBeenCalledWith(segment1, {
@@ -567,26 +547,20 @@ describe.skip("ContextMixin", () => {
       expect(mockFetch).toHaveBeenCalledTimes(5);
 
       // Verify separate signing requests
-      expect(mockFetch).toHaveBeenCalledWith(
-        "https://test.com/api/v1/url-token",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            url: "https://editframe.com/api/v1/transcode",
-            params: { url: sourceUrl1 },
-          }),
-        },
-      );
-      expect(mockFetch).toHaveBeenCalledWith(
-        "https://test.com/api/v1/url-token",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            url: "https://editframe.com/api/v1/transcode",
-            params: { url: sourceUrl2 },
-          }),
-        },
-      );
+      expect(mockFetch).toHaveBeenCalledWith("https://test.com/api/v1/url-token", {
+        method: "POST",
+        body: JSON.stringify({
+          url: "https://editframe.com/api/v1/transcode",
+          params: { url: sourceUrl1 },
+        }),
+      });
+      expect(mockFetch).toHaveBeenCalledWith("https://test.com/api/v1/url-token", {
+        method: "POST",
+        body: JSON.stringify({
+          url: "https://editframe.com/api/v1/transcode",
+          params: { url: sourceUrl2 },
+        }),
+      });
     }, 1000);
 
     test("should still sign individual URLs for non-transcode endpoints", async () => {
@@ -623,20 +597,14 @@ describe.skip("ContextMixin", () => {
       expect(mockFetch).toHaveBeenCalledTimes(4); // 2 signing + 2 requests
 
       // Should sign each URL individually (existing behavior)
-      expect(mockFetch).toHaveBeenCalledWith(
-        "https://test.com/api/v1/url-token",
-        {
-          method: "POST",
-          body: JSON.stringify({ url: regularUrl1 }),
-        },
-      );
-      expect(mockFetch).toHaveBeenCalledWith(
-        "https://test.com/api/v1/url-token",
-        {
-          method: "POST",
-          body: JSON.stringify({ url: regularUrl2 }),
-        },
-      );
+      expect(mockFetch).toHaveBeenCalledWith("https://test.com/api/v1/url-token", {
+        method: "POST",
+        body: JSON.stringify({ url: regularUrl1 }),
+      });
+      expect(mockFetch).toHaveBeenCalledWith("https://test.com/api/v1/url-token", {
+        method: "POST",
+        body: JSON.stringify({ url: regularUrl2 }),
+      });
     }, 1000);
   });
 

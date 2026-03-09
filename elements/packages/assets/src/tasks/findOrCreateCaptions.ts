@@ -41,9 +41,7 @@ interface CaptionOutput {
   }>;
 }
 
-const convertWhisperToEditframeFormat = (
-  whisperData: WhisperOutput,
-): CaptionOutput => {
+const convertWhisperToEditframeFormat = (whisperData: WhisperOutput): CaptionOutput => {
   const segments = whisperData.segments.map((segment) => ({
     start: Math.round(segment.start * 1000), // Convert to milliseconds
     end: Math.round(segment.end * 1000),
@@ -62,14 +60,7 @@ const convertWhisperToEditframeFormat = (
 };
 
 export const generateCaptionDataFromPath = async (absolutePath: string) => {
-  const args = [
-    "--language",
-    "en",
-    "--efficient",
-    "--output_format",
-    "json",
-    absolutePath,
-  ];
+  const args = ["--language", "en", "--efficient", "--output_format", "json", absolutePath];
   log("Running whisper_timestamped", args);
   const { stdout } = await execFilePromise("whisper_timestamped", args);
 
@@ -89,10 +80,7 @@ const generateCaptionDataTask = idempotentTask({
   runner: generateCaptionDataFromPath,
 });
 
-export const findOrCreateCaptions = async (
-  cacheRoot: string,
-  absolutePath: string,
-) => {
+export const findOrCreateCaptions = async (cacheRoot: string, absolutePath: string) => {
   try {
     return await generateCaptionDataTask(cacheRoot, absolutePath);
   } catch (error) {

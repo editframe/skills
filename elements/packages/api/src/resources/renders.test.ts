@@ -4,12 +4,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
 
 import { Client } from "../client.js";
 import { webReadableFromBuffers } from "../readableFromBuffers.js";
-import {
-  createRender,
-  lookupRenderByMd5,
-  OutputConfiguration,
-  uploadRender,
-} from "./renders.js";
+import { createRender, lookupRenderByMd5, OutputConfiguration, uploadRender } from "./renders.js";
 
 const server = setupServer();
 const client = new Client("ef_TEST_TOKEN", "http://localhost");
@@ -27,9 +22,7 @@ describe("Renders", () => {
         ),
       );
 
-      await expect(
-        createRender(client, createTestRender()),
-      ).rejects.toThrowError(
+      await expect(createRender(client, createTestRender())).rejects.toThrowError(
         "Failed to create render 500 Internal Server Error",
       );
     });
@@ -37,10 +30,7 @@ describe("Renders", () => {
     test("returns json data from the http response", async () => {
       server.use(
         http.post("http://localhost/api/v1/renders", () =>
-          HttpResponse.json(
-            { testResponse: "test" },
-            { status: 200, statusText: "OK" },
-          ),
+          HttpResponse.json({ testResponse: "test" }, { status: 200, statusText: "OK" }),
         ),
       );
 
@@ -59,23 +49,14 @@ describe("Renders", () => {
       );
 
       await expect(
-        uploadRender(
-          client,
-          "test-id",
-          webReadableFromBuffers(Buffer.from("test")),
-        ),
-      ).rejects.toThrowError(
-        "Failed to upload render 500 Internal Server Error",
-      );
+        uploadRender(client, "test-id", webReadableFromBuffers(Buffer.from("test"))),
+      ).rejects.toThrowError("Failed to upload render 500 Internal Server Error");
     });
 
     test("returns json data from the http response", async () => {
       server.use(
         http.post("http://localhost/api/v1/renders/test-id/upload", () =>
-          HttpResponse.json(
-            { testResponse: "test" },
-            { status: 200, statusText: "OK" },
-          ),
+          HttpResponse.json({ testResponse: "test" }, { status: 200, statusText: "OK" }),
         ),
       );
 

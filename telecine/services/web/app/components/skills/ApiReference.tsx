@@ -26,7 +26,8 @@ function AttributeCard({ attr }: { attr: ApiAttribute }) {
       </p>
 
       {/* Metadata row */}
-      {(attr.default !== undefined || (attr.values && attr.values.length > 0)) && (
+      {(attr.default !== undefined ||
+        (attr.values && attr.values.length > 0)) && (
         <div className="mt-2 pt-2 border-t border-black/5 dark:border-white/5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs">
           {/* Default value */}
           {attr.default !== undefined && (

@@ -31,14 +31,10 @@ const missingExports = [];
 
 for (const [name, pkg] of Object.entries(packages)) {
   if (!pkg.packageJson.exports) continue;
-  for (const [exportName, exportEntry] of Object.entries(
-    pkg.packageJson.exports,
-  )) {
+  for (const [exportName, exportEntry] of Object.entries(pkg.packageJson.exports)) {
     if (typeof exportEntry === "string") continue;
     for (const [exportType, exportDeclaration] of Object.entries(exportEntry)) {
-      for (const [exportKey, exportValue] of Object.entries(
-        exportDeclaration,
-      )) {
+      for (const [exportKey, exportValue] of Object.entries(exportDeclaration)) {
         const exportPath = join(pkg.packagePath, "..", exportValue);
         await stat(exportPath).catch(() => {
           missingExports.push({

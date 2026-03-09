@@ -62,7 +62,10 @@ const formatMs = (ms: number) => {
 const fmtDate = (d: Date | string | null) => {
   if (!d) return "—";
   const date = d instanceof Date ? d : new Date(d);
-  return date.toISOString().replace("T", " ").replace(/\.\d+Z$/, "Z");
+  return date
+    .toISOString()
+    .replace("T", " ")
+    .replace(/\.\d+Z$/, "Z");
 };
 
 const header = (text: string) =>
@@ -89,9 +92,8 @@ async function main() {
   console.log(`Status:     ${sc}${BOLD}${render.status}${RESET}`);
   console.log(`Created:    ${fmtDate(render.created_at)}`);
   if (render.started_at) {
-    const initDuration = render.completed_at || render.failed_at
-      ? ""
-      : " (still running)";
+    const initDuration =
+      render.completed_at || render.failed_at ? "" : " (still running)";
     console.log(`Started:    ${fmtDate(render.started_at)}${initDuration}`);
   }
   if (render.completed_at) {
@@ -116,7 +118,8 @@ async function main() {
   const h = render.height ?? "?";
   const fps = render.fps ?? "?";
   const dur = render.duration_ms != null ? `${render.duration_ms}ms` : "?";
-  const slice = render.work_slice_ms != null ? `${render.work_slice_ms}ms` : "?";
+  const slice =
+    render.work_slice_ms != null ? `${render.work_slice_ms}ms` : "?";
   console.log(`Config:     ${w}x${h} @ ${fps}fps, ${dur}, work_slice=${slice}`);
   console.log(`Org:        ${render.org_id}`);
   console.log(
@@ -159,14 +162,17 @@ async function main() {
     }
 
     // Show the HTML if present in the payload (helpful for debugging render content issues)
-    const payload = (typeof render.failure_detail === "object" && (render.failure_detail as any)?.json?.payload)
-      ? (render.failure_detail as any).json.payload
-      : null;
+    const payload =
+      typeof render.failure_detail === "object" &&
+      (render.failure_detail as any)?.json?.payload
+        ? (render.failure_detail as any).json.payload
+        : null;
     if (payload?.html) {
       console.log(`\n${BOLD}Input HTML:${RESET}`);
-      const htmlPreview = payload.html.length > 200
-        ? payload.html.slice(0, 200) + "..."
-        : payload.html;
+      const htmlPreview =
+        payload.html.length > 200
+          ? payload.html.slice(0, 200) + "..."
+          : payload.html;
       console.log(`  ${DIM}${htmlPreview}${RESET}`);
     }
   }
@@ -184,10 +190,7 @@ async function main() {
     header("Fragment Status");
 
     // Group by segment_id, show latest attempt
-    const bySegment = new Map<
-      string,
-      (typeof fragments)[number][]
-    >();
+    const bySegment = new Map<string, (typeof fragments)[number][]>();
     for (const f of fragments) {
       const existing = bySegment.get(f.segment_id) ?? [];
       existing.push(f);
@@ -197,7 +200,11 @@ async function main() {
     let completedCount = 0;
     let failedCount = 0;
     let inProgressCount = 0;
-    const failedFragments: { segmentId: string; error: string | null; attempts: number }[] = [];
+    const failedFragments: {
+      segmentId: string;
+      error: string | null;
+      attempts: number;
+    }[] = [];
 
     for (const [segmentId, attempts] of bySegment) {
       // Sort by attempt_number desc to get latest
@@ -206,13 +213,20 @@ async function main() {
 
       if (latest.completed_at) {
         completedCount++;
-        const durationMs = latest.started_at && latest.completed_at
-          ? new Date(latest.completed_at as any).getTime() -
-            new Date(latest.started_at as any).getTime()
-          : null;
-        const durStr = durationMs != null ? ` ${DIM}(${formatMs(durationMs)})${RESET}` : "";
-        const retryStr = latest.attempt_number > 0 ? ` ${YELLOW}(attempt ${latest.attempt_number + 1})${RESET}` : "";
-        console.log(`  ${check} ${segmentId.padEnd(8)} completed${durStr}${retryStr}`);
+        const durationMs =
+          latest.started_at && latest.completed_at
+            ? new Date(latest.completed_at as any).getTime() -
+              new Date(latest.started_at as any).getTime()
+            : null;
+        const durStr =
+          durationMs != null ? ` ${DIM}(${formatMs(durationMs)})${RESET}` : "";
+        const retryStr =
+          latest.attempt_number > 0
+            ? ` ${YELLOW}(attempt ${latest.attempt_number + 1})${RESET}`
+            : "";
+        console.log(
+          `  ${check} ${segmentId.padEnd(8)} completed${durStr}${retryStr}`,
+        );
       } else if (latest.failed_at) {
         failedCount++;
         const errorStr = latest.last_error ? ` — ${latest.last_error}` : "";
@@ -226,7 +240,9 @@ async function main() {
         });
       } else {
         inProgressCount++;
-        console.log(`  ${dash} ${segmentId.padEnd(8)} in progress (attempt ${latest.attempt_number + 1})`);
+        console.log(
+          `  ${dash} ${segmentId.padEnd(8)} in progress (attempt ${latest.attempt_number + 1})`,
+        );
       }
     }
 
@@ -263,18 +279,16 @@ async function main() {
       const key = `workflows:${renderId}:${stage}`;
       const count = await valkey.zcard(key);
       const icon =
-        stage === "completed"
-          ? check
-          : stage === "failed"
-            ? cross
-            : dash;
+        stage === "completed" ? check : stage === "failed" ? cross : dash;
       const color =
         stage === "failed" && count > 0
           ? RED
           : stage === "completed"
             ? GREEN
             : RESET;
-      console.log(`  ${icon} ${stage.padEnd(10)} ${color}${count} jobs${RESET}`);
+      console.log(
+        `  ${icon} ${stage.padEnd(10)} ${color}${count} jobs${RESET}`,
+      );
 
       // Show details for non-empty stages (except completed which can be large)
       if (count > 0 && stage !== "completed") {
@@ -284,9 +298,8 @@ async function main() {
           if (jobData) {
             try {
               const job = deserializeJob(jobData);
-              const age = stage === "claimed"
-                ? await valkey.zscore(key, jobKey)
-                : null;
+              const age =
+                stage === "claimed" ? await valkey.zscore(key, jobKey) : null;
               const ageStr = age
                 ? ` ${DIM}(claimed ${formatMs(Date.now() - Number(age))} ago)${RESET}`
                 : "";
@@ -346,9 +359,7 @@ async function main() {
       if (output.trim()) {
         console.log(output);
       } else {
-        console.log(
-          `${DIM}No log lines found containing ${renderId}.${RESET}`,
-        );
+        console.log(`${DIM}No log lines found containing ${renderId}.${RESET}`);
         console.log(
           `${DIM}(Containers may have restarted since this render ran)${RESET}`,
         );

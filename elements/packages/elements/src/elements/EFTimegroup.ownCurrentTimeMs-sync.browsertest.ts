@@ -218,8 +218,7 @@ describe("ownCurrentTimeMs sync — CSS animation consequence", () => {
 
     // Add an element with a CSS animation spanning the full duration
     const div = document.createElement("div");
-    div.style.cssText =
-      "animation: test-slide 4s linear both; width: 100px; height: 100px;";
+    div.style.cssText = "animation: test-slide 4s linear both; width: 100px; height: 100px;";
 
     const style = document.createElement("style");
     style.textContent = `

@@ -1,5 +1,10 @@
 import { serverQuery } from "@/graphql.server";
-import { Outlet, useLocation, useRouteError, isRouteErrorResponse } from "react-router";
+import {
+  Outlet,
+  useLocation,
+  useRouteError,
+  isRouteErrorResponse,
+} from "react-router";
 import { extractServerTableSearchParams } from "~/ui/useTableSearchParams";
 
 import { ResourceModules, dataShape } from "~/components/resources/admin";
@@ -20,7 +25,11 @@ export const ErrorBoundary = () => {
   return <div>Unknown error</div>;
 };
 
-export const loader = async ({ request, context, params }: Route.LoaderArgs) => {
+export const loader = async ({
+  request,
+  context,
+  params,
+}: Route.LoaderArgs) => {
   const session = context.get(adminIdentityContext);
   const searchParams = new URL(request.url).searchParams;
   const { limit, page } = extractServerTableSearchParams(searchParams);
@@ -50,7 +59,6 @@ export const loader = async ({ request, context, params }: Route.LoaderArgs) => 
     ),
   };
 };
-
 
 export default function ResourceIndex({
   loaderData: { liveQuery, resourceType },

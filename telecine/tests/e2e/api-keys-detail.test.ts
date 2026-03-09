@@ -25,9 +25,7 @@ describe("api keys - detail", () => {
   test("Requires editor permissions", async () => {
     const page = getPage();
     await signInAs(org.reader);
-    await page.goto(
-      `/resource/api_keys/${org.apiKey.id}?org=${org.id}`,
-    );
+    await page.goto(`/resource/api_keys/${org.apiKey.id}?org=${org.id}`);
 
     await playwrightExpect(
       page.getByText(/You don't have permission/),
@@ -42,16 +40,12 @@ describe("api keys - detail", () => {
   test("Displays API key details for admin", async () => {
     const page = getPage();
     await signInAs(org.primary);
-    await page.goto(
-      `/resource/api_keys/${org.apiKey.id}?org=${org.id}`,
-    );
+    await page.goto(`/resource/api_keys/${org.apiKey.id}?org=${org.id}`);
 
     await playwrightExpect(
       page.getByText(`API Key: ${org.apiKey.name}`),
     ).toBeVisible();
-    await playwrightExpect(
-      page.getByText(/This API key will/),
-    ).toBeVisible();
+    await playwrightExpect(page.getByText(/This API key will/)).toBeVisible();
   });
 
   test.skip("Can regenerate API token", async () => {
@@ -63,25 +57,17 @@ describe("api keys - detail", () => {
     );
 
     await page.getByRole("button", { name: "Regenerate Token" }).click();
-    await page
-      .getByLabel(/Type .* to confirm/)
-      .fill(freshOrg.apiKey.name);
-    await page
-      .getByRole("button", { name: "Regenerate", exact: true })
-      .click();
+    await page.getByLabel(/Type .* to confirm/).fill(freshOrg.apiKey.name);
+    await page.getByRole("button", { name: "Regenerate", exact: true }).click();
 
     await playwrightExpect(page.getByText("Regenerated!")).toBeVisible();
-    await playwrightExpect(
-      page.getByText("Copy API Token"),
-    ).toBeVisible();
+    await playwrightExpect(page.getByText("Copy API Token")).toBeVisible();
   });
 
   test("Can update API key details", async () => {
     const page = getPage();
     await signInAs(org.primary);
-    await page.goto(
-      `/resource/api_keys/${org.apiKey.id}?org=${org.id}`,
-    );
+    await page.goto(`/resource/api_keys/${org.apiKey.id}?org=${org.id}`);
 
     await page.getByLabel("name").fill("Updated API Key");
     await page.getByRole("button", { name: "Save changes" }).click();
@@ -99,9 +85,7 @@ describe("api keys - detail", () => {
       `/resource/api_keys/${freshOrg.apiKey.id}?org=${freshOrg.id}`,
     );
 
-    await page
-      .getByLabel("Webhook URL")
-      .fill("https://example.com/webhook");
+    await page.getByLabel("Webhook URL").fill("https://example.com/webhook");
     await page.getByText("render.created").click();
     await page.getByText("render.failed").click();
 
@@ -125,12 +109,8 @@ describe("api keys - detail", () => {
     await page
       .getByRole("button", { name: "Regenerate Webhook Secret" })
       .click();
-    await page
-      .getByLabel(/Type .* to confirm/)
-      .fill(freshOrg.apiKey.name);
-    await page
-      .getByRole("button", { name: "Regenerate", exact: true })
-      .click();
+    await page.getByLabel(/Type .* to confirm/).fill(freshOrg.apiKey.name);
+    await page.getByRole("button", { name: "Regenerate", exact: true }).click();
 
     await playwrightExpect(page.getByText("Regenerated!")).toBeVisible();
     await playwrightExpect(
@@ -150,10 +130,14 @@ describe("api keys - detail", () => {
       await signInAs(extendOrg.primary);
       await page.goto(
         `/resource/api_keys/${extendOrg.apiKey.id}?org=${extendOrg.id}`,
-        { waitUntil: "domcontentloaded" },
+        {
+          waitUntil: "domcontentloaded",
+        },
       );
 
-      const extendButton = page.getByRole("button", { name: "Extend Expiration" });
+      const extendButton = page.getByRole("button", {
+        name: "Extend Expiration",
+      });
       await extendButton.waitFor({ state: "visible" });
       await extendButton.click();
 
@@ -163,9 +147,7 @@ describe("api keys - detail", () => {
       await page.getByRole("option", { name: /day/ }).click();
       await dialog.getByRole("button", { name: "Extend Expiration" }).click();
 
-      await playwrightExpect(
-        page.getByText(/will expire in/),
-      ).toBeVisible();
+      await playwrightExpect(page.getByText(/will expire in/)).toBeVisible();
     });
   });
 
@@ -178,9 +160,7 @@ describe("api keys - detail", () => {
     );
 
     await page.getByRole("button", { name: "Delete", exact: true }).click();
-    await page
-      .getByLabel(/Type .* to confirm/)
-      .fill(freshOrg.apiKey.name);
+    await page.getByLabel(/Type .* to confirm/).fill(freshOrg.apiKey.name);
     await page
       .getByLabel("Delete API key for Test API")
       .getByRole("button", { name: "Delete", exact: true })
@@ -192,17 +172,13 @@ describe("api keys - detail", () => {
   test("Validates webhook URL format when updating", async () => {
     const page = getPage();
     await signInAs(org.primary);
-    await page.goto(
-      `/resource/api_keys/${org.apiKey.id}?org=${org.id}`,
-    );
+    await page.goto(`/resource/api_keys/${org.apiKey.id}?org=${org.id}`);
 
     await page.getByLabel("Webhook URL").fill("not-a-url");
     await page.getByRole("button", { name: "Save changes" }).click();
 
     await playwrightExpect(
-      page.getByText(
-        "Must be a valid URL starting with http:// or https://",
-      ),
+      page.getByText("Must be a valid URL starting with http:// or https://"),
     ).toBeVisible();
   });
 });

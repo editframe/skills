@@ -3,10 +3,7 @@ import { inspect } from "node:util";
 import type ValKey from "iovalkey";
 
 import { type logger, makeLogger } from "@/logging";
-import {
-  RequestSleep,
-  abortableLoopWithBackoff,
-} from "./AbortableLoop";
+import { RequestSleep, abortableLoopWithBackoff } from "./AbortableLoop";
 import type { MaterializedJob, SerializedJob } from "./Job";
 import { claimJob, completeJob, extendClaim, failJob, retryJob } from "./Job";
 import type { Queue } from "./Queue";
@@ -245,7 +242,11 @@ export class Worker<Payload = unknown> {
           idlePollCount++;
           const now = Date.now();
           const idleDurationMs = now - idleStartMs;
-          if (idleDurationMs >= IDLE_LOG_INTERVAL_MS && (lastIdleLogMs === null || now - lastIdleLogMs >= IDLE_LOG_INTERVAL_MS)) {
+          if (
+            idleDurationMs >= IDLE_LOG_INTERVAL_MS &&
+            (lastIdleLogMs === null ||
+              now - lastIdleLogMs >= IDLE_LOG_INTERVAL_MS)
+          ) {
             lastIdleLogMs = now;
             this.logger.info(
               {
@@ -275,19 +276,22 @@ export class Worker<Payload = unknown> {
         }
 
         // Log queue depth at claim time for competition analysis.
-        this.queue.getStats().then((stats) => {
-          this.logger.info(
-            {
-              queue: this.queue.name,
-              jobId: job.jobId,
-              workflowId: job.workflowId,
-              queueDepthQueued: stats.queued,
-              queueDepthClaimed: stats.claimed,
-              event: "jobClaimed",
-            },
-            "Job claimed",
-          );
-        }).catch(() => {});
+        this.queue
+          .getStats()
+          .then((stats) => {
+            this.logger.info(
+              {
+                queue: this.queue.name,
+                jobId: job.jobId,
+                workflowId: job.workflowId,
+                queueDepthQueued: stats.queued,
+                queueDepthClaimed: stats.claimed,
+                event: "jobClaimed",
+              },
+              "Job claimed",
+            );
+          })
+          .catch(() => {});
 
         using _claimExtender = this.extendClaimTimeout(job, signal);
         this.logger.debug(job, "Claimed job");

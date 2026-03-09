@@ -10,9 +10,7 @@ export const getClient = () => {
     const token = programOpts.token || process.env.EF_TOKEN;
     const efHost = programOpts.efHost || process.env.EF_HOST;
     if (!token) {
-      throw new Error(
-        "EF_TOKEN must be set or supplied as command line argument",
-      );
+      throw new Error("EF_TOKEN must be set or supplied as command line argument");
     }
     client = new Client(token, efHost);
   }

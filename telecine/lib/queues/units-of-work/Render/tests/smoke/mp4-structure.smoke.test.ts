@@ -1,6 +1,6 @@
 /**
  * MP4 Structure Smoke Tests
- * 
+ *
  * Validates deep MP4 structure and timing consistency across strategies.
  * Tests segment assembly, timing metadata, and base media decode times.
  */
@@ -11,7 +11,10 @@ import { render } from "../utils/render";
 import { type RenderStrategy } from "./strategies";
 import { processTestVideoAsset } from "../../test-utils/processTestAssets";
 import { createElectronRPC, type ElectronRPC } from "../../ElectronRPCClient";
-import { extractMP4Metadata, verifyDurationConsistency } from "@/util/mp4-box-analysis";
+import {
+  extractMP4Metadata,
+  verifyDurationConsistency,
+} from "@/util/mp4-box-analysis";
 import { makeTestAgent } from "TEST/util/test";
 import type { Selectable } from "kysely";
 import type { TestAgent } from "TEST/util/test";
@@ -29,7 +32,11 @@ const MP4_TEST_CONSTANTS = {
 // Test only server mode for MP4 structure validation
 // Browser modes create non-fragmented MP4s without segments, so these tests only apply to server mode
 const MP4_STRATEGIES: RenderStrategy[] = [
-  { name: "server", renderMode: "server", description: "Electron offscreen rendering (default)" },
+  {
+    name: "server",
+    renderMode: "server",
+    description: "Electron offscreen rendering (default)",
+  },
 ];
 
 describe("MP4 Structure Smoke Tests", () => {
@@ -40,7 +47,7 @@ describe("MP4 Structure Smoke Tests", () => {
   beforeAll(async () => {
     testAgent = await makeTestAgent("mp4-structure-smoke@example.org");
     electronRpc = await createElectronRPC();
-    
+
     // Process bars-n-tone.mp4 for audio track
     barsNTone = await processTestVideoAsset("bars-n-tone.mp4", testAgent);
   }, 60000);
@@ -65,7 +72,12 @@ describe("MP4 Structure Smoke Tests", () => {
     <div class="text-white text-2xl">Decode Time Test</div>
   </div>
 </ef-timegroup>`,
-        { ...renderOpts, testAgent, electronRpc, testName: `mp4-decode-time-${strategy.name}` },
+        {
+          ...renderOpts,
+          testAgent,
+          electronRpc,
+          testName: `mp4-decode-time-${strategy.name}`,
+        },
       );
 
       // Get mp4dump output for precise timing analysis
@@ -73,10 +85,12 @@ describe("MP4 Structure Smoke Tests", () => {
       try {
         mp4Output = execSync(`mp4dump "${result.videoPath}"`, {
           encoding: "utf8",
-          stdio: ['pipe', 'pipe', 'pipe']
+          stdio: ["pipe", "pipe", "pipe"],
         });
       } catch (error) {
-        throw new Error(`mp4dump failed: ${error instanceof Error ? error.message : String(error)}`);
+        throw new Error(
+          `mp4dump failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
       }
 
       // Parse timescales from mp4dump output
@@ -96,15 +110,23 @@ describe("MP4 Structure Smoke Tests", () => {
       // Expected: [movie_timescale, video_track_timescale, audio_track_timescale]
       expect(timescales.length).toBeGreaterThanOrEqual(3);
 
-      const movieTimescale = timescales[0] ?? MP4_TEST_CONSTANTS.DEFAULT_MOVIE_TIMESCALE;
-      const videoTimescale = timescales[1] ?? MP4_TEST_CONSTANTS.DEFAULT_VIDEO_TIMESCALE;
-      const audioTimescale = timescales[2] ?? MP4_TEST_CONSTANTS.DEFAULT_AUDIO_TIMESCALE;
+      const movieTimescale =
+        timescales[0] ?? MP4_TEST_CONSTANTS.DEFAULT_MOVIE_TIMESCALE;
+      const videoTimescale =
+        timescales[1] ?? MP4_TEST_CONSTANTS.DEFAULT_VIDEO_TIMESCALE;
+      const audioTimescale =
+        timescales[2] ?? MP4_TEST_CONSTANTS.DEFAULT_AUDIO_TIMESCALE;
 
       console.debug(`\n=== ${strategy.name} Timescales ===`);
-      console.debug(`Movie: ${movieTimescale}, Video: ${videoTimescale}, Audio: ${audioTimescale}`);
+      console.debug(
+        `Movie: ${movieTimescale}, Video: ${videoTimescale}, Audio: ${audioTimescale}`,
+      );
 
       // Create track mapping
-      const trackInfo = new Map<number, { timescale: number; handlerType: string }>();
+      const trackInfo = new Map<
+        number,
+        { timescale: number; handlerType: string }
+      >();
       trackInfo.set(1, { timescale: videoTimescale, handlerType: "vide" });
       trackInfo.set(2, { timescale: audioTimescale, handlerType: "soun" });
 
@@ -139,7 +161,10 @@ describe("MP4 Structure Smoke Tests", () => {
         }
 
         // Look for base media decode time and sample count pairs
-        if (line.includes("base media decode time =") && currentTrackId !== null) {
+        if (
+          line.includes("base media decode time =") &&
+          currentTrackId !== null
+        ) {
           const parts = line.split("=");
           if (parts[1]) {
             const baseTime = parseInt(parts[1].trim());
@@ -160,7 +185,11 @@ describe("MP4 Structure Smoke Tests", () => {
 
                   const segments = trackSegments.get(currentTrackId);
                   if (segments) {
-                    segments.push({ sequence: currentSequence, baseTime, sampleCount });
+                    segments.push({
+                      sequence: currentSequence,
+                      baseTime,
+                      sampleCount,
+                    });
                   }
 
                   break;
@@ -209,12 +238,20 @@ describe("MP4 Structure Smoke Tests", () => {
                 (s) => s.sequence === segment.sequence,
               );
               if (correspondingAudioSegment) {
-                const audioTimeMs = (correspondingAudioSegment.baseTime / MP4_TEST_CONSTANTS.DEFAULT_AUDIO_TIMESCALE) * 1000;
-                const videoTimeMs = (segment.baseTime / MP4_TEST_CONSTANTS.DEFAULT_VIDEO_TIMESCALE) * 1000;
+                const audioTimeMs =
+                  (correspondingAudioSegment.baseTime /
+                    MP4_TEST_CONSTANTS.DEFAULT_AUDIO_TIMESCALE) *
+                  1000;
+                const videoTimeMs =
+                  (segment.baseTime /
+                    MP4_TEST_CONSTANTS.DEFAULT_VIDEO_TIMESCALE) *
+                  1000;
 
                 // Video and audio timing will have small differences due to frame alignment
                 // Video: 33.33ms frames (30fps), Audio: 21.33ms frames (AAC), tolerance ~15ms
-                expect(Math.abs(videoTimeMs - audioTimeMs)).toBeLessThanOrEqual(MP4_TEST_CONSTANTS.AV_SYNC_TOLERANCE_MS);
+                expect(Math.abs(videoTimeMs - audioTimeMs)).toBeLessThanOrEqual(
+                  MP4_TEST_CONSTANTS.AV_SYNC_TOLERANCE_MS,
+                );
                 console.debug(
                   `✅ Segment ${segment.sequence}: Video (${videoTimeMs.toFixed(2)}ms) synced with Audio (${audioTimeMs.toFixed(2)}ms)`,
                 );
@@ -223,11 +260,15 @@ describe("MP4 Structure Smoke Tests", () => {
 
             // For expectedCumulativeTime calculation, use the synchronized time
             expectedCumulativeTime =
-              segment.baseTime + segment.sampleCount * Math.round(info!.timescale / MP4_TEST_CONSTANTS.VIDEO_FPS);
+              segment.baseTime +
+              segment.sampleCount *
+                Math.round(info!.timescale / MP4_TEST_CONSTANTS.VIDEO_FPS);
           }
 
           const sampleDuration =
-            info!.handlerType === "soun" ? MP4_TEST_CONSTANTS.AAC_FRAME_SAMPLES : Math.round(info!.timescale / MP4_TEST_CONSTANTS.VIDEO_FPS);
+            info!.handlerType === "soun"
+              ? MP4_TEST_CONSTANTS.AAC_FRAME_SAMPLES
+              : Math.round(info!.timescale / MP4_TEST_CONSTANTS.VIDEO_FPS);
           console.debug(
             `✅ Segment ${segment.sequence}: ${segment.baseTime} decode time, ${segment.sampleCount} samples (${sampleDuration} units per sample)`,
           );
@@ -251,7 +292,12 @@ describe("MP4 Structure Smoke Tests", () => {
     <div class="text-white text-2xl">Duration Test</div>
   </div>
 </ef-timegroup>`,
-        { ...renderOpts, testAgent, electronRpc, testName: `mp4-duration-${strategy.name}` },
+        {
+          ...renderOpts,
+          testAgent,
+          electronRpc,
+          testName: `mp4-duration-${strategy.name}`,
+        },
       );
 
       const metadata = await extractMP4Metadata(result.videoPath);
@@ -272,7 +318,12 @@ describe("MP4 Structure Smoke Tests", () => {
   <ef-audio asset-id="${barsNTone.id}"></ef-audio>
   <div class="w-full h-full bg-red-500"></div>
 </ef-timegroup>`,
-        { ...renderOpts, testAgent, electronRpc, testName: `mp4-sequence-${strategy.name}` },
+        {
+          ...renderOpts,
+          testAgent,
+          electronRpc,
+          testName: `mp4-sequence-${strategy.name}`,
+        },
       );
 
       const metadata = await extractMP4Metadata(result.videoPath);

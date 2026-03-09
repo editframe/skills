@@ -292,7 +292,13 @@ export const stallJob = async (
   job: SerializedJob<unknown>,
 ) => {
   logger.info(
-    { queue: job.queue, orgId: job.orgId, workflowId: job.workflowId, workflowName: job.workflow, jobId: job.jobId },
+    {
+      queue: job.queue,
+      orgId: job.orgId,
+      workflowId: job.workflowId,
+      workflowName: job.workflow,
+      jobId: job.jobId,
+    },
     "Stalling job",
   );
   return await executeSpan("Job.stallJob", async (span) => {

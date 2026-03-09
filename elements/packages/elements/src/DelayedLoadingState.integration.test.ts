@@ -29,10 +29,7 @@ describe("DelayedLoadingState Integration (EFVideo Pattern)", () => {
 
   test("should handle typical video seeking scenario", async () => {
     // Simulate fast seek to cached content (should not show loading)
-    delayedLoadingState.startLoading(
-      "video-segment",
-      "Loading video segment...",
-    );
+    delayedLoadingState.startLoading("video-segment", "Loading video segment...");
 
     // Fast operation completes in 100ms
     vi.advanceTimersByTime(100);
@@ -46,10 +43,7 @@ describe("DelayedLoadingState Integration (EFVideo Pattern)", () => {
 
   test("should handle slow uncached video loading", async () => {
     // Simulate slow seek to uncached content
-    delayedLoadingState.startLoading(
-      "video-segment",
-      "Loading video segment...",
-    );
+    delayedLoadingState.startLoading("video-segment", "Loading video segment...");
 
     // No loading shown yet
     expect(loadingStateHistory).toHaveLength(0);
@@ -77,18 +71,12 @@ describe("DelayedLoadingState Integration (EFVideo Pattern)", () => {
 
   test("should handle scrub track fallback scenario", async () => {
     // Simulate scrub track attempt
-    delayedLoadingState.startLoading(
-      "scrub-segment-load",
-      "Loading scrub segment...",
-    );
+    delayedLoadingState.startLoading("scrub-segment-load", "Loading scrub segment...");
 
     // Scrub fails quickly, fallback to normal video
     vi.advanceTimersByTime(50);
     delayedLoadingState.clearLoading("scrub-segment-load");
-    delayedLoadingState.startLoading(
-      "video-segment-fallback",
-      "Loading high quality video...",
-    );
+    delayedLoadingState.startLoading("video-segment-fallback", "Loading high quality video...");
 
     // At this point, the new operation just started, so we need 250ms from now
     expect(loadingStateHistory).toHaveLength(0);
@@ -110,22 +98,15 @@ describe("DelayedLoadingState Integration (EFVideo Pattern)", () => {
 
   test("should handle background preloading without user-visible loading", async () => {
     // Start foreground operation
-    delayedLoadingState.startLoading(
-      "video-segment",
-      "Loading current video...",
-    );
+    delayedLoadingState.startLoading("video-segment", "Loading current video...");
 
     // Start background preloading (should not affect loading state)
-    delayedLoadingState.startLoading(
-      "preload-segment-1",
-      "Preloading future segment",
-      { background: true },
-    );
-    delayedLoadingState.startLoading(
-      "preload-segment-2",
-      "Preloading future segment",
-      { background: true },
-    );
+    delayedLoadingState.startLoading("preload-segment-1", "Preloading future segment", {
+      background: true,
+    });
+    delayedLoadingState.startLoading("preload-segment-2", "Preloading future segment", {
+      background: true,
+    });
 
     // Advance past threshold
     vi.advanceTimersByTime(250);

@@ -66,9 +66,7 @@ export function recordReplayProxyPlugin() {
       log("[Proxy Plugin] Proxy middleware configured");
       log(`[Proxy Plugin] Cache directory: ${CACHE_DIR}`);
       if (CACHE_ONLY_MODE) {
-        log(
-          "[Proxy Plugin] ⚠️  Running in CACHE-ONLY mode - no remote fetching",
-        );
+        log("[Proxy Plugin] ⚠️  Running in CACHE-ONLY mode - no remote fetching");
       }
     },
   };
@@ -94,10 +92,7 @@ export function recordReplayProxyPlugin() {
       // Rewrite URLs in cached JSON/text responses to point back to current proxy
       const responseHeaders = { ...metadata.headers };
       const contentType = responseHeaders["content-type"] || "";
-      if (
-        contentType.includes("application/json") ||
-        contentType.includes("text/")
-      ) {
+      if (contentType.includes("application/json") || contentType.includes("text/")) {
         try {
           const originalHost = `http://${TARGET_HOST}:${TARGET_PORT}`;
           // Determine the correct proxy host to use
@@ -106,18 +101,12 @@ export function recordReplayProxyPlugin() {
           const bodyText = body.toString("utf-8");
           // Replace both the original host and localhost:63315 with the proxy host
           let rewrittenText = bodyText.replace(
-            new RegExp(
-              originalHost.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-              "g",
-            ),
+            new RegExp(originalHost.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
             proxyHost,
           );
           // Always replace localhost:63315 (cached responses may contain it)
           // Note: Using hardcoded port here for regex matching cached responses
-          rewrittenText = rewrittenText.replace(
-            /http:\/\/localhost:63315/g,
-            proxyHost,
-          );
+          rewrittenText = rewrittenText.replace(/http:\/\/localhost:63315/g, proxyHost);
           body = Buffer.from(rewrittenText, "utf-8");
 
           // Update content-length if it changed
@@ -127,9 +116,7 @@ export function recordReplayProxyPlugin() {
 
           log(`[Proxy] ✓ Rewrote cached URLs: ${originalHost} → ${proxyHost}`);
         } catch (error) {
-          console.warn(
-            `[Proxy] Failed to rewrite cached URLs: ${error.message}`,
-          );
+          console.warn(`[Proxy] Failed to rewrite cached URLs: ${error.message}`);
           // Continue with original body on error
         }
       }
@@ -137,9 +124,7 @@ export function recordReplayProxyPlugin() {
       res.writeHead(metadata.statusCode, responseHeaders);
       res.end(body);
     } catch (error) {
-      console.error(
-        `[Proxy] Failed to serve cached response: ${error.message}`,
-      );
+      console.error(`[Proxy] Failed to serve cached response: ${error.message}`);
       res.writeHead(500, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "Failed to read cache" }));
     }
@@ -166,15 +151,7 @@ export function recordReplayProxyPlugin() {
   }
 
   // Save response to cache
-  async function cacheResponse(
-    cacheDir,
-    statusCode,
-    headers,
-    body,
-    method,
-    url,
-    range,
-  ) {
+  async function cacheResponse(cacheDir, statusCode, headers, body, method, url, range) {
     try {
       await mkdir(cacheDir, { recursive: true }); // Create cache directory
 
@@ -192,10 +169,7 @@ export function recordReplayProxyPlugin() {
       const normalizedMetadata = normalizeMetadata(metadata);
 
       const metadataFile = join(cacheDir, "metadata.json");
-      await writeFile(
-        metadataFile,
-        JSON.stringify(normalizedMetadata, null, 2),
-      );
+      await writeFile(metadataFile, JSON.stringify(normalizedMetadata, null, 2));
 
       const dataFile = join(cacheDir, "data.bin");
       await writeFile(dataFile, body); // Write raw binary data
@@ -213,11 +187,7 @@ export function recordReplayProxyPlugin() {
     let apiPath;
     if (req.url.startsWith("/transcode")) {
       apiPath = `/api/v1/transcode${req.url}`;
-    } else if (
-      req.url.startsWith("/url-token") ||
-      req.url === "" ||
-      req.url === "/"
-    ) {
+    } else if (req.url.startsWith("/url-token") || req.url === "" || req.url === "/") {
       // Handle empty string or root path for exact /api/v1/url-token match
       // When middleware is registered with "/api/v1/url-token", exact match gives req.url = "" or "/"
       apiPath = `/api/v1/url-token${req.url.replace("/url-token", "")}`;
@@ -234,14 +204,8 @@ export function recordReplayProxyPlugin() {
 
     // Set CORS headers
     res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader(
-      "Access-Control-Allow-Methods",
-      "GET, POST, PUT, DELETE, OPTIONS",
-    );
-    res.setHeader(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Range, Authorization",
-    );
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Range, Authorization");
 
     if (req.method === "OPTIONS") {
       res.writeHead(200);
@@ -308,10 +272,7 @@ export function recordReplayProxyPlugin() {
 
           // Rewrite URLs in JSON/text responses to point back to proxy
           const contentType = responseHeaders["content-type"] || "";
-          if (
-            contentType.includes("application/json") ||
-            contentType.includes("text/")
-          ) {
+          if (contentType.includes("application/json") || contentType.includes("text/")) {
             try {
               const originalHost = `http://${TARGET_HOST}:${TARGET_PORT}`;
               // Determine the correct proxy host to use
@@ -320,17 +281,11 @@ export function recordReplayProxyPlugin() {
               const bodyText = body.toString("utf-8");
               // Replace both the original host and localhost:63315 with the proxy host
               let rewrittenText = bodyText.replace(
-                new RegExp(
-                  originalHost.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-                  "g",
-                ),
+                new RegExp(originalHost.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
                 proxyHost,
               );
               // Always replace localhost:63315 (responses may contain it from previous rewrites or cache)
-              rewrittenText = rewrittenText.replace(
-                /http:\/\/localhost:63315/g,
-                proxyHost,
-              );
+              rewrittenText = rewrittenText.replace(/http:\/\/localhost:63315/g, proxyHost);
               body = Buffer.from(rewrittenText, "utf-8");
 
               // Update content-length if it changed
@@ -354,19 +309,13 @@ export function recordReplayProxyPlugin() {
               try {
                 const metadataFile = join(cacheDir, "metadata.json");
                 if (existsSync(metadataFile)) {
-                  const metadata = JSON.parse(
-                    await readFile(metadataFile, "utf-8"),
-                  );
-                  log(
-                    `[Proxy] ✓ Serving from cache instead of 404 (${metadata.timestamp})`,
-                  );
+                  const metadata = JSON.parse(await readFile(metadataFile, "utf-8"));
+                  log(`[Proxy] ✓ Serving from cache instead of 404 (${metadata.timestamp})`);
                   await serveCachedResponse(res, cacheDir, req);
                   return;
                 }
               } catch (cacheError) {
-                console.error(
-                  `[Proxy] Failed to read cache: ${cacheError.message}`,
-                );
+                console.error(`[Proxy] Failed to read cache: ${cacheError.message}`);
               }
             }
 
@@ -395,17 +344,13 @@ export function recordReplayProxyPlugin() {
             try {
               const metadataFile = join(cacheDir, "metadata.json");
               if (existsSync(metadataFile)) {
-                const metadata = JSON.parse(
-                  await readFile(metadataFile, "utf-8"),
-                );
+                const metadata = JSON.parse(await readFile(metadataFile, "utf-8"));
                 log(`[Proxy] ✓ Serving from cache (${metadata.timestamp})`);
                 await serveCachedResponse(res, cacheDir, req);
                 return;
               }
             } catch (cacheError) {
-              console.error(
-                `[Proxy] Failed to read cache: ${cacheError.message}`,
-              );
+              console.error(`[Proxy] Failed to read cache: ${cacheError.message}`);
             }
           }
 

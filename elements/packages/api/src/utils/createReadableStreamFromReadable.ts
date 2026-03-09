@@ -30,8 +30,7 @@ class StreamPump {
     },
   ) {
     this.highWaterMark =
-      stream.readableHighWaterMark ||
-      new Stream.Readable().readableHighWaterMark;
+      stream.readableHighWaterMark || new Stream.Readable().readableHighWaterMark;
     this.accumalatedSize = 0;
     this.stream = stream;
     this.enqueue = this.enqueue.bind(this);

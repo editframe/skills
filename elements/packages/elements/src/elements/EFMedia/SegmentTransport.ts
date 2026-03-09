@@ -5,11 +5,7 @@ import type { CachedFetcher } from "./CachedFetcher.js";
 
 export interface SegmentTransport {
   fetchInitSegment(track: TrackRef, signal: AbortSignal): Promise<ArrayBuffer>;
-  fetchMediaSegment(
-    segmentId: number,
-    track: TrackRef,
-    signal: AbortSignal,
-  ): Promise<ArrayBuffer>;
+  fetchMediaSegment(segmentId: number, track: TrackRef, signal: AbortSignal): Promise<ArrayBuffer>;
   isCached(segmentId: number, track: TrackRef): boolean;
 }
 
@@ -36,18 +32,12 @@ function resolveRenditionId(track: TrackRef): RenditionId {
   return "high";
 }
 
-export function createUrlTransport(
-  opts: UrlTransportOptions,
-): SegmentTransport {
+export function createUrlTransport(opts: UrlTransportOptions): SegmentTransport {
   const { fetcher, src, templates, audioTrackId, videoTrackId } = opts;
 
-  function buildSegmentUrl(
-    segmentId: "init" | number,
-    track: TrackRef,
-  ): string {
+  function buildSegmentUrl(segmentId: "init" | number, track: TrackRef): string {
     const renditionId = resolveRenditionId(track);
-    const template =
-      segmentId === "init" ? templates.initSegment : templates.mediaSegment;
+    const template = segmentId === "init" ? templates.initSegment : templates.mediaSegment;
     const trackId =
       typeof track.id === "number"
         ? track.id
@@ -62,10 +52,7 @@ export function createUrlTransport(
   }
 
   return {
-    async fetchInitSegment(
-      track: TrackRef,
-      signal: AbortSignal,
-    ): Promise<ArrayBuffer> {
+    async fetchInitSegment(track: TrackRef, signal: AbortSignal): Promise<ArrayBuffer> {
       const url = buildSegmentUrl("init", track);
       return fetcher.fetchArrayBuffer(url, signal);
     },
@@ -102,8 +89,7 @@ export function createByteRangeTransport(
   }
 
   function getTrackId(track: TrackRef): number {
-    const trackId =
-      typeof track.id === "number" ? track.id : Number.parseInt(track.id, 10);
+    const trackId = typeof track.id === "number" ? track.id : Number.parseInt(track.id, 10);
     if (Number.isNaN(trackId)) {
       throw new Error(`Invalid track ID: ${track.id}`);
     }
@@ -111,10 +97,7 @@ export function createByteRangeTransport(
   }
 
   return {
-    async fetchInitSegment(
-      track: TrackRef,
-      signal: AbortSignal,
-    ): Promise<ArrayBuffer> {
+    async fetchInitSegment(track: TrackRef, signal: AbortSignal): Promise<ArrayBuffer> {
       const trackId = getTrackId(track);
       const trackData = data[trackId];
       if (!trackData) throw new Error(`Track ${trackId} not found`);

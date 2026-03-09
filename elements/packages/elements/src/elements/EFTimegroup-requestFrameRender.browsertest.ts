@@ -10,14 +10,7 @@
  * re-render so upgraded frames are always painted.
  */
 
-import {
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  test,
-} from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, test } from "vitest";
 import { LitElement, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import type { EFTimegroup } from "./EFTimegroup.js";
@@ -80,9 +73,7 @@ describe("requestFrameRender bypasses FrameController deduplication", () => {
     container.appendChild(timegroup);
     await timegroup.updateComplete;
 
-    child = document.createElement(
-      "test-rfrr-frame-element",
-    ) as TestFrameElement;
+    child = document.createElement("test-rfrr-frame-element") as TestFrameElement;
     timegroup.appendChild(child);
     await child.updateComplete;
     await timegroup.updateComplete;

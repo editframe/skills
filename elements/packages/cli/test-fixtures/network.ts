@@ -52,11 +52,7 @@ export const mockLookupFileByMd5 = ({
     });
   });
 
-export const mockLookupFileByMd5NotFound = ({
-  md5 = "test-md5",
-}: {
-  md5?: string;
-}) =>
+export const mockLookupFileByMd5NotFound = ({ md5 = "test-md5" }: { md5?: string }) =>
   http.get(`http://localhost:3000/api/v1/files/md5/${md5}`, async () => {
     return HttpResponse.json({}, { status: 404 });
   });
@@ -114,15 +110,12 @@ export const mockGetFileTrackUpload = ({
   fileId?: string;
   trackId?: number;
 }) =>
-  http.get(
-    `http://localhost:3000/api/v1/files/${fileId}/tracks/${trackId}/upload`,
-    async () => {
-      return HttpResponse.json({
-        id,
-        complete,
-      });
-    },
-  );
+  http.get(`http://localhost:3000/api/v1/files/${fileId}/tracks/${trackId}/upload`, async () => {
+    return HttpResponse.json({
+      id,
+      complete,
+    });
+  });
 
 export const mockUploadFileIndex = ({ id = "123" }: { id?: string }) =>
   http.post(
@@ -173,11 +166,7 @@ export const mockLookupImageFileByMd5 = ({
     });
   });
 
-export const mockLookupImageFileByMd5NotFound = ({
-  md5 = "test-md5",
-}: {
-  md5?: string;
-}) =>
+export const mockLookupImageFileByMd5NotFound = ({ md5 = "test-md5" }: { md5?: string }) =>
   http.get(`http://localhost:3000/api/v1/image_files/md5/${md5}`, async () => {
     return HttpResponse.json({}, { status: 404 });
   });
@@ -192,16 +181,13 @@ export const mockGetUploadImageFile = ({
   filename?: string;
   fixture: Fixture;
 }) =>
-  http.get(
-    `http://localhost:3000/api/v1/image_files/${id}/upload`,
-    async () => {
-      return HttpResponse.json({
-        id,
-        complete,
-        filename,
-      });
-    },
-  );
+  http.get(`http://localhost:3000/api/v1/image_files/${id}/upload`, async () => {
+    return HttpResponse.json({
+      id,
+      complete,
+      filename,
+    });
+  });
 
 export const mockCreateIsobmffFile = ({
   complete = true,
@@ -233,27 +219,17 @@ export const mockLookupISOBMFFFileByMd5 = ({
   md5?: string;
   fixture: Fixture;
 }) =>
-  http.get(
-    `http://localhost:3000/api/v1/isobmff_files/md5/${md5}`,
-    async () => {
-      return HttpResponse.json({
-        id,
-        complete,
-      });
-    },
-  );
+  http.get(`http://localhost:3000/api/v1/isobmff_files/md5/${md5}`, async () => {
+    return HttpResponse.json({
+      id,
+      complete,
+    });
+  });
 
-export const mockLookupISOBMFFFileByMd5NotFound = ({
-  md5 = "test-md5",
-}: {
-  md5?: string;
-}) =>
-  http.get(
-    `http://localhost:3000/api/v1/isobmff_files/md5/${md5}`,
-    async () => {
-      return HttpResponse.json({}, { status: 404 });
-    },
-  );
+export const mockLookupISOBMFFFileByMd5NotFound = ({ md5 = "test-md5" }: { md5?: string }) =>
+  http.get(`http://localhost:3000/api/v1/isobmff_files/md5/${md5}`, async () => {
+    return HttpResponse.json({}, { status: 404 });
+  });
 
 export const mockCreateIsobmffTrack = ({
   complete = true,
@@ -290,15 +266,12 @@ export const mockGetIsobmffTrackUpload = ({
   fileId?: string;
   trackId?: number;
 }) =>
-  http.get(
-    `http://localhost:3000/api/v1/isobmff_tracks/${fileId}/${trackId}/upload`,
-    async () => {
-      return HttpResponse.json({
-        id,
-        complete,
-      });
-    },
-  );
+  http.get(`http://localhost:3000/api/v1/isobmff_tracks/${fileId}/${trackId}/upload`, async () => {
+    return HttpResponse.json({
+      id,
+      complete,
+    });
+  });
 export const mockUploadIsobmffFileIndex = ({
   complete = true,
   id = "123",
@@ -327,27 +300,17 @@ export const mockLookupCaptionFileByMd5 = ({
   md5?: string;
   fixture: Fixture;
 }) =>
-  http.get(
-    `http://localhost:3000/api/v1/caption_files/md5/${md5}`,
-    async () => {
-      return HttpResponse.json({
-        id,
-        complete,
-      });
-    },
-  );
+  http.get(`http://localhost:3000/api/v1/caption_files/md5/${md5}`, async () => {
+    return HttpResponse.json({
+      id,
+      complete,
+    });
+  });
 
-export const mockLookupCaptionFileByMd5NotFound = ({
-  md5 = "test-md5",
-}: {
-  md5?: string;
-}) =>
-  http.get(
-    `http://localhost:3000/api/v1/caption_files/md5/${md5}`,
-    async () => {
-      return HttpResponse.json({}, { status: 404 });
-    },
-  );
+export const mockLookupCaptionFileByMd5NotFound = ({ md5 = "test-md5" }: { md5?: string }) =>
+  http.get(`http://localhost:3000/api/v1/caption_files/md5/${md5}`, async () => {
+    return HttpResponse.json({}, { status: 404 });
+  });
 
 export const mockCreateCaptionFile = ({
   complete = true,

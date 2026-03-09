@@ -31,8 +31,7 @@ export class TimegroupController implements ReactiveController {
       }
 
       this.child.requestUpdate();
-      const newChildTimeMs =
-        this.host.currentTimeMs - (this.child.startTimeMs ?? 0);
+      const newChildTimeMs = this.host.currentTimeMs - (this.child.startTimeMs ?? 0);
       this.child.currentTimeMs = newChildTimeMs;
     });
   }

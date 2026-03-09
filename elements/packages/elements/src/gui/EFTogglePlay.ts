@@ -45,11 +45,7 @@ export class EFTogglePlay extends TargetOrContextMixin(LitElement, efContext) {
   render() {
     return html`
       <div>
-        ${
-          this.playing
-            ? html`<slot name="pause"></slot>`
-            : html`<slot name="play"></slot>`
-        }
+        ${this.playing ? html`<slot name="pause"></slot>` : html`<slot name="play"></slot>`}
       </div>
     `;
   }
@@ -75,10 +71,7 @@ export class EFTogglePlay extends TargetOrContextMixin(LitElement, efContext) {
           } catch (error) {
             // If context creation/resume fails, continue with normal async flow
             // The fallback in startPlayback() will attempt resume (may not work on mobile)
-            console.warn(
-              "Failed to create/resume AudioContext synchronously:",
-              error,
-            );
+            console.warn("Failed to create/resume AudioContext synchronously:", error);
           }
         }
         this.efContext.play();

@@ -4,10 +4,7 @@ import { z } from "zod";
 import type { Client } from "../client.js";
 import { ProgressIterator } from "../ProgressIterator.js";
 import { uploadChunks } from "../uploadChunks.js";
-import {
-  CreateISOBMFFTrackPayload,
-  type CreateISOBMFFTrackResult,
-} from "./isobmff-track.js";
+import { CreateISOBMFFTrackPayload, type CreateISOBMFFTrackResult } from "./isobmff-track.js";
 
 const log = debug("ef:api:file");
 
@@ -18,13 +15,7 @@ const MAX_CAPTION_SIZE = 1024 * 1024 * 2; // 2MB
 export const FileType = z.enum(["video", "image", "caption"]);
 export type FileType = z.infer<typeof FileType>;
 
-export const FileStatus = z.enum([
-  "created",
-  "uploading",
-  "processing",
-  "ready",
-  "failed",
-]);
+export const FileStatus = z.enum(["created", "uploading", "processing", "ready", "failed"]);
 export type FileStatus = z.infer<typeof FileStatus>;
 
 export const CreateFilePayload = z.object({
@@ -87,10 +78,7 @@ const MAX_SIZE_BY_TYPE: Record<FileType, number> = {
   caption: MAX_CAPTION_SIZE,
 };
 
-export const createFile = async (
-  client: Client,
-  payload: CreateFilePayload,
-) => {
+export const createFile = async (client: Client, payload: CreateFilePayload) => {
   log("Creating a file", payload);
   CreateFilePayload.parse(payload);
 
@@ -112,9 +100,7 @@ export const createFile = async (
     return (await response.json()) as CreateFileResult;
   }
 
-  throw new Error(
-    `Failed to create file ${response.status} ${response.statusText}`,
-  );
+  throw new Error(`Failed to create file ${response.status} ${response.statusText}`);
 };
 
 export const uploadFile = (
@@ -134,10 +120,7 @@ export const uploadFile = (
   });
 };
 
-export const getFileDetail = async (
-  client: Client,
-  id: string,
-): Promise<FileDetail> => {
+export const getFileDetail = async (client: Client, id: string): Promise<FileDetail> => {
   const response = await client.authenticatedFetch(`/api/v1/files/${id}`, {
     method: "GET",
   });
@@ -150,9 +133,7 @@ export const getFileDetail = async (
     throw new Error(`File not found: ${id}`);
   }
 
-  throw new Error(
-    `Failed to get file detail ${response.status} ${response.statusText}`,
-  );
+  throw new Error(`Failed to get file detail ${response.status} ${response.statusText}`);
 };
 
 export const lookupFileByMd5 = async (
@@ -171,32 +152,23 @@ export const lookupFileByMd5 = async (
     return null;
   }
 
-  throw new Error(
-    `Failed to lookup file by md5 ${md5} ${response.status} ${response.statusText}`,
-  );
+  throw new Error(`Failed to lookup file by md5 ${md5} ${response.status} ${response.statusText}`);
 };
 
 export const deleteFile = async (client: Client, id: string) => {
-  const response = await client.authenticatedFetch(
-    `/api/v1/files/${id}/delete`,
-    {
-      method: "POST",
-    },
-  );
+  const response = await client.authenticatedFetch(`/api/v1/files/${id}/delete`, {
+    method: "POST",
+  });
 
   if (response.ok) {
     return (await response.json()) as { success: boolean };
   }
 
-  throw new Error(
-    `Failed to delete file ${id} ${response.status} ${response.statusText}`,
-  );
+  throw new Error(`Failed to delete file ${id} ${response.status} ${response.statusText}`);
 };
 
 export const getFileProcessingProgress = async (client: Client, id: string) => {
-  const eventSource = await client.authenticatedEventSource(
-    `/api/v1/files/${id}/progress`,
-  );
+  const eventSource = await client.authenticatedEventSource(`/api/v1/files/${id}/progress`);
 
   return new ProgressIterator(eventSource);
 };
@@ -206,33 +178,25 @@ export const transcribeFile = async (
   id: string,
   options: { trackId?: number } = {},
 ): Promise<TranscribeFileResult> => {
-  const response = await client.authenticatedFetch(
-    `/api/v1/files/${id}/transcribe`,
-    {
-      method: "POST",
-      body: JSON.stringify(options),
-    },
-  );
+  const response = await client.authenticatedFetch(`/api/v1/files/${id}/transcribe`, {
+    method: "POST",
+    body: JSON.stringify(options),
+  });
 
   if (response.ok) {
     return (await response.json()) as TranscribeFileResult;
   }
 
-  throw new Error(
-    `Failed to transcribe file ${id} ${response.status} ${response.statusText}`,
-  );
+  throw new Error(`Failed to transcribe file ${id} ${response.status} ${response.statusText}`);
 };
 
 export const getFileTranscription = async (
   client: Client,
   id: string,
 ): Promise<FileTranscriptionResult | null> => {
-  const response = await client.authenticatedFetch(
-    `/api/v1/files/${id}/transcription`,
-    {
-      method: "GET",
-    },
-  );
+  const response = await client.authenticatedFetch(`/api/v1/files/${id}/transcription`, {
+    method: "GET",
+  });
 
   if (response.ok) {
     return (await response.json()) as FileTranscriptionResult;
@@ -258,13 +222,10 @@ export const createFileTrack = async (
   log("Creating file track", fileId, payload);
   CreateISOBMFFTrackPayload.parse(payload);
 
-  const response = await client.authenticatedFetch(
-    `/api/v1/files/${fileId}/tracks`,
-    {
-      method: "POST",
-      body: JSON.stringify(payload),
-    },
-  );
+  const response = await client.authenticatedFetch(`/api/v1/files/${fileId}/tracks`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 
   log("File track created", response.status, response.statusText);
 
@@ -272,9 +233,7 @@ export const createFileTrack = async (
     return (await response.json()) as CreateISOBMFFTrackResult;
   }
 
-  throw new Error(
-    `Failed to create file track ${response.status} ${response.statusText}`,
-  );
+  throw new Error(`Failed to create file track ${response.status} ${response.statusText}`);
 };
 
 export const uploadFileTrack = (
@@ -309,14 +268,11 @@ export const uploadFileIndex = async (
     );
   }
 
-  const response = await client.authenticatedFetch(
-    `/api/v1/files/${fileId}/index/upload`,
-    {
-      method: "POST",
-      body: fileStream,
-      duplex: "half",
-    },
-  );
+  const response = await client.authenticatedFetch(`/api/v1/files/${fileId}/index/upload`, {
+    method: "POST",
+    body: fileStream,
+    duplex: "half",
+  });
 
   log("File index uploaded", response.status, response.statusText);
 
@@ -324,7 +280,5 @@ export const uploadFileIndex = async (
     return response.json();
   }
 
-  throw new Error(
-    `Failed to upload file index ${response.status} ${response.statusText}`,
-  );
+  throw new Error(`Failed to upload file index ${response.status} ${response.statusText}`);
 };

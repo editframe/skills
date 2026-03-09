@@ -81,9 +81,7 @@ describe("update password", () => {
     const page = getPage();
 
     await page.goto("/settings/update-password");
-    await playwrightExpect(page.getByLabel("Current Password")).toHaveValue(
-      "",
-    );
+    await playwrightExpect(page.getByLabel("Current Password")).toHaveValue("");
     await playwrightExpect(page.getByLabel("New Password")).toHaveValue("");
     await playwrightExpect(
       page.getByLabel("Password confirmation"),

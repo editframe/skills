@@ -70,7 +70,7 @@ export function useSubscriptionForQuery<
       rowsSubscription.unsubscribe();
       countSubscription.unsubscribe();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [descriptor.query, descriptor.countQuery, ...variablesDep]);
 
   return result;

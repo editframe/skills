@@ -56,10 +56,7 @@ export interface GetISOBMFFFileTranscriptionResult {
 }
 
 /** @deprecated Use the unified file API from ./file.js instead */
-export const createISOBMFFFile = async (
-  client: Client,
-  payload: CreateISOBMFFFilePayload,
-) => {
+export const createISOBMFFFile = async (client: Client, payload: CreateISOBMFFFilePayload) => {
   log("Creating isobmff file", payload);
   const response = await client.authenticatedFetch("/api/v1/isobmff_files", {
     method: "POST",
@@ -72,9 +69,7 @@ export const createISOBMFFFile = async (
     return (await response.json()) as CreateISOBMFFFileResult;
   }
 
-  throw new Error(
-    `Failed to create isobmff file ${response.status} ${response.statusText}`,
-  );
+  throw new Error(`Failed to create isobmff file ${response.status} ${response.statusText}`);
 };
 
 /** @deprecated Use the unified file API from ./file.js instead */
@@ -88,23 +83,18 @@ export const uploadFragmentIndex = async (
   if (fileSize > FILE_SIZE_LIMIT) {
     throw new Error(`File size exceeds limit of ${FILE_SIZE_LIMIT} bytes`);
   }
-  const response = await client.authenticatedFetch(
-    `/api/v1/isobmff_files/${fileId}/index/upload`,
-    {
-      method: "POST",
-      body: fileStream,
-      duplex: "half",
-    },
-  );
+  const response = await client.authenticatedFetch(`/api/v1/isobmff_files/${fileId}/index/upload`, {
+    method: "POST",
+    body: fileStream,
+    duplex: "half",
+  });
 
   log("Fragment index uploaded", response);
   if (response.ok) {
     return response.json();
   }
 
-  throw new Error(
-    `Failed to create fragment index ${response.status} ${response.statusText}`,
-  );
+  throw new Error(`Failed to create fragment index ${response.status} ${response.statusText}`);
 };
 
 /** @deprecated Use the unified file API from ./file.js instead */
@@ -112,12 +102,9 @@ export const lookupISOBMFFFileByMd5 = async (
   client: Client,
   md5: string,
 ): Promise<LookupISOBMFFFileByMd5Result | null> => {
-  const response = await client.authenticatedFetch(
-    `/api/v1/isobmff_files/md5/${md5}`,
-    {
-      method: "GET",
-    },
-  );
+  const response = await client.authenticatedFetch(`/api/v1/isobmff_files/md5/${md5}`, {
+    method: "GET",
+  });
   log("ISOBMFF file lookup", response);
 
   if (response.ok) {
@@ -138,9 +125,7 @@ export const getISOBMFFFileTranscription = async (
   client: Client,
   id: string,
 ): Promise<GetISOBMFFFileTranscriptionResult | null> => {
-  const response = await client.authenticatedFetch(
-    `/api/v1/isobmff_files/${id}/transcription`,
-  );
+  const response = await client.authenticatedFetch(`/api/v1/isobmff_files/${id}/transcription`);
 
   if (response.ok) {
     return (await response.json()) as GetISOBMFFFileTranscriptionResult;
@@ -159,9 +144,7 @@ export const TranscribeISOBMFFFilePayload = z.object({
   trackId: z.string().optional(),
 });
 
-export type TranscribeISOBMFFFilePayload = z.infer<
-  typeof TranscribeISOBMFFFilePayload
->;
+export type TranscribeISOBMFFFilePayload = z.infer<typeof TranscribeISOBMFFFilePayload>;
 
 /** @deprecated Use the unified file API from ./file.js instead */
 export interface TranscribeISOBMFFFileResult {
@@ -176,13 +159,10 @@ export const transcribeISOBMFFFile = async (
   id: string,
   payload: TranscribeISOBMFFFilePayload = {},
 ) => {
-  const response = await client.authenticatedFetch(
-    `/api/v1/isobmff_files/${id}/transcribe`,
-    {
-      method: "POST",
-      body: JSON.stringify(payload),
-    },
-  );
+  const response = await client.authenticatedFetch(`/api/v1/isobmff_files/${id}/transcribe`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 
   if (response.ok) {
     return (await response.json()) as TranscribeISOBMFFFileResult;

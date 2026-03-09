@@ -3,11 +3,7 @@
  * Provides a unified interface for native (drawElementImage) and foreignObject paths.
  */
 
-import {
-  isNativeCanvasApiAvailable,
-  getRenderMode,
-  type RenderMode,
-} from "./previewSettings.js";
+import { isNativeCanvasApiAvailable, getRenderMode, type RenderMode } from "./previewSettings.js";
 
 /**
  * Options for rendering HTML to an image or canvas.

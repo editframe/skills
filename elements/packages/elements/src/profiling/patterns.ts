@@ -22,9 +22,8 @@ export function detectPatterns(analysis: ProfileAnalysis): Pattern[] {
   // Pattern 1: Excessive DOM manipulation
   const domManipulation = analysis.hotspots.filter(
     (h) =>
-      h.functionName.match(
-        /appendChild|removeChild|insertBefore|replaceChild/i,
-      ) && h.selfTimePct > 5,
+      h.functionName.match(/appendChild|removeChild|insertBefore|replaceChild/i) &&
+      h.selfTimePct > 5,
   );
   if (domManipulation.length > 0) {
     const totalPct = domManipulation.reduce((sum, h) => sum + h.selfTimePct, 0);
@@ -53,8 +52,7 @@ export function detectPatterns(analysis: ProfileAnalysis): Pattern[] {
       description: `Layout property reads called frequently (${layoutReads[0]?.callCount} times)`,
       severity: "high",
       hotspots: layoutReads,
-      suggestion:
-        "Cache layout measurements and batch reads before writes to avoid forced reflow",
+      suggestion: "Cache layout measurements and batch reads before writes to avoid forced reflow",
     });
   }
 
@@ -87,15 +85,13 @@ export function detectPatterns(analysis: ProfileAnalysis): Pattern[] {
       description: `Function called ${frequentCalls[0]?.callCount} times with small individual cost`,
       severity: "medium",
       hotspots: frequentCalls,
-      suggestion:
-        "Consider reducing call frequency through memoization, caching, or debouncing",
+      suggestion: "Consider reducing call frequency through memoization, caching, or debouncing",
     });
   }
 
   // Pattern 5: JSON parsing/stringifying
   const jsonOperations = analysis.hotspots.filter(
-    (h) =>
-      h.functionName.match(/JSON\.parse|JSON\.stringify/i) && h.selfTimePct > 3,
+    (h) => h.functionName.match(/JSON\.parse|JSON\.stringify/i) && h.selfTimePct > 3,
   );
   if (jsonOperations.length > 0) {
     patterns.push({
@@ -111,9 +107,7 @@ export function detectPatterns(analysis: ProfileAnalysis): Pattern[] {
   // Pattern 6: Style computation
   const styleComputation = analysis.hotspots.filter(
     (h) =>
-      h.functionName.match(
-        /getComputedStyle|getPropertyValue|computedStyleMap/i,
-      ) &&
+      h.functionName.match(/getComputedStyle|getPropertyValue|computedStyleMap/i) &&
       h.callCount &&
       h.callCount > 20,
   );
@@ -123,17 +117,15 @@ export function detectPatterns(analysis: ProfileAnalysis): Pattern[] {
       description: `Style properties read ${styleComputation[0]?.callCount} times`,
       severity: "medium",
       hotspots: styleComputation,
-      suggestion:
-        "Cache computed styles or use CSS custom properties for dynamic values",
+      suggestion: "Cache computed styles or use CSS custom properties for dynamic values",
     });
   }
 
   // Pattern 7: Animation-related APIs
   const animationAPIs = analysis.hotspots.filter(
     (h) =>
-      h.functionName.match(
-        /getAnimations|requestAnimationFrame|cancelAnimationFrame/i,
-      ) && h.selfTimePct > 5,
+      h.functionName.match(/getAnimations|requestAnimationFrame|cancelAnimationFrame/i) &&
+      h.selfTimePct > 5,
   );
   if (animationAPIs.length > 0) {
     patterns.push({
@@ -141,16 +133,12 @@ export function detectPatterns(analysis: ProfileAnalysis): Pattern[] {
       description: `Animation APIs account for ${animationAPIs.reduce((s, h) => s + h.selfTimePct, 0).toFixed(1)}%`,
       severity: "medium",
       hotspots: animationAPIs,
-      suggestion:
-        "Cache animation objects or use Web Animations API more efficiently",
+      suggestion: "Cache animation objects or use Web Animations API more efficiently",
     });
   }
 
   // Pattern 8: File-level concentration (one file dominates)
-  for (const [file, timeMs] of Array.from(analysis.byFile.entries()).slice(
-    0,
-    3,
-  )) {
+  for (const [file, timeMs] of Array.from(analysis.byFile.entries()).slice(0, 3)) {
     const pct = (timeMs / analysis.totalTimeMs) * 100;
     if (pct > 40) {
       const fileHotspots = analysis.hotspots.filter((h) => h.file === file);
@@ -189,12 +177,7 @@ export function formatPatterns(patterns: Pattern[]): string {
   const lines: string[] = ["DETECTED PATTERNS:"];
 
   for (const pattern of patterns) {
-    const icon =
-      pattern.severity === "high"
-        ? "🔴"
-        : pattern.severity === "medium"
-          ? "🟡"
-          : "🟢";
+    const icon = pattern.severity === "high" ? "🔴" : pattern.severity === "medium" ? "🟡" : "🟢";
     lines.push("");
     lines.push(`${icon} ${pattern.name}`);
     lines.push(`   ${pattern.description}`);
@@ -203,9 +186,7 @@ export function formatPatterns(patterns: Pattern[]): string {
     if (pattern.hotspots.length > 0) {
       const top = pattern.hotspots.slice(0, 2);
       for (const h of top) {
-        lines.push(
-          `   • ${h.functionName} @ ${h.file}:${h.line} (${h.selfTimePct.toFixed(1)}%)`,
-        );
+        lines.push(`   • ${h.functionName} @ ${h.file}:${h.line} (${h.selfTimePct.toFixed(1)}%)`);
       }
       if (pattern.hotspots.length > 2) {
         lines.push(`   ... and ${pattern.hotspots.length - 2} more`);

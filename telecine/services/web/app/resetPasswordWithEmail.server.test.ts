@@ -95,9 +95,9 @@ describe("resetPasswordWithEmail", () => {
         .where("reset_token", "=", reset!.reset_token)
         .execute();
 
-      await expect(
-        getUserByResetToken(reset!.reset_token),
-      ).rejects.toThrow("Invalid reset token");
+      await expect(getUserByResetToken(reset!.reset_token)).rejects.toThrow(
+        "Invalid reset token",
+      );
     });
 
     test("rejects expired token (older than 1 hour)", async () => {
@@ -110,9 +110,9 @@ describe("resetPasswordWithEmail", () => {
         .where("reset_token", "=", reset!.reset_token)
         .execute();
 
-      await expect(
-        getUserByResetToken(reset!.reset_token),
-      ).rejects.toThrow("Invalid reset token");
+      await expect(getUserByResetToken(reset!.reset_token)).rejects.toThrow(
+        "Invalid reset token",
+      );
     });
   });
 

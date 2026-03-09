@@ -42,17 +42,44 @@ async function cleanupTestData() {
 
   const steps: [string, ReturnType<typeof sql>][] = [
     // Null out FK refs from other schemas to api_keys
-    ["null renders.api_key_id", sql`UPDATE video2.renders SET api_key_id = NULL WHERE api_key_id IN (${testApiKeyIds})`],
-    ["null process_html.api_key_id", sql`UPDATE video2.process_html SET api_key_id = NULL WHERE api_key_id IN (${testApiKeyIds})`],
+    [
+      "null renders.api_key_id",
+      sql`UPDATE video2.renders SET api_key_id = NULL WHERE api_key_id IN (${testApiKeyIds})`,
+    ],
+    [
+      "null process_html.api_key_id",
+      sql`UPDATE video2.process_html SET api_key_id = NULL WHERE api_key_id IN (${testApiKeyIds})`,
+    ],
     // Delete identity tables in dependency order
-    ["api_keys", sql`DELETE FROM identity.api_keys WHERE org_id IN (${testOrgIds})`],
-    ["invites", sql`DELETE FROM identity.invites WHERE org_id IN (${testOrgIds})`],
-    ["memberships", sql`DELETE FROM identity.memberships WHERE user_id IN (${testUserIds})`],
+    [
+      "api_keys",
+      sql`DELETE FROM identity.api_keys WHERE org_id IN (${testOrgIds})`,
+    ],
+    [
+      "invites",
+      sql`DELETE FROM identity.invites WHERE org_id IN (${testOrgIds})`,
+    ],
+    [
+      "memberships",
+      sql`DELETE FROM identity.memberships WHERE user_id IN (${testUserIds})`,
+    ],
     ["orgs", sql`DELETE FROM identity.orgs WHERE id IN (${testOrgIds})`],
-    ["password_resets", sql`DELETE FROM identity.password_resets WHERE user_id IN (${testUserIds})`],
-    ["email_confirmations", sql`DELETE FROM identity.email_confirmations WHERE user_id IN (${testUserIds})`],
-    ["magic_link_tokens", sql`DELETE FROM identity.magic_link_tokens WHERE user_id IN (${testUserIds})`],
-    ["email_passwords", sql`DELETE FROM identity.email_passwords WHERE user_id IN (${testUserIds})`],
+    [
+      "password_resets",
+      sql`DELETE FROM identity.password_resets WHERE user_id IN (${testUserIds})`,
+    ],
+    [
+      "email_confirmations",
+      sql`DELETE FROM identity.email_confirmations WHERE user_id IN (${testUserIds})`,
+    ],
+    [
+      "magic_link_tokens",
+      sql`DELETE FROM identity.magic_link_tokens WHERE user_id IN (${testUserIds})`,
+    ],
+    [
+      "email_passwords",
+      sql`DELETE FROM identity.email_passwords WHERE user_id IN (${testUserIds})`,
+    ],
     ["users", sql`DELETE FROM identity.users WHERE id IN (${testUserIds})`],
   ];
 
@@ -60,15 +87,13 @@ async function cleanupTestData() {
     try {
       await query.execute(db);
     } catch (err: any) {
-      console.warn(`Cleanup step "${name}" failed: ${err.detail || err.message}`);
+      console.warn(
+        `Cleanup step "${name}" failed: ${err.detail || err.message}`,
+      );
     }
   }
 }
 
 export default async function setup() {
-  await Promise.all([
-    deleteAllEmails(),
-    warmUpServer(),
-    cleanupTestData(),
-  ]);
+  await Promise.all([deleteAllEmails(), warmUpServer(), cleanupTestData()]);
 }

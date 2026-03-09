@@ -157,37 +157,26 @@ describe("EFText", () => {
       const secondWrapper = wordWrappers[1];
 
       if (firstWrapper) {
-        const wrapperSegments = Array.from(
-          firstWrapper.querySelectorAll("ef-text-segment"),
-        );
+        const wrapperSegments = Array.from(firstWrapper.querySelectorAll("ef-text-segment"));
         expect(wrapperSegments.length).toBe(5); // H, e, l, l, o
-        const wrapperText = wrapperSegments
-          .map((seg) => seg.segmentText)
-          .join("");
+        const wrapperText = wrapperSegments.map((seg) => seg.segmentText).join("");
         expect(wrapperText).toBe("Hello");
       }
 
       if (secondWrapper) {
-        const wrapperSegments = Array.from(
-          secondWrapper.querySelectorAll("ef-text-segment"),
-        );
+        const wrapperSegments = Array.from(secondWrapper.querySelectorAll("ef-text-segment"));
         expect(wrapperSegments.length).toBe(5); // w, o, r, l, d
-        const wrapperText = wrapperSegments
-          .map((seg) => seg.segmentText)
-          .join("");
+        const wrapperText = wrapperSegments.map((seg) => seg.segmentText).join("");
         expect(wrapperText).toBe("world");
       }
 
       // Verify space is not wrapped (should be a direct child segment)
-      const spaceSegment = Array.from(segments).find(
-        (seg) => seg.segmentText === " ",
-      );
+      const spaceSegment = Array.from(segments).find((seg) => seg.segmentText === " ");
       expect(spaceSegment).toBeTruthy();
       // Space should not be inside a word wrapper span
       const parentSpan = spaceSegment?.parentElement;
       const isInWordWrapper =
-        parentSpan?.tagName === "SPAN" &&
-        parentSpan?.style.whiteSpace === "nowrap";
+        parentSpan?.tagName === "SPAN" && parentSpan?.style.whiteSpace === "nowrap";
       expect(isInWordWrapper).toBe(false);
     });
 
@@ -1147,11 +1136,7 @@ describe("EFText", () => {
       // At t=0, all animations should be at initial state
       timegroup.currentTimeMs = 0;
       await timegroup.seekTask.taskComplete;
-      await Promise.all(
-        segments
-          .map((seg) => seg?.updateComplete)
-          .filter((p) => p !== undefined),
-      );
+      await Promise.all(segments.map((seg) => seg?.updateComplete).filter((p) => p !== undefined));
 
       // Animations might have started slightly due to timing - this is expected
       // What matters is that animations are controlled, not exact timing at t=0
@@ -1163,11 +1148,7 @@ describe("EFText", () => {
       // At t=500ms, all should still be at initial state (before delay + stagger)
       timegroup.currentTimeMs = 500;
       await timegroup.seekTask.taskComplete;
-      await Promise.all(
-        segments
-          .map((seg) => seg?.updateComplete)
-          .filter((p) => p !== undefined),
-      );
+      await Promise.all(segments.map((seg) => seg?.updateComplete).filter((p) => p !== undefined));
 
       // Animations may have started slightly - allow tolerance
       expect(anim0?.currentTime).toBeLessThan(100);
@@ -1177,11 +1158,7 @@ describe("EFText", () => {
       // At t=1000ms, first segment should start (delay = 1s, stagger = 0)
       timegroup.currentTimeMs = 1000;
       await timegroup.seekTask.taskComplete;
-      await Promise.all(
-        segments
-          .map((seg) => seg?.updateComplete)
-          .filter((p) => p !== undefined),
-      );
+      await Promise.all(segments.map((seg) => seg?.updateComplete).filter((p) => p !== undefined));
 
       expect(anim0?.currentTime).toBeGreaterThan(0); // Should have started
       // Animations may have started slightly - allow tolerance
@@ -1191,11 +1168,7 @@ describe("EFText", () => {
       // At t=1200ms, second segment should start (delay 1s + stagger 200ms)
       timegroup.currentTimeMs = 1200;
       await timegroup.seekTask.taskComplete;
-      await Promise.all(
-        segments
-          .map((seg) => seg?.updateComplete)
-          .filter((p) => p !== undefined),
-      );
+      await Promise.all(segments.map((seg) => seg?.updateComplete).filter((p) => p !== undefined));
 
       // Animations should be progressing - allow tolerance for timing
       expect(anim0?.currentTime).toBeGreaterThan(0); // Should be progressing
@@ -1330,10 +1303,7 @@ describe("EFText", () => {
       const text = document.createElement("ef-text");
       text.split = "word";
       // Create text with 1000 words
-      text.textContent = Array.from(
-        { length: 1000 },
-        (_, i) => `word${i}`,
-      ).join(" ");
+      text.textContent = Array.from({ length: 1000 }, (_, i) => `word${i}`).join(" ");
       text.duration = "2s";
       timegroup.appendChild(text);
       document.body.appendChild(timegroup);
@@ -1440,9 +1410,7 @@ describe("EFText", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
       // Filter to only word segments (exclude whitespace)
-      const wordSegments = segments.filter(
-        (seg) => !/^\s+$/.test(seg.segmentText),
-      );
+      const wordSegments = segments.filter((seg) => !/^\s+$/.test(seg.segmentText));
 
       // Each occurrence of "AT" should have a different stagger offset
       // The text is: "AT A TIME AT A TIME AT A TIME" (9 words total)
@@ -1528,9 +1496,7 @@ describe("EFText", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
-      const wordSegments = segments.filter(
-        (seg) => !/^\s+$/.test(seg.segmentText),
-      );
+      const wordSegments = segments.filter((seg) => !/^\s+$/.test(seg.segmentText));
       expect(wordSegments.length).toBe(3);
 
       // Each segment should have the animation applied
@@ -1615,9 +1581,7 @@ describe("EFText", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
-      const wordSegments = segments.filter(
-        (seg) => !/^\s+$/.test(seg.segmentText),
-      );
+      const wordSegments = segments.filter((seg) => !/^\s+$/.test(seg.segmentText));
       expect(wordSegments.length).toBe(2);
 
       // Segments should NOT have the parent's animation-delay copied
@@ -1669,9 +1633,7 @@ describe("EFText", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
       // Verify initial animation
-      const wordSegments = segments.filter(
-        (seg) => !/^\s+$/.test(seg.segmentText),
-      );
+      const wordSegments = segments.filter((seg) => !/^\s+$/.test(seg.segmentText));
       for (const seg of wordSegments) {
         expect(seg.style.animationName).toBe("test-fade");
       }
@@ -1720,9 +1682,7 @@ describe("EFText", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
-      const wordSegments = segments.filter(
-        (seg) => !/^\s+$/.test(seg.segmentText),
-      );
+      const wordSegments = segments.filter((seg) => !/^\s+$/.test(seg.segmentText));
       expect(wordSegments.length).toBe(3);
 
       for (const seg of wordSegments) {
@@ -1760,9 +1720,7 @@ describe("EFText", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
-      const wordSegments = segments.filter(
-        (seg) => !/^\s+$/.test(seg.segmentText),
-      );
+      const wordSegments = segments.filter((seg) => !/^\s+$/.test(seg.segmentText));
       expect(wordSegments.length).toBe(2);
 
       for (const seg of wordSegments) {
@@ -1800,9 +1758,7 @@ describe("EFText", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
-      const wordSegments = segments.filter(
-        (seg) => !/^\s+$/.test(seg.segmentText),
-      );
+      const wordSegments = segments.filter((seg) => !/^\s+$/.test(seg.segmentText));
       expect(wordSegments.length).toBe(2);
 
       for (const seg of wordSegments) {
@@ -1845,9 +1801,7 @@ describe("EFText", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
-      const wordSegments = segments.filter(
-        (seg) => !/^\s+$/.test(seg.segmentText),
-      );
+      const wordSegments = segments.filter((seg) => !/^\s+$/.test(seg.segmentText));
       expect(wordSegments.length).toBe(3);
 
       // Implementation sets fill-mode on inline style, so check inline style directly
@@ -1890,9 +1844,7 @@ describe("EFText", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
-      const wordSegments = segments.filter(
-        (seg) => !/^\s+$/.test(seg.segmentText),
-      );
+      const wordSegments = segments.filter((seg) => !/^\s+$/.test(seg.segmentText));
       expect(wordSegments.length).toBe(2);
 
       // Explicit forwards should not be overridden — check computed value
@@ -1925,12 +1877,8 @@ describe("EFText", () => {
       await Promise.all(segments.map((seg) => seg.updateComplete));
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
-      const wordSegments = segments.filter(
-        (seg) => !/^\s+$/.test(seg.segmentText),
-      );
-      const spaceSegments = segments.filter((seg) =>
-        /^\s+$/.test(seg.segmentText),
-      );
+      const wordSegments = segments.filter((seg) => !/^\s+$/.test(seg.segmentText));
+      const spaceSegments = segments.filter((seg) => /^\s+$/.test(seg.segmentText));
 
       expect(wordSegments.length).toBe(2);
       expect(spaceSegments.length).toBeGreaterThan(0);
@@ -1980,9 +1928,7 @@ describe("EFText", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
-      const wordSegments = segments.filter(
-        (seg) => !/^\s+$/.test(seg.segmentText),
-      );
+      const wordSegments = segments.filter((seg) => !/^\s+$/.test(seg.segmentText));
       expect(wordSegments.length).toBe(3);
 
       // New segments should have the animation
@@ -2004,8 +1950,7 @@ describe("EFText", () => {
         // Reference: unsplit ef-text (default split=word but no stagger so no animation)
         const ref = document.createElement("ef-text");
         ref.textContent = "HELLO WORLD TEST";
-        ref.style.cssText =
-          "position:absolute;bottom:16px;left:16px;right:16px;text-align:center;";
+        ref.style.cssText = "position:absolute;bottom:16px;left:16px;right:16px;text-align:center;";
         container.appendChild(ref);
 
         document.body.appendChild(container);
@@ -2123,9 +2068,7 @@ describe("EFText", () => {
         await Promise.all(segments.map((s) => s.updateComplete));
         await new Promise((r) => requestAnimationFrame(r));
 
-        const wordSegments = segments.filter(
-          (s) => !/^\s+$/.test(s.segmentText),
-        );
+        const wordSegments = segments.filter((s) => !/^\s+$/.test(s.segmentText));
         expect(wordSegments.length).toBeGreaterThan(0);
 
         // Seek to various points through the timeline
@@ -2180,9 +2123,7 @@ describe("EFText", () => {
         await new Promise((r) => requestAnimationFrame(r));
         await new Promise((r) => requestAnimationFrame(r));
 
-        const wordSegments = segments.filter(
-          (s) => !/^\s+$/.test(s.segmentText),
-        );
+        const wordSegments = segments.filter((s) => !/^\s+$/.test(s.segmentText));
         expect(wordSegments.length).toBeGreaterThan(0);
 
         // Verify initial endTimeMs matches text duration
@@ -2230,8 +2171,7 @@ describe("EFText", () => {
       `);
 
       const container = document.createElement("div");
-      container.style.cssText =
-        "position:relative;width:800px;font:bold 20px/1.4 sans-serif;";
+      container.style.cssText = "position:relative;width:800px;font:bold 20px/1.4 sans-serif;";
 
       const timegroup = document.createElement("ef-timegroup");
       timegroup.duration = "5s";
@@ -2472,8 +2412,7 @@ describe("EFText", () => {
       `);
 
       const container = document.createElement("div");
-      container.style.cssText =
-        "position:relative;width:800px;font:bold 20px/1.4 sans-serif;";
+      container.style.cssText = "position:relative;width:800px;font:bold 20px/1.4 sans-serif;";
 
       const timegroup = document.createElement("ef-timegroup");
       timegroup.duration = "5s";

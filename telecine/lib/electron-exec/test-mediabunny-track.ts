@@ -1,7 +1,7 @@
 /**
  * Test that loads the processed track-1.mp4 through mediabunny
  * to isolate whether the issue is with the file format or mediabunny
- * 
+ *
  * Run with: ./scripts/npx tsx lib/electron-exec/test-mediabunny-track.ts
  */
 
@@ -19,8 +19,14 @@ if (!existsSync(TEST_DIR)) {
 }
 
 // The actual processed track file from the ingestion pipeline
-const PROCESSED_TRACK = join(__dirname, "../../data/video2/546d22e2-28cc-420b-949e-41429b2effca/01f6edbd-a850-4db9-afb4-1352d3135972/track-1.mp4");
-const TRACKS_JSON = join(__dirname, "../../data/video2/546d22e2-28cc-420b-949e-41429b2effca/01f6edbd-a850-4db9-afb4-1352d3135972/tracks.json");
+const PROCESSED_TRACK = join(
+  __dirname,
+  "../../data/video2/546d22e2-28cc-420b-949e-41429b2effca/01f6edbd-a850-4db9-afb4-1352d3135972/track-1.mp4",
+);
+const TRACKS_JSON = join(
+  __dirname,
+  "../../data/video2/546d22e2-28cc-420b-949e-41429b2effca/01f6edbd-a850-4db9-afb4-1352d3135972/tracks.json",
+);
 
 const ELECTRON_SCRIPT = join(TEST_DIR, "electron-test.cjs");
 const PRELOAD_SCRIPT = join(TEST_DIR, "preload.cjs");
@@ -47,12 +53,18 @@ const trackData = readFileSync(PROCESSED_TRACK);
 console.log("Track file size:", trackData.length, "bytes");
 
 // Extract init segment
-const initSegment = trackData.slice(videoTrack.initSegment.offset, videoTrack.initSegment.offset + videoTrack.initSegment.size);
+const initSegment = trackData.slice(
+  videoTrack.initSegment.offset,
+  videoTrack.initSegment.offset + videoTrack.initSegment.size,
+);
 console.log("Init segment size:", initSegment.length, "bytes");
 
 // Extract first media segment
 const firstSegment = videoTrack.segments[0];
-const mediaSegment = trackData.slice(firstSegment.offset, firstSegment.offset + firstSegment.size);
+const mediaSegment = trackData.slice(
+  firstSegment.offset,
+  firstSegment.offset + firstSegment.size,
+);
 console.log("Media segment size:", mediaSegment.length, "bytes");
 
 // Create combined data (init + media segment)
@@ -60,7 +72,9 @@ const combinedData = Buffer.concat([initSegment, mediaSegment]);
 console.log("Combined data size:", combinedData.length, "bytes");
 
 // Create preload script
-writeFileSync(PRELOAD_SCRIPT, `
+writeFileSync(
+  PRELOAD_SCRIPT,
+  `
 const { contextBridge } = require('electron');
 contextBridge.exposeInMainWorld('testData', {
   initSegmentBytes: [${Array.from(initSegment).join(",")}],
@@ -68,19 +82,25 @@ contextBridge.exposeInMainWorld('testData', {
   combinedBytes: [${Array.from(combinedData).join(",")}],
   trackInfo: ${JSON.stringify(videoTrack)},
 });
-`);
+`,
+);
 
 // Create HTML file - simple VideoDecoder test, no mediabunny
-writeFileSync(HTML_FILE, `<!DOCTYPE html>
+writeFileSync(
+  HTML_FILE,
+  `<!DOCTYPE html>
 <html>
 <head><title>VideoDecoder Test</title></head>
 <body>
 <h1>Testing VideoDecoder with processed track file</h1>
 </body>
-</html>`);
+</html>`,
+);
 
 // Create electron main script - test VideoDecoder directly
-writeFileSync(ELECTRON_SCRIPT, `
+writeFileSync(
+  ELECTRON_SCRIPT,
+  `
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
 
@@ -315,25 +335,33 @@ app.whenReady().then(async () => {
     app.exit(1);
   }
 });
-`);
+`,
+);
 
 console.log("\nRunning Electron test...");
 
-const electronPath = join(__dirname, "../../node_modules/electron/dist/electron");
+const electronPath = join(
+  __dirname,
+  "../../node_modules/electron/dist/electron",
+);
 
-const electronProcess = spawn("xvfb-run", [
-  "--auto-servernum",
-  "--server-args=-screen 0 1920x1080x24",
-  electronPath,
-  "--no-sandbox",
-  "--disable-dev-shm-usage",
-  ELECTRON_SCRIPT,
-], {
-  stdio: "inherit",
-  env: {
-    ...process.env,
+const electronProcess = spawn(
+  "xvfb-run",
+  [
+    "--auto-servernum",
+    "--server-args=-screen 0 1920x1080x24",
+    electronPath,
+    "--no-sandbox",
+    "--disable-dev-shm-usage",
+    ELECTRON_SCRIPT,
+  ],
+  {
+    stdio: "inherit",
+    env: {
+      ...process.env,
+    },
   },
-});
+);
 
 electronProcess.on("close", (code) => {
   console.log("\nElectron process exited with code:", code);

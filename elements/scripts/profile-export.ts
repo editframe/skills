@@ -254,10 +254,7 @@ async function main() {
     browser = await chromium.launch({
       headless,
       channel: "chrome",
-      args: [
-        "--autoplay-policy=no-user-gesture-required",
-        "--enable-features=CanvasDrawElement",
-      ],
+      args: ["--autoplay-policy=no-user-gesture-required", "--enable-features=CanvasDrawElement"],
     });
     shouldCloseBrowser = true;
   }
@@ -370,9 +367,7 @@ async function main() {
         offscreen: `${offTime.toFixed(1)}ms (${(offTime / iterations).toFixed(2)}ms/frame)`,
       };
     });
-    console.log(
-      `\n📊 VideoFrame Creation Benchmark (${1920}x${1080}, 50 frames):`,
-    );
+    console.log(`\n📊 VideoFrame Creation Benchmark (${1920}x${1080}, 50 frames):`);
     console.log(`   HTMLCanvasElement → VideoFrame: ${vfBenchmark.html}`);
     console.log(`   OffscreenCanvas → VideoFrame:   ${vfBenchmark.offscreen}`);
 
@@ -433,22 +428,15 @@ async function main() {
     const result = await Promise.race([
       exportPromise,
       new Promise<{ success: false; error: string }>((resolve) =>
-        setTimeout(
-          () => resolve({ success: false, error: "Timeout" }),
-          exportTimeout,
-        ),
+        setTimeout(() => resolve({ success: false, error: "Timeout" }), exportTimeout),
       ),
     ]);
 
     const exportDuration = Date.now() - exportStartTime;
-    console.log(
-      `⏱️  Export completed in ${(exportDuration / 1000).toFixed(2)}s`,
-    );
+    console.log(`⏱️  Export completed in ${(exportDuration / 1000).toFixed(2)}s`);
     console.log(`   Result keys: ${Object.keys(result).join(", ")}`);
     if ((result as any).videoBuffer) {
-      console.log(
-        `   Video buffer size: ${(result as any).videoBuffer.length} bytes`,
-      );
+      console.log(`   Video buffer size: ${(result as any).videoBuffer.length} bytes`);
     }
 
     // Stop profiler and get results
@@ -597,8 +585,7 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
   // Sample interval in microseconds
   const sampleIntervalUs =
     profile.timeDeltas.length > 0
-      ? profile.timeDeltas.reduce((a, b) => a + b, 0) /
-        profile.timeDeltas.length
+      ? profile.timeDeltas.reduce((a, b) => a + b, 0) / profile.timeDeltas.length
       : 1000;
 
   const totalSamples = profile.samples.length;
@@ -628,8 +615,7 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
     if (resolved) {
       return `${node.callFrame.functionName || "(anonymous)"} @ ${resolved.source}:${resolved.line}`;
     }
-    const file =
-      node.callFrame.url?.split("/").slice(-1)[0]?.split("?")[0] || "(native)";
+    const file = node.callFrame.url?.split("/").slice(-1)[0]?.split("?")[0] || "(native)";
     return `${node.callFrame.functionName || "(anonymous)"} @ ${file}:${node.callFrame.lineNumber + 1}`;
   };
 
@@ -677,9 +663,7 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
     // Use resolved location if available
     const resolved = resolvedLocations.get(node.id);
     const file =
-      resolved?.source ||
-      node.callFrame.url?.split("/").slice(-1)[0]?.split("?")[0] ||
-      "(native)";
+      resolved?.source || node.callFrame.url?.split("/").slice(-1)[0]?.split("?")[0] || "(native)";
     const line = resolved?.line ?? node.callFrame.lineNumber + 1;
     const column = resolved?.column ?? node.callFrame.columnNumber + 1;
 
@@ -700,11 +684,7 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
       const scriptUrl = node.callFrame.url.split("?")[0];
       for (const pt of node.positionTicks) {
         // positionTicks lines are 1-based in V8, need to convert to 0-based for resolution
-        const resolvedPt = await sourceMapResolver.resolve(
-          scriptUrl,
-          pt.line - 1,
-          0,
-        );
+        const resolvedPt = await sourceMapResolver.resolve(scriptUrl, pt.line - 1, 0);
         resolvedPositionTicks.push({
           line: resolvedPt?.line ?? pt.line,
           ticks: pt.ticks,
@@ -760,12 +740,8 @@ function printHotspots(hotspots: HotspotInfo[]) {
   }
 }
 
-async function printDetailedAnalysis(
-  profile: CPUProfile,
-  focusFile: string = "",
-) {
-  const { hotspots, totalTimeMs, sampleIntervalUs } =
-    await analyzeProfileDetailed(profile);
+async function printDetailedAnalysis(profile: CPUProfile, focusFile: string = "") {
+  const { hotspots, totalTimeMs, sampleIntervalUs } = await analyzeProfileDetailed(profile);
 
   console.log(`\n${"=".repeat(80)}`);
   console.log(`DETAILED PROFILE ANALYSIS`);
@@ -785,9 +761,7 @@ async function printDetailedAnalysis(
         h.file.includes("sync")),
   );
 
-  const nativeCode = hotspots.filter(
-    (h) => h.file === "(native)" || !h.file.includes(".ts"),
-  );
+  const nativeCode = hotspots.filter((h) => h.file === "(native)" || !h.file.includes(".ts"));
 
   // Summary by file
   const byFile = new Map<string, number>();
@@ -799,16 +773,12 @@ async function printDetailedAnalysis(
   console.log(`\n--- TIME BY FILE ---`);
   for (const [file, time] of sortedFiles.slice(0, 15)) {
     const pct = ((time / totalTimeMs) * 100).toFixed(1);
-    console.log(
-      `  ${time.toFixed(1).padStart(8)}ms (${pct.padStart(5)}%)  ${file}`,
-    );
+    console.log(`  ${time.toFixed(1).padStart(8)}ms (${pct.padStart(5)}%)  ${file}`);
   }
 
   // LINE-LEVEL PROFILING for focused file or auto-detected hot files
   const focusedFiles = focusFile
-    ? hotspots.filter(
-        (h) => h.file.includes(focusFile) || h.url.includes(focusFile),
-      )
+    ? hotspots.filter((h) => h.file.includes(focusFile) || h.url.includes(focusFile))
     : ourCode.filter((h) => h.selfTimeMs > 50); // Auto-focus on hot functions
 
   if (focusedFiles.length > 0) {
@@ -824,32 +794,25 @@ async function printDetailedAnalysis(
 
     for (const [file, fileHotspots] of byFileDetailed) {
       // Aggregate line-level data across all functions in this file
-      const lineData = new Map<
-        number,
-        { ticks: number; functions: string[] }
-      >();
+      const lineData = new Map<number, { ticks: number; functions: string[] }>();
       let fileTotalTicks = 0;
 
       for (const h of fileHotspots) {
         // Add function's own line
         if (h.hitCount > 0) {
-          if (!lineData.has(h.line))
-            lineData.set(h.line, { ticks: 0, functions: [] });
+          if (!lineData.has(h.line)) lineData.set(h.line, { ticks: 0, functions: [] });
           const ld = lineData.get(h.line)!;
           ld.ticks += h.hitCount;
-          if (!ld.functions.includes(h.functionName))
-            ld.functions.push(h.functionName);
+          if (!ld.functions.includes(h.functionName)) ld.functions.push(h.functionName);
           fileTotalTicks += h.hitCount;
         }
 
         // Add positionTicks data (line-level detail within function)
         for (const pt of h.positionTicks) {
-          if (!lineData.has(pt.line))
-            lineData.set(pt.line, { ticks: 0, functions: [] });
+          if (!lineData.has(pt.line)) lineData.set(pt.line, { ticks: 0, functions: [] });
           const ld = lineData.get(pt.line)!;
           ld.ticks += pt.ticks;
-          if (!ld.functions.includes(h.functionName))
-            ld.functions.push(h.functionName);
+          if (!ld.functions.includes(h.functionName)) ld.functions.push(h.functionName);
           fileTotalTicks += pt.ticks;
         }
       }
@@ -868,9 +831,7 @@ async function printDetailedAnalysis(
       console.log(
         `  ${"Line".padStart(6)}  ${"Time".padStart(8)}  ${"Pct".padStart(6)}  Function/Context`,
       );
-      console.log(
-        `  ${"-".repeat(6)}  ${"-".repeat(8)}  ${"-".repeat(6)}  ${"-".repeat(40)}`,
-      );
+      console.log(`  ${"-".repeat(6)}  ${"-".repeat(8)}  ${"-".repeat(6)}  ${"-".repeat(40)}`);
 
       for (const [line, data] of sortedLines) {
         const lineTimeMs = (data.ticks * sampleIntervalUs) / 1000;
@@ -887,24 +848,18 @@ async function printDetailedAnalysis(
   console.log(`\n--- TOP HOTSPOTS IN OUR CODE (with callers) ---`);
   for (const h of ourCode.slice(0, 20)) {
     const pct = h.selfTimePct.toFixed(1);
-    console.log(
-      `\n  ${h.selfTimeMs.toFixed(1)}ms (${pct}%) - ${h.functionName}`,
-    );
+    console.log(`\n  ${h.selfTimeMs.toFixed(1)}ms (${pct}%) - ${h.functionName}`);
     console.log(`    Location: ${h.file}:${h.line}:${h.column}`);
     if (h.callers.length > 0) {
       console.log(`    Called by: ${h.callers.slice(0, 2).join(", ")}`);
     }
     // Show line-level breakdown if available
     if (h.positionTicks.length > 0) {
-      const sortedTicks = [...h.positionTicks]
-        .sort((a, b) => b.ticks - a.ticks)
-        .slice(0, 5);
+      const sortedTicks = [...h.positionTicks].sort((a, b) => b.ticks - a.ticks).slice(0, 5);
       console.log(`    Hot lines:`);
       for (const pt of sortedTicks) {
         const lineTimeMs = (pt.ticks * sampleIntervalUs) / 1000;
-        console.log(
-          `      L${pt.line}: ${lineTimeMs.toFixed(1)}ms (${pt.ticks} samples)`,
-        );
+        console.log(`      L${pt.line}: ${lineTimeMs.toFixed(1)}ms (${pt.ticks} samples)`);
       }
     }
   }
@@ -913,19 +868,12 @@ async function printDetailedAnalysis(
   console.log(`\n--- NATIVE API TIME ---`);
   const nativeByName = new Map<string, number>();
   for (const h of nativeCode) {
-    nativeByName.set(
-      h.functionName,
-      (nativeByName.get(h.functionName) || 0) + h.selfTimeMs,
-    );
+    nativeByName.set(h.functionName, (nativeByName.get(h.functionName) || 0) + h.selfTimeMs);
   }
-  const sortedNative = Array.from(nativeByName.entries()).sort(
-    (a, b) => b[1] - a[1],
-  );
+  const sortedNative = Array.from(nativeByName.entries()).sort((a, b) => b[1] - a[1]);
   for (const [name, time] of sortedNative.slice(0, 15)) {
     const pct = ((time / totalTimeMs) * 100).toFixed(1);
-    console.log(
-      `  ${time.toFixed(1).padStart(8)}ms (${pct.padStart(5)}%)  ${name}`,
-    );
+    console.log(`  ${time.toFixed(1).padStart(8)}ms (${pct.padStart(5)}%)  ${name}`);
   }
 
   // Actionable summary
@@ -944,8 +892,7 @@ async function printDetailedAnalysis(
     opportunities.push({
       description: "getAnimations() calls",
       timeMs: getAnimationsTime,
-      suggestion:
-        "Cache animations or use animation tracking to avoid repeated discovery",
+      suggestion: "Cache animations or use animation tracking to avoid repeated discovery",
     });
   }
 

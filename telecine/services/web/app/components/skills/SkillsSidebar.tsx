@@ -13,7 +13,12 @@ interface SkillPickerProps {
   inline?: boolean;
 }
 
-export function SkillPicker({ allSkills, currentSkill, onNavigate, inline }: SkillPickerProps) {
+export function SkillPicker({
+  allSkills,
+  currentSkill,
+  onNavigate,
+  inline,
+}: SkillPickerProps) {
   return (
     <aside
       className={clsx(
@@ -43,7 +48,6 @@ export function SkillPicker({ allSkills, currentSkill, onNavigate, inline }: Ski
           );
         })}
       </nav>
-
     </aside>
   );
 }
@@ -148,12 +152,7 @@ export function NavTreeSection({
   return (
     <div className="mb-4">
       {/* Sticky section header */}
-      <div
-        className={clsx(
-          "sticky top-0 z-[9] -mx-3 px-3 pb-1 pt-1",
-          NAV_BG,
-        )}
-      >
+      <div className={clsx("sticky top-0 z-[9] -mx-3 px-3 pb-1 pt-1", NAV_BG)}>
         <div className="flex items-center gap-2 px-3 py-1.5">
           {node.icon && (
             <span className="text-base leading-none">{node.icon}</span>

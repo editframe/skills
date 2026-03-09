@@ -82,7 +82,7 @@ export function ElementRenderer({
   parentElement = null,
 }: ElementRendererProps) {
   const strategy: ElementStrategy | undefined = elementStrategies[element.type];
-  
+
   if (!strategy) {
     return null;
   }
@@ -96,10 +96,11 @@ export function ElementRenderer({
   const needsAnimationStyle = strategy.needsAnimationStyle
     ? strategy.needsAnimationStyle(element)
     : true;
-  
-  const animationStyle = isTextWithSplit || !needsAnimationStyle
-    ? null
-    : generateAnimationStyle(element);
+
+  const animationStyle =
+    isTextWithSplit || !needsAnimationStyle
+      ? null
+      : generateAnimationStyle(element);
 
   const animationRules = assembleAnimationRules(
     element,

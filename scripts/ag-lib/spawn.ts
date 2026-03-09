@@ -5,7 +5,10 @@ import { randomUUID } from "node:crypto";
 
 const SPAWN_PROCESSES = new Map<string, { process: any; startTime: number }>();
 
-export async function spawnPlanner(planId: string, options: { model?: string; workspace?: string }): Promise<string> {
+export async function spawnPlanner(
+  planId: string,
+  options: { model?: string; workspace?: string },
+): Promise<string> {
   const plan = getPlan(planId);
   if (!plan) {
     throw new Error(`Plan document ${planId} not found`);
@@ -32,7 +35,10 @@ Do NOT wait for user feedback - work autonomously. Write all outputs to the data
   return spawnAgent("planner", planId, agentId, workspace, model, prompt);
 }
 
-export async function spawnWorker(planId: string, options: { model?: string; workspace?: string }): Promise<string> {
+export async function spawnWorker(
+  planId: string,
+  options: { model?: string; workspace?: string },
+): Promise<string> {
   const plan = getPlan(planId);
   if (!plan) {
     throw new Error(`Plan document ${planId} not found`);
@@ -66,7 +72,7 @@ function spawnAgent(
   agentId: string,
   workspace: string,
   model: string,
-  prompt: string
+  prompt: string,
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     // Find cursor agent command
@@ -75,16 +81,18 @@ function spawnAgent(
     const args = [
       "agent",
       "--print",
-      "--workspace", workspace,
-      "--model", model,
+      "--workspace",
+      workspace,
+      "--model",
+      model,
       "--force",
-      prompt
+      prompt,
     ];
 
     const proc = spawn(cursorAgent, args, {
       cwd: workspace,
       stdio: ["ignore", "pipe", "pipe"],
-      env: { ...process.env, AG_AGENT_ID: agentId, AG_PLAN_ID: planId }
+      env: { ...process.env, AG_AGENT_ID: agentId, AG_PLAN_ID: planId },
     });
 
     SPAWN_PROCESSES.set(planId, { process: proc, startTime: Date.now() });
@@ -160,10 +168,13 @@ export function waitForAgent(planId: string, timeout?: number): Promise<void> {
   });
 }
 
-export function getAgentStatus(planId: string): { running: boolean; startTime?: number } {
+export function getAgentStatus(planId: string): {
+  running: boolean;
+  startTime?: number;
+} {
   const entry = SPAWN_PROCESSES.get(planId);
   return {
     running: !!entry,
-    startTime: entry?.startTime
+    startTime: entry?.startTime,
   };
 }

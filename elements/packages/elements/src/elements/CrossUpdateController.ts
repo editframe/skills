@@ -1,8 +1,4 @@
-import type {
-  LitElement,
-  ReactiveController,
-  ReactiveControllerHost,
-} from "lit";
+import type { LitElement, ReactiveController, ReactiveControllerHost } from "lit";
 
 export class CrossUpdateController implements ReactiveController {
   constructor(

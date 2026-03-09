@@ -3,17 +3,17 @@ import { extname } from "node:path";
 /**
  * Get MIME type from file path based on file extension.
  * Returns a MIME type string or null if the extension is unknown.
- * 
+ *
  * @param filePath - The file path (can include query parameters)
  * @returns MIME type string or null if unknown
  */
 export function getMimeTypeFromPath(filePath: string): string | null {
   // Remove query parameters if present
   const pathWithoutQuery = filePath.split("?")[0] || filePath;
-  
+
   // Get file extension
   const extension = extname(pathWithoutQuery).toLowerCase().slice(1); // Remove the dot
-  
+
   if (!extension) {
     return null;
   }
@@ -30,7 +30,7 @@ export function getMimeTypeFromPath(filePath: string): string | null {
     flv: "video/x-flv",
     mkv: "video/x-matroska",
     m4s: "video/iso.segment", // ISO Base Media file segment
-    
+
     // Audio formats
     mp3: "audio/mpeg",
     m4a: "audio/mp4",
@@ -39,7 +39,7 @@ export function getMimeTypeFromPath(filePath: string): string | null {
     wav: "audio/wav",
     flac: "audio/flac",
     wma: "audio/x-ms-wma",
-    
+
     // Image formats
     jpg: "image/jpeg",
     jpeg: "image/jpeg",
@@ -49,7 +49,7 @@ export function getMimeTypeFromPath(filePath: string): string | null {
     svg: "image/svg+xml",
     bmp: "image/bmp",
     ico: "image/x-icon",
-    
+
     // Other formats
     json: "application/json",
     txt: "text/plain",

@@ -268,8 +268,9 @@ export default function AnimeJSPage() {
               + Editframe
             </p>
             <p className="text-lg text-[var(--warm-gray)] max-w-2xl">
-              Build scrubable, renderable animations with Anime.js and Editframe.
-              Edit the text and colors below to see changes in real-time.
+              Build scrubable, renderable animations with Anime.js and
+              Editframe. Edit the text and colors below to see changes in
+              real-time.
             </p>
           </div>
         </div>
@@ -278,11 +279,12 @@ export default function AnimeJSPage() {
       {/* Main Content */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-6">
-
           {/* Getting Started */}
           <div className="border-4 border-[var(--ink-black)] dark:border-white p-8 mb-20 relative">
             <div className="absolute -top-4 left-6 bg-[var(--poster-red)] px-3 py-1">
-              <span className="text-white text-xs font-bold uppercase tracking-widest">Get Started</span>
+              <span className="text-white text-xs font-bold uppercase tracking-widest">
+                Get Started
+              </span>
             </div>
             <p className="text-[var(--warm-gray)] mb-4">
               Scaffold a new project with the Anime.js template:
@@ -291,16 +293,33 @@ export default function AnimeJSPage() {
               <div className="bg-[var(--ink-black)] dark:bg-[#1a1a1a] px-5 py-3 font-mono text-sm flex items-center gap-3 border-2 border-[var(--ink-black)] dark:border-white/20">
                 <span>
                   <span className="text-[var(--poster-gold)]">$</span>
-                  <span className="text-white ml-2">npm create @editframe@beta -- animejs</span>
+                  <span className="text-white ml-2">
+                    npm create @editframe@beta -- animejs
+                  </span>
                 </span>
                 <button
                   type="button"
-                  onClick={() => navigator.clipboard?.writeText("npm create @editframe@beta -- animejs")}
+                  onClick={() =>
+                    navigator.clipboard?.writeText(
+                      "npm create @editframe@beta -- animejs",
+                    )
+                  }
                   className="text-white/40 hover:text-white transition-colors flex-shrink-0"
                   aria-label="Copy npm create @editframe@beta -- animejs command"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
                   </svg>
                 </button>
               </div>
@@ -309,12 +328,15 @@ export default function AnimeJSPage() {
                 className="inline-flex items-center justify-center px-6 py-3 border-2 border-[var(--ink-black)] dark:border-white font-bold text-sm uppercase tracking-wider hover:bg-[var(--ink-black)] hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors whitespace-nowrap"
               >
                 Docs
-               </Link>
+              </Link>
             </div>
           </div>
 
           {/* Section 1: SplitText + Stagger */}
-          <div ref={section1Ref} className="mb-20 pb-20 border-b-2 border-[var(--ink-black)]/10 dark:border-white/10">
+          <div
+            ref={section1Ref}
+            className="mb-20 pb-20 border-b-2 border-[var(--ink-black)]/10 dark:border-white/10"
+          >
             <h2 className="text-3xl sm:text-4xl font-black tracking-tighter uppercase mb-2">
               SplitText + Stagger
             </h2>
@@ -405,7 +427,10 @@ timegroup.addFrameTask(({ ownCurrentTimeMs }) => {
           </div>
 
           {/* Section 2: Timeline with Labels */}
-          <div ref={section2Ref} className="mb-20 pb-20 border-b-2 border-[var(--ink-black)]/10 dark:border-white/10">
+          <div
+            ref={section2Ref}
+            className="mb-20 pb-20 border-b-2 border-[var(--ink-black)]/10 dark:border-white/10"
+          >
             <h2 className="text-3xl sm:text-4xl font-black tracking-tighter uppercase mb-2">
               Timeline
             </h2>
@@ -511,7 +536,10 @@ timegroup.addFrameTask(({ ownCurrentTimeMs }) => {
           </div>
 
           {/* Section 3: WAAPI Demo */}
-          <div ref={section3Ref} className="mb-20 pb-20 border-b-2 border-[var(--ink-black)]/10 dark:border-white/10">
+          <div
+            ref={section3Ref}
+            className="mb-20 pb-20 border-b-2 border-[var(--ink-black)]/10 dark:border-white/10"
+          >
             <h2 className="text-3xl sm:text-4xl font-black tracking-tighter uppercase mb-2">
               Web Animations API
             </h2>
@@ -713,7 +741,6 @@ timegroup.addFrameTask(({ ownCurrentTimeMs }) => {
               </div>
             </div>
           </div>
-
         </div>
       </section>
 

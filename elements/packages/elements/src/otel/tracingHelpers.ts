@@ -1,10 +1,4 @@
-import {
-  type Context,
-  context,
-  propagation,
-  type Span,
-  trace,
-} from "@opentelemetry/api";
+import { type Context, context, propagation, type Span, trace } from "@opentelemetry/api";
 
 export type TraceContext = Record<string, string>;
 

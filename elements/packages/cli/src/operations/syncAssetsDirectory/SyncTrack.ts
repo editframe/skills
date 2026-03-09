@@ -128,20 +128,14 @@ export class SyncTrack implements SubAssetSync<CreateISOBMFFTrackResult> {
             byte_size: await this.byteSize(),
           };
 
-    this.created = await createFileTrack(
-      getClient(),
-      videoFile.id,
-      createPayload,
-    );
+    this.created = await createFileTrack(getClient(), videoFile.id, createPayload);
   }
   isComplete() {
     return !!this.created?.complete;
   }
   async upload() {
     if (!this.created) {
-      throw new Error(
-        "Track not created. Should have been prevented by .isComplete()",
-      );
+      throw new Error("Track not created. Should have been prevented by .isComplete()");
     }
     await uploadFileTrack(
       getClient(),
@@ -153,9 +147,7 @@ export class SyncTrack implements SubAssetSync<CreateISOBMFFTrackResult> {
   }
   async markSynced() {
     if (!this.created) {
-      throw new Error(
-        "Track not created. Should have been prevented by .isComplete()",
-      );
+      throw new Error("Track not created. Should have been prevented by .isComplete()");
     }
     const byteSize = await this.byteSize();
     await Promise.all([

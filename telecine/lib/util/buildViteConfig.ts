@@ -22,14 +22,25 @@ export const buildViteConfig = () => {
         // Don't bundle @editframe packages during SSR - they contain browser-only code
         external: ["@editframe/elements", "@editframe/react"],
         // But allow R3F dependencies to be bundled
-        noExternal: ["@react-three/offscreen", "@react-three/fiber", "three", "mitt"],
+        noExternal: [
+          "@react-three/offscreen",
+          "@react-three/fiber",
+          "three",
+          "mitt",
+        ],
         resolve: {
           conditions: ["import", "module", "browser", "default"],
         },
       },
       optimizeDeps: {
         exclude: ["@editframe/elements"],
-        include: ["@react-three/offscreen", "@react-three/fiber", "@react-three/drei", "three", "mitt"],
+        include: [
+          "@react-three/offscreen",
+          "@react-three/fiber",
+          "@react-three/drei",
+          "three",
+          "mitt",
+        ],
       },
       server: {
         allowedHosts: process.env.NODE_ENV === "production" ? undefined : true,
@@ -71,14 +82,20 @@ export const buildViteConfig = () => {
               ),
             }
           : {}),
-        "__EF_TELEMETRY_ENABLED__": JSON.stringify(
+        __EF_TELEMETRY_ENABLED__: JSON.stringify(
           process.env.EF_TELEMETRY_ENABLED === "true",
         ),
       },
-      resolve: { 
+      resolve: {
         alias: viteAliases,
         // Ensure Vite can find dependencies when resolving from elements package source files
-        dedupe: ['@react-three/fiber', '@react-three/offscreen', '@react-three/drei', 'three', 'mitt']
+        dedupe: [
+          "@react-three/fiber",
+          "@react-three/offscreen",
+          "@react-three/drei",
+          "three",
+          "mitt",
+        ],
       },
       esbuild: {
         target: "es2022",

@@ -5,14 +5,14 @@ import {
 } from "./vector-search.client";
 
 export interface SearchDocument {
-  id: string;           // Unique identifier (slug-based)
-  title: string;        // Page title from frontmatter
-  description: string;  // Page description from frontmatter
-  slug: string;         // URL path (e.g., "/docs/elements/video")
-  content: string;      // Full text content (plain text, no markdown)
-  headings: string[];   // Array of heading texts for context
-  category?: string;    // Section category (e.g., "elements", "getting-started")
-  vector?: number[];    // TF-IDF vector for semantic search (optional)
+  id: string; // Unique identifier (slug-based)
+  title: string; // Page title from frontmatter
+  description: string; // Page description from frontmatter
+  slug: string; // URL path (e.g., "/docs/elements/video")
+  content: string; // Full text content (plain text, no markdown)
+  headings: string[]; // Array of heading texts for context
+  category?: string; // Section category (e.g., "elements", "getting-started")
+  vector?: number[]; // TF-IDF vector for semantic search (optional)
 }
 
 export interface SearchIndexMetadata {
@@ -61,7 +61,14 @@ export async function initializeSearch(): Promise<void> {
     // Create MiniSearch instance
     searchIndex = new MiniSearch<SearchDocument>({
       fields: ["title", "description", "content", "headings"],
-      storeFields: ["id", "title", "description", "slug", "category", "headings"],
+      storeFields: [
+        "id",
+        "title",
+        "description",
+        "slug",
+        "category",
+        "headings",
+      ],
       searchOptions: {
         boost: { title: 3, description: 2, headings: 1.5, content: 1 },
         fuzzy: 0.2, // Typo tolerance (0-1)
@@ -143,10 +150,7 @@ export function search(
 
   // Combine scores: hybrid approach
   const combinedScores = new Map<string, number>();
-  const allDocIds = new Set([
-    ...keywordScores.keys(),
-    ...vectorScores.keys(),
-  ]);
+  const allDocIds = new Set([...keywordScores.keys(), ...vectorScores.keys()]);
 
   for (const docId of allDocIds) {
     const keywordScore = keywordScores.get(docId) || 0;
@@ -186,4 +190,3 @@ export function search(
 export function isSearchInitialized(): boolean {
   return searchIndex !== null;
 }
-

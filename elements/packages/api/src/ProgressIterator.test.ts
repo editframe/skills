@@ -1,11 +1,7 @@
 import { createTestStream } from "TEST/createTestStream.js";
 import { describe, expect, test } from "vitest";
 import { ProgressIterator } from "./ProgressIterator.js";
-import {
-  type CompleteEvent,
-  type ProgressEvent,
-  StreamEventSource,
-} from "./StreamEventSource.js";
+import { type CompleteEvent, type ProgressEvent, StreamEventSource } from "./StreamEventSource.js";
 
 describe("ProgressIterator", () => {
   test("Fulfills promise when complete event is emitted", async () => {

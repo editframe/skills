@@ -67,10 +67,7 @@ async function main() {
     browser = await chromium.launch({
       headless,
       channel: "chrome",
-      args: [
-        "--autoplay-policy=no-user-gesture-required",
-        "--enable-features=CanvasDrawElement",
-      ],
+      args: ["--autoplay-policy=no-user-gesture-required", "--enable-features=CanvasDrawElement"],
     });
     shouldCloseBrowser = true;
   }
@@ -159,10 +156,7 @@ async function main() {
 
     // Set up download handling to capture the file
     const downloadPromise = new Promise<string>((resolve, reject) => {
-      const timeout = setTimeout(
-        () => reject(new Error("Download timeout")),
-        600000,
-      );
+      const timeout = setTimeout(() => reject(new Error("Download timeout")), 600000);
 
       page.on("download", async (download) => {
         clearTimeout(timeout);

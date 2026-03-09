@@ -10,25 +10,27 @@ import path from "node:path";
 import { mkTempDir } from "@/util/tempFile";
 
 describe("createBundledHTMLDirectory", () => {
-  test("vite build succeeds and output contains render functions", { timeout: 60_000 }, async () => {
-    await using tempDir = await mkTempDir(
-      path.join(process.cwd(), "temp"),
-    );
-    const html = /* HTML */ `
+  test(
+    "vite build succeeds and output contains render functions",
+    { timeout: 60_000 },
+    async () => {
+      await using tempDir = await mkTempDir(path.join(process.cwd(), "temp"));
+      const html = /* HTML */ `
       <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="1s">
         <div>test</div>
       </ef-timegroup>
     `;
 
-    const distPath = await createBundledHTMLDirectory(tempDir.path, html);
+      const distPath = await createBundledHTMLDirectory(tempDir.path, html);
 
-    const indexHtml = await readFile(
-      path.join(distPath, "index.html"),
-      "utf-8",
-    );
-    expect(indexHtml).toContain("renderTimegroupToVideo");
-    expect(indexHtml).toContain("captureTimegroupAtTime");
-  });
+      const indexHtml = await readFile(
+        path.join(distPath, "index.html"),
+        "utf-8",
+      );
+      expect(indexHtml).toContain("renderTimegroupToVideo");
+      expect(indexHtml).toContain("captureTimegroupAtTime");
+    },
+  );
 });
 
 describe("injectApiHost", () => {
@@ -127,10 +129,14 @@ describe("extractAndRewriteImageSources", () => {
 
   test("each rewrite gets a unique UUID image ID", () => {
     const rewrites1 = extractAndRewriteImageSources(
-      parse(/* HTML */ `<ef-image src="https://example.com/img.webp"></ef-image>`),
+      parse(
+        /* HTML */ `<ef-image src="https://example.com/img.webp"></ef-image>`,
+      ),
     );
     const rewrites2 = extractAndRewriteImageSources(
-      parse(/* HTML */ `<ef-image src="https://example.com/img.webp"></ef-image>`),
+      parse(
+        /* HTML */ `<ef-image src="https://example.com/img.webp"></ef-image>`,
+      ),
     );
 
     expect(rewrites1[0]!.imageId).not.toBe(rewrites2[0]!.imageId);

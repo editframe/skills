@@ -5,7 +5,12 @@ vi.mock("@/logging", () => {
   const debugFn = vi.fn();
   const errorFn = vi.fn();
   const warnFn = vi.fn();
-  const instance = { info: infoFn, debug: debugFn, error: errorFn, warn: warnFn };
+  const instance = {
+    info: infoFn,
+    debug: debugFn,
+    error: errorFn,
+    warn: warnFn,
+  };
   return { logger: instance, makeLogger: vi.fn(() => instance) };
 });
 
@@ -18,7 +23,8 @@ import * as logging from "@/logging";
 import * as electronRPCClient from "../ElectronRPCClient";
 
 const mockLogger = () => (logging as any).logger;
-const mockCreateElectronRPC = () => (electronRPCClient.createElectronRPC as ReturnType<typeof vi.fn>);
+const mockCreateElectronRPC = () =>
+  electronRPCClient.createElectronRPC as ReturnType<typeof vi.fn>;
 
 describe("ElectronRPCManager observability", () => {
   beforeEach(() => {
@@ -37,7 +43,8 @@ describe("ElectronRPCManager observability", () => {
 
       expect(mockCreateElectronRPC()).toHaveBeenCalledOnce();
       const prewarmLogs = mockLogger().info.mock.calls.filter(
-        ([obj]: [any]) => typeof obj === "object" && obj?.event === "electronPrewarm",
+        ([obj]: [any]) =>
+          typeof obj === "object" && obj?.event === "electronPrewarm",
       );
       expect(prewarmLogs).toHaveLength(1);
       expect(prewarmLogs[0]![0]).toMatchObject({
@@ -52,7 +59,8 @@ describe("ElectronRPCManager observability", () => {
       await expect(ElectronRPCManager.prewarm()).resolves.toBeUndefined();
 
       const failedLogs = mockLogger().warn.mock.calls.filter(
-        ([obj]: [any]) => typeof obj === "object" && obj?.event === "electronPrewarmFailed",
+        ([obj]: [any]) =>
+          typeof obj === "object" && obj?.event === "electronPrewarmFailed",
       );
       expect(failedLogs).toHaveLength(1);
     });
@@ -74,7 +82,8 @@ describe("ElectronRPCManager observability", () => {
     await ElectronRPCManager.getRPCClient();
 
     const coldStartLogs = mockLogger().info.mock.calls.filter(
-      ([obj]: [any]) => typeof obj === "object" && obj?.event === "electronColdStart",
+      ([obj]: [any]) =>
+        typeof obj === "object" && obj?.event === "electronColdStart",
     );
     expect(coldStartLogs).toHaveLength(1);
     expect(coldStartLogs[0]![0]).toMatchObject({
@@ -93,7 +102,8 @@ describe("ElectronRPCManager observability", () => {
     await ElectronRPCManager.getRPCClient(); // warm
 
     const coldStartLogs = mockLogger().info.mock.calls.filter(
-      ([obj]: [any]) => typeof obj === "object" && obj?.event === "electronColdStart",
+      ([obj]: [any]) =>
+        typeof obj === "object" && obj?.event === "electronColdStart",
     );
     expect(coldStartLogs).toHaveLength(0);
   });

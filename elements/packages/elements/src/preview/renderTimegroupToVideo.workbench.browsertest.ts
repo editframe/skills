@@ -24,10 +24,7 @@ import "../gui/EFWorkbench.js";
 import "../gui/EFPreview.js";
 import "../canvas/EFCanvas.js";
 import "../elements/EFPanZoom.js";
-import {
-  renderTimegroupToVideo,
-  type RenderProgress,
-} from "./renderTimegroupToVideo.js";
+import { renderTimegroupToVideo, type RenderProgress } from "./renderTimegroupToVideo.js";
 import { logger } from "./logger.js";
 
 beforeAll(async () => {
@@ -118,12 +115,7 @@ async function decodeFirstFrame(videoBuffer: Uint8Array): Promise<{
     width: canvas.width,
     height: canvas.height,
     hasContent,
-    samplePixel: [
-      centerPixel[0]!,
-      centerPixel[1]!,
-      centerPixel[2]!,
-      centerPixel[3]!,
-    ],
+    samplePixel: [centerPixel[0]!, centerPixel[1]!, centerPixel[2]!, centerPixel[3]!],
     nonBlackPercentage,
   };
 }
@@ -158,17 +150,13 @@ describe("renderTimegroupToVideo - workbench integration", () => {
 
     try {
       const workbench = container.querySelector("ef-workbench") as EFWorkbench;
-      const timegroup = container.querySelector(
-        "#workbench-test",
-      ) as EFTimegroup;
+      const timegroup = container.querySelector("#workbench-test") as EFTimegroup;
 
       await workbench.updateComplete;
       await timegroup.updateComplete;
       await timegroup.waitForMediaDurations();
 
-      logger.debug(
-        "[Workbench Integration Test] Starting export with progress tracking...",
-      );
+      logger.debug("[Workbench Integration Test] Starting export with progress tracking...");
 
       const progressUpdates: RenderProgress[] = [];
 
@@ -279,17 +267,13 @@ describe("renderTimegroupToVideo - workbench integration", () => {
 
     try {
       const workbench = container.querySelector("ef-workbench") as EFWorkbench;
-      const timegroup = container.querySelector(
-        "#temporal-culling-test",
-      ) as EFTimegroup;
+      const timegroup = container.querySelector("#temporal-culling-test") as EFTimegroup;
 
       await workbench.updateComplete;
       await timegroup.updateComplete;
       await timegroup.waitForMediaDurations();
 
-      logger.debug(
-        "[Temporal Culling Test] Starting export across all time ranges...",
-      );
+      logger.debug("[Temporal Culling Test] Starting export across all time ranges...");
 
       // Export the full 5 seconds - this will exercise temporal culling as elements appear/disappear
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
@@ -309,9 +293,7 @@ describe("renderTimegroupToVideo - workbench integration", () => {
       const frameData = await decodeFirstFrame(videoBuffer!);
       expect(frameData.hasContent).toBe(true);
 
-      logger.debug(
-        "[Temporal Culling Test] Successfully exported video with temporal culling",
-      );
+      logger.debug("[Temporal Culling Test] Successfully exported video with temporal culling");
     } finally {
       container.remove();
     }
@@ -368,9 +350,7 @@ describe("renderTimegroupToVideo - workbench integration", () => {
       await timegroup.updateComplete;
       await timegroup.waitForMediaDurations();
 
-      logger.debug(
-        "[Nested Timegroups Test] Starting export with scene transitions...",
-      );
+      logger.debug("[Nested Timegroups Test] Starting export with scene transitions...");
 
       // Export across the scene boundary
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
@@ -390,9 +370,7 @@ describe("renderTimegroupToVideo - workbench integration", () => {
       const frameData = await decodeFirstFrame(videoBuffer!);
       expect(frameData.hasContent).toBe(true);
 
-      logger.debug(
-        "[Nested Timegroups Test] Successfully exported video across scene transitions",
-      );
+      logger.debug("[Nested Timegroups Test] Successfully exported video across scene transitions");
     } finally {
       container.remove();
     }
@@ -450,17 +428,13 @@ describe("renderTimegroupToVideo - workbench integration", () => {
 
     try {
       const workbench = container.querySelector("ef-workbench") as EFWorkbench;
-      const timegroup = container.querySelector(
-        "#dom-mutation-test",
-      ) as EFTimegroup;
+      const timegroup = container.querySelector("#dom-mutation-test") as EFTimegroup;
 
       await workbench.updateComplete;
       await timegroup.updateComplete;
       await timegroup.waitForMediaDurations();
 
-      logger.debug(
-        "[DOM Mutation Test] Starting export with complex DOM changes...",
-      );
+      logger.debug("[DOM Mutation Test] Starting export with complex DOM changes...");
 
       // Export 30+ frames to stress test DOM restoration logic
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
@@ -480,9 +454,7 @@ describe("renderTimegroupToVideo - workbench integration", () => {
       const frameData = await decodeFirstFrame(videoBuffer!);
       expect(frameData.hasContent).toBe(true);
 
-      logger.debug(
-        "[DOM Mutation Test] Successfully exported 36 frames with DOM mutations",
-      );
+      logger.debug("[DOM Mutation Test] Successfully exported 36 frames with DOM mutations");
     } finally {
       container.remove();
     }
@@ -545,9 +517,7 @@ describe("renderTimegroupToVideo - workbench integration", () => {
 
     try {
       const workbench = container.querySelector("ef-workbench") as EFWorkbench;
-      const timegroup = container.querySelector(
-        "#clone-reuse-test",
-      ) as EFTimegroup;
+      const timegroup = container.querySelector("#clone-reuse-test") as EFTimegroup;
 
       await workbench.updateComplete;
       await timegroup.updateComplete;
@@ -598,9 +568,7 @@ describe("renderTimegroupToVideo - workbench integration", () => {
       expect(frameData.height).toBe(720);
       expect(frameData.hasContent).toBe(true);
 
-      logger.debug(
-        "[Clone Reuse Test] Successfully exported 30 frames at 720p without DOM errors",
-      );
+      logger.debug("[Clone Reuse Test] Successfully exported 30 frames at 720p without DOM errors");
     } finally {
       container.remove();
     }
@@ -650,9 +618,7 @@ describe("renderTimegroupToVideo - workbench integration", () => {
 
     try {
       const workbench = container.querySelector("ef-workbench") as EFWorkbench;
-      const timegroup = container.querySelector(
-        "#hd-1080p-test",
-      ) as EFTimegroup;
+      const timegroup = container.querySelector("#hd-1080p-test") as EFTimegroup;
 
       await workbench.updateComplete;
       await timegroup.updateComplete;
@@ -680,9 +646,7 @@ describe("renderTimegroupToVideo - workbench integration", () => {
       expect(frameData.height).toBe(540);
       expect(frameData.hasContent).toBe(true);
 
-      logger.debug(
-        "[1080p Test] Successfully exported 1080p composition scaled to 960x540",
-      );
+      logger.debug("[1080p Test] Successfully exported 1080p composition scaled to 960x540");
     } finally {
       container.remove();
     }
@@ -736,12 +700,8 @@ describe("renderTimegroupToVideo - workbench integration", () => {
       document.body.appendChild(container);
 
       try {
-        const workbench = container.querySelector(
-          "ef-workbench",
-        ) as EFWorkbench;
-        const timegroup = container.querySelector(
-          `#perf-test-${res.name}`,
-        ) as EFTimegroup;
+        const workbench = container.querySelector("ef-workbench") as EFWorkbench;
+        const timegroup = container.querySelector(`#perf-test-${res.name}`) as EFTimegroup;
 
         await workbench.updateComplete;
         await timegroup.updateComplete;

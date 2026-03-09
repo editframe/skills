@@ -22,10 +22,7 @@ import "../canvas/EFCanvas.js";
 import "../elements/EFPanZoom.js";
 import { renderTimegroupToVideo } from "./renderTimegroupToVideo.js";
 import { captureTimegroupAtTime } from "./renderTimegroupToCanvas.js";
-import {
-  isNativeCanvasApiAvailable,
-  setNativeCanvasApiEnabled,
-} from "./previewSettings.js";
+import { isNativeCanvasApiAvailable, setNativeCanvasApiEnabled } from "./previewSettings.js";
 import { logger } from "./logger.js";
 
 beforeAll(async () => {
@@ -99,12 +96,7 @@ async function decodeFirstFrame(videoBuffer: Uint8Array): Promise<{
     width: canvas.width,
     height: canvas.height,
     hasContent,
-    samplePixel: [
-      centerPixel[0]!,
-      centerPixel[1]!,
-      centerPixel[2]!,
-      centerPixel[3]!,
-    ],
+    samplePixel: [centerPixel[0]!, centerPixel[1]!, centerPixel[2]!, centerPixel[3]!],
     nonBlackPercentage,
   };
 }
@@ -182,9 +174,7 @@ describe("renderTimegroupToVideo foreignObject path with ef-video", () => {
 
     try {
       const workbench = container.querySelector("ef-workbench") as any;
-      const timegroup = container.querySelector(
-        "#video-export-fo-test",
-      ) as EFTimegroup;
+      const timegroup = container.querySelector("#video-export-fo-test") as EFTimegroup;
 
       await workbench.updateComplete;
       await timegroup.updateComplete;
@@ -195,18 +185,12 @@ describe("renderTimegroupToVideo foreignObject path with ef-video", () => {
       // Additional wait for video to be ready
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      logger.debug(
-        "[ForeignObject Path Test] Timegroup ready, starting export...",
-      );
+      logger.debug("[ForeignObject Path Test] Timegroup ready, starting export...");
       logger.debug(
         `[ForeignObject Path Test] Timegroup dimensions: ${timegroup.offsetWidth}x${timegroup.offsetHeight}`,
       );
-      logger.debug(
-        `[ForeignObject Path Test] Timegroup duration: ${timegroup.durationMs}ms`,
-      );
-      logger.debug(
-        `[ForeignObject Path Test] Native API enabled: ${isNativeCanvasApiAvailable()}`,
-      );
+      logger.debug(`[ForeignObject Path Test] Timegroup duration: ${timegroup.durationMs}ms`);
+      logger.debug(`[ForeignObject Path Test] Native API enabled: ${isNativeCanvasApiAvailable()}`);
 
       // First, verify that thumbnail capture works (this uses captureTimegroupAtTime)
       const thumbnailCanvas = await captureTimegroupAtTime(timegroup, {
@@ -223,10 +207,9 @@ describe("renderTimegroupToVideo foreignObject path with ef-video", () => {
         `[ForeignObject Path Test] Thumbnail capture: ${(thumbnailCanvas as any).width}x${(thumbnailCanvas as any).height}, hasContent: ${thumbnailResult.hasContent}, nonBlack: ${thumbnailResult.nonBlackPercentage.toFixed(1)}%`,
       );
 
-      expect(
-        thumbnailResult.hasContent,
-        "Thumbnail capture should have non-black content",
-      ).toBe(true);
+      expect(thumbnailResult.hasContent, "Thumbnail capture should have non-black content").toBe(
+        true,
+      );
 
       // Now test video export with foreignObject path (this is where the bug manifests)
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
@@ -243,9 +226,7 @@ describe("renderTimegroupToVideo foreignObject path with ef-video", () => {
       expect(videoBuffer).toBeDefined();
       expect(videoBuffer!.length).toBeGreaterThan(1000);
 
-      logger.debug(
-        `[ForeignObject Path Test] Video buffer size: ${videoBuffer!.length} bytes`,
-      );
+      logger.debug(`[ForeignObject Path Test] Video buffer size: ${videoBuffer!.length} bytes`);
 
       // Decode first frame to verify it has content
       const frameData = await decodeFirstFrame(videoBuffer!);
@@ -259,9 +240,7 @@ describe("renderTimegroupToVideo foreignObject path with ef-video", () => {
       logger.debug(
         `[ForeignObject Path Test] Non-black percentage: ${frameData.nonBlackPercentage.toFixed(1)}%`,
       );
-      logger.debug(
-        `[ForeignObject Path Test] hasContent: ${frameData.hasContent}`,
-      );
+      logger.debug(`[ForeignObject Path Test] hasContent: ${frameData.hasContent}`);
 
       // This is the key assertion - video export should have non-black content
       expect(
@@ -324,9 +303,7 @@ describe("renderTimegroupToVideo foreignObject path with ef-video", () => {
 
     try {
       const workbench = container.querySelector("ef-workbench") as any;
-      const timegroup = container.querySelector(
-        "#sequence-test",
-      ) as EFTimegroup;
+      const timegroup = container.querySelector("#sequence-test") as EFTimegroup;
 
       await workbench.updateComplete;
       await timegroup.updateComplete;
@@ -338,9 +315,7 @@ describe("renderTimegroupToVideo foreignObject path with ef-video", () => {
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       logger.debug("[Sequence Test] Timegroup ready, starting export...");
-      logger.debug(
-        `[Sequence Test] Timegroup duration: ${timegroup.durationMs}ms`,
-      );
+      logger.debug(`[Sequence Test] Timegroup duration: ${timegroup.durationMs}ms`);
 
       // Export first 2 seconds (should be in Scene 1)
       const videoBuffer = await renderTimegroupToVideo(timegroup, {
@@ -358,21 +333,16 @@ describe("renderTimegroupToVideo foreignObject path with ef-video", () => {
 
       const frameData = await decodeFirstFrame(videoBuffer!);
 
-      logger.debug(
-        `[Sequence Test] Exported frame: ${frameData.width}x${frameData.height}`,
-      );
-      logger.debug(
-        `[Sequence Test] Center pixel: rgba(${frameData.samplePixel.join(",")})`,
-      );
+      logger.debug(`[Sequence Test] Exported frame: ${frameData.width}x${frameData.height}`);
+      logger.debug(`[Sequence Test] Center pixel: rgba(${frameData.samplePixel.join(",")})`);
       logger.debug(
         `[Sequence Test] Non-black percentage: ${frameData.nonBlackPercentage.toFixed(1)}%`,
       );
       logger.debug(`[Sequence Test] hasContent: ${frameData.hasContent}`);
 
-      expect(
-        frameData.hasContent,
-        "Sequence mode video export should have non-black content",
-      ).toBe(true);
+      expect(frameData.hasContent, "Sequence mode video export should have non-black content").toBe(
+        true,
+      );
     } finally {
       container.remove();
     }

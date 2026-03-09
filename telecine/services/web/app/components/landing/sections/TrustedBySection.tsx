@@ -11,7 +11,7 @@ export function TrustedBySection({ logos }: TrustedBySectionProps) {
         <p className="text-center text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-10">
           Trusted by
         </p>
-        
+
         <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-8">
           {logos.map((item, i) => (
             <div
@@ -34,11 +34,3 @@ export function TrustedBySection({ logos }: TrustedBySectionProps) {
     </section>
   );
 }
-
-
-
-
-
-
-
-

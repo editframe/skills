@@ -28,10 +28,7 @@ export class EFImageTrack extends TrackItem {
     }
 
     // Calculate how many thumbnails can fit
-    const thumbnailCount = Math.max(
-      1,
-      Math.floor((trackWidth - 8) / (thumbnailWidth + 2)),
-    );
+    const thumbnailCount = Math.max(1, Math.floor((trackWidth - 8) / (thumbnailWidth + 2)));
 
     return html`
       <div style=${styleMap({

@@ -6,7 +6,11 @@ import type { Route } from "./+types/receiveUploadChunk";
 
 export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
 
-export const action = async ({ request, params, context }: Route.ActionArgs) => {
+export const action = async ({
+  request,
+  params,
+  context,
+}: Route.ActionArgs) => {
   const session = context.get(identityContext);
   return await receiveUploadChunk(
     request,

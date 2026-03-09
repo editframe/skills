@@ -6,10 +6,9 @@ const WEB_HOST =
 describe("magic link security", () => {
   test("invalid magic link token returns error", async () => {
     const fakeToken = "00000000-0000-0000-0000-000000000000";
-    const response = await fetch(
-      `${WEB_HOST}/auth/magic-link/${fakeToken}`,
-      { redirect: "manual" },
-    );
+    const response = await fetch(`${WEB_HOST}/auth/magic-link/${fakeToken}`, {
+      redirect: "manual",
+    });
 
     expect([302, 400, 404, 500]).toContain(response.status);
 

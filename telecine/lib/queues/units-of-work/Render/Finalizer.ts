@@ -64,7 +64,10 @@ export const RenderFinalizerWorker = new Worker({
       work_slice_ms: work_slice_ms,
     });
 
-    logger.info({ renderId: render.id, fragmentCount: allFragmentIds.length }, "Merging fragment paths");
+    logger.info(
+      { renderId: render.id, fragmentCount: allFragmentIds.length },
+      "Merging fragment paths",
+    );
 
     await storageProvider.mergePaths(
       allFragmentIds.map((fragmentId) => {

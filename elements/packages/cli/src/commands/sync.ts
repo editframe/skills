@@ -11,7 +11,5 @@ program
     const baseCwd = process.env.ORIGINAL_CWD || process.cwd();
     const resolvedDirectory = path.resolve(baseCwd, directory);
 
-    await syncAssetDirectory(
-      join(resolvedDirectory, "src", "assets", ".cache"),
-    );
+    await syncAssetDirectory(join(resolvedDirectory, "src", "assets", ".cache"));
   });

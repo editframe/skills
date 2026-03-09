@@ -5,10 +5,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { html, render as litRender } from "lit";
-import {
-  serializeElementToXHTML,
-  captureTimelineToDataUri,
-} from "./serializeTimelineDirect.js";
+import { serializeElementToXHTML, captureTimelineToDataUri } from "./serializeTimelineDirect.js";
 import { EFTimegroup } from "../../elements/EFTimegroup.js";
 import "../../elements/EFText.js";
 import "../../elements/EFTextSegment.js";
@@ -72,9 +69,7 @@ describe("serializeTimelineDirect", () => {
       });
 
       // Decode SVG
-      const svgContent = atob(
-        dataUri.substring("data:image/svg+xml;base64,".length),
-      );
+      const svgContent = atob(dataUri.substring("data:image/svg+xml;base64,".length));
 
       // Parse and check text content is preserved
       const parser = new DOMParser();
@@ -180,10 +175,7 @@ describe("serializeTimelineDirect", () => {
   });
 
   describe("object-fit preservation", () => {
-    function createCanvasWithPixels(
-      width: number,
-      height: number,
-    ): HTMLCanvasElement {
+    function createCanvasWithPixels(width: number, height: number): HTMLCanvasElement {
       const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
@@ -301,10 +293,7 @@ describe("serializeTimelineDirect", () => {
       for (const el of allElements) {
         const style = el.getAttribute("style") || "";
         // Segment containers are the innermost styled elements containing word text
-        if (
-          el.textContent?.trim() === "SARAH" ||
-          el.textContent?.trim() === "CHEN!"
-        ) {
+        if (el.textContent?.trim() === "SARAH" || el.textContent?.trim() === "CHEN!") {
           if (style && el.children.length === 0) {
             segmentContainers.push(el);
           }
@@ -361,9 +350,7 @@ describe("serializeTimelineDirect", () => {
 
       // After animation propagation, verify segments got inline-block
       const segments = text.segments;
-      const nonWhitespaceSegments = segments.filter(
-        (s) => !/^\s+$/.test(s.segmentText),
-      );
+      const nonWhitespaceSegments = segments.filter((s) => !/^\s+$/.test(s.segmentText));
       for (const seg of nonWhitespaceSegments) {
         expect(getComputedStyle(seg).display).toBe("inline-block");
       }
@@ -385,10 +372,7 @@ describe("serializeTimelineDirect", () => {
       const allEls = doc.querySelectorAll("*");
       for (const el of allEls) {
         const content = el.textContent?.trim();
-        if (
-          (content === "Sarah" || content === "Chen!") &&
-          el.children.length === 0
-        ) {
+        if ((content === "Sarah" || content === "Chen!") && el.children.length === 0) {
           const style = el.getAttribute("style") || "";
           // Check: inline-block text segments should have width:auto, not a pixel value
           // A pixel width on the segment container forces text to fit that exact width,
@@ -447,10 +431,7 @@ describe("serializeTimelineDirect", () => {
   });
 
   describe("sequence visibility at end boundary", () => {
-    async function renderSequenceTimegroup(
-      child1Text: string,
-      child2Text: string,
-    ) {
+    async function renderSequenceTimegroup(child1Text: string, child2Text: string) {
       const wrapper = document.createElement("div");
       litRender(
         html`
@@ -471,10 +452,7 @@ describe("serializeTimelineDirect", () => {
     }
 
     it("should not serialize the first sequence child at its end boundary when a second child begins", async () => {
-      const timegroup = await renderSequenceTimegroup(
-        "FIRST_SCENE",
-        "SECOND_SCENE",
-      );
+      const timegroup = await renderSequenceTimegroup("FIRST_SCENE", "SECOND_SCENE");
 
       await timegroup.updateComplete;
       await timegroup.waitForMediaDurations();
@@ -496,10 +474,7 @@ describe("serializeTimelineDirect", () => {
     });
 
     it("should not serialize an ended sequence child when rendering past its end time", async () => {
-      const timegroup = await renderSequenceTimegroup(
-        "SCENE_ALPHA",
-        "SCENE_BETA",
-      );
+      const timegroup = await renderSequenceTimegroup("SCENE_ALPHA", "SCENE_BETA");
 
       await timegroup.updateComplete;
       await timegroup.waitForMediaDurations();
@@ -667,9 +642,7 @@ describe("serializeTimelineDirect", () => {
         // Verify clone setup: no playbackController, correct structure
         expect(clone.playbackController).toBeUndefined();
 
-        const childTGs = Array.from(
-          clone.querySelectorAll("ef-timegroup"),
-        ) as any[];
+        const childTGs = Array.from(clone.querySelectorAll("ef-timegroup")) as any[];
         expect(childTGs.length).toBe(3);
 
         const frameTimes = [0, 1000, 2000, 3000, 4000, 5000];
@@ -722,9 +695,7 @@ describe("serializeTimelineDirect", () => {
       try {
         expect(clone.mode).toBe("sequence");
 
-        const childTGs = Array.from(
-          clone.querySelectorAll("ef-timegroup"),
-        ) as EFTimegroup[];
+        const childTGs = Array.from(clone.querySelectorAll("ef-timegroup")) as EFTimegroup[];
         expect(childTGs.length).toBe(3);
 
         // Children should have sequential startTimeMs, not all 0
@@ -836,9 +807,7 @@ describe("serializeTimelineDirect", () => {
 
       // With 500ms overlap: Scene1 0-2000, Scene2 1500-3500, Scene3 3000-5000
       // Both scenes visible during overlap windows
-      const frameTimes = [
-        0, 750, 1500, 1750, 2000, 2500, 3000, 3250, 3500, 4000,
-      ];
+      const frameTimes = [0, 750, 1500, 1750, 2000, 2500, 3000, 3250, 3500, 4000];
       const results: string[] = [];
 
       for (const timeMs of frameTimes) {

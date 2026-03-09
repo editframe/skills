@@ -1,9 +1,6 @@
 import { CHUNK_SIZE_BYTES } from "./CHUNK_SIZE_BYTES.js";
 
-export async function* streamChunker(
-  readableStream: ReadableStream,
-  chunkSize = CHUNK_SIZE_BYTES,
-) {
+export async function* streamChunker(readableStream: ReadableStream, chunkSize = CHUNK_SIZE_BYTES) {
   const reader = readableStream.getReader();
   let buffer = new Uint8Array(0);
 

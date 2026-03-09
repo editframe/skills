@@ -23,8 +23,7 @@ export interface TimelineState {
   zoomOut: () => void;
 }
 
-export const timelineStateContext =
-  createContext<TimelineState>("timeline-state");
+export const timelineStateContext = createContext<TimelineState>("timeline-state");
 
 /**
  * Convert time to pixel position
@@ -58,8 +57,7 @@ export const TIMELINE_TRACK_HEIGHT = 22;
 /**
  * Vertical padding within a row (row height - track height) / 2
  */
-export const TIMELINE_ROW_PADDING =
-  (TIMELINE_ROW_HEIGHT - TIMELINE_TRACK_HEIGHT) / 2;
+export const TIMELINE_ROW_PADDING = (TIMELINE_ROW_HEIGHT - TIMELINE_TRACK_HEIGHT) / 2;
 
 /**
  * Calculate pixels per ms from a zoom scale

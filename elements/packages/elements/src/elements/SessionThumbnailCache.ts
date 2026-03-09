@@ -37,11 +37,7 @@ export function quantizeTimestamp(timeMs: number): number {
  * Generate cache key for thumbnail image data.
  * Format: "rootId:elementId:quantizedTimeMs"
  */
-export function getCacheKey(
-  rootId: string,
-  elementId: string,
-  timeMs: number,
-): string {
+export function getCacheKey(rootId: string, elementId: string, timeMs: number): string {
   const quantizedTimeMs = quantizeTimestamp(timeMs);
   return `${rootId}:${elementId}:${quantizedTimeMs}`;
 }
@@ -141,12 +137,7 @@ export class SessionThumbnailCache {
   /**
    * Store a thumbnail in cache (LRU eviction).
    */
-  set(
-    key: CacheKey,
-    image: CanvasImageSource,
-    timeMs: number,
-    elementId: string,
-  ): void {
+  set(key: CacheKey, image: CanvasImageSource, timeMs: number, elementId: string): void {
     // If key already exists, delete it first to update position
     if (this.cache.has(key)) {
       this.cache.delete(key);
@@ -213,11 +204,7 @@ export class SessionThumbnailCache {
    * Invalidate all thumbnails that overlap with a given time range.
    * This is more aggressive - invalidates any thumbnail that might show content from the range.
    */
-  invalidateOverlappingRange(
-    rootId: string,
-    startTimeMs: number,
-    endTimeMs: number,
-  ): number {
+  invalidateOverlappingRange(rootId: string, startTimeMs: number, endTimeMs: number): number {
     let count = 0;
 
     for (const [key, entry] of this.cache.entries()) {

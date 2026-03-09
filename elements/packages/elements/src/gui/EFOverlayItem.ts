@@ -46,14 +46,10 @@ export class EFOverlayItem extends LitElement {
 
   private resolveTarget(): HTMLElement | null {
     if (this.elementId) {
-      let element = document.querySelector(
-        `[data-element-id="${this.elementId}"]`,
-      ) as HTMLElement;
+      let element = document.querySelector(`[data-element-id="${this.elementId}"]`) as HTMLElement;
 
       if (!element) {
-        element = document.querySelector(
-          `[data-timegroup-id="${this.elementId}"]`,
-        ) as HTMLElement;
+        element = document.querySelector(`[data-timegroup-id="${this.elementId}"]`) as HTMLElement;
       }
 
       return element || null;
@@ -63,8 +59,7 @@ export class EFOverlayItem extends LitElement {
 
     if (typeof this.target === "string") {
       return (
-        (document.querySelector(this.target) as HTMLElement) ||
-        document.getElementById(this.target)
+        (document.querySelector(this.target) as HTMLElement) || document.getElementById(this.target)
       );
     }
 

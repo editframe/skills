@@ -178,15 +178,7 @@ export function renderOffscreen(children: React.ReactNode) {
   /* ━━ Init handler ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
   const handleInit = (payload: any) => {
-    const {
-      props,
-      drawingSurface: canvas,
-      width,
-      top,
-      left,
-      height,
-      pixelRatio,
-    } = payload;
+    const { props, drawingSurface: canvas, width, top, left, height, pixelRatio } = payload;
 
     console.log("[renderOffscreen] Init received", {
       width,
@@ -241,16 +233,9 @@ export function renderOffscreen(children: React.ReactNode) {
           if (props.eventPrefix) {
             state.setEvents({
               compute: (event: DomEvent, state: RootState) => {
-                const x = event[
-                  (props.eventPrefix + "X") as keyof DomEvent
-                ] as number;
-                const y = event[
-                  (props.eventPrefix + "Y") as keyof DomEvent
-                ] as number;
-                state.pointer.set(
-                  (x / state.size.width) * 2 - 1,
-                  -(y / state.size.height) * 2 + 1,
-                );
+                const x = event[(props.eventPrefix + "X") as keyof DomEvent] as number;
+                const y = event[(props.eventPrefix + "Y") as keyof DomEvent] as number;
+                state.pointer.set((x / state.size.width) * 2 - 1, -(y / state.size.height) * 2 + 1);
                 state.raycaster.setFromCamera(state.pointer, state.camera);
               },
             });
@@ -298,11 +283,7 @@ export function renderOffscreen(children: React.ReactNode) {
 
   /* ━━ Frame rendering + pixel capture ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-  const handleRenderFrame = async ({
-    timeMs,
-    durationMs,
-    requestId,
-  }: RenderFramePayload) => {
+  const handleRenderFrame = async ({ timeMs, durationMs, requestId }: RenderFramePayload) => {
     console.log("[renderOffscreen] Render frame", { timeMs, requestId });
 
     try {
@@ -340,9 +321,7 @@ export function renderOffscreen(children: React.ReactNode) {
       });
 
       // 4. Transfer back to main thread (zero-copy transfer)
-      (self as any).postMessage({ type: "frameRendered", requestId, bitmap }, [
-        bitmap,
-      ]);
+      (self as any).postMessage({ type: "frameRendered", requestId, bitmap }, [bitmap]);
     } catch (e: any) {
       console.error("[renderOffscreen] Frame render error:", e);
       postMessage({

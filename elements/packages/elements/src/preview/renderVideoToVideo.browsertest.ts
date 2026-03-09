@@ -49,38 +49,31 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
         };
         window.addEventListener("unhandledrejection", swallowAbort);
         config.remove();
-        setTimeout(
-          () => window.removeEventListener("unhandledrejection", swallowAbort),
-          500,
-        );
+        setTimeout(() => window.removeEventListener("unhandledrejection", swallowAbort), 500);
       },
     };
   }
 
   describe("getVideoFrameAtSourceTime", () => {
-    it(
-      "should return a VideoFrame at a given source time",
-      { timeout: 30000 },
-      async () => {
-        const { video, cleanup } = await createVideo();
+    it("should return a VideoFrame at a given source time", { timeout: 30000 }, async () => {
+      const { video, cleanup } = await createVideo();
+      try {
+        const frame = await video.getVideoFrameAtSourceTime(0, {
+          quality: "main",
+        });
         try {
-          const frame = await video.getVideoFrameAtSourceTime(0, {
-            quality: "main",
-          });
-          try {
-            expect(frame).toBeTruthy();
-            expect(frame.displayWidth).toBeGreaterThan(0);
-            expect(frame.displayHeight).toBeGreaterThan(0);
-            expect(frame.codedWidth).toBeGreaterThan(0);
-            expect(frame.codedHeight).toBeGreaterThan(0);
-          } finally {
-            frame.close();
-          }
+          expect(frame).toBeTruthy();
+          expect(frame.displayWidth).toBeGreaterThan(0);
+          expect(frame.displayHeight).toBeGreaterThan(0);
+          expect(frame.codedWidth).toBeGreaterThan(0);
+          expect(frame.codedHeight).toBeGreaterThan(0);
         } finally {
-          cleanup();
+          frame.close();
         }
-      },
-    );
+      } finally {
+        cleanup();
+      }
+    });
 
     it(
       "should not propagate AbortError from background PlaybackController renders",
@@ -118,10 +111,7 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
 
             expect(abortErrors).toHaveLength(0);
           } finally {
-            window.removeEventListener(
-              "unhandledrejection",
-              onUnhandledRejection,
-            );
+            window.removeEventListener("unhandledrejection", onUnhandledRejection);
           }
         } finally {
           cleanup();
@@ -129,59 +119,51 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
       },
     );
 
-    it(
-      "should return different frames at different source times",
-      { timeout: 30000 },
-      async () => {
-        const { video, cleanup } = await createVideo();
+    it("should return different frames at different source times", { timeout: 30000 }, async () => {
+      const { video, cleanup } = await createVideo();
+      try {
+        const frame0 = await video.getVideoFrameAtSourceTime(0, {
+          quality: "main",
+        });
+        const frame1000 = await video.getVideoFrameAtSourceTime(1000, {
+          quality: "main",
+        });
+
         try {
-          const frame0 = await video.getVideoFrameAtSourceTime(0, {
-            quality: "main",
-          });
-          const frame1000 = await video.getVideoFrameAtSourceTime(1000, {
-            quality: "main",
-          });
+          // Both frames should be valid
+          expect(frame0.displayWidth).toBeGreaterThan(0);
+          expect(frame1000.displayWidth).toBeGreaterThan(0);
 
-          try {
-            // Both frames should be valid
-            expect(frame0.displayWidth).toBeGreaterThan(0);
-            expect(frame1000.displayWidth).toBeGreaterThan(0);
-
-            // Dimensions should match (same video)
-            expect(frame0.codedWidth).toBe(frame1000.codedWidth);
-            expect(frame0.codedHeight).toBe(frame1000.codedHeight);
-          } finally {
-            frame0.close();
-            frame1000.close();
-          }
+          // Dimensions should match (same video)
+          expect(frame0.codedWidth).toBe(frame1000.codedWidth);
+          expect(frame0.codedHeight).toBe(frame1000.codedHeight);
         } finally {
-          cleanup();
+          frame0.close();
+          frame1000.close();
         }
-      },
-    );
+      } finally {
+        cleanup();
+      }
+    });
   });
 
   describe("renderToVideo", () => {
-    it(
-      "should render an untrimmed video to a valid MP4 buffer",
-      { timeout: 60000 },
-      async () => {
-        const { video, cleanup } = await createVideo();
-        try {
-          const buffer = await video.renderToVideo({
-            fps: 10,
-            returnBuffer: true,
-            includeAudio: false,
-            toMs: 1000,
-          });
+    it("should render an untrimmed video to a valid MP4 buffer", { timeout: 60000 }, async () => {
+      const { video, cleanup } = await createVideo();
+      try {
+        const buffer = await video.renderToVideo({
+          fps: 10,
+          returnBuffer: true,
+          includeAudio: false,
+          toMs: 1000,
+        });
 
-          expect(buffer).toBeTruthy();
-          expect(buffer!.byteLength).toBeGreaterThan(0);
-        } finally {
-          cleanup();
-        }
-      },
-    );
+        expect(buffer).toBeTruthy();
+        expect(buffer!.byteLength).toBeGreaterThan(0);
+      } finally {
+        cleanup();
+      }
+    });
 
     it(
       "should render a trimmed video and produce correct duration output",
@@ -230,61 +212,53 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
       }
     });
 
-    it(
-      "should report progress during rendering",
-      { timeout: 60000 },
-      async () => {
-        const { video, cleanup } = await createVideo();
-        try {
-          const progressReports: number[] = [];
+    it("should report progress during rendering", { timeout: 60000 }, async () => {
+      const { video, cleanup } = await createVideo();
+      try {
+        const progressReports: number[] = [];
 
-          const buffer = await video.renderToVideo({
-            fps: 10,
+        const buffer = await video.renderToVideo({
+          fps: 10,
+          returnBuffer: true,
+          includeAudio: false,
+          toMs: 1000,
+          onProgress: (p) => {
+            progressReports.push(p.progress);
+          },
+        });
+
+        expect(buffer).toBeTruthy();
+        expect(progressReports.length).toBeGreaterThan(0);
+        // Progress should start low and end at 1
+        expect(progressReports[0]).toBeLessThan(1);
+        expect(progressReports[progressReports.length - 1]).toBe(1);
+      } finally {
+        cleanup();
+      }
+    });
+
+    it("should support cancellation via AbortSignal", { timeout: 30000 }, async () => {
+      const { video, cleanup } = await createVideo();
+      try {
+        const controller = new AbortController();
+        controller.abort();
+
+        let threw = false;
+        try {
+          await video.renderToVideo({
+            fps: 30,
             returnBuffer: true,
             includeAudio: false,
-            toMs: 1000,
-            onProgress: (p) => {
-              progressReports.push(p.progress);
-            },
+            signal: controller.signal,
           });
-
-          expect(buffer).toBeTruthy();
-          expect(progressReports.length).toBeGreaterThan(0);
-          // Progress should start low and end at 1
-          expect(progressReports[0]).toBeLessThan(1);
-          expect(progressReports[progressReports.length - 1]).toBe(1);
-        } finally {
-          cleanup();
+        } catch {
+          threw = true;
         }
-      },
-    );
-
-    it(
-      "should support cancellation via AbortSignal",
-      { timeout: 30000 },
-      async () => {
-        const { video, cleanup } = await createVideo();
-        try {
-          const controller = new AbortController();
-          controller.abort();
-
-          let threw = false;
-          try {
-            await video.renderToVideo({
-              fps: 30,
-              returnBuffer: true,
-              includeAudio: false,
-              signal: controller.signal,
-            });
-          } catch {
-            threw = true;
-          }
-          expect(threw).toBe(true);
-        } finally {
-          cleanup();
-        }
-      },
-    );
+        expect(threw).toBe(true);
+      } finally {
+        cleanup();
+      }
+    });
   });
 
   describe("CSS effects", () => {
@@ -317,9 +291,7 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
     });
 
     it("should render with filter", { timeout: 5000 }, async () => {
-      const buffer = await renderWithStyle(
-        "filter: grayscale(1) brightness(1.2);",
-      );
+      const buffer = await renderWithStyle("filter: grayscale(1) brightness(1.2);");
       expect(buffer.byteLength).not.toBe(baseline.byteLength);
     });
 
@@ -328,15 +300,9 @@ describe.sequential("renderVideoToVideo — direct fast path", () => {
       expect(buffer.byteLength).not.toBe(baseline.byteLength);
     });
 
-    it(
-      "should render with combined filter and opacity",
-      { timeout: 5000 },
-      async () => {
-        const buffer = await renderWithStyle(
-          "filter: brightness(1.3); opacity: 0.8;",
-        );
-        expect(buffer.byteLength).not.toBe(baseline.byteLength);
-      },
-    );
+    it("should render with combined filter and opacity", { timeout: 5000 }, async () => {
+      const buffer = await renderWithStyle("filter: brightness(1.3); opacity: 0.8;");
+      expect(buffer.byteLength).not.toBe(baseline.byteLength);
+    });
   });
 });

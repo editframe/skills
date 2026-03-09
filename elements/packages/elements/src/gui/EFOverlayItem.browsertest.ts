@@ -32,9 +32,7 @@ describe("EFOverlayItem", () => {
     testElements.push(target);
 
     // Create overlay layer
-    const overlayLayer = document.createElement(
-      "ef-overlay-layer",
-    ) as EFOverlayLayer;
+    const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
     overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 1 };
     overlayLayer.style.position = "absolute";
     overlayLayer.style.left = "0px";
@@ -47,9 +45,7 @@ describe("EFOverlayItem", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     // Create overlay item
-    const overlayItem = document.createElement(
-      "ef-overlay-item",
-    ) as EFOverlayItem;
+    const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
     overlayItem.target = target;
     overlayLayer.appendChild(overlayItem);
     testElements.push(overlayItem);
@@ -65,14 +61,8 @@ describe("EFOverlayItem", () => {
 
     expect(parseFloat(overlayItem.style.left)).toBeCloseTo(expectedX, 1);
     expect(parseFloat(overlayItem.style.top)).toBeCloseTo(expectedY, 1);
-    expect(parseFloat(overlayItem.style.width)).toBeCloseTo(
-      targetRect.width,
-      1,
-    );
-    expect(parseFloat(overlayItem.style.height)).toBeCloseTo(
-      targetRect.height,
-      1,
-    );
+    expect(parseFloat(overlayItem.style.width)).toBeCloseTo(targetRect.width, 1);
+    expect(parseFloat(overlayItem.style.height)).toBeCloseTo(targetRect.height, 1);
   });
 
   test("overlay item updates position when target moves", async () => {
@@ -85,9 +75,7 @@ describe("EFOverlayItem", () => {
     document.body.appendChild(target);
     testElements.push(target);
 
-    const overlayLayer = document.createElement(
-      "ef-overlay-layer",
-    ) as EFOverlayLayer;
+    const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
     overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 1 };
     overlayLayer.style.position = "absolute";
     overlayLayer.style.left = "0px";
@@ -99,9 +87,7 @@ describe("EFOverlayItem", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    const overlayItem = document.createElement(
-      "ef-overlay-item",
-    ) as EFOverlayItem;
+    const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
     overlayItem.target = target;
     overlayLayer.appendChild(overlayItem);
     testElements.push(overlayItem);
@@ -134,9 +120,7 @@ describe("EFOverlayItem", () => {
     testElements.push(target);
 
     // Overlay layer with offset
-    const overlayLayer = document.createElement(
-      "ef-overlay-layer",
-    ) as EFOverlayLayer;
+    const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
     overlayLayer.panZoomTransform = { x: 50, y: 75, scale: 1 };
     overlayLayer.style.position = "absolute";
     overlayLayer.style.left = "100px";
@@ -148,9 +132,7 @@ describe("EFOverlayItem", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    const overlayItem = document.createElement(
-      "ef-overlay-item",
-    ) as EFOverlayItem;
+    const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
     overlayItem.target = target;
     overlayLayer.appendChild(overlayItem);
     testElements.push(overlayItem);
@@ -177,9 +159,7 @@ describe("EFOverlayItem", () => {
     document.body.appendChild(target);
     testElements.push(target);
 
-    const overlayLayer = document.createElement(
-      "ef-overlay-layer",
-    ) as EFOverlayLayer;
+    const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
     overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 1 };
     overlayLayer.style.position = "absolute";
     overlayLayer.style.left = "0px";
@@ -191,9 +171,7 @@ describe("EFOverlayItem", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    const overlayItem = document.createElement(
-      "ef-overlay-item",
-    ) as EFOverlayItem;
+    const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
     overlayItem.target = target;
     overlayLayer.appendChild(overlayItem);
     testElements.push(overlayItem);
@@ -211,9 +189,7 @@ describe("EFOverlayItem", () => {
 
     const event = await Promise.race([
       positionChangedHandler,
-      new Promise<CustomEvent>((_, reject) =>
-        setTimeout(() => reject(new Error("Timeout")), 500),
-      ),
+      new Promise<CustomEvent>((_, reject) => setTimeout(() => reject(new Error("Timeout")), 500)),
     ]);
 
     expect(event.detail).toHaveProperty("x");
@@ -234,9 +210,7 @@ describe("EFOverlayItem", () => {
     document.body.appendChild(target);
     testElements.push(target);
 
-    const overlayLayer = document.createElement(
-      "ef-overlay-layer",
-    ) as EFOverlayLayer;
+    const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
     overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 1 };
     overlayLayer.style.position = "absolute";
     overlayLayer.style.left = "0px";
@@ -248,9 +222,7 @@ describe("EFOverlayItem", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    const overlayItem = document.createElement(
-      "ef-overlay-item",
-    ) as EFOverlayItem;
+    const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
     overlayItem.target = target;
     overlayLayer.appendChild(overlayItem);
     testElements.push(overlayItem);
@@ -271,9 +243,7 @@ describe("EFOverlayItem", () => {
     document.body.appendChild(target);
     testElements.push(target);
 
-    const overlayLayer = document.createElement(
-      "ef-overlay-layer",
-    ) as EFOverlayLayer;
+    const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
     overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 1 };
     overlayLayer.style.position = "absolute";
     overlayLayer.style.left = "0px";
@@ -285,9 +255,7 @@ describe("EFOverlayItem", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    const overlayItem = document.createElement(
-      "ef-overlay-item",
-    ) as EFOverlayItem;
+    const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
     overlayItem.target = target;
     overlayLayer.appendChild(overlayItem);
     testElements.push(overlayItem);
@@ -314,9 +282,7 @@ describe("EFOverlayItem", () => {
     document.body.appendChild(target);
     testElements.push(target);
 
-    const overlayLayer = document.createElement(
-      "ef-overlay-layer",
-    ) as EFOverlayLayer;
+    const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
     overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 1 };
     overlayLayer.style.position = "absolute";
     overlayLayer.style.left = "0px";
@@ -328,9 +294,7 @@ describe("EFOverlayItem", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    const overlayItem = document.createElement(
-      "ef-overlay-item",
-    ) as EFOverlayItem;
+    const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
     overlayItem.target = "#test-target";
     overlayLayer.appendChild(overlayItem);
     testElements.push(overlayItem);

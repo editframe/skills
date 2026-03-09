@@ -75,7 +75,9 @@ export const extractFrameCountFromBuffer = (buffer: Buffer): number => {
       // Method 3: Estimate from duration and framerate
       const output = execSync(
         `ffprobe -v quiet -print_format json -show_streams "${tempPath}"`,
-        { encoding: "utf8" },
+        {
+          encoding: "utf8",
+        },
       );
       const data = JSON.parse(output);
       const videoStream = data.streams?.find(
@@ -124,7 +126,9 @@ export const extractFrameAtTime = async (
     const framePath = path.join(frameDir, `frame-${Date.now()}.png`);
     execSync(
       `ffmpeg -y -i "${videoPath}" -ss ${timeSeconds} -vframes 1 "${framePath}"`,
-      { stdio: "pipe" },
+      {
+        stdio: "pipe",
+      },
     );
 
     const frameBuffer = readFileSync(framePath);
@@ -172,7 +176,9 @@ export const testVideoPlayback = async (
   try {
     const output = execSync(
       `ffprobe -v quiet -print_format json -show_format "${videoPath}"`,
-      { encoding: "utf8" },
+      {
+        encoding: "utf8",
+      },
     );
     const data = JSON.parse(output);
 
@@ -206,7 +212,9 @@ export const testVideoSeek = async (
 
     execSync(
       `ffmpeg -y -ss ${seekTime} -i "${videoPath}" -vframes 1 "${tempFramePath}"`,
-      { stdio: "pipe" },
+      {
+        stdio: "pipe",
+      },
     );
 
     // If we got here, seeking worked
@@ -239,7 +247,9 @@ export const getVideoDuration = async (videoPath: string): Promise<number> => {
   try {
     const output = execSync(
       `ffprobe -v quiet -print_format json -show_format "${videoPath}"`,
-      { encoding: "utf8" },
+      {
+        encoding: "utf8",
+      },
     );
     const data = JSON.parse(output);
     return Number.parseFloat(data.format?.duration || "1.0");
@@ -257,7 +267,9 @@ export const extractCodecInfo = async (
   try {
     const output = execSync(
       `ffprobe -v quiet -print_format json -show_streams "${videoPath}"`,
-      { encoding: "utf8" },
+      {
+        encoding: "utf8",
+      },
     );
     const data = JSON.parse(output);
 

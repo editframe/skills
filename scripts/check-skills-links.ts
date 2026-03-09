@@ -47,7 +47,10 @@ interface SkillFrontmatter {
 // Minimal frontmatter parser (no dependencies)
 // ---------------------------------------------------------------------------
 
-function parseFrontmatter(content: string): { attributes: Record<string, any>; body: string } {
+function parseFrontmatter(content: string): {
+  attributes: Record<string, any>;
+  body: string;
+} {
   const match = content.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
   if (!match) return { attributes: {}, body: content };
 
@@ -85,7 +88,11 @@ function parseFrontmatter(content: string): { attributes: Record<string, any>; b
           isArray = true;
           const obj: Record<string, string> = {};
           i++;
-          while (i < lines.length && /^\s{4,}/.test(lines[i]!) && !/^\s+-/.test(lines[i]!)) {
+          while (
+            i < lines.length &&
+            /^\s{4,}/.test(lines[i]!) &&
+            !/^\s+-/.test(lines[i]!)
+          ) {
             const propMatch = lines[i]!.match(/^\s+(\w[\w-]*):\s*(.+)$/);
             if (propMatch) {
               obj[propMatch[1]!] = propMatch[2]!.replace(/^["']|["']$/g, "");
@@ -96,9 +103,16 @@ function parseFrontmatter(content: string): { attributes: Record<string, any>; b
         } else if (arrInlineMatch) {
           isArray = true;
           const obj: Record<string, string> = {};
-          obj[arrInlineMatch[1]!] = arrInlineMatch[2]!.replace(/^["']|["']$/g, "");
+          obj[arrInlineMatch[1]!] = arrInlineMatch[2]!.replace(
+            /^["']|["']$/g,
+            "",
+          );
           i++;
-          while (i < lines.length && /^\s{4,}/.test(lines[i]!) && !/^\s+-/.test(lines[i]!)) {
+          while (
+            i < lines.length &&
+            /^\s{4,}/.test(lines[i]!) &&
+            !/^\s+-/.test(lines[i]!)
+          ) {
             const propMatch = lines[i]!.match(/^\s+(\w[\w-]*):\s*(.+)$/);
             if (propMatch) {
               obj[propMatch[1]!] = propMatch[2]!.replace(/^["']|["']$/g, "");
@@ -133,7 +147,7 @@ const SKILLS_BASE = join(MONOREPO_ROOT, "skills", "skills");
 function getSkillDirs(): string[] {
   if (!existsSync(SKILLS_BASE)) return [];
   return readdirSync(SKILLS_BASE).filter((e) =>
-    statSync(join(SKILLS_BASE, e)).isDirectory()
+    statSync(join(SKILLS_BASE, e)).isDirectory(),
   );
 }
 
@@ -144,7 +158,9 @@ function getSkillFrontmatter(skillDir: string): SkillFrontmatter | null {
   return attributes as SkillFrontmatter;
 }
 
-function getReferences(skillDir: string): { name: string; fm: ReferenceFrontmatter }[] {
+function getReferences(
+  skillDir: string,
+): { name: string; fm: ReferenceFrontmatter }[] {
   const refDir = join(SKILLS_BASE, skillDir, "references");
   if (!existsSync(refDir)) return [];
 
@@ -153,7 +169,10 @@ function getReferences(skillDir: string): { name: string; fm: ReferenceFrontmatt
     .map((f) => {
       const content = readFileSync(join(refDir, f), "utf8");
       const { attributes } = parseFrontmatter(content);
-      return { name: f.replace(".md", ""), fm: attributes as ReferenceFrontmatter };
+      return {
+        name: f.replace(".md", ""),
+        fm: attributes as ReferenceFrontmatter,
+      };
     });
 }
 
@@ -289,7 +308,9 @@ function sourceFileToRefName(filePath: string): string {
 // External link checking
 // ---------------------------------------------------------------------------
 
-async function checkExternalLink(url: string): Promise<{ ok: boolean; status?: number; error?: string }> {
+async function checkExternalLink(
+  url: string,
+): Promise<{ ok: boolean; status?: number; error?: string }> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10_000);
@@ -343,7 +364,12 @@ async function main() {
       const rawLinks = extractLinks(content);
 
       for (const raw of rawLinks) {
-        const { resolvedUrl, external } = resolveLink(raw.href, "SKILL.md", skillName, true);
+        const { resolvedUrl, external } = resolveLink(
+          raw.href,
+          "SKILL.md",
+          skillName,
+          true,
+        );
 
         if (resolvedUrl === null) continue; // fragment link
 
@@ -507,7 +533,11 @@ function suggestFix(link: LinkInfo): string | null {
   // Common mistake: using "foo.md" instead of "references/foo.md" from a
   // reference file. The SkillLink component only intercepts links that
   // start with "references/".
-  if (href.endsWith(".md") && !href.startsWith("references/") && !href.startsWith("http")) {
+  if (
+    href.endsWith(".md") &&
+    !href.startsWith("references/") &&
+    !href.startsWith("http")
+  ) {
     return `references/${href}`;
   }
 

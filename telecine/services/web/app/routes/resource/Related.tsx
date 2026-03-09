@@ -46,7 +46,6 @@ export const loader = async ({
   };
 };
 
-
 export default function ResourceDetail({
   loaderData: { orgId, liveQuery, resourceType, id, relatedType, relId },
 }: Route.ComponentProps) {

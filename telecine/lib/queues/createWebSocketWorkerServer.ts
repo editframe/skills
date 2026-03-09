@@ -17,7 +17,8 @@ export const createWebSocketWorkerServer = <Payload>(
   const connectionLoops = new Map<WebSocket, AbortableLoop[]>();
 
   let activeJobId: string | undefined;
-  let drainSpanEnd: ((hadActiveJob: boolean, jobId?: string) => void) | null = null;
+  let drainSpanEnd: ((hadActiveJob: boolean, jobId?: string) => void) | null =
+    null;
 
   // Startup span: covers process start through first scheduler connection (rpcReady).
   let startupSpanEnd: (() => void) | null = null;
@@ -42,7 +43,10 @@ export const createWebSocketWorkerServer = <Payload>(
 
   wss.on("connection", (ws) => {
     if (activeConnection) {
-      logger.error({ queue: worker.name }, "Rejecting second scheduler connection");
+      logger.error(
+        { queue: worker.name },
+        "Rejecting second scheduler connection",
+      );
       ws.close(TRY_AGAIN_LATER, "Worker already has an active connection");
       return;
     }
@@ -51,11 +55,18 @@ export const createWebSocketWorkerServer = <Payload>(
     if (startupSpanEnd) {
       startupSpanEnd();
       startupSpanEnd = null;
-      logger.info({ queue: worker.name }, "Worker startup span ended (rpcReady)");
+      logger.info(
+        { queue: worker.name },
+        "Worker startup span ended (rpcReady)",
+      );
     }
 
     logger.info(
-      { queue: worker.name, concurrency: worker.concurrency, event: "schedulerConnected" },
+      {
+        queue: worker.name,
+        concurrency: worker.concurrency,
+        event: "schedulerConnected",
+      },
       "Scheduler connected, starting work loops",
     );
 
@@ -65,12 +76,18 @@ export const createWebSocketWorkerServer = <Payload>(
     }
     connectionLoops.set(ws, loops);
 
-    logger.info({ queue: worker.name, loopCount: loops.length }, "Work loops started");
+    logger.info(
+      { queue: worker.name, loopCount: loops.length },
+      "Work loops started",
+    );
 
     let isAlive = true;
     const heartbeat = setInterval(() => {
       if (!isAlive) {
-        logger.warn({ queue: worker.name }, "Scheduler heartbeat timeout, terminating connection");
+        logger.warn(
+          { queue: worker.name },
+          "Scheduler heartbeat timeout, terminating connection",
+        );
         ws.terminate();
         return;
       }
@@ -93,7 +110,10 @@ export const createWebSocketWorkerServer = <Payload>(
     });
 
     ws.on("error", (err) => {
-      logger.warn({ queue: worker.name, error: err.message }, "WebSocket error");
+      logger.warn(
+        { queue: worker.name, error: err.message },
+        "WebSocket error",
+      );
     });
   });
 
@@ -127,7 +147,12 @@ export const createWebSocketWorkerServer = <Payload>(
     const drainStartMs = Date.now();
 
     logger.info(
-      { queue: worker.name, hadActiveJob, jobId: jobId ?? null, event: "drainStarted" },
+      {
+        queue: worker.name,
+        hadActiveJob,
+        jobId: jobId ?? null,
+        event: "drainStarted",
+      },
       "Worker draining",
     );
 
@@ -150,7 +175,13 @@ export const createWebSocketWorkerServer = <Payload>(
       span.setAttribute("drainDurationMs", drainDurationMs);
 
       logger.info(
-        { queue: worker.name, hadActiveJob, jobId: jobId ?? null, drainDurationMs, event: "drainCompleted" },
+        {
+          queue: worker.name,
+          hadActiveJob,
+          jobId: jobId ?? null,
+          drainDurationMs,
+          event: "drainCompleted",
+        },
         "Worker drain complete",
       );
     });
@@ -185,24 +216,28 @@ export const createWebSocketWorkerServer = <Payload>(
 
   process.on("SIGTERM", () => {
     logger.info("SIGTERM received, closing server");
-    close().then(() => {
-      server.close();
-      process.exit(0);
-    }).catch(() => {
-      server.close();
-      process.exit(1);
-    });
+    close()
+      .then(() => {
+        server.close();
+        process.exit(0);
+      })
+      .catch(() => {
+        server.close();
+        process.exit(1);
+      });
   });
 
   process.on("SIGINT", () => {
     logger.info("SIGINT received, closing server");
-    close().then(() => {
-      server.close();
-      process.exit(0);
-    }).catch(() => {
-      server.close();
-      process.exit(1);
-    });
+    close()
+      .then(() => {
+        server.close();
+        process.exit(0);
+      })
+      .catch(() => {
+        server.close();
+        process.exit(1);
+      });
   });
 
   return {

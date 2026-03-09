@@ -16,7 +16,9 @@ interface FlatSpan {
   attributes: Record<string, string>;
 }
 
-async function querySpans(params: Record<string, string | number>): Promise<FlatSpan[]> {
+async function querySpans(
+  params: Record<string, string | number>,
+): Promise<FlatSpan[]> {
   const qs = new URLSearchParams(
     Object.entries(params).map(([k, v]) => [k, String(v)]),
   ).toString();
@@ -40,7 +42,10 @@ async function waitForSpans(
   throw new Error(`waitForSpans timed out after ${timeoutMs}ms`);
 }
 
-async function waitForRender(renderId: string, timeoutMs = 60000): Promise<string> {
+async function waitForRender(
+  renderId: string,
+  timeoutMs = 60000,
+): Promise<string> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const row = await db
@@ -70,7 +75,11 @@ describe("OTel Span Propagation", { timeout: 90000 }, () => {
         status: "created",
         strategy: "v1",
         fps: 30,
-        output_config: { container: "mp4", video: { codec: "h264" }, audio: { codec: "aac" } },
+        output_config: {
+          container: "mp4",
+          video: { codec: "h264" },
+          audio: { codec: "aac" },
+        },
         metadata: {},
         work_slice_ms: 4000,
       })
@@ -97,7 +106,10 @@ describe("OTel Span Propagation", { timeout: 90000 }, () => {
     const renderFrameSpans = segmentEncoderSpans.filter(
       (s) => s.name === "SegmentEncoder.renderFrame",
     );
-    expect(renderFrameSpans.length, "SegmentEncoder.renderFrame spans must appear").toBeGreaterThan(0);
+    expect(
+      renderFrameSpans.length,
+      "SegmentEncoder.renderFrame spans must appear",
+    ).toBeGreaterThan(0);
 
     const renderTraceId = renderFrameSpans[0]!.traceId;
     const electronEngineSpans = await querySpans({
@@ -134,7 +146,11 @@ describe("OTel Span Propagation", { timeout: 90000 }, () => {
         status: "created",
         strategy: "v1",
         fps: 30,
-        output_config: { container: "mp4", video: { codec: "h264" }, audio: { codec: "aac" } },
+        output_config: {
+          container: "mp4",
+          video: { codec: "h264" },
+          audio: { codec: "aac" },
+        },
         metadata: {},
         work_slice_ms: 4000,
       })
@@ -146,7 +162,11 @@ describe("OTel Span Propagation", { timeout: 90000 }, () => {
     expect(finalStatus, `render ${renderId} must complete`).toBe("complete");
 
     const spans = await waitForSpans(
-      { "attr.renderId": renderId, namePrefix: "SegmentEncoder.renderFrame", limit: 20 },
+      {
+        "attr.renderId": renderId,
+        namePrefix: "SegmentEncoder.renderFrame",
+        limit: 20,
+      },
       (s) => s.length > 0,
     );
 

@@ -10,22 +10,28 @@ function findMonorepoRoot(): string | null {
       encoding: "utf-8",
       stdio: "pipe",
     }).trim();
-    
-    if (existsSync(path.join(gitRoot, "elements")) && existsSync(path.join(gitRoot, "telecine"))) {
+
+    if (
+      existsSync(path.join(gitRoot, "elements")) &&
+      existsSync(path.join(gitRoot, "telecine"))
+    ) {
       return gitRoot;
     }
   } catch {
     // Not in git repo or git command failed
   }
-  
+
   let currentDir = __dirname;
   while (currentDir !== path.dirname(currentDir)) {
-    if (existsSync(path.join(currentDir, "elements")) && existsSync(path.join(currentDir, "telecine"))) {
+    if (
+      existsSync(path.join(currentDir, "elements")) &&
+      existsSync(path.join(currentDir, "telecine"))
+    ) {
       return currentDir;
     }
     currentDir = path.dirname(currentDir);
   }
-  
+
   return null;
 }
 
@@ -48,7 +54,8 @@ async function main() {
   // ALLOW_RENDERER_BACKGROUNDING=1 removes these protective flags so we can
   // test that Worker+OffscreenCanvas continues rendering while main-thread WebGL
   // gets suspended in hidden tabs.
-  const allowRendererBackgrounding = process.env.ALLOW_RENDERER_BACKGROUNDING === "1";
+  const allowRendererBackgrounding =
+    process.env.ALLOW_RENDERER_BACKGROUNDING === "1";
   const ignoreDefaultArgs = allowRendererBackgrounding
     ? [
         "--disable-renderer-backgrounding",
@@ -58,7 +65,9 @@ async function main() {
     : [];
 
   if (allowRendererBackgrounding) {
-    console.log("⚠️  ALLOW_RENDERER_BACKGROUNDING=1: Chrome will suspend renderer for hidden tabs");
+    console.log(
+      "⚠️  ALLOW_RENDERER_BACKGROUNDING=1: Chrome will suspend renderer for hidden tabs",
+    );
     console.log("   Flags removed:", ignoreDefaultArgs.join(", "));
   }
 

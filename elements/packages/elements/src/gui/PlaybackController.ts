@@ -3,14 +3,8 @@ import type { ReactiveController, ReactiveControllerHost } from "lit";
 import { currentTimeContext } from "./currentTimeContext.js";
 import { durationContext } from "./durationContext.js";
 import { loopContext, playingContext } from "./playingContext.js";
-import {
-  updateAnimations,
-  type AnimatableElement,
-} from "../elements/updateAnimations.js";
-import type {
-  RenderFrameOptions,
-  FrameRenderable,
-} from "../preview/FrameController.js";
+import { updateAnimations, type AnimatableElement } from "../elements/updateAnimations.js";
+import type { RenderFrameOptions, FrameRenderable } from "../preview/FrameController.js";
 
 interface PlaybackHost extends HTMLElement, ReactiveControllerHost {
   currentTimeMs: number;
@@ -139,14 +133,10 @@ export class PlaybackController implements ReactiveController {
     this.#runSeek(time).finally(async () => {
       // CRITICAL: Coordinate animations after seek completes
       // This ensures animations are positioned correctly, not playing naturally
-      const { updateAnimations } =
-        await import("../elements/updateAnimations.js");
+      const { updateAnimations } = await import("../elements/updateAnimations.js");
       updateAnimations(this.#host as any);
 
-      if (
-        this.#pendingSeekTime !== undefined &&
-        this.#pendingSeekTime !== time
-      ) {
+      if (this.#pendingSeekTime !== undefined && this.#pendingSeekTime !== time) {
         const pendingTime = this.#pendingSeekTime;
         this.#pendingSeekTime = undefined;
         this.#processingPendingSeek = true;
@@ -173,10 +163,7 @@ export class PlaybackController implements ReactiveController {
       await this.#host.waitForMediaDurations?.(signal);
       signal.throwIfAborted();
 
-      const newTime = Math.max(
-        0,
-        Math.min(targetTime, this.#host.durationMs / 1000),
-      );
+      const newTime = Math.max(0, Math.min(targetTime, this.#host.durationMs / 1000));
       this.#currentTime = newTime;
       this.#host.requestUpdate("currentTime");
       this.#currentTimeMsProvider.setValue(this.currentTimeMs);
@@ -191,8 +178,7 @@ export class PlaybackController implements ReactiveController {
       signal.throwIfAborted();
 
       // Save to localStorage for persistence (only if not restoring to avoid loops)
-      const isRestoring =
-        (this.#host as any).isRestoringFromLocalStorage?.() ?? false;
+      const isRestoring = (this.#host as any).isRestoringFromLocalStorage?.() ?? false;
       if (!isRestoring) {
         this.#host.saveTimeToLocalStorage?.(newTime);
       } else {
@@ -371,8 +357,7 @@ export class PlaybackController implements ReactiveController {
           },
         });
       } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError")
-          return;
+        if (error instanceof DOMException && error.name === "AbortError") return;
         console.error("FrameController error:", error);
       }
       return;
@@ -394,10 +379,7 @@ export class PlaybackController implements ReactiveController {
     return this.#startSelfRender(host, timeMs);
   }
 
-  #startSelfRender(
-    host: Partial<FrameRenderable>,
-    timeMs: number,
-  ): Promise<void> {
+  #startSelfRender(host: Partial<FrameRenderable>, timeMs: number): Promise<void> {
     this.#selfRenderAbortController?.abort();
     this.#selfRenderAbortController = new AbortController();
     const signal = this.#selfRenderAbortController.signal;
@@ -410,8 +392,7 @@ export class PlaybackController implements ReactiveController {
         host.renderFrame!(timeMs);
         updateAnimations(this.#host as unknown as AnimatableElement);
       } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError")
-          return;
+        if (error instanceof DOMException && error.name === "AbortError") return;
         if ((error as any)?.name === "AbortError") return;
         console.error("Standalone frame render error:", error);
       } finally {
@@ -430,9 +411,7 @@ export class PlaybackController implements ReactiveController {
     this.#listeners.add(listener);
   }
 
-  removeListener(
-    listener: (event: PlaybackControllerUpdateEvent) => void,
-  ): void {
+  removeListener(listener: (event: PlaybackControllerUpdateEvent) => void): void {
     this.#listeners.delete(listener);
   }
 
@@ -459,13 +438,9 @@ export class PlaybackController implements ReactiveController {
 
     // Calculate raw time based on audio context
     let rawTimeMs: number;
-    if (
-      this.#playbackWrapTimeSeconds > 0 &&
-      audioContextTime >= this.#playbackWrapTimeSeconds
-    ) {
+    if (this.#playbackWrapTimeSeconds > 0 && audioContextTime >= this.#playbackWrapTimeSeconds) {
       // After wrap: time since wrap, wrapped to duration
-      const timeSinceWrap =
-        (audioContextTime - this.#playbackWrapTimeSeconds) * 1000;
+      const timeSinceWrap = (audioContextTime - this.#playbackWrapTimeSeconds) * 1000;
       rawTimeMs = timeSinceWrap % endMs;
     } else {
       // Before wrap or no wrap: normal calculation
@@ -477,8 +452,7 @@ export class PlaybackController implements ReactiveController {
       }
     }
 
-    const nextTimeMs =
-      Math.round(rawTimeMs / this.#MS_PER_FRAME) * this.#MS_PER_FRAME;
+    const nextTimeMs = Math.round(rawTimeMs / this.#MS_PER_FRAME) * this.#MS_PER_FRAME;
 
     // During playback, update time directly without triggering seek
     // This avoids frame drops at the loop boundary
@@ -626,10 +600,7 @@ export class PlaybackController implements ReactiveController {
       }
 
       const startMs = logicalTimeMs;
-      const endMs = Math.min(
-        logicalTimeMs + this.#AUDIO_PLAYBACK_SLICE_MS,
-        toMs,
-      );
+      const endMs = Math.min(logicalTimeMs + this.#AUDIO_PLAYBACK_SLICE_MS, toMs);
 
       // Will this slice reach the end?
       const willReachEnd = endMs >= toMs;

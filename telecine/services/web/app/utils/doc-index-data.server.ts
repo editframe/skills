@@ -1,5 +1,8 @@
 import { join, resolve } from "node:path";
-import { scanDirectoryForDocs, detectDirectoryType } from "./doc-index-generator";
+import {
+  scanDirectoryForDocs,
+  detectDirectoryType,
+} from "./doc-index-generator";
 
 const SECTION_CONFIGS = {
   tutorial: {
@@ -16,15 +19,18 @@ const SECTION_CONFIGS = {
   },
   explanation: {
     title: "Explanations",
-    description: "Deep dives into architecture, concepts, and technical advantages",
+    description:
+      "Deep dives into architecture, concepts, and technical advantages",
     sectionTitle: "Explanations",
-    introText: "Conceptual explanations to deepen your understanding of how things work and why the architecture provides superior outcomes.",
+    introText:
+      "Conceptual explanations to deepen your understanding of how things work and why the architecture provides superior outcomes.",
   },
   reference: {
     title: "Reference",
     description: "Complete property and API reference",
     sectionTitle: "Reference",
-    introText: "Complete technical reference for all properties and attributes.",
+    introText:
+      "Complete technical reference for all properties and attributes.",
   },
 } as const;
 
@@ -62,16 +68,20 @@ export function buildRelatedSections(
   ];
 
   // Filter out the current section
-  const normalizedCurrent = currentSection === "how-to" ? "how-to" : currentSection;
-  
-  return allSections.filter((section) => {
-    const sectionPath = section.slug.split("/").pop() || "";
-    const normalizedSection = sectionPath === "how-to" ? "how-to" : sectionPath;
-    return normalizedSection !== normalizedCurrent;
-  }).map((section) => ({
-    name: section.name,
-    href: section.slug,
-  }));
+  const normalizedCurrent =
+    currentSection === "how-to" ? "how-to" : currentSection;
+
+  return allSections
+    .filter((section) => {
+      const sectionPath = section.slug.split("/").pop() || "";
+      const normalizedSection =
+        sectionPath === "how-to" ? "how-to" : sectionPath;
+      return normalizedSection !== normalizedCurrent;
+    })
+    .map((section) => ({
+      name: section.name,
+      href: section.slug,
+    }));
 }
 
 /**
@@ -79,10 +89,10 @@ export function buildRelatedSections(
  */
 export function detectSectionType(directoryPath: string): string | null {
   const dirName = directoryPath.split("/").pop()?.toLowerCase() || "";
-  
+
   // Handle numbered prefixes like "020-how-to" or "030-explanation"
   const normalizedName = dirName.replace(/^\d+-/, "");
-  
+
   if (
     normalizedName === "tutorial" ||
     normalizedName === "how-to" ||
@@ -91,13 +101,13 @@ export function detectSectionType(directoryPath: string): string | null {
   ) {
     return normalizedName === "how-to" ? "how-to" : normalizedName;
   }
-  
+
   return null;
 }
 
 /**
  * Gets doc index data for a given directory path and base slug
- * 
+ *
  * @param directoryPath - Full directory path (e.g., "/path/to/docs/010-elements/008-audio/020-how-to")
  * @param baseSlug - Base slug for generating links (e.g., "/docs/elements/audio")
  */
@@ -106,7 +116,7 @@ export async function getDocIndexData(
   baseSlug: string,
 ): Promise<DocIndexData | null> {
   const sectionType = detectSectionType(directoryPath);
-  
+
   if (!sectionType) {
     return null;
   }
@@ -117,7 +127,7 @@ export async function getDocIndexData(
   }
 
   const docs = await scanDirectoryForDocs(directoryPath, baseSlug);
-  
+
   if (docs.length === 0) {
     return null;
   }
@@ -141,7 +151,7 @@ export async function getDocIndexData(
 
 /**
  * Derives base slug from a docs path
- * 
+ *
  * If the path includes a section directory (how-to, explanation, etc.), it's removed.
  * Example: "010-elements/008-audio/020-how-to" -> "/docs/elements/audio"
  * Example: "010-elements/008-audio" -> "/docs/elements/audio"
@@ -152,19 +162,18 @@ export function deriveBaseSlugFromPath(docsPath: string): string {
     .replace(/(\/?\d+-)/g, "/")
     .replace(/^\//, "")
     .replace(/\/$/, "");
-  
+
   // Check if the last part is a section directory (how-to, explanation, tutorial, reference)
   const parts = slugPath.split("/");
   const lastPart = parts[parts.length - 1];
   const sectionDirectories = ["how-to", "explanation", "tutorial", "reference"];
-  
+
   // If the last part is a section directory, remove it
   if (sectionDirectories.includes(lastPart)) {
     parts.pop();
   }
-  
+
   const baseSlug = `/docs/${parts.join("/")}`;
-  
+
   return baseSlug;
 }
-

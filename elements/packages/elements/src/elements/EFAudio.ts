@@ -55,8 +55,7 @@ export class EFAudio extends TWMixin(EFMedia) implements FrameRenderable {
    */
   getFrameState(_timeMs: number): FrameState {
     // Check if media engine is loaded
-    const isReady =
-      this.#mediaEngineLoaded && this.mediaEngineTask.status === 2; // COMPLETE
+    const isReady = this.#mediaEngineLoaded && this.mediaEngineTask.status === 2; // COMPLETE
 
     return {
       needsPreparation: !isReady,

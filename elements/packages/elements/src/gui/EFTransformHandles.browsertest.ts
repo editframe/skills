@@ -23,14 +23,10 @@ describe("EFTransformHandles", () => {
   describe("rendering", () => {
     test("overlay renders at default bounds position and size", async () => {
       render(html`<ef-transform-handles></ef-transform-handles>`, container);
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
-      const overlay = el.shadowRoot!.querySelector(
-        ".overlay",
-      ) as HTMLDivElement;
+      const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
       expect(overlay.style.left).toBe("0px");
       expect(overlay.style.top).toBe("0px");
       expect(overlay.style.width).toBe("100px");
@@ -39,18 +35,11 @@ describe("EFTransformHandles", () => {
 
     test("overlay renders at provided bounds position and size", async () => {
       const bounds = { x: 50, y: 75, width: 200, height: 150 };
-      render(
-        html`<ef-transform-handles .bounds=${bounds}></ef-transform-handles>`,
-        container,
-      );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      render(html`<ef-transform-handles .bounds=${bounds}></ef-transform-handles>`, container);
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
-      const overlay = el.shadowRoot!.querySelector(
-        ".overlay",
-      ) as HTMLDivElement;
+      const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
       expect(overlay.style.left).toBe("50px");
       expect(overlay.style.top).toBe("75px");
       expect(overlay.style.width).toBe("200px");
@@ -63,14 +52,10 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .enableRotation=${true}></ef-transform-handles>`,
         container,
       );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
-      const overlay = el.shadowRoot!.querySelector(
-        ".overlay",
-      ) as HTMLDivElement;
+      const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
       expect(overlay.style.transform).toContain("rotate(45deg)");
       // Browser may normalize "center" to "center center"
       expect(overlay.style.transformOrigin).toContain("center");
@@ -82,14 +67,10 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .enableRotation=${false}></ef-transform-handles>`,
         container,
       );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
-      const overlay = el.shadowRoot!.querySelector(
-        ".overlay",
-      ) as HTMLDivElement;
+      const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
       expect(overlay.style.transform).toBeFalsy();
     });
 
@@ -99,27 +80,18 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .enableRotation=${true}></ef-transform-handles>`,
         container,
       );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
-      const overlay = el.shadowRoot!.querySelector(
-        ".overlay",
-      ) as HTMLDivElement;
+      const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
       expect(overlay.style.transform).toBeFalsy();
     });
   });
 
   describe("interaction controls visibility", () => {
     test("drag area is rendered when drag is enabled", async () => {
-      render(
-        html`<ef-transform-handles .enableDrag=${true}></ef-transform-handles>`,
-        container,
-      );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      render(html`<ef-transform-handles .enableDrag=${true}></ef-transform-handles>`, container);
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
       const dragArea = el.shadowRoot!.querySelector(".drag-area");
@@ -127,13 +99,8 @@ describe("EFTransformHandles", () => {
     });
 
     test("drag area is not rendered when drag is disabled", async () => {
-      render(
-        html`<ef-transform-handles .enableDrag=${false}></ef-transform-handles>`,
-        container,
-      );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      render(html`<ef-transform-handles .enableDrag=${false}></ef-transform-handles>`, container);
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
       const dragArea = el.shadowRoot!.querySelector(".drag-area");
@@ -141,13 +108,8 @@ describe("EFTransformHandles", () => {
     });
 
     test("resize handles are rendered when resize is enabled", async () => {
-      render(
-        html`<ef-transform-handles .enableResize=${true}></ef-transform-handles>`,
-        container,
-      );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      render(html`<ef-transform-handles .enableResize=${true}></ef-transform-handles>`, container);
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
       const handles = el.shadowRoot!.querySelectorAll(".handle");
@@ -155,13 +117,8 @@ describe("EFTransformHandles", () => {
     });
 
     test("resize handles are not rendered when resize is disabled", async () => {
-      render(
-        html`<ef-transform-handles .enableResize=${false}></ef-transform-handles>`,
-        container,
-      );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      render(html`<ef-transform-handles .enableResize=${false}></ef-transform-handles>`, container);
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
       const handles = el.shadowRoot!.querySelectorAll(".handle");
@@ -173,9 +130,7 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .enableRotation=${true}></ef-transform-handles>`,
         container,
       );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
       const rotateHandle = el.shadowRoot!.querySelector(".rotate-handle");
@@ -187,9 +142,7 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .enableRotation=${false}></ef-transform-handles>`,
         container,
       );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
       const rotateHandle = el.shadowRoot!.querySelector(".rotate-handle");
@@ -200,13 +153,8 @@ describe("EFTransformHandles", () => {
   describe("drag interaction", () => {
     test("overlay position updates during drag and bounds-change event is dispatched with correct values", async () => {
       const bounds = { x: 100, y: 100, width: 200, height: 150 };
-      render(
-        html`<ef-transform-handles .bounds=${bounds}></ef-transform-handles>`,
-        container,
-      );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      render(html`<ef-transform-handles .bounds=${bounds}></ef-transform-handles>`, container);
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
       let lastEventBounds: any = null;
@@ -214,12 +162,8 @@ describe("EFTransformHandles", () => {
         lastEventBounds = (e as CustomEvent).detail.bounds;
       });
 
-      const dragArea = el.shadowRoot!.querySelector(
-        ".drag-area",
-      ) as HTMLDivElement;
-      const overlay = el.shadowRoot!.querySelector(
-        ".overlay",
-      ) as HTMLDivElement;
+      const dragArea = el.shadowRoot!.querySelector(".drag-area") as HTMLDivElement;
+      const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
 
       // Start drag
       const downEvent = new MouseEvent("mousedown", {
@@ -256,21 +200,12 @@ describe("EFTransformHandles", () => {
 
     test("overlay has dragging class during drag interaction", async () => {
       const bounds = { x: 100, y: 100, width: 200, height: 150 };
-      render(
-        html`<ef-transform-handles .bounds=${bounds}></ef-transform-handles>`,
-        container,
-      );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      render(html`<ef-transform-handles .bounds=${bounds}></ef-transform-handles>`, container);
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
-      const overlay = el.shadowRoot!.querySelector(
-        ".overlay",
-      ) as HTMLDivElement;
-      const dragArea = el.shadowRoot!.querySelector(
-        ".drag-area",
-      ) as HTMLDivElement;
+      const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
+      const dragArea = el.shadowRoot!.querySelector(".drag-area") as HTMLDivElement;
 
       expect(overlay.classList.contains("dragging")).toBe(false);
 
@@ -298,9 +233,7 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .enableDrag=${false}></ef-transform-handles>`,
         container,
       );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
       let eventDispatched = false;
@@ -309,9 +242,7 @@ describe("EFTransformHandles", () => {
       });
 
       // Try to drag (but drag area shouldn't exist)
-      const overlay = el.shadowRoot!.querySelector(
-        ".overlay",
-      ) as HTMLDivElement;
+      const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
       const downEvent = new MouseEvent("mousedown", {
         clientX: 150,
         clientY: 150,
@@ -336,13 +267,8 @@ describe("EFTransformHandles", () => {
   describe("resize interaction", () => {
     test("overlay size and position update during resize and bounds-change event is dispatched", async () => {
       const bounds = { x: 100, y: 100, width: 200, height: 150 };
-      render(
-        html`<ef-transform-handles .bounds=${bounds}></ef-transform-handles>`,
-        container,
-      );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      render(html`<ef-transform-handles .bounds=${bounds}></ef-transform-handles>`, container);
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
       let lastEventBounds: any = null;
@@ -350,9 +276,9 @@ describe("EFTransformHandles", () => {
         lastEventBounds = (e as CustomEvent).detail.bounds;
       });
 
-      const seHandle = Array.from(
-        el.shadowRoot!.querySelectorAll(".handle"),
-      ).find((h) => h.classList.contains("se")) as HTMLDivElement;
+      const seHandle = Array.from(el.shadowRoot!.querySelectorAll(".handle")).find((h) =>
+        h.classList.contains("se"),
+      ) as HTMLDivElement;
 
       // Start resize from SE corner
       const downEvent = new MouseEvent("mousedown", {
@@ -386,9 +312,7 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .enableRotation=${true}></ef-transform-handles>`,
         container,
       );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
       let lastEventBounds: any = null;
@@ -396,9 +320,9 @@ describe("EFTransformHandles", () => {
         lastEventBounds = (e as CustomEvent).detail.bounds;
       });
 
-      const seHandle = Array.from(
-        el.shadowRoot!.querySelectorAll(".handle"),
-      ).find((h) => h.classList.contains("se")) as HTMLDivElement;
+      const seHandle = Array.from(el.shadowRoot!.querySelectorAll(".handle")).find((h) =>
+        h.classList.contains("se"),
+      ) as HTMLDivElement;
 
       const downEvent = new MouseEvent("mousedown", {
         clientX: 300,
@@ -428,9 +352,7 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .minSize=${50}></ef-transform-handles>`,
         container,
       );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
       let lastEventBounds: any = null;
@@ -438,9 +360,9 @@ describe("EFTransformHandles", () => {
         lastEventBounds = (e as CustomEvent).detail.bounds;
       });
 
-      const eHandle = Array.from(
-        el.shadowRoot!.querySelectorAll(".handle"),
-      ).find((h) => h.classList.contains("e")) as HTMLDivElement;
+      const eHandle = Array.from(el.shadowRoot!.querySelectorAll(".handle")).find((h) =>
+        h.classList.contains("e"),
+      ) as HTMLDivElement;
 
       // Start resize and shrink below minimum
       const downEvent = new MouseEvent("mousedown", {
@@ -472,9 +394,7 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .enableResize=${false}></ef-transform-handles>`,
         container,
       );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
       // Try to resize (but handles shouldn't exist)
@@ -490,9 +410,7 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .enableRotation=${true}></ef-transform-handles>`,
         container,
       );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
       let lastRotation: number | null = null;
@@ -500,9 +418,7 @@ describe("EFTransformHandles", () => {
         lastRotation = (e as CustomEvent).detail.rotation;
       });
 
-      const rotateHandle = el.shadowRoot!.querySelector(
-        ".rotate-handle",
-      ) as HTMLDivElement;
+      const rotateHandle = el.shadowRoot!.querySelector(".rotate-handle") as HTMLDivElement;
 
       // Start rotation from center-right of element
       const centerX = 100 + 200 / 2; // 200
@@ -539,9 +455,7 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .enableRotation=${true} .rotationStep=${15}></ef-transform-handles>`,
         container,
       );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
       const rotations: number[] = [];
@@ -549,9 +463,7 @@ describe("EFTransformHandles", () => {
         rotations.push((e as CustomEvent).detail.rotation);
       });
 
-      const rotateHandle = el.shadowRoot!.querySelector(
-        ".rotate-handle",
-      ) as HTMLDivElement;
+      const rotateHandle = el.shadowRoot!.querySelector(".rotate-handle") as HTMLDivElement;
 
       const centerX = 100 + 200 / 2;
       const centerY = 100 + 150 / 2;
@@ -595,9 +507,7 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .enableRotation=${false}></ef-transform-handles>`,
         container,
       );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
       // Try to rotate (but rotate handle shouldn't exist)
@@ -613,17 +523,13 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .enableRotation=${true}></ef-transform-handles>`,
         container,
       );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
-      const dragArea = el.shadowRoot!.querySelector(
-        ".drag-area",
+      const dragArea = el.shadowRoot!.querySelector(".drag-area") as HTMLDivElement;
+      const seHandle = Array.from(el.shadowRoot!.querySelectorAll(".handle")).find((h) =>
+        h.classList.contains("se"),
       ) as HTMLDivElement;
-      const seHandle = Array.from(
-        el.shadowRoot!.querySelectorAll(".handle"),
-      ).find((h) => h.classList.contains("se")) as HTMLDivElement;
 
       // Start drag
       const dragDown = new MouseEvent("mousedown", {
@@ -635,9 +541,7 @@ describe("EFTransformHandles", () => {
       dragArea.dispatchEvent(dragDown);
       await el.updateComplete;
 
-      const overlay = el.shadowRoot!.querySelector(
-        ".overlay",
-      ) as HTMLDivElement;
+      const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
       expect(overlay.classList.contains("dragging")).toBe(true);
 
       // Try to start resize while dragging (should not work)
@@ -662,21 +566,12 @@ describe("EFTransformHandles", () => {
 
     test("interaction state is cleaned up on mouseup", async () => {
       const bounds = { x: 100, y: 100, width: 200, height: 150 };
-      render(
-        html`<ef-transform-handles .bounds=${bounds}></ef-transform-handles>`,
-        container,
-      );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      render(html`<ef-transform-handles .bounds=${bounds}></ef-transform-handles>`, container);
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
-      const dragArea = el.shadowRoot!.querySelector(
-        ".drag-area",
-      ) as HTMLDivElement;
-      const overlay = el.shadowRoot!.querySelector(
-        ".overlay",
-      ) as HTMLDivElement;
+      const dragArea = el.shadowRoot!.querySelector(".drag-area") as HTMLDivElement;
+      const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
 
       // Start drag
       const downEvent = new MouseEvent("mousedown", {
@@ -714,18 +609,11 @@ describe("EFTransformHandles", () => {
   describe("bounds prop updates", () => {
     test("overlay updates when bounds prop changes", async () => {
       const bounds = { x: 100, y: 100, width: 200, height: 150 };
-      render(
-        html`<ef-transform-handles .bounds=${bounds}></ef-transform-handles>`,
-        container,
-      );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      render(html`<ef-transform-handles .bounds=${bounds}></ef-transform-handles>`, container);
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
-      const overlay = el.shadowRoot!.querySelector(
-        ".overlay",
-      ) as HTMLDivElement;
+      const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
       expect(overlay.style.left).toBe("100px");
       expect(overlay.style.top).toBe("100px");
 
@@ -745,14 +633,10 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .enableRotation=${true}></ef-transform-handles>`,
         container,
       );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
-      const overlay = el.shadowRoot!.querySelector(
-        ".overlay",
-      ) as HTMLDivElement;
+      const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
       expect(overlay.style.transform).toBeFalsy();
 
       // Update rotation
@@ -777,13 +661,8 @@ describe("EFTransformHandles", () => {
       // At 2x zoom, bounds are scaled: 100px canvas = 200px screen
       // EFCanvas passes: layoutWidth * scale = 100 * 2 = 200px screen
       const bounds = { x: 200, y: 200, width: 200, height: 150 }; // Screen pixels (100*2 canvas)
-      render(
-        html`<ef-transform-handles .bounds=${bounds}></ef-transform-handles>`,
-        panZoom,
-      );
-      const el = panZoom.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      render(html`<ef-transform-handles .bounds=${bounds}></ef-transform-handles>`, panZoom);
+      const el = panZoom.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
       await new Promise((resolve) => setTimeout(resolve, 50)); // Wait for context
 
@@ -792,12 +671,10 @@ describe("EFTransformHandles", () => {
         lastEventBounds = (e as CustomEvent).detail.bounds;
       });
 
-      const seHandle = Array.from(
-        el.shadowRoot!.querySelectorAll(".handle"),
-      ).find((h) => h.classList.contains("se")) as HTMLDivElement;
-      const overlay = el.shadowRoot!.querySelector(
-        ".overlay",
+      const seHandle = Array.from(el.shadowRoot!.querySelectorAll(".handle")).find((h) =>
+        h.classList.contains("se"),
       ) as HTMLDivElement;
+      const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
 
       // Start resize from SE corner (at 2x zoom, corner is at 600, 500 screen pixels)
       const downEvent = new MouseEvent("mousedown", {
@@ -846,13 +723,8 @@ describe("EFTransformHandles", () => {
 
       // At 0.5x zoom, bounds are scaled: 100px canvas = 50px screen
       const bounds = { x: 50, y: 50, width: 50, height: 37.5 }; // Screen pixels (100*0.5 canvas)
-      render(
-        html`<ef-transform-handles .bounds=${bounds}></ef-transform-handles>`,
-        panZoom,
-      );
-      const el = panZoom.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      render(html`<ef-transform-handles .bounds=${bounds}></ef-transform-handles>`, panZoom);
+      const el = panZoom.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
       await new Promise((resolve) => setTimeout(resolve, 50)); // Wait for context
 
@@ -861,9 +733,9 @@ describe("EFTransformHandles", () => {
         lastEventBounds = (e as CustomEvent).detail.bounds;
       });
 
-      const eHandle = Array.from(
-        el.shadowRoot!.querySelectorAll(".handle"),
-      ).find((h) => h.classList.contains("e")) as HTMLDivElement;
+      const eHandle = Array.from(el.shadowRoot!.querySelectorAll(".handle")).find((h) =>
+        h.classList.contains("e"),
+      ) as HTMLDivElement;
 
       // Start resize from E handle (at 0.5x zoom, right edge is at 150 screen pixels)
       const downEvent = new MouseEvent("mousedown", {
@@ -916,9 +788,7 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .enableRotation=${true}></ef-transform-handles>`,
         panZoom,
       );
-      const el = panZoom.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = panZoom.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
       await new Promise((resolve) => setTimeout(resolve, 50));
 
@@ -927,9 +797,9 @@ describe("EFTransformHandles", () => {
         lastEventBounds = (e as CustomEvent).detail.bounds;
       });
 
-      const seHandle = Array.from(
-        el.shadowRoot!.querySelectorAll(".handle"),
-      ).find((h) => h.classList.contains("se")) as HTMLDivElement;
+      const seHandle = Array.from(el.shadowRoot!.querySelectorAll(".handle")).find((h) =>
+        h.classList.contains("se"),
+      ) as HTMLDivElement;
 
       const downEvent = new MouseEvent("mousedown", {
         clientX: 600,
@@ -951,9 +821,7 @@ describe("EFTransformHandles", () => {
 
       // Verify rotation is preserved during resize at zoom
       expect(lastEventBounds.rotation).toBe(45);
-      const overlay = el.shadowRoot!.querySelector(
-        ".overlay",
-      ) as HTMLDivElement;
+      const overlay = el.shadowRoot!.querySelector(".overlay") as HTMLDivElement;
       expect(overlay.style.transform).toContain("rotate(45deg)");
 
       panZoom.remove();
@@ -979,9 +847,7 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .enableRotation=${true}></ef-transform-handles>`,
         panZoom,
       );
-      const el = panZoom.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = panZoom.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
       await new Promise((resolve) => setTimeout(resolve, 50));
 
@@ -990,9 +856,7 @@ describe("EFTransformHandles", () => {
         lastRotation = (e as CustomEvent).detail.rotation;
       });
 
-      const rotateHandle = el.shadowRoot!.querySelector(
-        ".rotate-handle",
-      ) as HTMLDivElement;
+      const rotateHandle = el.shadowRoot!.querySelector(".rotate-handle") as HTMLDivElement;
 
       // Element center at 2x zoom: (200 + 200/2, 200 + 150/2) = (300, 275) screen pixels
       const centerX = 200 + 200 / 2; // 300
@@ -1046,9 +910,7 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .enableRotation=${true}></ef-transform-handles>`,
         panZoom,
       );
-      const el = panZoom.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = panZoom.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
       await new Promise((resolve) => setTimeout(resolve, 50));
 
@@ -1057,9 +919,7 @@ describe("EFTransformHandles", () => {
         lastRotation = (e as CustomEvent).detail.rotation;
       });
 
-      const rotateHandle = el.shadowRoot!.querySelector(
-        ".rotate-handle",
-      ) as HTMLDivElement;
+      const rotateHandle = el.shadowRoot!.querySelector(".rotate-handle") as HTMLDivElement;
 
       // Element center at 0.5x zoom: (50 + 50/2, 50 + 37.5/2) = (75, 68.75) screen pixels
       const centerX = 50 + 50 / 2; // 75
@@ -1114,9 +974,7 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .enableRotation=${true} .rotationStep=${15}></ef-transform-handles>`,
         panZoom,
       );
-      const el = panZoom.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = panZoom.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
       await new Promise((resolve) => setTimeout(resolve, 50));
 
@@ -1125,9 +983,7 @@ describe("EFTransformHandles", () => {
         rotations.push((e as CustomEvent).detail.rotation);
       });
 
-      const rotateHandle = el.shadowRoot!.querySelector(
-        ".rotate-handle",
-      ) as HTMLDivElement;
+      const rotateHandle = el.shadowRoot!.querySelector(".rotate-handle") as HTMLDivElement;
 
       const centerX = 200 + 200 / 2;
       const centerY = 200 + 150 / 2;
@@ -1182,9 +1038,7 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .minSize=${100}></ef-transform-handles>`,
         panZoom,
       );
-      const el = panZoom.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = panZoom.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
       await new Promise((resolve) => setTimeout(resolve, 50));
 
@@ -1193,9 +1047,9 @@ describe("EFTransformHandles", () => {
         lastEventBounds = (e as CustomEvent).detail.bounds;
       });
 
-      const wHandle = Array.from(
-        el.shadowRoot!.querySelectorAll(".handle"),
-      ).find((h) => h.classList.contains("w")) as HTMLDivElement;
+      const wHandle = Array.from(el.shadowRoot!.querySelectorAll(".handle")).find((h) =>
+        h.classList.contains("w"),
+      ) as HTMLDivElement;
 
       // Start resize and shrink below minimum
       const downEvent = new MouseEvent("mousedown", {
@@ -1233,60 +1087,26 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .enableRotation=${true}></ef-transform-handles>`,
         container,
       );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
-      const nHandle = el.shadowRoot!.querySelector(
-        ".handle.n",
-      ) as HTMLDivElement;
-      const eHandle = el.shadowRoot!.querySelector(
-        ".handle.e",
-      ) as HTMLDivElement;
-      const sHandle = el.shadowRoot!.querySelector(
-        ".handle.s",
-      ) as HTMLDivElement;
-      const wHandle = el.shadowRoot!.querySelector(
-        ".handle.w",
-      ) as HTMLDivElement;
-      const nwHandle = el.shadowRoot!.querySelector(
-        ".handle.nw",
-      ) as HTMLDivElement;
-      const neHandle = el.shadowRoot!.querySelector(
-        ".handle.ne",
-      ) as HTMLDivElement;
-      const seHandle = el.shadowRoot!.querySelector(
-        ".handle.se",
-      ) as HTMLDivElement;
-      const swHandle = el.shadowRoot!.querySelector(
-        ".handle.sw",
-      ) as HTMLDivElement;
+      const nHandle = el.shadowRoot!.querySelector(".handle.n") as HTMLDivElement;
+      const eHandle = el.shadowRoot!.querySelector(".handle.e") as HTMLDivElement;
+      const sHandle = el.shadowRoot!.querySelector(".handle.s") as HTMLDivElement;
+      const wHandle = el.shadowRoot!.querySelector(".handle.w") as HTMLDivElement;
+      const nwHandle = el.shadowRoot!.querySelector(".handle.nw") as HTMLDivElement;
+      const neHandle = el.shadowRoot!.querySelector(".handle.ne") as HTMLDivElement;
+      const seHandle = el.shadowRoot!.querySelector(".handle.se") as HTMLDivElement;
+      const swHandle = el.shadowRoot!.querySelector(".handle.sw") as HTMLDivElement;
 
-      expect(
-        nHandle.style.cursor || getComputedStyle(nHandle).cursor,
-      ).toContain("n-resize");
-      expect(
-        eHandle.style.cursor || getComputedStyle(eHandle).cursor,
-      ).toContain("e-resize");
-      expect(
-        sHandle.style.cursor || getComputedStyle(sHandle).cursor,
-      ).toContain("s-resize");
-      expect(
-        wHandle.style.cursor || getComputedStyle(wHandle).cursor,
-      ).toContain("w-resize");
-      expect(
-        nwHandle.style.cursor || getComputedStyle(nwHandle).cursor,
-      ).toContain("nw-resize");
-      expect(
-        neHandle.style.cursor || getComputedStyle(neHandle).cursor,
-      ).toContain("ne-resize");
-      expect(
-        seHandle.style.cursor || getComputedStyle(seHandle).cursor,
-      ).toContain("se-resize");
-      expect(
-        swHandle.style.cursor || getComputedStyle(swHandle).cursor,
-      ).toContain("sw-resize");
+      expect(nHandle.style.cursor || getComputedStyle(nHandle).cursor).toContain("n-resize");
+      expect(eHandle.style.cursor || getComputedStyle(eHandle).cursor).toContain("e-resize");
+      expect(sHandle.style.cursor || getComputedStyle(sHandle).cursor).toContain("s-resize");
+      expect(wHandle.style.cursor || getComputedStyle(wHandle).cursor).toContain("w-resize");
+      expect(nwHandle.style.cursor || getComputedStyle(nwHandle).cursor).toContain("nw-resize");
+      expect(neHandle.style.cursor || getComputedStyle(neHandle).cursor).toContain("ne-resize");
+      expect(seHandle.style.cursor || getComputedStyle(seHandle).cursor).toContain("se-resize");
+      expect(swHandle.style.cursor || getComputedStyle(swHandle).cursor).toContain("sw-resize");
     });
 
     test("handles show correct cursor at 90° rotation", async () => {
@@ -1295,62 +1115,28 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .enableRotation=${true}></ef-transform-handles>`,
         container,
       );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
-      const nHandle = el.shadowRoot!.querySelector(
-        ".handle.n",
-      ) as HTMLDivElement;
-      const eHandle = el.shadowRoot!.querySelector(
-        ".handle.e",
-      ) as HTMLDivElement;
-      const sHandle = el.shadowRoot!.querySelector(
-        ".handle.s",
-      ) as HTMLDivElement;
-      const wHandle = el.shadowRoot!.querySelector(
-        ".handle.w",
-      ) as HTMLDivElement;
-      const nwHandle = el.shadowRoot!.querySelector(
-        ".handle.nw",
-      ) as HTMLDivElement;
-      const neHandle = el.shadowRoot!.querySelector(
-        ".handle.ne",
-      ) as HTMLDivElement;
-      const seHandle = el.shadowRoot!.querySelector(
-        ".handle.se",
-      ) as HTMLDivElement;
-      const swHandle = el.shadowRoot!.querySelector(
-        ".handle.sw",
-      ) as HTMLDivElement;
+      const nHandle = el.shadowRoot!.querySelector(".handle.n") as HTMLDivElement;
+      const eHandle = el.shadowRoot!.querySelector(".handle.e") as HTMLDivElement;
+      const sHandle = el.shadowRoot!.querySelector(".handle.s") as HTMLDivElement;
+      const wHandle = el.shadowRoot!.querySelector(".handle.w") as HTMLDivElement;
+      const nwHandle = el.shadowRoot!.querySelector(".handle.nw") as HTMLDivElement;
+      const neHandle = el.shadowRoot!.querySelector(".handle.ne") as HTMLDivElement;
+      const seHandle = el.shadowRoot!.querySelector(".handle.se") as HTMLDivElement;
+      const swHandle = el.shadowRoot!.querySelector(".handle.sw") as HTMLDivElement;
 
       // At 90° rotation: n→e, e→s, s→w, w→n
-      expect(
-        nHandle.style.cursor || getComputedStyle(nHandle).cursor,
-      ).toContain("e-resize");
-      expect(
-        eHandle.style.cursor || getComputedStyle(eHandle).cursor,
-      ).toContain("s-resize");
-      expect(
-        sHandle.style.cursor || getComputedStyle(sHandle).cursor,
-      ).toContain("w-resize");
-      expect(
-        wHandle.style.cursor || getComputedStyle(wHandle).cursor,
-      ).toContain("n-resize");
+      expect(nHandle.style.cursor || getComputedStyle(nHandle).cursor).toContain("e-resize");
+      expect(eHandle.style.cursor || getComputedStyle(eHandle).cursor).toContain("s-resize");
+      expect(sHandle.style.cursor || getComputedStyle(sHandle).cursor).toContain("w-resize");
+      expect(wHandle.style.cursor || getComputedStyle(wHandle).cursor).toContain("n-resize");
       // Corners: nw→ne, ne→se, se→sw, sw→nw
-      expect(
-        nwHandle.style.cursor || getComputedStyle(nwHandle).cursor,
-      ).toContain("ne-resize");
-      expect(
-        neHandle.style.cursor || getComputedStyle(neHandle).cursor,
-      ).toContain("se-resize");
-      expect(
-        seHandle.style.cursor || getComputedStyle(seHandle).cursor,
-      ).toContain("sw-resize");
-      expect(
-        swHandle.style.cursor || getComputedStyle(swHandle).cursor,
-      ).toContain("nw-resize");
+      expect(nwHandle.style.cursor || getComputedStyle(nwHandle).cursor).toContain("ne-resize");
+      expect(neHandle.style.cursor || getComputedStyle(neHandle).cursor).toContain("se-resize");
+      expect(seHandle.style.cursor || getComputedStyle(seHandle).cursor).toContain("sw-resize");
+      expect(swHandle.style.cursor || getComputedStyle(swHandle).cursor).toContain("nw-resize");
     });
 
     test("handles show correct cursor at 180° rotation", async () => {
@@ -1359,37 +1145,19 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .enableRotation=${true}></ef-transform-handles>`,
         container,
       );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
-      const nHandle = el.shadowRoot!.querySelector(
-        ".handle.n",
-      ) as HTMLDivElement;
-      const eHandle = el.shadowRoot!.querySelector(
-        ".handle.e",
-      ) as HTMLDivElement;
-      const sHandle = el.shadowRoot!.querySelector(
-        ".handle.s",
-      ) as HTMLDivElement;
-      const wHandle = el.shadowRoot!.querySelector(
-        ".handle.w",
-      ) as HTMLDivElement;
+      const nHandle = el.shadowRoot!.querySelector(".handle.n") as HTMLDivElement;
+      const eHandle = el.shadowRoot!.querySelector(".handle.e") as HTMLDivElement;
+      const sHandle = el.shadowRoot!.querySelector(".handle.s") as HTMLDivElement;
+      const wHandle = el.shadowRoot!.querySelector(".handle.w") as HTMLDivElement;
 
       // At 180° rotation: n→s, e→w, s→n, w→e
-      expect(
-        nHandle.style.cursor || getComputedStyle(nHandle).cursor,
-      ).toContain("s-resize");
-      expect(
-        eHandle.style.cursor || getComputedStyle(eHandle).cursor,
-      ).toContain("w-resize");
-      expect(
-        sHandle.style.cursor || getComputedStyle(sHandle).cursor,
-      ).toContain("n-resize");
-      expect(
-        wHandle.style.cursor || getComputedStyle(wHandle).cursor,
-      ).toContain("e-resize");
+      expect(nHandle.style.cursor || getComputedStyle(nHandle).cursor).toContain("s-resize");
+      expect(eHandle.style.cursor || getComputedStyle(eHandle).cursor).toContain("w-resize");
+      expect(sHandle.style.cursor || getComputedStyle(sHandle).cursor).toContain("n-resize");
+      expect(wHandle.style.cursor || getComputedStyle(wHandle).cursor).toContain("e-resize");
     });
 
     test("handles show correct cursor at 270° rotation", async () => {
@@ -1398,37 +1166,19 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .enableRotation=${true}></ef-transform-handles>`,
         container,
       );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
-      const nHandle = el.shadowRoot!.querySelector(
-        ".handle.n",
-      ) as HTMLDivElement;
-      const eHandle = el.shadowRoot!.querySelector(
-        ".handle.e",
-      ) as HTMLDivElement;
-      const sHandle = el.shadowRoot!.querySelector(
-        ".handle.s",
-      ) as HTMLDivElement;
-      const wHandle = el.shadowRoot!.querySelector(
-        ".handle.w",
-      ) as HTMLDivElement;
+      const nHandle = el.shadowRoot!.querySelector(".handle.n") as HTMLDivElement;
+      const eHandle = el.shadowRoot!.querySelector(".handle.e") as HTMLDivElement;
+      const sHandle = el.shadowRoot!.querySelector(".handle.s") as HTMLDivElement;
+      const wHandle = el.shadowRoot!.querySelector(".handle.w") as HTMLDivElement;
 
       // At 270° rotation: n→w, e→n, s→e, w→s
-      expect(
-        nHandle.style.cursor || getComputedStyle(nHandle).cursor,
-      ).toContain("w-resize");
-      expect(
-        eHandle.style.cursor || getComputedStyle(eHandle).cursor,
-      ).toContain("n-resize");
-      expect(
-        sHandle.style.cursor || getComputedStyle(sHandle).cursor,
-      ).toContain("e-resize");
-      expect(
-        wHandle.style.cursor || getComputedStyle(wHandle).cursor,
-      ).toContain("s-resize");
+      expect(nHandle.style.cursor || getComputedStyle(nHandle).cursor).toContain("w-resize");
+      expect(eHandle.style.cursor || getComputedStyle(eHandle).cursor).toContain("n-resize");
+      expect(sHandle.style.cursor || getComputedStyle(sHandle).cursor).toContain("e-resize");
+      expect(wHandle.style.cursor || getComputedStyle(wHandle).cursor).toContain("s-resize");
     });
 
     test("handles show correct cursor at 45° rotation", async () => {
@@ -1437,62 +1187,36 @@ describe("EFTransformHandles", () => {
         html`<ef-transform-handles .bounds=${bounds} .enableRotation=${true}></ef-transform-handles>`,
         container,
       );
-      const el = container.querySelector<EFTransformHandles>(
-        "ef-transform-handles",
-      )!;
+      const el = container.querySelector<EFTransformHandles>("ef-transform-handles")!;
       await el.updateComplete;
 
-      const nHandle = el.shadowRoot!.querySelector(
-        ".handle.n",
-      ) as HTMLDivElement;
-      const eHandle = el.shadowRoot!.querySelector(
-        ".handle.e",
-      ) as HTMLDivElement;
-      const sHandle = el.shadowRoot!.querySelector(
-        ".handle.s",
-      ) as HTMLDivElement;
-      const wHandle = el.shadowRoot!.querySelector(
-        ".handle.w",
-      ) as HTMLDivElement;
+      const nHandle = el.shadowRoot!.querySelector(".handle.n") as HTMLDivElement;
+      const eHandle = el.shadowRoot!.querySelector(".handle.e") as HTMLDivElement;
+      const sHandle = el.shadowRoot!.querySelector(".handle.s") as HTMLDivElement;
+      const wHandle = el.shadowRoot!.querySelector(".handle.w") as HTMLDivElement;
 
       // At 45° rotation: n→ne, e→se, s→sw, w→nw
-      expect(
-        nHandle.style.cursor || getComputedStyle(nHandle).cursor,
-      ).toContain("ne-resize");
-      expect(
-        eHandle.style.cursor || getComputedStyle(eHandle).cursor,
-      ).toContain("se-resize");
-      expect(
-        sHandle.style.cursor || getComputedStyle(sHandle).cursor,
-      ).toContain("sw-resize");
-      expect(
-        wHandle.style.cursor || getComputedStyle(wHandle).cursor,
-      ).toContain("nw-resize");
+      expect(nHandle.style.cursor || getComputedStyle(nHandle).cursor).toContain("ne-resize");
+      expect(eHandle.style.cursor || getComputedStyle(eHandle).cursor).toContain("se-resize");
+      expect(sHandle.style.cursor || getComputedStyle(sHandle).cursor).toContain("sw-resize");
+      expect(wHandle.style.cursor || getComputedStyle(wHandle).cursor).toContain("nw-resize");
     });
 
     test("cursor updates when rotation changes", async () => {
-      const el = document.createElement(
-        "ef-transform-handles",
-      ) as EFTransformHandles;
+      const el = document.createElement("ef-transform-handles") as EFTransformHandles;
       el.enableRotation = true;
       el.bounds = { x: 100, y: 100, width: 200, height: 150, rotation: 0 };
       container.appendChild(el);
       await el.updateComplete;
 
-      const nHandle = el.shadowRoot!.querySelector(
-        ".handle.n",
-      ) as HTMLDivElement;
-      expect(
-        nHandle.style.cursor || getComputedStyle(nHandle).cursor,
-      ).toContain("n-resize");
+      const nHandle = el.shadowRoot!.querySelector(".handle.n") as HTMLDivElement;
+      expect(nHandle.style.cursor || getComputedStyle(nHandle).cursor).toContain("n-resize");
 
       // Update rotation to 90°
       el.bounds = { x: 100, y: 100, width: 200, height: 150, rotation: 90 };
       await el.updateComplete;
 
-      expect(
-        nHandle.style.cursor || getComputedStyle(nHandle).cursor,
-      ).toContain("e-resize");
+      expect(nHandle.style.cursor || getComputedStyle(nHandle).cursor).toContain("e-resize");
     });
   });
 });

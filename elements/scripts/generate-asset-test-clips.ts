@@ -11,10 +11,7 @@ import { generateTrackFromPath } from "../packages/assets/src/tasks/generateTrac
 import { generateTrackFragmentIndexFromPath } from "../packages/assets/src/tasks/generateTrackFragmentIndex.js";
 
 const OUTPUT_DIR = path.join(process.cwd(), "test-assets", "asset-mode");
-const SOURCE_VIDEO_DIR = path.join(
-  process.cwd(),
-  "../../lib/transcode/test-assets/transcode",
-);
+const SOURCE_VIDEO_DIR = path.join(process.cwd(), "../../lib/transcode/test-assets/transcode");
 
 /**
  * Generate a test source video if it doesn't exist
@@ -93,8 +90,7 @@ async function generateAssetFiles(sourceVideoPath: string): Promise<void> {
   await fs.mkdir(OUTPUT_DIR, { recursive: true });
 
   // Generate track fragment index
-  const fragmentIndex =
-    await generateTrackFragmentIndexFromPath(sourceVideoPath);
+  const fragmentIndex = await generateTrackFragmentIndexFromPath(sourceVideoPath);
   const indexPath = path.join(OUTPUT_DIR, "index.json");
   await fs.writeFile(indexPath, JSON.stringify(fragmentIndex, null, 2));
   console.log(`✅ Generated track fragment index: ${indexPath}`);
@@ -102,10 +98,7 @@ async function generateAssetFiles(sourceVideoPath: string): Promise<void> {
   // Generate track files for each track
   for (const [trackId, track] of Object.entries(fragmentIndex)) {
     console.log(`📼 Generating track ${trackId} (${track.type})`);
-    const trackStream = await generateTrackFromPath(
-      sourceVideoPath,
-      Number(trackId),
-    );
+    const trackStream = await generateTrackFromPath(sourceVideoPath, Number(trackId));
     const trackPath = path.join(OUTPUT_DIR, `track-${trackId}.mp4`);
     const writeStream = fsSync.createWriteStream(trackPath);
 
@@ -123,10 +116,7 @@ async function generateAssetFiles(sourceVideoPath: string): Promise<void> {
  * Generate TypeScript constants for tests
  */
 async function generateTestConstants(): Promise<void> {
-  const indexData = await fs.readFile(
-    path.join(OUTPUT_DIR, "index.json"),
-    "utf-8",
-  );
+  const indexData = await fs.readFile(path.join(OUTPUT_DIR, "index.json"), "utf-8");
   const fragmentIndex = JSON.parse(indexData);
 
   const tsContent = `/**

@@ -29,16 +29,8 @@ describe("overlayCoordinateTransform", () => {
     const originalX = 150;
     const originalY = 250;
 
-    const overlayCoords = screenToOverlay(
-      originalX,
-      originalY,
-      overlayLayerRect,
-    );
-    const screenCoords = overlayToScreen(
-      overlayCoords.x,
-      overlayCoords.y,
-      overlayLayerRect,
-    );
+    const overlayCoords = screenToOverlay(originalX, originalY, overlayLayerRect);
+    const screenCoords = overlayToScreen(overlayCoords.x, overlayCoords.y, overlayLayerRect);
 
     expect(screenCoords.x).toBeCloseTo(originalX, 0.01);
     expect(screenCoords.y).toBeCloseTo(originalY, 0.01);
@@ -49,11 +41,7 @@ describe("overlayCoordinateTransform", () => {
     const overlayLayerRect = new DOMRect(100, 200, 800, 600);
     const rotation = 45;
 
-    const result = elementScreenToOverlay(
-      elementRect,
-      overlayLayerRect,
-      rotation,
-    );
+    const result = elementScreenToOverlay(elementRect, overlayLayerRect, rotation);
 
     expect(result.x).toBe(50); // 150 - 100
     expect(result.y).toBe(50); // 250 - 200
@@ -67,11 +55,7 @@ describe("overlayCoordinateTransform", () => {
     const overlayLayerRect = new DOMRect(100, 200, 800, 600);
     const rotation = 90;
 
-    const result = elementScreenToOverlay(
-      elementRect,
-      overlayLayerRect,
-      rotation,
-    );
+    const result = elementScreenToOverlay(elementRect, overlayLayerRect, rotation);
 
     expect(result.rotation).toBe(90);
   });

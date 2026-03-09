@@ -23,18 +23,13 @@ describe("Transcriptions", () => {
 
       await expect(
         createTranscription(client, { file_id: "test", track_id: 1 }),
-      ).rejects.toThrowError(
-        "Failed to create transcription 500 Internal Server Error",
-      );
+      ).rejects.toThrowError("Failed to create transcription 500 Internal Server Error");
     });
 
     test("returns json data from the http response", async () => {
       server.use(
         http.post("http://localhost/api/v1/transcriptions", () =>
-          HttpResponse.json(
-            { testResponse: "test" },
-            { status: 200, statusText: "OK" },
-          ),
+          HttpResponse.json({ testResponse: "test" }, { status: 200, statusText: "OK" }),
         ),
       );
 

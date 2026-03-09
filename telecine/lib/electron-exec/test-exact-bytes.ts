@@ -1,12 +1,12 @@
 /**
  * Test VideoDecoder with the EXACT same bytes mediabunny uses
- * 
+ *
  * This test:
  * 1. Reads the actual ingested track-1.mp4 file
  * 2. Uses the exact byte ranges from tracks.json (init segment + segment 0)
  * 3. Manually parses the fMP4 to extract avcC and samples
  * 4. Directly feeds them to VideoDecoder (no mediabunny)
- * 
+ *
  * If this crashes: the issue is with the data or Electron/WebCodecs
  * If this works: the issue is with mediabunny's processing
  */
@@ -24,8 +24,14 @@ if (!existsSync(TEST_DIR)) {
 }
 
 // The actual processed track file from the ingestion pipeline
-const TRACK_FILE = join(__dirname, "../../data/video2/546d22e2-28cc-420b-949e-41429b2effca/01f6edbd-a850-4db9-afb4-1352d3135972/track-1.mp4");
-const TRACKS_JSON = join(__dirname, "../../data/video2/546d22e2-28cc-420b-949e-41429b2effca/01f6edbd-a850-4db9-afb4-1352d3135972/tracks.json");
+const TRACK_FILE = join(
+  __dirname,
+  "../../data/video2/546d22e2-28cc-420b-949e-41429b2effca/01f6edbd-a850-4db9-afb4-1352d3135972/track-1.mp4",
+);
+const TRACKS_JSON = join(
+  __dirname,
+  "../../data/video2/546d22e2-28cc-420b-949e-41429b2effca/01f6edbd-a850-4db9-afb4-1352d3135972/tracks.json",
+);
 
 console.log("=== Testing VideoDecoder with EXACT mediabunny bytes ===\n");
 
@@ -38,8 +44,18 @@ if (!existsSync(TRACKS_JSON)) {
 const tracksJson = JSON.parse(readFileSync(TRACKS_JSON, "utf-8"));
 const track = tracksJson["1"]; // Track 1 is video
 console.log("  Track codec:", track.codec);
-console.log("  Init segment: offset=" + track.initSegment.offset + ", size=" + track.initSegment.size);
-console.log("  Segment 0: offset=" + track.segments[0].offset + ", size=" + track.segments[0].size);
+console.log(
+  "  Init segment: offset=" +
+    track.initSegment.offset +
+    ", size=" +
+    track.initSegment.size,
+);
+console.log(
+  "  Segment 0: offset=" +
+    track.segments[0].offset +
+    ", size=" +
+    track.segments[0].size,
+);
 
 // Step 2: Read the exact bytes
 console.log("\nStep 2: Reading track file bytes...");
@@ -52,11 +68,11 @@ console.log("  Total file size:", trackData.length, "bytes");
 
 const initSegmentBytes = trackData.subarray(
   track.initSegment.offset,
-  track.initSegment.offset + track.initSegment.size
+  track.initSegment.offset + track.initSegment.size,
 );
 const segment0Bytes = trackData.subarray(
   track.segments[0].offset,
-  track.segments[0].offset + track.segments[0].size
+  track.segments[0].offset + track.segments[0].size,
 );
 
 console.log("  Init segment bytes:", initSegmentBytes.length);
@@ -381,7 +397,7 @@ const electron = spawn(
       DISPLAY: process.env.DISPLAY || ":99",
       ELECTRON_DISABLE_GPU: "1",
     },
-  }
+  },
 );
 
 electron.on("close", (code) => {

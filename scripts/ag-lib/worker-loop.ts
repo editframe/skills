@@ -4,7 +4,11 @@ import * as status from "./status.js";
 import chalk from "chalk";
 import { sleep } from "./util.js";
 
-export async function startWorkerLoop(options: { queueId?: string; model?: string; workspace?: string }) {
+export async function startWorkerLoop(options: {
+  queueId?: string;
+  model?: string;
+  workspace?: string;
+}) {
   const workspace = options.workspace || process.cwd();
   const model = "auto";
   const queueId = options.queueId;
@@ -24,19 +28,23 @@ export async function startWorkerLoop(options: { queueId?: string; model?: strin
     try {
       // Try to claim a plan
       const nextPlan = plan.getNextReadyPlan(queueId);
-      
+
       if (!nextPlan) {
         consecutiveNoPlans++;
-        
+
         if (consecutiveNoPlans >= MAX_NO_PLANS) {
-          console.log(chalk.yellow("\nNo plans available for a while. Exiting worker loop."));
+          console.log(
+            chalk.yellow(
+              "\nNo plans available for a while. Exiting worker loop.",
+            ),
+          );
           break;
         }
-        
+
         if (consecutiveNoPlans === 1) {
           console.log(chalk.gray("No ready plans available. Waiting..."));
         }
-        
+
         await sleep(5000); // Wait 5 seconds before checking again
         continue;
       }
@@ -67,7 +75,6 @@ export async function startWorkerLoop(options: { queueId?: string; model?: strin
           break;
         }
       }
-
     } catch (error: any) {
       console.error(chalk.red(`\n❌ Error in worker loop: ${error.message}`));
       await sleep(5000); // Wait before retrying
@@ -77,7 +84,12 @@ export async function startWorkerLoop(options: { queueId?: string; model?: strin
   console.log(chalk.cyan("\n👋 Worker loop stopped."));
 }
 
-async function executePlan(planId: string, workerId: string, workspace: string, model: string): Promise<void> {
+async function executePlan(
+  planId: string,
+  workerId: string,
+  workspace: string,
+  model: string,
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const planDoc = plan.getPlan(planId);
     if (!planDoc) {
@@ -102,18 +114,24 @@ Do NOT wait for user feedback - work autonomously. Write all outputs to the data
 
     console.log(chalk.cyan(`🚀 Starting execution of plan ${planId}...`));
 
-    const proc = spawn("cursor", [
-      "agent",
-      "--print",
-      "--workspace", workspace,
-      "--model", model,
-      "--force",
-      prompt
-    ], {
-      cwd: workspace,
-      stdio: ["ignore", "pipe", "pipe"],
-      env: { ...process.env, AG_AGENT_ID: workerId, AG_PLAN_ID: planId }
-    });
+    const proc = spawn(
+      "cursor",
+      [
+        "agent",
+        "--print",
+        "--workspace",
+        workspace,
+        "--model",
+        model,
+        "--force",
+        prompt,
+      ],
+      {
+        cwd: workspace,
+        stdio: ["ignore", "pipe", "pipe"],
+        env: { ...process.env, AG_AGENT_ID: workerId, AG_PLAN_ID: planId },
+      },
+    );
 
     let stdout = "";
     let stderr = "";
@@ -136,7 +154,9 @@ Do NOT wait for user feedback - work autonomously. Write all outputs to the data
         console.log(chalk.green(`\n✅ Plan ${planId} execution completed`));
         resolve();
       } else {
-        console.error(chalk.red(`\n❌ Plan ${planId} execution failed with code ${code}`));
+        console.error(
+          chalk.red(`\n❌ Plan ${planId} execution failed with code ${code}`),
+        );
         plan.failPlan(planId, `Execution failed: ${stderr}`);
         resolve(); // Continue loop even on failure
       }

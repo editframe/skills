@@ -13,7 +13,15 @@ export const loader = async ({
     .selectFrom("video2.files")
     .where("md5", "=", md5)
     .where("org_id", "=", session.oid)
-    .select(["id", "filename", "type", "status", "byte_size", "md5", "next_byte"])
+    .select([
+      "id",
+      "filename",
+      "type",
+      "status",
+      "byte_size",
+      "md5",
+      "next_byte",
+    ])
     .executeTakeFirstOrThrow(() => {
       throw new Response("Not Found", { status: 404 });
     });

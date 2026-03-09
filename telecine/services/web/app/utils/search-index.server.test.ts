@@ -40,7 +40,7 @@ meta:
 # Test Page
 
 This is the content of the test page.
-`
+`,
     );
 
     const { buildSearchIndex } = await import("./search-index.server");
@@ -66,7 +66,7 @@ meta:
 ### Sub-subheading
 
 Content here.
-`
+`,
     );
 
     const { buildSearchIndex } = await import("./search-index.server");
@@ -88,7 +88,7 @@ meta:
   - title: Introduction
 ---
 # Introduction
-`
+`,
     );
 
     const { buildSearchIndex } = await import("./search-index.server");

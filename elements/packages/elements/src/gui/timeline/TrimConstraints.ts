@@ -7,9 +7,7 @@ export interface TrimConstraints {
   maxEndMs: number;
 }
 
-export function getTrimConstraints(
-  element: TemporalMixinInterface,
-): TrimConstraints {
+export function getTrimConstraints(element: TemporalMixinInterface): TrimConstraints {
   const intrinsicDuration = element.intrinsicDurationMs ?? element.durationMs;
   const trimStartMs = element.trimStartMs ?? 0;
   const trimEndMs = element.trimEndMs ?? 0;

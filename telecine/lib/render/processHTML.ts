@@ -2,7 +2,6 @@ import { randomUUID } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
-
 import type { Selectable } from "kysely";
 import { parse } from "node-html-parser";
 import * as tar from "tar";
@@ -414,33 +413,36 @@ export async function processHTML(options: ProcessHTMLOptions) {
       id: options.render_id,
     });
 
-    const byteSize = await executeSpan(
-      "processHTML.uploadBundle",
-      async () => {
-        setSpanAttributes({ filePath });
-        const writeStream = await storageProvider.createWriteStream(filePath);
-        logger.info({ ...meta, filePath }, "processHTML: write stream created, writing data");
+    const byteSize = await executeSpan("processHTML.uploadBundle", async () => {
+      setSpanAttributes({ filePath });
+      const writeStream = await storageProvider.createWriteStream(filePath);
+      logger.info(
+        { ...meta, filePath },
+        "processHTML: write stream created, writing data",
+      );
 
-        const byteSize = await executeSpan(
-          "processHTML.writeStream",
-          async () => {
-            return writeReadableStreamToWritable(bundledStream, writeStream);
-          },
-        );
-        logger.info({ ...meta, byteSize }, "processHTML: data written, awaiting finalized");
+      const byteSize = await executeSpan(
+        "processHTML.writeStream",
+        async () => {
+          return writeReadableStreamToWritable(bundledStream, writeStream);
+        },
+      );
+      logger.info(
+        { ...meta, byteSize },
+        "processHTML: data written, awaiting finalized",
+      );
 
-        await executeSpan("processHTML.awaitFinalized", async () => {
-          setSpanAttributes({ byteSize });
-          await new Promise((resolve, reject) => {
-            writeStream.on("finalized", resolve);
-            writeStream.on("error", reject);
-          });
+      await executeSpan("processHTML.awaitFinalized", async () => {
+        setSpanAttributes({ byteSize });
+        await new Promise((resolve, reject) => {
+          writeStream.on("finalized", resolve);
+          writeStream.on("error", reject);
         });
-        logger.info(meta, "processHTML: finalized");
+      });
+      logger.info(meta, "processHTML: finalized");
 
-        return byteSize;
-      },
-    );
+      return byteSize;
+    });
 
     await executeSpan("processHTML.updateDatabase", async () => {
       setSpanAttributes({ byteSize, renderId: options.render_id });

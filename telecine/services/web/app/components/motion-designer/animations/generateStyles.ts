@@ -1,5 +1,8 @@
 import type { ElementNode, Animation } from "~/lib/motion-designer/types";
-import type { KeyframesDefinition, KeyframeRule } from "../rendering/cssStructures";
+import type {
+  KeyframesDefinition,
+  KeyframeRule,
+} from "../rendering/cssStructures";
 
 export interface AnimationMetadata {
   property: string;
@@ -63,7 +66,6 @@ export function generateAnimationStyles(element: ElementNode): string | null {
       // Multiple animations on same property - merge into one keyframe animation
       keyframes.push(generateMergedKeyframes(group, element, cssProperty));
     }
-
   }
 
   return keyframes.join("\n");
@@ -199,7 +201,8 @@ function buildMergedKeyframesDefinition(
     } else if (i === sortedTimePoints.length - 1) {
       percent = 100;
     } else {
-      percent = totalDuration > 0 ? ((timeMs - firstStart) / totalDuration) * 100 : 0;
+      percent =
+        totalDuration > 0 ? ((timeMs - firstStart) / totalDuration) * 100 : 0;
     }
 
     const properties: Record<string, string> = {};
@@ -990,4 +993,3 @@ function generateKeyframes(
 
   return `@keyframes ${animationName} {\n${keyframeRules}\n}`;
 }
-

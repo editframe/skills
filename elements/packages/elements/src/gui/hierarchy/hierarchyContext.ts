@@ -13,16 +13,9 @@ export interface HierarchyActions {
   toggleExpanded(elementId: string): void;
   setExpanded(elementId: string, expanded: boolean): void;
   startDrag(elementId: string): void;
-  updateDropTarget(
-    targetId: string | null,
-    position: "before" | "after" | "inside" | null,
-  ): void;
+  updateDropTarget(targetId: string | null, position: "before" | "after" | "inside" | null): void;
   endDrag(): void;
-  reorder(
-    sourceId: string,
-    targetId: string,
-    position: "before" | "after" | "inside",
-  ): void;
+  reorder(sourceId: string, targetId: string, position: "before" | "after" | "inside"): void;
 }
 
 export interface HierarchyContext {
@@ -41,6 +34,4 @@ export interface HierarchyContext {
   setHighlightedElement?: (element: HTMLElement | null) => void;
 }
 
-export const hierarchyContext = createContext<HierarchyContext>(
-  Symbol("hierarchyContext"),
-);
+export const hierarchyContext = createContext<HierarchyContext>(Symbol("hierarchyContext"));

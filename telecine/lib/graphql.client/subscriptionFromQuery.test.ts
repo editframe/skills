@@ -21,7 +21,14 @@ function makeQueryDoc(fields: string[]): DocumentNode {
             directives: [],
             selectionSet: {
               kind: "SelectionSet",
-              selections: [{ kind: "Field", name: { kind: "Name", value: "id" }, arguments: [], directives: [] }],
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "id" },
+                  arguments: [],
+                  directives: [],
+                },
+              ],
             },
           })),
         },
@@ -34,21 +41,27 @@ describe("subscriptionFromQuery", () => {
   test("converts operation kind from query to subscription", () => {
     const query = makeQueryDoc(["result"]);
     const subscription = subscriptionFromQuery(query as any);
-    const opDef = subscription.definitions.find((d) => d.kind === "OperationDefinition") as any;
+    const opDef = subscription.definitions.find(
+      (d) => d.kind === "OperationDefinition",
+    ) as any;
     expect(opDef.operation).toBe("subscription");
   });
 
   test("appends Subscription to operation name", () => {
     const query = makeQueryDoc(["result"]);
     const subscription = subscriptionFromQuery(query as any);
-    const opDef = subscription.definitions.find((d) => d.kind === "OperationDefinition") as any;
+    const opDef = subscription.definitions.find(
+      (d) => d.kind === "OperationDefinition",
+    ) as any;
     expect(opDef.name.value).toBe("TestQuerySubscription");
   });
 
   test("does not modify the original query document", () => {
     const query = makeQueryDoc(["result"]);
     subscriptionFromQuery(query as any);
-    const opDef = query.definitions.find((d) => d.kind === "OperationDefinition") as any;
+    const opDef = query.definitions.find(
+      (d) => d.kind === "OperationDefinition",
+    ) as any;
     expect(opDef.operation).toBe("query");
     expect(opDef.name.value).toBe("TestQuery");
   });

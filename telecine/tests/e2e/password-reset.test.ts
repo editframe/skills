@@ -126,10 +126,7 @@ describe("password reset", () => {
     await page.getByLabel("Email address").fill(user.email_address);
     await page.getByRole("button", { name: "Reset Password" }).click();
 
-    await waitForEmail(
-      user.email_address,
-      "[Editframe] Reset your password",
-    );
+    await waitForEmail(user.email_address, "[Editframe] Reset your password");
 
     await followEmailLink("Reset your password");
     await page.waitForURL(/\/auth\/update-password\//);

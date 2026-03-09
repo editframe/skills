@@ -5,10 +5,7 @@ import { pipeline } from "node:stream/promises";
 
 describe("generateSingleTrack", () => {
   test("should generate single video track stream and fragment index", async () => {
-    const result = await generateSingleTrackFromPath(
-      "test-assets/10s-bars.mp4",
-      1,
-    );
+    const result = await generateSingleTrackFromPath("test-assets/10s-bars.mp4", 1);
 
     // Collect the stream data
     const chunks: Buffer[] = [];
@@ -40,10 +37,7 @@ describe("generateSingleTrack", () => {
   }, 15000);
 
   test("should generate single audio track stream and fragment index", async () => {
-    const result = await generateSingleTrackFromPath(
-      "test-assets/10s-bars.mp4",
-      2,
-    );
+    const result = await generateSingleTrackFromPath("test-assets/10s-bars.mp4", 2);
 
     // Collect the stream data
     const chunks: Buffer[] = [];
@@ -109,10 +103,7 @@ describe("generateSingleTrack", () => {
     ];
 
     for (const testFile of testFiles) {
-      const result = await generateSingleTrackFromPath(
-        testFile.path,
-        testFile.trackIndex,
-      );
+      const result = await generateSingleTrackFromPath(testFile.path, testFile.trackIndex);
 
       // Collect minimal data to verify it works
       const chunks: Buffer[] = [];
@@ -127,17 +118,10 @@ describe("generateSingleTrack", () => {
       const fragmentIndex = await result.fragmentIndex;
 
       assert.isAbove(chunks.length, 0, `${testFile.path} should produce data`);
-      assert.isObject(
-        fragmentIndex,
-        `${testFile.path} should have fragment index`,
-      );
+      assert.isObject(fragmentIndex, `${testFile.path} should have fragment index`);
 
       const trackIds = Object.keys(fragmentIndex).map(Number);
-      assert.equal(
-        trackIds.length,
-        1,
-        `${testFile.path} should have one track`,
-      );
+      assert.equal(trackIds.length, 1, `${testFile.path} should have one track`);
 
       const track = fragmentIndex[trackIds[0]!]!;
       assert.equal(

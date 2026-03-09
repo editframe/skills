@@ -3,10 +3,7 @@ import { css, html, LitElement, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { TWMixin } from "../TWMixin.js";
-import {
-  timelineEditingContext,
-  type TimelineEditingContext,
-} from "./timelineEditingContext.js";
+import { timelineEditingContext, type TimelineEditingContext } from "./timelineEditingContext.js";
 
 export interface TrimValue {
   startMs: number;
@@ -201,8 +198,7 @@ export class EFTrimHandles extends TWMixin(LitElement) {
     if (!target || !("currentTimeMs" in target)) return;
 
     if (type === "end") {
-      target.currentTimeMs =
-        this.intrinsicDurationMs - value.startMs - value.endMs;
+      target.currentTimeMs = this.intrinsicDurationMs - value.startMs - value.endMs;
     } else {
       target.currentTimeMs = 0;
     }
@@ -313,18 +309,12 @@ export class EFTrimHandles extends TWMixin(LitElement) {
 
     if (this.draggingHandle === "start") {
       newValueMs = Math.max(0, this.dragStartValue + deltaMs);
-      newValueMs = Math.min(
-        newValueMs,
-        this.intrinsicDurationMs - (this.trimEndMs || 0),
-      );
+      newValueMs = Math.min(newValueMs, this.intrinsicDurationMs - (this.trimEndMs || 0));
 
       this.#emitChange("start", { startMs: newValueMs, endMs: this.trimEndMs });
     } else {
       newValueMs = Math.max(0, this.dragStartValue - deltaMs);
-      newValueMs = Math.min(
-        newValueMs,
-        this.intrinsicDurationMs - this.trimStartMs,
-      );
+      newValueMs = Math.min(newValueMs, this.intrinsicDurationMs - this.trimStartMs);
 
       this.#emitChange("end", { startMs: this.trimStartMs, endMs: newValueMs });
     }
@@ -363,9 +353,7 @@ export class EFTrimHandles extends TWMixin(LitElement) {
     const trimEndPx = (this.trimEndMs || 0) * pxPerMs;
     const isStandalone = this.mode === "standalone";
     const handleWidthPx =
-      parseFloat(
-        getComputedStyle(this).getPropertyValue("--trim-handle-width"),
-      ) || 8;
+      parseFloat(getComputedStyle(this).getPropertyValue("--trim-handle-width")) || 8;
 
     return html`
       ${

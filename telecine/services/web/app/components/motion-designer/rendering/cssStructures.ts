@@ -19,4 +19,3 @@ export interface CSSStyleRuleDefinition {
   selector: string;
   properties: Record<string, string>;
 }
-

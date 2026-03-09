@@ -40,8 +40,12 @@ vi.mock("@/logging", () => {
 });
 
 vi.mock("@/tracing", () => ({
-  executeSpan: vi.fn(async (_, fn) => fn({ setAttributes: vi.fn(), setAttribute: vi.fn(), end: vi.fn() })),
-  executeRootSpan: vi.fn(async (_, fn) => fn({ setAttributes: vi.fn(), setAttribute: vi.fn(), end: vi.fn() })),
+  executeSpan: vi.fn(async (_, fn) =>
+    fn({ setAttributes: vi.fn(), setAttribute: vi.fn(), end: vi.fn() }),
+  ),
+  executeRootSpan: vi.fn(async (_, fn) =>
+    fn({ setAttributes: vi.fn(), setAttribute: vi.fn(), end: vi.fn() }),
+  ),
 }));
 
 vi.mock("@/valkey/valkey", () => ({
@@ -80,14 +84,32 @@ describe("Worker observability", () => {
         zremrangebyscore: vi.fn().mockReturnThis(),
         exec: vi.fn().mockResolvedValue([]),
       }),
-      getQueueStats: vi.fn().mockResolvedValue(JSON.stringify({ queued: 3, claimed: 1, completed: 0, failed: 0, stalled: 0 })),
+      getQueueStats: vi
+        .fn()
+        .mockResolvedValue(
+          JSON.stringify({
+            queued: 3,
+            claimed: 1,
+            completed: 0,
+            failed: 0,
+            stalled: 0,
+          }),
+        ),
     };
 
     mockQueue = {
       name: "test-queue",
       workerConcurrency: 1,
       storage: mockStorage,
-      getStats: vi.fn().mockResolvedValue({ queued: 3, claimed: 1, completed: 0, failed: 0, stalled: 0 }),
+      getStats: vi
+        .fn()
+        .mockResolvedValue({
+          queued: 3,
+          claimed: 1,
+          completed: 0,
+          failed: 0,
+          stalled: 0,
+        }),
     };
   });
 
@@ -117,7 +139,8 @@ describe("Worker observability", () => {
       vi.useRealTimers();
 
       const idleLogs = mockLogger.info.mock.calls.filter(
-        ([obj]: [any]) => typeof obj === "object" && obj?.event === "workerIdle",
+        ([obj]: [any]) =>
+          typeof obj === "object" && obj?.event === "workerIdle",
       );
 
       expect(idleLogs.length).toBeGreaterThanOrEqual(1);
@@ -152,7 +175,8 @@ describe("Worker observability", () => {
       vi.useRealTimers();
 
       const idleLogs = mockLogger.info.mock.calls.filter(
-        ([obj]: [any]) => typeof obj === "object" && obj?.event === "workerIdle",
+        ([obj]: [any]) =>
+          typeof obj === "object" && obj?.event === "workerIdle",
       );
       expect(idleLogs.length).toBe(0);
     });
@@ -202,15 +226,22 @@ describe("Worker observability", () => {
       vi.useRealTimers();
 
       // Allow the async getStats().then(...) to run
-      await vi.waitFor(() => {
-        const claimedLogs = mockLogger.info.mock.calls.filter(
-          ([obj]: [any]) => typeof obj === "object" && obj?.event === "jobClaimed",
-        );
-        return claimedLogs.length > 0;
-      }, { timeout: 2000 }).catch(() => null);
+      await vi
+        .waitFor(
+          () => {
+            const claimedLogs = mockLogger.info.mock.calls.filter(
+              ([obj]: [any]) =>
+                typeof obj === "object" && obj?.event === "jobClaimed",
+            );
+            return claimedLogs.length > 0;
+          },
+          { timeout: 2000 },
+        )
+        .catch(() => null);
 
       const claimedLogs = mockLogger.info.mock.calls.filter(
-        ([obj]: [any]) => typeof obj === "object" && obj?.event === "jobClaimed",
+        ([obj]: [any]) =>
+          typeof obj === "object" && obj?.event === "jobClaimed",
       );
 
       if (claimedLogs.length > 0) {
@@ -266,7 +297,8 @@ describe("Worker observability", () => {
       vi.useRealTimers();
 
       const idleEndedLogs = mockLogger.info.mock.calls.filter(
-        ([obj]: [any]) => typeof obj === "object" && obj?.event === "workerIdleEnded",
+        ([obj]: [any]) =>
+          typeof obj === "object" && obj?.event === "workerIdleEnded",
       );
 
       expect(idleEndedLogs.length).toBeGreaterThanOrEqual(1);

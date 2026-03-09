@@ -125,11 +125,13 @@ describe("Visual Regression", { timeout: 60000 }, () => {
       const result = await render(`
         <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="2s">
           <div class="w-full h-full grid grid-cols-3 grid-rows-3 gap-4 p-4 bg-black">
-            ${Array.from({ length: 9 }, (_, i) => 
-              `<div class="bg-blue-${((i % 3) + 1) * 300} flex items-center justify-center">
+            ${Array.from(
+              { length: 9 },
+              (_, i) =>
+                `<div class="bg-blue-${((i % 3) + 1) * 300} flex items-center justify-center">
                 <span class="text-white text-3xl">${i + 1}</span>
-              </div>`
-            ).join('')}
+              </div>`,
+            ).join("")}
           </div>
         </ef-timegroup>
       `);

@@ -15,9 +15,7 @@ function tokenize(text: string): string[] {
  * Computes TF-IDF vectors for documents
  * This is a simple, zero-dependency approach to semantic search
  */
-export function computeTFIDFVectors(
-  documents: SearchDocument[],
-): {
+export function computeTFIDFVectors(documents: SearchDocument[]): {
   vectors: number[][];
   vocabulary: string[];
   idf: Record<string, number>;
@@ -28,12 +26,7 @@ export function computeTFIDFVectors(
 
   for (const doc of documents) {
     // Combine all searchable text
-    const text = [
-      doc.title,
-      doc.description,
-      doc.content,
-      ...doc.headings,
-    ]
+    const text = [doc.title, doc.description, doc.content, ...doc.headings]
       .filter(Boolean)
       .join(" ");
 
@@ -125,9 +118,7 @@ export function computeQueryVector(
   }
 
   // Normalize vector (L2 norm)
-  const magnitude = Math.sqrt(
-    vector.reduce((sum, val) => sum + val * val, 0),
-  );
+  const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
   if (magnitude > 0) {
     for (let j = 0; j < vector.length; j++) {
       vector[j] = vector[j] / magnitude;
@@ -136,4 +127,3 @@ export function computeQueryVector(
 
   return vector;
 }
-

@@ -14,7 +14,8 @@ const EF_HOST = process.env.EF_HOST ?? "http://web:3000";
 const EF_TOKEN = process.env.EF_TOKEN;
 const args = process.argv.slice(2);
 const timeoutIdx = args.indexOf("--timeout");
-const TIMEOUT_MS = (timeoutIdx !== -1 ? parseInt(args[timeoutIdx + 1]!) : 900) * 1000;
+const TIMEOUT_MS =
+  (timeoutIdx !== -1 ? parseInt(args[timeoutIdx + 1]!) : 900) * 1000;
 
 if (!EF_TOKEN) {
   console.error("EF_TOKEN environment variable is required");
@@ -34,18 +35,26 @@ async function createRender(html: string): Promise<string> {
       strategy: "v1",
       fps: 30,
       work_slice_ms: 4000,
-      output: { container: "mp4", video: { codec: "h264" }, audio: { codec: "aac" } },
+      output: {
+        container: "mp4",
+        video: { codec: "h264" },
+        audio: { codec: "aac" },
+      },
       html,
     }),
   });
   if (!res.ok) {
-    throw new Error(`Failed to create render: ${res.status} ${res.statusText} ${await res.text()}`);
+    throw new Error(
+      `Failed to create render: ${res.status} ${res.statusText} ${await res.text()}`,
+    );
   }
   const data = (await res.json()) as { id: string };
   return data.id;
 }
 
-async function pollRender(id: string): Promise<{ status: string; error?: string }> {
+async function pollRender(
+  id: string,
+): Promise<{ status: string; error?: string }> {
   const deadline = Date.now() + TIMEOUT_MS;
   while (Date.now() < deadline) {
     const res = await fetch(`${EF_HOST}/api/v1/renders/${id}`, { headers });
@@ -90,11 +99,26 @@ const BASE_HTML = (waveformAttrs: string) => `
   </ef-timegroup>`;
 
 const TESTS: Array<{ name: string; html: string }> = [
-  { name: "bars + interpolate-frequencies (fft)", html: BASE_HTML(`mode="bars" bar-spacing="2"`) },
-  { name: "bars no interpolation (fft)",          html: BASE_HTML(`mode="bars" bar-spacing="2"`).replace("interpolate-frequencies ", "") },
-  { name: "roundBars (fft)",                      html: BASE_HTML(`mode="roundBars" bar-spacing="3"`) },
-  { name: "line (time-domain)",                   html: BASE_HTML(`mode="line" line-width="3"`) },
-  { name: "curve (time-domain)",                  html: BASE_HTML(`mode="curve" line-width="3"`) },
+  {
+    name: "bars + interpolate-frequencies (fft)",
+    html: BASE_HTML(`mode="bars" bar-spacing="2"`),
+  },
+  {
+    name: "bars no interpolation (fft)",
+    html: BASE_HTML(`mode="bars" bar-spacing="2"`).replace(
+      "interpolate-frequencies ",
+      "",
+    ),
+  },
+  {
+    name: "roundBars (fft)",
+    html: BASE_HTML(`mode="roundBars" bar-spacing="3"`),
+  },
+  { name: "line (time-domain)", html: BASE_HTML(`mode="line" line-width="3"`) },
+  {
+    name: "curve (time-domain)",
+    html: BASE_HTML(`mode="curve" line-width="3"`),
+  },
 ];
 
 async function main() {

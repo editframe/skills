@@ -55,27 +55,21 @@ export class SyncFragmentIndex implements SubAssetSync<CreateFileResult> {
 
   async upload() {
     if (!this.created) {
-      throw new Error(
-        "Fragment index not created. Should have been prevented by .isComplete()",
-      );
+      throw new Error("Fragment index not created. Should have been prevented by .isComplete()");
     }
     await uploadFileIndex(
       getClient(),
       this.created.id,
       // It is unclear why we need to use Readable.from here
       // Tests fail when using createReadStream
-      createReadableStreamFromReadable(
-        Readable.from(await fs.readFile(this.path)),
-      ),
+      createReadableStreamFromReadable(Readable.from(await fs.readFile(this.path))),
       await this.byteSize(),
     );
   }
 
   async markSynced() {
     if (!this.created) {
-      throw new Error(
-        "Fragment index not created. Should have been prevented by .isComplete()",
-      );
+      throw new Error("Fragment index not created. Should have been prevented by .isComplete()");
     }
     const byteSize = await this.byteSize();
     await Promise.all([

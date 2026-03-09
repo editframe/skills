@@ -23,26 +23,17 @@ describe("SyncCaption", async () => {
     [fixture("test.mp4", "test.mp4")],
     async ({ files: [video], generateCaptions }) => {
       test("Reads byte size", async () => {
-        const syncCaption = new SyncCaption(
-          await generateCaptions(video!),
-          video!.md5,
-        );
+        const syncCaption = new SyncCaption(await generateCaptions(video!), video!.md5);
         await expect(syncCaption.byteSize()).resolves.toEqual(35);
       });
 
       test("prepare() is noop", async () => {
-        const syncCaption = new SyncCaption(
-          await generateCaptions(video!),
-          video!.md5,
-        );
+        const syncCaption = new SyncCaption(await generateCaptions(video!), video!.md5);
         await expect(syncCaption.prepare()).resolves.toBeUndefined();
       });
 
       test("validate() is noop", async () => {
-        const syncCaption = new SyncCaption(
-          await generateCaptions(video!),
-          video!.md5,
-        );
+        const syncCaption = new SyncCaption(await generateCaptions(video!), video!.md5);
         await expect(syncCaption.validate()).resolves.toBeUndefined();
       });
 
@@ -55,10 +46,7 @@ describe("SyncCaption", async () => {
               fixture: video!,
             }),
           );
-          const syncCaption = new SyncCaption(
-            await generateCaptions(video!),
-            video!.md5,
-          );
+          const syncCaption = new SyncCaption(await generateCaptions(video!), video!.md5);
           await syncCaption.create();
           expect(syncCaption.isComplete()).toBe(true);
         });
@@ -74,10 +62,7 @@ describe("SyncCaption", async () => {
               fixture: video!,
             }),
           );
-          const syncCaption = new SyncCaption(
-            await generateCaptions(video!),
-            video!.md5,
-          );
+          const syncCaption = new SyncCaption(await generateCaptions(video!), video!.md5);
           await syncCaption.create();
           expect(syncCaption.isComplete()).toBe(false);
         });
@@ -94,10 +79,7 @@ describe("SyncCaption", async () => {
               fixture: video!,
             }),
           );
-          const syncCaption = new SyncCaption(
-            await generateCaptions(video!),
-            video!.md5,
-          );
+          const syncCaption = new SyncCaption(await generateCaptions(video!), video!.md5);
           await syncCaption.create();
           expect(syncCaption.isComplete()).toBe(true);
         });
@@ -105,10 +87,7 @@ describe("SyncCaption", async () => {
 
       describe(".upload()", () => {
         test("throws when not created", async () => {
-          const syncCaption = new SyncCaption(
-            await generateCaptions(video!),
-            video!.md5,
-          );
+          const syncCaption = new SyncCaption(await generateCaptions(video!), video!.md5);
           await expect(syncCaption.upload()).rejects.toThrow();
         });
 
@@ -128,10 +107,7 @@ describe("SyncCaption", async () => {
               fixture: video!,
             }),
           );
-          const syncCaption = new SyncCaption(
-            await generateCaptions(video!),
-            video!.md5,
-          );
+          const syncCaption = new SyncCaption(await generateCaptions(video!), video!.md5);
           await syncCaption.create();
           await expect(syncCaption.upload()).resolves.toBeUndefined();
         });
@@ -139,10 +115,7 @@ describe("SyncCaption", async () => {
 
       describe(".markSynced()", () => {
         test("throws when not created", async () => {
-          const syncCaption = new SyncCaption(
-            await generateCaptions(video!),
-            video!.md5,
-          );
+          const syncCaption = new SyncCaption(await generateCaptions(video!), video!.md5);
           await expect(syncCaption.markSynced()).rejects.toThrow();
         });
 
@@ -158,10 +131,7 @@ describe("SyncCaption", async () => {
               fixture: video!,
             }),
           );
-          const syncCaption = new SyncCaption(
-            await generateCaptions(video!),
-            video!.md5,
-          );
+          const syncCaption = new SyncCaption(await generateCaptions(video!), video!.md5);
           await syncCaption.create();
           await syncCaption.markSynced();
 

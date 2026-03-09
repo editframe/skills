@@ -24,7 +24,10 @@ export function NewsletterSection({
             </p>
           )}
 
-          <form className="flex flex-col sm:flex-row gap-3" onSubmit={(e) => e.preventDefault()}>
+          <form
+            className="flex flex-col sm:flex-row gap-3"
+            onSubmit={(e) => e.preventDefault()}
+          >
             <input
               type="email"
               placeholder={placeholder}
@@ -42,11 +45,3 @@ export function NewsletterSection({
     </section>
   );
 }
-
-
-
-
-
-
-
-

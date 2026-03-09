@@ -245,10 +245,42 @@ export class SegmentEncoder extends EventEmitter {
     const videoCodecArgs = hasGpu()
       ? // NVENC hardware encoder: offloads H.264 encoding to GPU NVENC silicon
         // biome-ignore format: strict command line format
-        ["-c:v", "h264_nvenc", "-g", `${groupSize}`, "-bf", "0", "-b_adapt", "0", "-preset", "p4", "-profile:v", "high", "-level:v", "4.0", "-pix_fmt", "yuv420p"]
+        [
+          "-c:v",
+          "h264_nvenc",
+          "-g",
+          `${groupSize}`,
+          "-bf",
+          "0",
+          "-b_adapt",
+          "0",
+          "-preset",
+          "p4",
+          "-profile:v",
+          "high",
+          "-level:v",
+          "4.0",
+          "-pix_fmt",
+          "yuv420p",
+        ]
       : // Software encoder: libx264 ultrafast for CPU instances
         // biome-ignore format: strict command line format
-        ["-c:v", "libx264", "-g", `${groupSize}`, "-preset", "ultrafast", "-tune", "zerolatency", "-profile:v", "high", "-level:v", "4.0", "-pix_fmt", "yuv420p"];
+        [
+          "-c:v",
+          "libx264",
+          "-g",
+          `${groupSize}`,
+          "-preset",
+          "ultrafast",
+          "-tune",
+          "zerolatency",
+          "-profile:v",
+          "high",
+          "-level:v",
+          "4.0",
+          "-pix_fmt",
+          "yuv420p",
+        ];
 
     // biome-ignore format: strict command line format
     return new DisposableEncoder([
@@ -534,10 +566,8 @@ export class SegmentEncoder extends EventEmitter {
     let longestFrameTime = 0;
 
     // Start frame 0's beginFrame before the loop so it can overlap with other work
-    let pendingBeginFrame: Promise<Buffer | ArrayBuffer> = this.engine.beginFrame(
-      0,
-      this.totalFrameCount === 1,
-    );
+    let pendingBeginFrame: Promise<Buffer | ArrayBuffer> =
+      this.engine.beginFrame(0, this.totalFrameCount === 1);
 
     for (
       let frameNumber = 0;

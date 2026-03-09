@@ -188,9 +188,7 @@ describe.skip("organizations - edit", () => {
 
     await page.goto(`/organizations/${editableOrg.id}/`);
     await page.getByLabel("Display Name").fill("Edited");
-    await page
-      .getByRole("button", { name: "Save changes" })
-      .click();
+    await page.getByRole("button", { name: "Save changes" }).click();
     await playwrightExpect(page.locator("h1").first()).toHaveText(
       "Organization: Edited",
     );

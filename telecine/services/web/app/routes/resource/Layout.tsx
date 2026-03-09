@@ -13,10 +13,7 @@ import { db } from "@/sql-client.server";
 
 import type { Route } from "./+types/Layout";
 import { authMiddleware } from "~/middleware/auth";
-import {
-  identityContext,
-  sessionCookieContext,
-} from "~/middleware/context";
+import { identityContext, sessionCookieContext } from "~/middleware/context";
 
 export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
 
@@ -77,7 +74,9 @@ const getUserOrgs = (session: SessionInfo) => {
 const maybeRedirectToOrg = async (
   orgs: { id: string; display_name: string }[],
   request: Request,
-  sessionCookie: Awaited<ReturnType<typeof import("@/util/session").getSession>>,
+  sessionCookie: Awaited<
+    ReturnType<typeof import("@/util/session").getSession>
+  >,
 ) => {
   const activeSpan = trace.getActiveSpan();
 

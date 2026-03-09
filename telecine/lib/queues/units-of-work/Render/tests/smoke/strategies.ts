@@ -1,6 +1,6 @@
 /**
  * Rendering strategy configurations for smoke tests.
- * 
+ *
  * We test 5 different rendering strategies to ensure all paths work:
  * 1. server: Electron offscreen rendering (default, fastest)
  * 2-5. Browser-based rendering with different canvas modes
@@ -51,7 +51,7 @@ export const ALL_STRATEGIES: RenderStrategy[] = [
  * Get strategy by name for filtered test runs
  */
 export function getStrategy(name: string): RenderStrategy | undefined {
-  return ALL_STRATEGIES.find(s => s.name === name);
+  return ALL_STRATEGIES.find((s) => s.name === name);
 }
 
 /**
@@ -64,13 +64,19 @@ export function getStrategiesToTest(): RenderStrategy[] {
   if (filter) {
     const strategy = getStrategy(filter);
     if (!strategy) {
-      throw new Error(`Unknown render strategy: ${filter}. Available: ${ALL_STRATEGIES.map(s => s.name).join(", ")}`);
+      throw new Error(
+        `Unknown render strategy: ${filter}. Available: ${ALL_STRATEGIES.map((s) => s.name).join(", ")}`,
+      );
     }
-    console.log(`[getStrategiesToTest] Using filtered strategy: ${strategy.name}`);
+    console.log(
+      `[getStrategiesToTest] Using filtered strategy: ${strategy.name}`,
+    );
     return [strategy];
   }
-  
+
   // Default: test all strategies to ensure lockstep consistency
-  console.log(`[getStrategiesToTest] Testing ALL strategies (${ALL_STRATEGIES.length}) for output consistency`);
+  console.log(
+    `[getStrategiesToTest] Testing ALL strategies (${ALL_STRATEGIES.length}) for output consistency`,
+  );
   return ALL_STRATEGIES;
 }

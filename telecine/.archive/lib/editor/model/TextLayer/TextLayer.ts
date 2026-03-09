@@ -80,9 +80,7 @@ export class TextLayer extends ExtendedModel(
 
   @computed
   get htmlToImageContent(): string {
-    return `<div><p style="${cssAttributesAsCSS(this.typographyCSS)}">${
-      this.text
-    }</p></div>`;
+    return `<div><p style="${cssAttributesAsCSS(this.typographyCSS)}">${this.text}</p></div>`;
   }
 
   htmlToImageCache: HTMLImageElement | null = null;

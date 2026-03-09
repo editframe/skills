@@ -5,19 +5,13 @@ import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ISOBoxer from "codem-isoboxer";
 
-const fragFixture = resolve(
-  __dirname,
-  "../../../../test-assets/frame-count.frag.mp4",
-);
+const fragFixture = resolve(__dirname, "../../../../test-assets/frame-count.frag.mp4");
 
 describe("patchMoovDuration", () => {
   it("sets mvhd.duration from durationMs using the file's timescale", async () => {
     const { patchMoovDuration } = await import("./patchFragmentedMp4.js");
     const buf = await readFile(fragFixture);
-    const arrayBuffer = buf.buffer.slice(
-      buf.byteOffset,
-      buf.byteOffset + buf.byteLength,
-    );
+    const arrayBuffer = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
 
     const patched = patchMoovDuration(arrayBuffer, 5000);
 
@@ -30,10 +24,7 @@ describe("patchMoovDuration", () => {
   it("zeroes tkhd and mdhd durations", async () => {
     const { patchMoovDuration } = await import("./patchFragmentedMp4.js");
     const buf = await readFile(fragFixture);
-    const arrayBuffer = buf.buffer.slice(
-      buf.byteOffset,
-      buf.byteOffset + buf.byteLength,
-    );
+    const arrayBuffer = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
 
     const patched = patchMoovDuration(arrayBuffer, 5000);
 
@@ -49,10 +40,7 @@ describe("patchMoovDuration", () => {
   it("removes edts boxes from all trak children", async () => {
     const { patchMoovDuration } = await import("./patchFragmentedMp4.js");
     const buf = await readFile(fragFixture);
-    const arrayBuffer = buf.buffer.slice(
-      buf.byteOffset,
-      buf.byteOffset + buf.byteLength,
-    );
+    const arrayBuffer = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
 
     const patched = patchMoovDuration(arrayBuffer, 5000);
 
@@ -63,10 +51,7 @@ describe("patchMoovDuration", () => {
   it("preserves moof boxes (output is still fragmented)", async () => {
     const { patchMoovDuration } = await import("./patchFragmentedMp4.js");
     const buf = await readFile(fragFixture);
-    const arrayBuffer = buf.buffer.slice(
-      buf.byteOffset,
-      buf.byteOffset + buf.byteLength,
-    );
+    const arrayBuffer = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
 
     const patched = patchMoovDuration(arrayBuffer, 5000);
 
@@ -93,8 +78,7 @@ describe("patchFragmentedMp4", () => {
 
   it("patches mvhd.duration in the output file", async () => {
     vi.mock("node:child_process", async (importOriginal) => {
-      const original =
-        await importOriginal<typeof import("node:child_process")>();
+      const original = await importOriginal<typeof import("node:child_process")>();
       return {
         ...original,
         spawnSync: () => ({ status: 1, stderr: Buffer.from("") }),
@@ -116,16 +100,13 @@ describe("patchFragmentedMp4", () => {
 
   it("logs a message when ffmpeg is not available", async () => {
     vi.mock("node:child_process", async (importOriginal) => {
-      const original =
-        await importOriginal<typeof import("node:child_process")>();
+      const original = await importOriginal<typeof import("node:child_process")>();
       return {
         ...original,
         spawnSync: () => ({ status: null, error: new Error("ENOENT") }),
       };
     });
-    const stderrSpy = vi
-      .spyOn(process.stderr, "write")
-      .mockImplementation(() => true);
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     const { patchFragmentedMp4 } = await import("./patchFragmentedMp4.js");
 
     await patchFragmentedMp4(tmpPath, 3000);

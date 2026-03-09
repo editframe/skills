@@ -1,26 +1,11 @@
 import { consume, provide } from "@lit/context";
-import {
-  css,
-  html,
-  LitElement,
-  nothing,
-  type PropertyValues,
-  type TemplateResult,
-} from "lit";
-import {
-  customElement,
-  eventOptions,
-  property,
-  state,
-} from "lit/decorators.js";
+import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from "lit";
+import { customElement, eventOptions, property, state } from "lit/decorators.js";
 import { createRef, ref, type Ref } from "lit/directives/ref.js";
 import { repeat } from "lit/directives/repeat.js";
 import { styleMap } from "lit/directives/style-map.js";
 
-import {
-  isEFTemporal,
-  type TemporalMixinInterface,
-} from "../../elements/EFTemporal.js";
+import { isEFTemporal, type TemporalMixinInterface } from "../../elements/EFTemporal.js";
 import { EFTimegroup } from "../../elements/EFTimegroup.js";
 import { findRootTemporal } from "../../elements/findRootTemporal.js";
 import { TargetController } from "../../elements/TargetController.js";
@@ -515,8 +500,7 @@ export class EFTimeline extends TWMixin(LitElement) {
 
   @provide({ context: timelineEditingContext })
   @state()
-  private _editingContext: TimelineEditingContext =
-    createTimelineEditingContext();
+  private _editingContext: TimelineEditingContext = createTimelineEditingContext();
 
   private targetController?: TargetController;
   private tracksScrollRef: Ref<HTMLDivElement> = createRef();
@@ -599,16 +583,12 @@ export class EFTimeline extends TWMixin(LitElement) {
     };
 
     // Check which values changed
-    const pixelsPerMsChanged =
-      this._timelineState.pixelsPerMs !== newState.pixelsPerMs;
-    const currentTimeMsChanged =
-      this._timelineState.currentTimeMs !== newState.currentTimeMs;
-    const durationMsChanged =
-      this._timelineState.durationMs !== newState.durationMs;
+    const pixelsPerMsChanged = this._timelineState.pixelsPerMs !== newState.pixelsPerMs;
+    const currentTimeMsChanged = this._timelineState.currentTimeMs !== newState.currentTimeMs;
+    const durationMsChanged = this._timelineState.durationMs !== newState.durationMs;
     const viewportScrollLeftChanged =
       this._timelineState.viewportScrollLeft !== newState.viewportScrollLeft;
-    const viewportWidthChanged =
-      this._timelineState.viewportWidth !== newState.viewportWidth;
+    const viewportWidthChanged = this._timelineState.viewportWidth !== newState.viewportWidth;
 
     // PERFORMANCE: During playback, scroll changes should NOT trigger context updates.
     //
@@ -692,11 +672,7 @@ export class EFTimeline extends TWMixin(LitElement) {
 
   get targetTemporal(): TemporalMixinInterface | null {
     // If controlTarget is explicitly set, look it up directly
-    if (
-      this.controlTarget &&
-      this.controlTarget !== "" &&
-      this.controlTarget !== "selection"
-    ) {
+    if (this.controlTarget && this.controlTarget !== "" && this.controlTarget !== "selection") {
       const element = document.getElementById(this.controlTarget);
       if (element && isEFTemporal(element)) {
         return element as TemporalMixinInterface & HTMLElement;
@@ -745,10 +721,7 @@ export class EFTimeline extends TWMixin(LitElement) {
   /** Whether frame markers should be visible at current zoom */
   get showFrameMarkers(): boolean {
     const frameIntervalMs = calculateFrameIntervalMs(this.fps);
-    const pixelsPerFrame = calculatePixelsPerFrame(
-      frameIntervalMs,
-      this.pixelsPerMs,
-    );
+    const pixelsPerFrame = calculatePixelsPerFrame(frameIntervalMs, this.pixelsPerMs);
     return shouldShowFrameMarkers(pixelsPerFrame);
   }
 
@@ -759,9 +732,7 @@ export class EFTimeline extends TWMixin(LitElement) {
   private getRootTimegroupId(): string | null {
     if (!this.targetTemporal) return null;
 
-    const rootTemporal = findRootTemporal(
-      this.targetTemporal as unknown as Element,
-    );
+    const rootTemporal = findRootTemporal(this.targetTemporal as unknown as Element);
 
     if (rootTemporal instanceof EFTimegroup && rootTemporal.id) {
       return rootTemporal.id;
@@ -814,10 +785,7 @@ export class EFTimeline extends TWMixin(LitElement) {
           Math.min(this.maxZoom * DEFAULT_PIXELS_PER_MS, state.pixelsPerMs),
         );
       }
-      if (
-        typeof state.viewportScrollLeft === "number" &&
-        state.viewportScrollLeft >= 0
-      ) {
+      if (typeof state.viewportScrollLeft === "number" && state.viewportScrollLeft >= 0) {
         // Restore scroll position after DOM is ready
         requestAnimationFrame(() => {
           const tracksScroll = this.tracksScrollRef.value;
@@ -867,10 +835,7 @@ export class EFTimeline extends TWMixin(LitElement) {
     this.removeKeyboardListener();
     this.targetObserver?.disconnect();
     if (this.#durationChangeTarget) {
-      this.#durationChangeTarget.removeEventListener(
-        "durationchange",
-        this.#durationChangeHandler,
-      );
+      this.#durationChangeTarget.removeEventListener("durationchange", this.#durationChangeHandler);
       this.#durationChangeTarget = undefined;
     }
     this.resizeObserver?.disconnect();
@@ -892,10 +857,7 @@ export class EFTimeline extends TWMixin(LitElement) {
     // Always disconnect from previous target first
     this.targetObserver?.disconnect();
     if (this.#durationChangeTarget) {
-      this.#durationChangeTarget.removeEventListener(
-        "durationchange",
-        this.#durationChangeHandler,
-      );
+      this.#durationChangeTarget.removeEventListener("durationchange", this.#durationChangeHandler);
       this.#durationChangeTarget = undefined;
     }
 
@@ -918,11 +880,7 @@ export class EFTimeline extends TWMixin(LitElement) {
 
   protected willUpdate(changedProperties: PropertyValues): void {
     // Setup TargetController for canvas target
-    if (
-      changedProperties.has("target") &&
-      this.target &&
-      !this.targetController
-    ) {
+    if (changedProperties.has("target") && this.target && !this.targetController) {
       this.targetController = new TargetController(this as any);
     }
 
@@ -988,18 +946,12 @@ export class EFTimeline extends TWMixin(LitElement) {
     }
 
     // Subscribe to playback controller when targetTemporal changes
-    if (
-      changedProperties.has("targetTemporal") ||
-      changedProperties.has("controlTarget")
-    ) {
+    if (changedProperties.has("targetTemporal") || changedProperties.has("controlTarget")) {
       this.subscribeToPlaybackController();
     }
 
     // Restore timeline state when target changes
-    if (
-      changedProperties.has("targetTemporal") ||
-      changedProperties.has("target")
-    ) {
+    if (changedProperties.has("targetTemporal") || changedProperties.has("target")) {
       // Wait for DOM to be ready before restoring scroll
       requestAnimationFrame(() => {
         this.restoreTimelineState();
@@ -1007,18 +959,12 @@ export class EFTimeline extends TWMixin(LitElement) {
     }
 
     // Save timeline state when zoom or scroll changes
-    if (
-      changedProperties.has("pixelsPerMs") ||
-      changedProperties.has("viewportScrollLeft")
-    ) {
+    if (changedProperties.has("pixelsPerMs") || changedProperties.has("viewportScrollLeft")) {
       this.debouncedSaveTimelineState();
     }
 
     // Re-register observer and listeners when target changes
-    if (
-      changedProperties.has("targetElement") ||
-      changedProperties.has("target")
-    ) {
+    if (changedProperties.has("targetElement") || changedProperties.has("target")) {
       // Reset selection listener to ensure we're listening to the right canvas
       this.removeSelectionListener();
       this.selectionChangeHandler = undefined;
@@ -1062,10 +1008,7 @@ export class EFTimeline extends TWMixin(LitElement) {
     const selectionCtx = this.getCanvasSelectionContext();
     if (selectionCtx && "addEventListener" in selectionCtx) {
       this.selectionChangeHandler = () => this.requestUpdate();
-      (selectionCtx as any).addEventListener(
-        "selectionchange",
-        this.selectionChangeHandler,
-      );
+      (selectionCtx as any).addEventListener("selectionchange", this.selectionChangeHandler);
       // Request update immediately to catch initial selection
       this.requestUpdate();
     }
@@ -1085,15 +1028,8 @@ export class EFTimeline extends TWMixin(LitElement) {
 
   private removeSelectionListener(): void {
     const selectionCtx = this.getCanvasSelectionContext();
-    if (
-      selectionCtx &&
-      "removeEventListener" in selectionCtx &&
-      this.selectionChangeHandler
-    ) {
-      (selectionCtx as any).removeEventListener(
-        "selectionchange",
-        this.selectionChangeHandler,
-      );
+    if (selectionCtx && "removeEventListener" in selectionCtx && this.selectionChangeHandler) {
+      (selectionCtx as any).removeEventListener("selectionchange", this.selectionChangeHandler);
       this.selectionChangeHandler = undefined;
     }
 
@@ -1123,11 +1059,7 @@ export class EFTimeline extends TWMixin(LitElement) {
           }
         }
       };
-      this.tracksScrollRef.value.addEventListener(
-        "scroll",
-        this.scrollHandler,
-        { passive: true },
-      );
+      this.tracksScrollRef.value.addEventListener("scroll", this.scrollHandler, { passive: true });
       // Initialize scroll position
       this.scrollHandler();
 
@@ -1142,16 +1074,10 @@ export class EFTimeline extends TWMixin(LitElement) {
   private removeScrollListener(): void {
     if (this.tracksScrollRef.value) {
       if (this.scrollHandler) {
-        this.tracksScrollRef.value.removeEventListener(
-          "scroll",
-          this.scrollHandler,
-        );
+        this.tracksScrollRef.value.removeEventListener("scroll", this.scrollHandler);
       }
       if (this.#wheelHandler) {
-        this.tracksScrollRef.value.removeEventListener(
-          "wheel",
-          this.#wheelHandler,
-        );
+        this.tracksScrollRef.value.removeEventListener("wheel", this.#wheelHandler);
         this.#wheelHandler = null;
       }
     }
@@ -1197,10 +1123,7 @@ export class EFTimeline extends TWMixin(LitElement) {
 
           // Only update if subscription hasn't already updated these values
           // This prevents race conditions between polling and subscription
-          if (
-            newIsPlaying !== this.isPlaying ||
-            newIsLooping !== this.isLooping
-          ) {
+          if (newIsPlaying !== this.isPlaying || newIsLooping !== this.isLooping) {
             // Only update if we don't have an active subscription (fallback mode)
             if (!this.#playbackSubscription) {
               const wasPlaying = this.isPlaying;
@@ -1224,8 +1147,7 @@ export class EFTimeline extends TWMixin(LitElement) {
           const now = performance.now();
           const shouldUpdateContext =
             !newIsPlaying ||
-            now - this.lastContextUpdateTime >=
-              EFTimeline.CONTEXT_UPDATE_INTERVAL_MS;
+            now - this.lastContextUpdateTime >= EFTimeline.CONTEXT_UPDATE_INTERVAL_MS;
 
           if (shouldUpdateContext && this.currentTimeMs !== newTimeMs) {
             this.currentTimeMs = newTimeMs;
@@ -1289,10 +1211,7 @@ export class EFTimeline extends TWMixin(LitElement) {
         const fps = this.fps;
         const frameDurationMs = 1000 / fps;
         const frameStartMs = quantizeToFrameTimeMs(timeMs, fps);
-        const frameEndMs = Math.min(
-          frameStartMs + frameDurationMs,
-          this.durationMs,
-        );
+        const frameEndMs = Math.min(frameStartMs + frameDurationMs, this.durationMs);
         const startPx = timeToPx(frameStartMs, this.pixelsPerMs);
         const widthPx = timeToPx(frameEndMs, this.pixelsPerMs) - startPx;
 
@@ -1338,10 +1257,7 @@ export class EFTimeline extends TWMixin(LitElement) {
       // Already following - scroll by exactly the delta to keep playhead stationary on screen
       const delta = playheadPx - this.lastPlayheadPx;
       if (delta !== 0) {
-        newScrollLeft = Math.max(
-          0,
-          Math.min(maxScroll, tracksScroll.scrollLeft + delta),
-        );
+        newScrollLeft = Math.max(0, Math.min(maxScroll, tracksScroll.scrollLeft + delta));
         tracksScroll.scrollLeft = newScrollLeft;
         scrollChanged = true;
       }
@@ -1349,10 +1265,7 @@ export class EFTimeline extends TWMixin(LitElement) {
       // Playhead reached right threshold - start following from this exact position (no snap)
       this.isFollowingPlayhead = true;
       // No scroll change - just start tracking from current position
-    } else if (
-      playheadInViewport < leftThreshold &&
-      tracksScroll.scrollLeft > 0
-    ) {
+    } else if (playheadInViewport < leftThreshold && tracksScroll.scrollLeft > 0) {
       // Playhead at left edge and we can scroll left - scroll to show more
       newScrollLeft = Math.max(0, playheadPx - leftThreshold);
       tracksScroll.scrollLeft = newScrollLeft;
@@ -1566,10 +1479,7 @@ export class EFTimeline extends TWMixin(LitElement) {
     // Calculate zoom delta (same factor as EFPanZoom)
     const zoomFactor = e.deltaY > 0 ? 0.95 : 1.05;
     const currentZoom = pixelsPerMsToZoom(this.pixelsPerMs);
-    const newZoom = Math.max(
-      this.minZoom,
-      Math.min(this.maxZoom, currentZoom * zoomFactor),
-    );
+    const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, currentZoom * zoomFactor));
     const newPixelsPerMs = newZoom * DEFAULT_PIXELS_PER_MS;
 
     // Calculate new scroll position to keep timeAtCursor under the cursor
@@ -1596,10 +1506,7 @@ export class EFTimeline extends TWMixin(LitElement) {
    * @param timeMs The raw time to seek to
    * @param snapToFrame Whether to quantize to the nearest frame boundary (default: true when frame markers visible)
    */
-  private handleSeek(
-    timeMs: number,
-    snapToFrame: boolean = this.showFrameMarkers,
-  ): void {
+  private handleSeek(timeMs: number, snapToFrame: boolean = this.showFrameMarkers): void {
     if (!this.targetTemporal) {
       console.warn(
         "[EFTimeline] Cannot seek: targetTemporal is null. controlTarget:",
@@ -1707,9 +1614,7 @@ export class EFTimeline extends TWMixin(LitElement) {
       const target = e.currentTarget as HTMLElement;
       const rect = target.getBoundingClientRect();
       const scrollLeft = target.scrollLeft;
-      const hierarchyWidth = this.showHierarchy
-        ? EFTimeline.HIERARCHY_WIDTH
-        : 0;
+      const hierarchyWidth = this.showHierarchy ? EFTimeline.HIERARCHY_WIDTH : 0;
       const x = e.clientX - rect.left + scrollLeft - hierarchyWidth;
       if (x >= 0) {
         const timeMs = pxToTime(x, this.pixelsPerMs);
@@ -1767,17 +1672,11 @@ export class EFTimeline extends TWMixin(LitElement) {
 
       let scrollDelta = 0;
 
-      if (
-        distanceFromLeft < EFTimeline.EDGE_SCROLL_ZONE &&
-        distanceFromLeft >= 0
-      ) {
+      if (distanceFromLeft < EFTimeline.EDGE_SCROLL_ZONE && distanceFromLeft >= 0) {
         // Near left edge - scroll left (faster as you get closer to edge)
         const intensity = 1 - distanceFromLeft / EFTimeline.EDGE_SCROLL_ZONE;
         scrollDelta = -EFTimeline.EDGE_SCROLL_SPEED * intensity;
-      } else if (
-        distanceFromRight < EFTimeline.EDGE_SCROLL_ZONE &&
-        distanceFromRight >= 0
-      ) {
+      } else if (distanceFromRight < EFTimeline.EDGE_SCROLL_ZONE && distanceFromRight >= 0) {
         // Near right edge - scroll right
         const intensity = 1 - distanceFromRight / EFTimeline.EDGE_SCROLL_ZONE;
         scrollDelta = EFTimeline.EDGE_SCROLL_SPEED * intensity;
@@ -1901,10 +1800,7 @@ export class EFTimeline extends TWMixin(LitElement) {
     const fps = this.fps;
     const frameDurationMs = 1000 / fps;
     const frameStartMs = quantizeToFrameTimeMs(this.currentTimeMs, fps);
-    const frameEndMs = Math.min(
-      frameStartMs + frameDurationMs,
-      this.durationMs,
-    );
+    const frameEndMs = Math.min(frameStartMs + frameDurationMs, this.durationMs);
 
     const startPx = timeToPx(frameStartMs, this.pixelsPerMs);
     const endPx = timeToPx(frameEndMs, this.pixelsPerMs);
@@ -1964,9 +1860,8 @@ export class EFTimeline extends TWMixin(LitElement) {
 
   private handleTrimChange(e: CustomEvent<TrimChangeDetail>): void {
     const { elementId, value } = e.detail;
-    const element = this.targetElement?.querySelector(
-      `#${elementId}`,
-    ) as TemporalMixinInterface & HTMLElement;
+    const element = this.targetElement?.querySelector(`#${elementId}`) as TemporalMixinInterface &
+      HTMLElement;
     if (element) {
       element.trimStartMs = value.startMs;
       element.trimEndMs = value.endMs;
@@ -1984,9 +1879,7 @@ export class EFTimeline extends TWMixin(LitElement) {
   /**
    * Handle row selection events - update selection context.
    */
-  private handleRowSelect(
-    e: CustomEvent<{ elementId: string; element: Element }>,
-  ): void {
+  private handleRowSelect(e: CustomEvent<{ elementId: string; element: Element }>): void {
     const selectionCtx = this.getCanvasSelectionContext();
     if (selectionCtx && e.detail.elementId) {
       selectionCtx.select(e.detail.elementId);
@@ -1997,13 +1890,9 @@ export class EFTimeline extends TWMixin(LitElement) {
    * Render timeline rows using flattened hierarchy.
    * Each row is a unified component with both label and track.
    */
-  private renderRows(
-    target: TemporalMixinInterface & HTMLElement,
-  ): TemplateResult {
-    const rows = flattenHierarchy(
-      target as unknown as TemporalMixinInterface & Element,
-    ).filter((row) =>
-      shouldRenderElement(row.element, this.hideSelectors, this.showSelectors),
+  private renderRows(target: TemporalMixinInterface & HTMLElement): TemplateResult {
+    const rows = flattenHierarchy(target as unknown as TemporalMixinInterface & Element).filter(
+      (row) => shouldRenderElement(row.element, this.hideSelectors, this.showSelectors),
     );
 
     const selectionCtx = this.getCanvasSelectionContext();

@@ -1,10 +1,7 @@
 import { type Context, consume } from "@lit/context";
 import type { LitElement } from "lit";
 import { property, state } from "lit/decorators.js";
-import {
-  isEFTemporal,
-  type TemporalMixinInterface,
-} from "../elements/EFTemporal.js";
+import { isEFTemporal, type TemporalMixinInterface } from "../elements/EFTemporal.js";
 import { TargetController } from "../elements/TargetController.js";
 import {
   type ControllableInterface,
@@ -79,16 +76,10 @@ export function TargetOrContextMixin<T extends Constructor<LitElement>>(
       this.#contextRequestHandler = (event: Event) => {
         if (this.targetElement && event.type === "context-request") {
           event.stopPropagation();
-          this.targetElement.dispatchEvent(
-            new (event.constructor as any)(event.type, event),
-          );
+          this.targetElement.dispatchEvent(new (event.constructor as any)(event.type, event));
         }
       };
-      this.addEventListener(
-        "context-request",
-        this.#contextRequestHandler,
-        true,
-      );
+      this.addEventListener("context-request", this.#contextRequestHandler, true);
     }
 
     #unsubscribeAll() {
@@ -138,8 +129,7 @@ export function TargetOrContextMixin<T extends Constructor<LitElement>>(
 
       // Temporal target without PlaybackController yet — wait for initialization
       if (isEFTemporal(this.targetElement)) {
-        const target = this.targetElement as unknown as TemporalMixinInterface &
-          HTMLElement;
+        const target = this.targetElement as unknown as TemporalMixinInterface & HTMLElement;
         target.updateComplete.then(() => {
           if ((this.targetElement as unknown) !== target) return;
           if (!this.#tryDirectTemporalSubscription()) {
@@ -192,10 +182,7 @@ export function TargetOrContextMixin<T extends Constructor<LitElement>>(
       super.updated?.(changedProperties);
 
       if (changedProperties.has("targetElement") && this.targetElement) {
-        if (
-          isEFTemporal(this.targetElement) &&
-          !isControllable(this.targetElement)
-        ) {
+        if (isEFTemporal(this.targetElement) && !isControllable(this.targetElement)) {
           console.warn(
             "Control element is targeting a non-root temporal element without playbackController. " +
               "Controls can only target root temporal elements (not nested within a timegroup). " +
@@ -222,11 +209,7 @@ export function TargetOrContextMixin<T extends Constructor<LitElement>>(
       super.disconnectedCallback();
       this.#unsubscribeAll();
       if (this.#contextRequestHandler) {
-        this.removeEventListener(
-          "context-request",
-          this.#contextRequestHandler,
-          true,
-        );
+        this.removeEventListener("context-request", this.#contextRequestHandler, true);
       }
     }
   }

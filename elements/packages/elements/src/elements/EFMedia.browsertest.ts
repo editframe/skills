@@ -103,11 +103,7 @@ describe.skip("JIT Media Engine", () => {
   });
 
   describe("video seek on load", () => {
-    test("seeks to time specified on element", async ({
-      timegroup,
-      jitVideo,
-      expect,
-    }) => {
+    test("seeks to time specified on element", async ({ timegroup, jitVideo, expect }) => {
       await timegroup.seek(2200);
       const sample = jitVideo.unifiedVideoSeekTask.value;
       expect(sample?.timestamp).toBeCloseTo(2.2, 1);
@@ -115,11 +111,7 @@ describe.skip("JIT Media Engine", () => {
   });
 
   describe("video seeking", () => {
-    test("seeks to 0 seconds and loads first frame", async ({
-      timegroup,
-      jitVideo,
-      expect,
-    }) => {
+    test("seeks to 0 seconds and loads first frame", async ({ timegroup, jitVideo, expect }) => {
       // Debug: Check what segment should be loaded for 0ms
       const mediaEngine = await (jitVideo as any).mediaEngineTask.taskComplete;
       const videoTrack = mediaEngine?.tracks.video;
@@ -142,22 +134,14 @@ describe.skip("JIT Media Engine", () => {
       expect(frame?.timestamp).toEqual(0);
     });
 
-    test("seeks to 3 seconds and loads frame", async ({
-      timegroup,
-      jitVideo,
-      expect,
-    }) => {
+    test("seeks to 3 seconds and loads frame", async ({ timegroup, jitVideo, expect }) => {
       await timegroup.waitForMediaDurations();
       await timegroup.seek(3000);
       const frame = jitVideo.unifiedVideoSeekTask.value;
       expect(frame?.timestamp).toBeCloseTo(3, 1);
     });
 
-    test("seeks to 5 seconds and loads frame", async ({
-      timegroup,
-      jitVideo,
-      expect,
-    }) => {
+    test("seeks to 5 seconds and loads frame", async ({ timegroup, jitVideo, expect }) => {
       await timegroup.waitForMediaDurations();
       await timegroup.seek(5000);
       const frame = jitVideo.unifiedVideoSeekTask.value;
@@ -165,11 +149,7 @@ describe.skip("JIT Media Engine", () => {
     });
 
     // Frame timestamp precision issue
-    test.skip("seeks ahead in increments", async ({
-      timegroup,
-      jitVideo,
-      expect,
-    }) => {
+    test.skip("seeks ahead in increments", async ({ timegroup, jitVideo, expect }) => {
       await timegroup.waitForMediaDurations();
 
       // Test seeking in larger increments to avoid CI timeouts
@@ -209,9 +189,7 @@ describe.skip("JIT Media Engine", () => {
     }) => {
       await timegroup.waitForMediaDurations();
       timegroup.currentTimeMs = 2026.6666666666663;
-      await expect(
-        jitVideo.audioSeekTask.taskComplete,
-      ).resolves.to.not.toThrowError();
+      await expect(jitVideo.audioSeekTask.taskComplete).resolves.to.not.toThrowError();
     });
 
     test("can seek audio to 4050ms in head-moov-480p.mp4", async ({
@@ -221,9 +199,7 @@ describe.skip("JIT Media Engine", () => {
     }) => {
       timegroup.currentTimeMs = 4050;
       jitVideo.desiredSeekTimeMs = 4050;
-      await expect(
-        jitVideo.audioSeekTask.taskComplete,
-      ).resolves.to.not.toThrowError();
+      await expect(jitVideo.audioSeekTask.taskComplete).resolves.to.not.toThrowError();
     });
 
     // test.only("computes correct audio segment id for 4025.0000000000005ms", async ({ expect, jitVideo, timegroup }) => {
@@ -276,10 +252,7 @@ describe("Media Engine Selection", () => {
     video.remove();
   });
 
-  test("creates media engine for local src paths", async ({
-    configuration,
-    expect,
-  }) => {
+  test("creates media engine for local src paths", async ({ configuration, expect }) => {
     const video = document.createElement("ef-video");
     video.src = localSrc;
     configuration.appendChild(video);
@@ -289,10 +262,7 @@ describe("Media Engine Selection", () => {
     video.remove();
   });
 
-  test("requests transcode manifest for local src paths", async ({
-    configuration,
-    expect,
-  }) => {
+  test("requests transcode manifest for local src paths", async ({ configuration, expect }) => {
     const originalFetch = window.fetch;
     const capturedUrls: string[] = [];
     vi.spyOn(window, "fetch").mockImplementation((input, init) => {
@@ -373,10 +343,7 @@ describe("EFMedia", () => {
       expect(element.mute).toBe(true); // Standard boolean attributes: any value = true
     });
 
-    test("reflects property changes to attribute", async ({
-      element,
-      expect,
-    }) => {
+    test("reflects property changes to attribute", async ({ element, expect }) => {
       element.mute = true;
       await element.updateComplete; // Wait for Lit to update
       expect(element.hasAttribute("mute")).toBe(true);
@@ -434,14 +401,8 @@ describe("EFMedia", () => {
           await unmutedElement.getMediaEngine();
 
           // Spy on fetchAudioSpanningTime to verify muted element is skipped
-          const mutedFetchSpy = vi.spyOn(
-            mutedElement,
-            "fetchAudioSpanningTime",
-          );
-          const unmutedFetchSpy = vi.spyOn(
-            unmutedElement,
-            "fetchAudioSpanningTime",
-          );
+          const mutedFetchSpy = vi.spyOn(mutedElement, "fetchAudioSpanningTime");
+          const unmutedFetchSpy = vi.spyOn(unmutedElement, "fetchAudioSpanningTime");
 
           // Render a short audio segment
           try {
@@ -500,48 +461,45 @@ describe("EFMedia", () => {
         },
       );
 
-      audioTest(
-        "handles dynamic mute changes",
-        async ({ configuration, timegroup, expect }) => {
-          const element = document.createElement("test-media");
-          element.src = "http://web:3000/head-moov-480p.mp4";
-          element.mute = false; // Start unmuted
-          timegroup.append(element);
+      audioTest("handles dynamic mute changes", async ({ configuration, timegroup, expect }) => {
+        const element = document.createElement("test-media");
+        element.src = "http://web:3000/head-moov-480p.mp4";
+        element.mute = false; // Start unmuted
+        timegroup.append(element);
 
-          configuration.append(timegroup);
+        configuration.append(timegroup);
 
-          await element.getMediaEngine();
+        await element.getMediaEngine();
 
-          const fetchSpy = vi.spyOn(element, "fetchAudioSpanningTime");
+        const fetchSpy = vi.spyOn(element, "fetchAudioSpanningTime");
 
-          // First render - unmuted
-          try {
-            await timegroup.renderAudio(0, 500);
-          } catch (error) {
-            console.log("Audio rendering failed (expected in test):", error);
-          }
+        // First render - unmuted
+        try {
+          await timegroup.renderAudio(0, 500);
+        } catch (error) {
+          console.log("Audio rendering failed (expected in test):", error);
+        }
 
-          const firstCallCount = fetchSpy.mock.calls.length;
+        const firstCallCount = fetchSpy.mock.calls.length;
 
-          // Mute the element
-          element.mute = true;
-          await element.updateComplete;
+        // Mute the element
+        element.mute = true;
+        await element.updateComplete;
 
-          // Second render - muted (should be skipped)
-          try {
-            await timegroup.renderAudio(500, 1000);
-          } catch (error) {
-            console.log("Audio rendering failed (expected in test):", error);
-          }
+        // Second render - muted (should be skipped)
+        try {
+          await timegroup.renderAudio(500, 1000);
+        } catch (error) {
+          console.log("Audio rendering failed (expected in test):", error);
+        }
 
-          const secondCallCount = fetchSpy.mock.calls.length;
+        const secondCallCount = fetchSpy.mock.calls.length;
 
-          // Verify no additional calls were made when muted
-          expect(secondCallCount).toBe(firstCallCount);
+        // Verify no additional calls were made when muted
+        expect(secondCallCount).toBe(firstCallCount);
 
-          fetchSpy.mockRestore();
-        },
-      );
+        fetchSpy.mockRestore();
+      });
     });
   });
 
@@ -661,10 +619,7 @@ describe("EFMedia", () => {
       expect(element.assetId).toBe(null);
     });
 
-    test("reflects property changes to attribute", async ({
-      element,
-      expect,
-    }) => {
+    test("reflects property changes to attribute", async ({ element, expect }) => {
       element.assetId = "test-asset-456";
       await element.updateComplete;
       expect(element.getAttribute("file-id")).toBe("test-asset-456");
@@ -698,10 +653,7 @@ describe("EFMedia", () => {
       expect(element.fftSize).toBe(1024);
     });
 
-    test("reflects property changes to attribute", async ({
-      element,
-      expect,
-    }) => {
+    test("reflects property changes to attribute", async ({ element, expect }) => {
       element.fftSize = 512;
       await element.updateComplete;
       expect(element.getAttribute("fft-size")).toBe("512");
@@ -723,10 +675,7 @@ describe("EFMedia", () => {
       expect(element.fftDecay).toBe(16);
     });
 
-    test("reflects property changes to attribute", async ({
-      element,
-      expect,
-    }) => {
+    test("reflects property changes to attribute", async ({ element, expect }) => {
       element.fftDecay = 32;
       await element.updateComplete;
       expect(element.getAttribute("fft-decay")).toBe("32");
@@ -748,10 +697,7 @@ describe("EFMedia", () => {
       expect(element.fftGain).toBe(0.5);
     });
 
-    test("reflects property changes to attribute", async ({
-      element,
-      expect,
-    }) => {
+    test("reflects property changes to attribute", async ({ element, expect }) => {
       element.fftGain = 2.5;
       await element.updateComplete;
       expect(element.getAttribute("fft-gain")).toBe("2.5");
@@ -781,10 +727,7 @@ describe("EFMedia", () => {
       expect(element.interpolateFrequencies).toBe(true); // Standard boolean attributes: any value = true
     });
 
-    test("reflects property changes to attribute", async ({
-      element,
-      expect,
-    }) => {
+    test("reflects property changes to attribute", async ({ element, expect }) => {
       element.interpolateFrequencies = true;
       await element.updateComplete;
       expect(element.hasAttribute("interpolate-frequencies")).toBe(true);
@@ -909,10 +852,7 @@ describe("contentReadyState lifecycle", () => {
     expect(video.contentReadyState).toBe("idle");
   });
 
-  test("ef-video transitions idle → loading → ready", async ({
-    configuration,
-    expect,
-  }) => {
+  test("ef-video transitions idle → loading → ready", async ({ configuration, expect }) => {
     const video = document.createElement("ef-video");
     const states: string[] = [];
     video.addEventListener("readystatechange", ((e: CustomEvent) => {
@@ -942,10 +882,7 @@ describe("contentReadyState lifecycle", () => {
     video.remove();
   });
 
-  test("source swap: ready → loading → ready", async ({
-    configuration,
-    expect,
-  }) => {
+  test("source swap: ready → loading → ready", async ({ configuration, expect }) => {
     const video = document.createElement("ef-video");
     video.src = "http://web:3000/head-moov-480p.mp4";
     configuration.append(video);
@@ -1039,10 +976,7 @@ describe("contentReadyState lifecycle", () => {
     video.remove();
   });
 
-  test("no contentchange on playback tick", async ({
-    configuration,
-    expect,
-  }) => {
+  test("no contentchange on playback tick", async ({ configuration, expect }) => {
     const video = document.createElement("ef-video");
     video.src = "http://web:3000/head-moov-480p.mp4";
     configuration.append(video);

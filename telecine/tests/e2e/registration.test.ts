@@ -41,9 +41,7 @@ describe.skip("registration", () => {
     await page.getByRole("button", { name: "Continue" }).click();
     await page.getByRole("button", { name: "Finish setup" }).click();
 
-    await playwrightExpect(
-      page.getByText(`Welcome ${email}`),
-    ).toBeVisible();
+    await playwrightExpect(page.getByText(`Welcome ${email}`)).toBeVisible();
 
     await page.goto("/organizations");
     await playwrightExpect(page.getByText("Test Org")).toBeVisible();
@@ -66,9 +64,7 @@ describe.skip("registration", () => {
     await page.getByRole("button", { name: "Continue" }).click();
     await page.getByRole("link", { name: "Skip for now" }).click();
 
-    await playwrightExpect(
-      page.getByText(`Welcome ${email}`),
-    ).toBeVisible();
+    await playwrightExpect(page.getByText(`Welcome ${email}`)).toBeVisible();
 
     await page.goto("/organizations");
     await playwrightExpect(page.getByText("Test Org")).toBeVisible();

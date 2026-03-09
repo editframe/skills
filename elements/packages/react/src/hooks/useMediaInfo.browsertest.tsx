@@ -27,10 +27,7 @@ describe("useMediaInfo - MediaInfoController", () => {
       }
     };
 
-    const controller = new MediaInfoController(
-      video as any,
-      setMediaInfo as any,
-    );
+    const controller = new MediaInfoController(video as any, setMediaInfo as any);
     controller.hostConnected();
     controller.syncNow();
 
@@ -55,18 +52,13 @@ describe("useMediaInfo - MediaInfoController", () => {
     }> = [];
     const setMediaInfo = (info: any) => {
       if (typeof info === "function") {
-        receivedInfos.push(
-          info(receivedInfos[receivedInfos.length - 1] ?? null),
-        );
+        receivedInfos.push(info(receivedInfos[receivedInfos.length - 1] ?? null));
       } else {
         receivedInfos.push(info);
       }
     };
 
-    const controller = new MediaInfoController(
-      video as any,
-      setMediaInfo as any,
-    );
+    const controller = new MediaInfoController(video as any, setMediaInfo as any);
     controller.hostConnected();
     controller.syncNow();
 

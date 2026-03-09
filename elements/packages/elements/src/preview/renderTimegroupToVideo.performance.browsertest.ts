@@ -84,9 +84,7 @@ describe("renderTimegroupToVideo performance", () => {
       expect(result).toBeTruthy();
       if (result) {
         expect(result.byteLength).toBeGreaterThan(0);
-        logger.debug(
-          `[Perf test] Output size: ${(result.byteLength / 1024).toFixed(2)} KB`,
-        );
+        logger.debug(`[Perf test] Output size: ${(result.byteLength / 1024).toFixed(2)} KB`);
       }
 
       // Performance expectations (should complete in reasonable time)

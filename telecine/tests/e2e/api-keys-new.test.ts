@@ -95,9 +95,7 @@ describe("api keys - new", () => {
     await playwrightExpect(
       page.getByText("API Key: Test API Key"),
     ).toBeVisible();
-    await playwrightExpect(
-      page.getByLabel("Copy API Token"),
-    ).toBeVisible();
+    await playwrightExpect(page.getByLabel("Copy API Token")).toBeVisible();
     await playwrightExpect(
       page.getByLabel("Copy Webhook Signing Secret"),
     ).toBeVisible();
@@ -152,9 +150,7 @@ describe("api keys - new", () => {
     await page.getByRole("button", { name: "Create API key" }).click();
 
     await playwrightExpect(
-      page.getByText(
-        "Must be a valid URL starting with http:// or https://",
-      ),
+      page.getByText("Must be a valid URL starting with http:// or https://"),
     ).toBeVisible();
   });
 });

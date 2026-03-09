@@ -66,7 +66,6 @@ export const loader = async ({
   };
 };
 
-
 const PanelOverlay = ({ children }: { children: React.ReactNode }) => {
   const { resourceType } = useParams();
 

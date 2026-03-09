@@ -31,9 +31,7 @@ function verifyDataUrl(dataUrl: string, expectedFormat: "jpeg" | "png"): void {
 /**
  * Test helper: Load image from data URL
  */
-async function loadImageFromDataUrl(
-  dataUrl: string,
-): Promise<HTMLImageElement> {
+async function loadImageFromDataUrl(dataUrl: string): Promise<HTMLImageElement> {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
@@ -155,9 +153,7 @@ describe("WorkerPool Integration Tests", () => {
 
       const results = await Promise.all(
         canvases.map((canvas) =>
-          smallPool.execute((worker) =>
-            encodeCanvasInWorker(worker, canvas, false),
-          ),
+          smallPool.execute((worker) => encodeCanvasInWorker(worker, canvas, false)),
         ),
       );
 
@@ -214,21 +210,13 @@ describe("WorkerPool Integration Tests", () => {
       taintedCanvas.height = 100;
 
       const results = await Promise.allSettled([
-        pool.execute((worker) =>
-          encodeCanvasInWorker(worker, validCanvas, false),
-        ),
-        pool.execute((worker) =>
-          encodeCanvasInWorker(worker, taintedCanvas, false),
-        ),
-        pool.execute((worker) =>
-          encodeCanvasInWorker(worker, validCanvas, true),
-        ),
+        pool.execute((worker) => encodeCanvasInWorker(worker, validCanvas, false)),
+        pool.execute((worker) => encodeCanvasInWorker(worker, taintedCanvas, false)),
+        pool.execute((worker) => encodeCanvasInWorker(worker, validCanvas, true)),
       ]);
 
       // At least the valid canvas encodings should succeed
-      const successCount = results.filter(
-        (r) => r.status === "fulfilled",
-      ).length;
+      const successCount = results.filter((r) => r.status === "fulfilled").length;
       expect(successCount).toBeGreaterThanOrEqual(2);
 
       // Check fulfilled results
@@ -255,12 +243,8 @@ describe("WorkerPool Integration Tests", () => {
       ).rejects.toThrow("Intentional failure");
 
       // Subsequent tasks should still work
-      const result1 = await pool.execute((worker) =>
-        encodeCanvasInWorker(worker, canvas1, false),
-      );
-      const result2 = await pool.execute((worker) =>
-        encodeCanvasInWorker(worker, canvas2, false),
-      );
+      const result1 = await pool.execute((worker) => encodeCanvasInWorker(worker, canvas1, false));
+      const result2 = await pool.execute((worker) => encodeCanvasInWorker(worker, canvas2, false));
 
       verifyDataUrl(result1, "jpeg");
       verifyDataUrl(result2, "jpeg");
@@ -275,9 +259,7 @@ describe("WorkerPool Integration Tests", () => {
       }
 
       // Use large canvases so encoding time dominates over parallelism overhead
-      const canvases = Array.from({ length: 4 }, () =>
-        createTestCanvas(1000, 1000, "blue"),
-      );
+      const canvases = Array.from({ length: 4 }, () => createTestCanvas(1000, 1000, "blue"));
 
       // Warm up the worker pool so all workers are initialized
       await pool.execute((worker) =>
@@ -287,9 +269,7 @@ describe("WorkerPool Integration Tests", () => {
       // Sequential encoding
       const sequentialStart = performance.now();
       for (const canvas of canvases) {
-        await pool.execute((worker) =>
-          encodeCanvasInWorker(worker, canvas, false),
-        );
+        await pool.execute((worker) => encodeCanvasInWorker(worker, canvas, false));
       }
       const sequentialDuration = performance.now() - sequentialStart;
 
@@ -342,9 +322,7 @@ describe("WorkerPool Integration Tests", () => {
       expect(bitmap.height).toBe(100);
 
       // Encode through worker (internally creates and transfers ImageBitmap)
-      const dataUrl = await pool.execute((worker) =>
-        encodeCanvasInWorker(worker, canvas, false),
-      );
+      const dataUrl = await pool.execute((worker) => encodeCanvasInWorker(worker, canvas, false));
 
       verifyDataUrl(dataUrl, "jpeg");
 
@@ -365,9 +343,7 @@ describe("WorkerPool Integration Tests", () => {
       ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
       ctx.fillRect(0, 0, 100, 100);
 
-      const dataUrl = await pool.execute((worker) =>
-        encodeCanvasInWorker(worker, canvas, true),
-      );
+      const dataUrl = await pool.execute((worker) => encodeCanvasInWorker(worker, canvas, true));
 
       verifyDataUrl(dataUrl, "png");
 
@@ -384,9 +360,7 @@ describe("WorkerPool Integration Tests", () => {
 
       const canvas = createTestCanvas(100, 100, "blue");
 
-      const dataUrl = await pool.execute((worker) =>
-        encodeCanvasInWorker(worker, canvas, false),
-      );
+      const dataUrl = await pool.execute((worker) => encodeCanvasInWorker(worker, canvas, false));
 
       verifyDataUrl(dataUrl, "jpeg");
 
@@ -468,9 +442,7 @@ describe("WorkerPool Integration Tests", () => {
 
       for (let i = 0; i < 10; i++) {
         const canvas = createTestCanvas(50, 50, `rgb(${i * 25}, 0, 0)`);
-        const dataUrl = await pool.execute((worker) =>
-          encodeCanvasInWorker(worker, canvas, false),
-        );
+        const dataUrl = await pool.execute((worker) => encodeCanvasInWorker(worker, canvas, false));
         results.push(dataUrl);
       }
 
@@ -489,9 +461,7 @@ describe("WorkerPool Integration Tests", () => {
       const canvas = createTestCanvas(1920, 1080, "blue");
 
       // Start encoding
-      const promise = pool.execute((worker) =>
-        encodeCanvasInWorker(worker, canvas, false),
-      );
+      const promise = pool.execute((worker) => encodeCanvasInWorker(worker, canvas, false));
 
       // Terminate immediately
       pool.terminate();

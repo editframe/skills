@@ -4,11 +4,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
 
 import { Client } from "../client.js";
 import { webReadableFromBuffers } from "../readableFromBuffers.js";
-import {
-  createCaptionFile,
-  lookupCaptionFileByMd5,
-  uploadCaptionFile,
-} from "./caption-file.js";
+import { createCaptionFile, lookupCaptionFileByMd5, uploadCaptionFile } from "./caption-file.js";
 
 const server = setupServer();
 const client = new Client("ef_TEST_TOKEN", "http://localhost");
@@ -26,9 +22,7 @@ describe("CaptionFile", () => {
           filename: "test",
           byte_size: 1024 * 1024 * 3,
         }),
-      ).rejects.toThrowError(
-        "File size 3145728 bytes exceeds limit 2097152 bytes",
-      );
+      ).rejects.toThrowError("File size 3145728 bytes exceeds limit 2097152 bytes");
     });
 
     test("Throws when server returns an error", async () => {
@@ -44,18 +38,13 @@ describe("CaptionFile", () => {
           filename: "test",
           byte_size: 4,
         }),
-      ).rejects.toThrowError(
-        "Failed to create caption 500 Internal Server Error",
-      );
+      ).rejects.toThrowError("Failed to create caption 500 Internal Server Error");
     });
 
     test("Returns json data from the http response", async () => {
       server.use(
         http.post("http://localhost/api/v1/caption_files", () =>
-          HttpResponse.json(
-            { id: "test-id" },
-            { status: 200, statusText: "OK" },
-          ),
+          HttpResponse.json({ id: "test-id" }, { status: 200, statusText: "OK" }),
         ),
       );
 
@@ -78,9 +67,7 @@ describe("CaptionFile", () => {
           webReadableFromBuffers(Buffer.from("test")),
           1024 * 1024 * 3,
         ),
-      ).rejects.toThrowError(
-        "File size 3145728 bytes exceeds limit 2097152 bytes",
-      );
+      ).rejects.toThrowError("File size 3145728 bytes exceeds limit 2097152 bytes");
     });
 
     test("Throws when server returns an error", async () => {
@@ -91,24 +78,14 @@ describe("CaptionFile", () => {
       );
 
       await expect(
-        uploadCaptionFile(
-          client,
-          "test-id",
-          webReadableFromBuffers(Buffer.from("nice")),
-          4,
-        ),
-      ).rejects.toThrowError(
-        "Failed to upload caption 500 Internal Server Error",
-      );
+        uploadCaptionFile(client, "test-id", webReadableFromBuffers(Buffer.from("nice")), 4),
+      ).rejects.toThrowError("Failed to upload caption 500 Internal Server Error");
     });
 
     test("Returns json data from the http response", async () => {
       server.use(
         http.post("http://localhost/api/v1/caption_files/test-id/upload", () =>
-          HttpResponse.json(
-            { id: "test-id" },
-            { status: 200, statusText: "OK" },
-          ),
+          HttpResponse.json({ id: "test-id" }, { status: 200, statusText: "OK" }),
         ),
       );
 
@@ -162,9 +139,7 @@ describe("CaptionFile", () => {
         ),
       );
 
-      await expect(
-        lookupCaptionFileByMd5(client, "test-md5"),
-      ).rejects.toThrowError(
+      await expect(lookupCaptionFileByMd5(client, "test-md5")).rejects.toThrowError(
         "Failed to lookup caption by md5 test-md5 500 Internal Server Error",
       );
     });

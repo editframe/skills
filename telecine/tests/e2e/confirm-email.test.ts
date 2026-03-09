@@ -53,8 +53,8 @@ describe("email confirmation", () => {
     await followEmailLink("Confirm your email address");
     const page = getPage();
 
-    await playwrightExpect(
-      page.locator("h3").first(),
-    ).toHaveText("Failed to confirm email");
+    await playwrightExpect(page.locator("h3").first()).toHaveText(
+      "Failed to confirm email",
+    );
   });
 });

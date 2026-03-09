@@ -14,9 +14,7 @@ export interface SpawnedViteServer {
  * This allows Vite to run in its own process with full config resolution,
  * while the CLI maintains control via Playwright for rendering.
  */
-export async function spawnViteServer(
-  directory: string,
-): Promise<SpawnedViteServer> {
+export async function spawnViteServer(directory: string): Promise<SpawnedViteServer> {
   return new Promise((resolve, reject) => {
     log("Spawning vite dev server in", directory);
 
@@ -77,9 +75,7 @@ export async function spawnViteServer(
       if (!resolved) {
         resolved = true;
         reject(
-          new Error(
-            `Vite exited unexpectedly with code ${code} and signal ${signal}\n${stderr}`,
-          ),
+          new Error(`Vite exited unexpectedly with code ${code} and signal ${signal}\n${stderr}`),
         );
       }
     });
@@ -89,11 +85,7 @@ export async function spawnViteServer(
       if (!resolved) {
         resolved = true;
         viteProcess.kill();
-        reject(
-          new Error(
-            `Vite server did not start within 30 seconds\nStderr: ${stderr}`,
-          ),
-        );
+        reject(new Error(`Vite server did not start within 30 seconds\nStderr: ${stderr}`));
       }
     }, 30000);
   });

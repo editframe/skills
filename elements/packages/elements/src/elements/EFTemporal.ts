@@ -7,9 +7,8 @@ import type { EFTimegroup } from "./EFTimegroup.js";
 // Lazy import to break circular dependency: EFTemporal -> EFTimegroup -> EFMedia -> EFTemporal
 // isTimegroupCalculatingDuration is only used at runtime in a getter, so we can import it lazily
 // Use a module-level variable that gets set when EFTimegroup module loads
-let isTimegroupCalculatingDurationFn:
-  | ((timegroup: EFTimegroup | undefined) => boolean)
-  | null = null;
+let isTimegroupCalculatingDurationFn: ((timegroup: EFTimegroup | undefined) => boolean) | null =
+  null;
 
 // This function will be called by EFTimegroup when it loads to register the function
 export const registerIsTimegroupCalculatingDuration = (
@@ -18,13 +17,9 @@ export const registerIsTimegroupCalculatingDuration = (
   isTimegroupCalculatingDurationFn = fn;
 };
 
-const getIsTimegroupCalculatingDuration = (): ((
-  timegroup: EFTimegroup | undefined,
-) => boolean) => {
+const getIsTimegroupCalculatingDuration = (): ((timegroup: EFTimegroup | undefined) => boolean) => {
   if (isTimegroupCalculatingDurationFn) {
-    return isTimegroupCalculatingDurationFn as (
-      timegroup: EFTimegroup | undefined,
-    ) => boolean;
+    return isTimegroupCalculatingDurationFn as (timegroup: EFTimegroup | undefined) => boolean;
   }
 
   // If not registered yet, try to import synchronously (only works if module is already loaded)
@@ -45,9 +40,7 @@ const getIsTimegroupCalculatingDuration = (): ((
   return fallbackFn;
 };
 
-export const timegroupContext = createContext<EFTimegroup>(
-  Symbol("timeGroupContext"),
-);
+export const timegroupContext = createContext<EFTimegroup>(Symbol("timeGroupContext"));
 
 // ============================================================================
 // Core Concept 1: Temporal Role
@@ -72,9 +65,7 @@ export type ContentChangeReason = "source" | "bounds" | "structure" | "content";
 
 type TemporalRole = "root" | "child";
 
-function determineTemporalRole(
-  parentTimegroup: EFTimegroup | undefined,
-): TemporalRole {
+function determineTemporalRole(parentTimegroup: EFTimegroup | undefined): TemporalRole {
   return parentTimegroup === undefined ? "root" : "child";
 }
 
@@ -172,9 +163,7 @@ function evaluateModifiedDuration(
   switch (modification.strategy) {
     case "trimming": {
       const trimmedDurationMs =
-        baseDurationMs -
-        (modification.trimStartMs ?? 0) -
-        (modification.trimEndMs ?? 0);
+        baseDurationMs - (modification.trimStartMs ?? 0) - (modification.trimEndMs ?? 0);
       return Math.max(0, trimmedDurationMs);
     }
     case "source-manipulation": {
@@ -200,9 +189,7 @@ function evaluateModifiedDuration(
 
 type StartTimeStrategy = "sequence" | "offset";
 
-function determineStartTimeStrategy(
-  parentTimegroup: EFTimegroup | undefined,
-): StartTimeStrategy {
+function determineStartTimeStrategy(parentTimegroup: EFTimegroup | undefined): StartTimeStrategy {
   if (!parentTimegroup) {
     return "offset";
   }
@@ -225,10 +212,7 @@ function evaluateStartTimeForSequence(
   return previous.startTimeMs + previous.durationMs - parentTimegroup.overlapMs;
 }
 
-function evaluateStartTimeForOffset(
-  parentTimegroup: EFTimegroup,
-  offsetMs: number,
-): number {
+function evaluateStartTimeForOffset(parentTimegroup: EFTimegroup, offsetMs: number): number {
   return parentTimegroup.startTimeMs + offsetMs;
 }
 
@@ -250,12 +234,7 @@ function evaluateStartTime(
       if (ownIndex === -1) {
         return 0;
       }
-      return evaluateStartTimeForSequence(
-        element,
-        parentTimegroup,
-        siblingTemporals,
-        ownIndex,
-      );
+      return evaluateStartTimeForSequence(element, parentTimegroup, siblingTemporals, ownIndex);
     }
     case "offset":
       return evaluateStartTimeForOffset(parentTimegroup, offsetMs);
@@ -285,18 +264,12 @@ function determineCurrentTimeSource(
   durationMs: number,
 ): CurrentTimeSourceResult {
   if (playbackController) {
-    const timeMs = Math.min(
-      Math.max(0, playbackController.currentTimeMs),
-      durationMs,
-    );
+    const timeMs = Math.min(Math.max(0, playbackController.currentTimeMs), durationMs);
     return { source: "playback-controller", timeMs };
   }
 
   if (rootTimegroup && !isRootTimegroup) {
-    const timeMs = Math.min(
-      Math.max(0, rootTimegroup.currentTimeMs - startTimeMs),
-      durationMs,
-    );
+    const timeMs = Math.min(Math.max(0, rootTimegroup.currentTimeMs - startTimeMs), durationMs);
     return { source: "root-timegroup", timeMs };
   }
 
@@ -551,8 +524,7 @@ export declare class TemporalMixinInterface {
   updateComplete: Promise<boolean>;
 }
 
-export const isEFTemporal = (obj: any): obj is TemporalMixinInterface =>
-  obj[EF_TEMPORAL];
+export const isEFTemporal = (obj: any): obj is TemporalMixinInterface => obj[EF_TEMPORAL];
 
 const EF_TEMPORAL = Symbol("EF_TEMPORAL");
 
@@ -631,10 +603,7 @@ let temporalCache: Map<Element, TemporalMixinInterface[]>;
 let temporalCacheResetScheduled = false;
 export const resetTemporalCache = () => {
   temporalCache = new Map();
-  if (
-    typeof requestAnimationFrame !== "undefined" &&
-    !temporalCacheResetScheduled
-  ) {
+  if (typeof requestAnimationFrame !== "undefined" && !temporalCacheResetScheduled) {
     temporalCacheResetScheduled = true;
     requestAnimationFrame(() => {
       temporalCacheResetScheduled = false;
@@ -706,10 +675,7 @@ let startTimeMsCache = new WeakMap<Element, number>();
 let startTimeMsCacheResetScheduled = false;
 const resetStartTimeMsCache = () => {
   startTimeMsCache = new WeakMap();
-  if (
-    typeof requestAnimationFrame !== "undefined" &&
-    !startTimeMsCacheResetScheduled
-  ) {
+  if (typeof requestAnimationFrame !== "undefined" && !startTimeMsCacheResetScheduled) {
     startTimeMsCacheResetScheduled = true;
     requestAnimationFrame(() => {
       startTimeMsCacheResetScheduled = false;
@@ -723,9 +689,7 @@ export const flushStartTimeMsCache = () => {
   startTimeMsCache = new WeakMap();
 };
 
-export const EFTemporal = <T extends Constructor<LitElement>>(
-  superClass: T,
-) => {
+export const EFTemporal = <T extends Constructor<LitElement>>(superClass: T) => {
   class TemporalMixinClass extends superClass {
     // ---- Content Readiness Protocol ----
 
@@ -861,8 +825,7 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       // If there's NO ancestor timegroup, this is a true root → create PlaybackController.
       // If there IS an ancestor, wait for context to propagate (handled by parentTimegroup setter).
       // Note: closest() includes self, so we check from parentElement to find true ancestors.
-      const hasAncestorTimegroup =
-        this.parentElement?.closest("ef-timegroup") != null;
+      const hasAncestorTimegroup = this.parentElement?.closest("ef-timegroup") != null;
 
       if (!hasAncestorTimegroup && !this.playbackController) {
         // True root: no ancestor timegroup in DOM
@@ -976,10 +939,7 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       if (this._trimStartMs === undefined) {
         return undefined;
       }
-      return Math.min(
-        Math.max(this._trimStartMs, 0),
-        this.intrinsicDurationMs ?? 0,
-      );
+      return Math.min(Math.max(this._trimStartMs, 0), this.intrinsicDurationMs ?? 0);
     }
 
     set trimStartMs(value: number | undefined) {
@@ -1033,10 +993,7 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       if (this._sourceOutMs === undefined) {
         return undefined;
       }
-      if (
-        this.intrinsicDurationMs &&
-        this._sourceOutMs > this.intrinsicDurationMs
-      ) {
+      if (this.intrinsicDurationMs && this._sourceOutMs > this.intrinsicDurationMs) {
         return this.intrinsicDurationMs;
       }
       return Math.max(this._sourceOutMs, 0);
@@ -1053,11 +1010,9 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       // properties change (the visible frame changes even though currentTimeMs hasn't).
       // Also render the initial frame when a standalone root becomes ready.
       const sourceChanged =
-        changedProperties.has("_sourceInMs") ||
-        changedProperties.has("_sourceOutMs");
+        changedProperties.has("_sourceInMs") || changedProperties.has("_sourceOutMs");
       const trimChanged =
-        changedProperties.has("_trimStartMs") ||
-        changedProperties.has("_trimEndMs");
+        changedProperties.has("_trimStartMs") || changedProperties.has("_trimEndMs");
       const becameReady =
         changedProperties.has("contentReadyState") &&
         changedProperties.get("contentReadyState") !== "ready" &&
@@ -1065,18 +1020,10 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       const offsetChanged = changedProperties.has("_offsetMs");
       const durationChanged = changedProperties.has("_durationMs");
 
-      if (
-        sourceChanged ||
-        trimChanged ||
-        becameReady ||
-        offsetChanged ||
-        durationChanged
-      ) {
+      if (sourceChanged || trimChanged || becameReady || offsetChanged || durationChanged) {
         // Render clones are sequenced via seekForRender — don't trigger autonomous re-renders,
         // which would abort the in-progress seekForRender FrameController signal.
-        const isRenderClone = this.rootTimegroup?.hasAttribute(
-          "data-no-playback-controller",
-        );
+        const isRenderClone = this.rootTimegroup?.hasAttribute("data-no-playback-controller");
         if (this.rootTimegroup && !isRenderClone) {
           this.rootTimegroup.requestFrameRender();
         } else if (this.playbackController) {
@@ -1099,8 +1046,7 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
     rootTimegroup?: EFTimegroup = this.getRootTimegroup();
 
     private getRootTimegroup(): EFTimegroup | undefined {
-      let parent =
-        this.tagName === "EF-TIMEGROUP" ? this : this.parentTimegroup;
+      let parent = this.tagName === "EF-TIMEGROUP" ? this : this.parentTimegroup;
       while (parent?.parentTimegroup) {
         parent = parent.parentTimegroup;
       }
@@ -1129,11 +1075,8 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
     get durationMs() {
       // Prevent infinite loops: don't call parent.durationMs if parent is currently calculating
       // Lazy import to break circular dependency: EFTemporal -> EFTimegroup -> EFMedia -> EFTemporal
-      const isTimegroupCalculatingDuration =
-        getIsTimegroupCalculatingDuration();
-      const parentDurationMs = isTimegroupCalculatingDuration(
-        this.parentTimegroup,
-      )
+      const isTimegroupCalculatingDuration = getIsTimegroupCalculatingDuration();
+      const parentDurationMs = isTimegroupCalculatingDuration(this.parentTimegroup)
         ? undefined
         : this.parentTimegroup?.durationMs;
       const durationSource = determineDurationSource(
@@ -1149,10 +1092,7 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
         this.sourceOutMs,
       );
 
-      return evaluateModifiedDuration(
-        durationSource.baseDurationMs,
-        modification,
-      );
+      return evaluateModifiedDuration(durationSource.baseDurationMs, modification);
     }
 
     get sourceStartMs() {
@@ -1255,10 +1195,7 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
           }
           break;
         case "child":
-          if (
-            this.rootTimegroup &&
-            this.rootTimegroup !== (this as any as EFTimegroup)
-          ) {
+          if (this.rootTimegroup && this.rootTimegroup !== (this as any as EFTimegroup)) {
             this.rootTimegroup.currentTimeMs = value;
           } else {
             this.#currentTimeMs = value;
@@ -1282,11 +1219,8 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
       // 1. Explicitly disabled via attribute (e.g., for render clones)
       // 2. Already exists
       // 3. In headless rendering mode (EF_FRAMEGEN active)
-      const noPlayback = (this as any).hasAttribute?.(
-        "data-no-playback-controller",
-      );
-      const isRendering =
-        typeof window !== "undefined" && "FRAMEGEN_BRIDGE" in window;
+      const noPlayback = (this as any).hasAttribute?.("data-no-playback-controller");
+      const isRendering = typeof window !== "undefined" && "FRAMEGEN_BRIDGE" in window;
       if (noPlayback || this.playbackController || isRendering) {
         return;
       }
@@ -1309,6 +1243,5 @@ export const EFTemporal = <T extends Constructor<LitElement>>(
     value: true,
   });
 
-  return TemporalMixinClass as unknown as Constructor<TemporalMixinInterface> &
-    T;
+  return TemporalMixinClass as unknown as Constructor<TemporalMixinInterface> & T;
 };

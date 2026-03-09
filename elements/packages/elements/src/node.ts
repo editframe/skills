@@ -8,11 +8,7 @@
  */
 
 // Re-export only the getRenderInfo module which has no side effects
-export {
-  getRenderInfo,
-  RenderInfoSchema,
-  type RenderInfo,
-} from "./getRenderInfo.js";
+export { getRenderInfo, RenderInfoSchema, type RenderInfo } from "./getRenderInfo.js";
 
 // Re-export types (these have no runtime code)
 export type { EFTimegroup } from "./elements/EFTimegroup.js";

@@ -17,8 +17,8 @@ import { logger } from "./logger.js";
  * Ordered from highest to lowest quality.
  */
 const SCALE_STEPS = [
-  1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.45, 0.4, 0.35,
-  0.3, 0.25, 0.2, 0.15, 0.1,
+  1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.15,
+  0.1,
 ] as const;
 type ScaleStep = (typeof SCALE_STEPS)[number];
 
@@ -111,16 +111,11 @@ export class AdaptiveResolutionTracker {
         }
       });
 
-      this.pressureObserver
-        .observe("cpu", { sampleInterval: 500 })
-        .catch(() => {
-          // Ignore errors from observe (e.g., AbortError if disconnect called before observe resolves)
-        });
+      this.pressureObserver.observe("cpu", { sampleInterval: 500 }).catch(() => {
+        // Ignore errors from observe (e.g., AbortError if disconnect called before observe resolves)
+      });
     } catch (e) {
-      logger.warn(
-        "[AdaptiveResolutionTracker] Failed to initialize PressureObserver:",
-        e,
-      );
+      logger.warn("[AdaptiveResolutionTracker] Failed to initialize PressureObserver:", e);
       this.pressureObserver = null;
     }
   }
@@ -167,8 +162,7 @@ export class AdaptiveResolutionTracker {
       return; // Rate limit changes
     }
 
-    const avgRenderTime =
-      this.renderTimes.reduce((a, b) => a + b, 0) / this.renderTimes.length;
+    const avgRenderTime = this.renderTimes.reduce((a, b) => a + b, 0) / this.renderTimes.length;
 
     // Scale DOWN if we're consistently slow
     if (avgRenderTime > SCALE_DOWN_THRESHOLD_MS) {
@@ -184,8 +178,7 @@ export class AdaptiveResolutionTracker {
 
     // Scale UP if we have sustained headroom and CPU isn't under pressure
     // (we already returned above if pressure is serious/critical, but check again for clarity)
-    const pressureOk =
-      this.pressureState === "nominal" || this.pressureState === "fair";
+    const pressureOk = this.pressureState === "nominal" || this.pressureState === "fair";
     if (
       avgRenderTime < SCALE_UP_THRESHOLD_MS &&
       this.samplesAtCurrentScale >= SCALE_UP_STABILITY_SAMPLES &&
@@ -260,8 +253,7 @@ export class AdaptiveResolutionTracker {
     // FPS based on frame intervals (how often we're called), not render time
     const avgFrameInterval =
       this.frameIntervals.length > 0
-        ? this.frameIntervals.reduce((a, b) => a + b, 0) /
-          this.frameIntervals.length
+        ? this.frameIntervals.reduce((a, b) => a + b, 0) / this.frameIntervals.length
         : 16.67;
     const fps = avgFrameInterval > 0 ? 1000 / avgFrameInterval : 0;
 
@@ -269,8 +261,7 @@ export class AdaptiveResolutionTracker {
     const timeSinceLastChange = now - this.lastScaleChangeTime;
     const canChange = timeSinceLastChange >= MIN_SCALE_CHANGE_INTERVAL_MS;
 
-    const pressureOk =
-      this.pressureState === "nominal" || this.pressureState === "fair";
+    const pressureOk = this.pressureState === "nominal" || this.pressureState === "fair";
     const canScaleUp =
       canChange &&
       this.currentScaleIndex > 0 &&
@@ -278,8 +269,7 @@ export class AdaptiveResolutionTracker {
       this.samplesAtCurrentScale >= SCALE_UP_STABILITY_SAMPLES &&
       pressureOk;
 
-    const canScaleDown =
-      canChange && this.currentScaleIndex < SCALE_STEPS.length - 1;
+    const canScaleDown = canChange && this.currentScaleIndex < SCALE_STEPS.length - 1;
 
     // Headroom: positive = we're faster than needed, negative = we're behind
     const headroom = TARGET_FRAME_TIME_MS - avgRenderTime;

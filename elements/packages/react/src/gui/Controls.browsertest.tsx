@@ -87,14 +87,10 @@ describe("Controls", () => {
   });
 
   describe("hydratedContainer", () => {
-    test.skip("proxies contexts following hydration", async ({
-      hydratedContainer,
-      expect,
-    }) => {
-      await vi.waitUntil(
-        () => hydratedContainer.innerHTML.includes("ef-controls"),
-        { timeout: 5000 },
-      );
+    test.skip("proxies contexts following hydration", async ({ hydratedContainer, expect }) => {
+      await vi.waitUntil(() => hydratedContainer.innerHTML.includes("ef-controls"), {
+        timeout: 5000,
+      });
       const controls =
         // biome-ignore lint/style/noNonNullAssertion: Safe in tests where elements are guaranteed to exist
         hydratedContainer.getElementsByTagName("ef-controls")[0]!;

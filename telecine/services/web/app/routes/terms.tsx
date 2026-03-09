@@ -53,8 +53,9 @@ export default function TermsPage() {
             </p>
 
             <p>
-              <strong>Prohibited:</strong> Sharing credentials or API keys across
-              organizations; creating multiple accounts to circumvent pricing.
+              <strong>Prohibited:</strong> Sharing credentials or API keys
+              across organizations; creating multiple accounts to circumvent
+              pricing.
             </p>
 
             <p>
@@ -74,7 +75,9 @@ export default function TermsPage() {
               <strong>Team (4–10 employees):</strong> Client-Side SDK for any
               business purpose.
               <br />
-              <strong>Cloud (11–20 employees, or any size needing cloud):</strong>{" "}
+              <strong>
+                Cloud (11–20 employees, or any size needing cloud):
+              </strong>{" "}
               Client-Side SDK + Server-Side Rendering + Premium Player.
               <br />
               <strong>Enterprise (21+):</strong> Cloud Tier features + priority
@@ -105,24 +108,24 @@ export default function TermsPage() {
             </p>
 
             <p>
-              <strong>Delivery minute:</strong> One minute of video streamed from
-              cloud storage via Premium Player. Cache replays in the same session
-              are not billed. Local file playback via the Client-Side SDK is not
-              billed.
+              <strong>Delivery minute:</strong> One minute of video streamed
+              from cloud storage via Premium Player. Cache replays in the same
+              session are not billed. Local file playback via the Client-Side
+              SDK is not billed.
             </p>
 
             <p>
               See{" "}
-              <a href="https://editframe.com/pricing">editframe.com/pricing</a> for
-              current rates.
+              <a href="https://editframe.com/pricing">editframe.com/pricing</a>{" "}
+              for current rates.
             </p>
 
             <h3>Upgrade Requirements</h3>
 
             <p>
-              You are responsible for upgrading within 30 days of crossing a tier
-              threshold. Evaluation use (30 days, non-production) is permitted
-              before upgrading.
+              You are responsible for upgrading within 30 days of crossing a
+              tier threshold. Evaluation use (30 days, non-production) is
+              permitted before upgrading.
             </p>
 
             <hr />
@@ -181,7 +184,8 @@ export default function TermsPage() {
             </p>
 
             <p>
-              We may suspend access immediately for violations or security risks.
+              We may suspend access immediately for violations or security
+              risks.
             </p>
 
             <hr />
@@ -213,8 +217,8 @@ export default function TermsPage() {
 
             <p>
               Target uptime: 99.5% monthly. Prorated service credits available
-              for documented downtime. Credits are the sole remedy for downtime —
-              no cash refunds.
+              for documented downtime. Credits are the sole remedy for downtime
+              — no cash refunds.
             </p>
 
             <hr />
@@ -273,8 +277,8 @@ export default function TermsPage() {
                 <strong>Jurisdiction:</strong> New York County, NY courts
               </li>
               <li>
-                <strong>Jury trial waiver:</strong> Both parties waive jury trial
-                rights to the maximum extent permitted by law
+                <strong>Jury trial waiver:</strong> Both parties waive jury
+                trial rights to the maximum extent permitted by law
               </li>
               <li>
                 <strong>Assignment:</strong> You may not assign these Terms

@@ -33,7 +33,10 @@ function makeContext(session: ReturnType<typeof makeSession> | null) {
   return { get: (key: unknown) => store.get(key) };
 }
 
-function makeRequest(body: Record<string, unknown>, headers: Record<string, string> = {}) {
+function makeRequest(
+  body: Record<string, unknown>,
+  headers: Record<string, string> = {},
+) {
   return new Request("http://localhost/api/v1/telemetry", {
     method: "POST",
     headers: { "Content-Type": "application/json", ...headers },
@@ -170,7 +173,12 @@ describe("POST /api/v1/telemetry", () => {
 
     test("stores width/height/fps when provided", async () => {
       await action({
-        request: makeRequest({ render_path: "client", width: 1920, height: 1080, fps: 30 }),
+        request: makeRequest({
+          render_path: "client",
+          width: 1920,
+          height: 1080,
+          fps: 30,
+        }),
         context: makeContext(makeSession()),
       } as any);
       const row = mocks.mockValues.mock.calls[0][0];
@@ -180,12 +188,18 @@ describe("POST /api/v1/telemetry", () => {
     });
 
     test("stores feature_usage when provided", async () => {
-      const feature_usage = { hasVideo: true, hasAudio: false, elementCount: 3 };
+      const feature_usage = {
+        hasVideo: true,
+        hasAudio: false,
+        elementCount: 3,
+      };
       await action({
         request: makeRequest({ render_path: "client", feature_usage }),
         context: makeContext(makeSession()),
       } as any);
-      expect(mocks.mockValues.mock.calls[0][0].feature_usage).toEqual(feature_usage);
+      expect(mocks.mockValues.mock.calls[0][0].feature_usage).toEqual(
+        feature_usage,
+      );
     });
 
     test("stores sdk_version and cli_version when provided", async () => {
@@ -217,7 +231,10 @@ describe("POST /api/v1/telemetry", () => {
 
     test("falls back to x-real-ip when x-forwarded-for is absent", async () => {
       await action({
-        request: makeRequest({ render_path: "cli" }, { "x-real-ip": "198.51.100.5" }),
+        request: makeRequest(
+          { render_path: "cli" },
+          { "x-real-ip": "198.51.100.5" },
+        ),
         context: makeContext(makeSession()),
       } as any);
       expect(mocks.mockValues.mock.calls[0][0].ip_address).toBe("198.51.100.5");
@@ -231,7 +248,9 @@ describe("POST /api/v1/telemetry", () => {
         ),
         context: makeContext(makeSession()),
       } as any);
-      expect(mocks.mockValues.mock.calls[0][0].origin).toBe("https://app.example.com");
+      expect(mocks.mockValues.mock.calls[0][0].origin).toBe(
+        "https://app.example.com",
+      );
     });
   });
 
@@ -260,13 +279,18 @@ describe("POST /api/v1/telemetry", () => {
         request: makeRequest({ render_path: "client" }),
         context: makeContext(makeSession()),
       } as any);
-      expect(mocks.mockLoggerError).toHaveBeenCalledWith(dbError, "telemetry insert failed");
+      expect(mocks.mockLoggerError).toHaveBeenCalledWith(
+        dbError,
+        "telemetry insert failed",
+      );
     });
   });
 
   describe("non-POST methods", () => {
     test("rejects GET requests with 405", async () => {
-      const request = new Request("http://localhost/api/v1/telemetry", { method: "GET" });
+      const request = new Request("http://localhost/api/v1/telemetry", {
+        method: "GET",
+      });
       const context = makeContext(makeSession());
       await expect(action({ request, context } as any)).rejects.toMatchObject({
         status: 405,
@@ -299,7 +323,11 @@ describe("POST /api/v1/telemetry", () => {
 
     test("silently drops numeric fields sent as strings", async () => {
       await action({
-        request: makeRequest({ render_path: "client", duration_ms: "5000", width: "1920" }),
+        request: makeRequest({
+          render_path: "client",
+          duration_ms: "5000",
+          width: "1920",
+        }),
         context: makeContext(makeSession()),
       } as any);
       const row = mocks.mockValues.mock.calls[0][0];
@@ -347,7 +375,10 @@ describe("POST /api/v1/telemetry", () => {
 
     test("handles single-IP x-forwarded-for without comma", async () => {
       await action({
-        request: makeRequest({ render_path: "cli" }, { "x-forwarded-for": "10.0.0.1" }),
+        request: makeRequest(
+          { render_path: "cli" },
+          { "x-forwarded-for": "10.0.0.1" },
+        ),
         context: makeContext(makeSession()),
       } as any);
       expect(mocks.mockValues.mock.calls[0][0].ip_address).toBe("10.0.0.1");

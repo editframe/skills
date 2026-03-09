@@ -142,7 +142,9 @@ describe.skip("assets", () => {
     ).toBeVisible();
     await playwrightExpect(
       page.getByText(`Asset ${imageFile.id} has been deleted`),
-    ).toBeVisible({ timeout: 30000 });
+    ).toBeVisible({
+      timeout: 30000,
+    });
   });
 
   test("Upload a caption file and delete it", async () => {
@@ -177,7 +179,9 @@ describe.skip("assets", () => {
     ).toBeVisible();
     await playwrightExpect(
       page.getByText(`Asset ${captionFile.id} has been deleted`),
-    ).toBeVisible({ timeout: 30000 });
+    ).toBeVisible({
+      timeout: 30000,
+    });
   });
 
   test("Upload a fragment index file and tracks and delete it", async () => {
@@ -259,7 +263,9 @@ describe.skip("assets", () => {
     ).toBeVisible();
     await playwrightExpect(
       page.getByText(`Asset ${isoFile.id} has been deleted`),
-    ).toBeVisible({ timeout: 30000 });
+    ).toBeVisible({
+      timeout: 30000,
+    });
   });
 
   test("Upload an unprocessed file and delete it", async () => {

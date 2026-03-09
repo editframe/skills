@@ -8,8 +8,18 @@ export function ToolsGridSection() {
       <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.02]">
         <svg width="100%" height="100%">
           <defs>
-            <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="var(--poster-green)" strokeWidth="1"/>
+            <pattern
+              id="grid"
+              width="60"
+              height="60"
+              patternUnits="userSpaceOnUse"
+            >
+              <path
+                d="M 60 0 L 0 0 0 60"
+                fill="none"
+                stroke="var(--poster-green)"
+                strokeWidth="1"
+              />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#grid)" />
@@ -21,8 +31,18 @@ export function ToolsGridSection() {
         <div className="mb-16">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 bg-[var(--poster-green)] flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <svg
+                className="w-6 h-6 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
               </svg>
             </div>
             <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase text-[var(--ink-black)] dark:text-white">
@@ -30,7 +50,8 @@ export function ToolsGridSection() {
             </h2>
           </div>
           <p className="text-lg text-[var(--warm-gray)] max-w-xl">
-            Real tools generated with agent skills. Interactive, production-ready.
+            Real tools generated with agent skills. Interactive,
+            production-ready.
           </p>
         </div>
 

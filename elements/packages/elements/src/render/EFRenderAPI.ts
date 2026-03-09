@@ -59,43 +59,33 @@ declare global {
 
 function findRootTimegroup(): EFTimegroup | null {
   // Try to find timegroup from workbench first
-  const workbench = document.querySelector(
-    "ef-workbench",
-  ) as EFWorkbench | null;
+  const workbench = document.querySelector("ef-workbench") as EFWorkbench | null;
   if (workbench) {
-    const timegroup = workbench.querySelector(
-      "ef-timegroup",
-    ) as EFTimegroup | null;
+    const timegroup = workbench.querySelector("ef-timegroup") as EFTimegroup | null;
     if (timegroup) {
       return timegroup;
     }
   }
 
   // Fallback: find first root timegroup
-  const rootTimegroup = document.querySelector(
-    "ef-timegroup",
-  ) as EFTimegroup | null;
+  const rootTimegroup = document.querySelector("ef-timegroup") as EFTimegroup | null;
   return rootTimegroup;
 }
 
 function setWorkbenchRendering(rendering: boolean): void {
-  const workbench = document.querySelector(
-    "ef-workbench",
-  ) as EFWorkbench | null;
+  const workbench = document.querySelector("ef-workbench") as EFWorkbench | null;
   if (workbench) {
     workbench.rendering = rendering;
   }
 }
 
-async function waitForTimegroupDimensions(
-  timegroup: EFTimegroup,
-): Promise<void> {
+async function waitForTimegroupDimensions(timegroup: EFTimegroup): Promise<void> {
   await Promise.all(
     Array.from(document.styleSheets).map((sheet) => {
       if (sheet.href) {
-        const link = Array.from(
-          document.querySelectorAll('link[rel="stylesheet"]'),
-        ).find((l) => (l as HTMLLinkElement).href === sheet.href);
+        const link = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).find(
+          (l) => (l as HTMLLinkElement).href === sheet.href,
+        );
         if (link && !(link as HTMLLinkElement).sheet) {
           return new Promise((resolve) => {
             link.addEventListener("load", resolve);
@@ -115,8 +105,7 @@ async function waitForTimegroupDimensions(
   const hasRect = rect.width > 0 && rect.height > 0;
   const computedWidth = getComputedStyle(timegroup).width;
   const computedHeight = getComputedStyle(timegroup).height;
-  const hasComputed =
-    parseFloat(computedWidth) > 0 && parseFloat(computedHeight) > 0;
+  const hasComputed = parseFloat(computedWidth) > 0 && parseFloat(computedHeight) > 0;
 
   if (!hasOffset && !hasRect && !hasComputed) {
     throw new Error(
@@ -171,8 +160,7 @@ const api: IEFRenderAPI = {
 
       // Render with custom stream
       // Dynamic import to avoid loading render utilities during module initialization
-      const { renderTimegroupToVideo } =
-        await import("../preview/renderTimegroupToVideo.js");
+      const { renderTimegroupToVideo } = await import("../preview/renderTimegroupToVideo.js");
       await renderTimegroupToVideo(timegroup, {
         ...options,
         customWritableStream: chunkWriter,
@@ -205,8 +193,7 @@ const api: IEFRenderAPI = {
       const onProgress = options.onProgress || window.onRenderProgress;
 
       // Dynamic import to avoid loading render utilities during module initialization
-      const { renderTimegroupToVideo } =
-        await import("../preview/renderTimegroupToVideo.js");
+      const { renderTimegroupToVideo } = await import("../preview/renderTimegroupToVideo.js");
       const buffer = await renderTimegroupToVideo(timegroup, {
         ...options,
         returnBuffer: true,

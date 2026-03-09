@@ -23,9 +23,7 @@ describe("EFThumbnailStrip - Basic Functionality", () => {
     container.appendChild(timegroup);
     await timegroup.updateComplete;
 
-    const strip = document.createElement(
-      "ef-thumbnail-strip",
-    ) as EFThumbnailStrip;
+    const strip = document.createElement("ef-thumbnail-strip") as EFThumbnailStrip;
     strip.targetElement = timegroup;
     strip.thumbnailHeight = 48;
     strip.thumbnailSpacingPx = 96;
@@ -35,16 +33,12 @@ describe("EFThumbnailStrip - Basic Functionality", () => {
     await strip.updateComplete;
 
     // Should have a thumbnail container
-    const thumbnailContainer = strip.shadowRoot?.querySelector(
-      ".thumbnail-container",
-    );
+    const thumbnailContainer = strip.shadowRoot?.querySelector(".thumbnail-container");
     expect(thumbnailContainer).toBeTruthy();
   });
 
   test("should show error for missing target", async () => {
-    const strip = document.createElement(
-      "ef-thumbnail-strip",
-    ) as EFThumbnailStrip;
+    const strip = document.createElement("ef-thumbnail-strip") as EFThumbnailStrip;
     container.appendChild(strip);
     await strip.updateComplete;
 
@@ -58,9 +52,7 @@ describe("EFThumbnailStrip - Basic Functionality", () => {
     div.id = "test-div";
     container.appendChild(div);
 
-    const strip = document.createElement(
-      "ef-thumbnail-strip",
-    ) as EFThumbnailStrip;
+    const strip = document.createElement("ef-thumbnail-strip") as EFThumbnailStrip;
     strip.targetElement = div;
     container.appendChild(strip);
     await strip.updateComplete;
@@ -79,9 +71,7 @@ describe("EFThumbnailStrip - Basic Functionality", () => {
     container.appendChild(timegroup);
     await timegroup.updateComplete;
 
-    const strip = document.createElement(
-      "ef-thumbnail-strip",
-    ) as EFThumbnailStrip;
+    const strip = document.createElement("ef-thumbnail-strip") as EFThumbnailStrip;
     strip.targetElement = timegroup;
     strip.thumbnailHeight = 48;
     container.appendChild(strip);
@@ -101,9 +91,7 @@ describe("EFThumbnailStrip - Basic Functionality", () => {
     container.appendChild(timegroup);
     await timegroup.updateComplete;
 
-    const strip = document.createElement(
-      "ef-thumbnail-strip",
-    ) as EFThumbnailStrip;
+    const strip = document.createElement("ef-thumbnail-strip") as EFThumbnailStrip;
     strip.target = "test-timegroup-id";
     container.appendChild(strip);
     await strip.updateComplete;
@@ -127,9 +115,7 @@ describe("EFThumbnailStrip - Basic Functionality", () => {
 
     const pixelsPerMs = 0.1; // 100px per second
 
-    const strip = document.createElement(
-      "ef-thumbnail-strip",
-    ) as EFThumbnailStrip;
+    const strip = document.createElement("ef-thumbnail-strip") as EFThumbnailStrip;
     strip.targetElement = timegroup;
     strip.pixelsPerMs = pixelsPerMs;
     container.appendChild(strip);
@@ -170,9 +156,7 @@ describe("EFThumbnailStrip - Basic Functionality", () => {
     expect(timegroup.contentReadyState).toBe("ready");
 
     // Now create and attach the thumbnail strip AFTER target is ready
-    const strip = document.createElement(
-      "ef-thumbnail-strip",
-    ) as EFThumbnailStrip;
+    const strip = document.createElement("ef-thumbnail-strip") as EFThumbnailStrip;
     strip.targetElement = timegroup;
     strip.thumbnailHeight = 48;
     strip.pixelsPerMs = 0.1;
@@ -200,9 +184,7 @@ describe("EFThumbnailStrip - Basic Functionality", () => {
     container.appendChild(timegroup);
     await timegroup.updateComplete;
 
-    const strip = document.createElement(
-      "ef-thumbnail-strip",
-    ) as EFThumbnailStrip;
+    const strip = document.createElement("ef-thumbnail-strip") as EFThumbnailStrip;
     strip.targetElement = timegroup;
     strip.thumbnailHeight = 48;
     strip.pixelsPerMs = 0.1;
@@ -224,9 +206,7 @@ describe("EFThumbnailStrip - Basic Functionality", () => {
     await strip.updateComplete;
 
     // Strip should still render (not crash/break from event-driven updates)
-    const thumbnailContainer = strip.shadowRoot?.querySelector(
-      ".thumbnail-container",
-    );
+    const thumbnailContainer = strip.shadowRoot?.querySelector(".thumbnail-container");
     expect(thumbnailContainer).toBeTruthy();
   });
 
@@ -246,9 +226,7 @@ describe("EFThumbnailStrip - Basic Functionality", () => {
     await child.updateComplete;
     await new Promise((r) => requestAnimationFrame(r));
 
-    const strip = document.createElement(
-      "ef-thumbnail-strip",
-    ) as EFThumbnailStrip;
+    const strip = document.createElement("ef-thumbnail-strip") as EFThumbnailStrip;
     strip.targetElement = timegroup;
     strip.thumbnailHeight = 48;
     // Do NOT set pixelsPerMs — should auto-fit to container width
@@ -284,9 +262,7 @@ describe("EFThumbnailStrip - Basic Functionality", () => {
     await child.updateComplete;
     await new Promise((r) => requestAnimationFrame(r));
 
-    const strip = document.createElement(
-      "ef-thumbnail-strip",
-    ) as EFThumbnailStrip;
+    const strip = document.createElement("ef-thumbnail-strip") as EFThumbnailStrip;
     strip.targetElement = timegroup;
     strip.thumbnailHeight = 48;
     strip.pixelsPerMs = 0.2; // Explicit: 0.2px/ms → 10000ms * 0.2 = 2000px
@@ -304,9 +280,7 @@ describe("EFThumbnailStrip - Basic Functionality", () => {
   });
 
   test("useIntrinsicDuration defaults to false", async () => {
-    const strip = document.createElement(
-      "ef-thumbnail-strip",
-    ) as EFThumbnailStrip;
+    const strip = document.createElement("ef-thumbnail-strip") as EFThumbnailStrip;
     container.appendChild(strip);
     await strip.updateComplete;
     expect(strip.useIntrinsicDuration).toBe(false);

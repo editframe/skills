@@ -1,16 +1,22 @@
 /**
  * Minimal standalone test for WebCodecs VideoDecoder in Electron/Xvfb
- * 
+ *
  * This test isolates the VideoDecoder crash to determine if it's:
  * 1. A mediabunny issue
  * 2. An Electron/Chromium issue
  * 3. A Docker/Xvfb environment issue
- * 
+ *
  * Run with: ./scripts/npx tsx lib/electron-exec/test-webcodecs-minimal.ts
  */
 
 import { spawn, execSync } from "node:child_process";
-import { writeFileSync, readFileSync, existsSync, mkdirSync, copyFileSync } from "node:fs";
+import {
+  writeFileSync,
+  readFileSync,
+  existsSync,
+  mkdirSync,
+  copyFileSync,
+} from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -23,12 +29,20 @@ if (!existsSync(TEST_DIR)) {
 }
 
 // Use the actual bars-n-tone.mp4 test file from our test fixtures
-const BARS_N_TONE = join(__dirname, "../../lib/process-file/test-files/bars-n-tone.mp4");
-const TEST_VIDEO = existsSync(BARS_N_TONE) ? BARS_N_TONE : join(TEST_DIR, "test-video.mp4");
+const BARS_N_TONE = join(
+  __dirname,
+  "../../lib/process-file/test-files/bars-n-tone.mp4",
+);
+const TEST_VIDEO = existsSync(BARS_N_TONE)
+  ? BARS_N_TONE
+  : join(TEST_DIR, "test-video.mp4");
 const TEST_TRACK = join(TEST_DIR, "test-track.mp4");
 
 // The actual processed track file from the ingestion pipeline
-const PROCESSED_TRACK = join(__dirname, "../../data/video2/546d22e2-28cc-420b-949e-41429b2effca/01f6edbd-a850-4db9-afb4-1352d3135972/track-1.mp4");
+const PROCESSED_TRACK = join(
+  __dirname,
+  "../../data/video2/546d22e2-28cc-420b-949e-41429b2effca/01f6edbd-a850-4db9-afb4-1352d3135972/track-1.mp4",
+);
 const ELECTRON_SCRIPT = join(TEST_DIR, "electron-test.cjs");
 const PRELOAD_SCRIPT = join(TEST_DIR, "preload.cjs");
 
@@ -44,13 +58,19 @@ if (TEST_VIDEO === BARS_N_TONE && existsSync(BARS_N_TONE)) {
 } else if (!existsSync(TEST_VIDEO)) {
   console.log("  Creating test video with FFmpeg...");
   try {
-    execSync(`ffmpeg -f lavfi -i testsrc=duration=1:size=320x240:rate=30 \
+    execSync(
+      `ffmpeg -f lavfi -i testsrc=duration=1:size=320x240:rate=30 \
       -c:v libx264 -profile:v baseline -level 3.0 -pix_fmt yuv420p \
       -movflags +faststart \
-      "${TEST_VIDEO}" -y 2>&1`, { stdio: "pipe" });
+      "${TEST_VIDEO}" -y 2>&1`,
+      { stdio: "pipe" },
+    );
     console.log("  Created test video: " + TEST_VIDEO);
   } catch (e: any) {
-    console.error("  Failed to create test video:", e.stderr?.toString() || e.message);
+    console.error(
+      "  Failed to create test video:",
+      e.stderr?.toString() || e.message,
+    );
     process.exit(1);
   }
 } else {
@@ -60,22 +80,31 @@ if (TEST_VIDEO === BARS_N_TONE && existsSync(BARS_N_TONE)) {
 // Step 2: Extract video track to fMP4 format (same as our pipeline)
 console.log("\nStep 2: Extracting video track to fMP4...");
 try {
-  execSync(`ffmpeg -i "${TEST_VIDEO}" \
+  execSync(
+    `ffmpeg -i "${TEST_VIDEO}" \
     -c:v copy \
     -an \
     -movflags frag_keyframe+empty_moov+default_base_moof \
     -bsf:v filter_units=remove_types=6 \
-    "${TEST_TRACK}" -y 2>&1`, { stdio: "pipe" });
+    "${TEST_TRACK}" -y 2>&1`,
+    { stdio: "pipe" },
+  );
   console.log("  Extracted track: " + TEST_TRACK);
 } catch (e: any) {
-  console.error("  Failed to extract track:", e.stderr?.toString() || e.message);
+  console.error(
+    "  Failed to extract track:",
+    e.stderr?.toString() || e.message,
+  );
   process.exit(1);
 }
 
 // Step 3: Analyze the track with FFprobe
 console.log("\nStep 3: Analyzing track structure...");
 try {
-  const probeOutput = execSync(`ffprobe -v quiet -print_format json -show_format -show_streams "${TEST_TRACK}"`, { encoding: "utf-8" });
+  const probeOutput = execSync(
+    `ffprobe -v quiet -print_format json -show_format -show_streams "${TEST_TRACK}"`,
+    { encoding: "utf-8" },
+  );
   const probe = JSON.parse(probeOutput);
   const videoStream = probe.streams?.find((s: any) => s.codec_type === "video");
   if (videoStream) {
@@ -400,23 +429,30 @@ console.log("  Created electron test script: " + ELECTRON_SCRIPT);
 // Step 6: Run the Electron test
 console.log("\nStep 5: Running Electron test...");
 
-const electronPath = join(__dirname, "../../node_modules/electron/dist/electron");
+const electronPath = join(
+  __dirname,
+  "../../node_modules/electron/dist/electron",
+);
 console.log("  Electron path: " + electronPath);
 
 // Use xvfb-run to provide a virtual display
-const electronProcess = spawn("xvfb-run", [
-  "--auto-servernum",
-  "--server-args=-screen 0 1920x1080x24",
-  electronPath,
-  "--no-sandbox",
-  "--disable-dev-shm-usage",
-  ELECTRON_SCRIPT,
-], {
-  stdio: "inherit",
-  env: {
-    ...process.env,
+const electronProcess = spawn(
+  "xvfb-run",
+  [
+    "--auto-servernum",
+    "--server-args=-screen 0 1920x1080x24",
+    electronPath,
+    "--no-sandbox",
+    "--disable-dev-shm-usage",
+    ELECTRON_SCRIPT,
+  ],
+  {
+    stdio: "inherit",
+    env: {
+      ...process.env,
+    },
   },
-});
+);
 
 electronProcess.on("close", (code) => {
   console.log("\nElectron process exited with code:", code);

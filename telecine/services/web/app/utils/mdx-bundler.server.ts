@@ -40,7 +40,11 @@ export async function parseMdx(mdx: string) {
   const { frontmatter, code } = await bundleMDX<Frontmatter>({
     source: mdx,
     mdxOptions(options) {
-      options.remarkPlugins = [...(options.remarkPlugins ?? []), remarkGfm, remarkCodeMeta];
+      options.remarkPlugins = [
+        ...(options.remarkPlugins ?? []),
+        remarkGfm,
+        remarkCodeMeta,
+      ];
       options.rehypePlugins = [
         ...(options.rehypePlugins ?? []),
         rehypeSlug,

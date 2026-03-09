@@ -1,4 +1,7 @@
-import { createEmailPasswordSessionCookie, createLoginHeaders } from "@/util/session";
+import {
+  createEmailPasswordSessionCookie,
+  createLoginHeaders,
+} from "@/util/session";
 import { redirect } from "react-router";
 import type { MetaFunction } from "react-router";
 import { ErrorMessage } from "~/components/ErrorMessage";
@@ -14,9 +17,7 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
     return null;
   }
   try {
-    const sessionInfo = await getUserEmailAndPasswordByMagicToken(
-      params.token,
-    );
+    const sessionInfo = await getUserEmailAndPasswordByMagicToken(params.token);
     const sessionCookie = await createEmailPasswordSessionCookie(sessionInfo);
     return redirect("/welcome", {
       headers: await createLoginHeaders(sessionCookie),

@@ -20,8 +20,10 @@ export function usePanZoomScale(): number {
 
       // Find PanZoom element (sibling of OverlayLayer)
       const container = overlayLayer.parentElement;
-      const panZoomElement = container?.querySelector("ef-pan-zoom") as EFPanZoom | null;
-      
+      const panZoomElement = container?.querySelector(
+        "ef-pan-zoom",
+      ) as EFPanZoom | null;
+
       if (panZoomElement && typeof panZoomElement.scale === "number") {
         setScale(panZoomElement.scale);
       } else {
@@ -36,8 +38,10 @@ export function usePanZoomScale(): number {
     const overlayLayer = document.querySelector("ef-overlay-layer");
     if (overlayLayer) {
       const container = overlayLayer.parentElement;
-      const panZoomElement = container?.querySelector("ef-pan-zoom") as EFPanZoom | null;
-      
+      const panZoomElement = container?.querySelector(
+        "ef-pan-zoom",
+      ) as EFPanZoom | null;
+
       if (panZoomElement) {
         const handleTransformChanged = () => {
           if (typeof panZoomElement.scale === "number") {
@@ -45,10 +49,16 @@ export function usePanZoomScale(): number {
           }
         };
 
-        panZoomElement.addEventListener("transform-changed", handleTransformChanged);
-        
+        panZoomElement.addEventListener(
+          "transform-changed",
+          handleTransformChanged,
+        );
+
         return () => {
-          panZoomElement.removeEventListener("transform-changed", handleTransformChanged);
+          panZoomElement.removeEventListener(
+            "transform-changed",
+            handleTransformChanged,
+          );
         };
       }
     }
@@ -56,4 +66,3 @@ export function usePanZoomScale(): number {
 
   return scale;
 }
-

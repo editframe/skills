@@ -1,8 +1,6 @@
 import type { SubAssetSync } from "./SubAssetSync.js";
 
-export const doAssetSync = async function* (
-  assetSync: SubAssetSync<unknown>,
-): AsyncGenerator<{
+export const doAssetSync = async function* (assetSync: SubAssetSync<unknown>): AsyncGenerator<{
   status: "info" | "success";
   message: string;
 }> {

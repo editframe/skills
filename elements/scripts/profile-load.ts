@@ -229,10 +229,7 @@ async function profilePageLoad(
       const checkComplete = async () => {
         for (const tg of Array.from(timegroups)) {
           const el = tg as any;
-          if (
-            el.waitForMediaDurations &&
-            typeof el.waitForMediaDurations === "function"
-          ) {
+          if (el.waitForMediaDurations && typeof el.waitForMediaDurations === "function") {
             try {
               await el.waitForMediaDurations();
             } catch (e) {
@@ -345,11 +342,7 @@ async function analyzeProfile(
   // Resolve source locations
   const resolvedHotspots = await Promise.all(
     hotspots.slice(0, 50).map(async (hotspot) => {
-      const resolved = await resolver.resolveLocation(
-        hotspot.url,
-        hotspot.line,
-        hotspot.column,
-      );
+      const resolved = await resolver.resolveLocation(hotspot.url, hotspot.line, hotspot.column);
       return { hotspot, resolved };
     }),
   );
@@ -372,9 +365,7 @@ async function analyzeProfile(
       );
       console.log(`    Location: ${location}`);
       if (hotspot.totalTime > hotspot.selfTime) {
-        console.log(
-          `    Total time: ${(hotspot.totalTime / 1000).toFixed(2)}ms`,
-        );
+        console.log(`    Total time: ${(hotspot.totalTime / 1000).toFixed(2)}ms`);
       }
       console.log();
     }
@@ -433,9 +424,7 @@ async function printLineLevelProfile(
     console.log("  Line      Time     Function");
     console.log("  ------  --------  ---------");
     for (const [line, time] of sortedLines.slice(0, 20)) {
-      console.log(
-        `  ${String(line + 1).padStart(6)}  ${(time / 1000).toFixed(2)}ms`,
-      );
+      console.log(`  ${String(line + 1).padStart(6)}  ${(time / 1000).toFixed(2)}ms`);
     }
   }
 }

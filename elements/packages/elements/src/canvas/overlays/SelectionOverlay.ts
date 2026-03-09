@@ -1,10 +1,7 @@
 import { consume } from "@lit/context";
 import { css, html, LitElement } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import {
-  selectionContext,
-  type SelectionContext,
-} from "../selection/selectionContext.js";
+import { selectionContext, type SelectionContext } from "../selection/selectionContext.js";
 import { panZoomTransformContext } from "../../gui/panZoomTransformContext.js";
 import type { PanZoomTransform } from "../../elements/EFPanZoom.js";
 import {
@@ -54,9 +51,7 @@ export class SelectionOverlay extends LitElement {
     return this;
   }
 
-  firstUpdated(
-    changedProperties: Map<string | number | symbol, unknown>,
-  ): void {
+  firstUpdated(changedProperties: Map<string | number | symbol, unknown>): void {
     super.firstUpdated?.(changedProperties);
   }
 
@@ -220,10 +215,7 @@ export class SelectionOverlay extends LitElement {
         current = (current as ShadowRoot).host;
       } else if (current instanceof HTMLElement) {
         // Check if this is the EFCanvas element (case-insensitive check)
-        if (
-          current.tagName === "EF-CANVAS" ||
-          current.tagName.toLowerCase() === "ef-canvas"
-        ) {
+        if (current.tagName === "EF-CANVAS" || current.tagName.toLowerCase() === "ef-canvas") {
           this.canvasElement = current;
           return;
         }
@@ -332,26 +324,20 @@ export class SelectionOverlay extends LitElement {
     }
 
     // Get pan-zoom element for box-select coordinate conversion
-    const panZoomElement = effectiveCanvas.closest(
-      "ef-pan-zoom",
-    ) as HTMLElement | null;
+    const panZoomElement = effectiveCanvas.closest("ef-pan-zoom") as HTMLElement | null;
 
     // Get highlighted element from canvas
     const canvas = effectiveCanvas as any;
     const highlightedElement = canvas?.highlightedElement as HTMLElement | null;
 
     // SEMANTICS: What should be shown?
-    const targets = getOverlayTargets(
-      this.effectiveSelection,
-      highlightedElement,
-    );
+    const targets = getOverlayTargets(this.effectiveSelection, highlightedElement);
 
     // Adapt canvas to CanvasWithMetadata interface
     const canvasWithMetadata: CanvasWithMetadata = {
       getElementData: (id: string) => canvas?.getElementData?.(id),
       getElement: (id: string) => canvas?.elementRegistry?.get(id),
-      querySelector: (selector: string) =>
-        effectiveCanvas.querySelector(selector),
+      querySelector: (selector: string) => effectiveCanvas.querySelector(selector),
       shadowRoot: effectiveCanvas.shadowRoot,
     };
 
@@ -373,17 +359,11 @@ export class SelectionOverlay extends LitElement {
    * Read current transform directly from panzoom element.
    * This ensures we always have fresh values instead of stale property/context.
    */
-  private readCurrentTransform(
-    panZoomElement: HTMLElement | null,
-  ): PanZoomTransform | undefined {
+  private readCurrentTransform(panZoomElement: HTMLElement | null): PanZoomTransform | undefined {
     // Try reading from panzoom element directly (most accurate)
     if (panZoomElement) {
       const pz = panZoomElement as any;
-      if (
-        typeof pz.x === "number" &&
-        typeof pz.y === "number" &&
-        typeof pz.scale === "number"
-      ) {
+      if (typeof pz.x === "number" && typeof pz.y === "number" && typeof pz.scale === "number") {
         return { x: pz.x, y: pz.y, scale: pz.scale };
       }
     }

@@ -54,7 +54,11 @@ function BreadcrumbSegment({
             stroke="currentColor"
             strokeWidth={2.5}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         </button>
       ) : to ? (
@@ -132,7 +136,9 @@ export function MobileBreadcrumbBar({
 
         {currentSkill && currentSkillTitle && (
           <>
-            <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">/</span>
+            <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">
+              /
+            </span>
             {currentReference ? (
               /* On a reference page: skill segment links back, ref segment has dropdown */
               <>
@@ -141,7 +147,9 @@ export function MobileBreadcrumbBar({
                   isLast={false}
                   to={`/skills/${currentSkill}`}
                 />
-                <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">/</span>
+                <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">
+                  /
+                </span>
                 <BreadcrumbSegment
                   label={currentReferenceTitle || currentReference}
                   items={referenceItems}
@@ -150,10 +158,7 @@ export function MobileBreadcrumbBar({
               </>
             ) : (
               /* On the skill overview page: skill segment is the last item */
-              <BreadcrumbSegment
-                label={currentSkillTitle}
-                isLast={true}
-              />
+              <BreadcrumbSegment label={currentSkillTitle} isLast={true} />
             )}
           </>
         )}

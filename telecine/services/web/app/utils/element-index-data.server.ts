@@ -35,7 +35,9 @@ export interface ElementIndexData {
 /**
  * Reads frontmatter from an MDX file
  */
-function readMdxFrontmatter(filePath: string): { title?: string; description?: string } | null {
+function readMdxFrontmatter(
+  filePath: string,
+): { title?: string; description?: string } | null {
   if (!existsSync(filePath)) {
     return null;
   }
@@ -43,10 +45,10 @@ function readMdxFrontmatter(filePath: string): { title?: string; description?: s
   try {
     const content = readFileSync(filePath, "utf8");
     const { attributes } = fm<any>(content);
-    
+
     const title = attributes.meta?.find((attr: any) => attr.title)?.title;
     const description = attributes.meta?.find(
-      (attr: any) => attr.name === "description"
+      (attr: any) => attr.name === "description",
     )?.content;
 
     return { title, description };
@@ -57,7 +59,7 @@ function readMdxFrontmatter(filePath: string): { title?: string; description?: s
 
 /**
  * Gets element index data for a given element directory path
- * 
+ *
  * @param elementDirectoryPath - Full directory path to element (e.g., "/path/to/docs/010-elements/008-audio")
  * @param baseSlug - Base slug for generating links (e.g., "/docs/elements/audio")
  */
@@ -68,28 +70,42 @@ export async function getElementIndexData(
   // Read element index.mdx for element name and description
   const elementIndexPath = join(elementDirectoryPath, "index.mdx");
   const elementMeta = readMdxFrontmatter(elementIndexPath);
-  
+
   if (!elementMeta) {
     return null;
   }
 
-  const elementName = elementMeta.title || baseSlug.split("/").pop() || "Element";
+  const elementName =
+    elementMeta.title || baseSlug.split("/").pop() || "Element";
   const elementDescription = elementMeta.description || "";
 
   // Read tutorial index.mdx
-  const tutorialIndexPath = join(elementDirectoryPath, "010-tutorial", "index.mdx");
+  const tutorialIndexPath = join(
+    elementDirectoryPath,
+    "010-tutorial",
+    "index.mdx",
+  );
   const tutorialMeta = readMdxFrontmatter(tutorialIndexPath);
-  const tutorial = tutorialMeta ? {
-    title: tutorialMeta.title || "Tutorial",
-    href: `${baseSlug}/tutorial`,
-    description: tutorialMeta.description,
-  } : null;
+  const tutorial = tutorialMeta
+    ? {
+        title: tutorialMeta.title || "Tutorial",
+        href: `${baseSlug}/tutorial`,
+        description: tutorialMeta.description,
+      }
+    : null;
 
   // Scan how-to directory for guides
   const howToDirectory = join(elementDirectoryPath, "020-how-to");
-  let howToGuides: Array<{ title: string; href: string; description?: string }> = [];
+  let howToGuides: Array<{
+    title: string;
+    href: string;
+    description?: string;
+  }> = [];
   if (existsSync(howToDirectory) && statSync(howToDirectory).isDirectory()) {
-    const guides = await scanDirectoryForDocs(howToDirectory, `${baseSlug}/how-to`);
+    const guides = await scanDirectoryForDocs(
+      howToDirectory,
+      `${baseSlug}/how-to`,
+    );
     howToGuides = guides.map((guide) => ({
       title: guide.title,
       href: guide.slug,
@@ -99,9 +115,19 @@ export async function getElementIndexData(
 
   // Scan explanation directory for concepts
   const explanationDirectory = join(elementDirectoryPath, "030-explanation");
-  let explanations: Array<{ title: string; href: string; description?: string }> = [];
-  if (existsSync(explanationDirectory) && statSync(explanationDirectory).isDirectory()) {
-    const concepts = await scanDirectoryForDocs(explanationDirectory, `${baseSlug}/explanation`);
+  let explanations: Array<{
+    title: string;
+    href: string;
+    description?: string;
+  }> = [];
+  if (
+    existsSync(explanationDirectory) &&
+    statSync(explanationDirectory).isDirectory()
+  ) {
+    const concepts = await scanDirectoryForDocs(
+      explanationDirectory,
+      `${baseSlug}/explanation`,
+    );
     explanations = concepts.map((concept) => ({
       title: concept.title,
       href: concept.slug,
@@ -110,13 +136,19 @@ export async function getElementIndexData(
   }
 
   // Read reference index.mdx
-  const referenceIndexPath = join(elementDirectoryPath, "040-reference", "index.mdx");
+  const referenceIndexPath = join(
+    elementDirectoryPath,
+    "040-reference",
+    "index.mdx",
+  );
   const referenceMeta = readMdxFrontmatter(referenceIndexPath);
-  const reference = referenceMeta ? {
-    title: referenceMeta.title || "Reference",
-    href: `${baseSlug}/reference`,
-    description: referenceMeta.description,
-  } : null;
+  const reference = referenceMeta
+    ? {
+        title: referenceMeta.title || "Reference",
+        href: `${baseSlug}/reference`,
+        description: referenceMeta.description,
+      }
+    : null;
 
   return {
     elementName,
@@ -127,13 +159,3 @@ export async function getElementIndexData(
     reference,
   };
 }
-
-
-
-
-
-
-
-
-
-

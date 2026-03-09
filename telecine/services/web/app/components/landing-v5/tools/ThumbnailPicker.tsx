@@ -26,7 +26,9 @@ export function ThumbnailPicker() {
 
   const [isClient, setIsClient] = useState(false);
   const [thumbnailDataUrl, setThumbnailDataUrl] = useState<string | null>(null);
-  const [selectedTimeLabel, setSelectedTimeLabel] = useState<string | null>(null);
+  const [selectedTimeLabel, setSelectedTimeLabel] = useState<string | null>(
+    null,
+  );
   const previewRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -91,10 +93,7 @@ export function ThumbnailPicker() {
                   duration="10s"
                   className="w-full h-full"
                 >
-                  <Video
-                    src={VIDEO_SRC}
-                    className="size-full object-contain"
-                  />
+                  <Video src={VIDEO_SRC} className="size-full object-contain" />
                 </Timegroup>
               </div>
 
@@ -176,7 +175,11 @@ export function ThumbnailPicker() {
           <div className="flex items-center gap-4">
             <div className="w-24 h-14 bg-black border-2 border-black dark:border-white flex items-center justify-center overflow-hidden">
               {thumbnailDataUrl ? (
-                <img src={thumbnailDataUrl} alt="Selected thumbnail" className="w-full h-full object-contain" />
+                <img
+                  src={thumbnailDataUrl}
+                  alt="Selected thumbnail"
+                  className="w-full h-full object-contain"
+                />
               ) : (
                 <span className="text-white/50 text-[10px] uppercase">
                   None
@@ -209,7 +212,9 @@ export function ThumbnailPicker() {
         </div>
 
         <ExportButton
-          getTarget={() => previewRef.current?.querySelector("ef-timegroup") as HTMLElement}
+          getTarget={() =>
+            previewRef.current?.querySelector("ef-timegroup") as HTMLElement
+          }
           name="Thumbnail Video"
           fileName="thumbnail-video.mp4"
           renderOpts={{ includeAudio: true }}

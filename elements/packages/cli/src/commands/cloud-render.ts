@@ -22,17 +22,11 @@ import { withSpinner } from "../utils/withSpinner.js";
 
 const log = debug("ef:cli:render");
 
-export const buildAssetId = async (
-  srcDir: string,
-  src: string,
-  basename: string,
-) => {
+export const buildAssetId = async (srcDir: string, src: string, basename: string) => {
   log(`Building image asset id for ${src}\n`);
   const assetPath = path.join(srcDir, src);
   const assetMd5 = await md5FilePath(assetPath);
-  const syncStatus = new SyncStatus(
-    join(srcDir, "assets", ".cache", assetMd5, basename),
-  );
+  const syncStatus = new SyncStatus(join(srcDir, "assets", ".cache", assetMd5, basename));
   const info = await syncStatus.readInfo();
   if (!info) {
     throw new Error(`SyncStatus info is not found for ${syncStatus.infoPath}`);
@@ -43,13 +37,9 @@ export const buildAssetId = async (
 
 program
   .command("cloud-render [directory]")
-  .description(
-    "Render a directory's index.html file as a video in the editframe cloud",
-  )
+  .description("Render a directory's index.html file as a video in the editframe cloud")
   .addOption(
-    new Option("-s, --strategy <strategy>", "Render strategy")
-      .choices(["v1"])
-      .default("v1"),
+    new Option("-s, --strategy <strategy>", "Render strategy").choices(["v1"]).default("v1"),
   )
   .action(async (directory, options) => {
     directory ??= ".";
@@ -58,9 +48,7 @@ program
     const baseCwd = process.env.ORIGINAL_CWD || process.cwd();
     const resolvedDirectory = path.resolve(baseCwd, directory);
 
-    await syncAssetDirectory(
-      join(resolvedDirectory, "src", "assets", ".cache"),
-    );
+    await syncAssetDirectory(join(resolvedDirectory, "src", "assets", ".cache"));
 
     const srcDir = path.join(resolvedDirectory, "src");
     const distDir = path.join(resolvedDirectory, "dist");
@@ -70,15 +58,7 @@ program
           spawnSync(
             "npx",
             // biome-ignore format: Grouping CLI arguments
-            [
-              "vite",
-              "build",
-              resolvedDirectory,
-              "--clearScreen",
-              "false",
-              "--logLevel",
-              "debug",
-            ],
+            ["vite", "build", resolvedDirectory, "--clearScreen", "false", "--logLevel", "debug"],
             {
               stdio: "inherit",
             },
@@ -101,9 +81,7 @@ program
         headless: true,
       },
       async (page) => {
-        const renderInfo = RenderInfoSchema.parse(
-          await page.evaluate(getRenderInfo),
-        );
+        const renderInfo = RenderInfoSchema.parse(await page.evaluate(getRenderInfo));
 
         validateVideoResolution({
           width: renderInfo.width,
@@ -112,19 +90,12 @@ program
 
         await processRenderInfo(renderInfo);
 
-        const doc = parseHTML(
-          await readFile(path.join(distDir, "index.html"), "utf-8"),
-        );
+        const doc = parseHTML(await readFile(path.join(distDir, "index.html"), "utf-8"));
 
         log("Building file IDs");
-        for (const element of doc.querySelectorAll(
-          "ef-image, ef-audio, ef-video",
-        )) {
+        for (const element of doc.querySelectorAll("ef-image, ef-audio, ef-video")) {
           log(`Processing ${element.tagName}`);
-          if (
-            element.hasAttribute("file-id") ||
-            element.hasAttribute("asset-id")
-          ) {
+          if (element.hasAttribute("file-id") || element.hasAttribute("asset-id")) {
             log(
               `File ID for ${element.tagName} ${element.getAttribute("src")} is ${element.getAttribute("file-id") || element.getAttribute("asset-id")}`,
             );
@@ -138,17 +109,11 @@ program
 
           switch (element.tagName) {
             case "EF-IMAGE":
-              element.setAttribute(
-                "file-id",
-                await buildAssetId(srcDir, src, basename(src)),
-              );
+              element.setAttribute("file-id", await buildAssetId(srcDir, src, basename(src)));
               break;
             case "EF-AUDIO":
             case "EF-VIDEO":
-              element.setAttribute(
-                "file-id",
-                await buildAssetId(srcDir, src, "isobmff"),
-              );
+              element.setAttribute("file-id", await buildAssetId(srcDir, src, "isobmff"));
               break;
             default:
               log(`Unknown element type: ${element.tagName}`);
@@ -190,11 +155,7 @@ program
         const readable = new PassThrough();
         tarStream.pipe(readable);
 
-        await uploadRender(
-          getClient(),
-          render.id,
-          createReadableStreamFromReadable(readable),
-        );
+        await uploadRender(getClient(), render.id, createReadableStreamFromReadable(readable));
         process.stderr.write("Render assets uploaded\n");
         process.stderr.write(inspect(render));
         process.stderr.write("\n");

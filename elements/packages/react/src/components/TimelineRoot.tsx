@@ -84,9 +84,7 @@ export const TimelineRoot: React.FC<TimelineRootProps> = ({
         root.render(<Comp id={id} />);
       });
 
-      const newTimegroup = cloneContainer.querySelector(
-        "ef-timegroup",
-      ) as EFTimegroup | null;
+      const newTimegroup = cloneContainer.querySelector("ef-timegroup") as EFTimegroup | null;
       if (!newTimegroup) {
         throw new Error(
           "[TimelineRoot] Clone factory did not produce an ef-timegroup. " +
@@ -108,11 +106,7 @@ export const TimelineRoot: React.FC<TimelineRootProps> = ({
   }, [id]);
 
   return (
-    <div
-      ref={containerRef}
-      className={className}
-      style={{ display: "contents", ...style }}
-    >
+    <div ref={containerRef} className={className} style={{ display: "contents", ...style }}>
       {children}
       <Component id={id} />
     </div>

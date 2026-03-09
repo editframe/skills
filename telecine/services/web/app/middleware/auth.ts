@@ -1,9 +1,6 @@
 import { redirect } from "react-router";
 import { logger } from "@/logging";
-import {
-  maybeIdentityContext,
-  identityContext,
-} from "./context";
+import { maybeIdentityContext, identityContext } from "./context";
 import type { Route } from "../+types/root";
 
 /**
@@ -11,9 +8,7 @@ import type { Route } from "../+types/root";
  * Reads the identity set by sessionMiddleware and requires it to be present.
  * Redirects to /auth/login if unauthenticated or anonymous.
  */
-export const authMiddleware: Route.MiddlewareFunction = async ({
-  context,
-}) => {
+export const authMiddleware: Route.MiddlewareFunction = async ({ context }) => {
   const identity = context.get(maybeIdentityContext);
 
   if (!identity) {

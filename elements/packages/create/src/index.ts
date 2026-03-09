@@ -105,16 +105,12 @@ async function main() {
 
   // Validate template if provided
   if (cliTemplate && !templates.includes(cliTemplate)) {
-    process.stderr.write(
-      chalk.red(`Error: Template "${cliTemplate}" does not exist.\n\n`),
-    );
+    process.stderr.write(chalk.red(`Error: Template "${cliTemplate}" does not exist.\n\n`));
     process.stderr.write(chalk.bold("Available templates:\n"));
     for (const t of templates) {
       process.stderr.write(`  - ${t}\n`);
     }
-    process.stderr.write(
-      chalk.dim("\nRun with --help for more information.\n"),
-    );
+    process.stderr.write(chalk.dim("\nRun with --help for more information.\n"));
     process.exit(1);
   }
 
@@ -153,8 +149,7 @@ async function main() {
   }
 
   // Prompt for all missing information at once
-  const answers =
-    promptQuestions.length > 0 ? await prompts(promptQuestions) : {};
+  const answers = promptQuestions.length > 0 ? await prompts(promptQuestions) : {};
 
   // Handle user cancellation
   if (
@@ -170,8 +165,7 @@ async function main() {
   const templateName = cliTemplate || answers.templateName || templates[0];
 
   // Determine if skills should be installed
-  const installSkills =
-    !skipSkills && (nonInteractive || answers.installSkills !== false);
+  const installSkills = !skipSkills && (nonInteractive || answers.installSkills !== false);
 
   const targetDir = path.join(process.cwd(), directoryName);
   const templateDir = path.join(__dirname, "templates", templateName);
@@ -179,9 +173,7 @@ async function main() {
   const exists = await checkDirectoryExists(targetDir);
 
   if (exists) {
-    process.stderr.write(
-      chalk.yellow(`Directory ${targetDir} already exists.\n`),
-    );
+    process.stderr.write(chalk.yellow(`Directory ${targetDir} already exists.\n`));
     const { overwrite } = await prompts({
       type: "confirm",
       name: "overwrite",
@@ -251,18 +243,12 @@ async function main() {
     process.stderr.write(chalk.dim("  • editframe-webhooks\n"));
 
     process.stderr.write(chalk.bold("\nTry asking your AI agent:\n"));
-    process.stderr.write(
-      chalk.dim('  "Create a 5-second video with fade-in text"\n'),
-    );
+    process.stderr.write(chalk.dim('  "Create a 5-second video with fade-in text"\n'));
     process.stderr.write(chalk.dim('  "Add a waveform visualization"\n'));
-    process.stderr.write(
-      chalk.dim('  "Animate this element with spring physics"\n'),
-    );
+    process.stderr.write(chalk.dim('  "Animate this element with spring physics"\n'));
   }
 
-  process.stderr.write(
-    chalk.dim("\nDocumentation: https://editframe.com/docs\n"),
-  );
+  process.stderr.write(chalk.dim("\nDocumentation: https://editframe.com/docs\n"));
   process.stderr.write(chalk.dim("Happy coding! 🎬\n\n"));
 }
 

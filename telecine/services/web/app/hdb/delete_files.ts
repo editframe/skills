@@ -33,28 +33,20 @@ export const action = async ({ request }: Route.ActionArgs) => {
     switch (type) {
       case "video": {
         deletions.push(
-          storageProvider.deletePath(
-            dataFilePath({ org_id, id }),
-          ),
-          storageProvider.deletePath(
-            isobmffIndexFilePath({ org_id, id }),
-          ),
+          storageProvider.deletePath(dataFilePath({ org_id, id })),
+          storageProvider.deletePath(isobmffIndexFilePath({ org_id, id })),
         );
         break;
       }
       case "image": {
         deletions.push(
-          storageProvider.deletePath(
-            imageFilePath({ org_id, id }),
-          ),
+          storageProvider.deletePath(imageFilePath({ org_id, id })),
         );
         break;
       }
       case "caption": {
         deletions.push(
-          storageProvider.deletePath(
-            captionsFilePath({ org_id, id }),
-          ),
+          storageProvider.deletePath(captionsFilePath({ org_id, id })),
         );
         break;
       }

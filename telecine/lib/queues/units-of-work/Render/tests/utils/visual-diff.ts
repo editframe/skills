@@ -53,7 +53,9 @@ export async function extractFrames(
 
     execSync(
       `ffmpeg -y -ss ${timestamp} -i "${videoPath}" -vframes 1 "${framePath}"`,
-      { stdio: "pipe" },
+      {
+        stdio: "pipe",
+      },
     );
 
     if (existsSync(framePath)) {
@@ -146,19 +148,20 @@ export async function compareToBaseline(
   const diffDir = path.join(baseDir, "diffs");
 
   // Extract test frames
-  const testFrames = await extractFrames(videoPath, testDir, { framesPerSecond: fps });
+  const testFrames = await extractFrames(videoPath, testDir, {
+    framesPerSecond: fps,
+  });
 
   // If updating baseline, copy test frames to baseline and exit
   if (updateBaseline) {
     await mkdir(baselineDir, { recursive: true });
     for (const testFrame of testFrames) {
-      const baselineFrame = path.join(
-        baselineDir,
-        path.basename(testFrame),
-      );
+      const baselineFrame = path.join(baselineDir, path.basename(testFrame));
       await copyFile(testFrame, baselineFrame);
     }
-    console.log(`✅ Updated baseline for ${testName} (${testFrames.length} frames)`);
+    console.log(
+      `✅ Updated baseline for ${testName} (${testFrames.length} frames)`,
+    );
     return;
   }
 
@@ -167,14 +170,14 @@ export async function compareToBaseline(
   for (let i = 0; i < testFrames.length; i++) {
     const frameNum = (i + 1).toString().padStart(3, "0");
     const baselineFrame = path.join(baselineDir, `frame-${frameNum}.png`);
-    
+
     if (!existsSync(baselineFrame)) {
       throw new Error(
         `Baseline not found for ${testName}. Run with UPDATE_BASELINES=true to create baselines.\n` +
-        `Missing: ${baselineFrame}`,
+          `Missing: ${baselineFrame}`,
       );
     }
-    
+
     baselineFrames.push(baselineFrame);
   }
 
@@ -196,16 +199,13 @@ export async function compareToBaseline(
       `diff-${(i + 1).toString().padStart(3, "0")}.png`,
     );
 
-    const comparison = await compareFrames(
-      baselineFrame,
-      testFrame,
-      diffPath,
-      { threshold },
-    );
+    const comparison = await compareFrames(baselineFrame, testFrame, diffPath, {
+      threshold,
+    });
 
     if (!comparison.match) {
       const diffPercentage = comparison.diffPercentage ?? 100;
-      
+
       // Allow some tolerance for encoding artifacts
       if (diffPercentage > threshold * 100) {
         failedFrames.push({
@@ -230,14 +230,16 @@ export async function compareToBaseline(
 
     throw new Error(
       `Visual regression detected in ${testName}:\n` +
-      `${failedFrames.length}/${testFrames.length} frames exceeded ${threshold * 100}% threshold\n` +
-      details +
-      `\n\nTo update baselines: UPDATE_BASELINES=true npm test\n` +
-      `Artifacts: ${baseDir}`,
+        `${failedFrames.length}/${testFrames.length} frames exceeded ${threshold * 100}% threshold\n` +
+        details +
+        `\n\nTo update baselines: UPDATE_BASELINES=true npm test\n` +
+        `Artifacts: ${baseDir}`,
     );
   }
 
-  console.log(`✅ Visual regression passed for ${testName} (${testFrames.length} frames)`);
+  console.log(
+    `✅ Visual regression passed for ${testName} (${testFrames.length} frames)`,
+  );
 }
 
 /**
@@ -252,11 +254,15 @@ export async function extractFrame(
 
   execSync(
     `ffmpeg -y -ss ${timeSeconds} -i "${videoPath}" -vframes 1 "${outputPath}"`,
-    { stdio: "pipe" },
+    {
+      stdio: "pipe",
+    },
   );
 
   if (!existsSync(outputPath)) {
-    throw new Error(`Failed to extract frame at ${timeSeconds}s from ${videoPath}`);
+    throw new Error(
+      `Failed to extract frame at ${timeSeconds}s from ${videoPath}`,
+    );
   }
 
   return outputPath;
@@ -303,15 +309,18 @@ export async function compareFramesWithOdiff(
 
     // If we got here, images match within threshold
     const diffPixels = parseInt(result.trim()) || 0;
-    
+
     // Get image dimensions to calculate percentage
     const identifyResult = execSync(
       `identify -format "%w %h" "${frame1Path}"`,
-      { encoding: "utf8" },
+      {
+        encoding: "utf8",
+      },
     );
     const [width, height] = identifyResult.trim().split(" ").map(Number);
     const totalPixels = width * height;
-    const diffPercentage = totalPixels > 0 ? (diffPixels / totalPixels) * 100 : 0;
+    const diffPercentage =
+      totalPixels > 0 ? (diffPixels / totalPixels) * 100 : 0;
 
     return {
       passed: diffPercentage <= threshold * 100,
@@ -327,11 +336,14 @@ export async function compareFramesWithOdiff(
     try {
       const identifyResult = execSync(
         `identify -format "%w %h" "${frame1Path}"`,
-        { encoding: "utf8" },
+        {
+          encoding: "utf8",
+        },
       );
       const [width, height] = identifyResult.trim().split(" ").map(Number);
       const totalPixels = width * height;
-      const diffPercentage = totalPixels > 0 ? (diffPixels / totalPixels) * 100 : 0;
+      const diffPercentage =
+        totalPixels > 0 ? (diffPixels / totalPixels) * 100 : 0;
 
       return {
         passed: diffPercentage <= threshold * 100,
@@ -363,43 +375,86 @@ export async function compareStrategies(
 
   // Use first strategy as reference
   const referenceStrategy = strategies[0];
-  const referenceVideoPath = path.join(testOutputDir, referenceStrategy, "output.mp4");
+  const referenceVideoPath = path.join(
+    testOutputDir,
+    referenceStrategy,
+    "output.mp4",
+  );
 
   if (!existsSync(referenceVideoPath)) {
     throw new Error(`Reference video not found: ${referenceVideoPath}`);
   }
 
   // Extract frames from reference
-  const referenceFramesDir = path.join(testOutputDir, referenceStrategy, "frames");
-  const referenceFrames = await extractFrames(referenceVideoPath, referenceFramesDir, { framesPerSecond: fps });
+  const referenceFramesDir = path.join(
+    testOutputDir,
+    referenceStrategy,
+    "frames",
+  );
+  const referenceFrames = await extractFrames(
+    referenceVideoPath,
+    referenceFramesDir,
+    {
+      framesPerSecond: fps,
+    },
+  );
 
   // Compare each other strategy against reference
   for (let i = 1; i < strategies.length; i++) {
     const compareStrategy = strategies[i];
-    const compareVideoPath = path.join(testOutputDir, compareStrategy, "output.mp4");
+    const compareVideoPath = path.join(
+      testOutputDir,
+      compareStrategy,
+      "output.mp4",
+    );
 
     if (!existsSync(compareVideoPath)) {
-      console.warn(`⚠️  Video not found for ${compareStrategy}: ${compareVideoPath}`);
+      console.warn(
+        `⚠️  Video not found for ${compareStrategy}: ${compareVideoPath}`,
+      );
       continue;
     }
 
     // Extract frames from comparison video
-    const compareFramesDir = path.join(testOutputDir, compareStrategy, "frames");
-    const compareFrames = await extractFrames(compareVideoPath, compareFramesDir, { framesPerSecond: fps });
+    const compareFramesDir = path.join(
+      testOutputDir,
+      compareStrategy,
+      "frames",
+    );
+    const compareFrames = await extractFrames(
+      compareVideoPath,
+      compareFramesDir,
+      {
+        framesPerSecond: fps,
+      },
+    );
 
     // Compare frame by frame
-    for (let frameIdx = 0; frameIdx < Math.min(referenceFrames.length, compareFrames.length); frameIdx++) {
+    for (
+      let frameIdx = 0;
+      frameIdx < Math.min(referenceFrames.length, compareFrames.length);
+      frameIdx++
+    ) {
       const referenceFrame = referenceFrames[frameIdx];
       const compareFrame = compareFrames[frameIdx];
 
-      const diffDir = path.join(testOutputDir, "diffs", `${referenceStrategy}-vs-${compareStrategy}`);
-      const diffPath = path.join(diffDir, `frame-${(frameIdx + 1).toString().padStart(3, "0")}.png`);
+      const diffDir = path.join(
+        testOutputDir,
+        "diffs",
+        `${referenceStrategy}-vs-${compareStrategy}`,
+      );
+      const diffPath = path.join(
+        diffDir,
+        `frame-${(frameIdx + 1).toString().padStart(3, "0")}.png`,
+      );
 
       const comparison = await compareFramesWithOdiff(
         referenceFrame,
         compareFrame,
         diffPath,
-        { threshold },
+        {
+          threshold,
+        },
       );
 
       results.push({

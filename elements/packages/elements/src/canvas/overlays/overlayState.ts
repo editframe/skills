@@ -100,14 +100,10 @@ export function getOverlayTargets(
   highlightedElement: HTMLElement | null,
 ): OverlayTargets {
   return {
-    selectedIds: selection?.selectedIds
-      ? new Set(selection.selectedIds)
-      : new Set(),
+    selectedIds: selection?.selectedIds ? new Set(selection.selectedIds) : new Set(),
     boxSelectBounds: selection?.boxSelectBounds ?? null,
     highlightedElementId:
-      highlightedElement?.getAttribute("data-element-id") ??
-      highlightedElement?.id ??
-      null,
+      highlightedElement?.getAttribute("data-element-id") ?? highlightedElement?.id ?? null,
   };
 }
 
@@ -163,10 +159,7 @@ export function calculateElementScreenBounds(
 /**
  * Find an element by ID in the canvas (checks both light DOM and shadow DOM).
  */
-function findElement(
-  elementId: string,
-  canvas: CanvasWithMetadata,
-): HTMLElement | null {
+function findElement(elementId: string, canvas: CanvasWithMetadata): HTMLElement | null {
   // Try canvas's getElement method first
   if (canvas.getElement) {
     const element = canvas.getElement(elementId);
@@ -182,9 +175,7 @@ function findElement(
   }
 
   // Try light DOM
-  return canvas.querySelector(
-    `[data-element-id="${elementId}"]`,
-  ) as HTMLElement | null;
+  return canvas.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement | null;
 }
 
 /**
@@ -251,14 +242,8 @@ export function calculateBoxSelectBounds(
   // Try to use EFPanZoom's canvasToScreen method if available
   const pz = panZoomElement as any;
   if (typeof pz.canvasToScreen === "function") {
-    const topLeft = pz.canvasToScreen(
-      boxSelectBounds.left,
-      boxSelectBounds.top,
-    );
-    const bottomRight = pz.canvasToScreen(
-      boxSelectBounds.right,
-      boxSelectBounds.bottom,
-    );
+    const topLeft = pz.canvasToScreen(boxSelectBounds.left, boxSelectBounds.top);
+    const bottomRight = pz.canvasToScreen(boxSelectBounds.right, boxSelectBounds.bottom);
 
     return {
       x: topLeft.x,
@@ -296,12 +281,7 @@ export function calculateHighlightBounds(
 ): ScreenBounds | null {
   if (!highlightedElementId) return null;
 
-  return calculateElementScreenBounds(
-    highlightedElementId,
-    canvas,
-    canvasRect,
-    scale,
-  );
+  return calculateElementScreenBounds(highlightedElementId, canvas, canvasRect, scale);
 }
 
 // ============================================================================
@@ -329,23 +309,9 @@ export function calculateOverlayState(
   const scale = panZoomTransform?.scale ?? 1;
 
   return {
-    selection: calculateSelectionBounds(
-      targets.selectedIds,
-      canvas,
-      canvasRect,
-      scale,
-    ),
-    boxSelect: calculateBoxSelectBounds(
-      targets.boxSelectBounds,
-      panZoomElement,
-      panZoomTransform,
-    ),
-    highlight: calculateHighlightBounds(
-      targets.highlightedElementId,
-      canvas,
-      canvasRect,
-      scale,
-    ),
+    selection: calculateSelectionBounds(targets.selectedIds, canvas, canvasRect, scale),
+    boxSelect: calculateBoxSelectBounds(targets.boxSelectBounds, panZoomElement, panZoomTransform),
+    highlight: calculateHighlightBounds(targets.highlightedElementId, canvas, canvasRect, scale),
   };
 }
 

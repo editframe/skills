@@ -1,13 +1,7 @@
-import {
-  cacheImage,
-  findOrCreateCaptions,
-  generateTrack,
-} from "@editframe/assets";
+import { cacheImage, findOrCreateCaptions, generateTrack } from "@editframe/assets";
 import type { getRenderInfo } from "@editframe/elements/node";
 
-export const processRenderInfo = async (
-  renderInfo: Awaited<ReturnType<typeof getRenderInfo>>,
-) => {
+export const processRenderInfo = async (renderInfo: Awaited<ReturnType<typeof getRenderInfo>>) => {
   for (const [src, tracks] of Object.entries(renderInfo.assets.efMedia)) {
     process.stderr.write("Processing media asset: ");
     process.stderr.write(src);
@@ -16,11 +10,7 @@ export const processRenderInfo = async (
       process.stderr.write("Generating track: ");
       process.stderr.write(trackId);
       process.stderr.write("\n");
-      await generateTrack(
-        "./src/assets",
-        `./src${src}`,
-        `src?trackId=${trackId}`,
-      );
+      await generateTrack("./src/assets", `./src${src}`, `src?trackId=${trackId}`);
     }
   }
 

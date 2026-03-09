@@ -3,8 +3,7 @@
  */
 
 // Pre-computed base64 lookup table as Uint8Array for faster indexing
-const BASE64_CHARS =
-  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const BASE64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /**
  * Fast base64 encoding directly from Uint8Array.

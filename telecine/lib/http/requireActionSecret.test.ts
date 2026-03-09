@@ -83,10 +83,7 @@ describe("requireActionSecret", () => {
         end: vi.fn(),
       };
 
-      const result = requireActionSecret(
-        request,
-        mockRes as any,
-      );
+      const result = requireActionSecret(request, mockRes as any);
 
       expect(result).toBe(false);
       expect(mockRes.writeHead).not.toHaveBeenCalled();
@@ -103,10 +100,7 @@ describe("requireActionSecret", () => {
         end: vi.fn(),
       };
 
-      const result = requireActionSecret(
-        request,
-        mockRes as any,
-      );
+      const result = requireActionSecret(request, mockRes as any);
 
       expect(result).toBe(true);
       expect(mockRes.writeHead).toHaveBeenCalledWith(401, {

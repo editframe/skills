@@ -185,9 +185,7 @@ export class EFTimegroupTrack extends TrackItem {
             backgroundColor: this.isFocused
               ? "var(--filmstrip-item-focused)"
               : "var(--filmstrip-item-bg)",
-            borderColor: this.shouldShowFilmstrip
-              ? "transparent"
-              : "var(--filmstrip-border)",
+            borderColor: this.shouldShowFilmstrip ? "transparent" : "var(--filmstrip-border)",
           })}
         >
           ${this.animations()}

@@ -55,11 +55,15 @@ const startupContext = trace.setSpan(parentContext, startupSpan);
 electron.app.on("window-all-closed", () => {});
 
 electron.app.on("child-process-gone", (_event, details) => {
-  process.stderr.write(`[BOOTLOADER] child-process-gone: type=${details.type} reason=${details.reason} exitCode=${details.exitCode}\n`);
+  process.stderr.write(
+    `[BOOTLOADER] child-process-gone: type=${details.type} reason=${details.reason} exitCode=${details.exitCode}\n`,
+  );
 });
 
 process.on("uncaughtException", (err) => {
-  process.stderr.write(`[BOOTLOADER] uncaughtException: ${err.stack || err.message}\n`);
+  process.stderr.write(
+    `[BOOTLOADER] uncaughtException: ${err.stack || err.message}\n`,
+  );
 });
 
 electron.app.on("ready", async () => {
@@ -74,12 +78,17 @@ electron.app.on("ready", async () => {
 
         let imported;
         if (usePrebuilt) {
-          process.stderr.write(`[BOOTLOADER] Loading pre-built bundle: ${prebuiltPath}\n`);
+          process.stderr.write(
+            `[BOOTLOADER] Loading pre-built bundle: ${prebuiltPath}\n`,
+          );
           imported = await import(prebuiltPath);
         } else {
-          process.stderr.write(`[BOOTLOADER] No pre-built bundle found, starting Vite for: ${execPath}\n`);
+          process.stderr.write(
+            `[BOOTLOADER] No pre-built bundle found, starting Vite for: ${execPath}\n`,
+          );
           const { createServer } = await import("rolldown-vite");
-          const { default: tsconfigPaths } = await import("vite-tsconfig-paths");
+          const { default: tsconfigPaths } =
+            await import("vite-tsconfig-paths");
           const { viteAliases } = await import("../util/viteAliases.js");
 
           server = await createServer({

@@ -212,9 +212,7 @@ describe("FrameController", () => {
 
   describe("renderFrame lifecycle", () => {
     test("calls prepareFrame when needsPreparation is true", async () => {
-      const element = document.createElement(
-        "test-frame-element",
-      ) as TestFrameElement;
+      const element = document.createElement("test-frame-element") as TestFrameElement;
       element.needsPrep = true;
       root.appendChild(element);
       await root.updateComplete;
@@ -227,9 +225,7 @@ describe("FrameController", () => {
     });
 
     test("skips prepareFrame when needsPreparation is false", async () => {
-      const element = document.createElement(
-        "test-frame-element",
-      ) as TestFrameElement;
+      const element = document.createElement("test-frame-element") as TestFrameElement;
       element.needsPrep = false;
       root.appendChild(element);
       await root.updateComplete;
@@ -241,12 +237,8 @@ describe("FrameController", () => {
     });
 
     test("calls renderFrame for all visible elements", async () => {
-      const element1 = document.createElement(
-        "test-frame-element",
-      ) as TestFrameElement;
-      const element2 = document.createElement(
-        "test-frame-element",
-      ) as TestFrameElement;
+      const element1 = document.createElement("test-frame-element") as TestFrameElement;
+      const element2 = document.createElement("test-frame-element") as TestFrameElement;
       root.appendChild(element1);
       root.appendChild(element2);
       await root.updateComplete;
@@ -260,9 +252,7 @@ describe("FrameController", () => {
     });
 
     test("passes correct timeMs to renderFrame", async () => {
-      const element = document.createElement(
-        "test-frame-element",
-      ) as TestFrameElement;
+      const element = document.createElement("test-frame-element") as TestFrameElement;
       root.appendChild(element);
       await root.updateComplete;
 
@@ -277,21 +267,15 @@ describe("FrameController", () => {
     test("renders elements in priority order", async () => {
       const renderOrder: string[] = [];
 
-      const high = document.createElement(
-        "test-frame-element",
-      ) as TestFrameElement;
+      const high = document.createElement("test-frame-element") as TestFrameElement;
       high.priority = PRIORITY_VIDEO;
       high.renderFrame = () => renderOrder.push("high");
 
-      const mid = document.createElement(
-        "test-frame-element",
-      ) as TestFrameElement;
+      const mid = document.createElement("test-frame-element") as TestFrameElement;
       mid.priority = PRIORITY_AUDIO;
       mid.renderFrame = () => renderOrder.push("mid");
 
-      const low = document.createElement(
-        "test-frame-element",
-      ) as TestFrameElement;
+      const low = document.createElement("test-frame-element") as TestFrameElement;
       low.priority = PRIORITY_IMAGE;
       low.renderFrame = () => renderOrder.push("low");
 
@@ -312,9 +296,7 @@ describe("FrameController", () => {
 
   describe("temporal visibility filtering", () => {
     test("includes elements within time range", async () => {
-      const element = document.createElement(
-        "test-fc-temporal-element",
-      ) as TestTemporalElement;
+      const element = document.createElement("test-fc-temporal-element") as TestTemporalElement;
       element.startTimeMs = 0;
       element.endTimeMs = 5000;
       root.appendChild(element);
@@ -327,9 +309,7 @@ describe("FrameController", () => {
     });
 
     test("excludes elements outside time range (before)", async () => {
-      const element = document.createElement(
-        "test-fc-temporal-element",
-      ) as TestTemporalElement;
+      const element = document.createElement("test-fc-temporal-element") as TestTemporalElement;
       element.startTimeMs = 5000;
       element.endTimeMs = 10000;
       root.appendChild(element);
@@ -342,9 +322,7 @@ describe("FrameController", () => {
     });
 
     test("excludes elements outside time range (after)", async () => {
-      const element = document.createElement(
-        "test-fc-temporal-element",
-      ) as TestTemporalElement;
+      const element = document.createElement("test-fc-temporal-element") as TestTemporalElement;
       element.startTimeMs = 0;
       element.endTimeMs = 5000;
       root.appendChild(element);
@@ -357,9 +335,7 @@ describe("FrameController", () => {
     });
 
     test("uses exclusive end time (element ends at exact boundary)", async () => {
-      const element = document.createElement(
-        "test-fc-temporal-element",
-      ) as TestTemporalElement;
+      const element = document.createElement("test-fc-temporal-element") as TestTemporalElement;
       element.startTimeMs = 0;
       element.endTimeMs = 5000;
       root.appendChild(element);
@@ -374,9 +350,7 @@ describe("FrameController", () => {
 
   describe("abort handling", () => {
     test("abort() stops the abort controller", async () => {
-      const element = document.createElement(
-        "test-frame-element",
-      ) as TestFrameElement;
+      const element = document.createElement("test-frame-element") as TestFrameElement;
       root.appendChild(element);
       await root.updateComplete;
 
@@ -395,9 +369,7 @@ describe("FrameController", () => {
     });
 
     test("queued render replaces pending when render in progress", async () => {
-      const element = document.createElement(
-        "test-frame-element",
-      ) as TestFrameElement;
+      const element = document.createElement("test-frame-element") as TestFrameElement;
       element.needsPrep = true;
       root.appendChild(element);
       await root.updateComplete;
@@ -420,9 +392,7 @@ describe("FrameController", () => {
 
   describe("render queuing", () => {
     test("queues render while another is in progress", async () => {
-      const element = document.createElement(
-        "test-frame-element",
-      ) as TestFrameElement;
+      const element = document.createElement("test-frame-element") as TestFrameElement;
       element.needsPrep = true;
       root.appendChild(element);
       await root.updateComplete;
@@ -447,9 +417,7 @@ describe("FrameController", () => {
 
   describe("onAnimationsUpdate callback", () => {
     test("calls onAnimationsUpdate after rendering", async () => {
-      const element = document.createElement(
-        "test-frame-element",
-      ) as TestFrameElement;
+      const element = document.createElement("test-frame-element") as TestFrameElement;
       root.appendChild(element);
       await root.updateComplete;
 
@@ -462,9 +430,7 @@ describe("FrameController", () => {
     });
 
     test("does not call onAnimationsUpdate if not provided", async () => {
-      const element = document.createElement(
-        "test-frame-element",
-      ) as TestFrameElement;
+      const element = document.createElement("test-frame-element") as TestFrameElement;
       root.appendChild(element);
       await root.updateComplete;
 

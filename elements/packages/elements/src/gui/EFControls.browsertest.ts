@@ -71,11 +71,7 @@ describe.skip("EFControls", () => {
       { id: "test-preview", mode: "fixed", duration: "10s" },
       document.body,
     );
-    const controls = makeElement(
-      "ef-controls",
-      { target: "test-preview" },
-      document.body,
-    );
+    const controls = makeElement("ef-controls", { target: "test-preview" }, document.body);
 
     // Wait for both elements to complete their updates
     await preview.updateComplete;
@@ -86,11 +82,7 @@ describe.skip("EFControls", () => {
   });
 
   test("handles missing target gracefully", async () => {
-    const controls = makeElement(
-      "ef-controls",
-      { target: "nonexistent-preview" },
-      document.body,
-    );
+    const controls = makeElement("ef-controls", { target: "nonexistent-preview" }, document.body);
 
     await controls.updateComplete;
 
@@ -98,11 +90,7 @@ describe.skip("EFControls", () => {
   });
 
   test("updates when target is set after connection", async () => {
-    const preview = makeElement(
-      "ef-preview",
-      { mode: "fixed", duration: "10s" },
-      document.body,
-    );
+    const preview = makeElement("ef-preview", { mode: "fixed", duration: "10s" }, document.body);
     const controls = makeElement("ef-controls", {}, document.body);
 
     // Initially no target
@@ -123,11 +111,7 @@ describe.skip("EFControls", () => {
 
     makeElement("ef-timegroup", { mode: "fixed", duration: "10s" }, preview);
 
-    const controls = makeElement(
-      "ef-controls",
-      { target: "test-preview" },
-      document.body,
-    );
+    const controls = makeElement("ef-controls", { target: "test-preview" }, document.body);
     controls.target = "test-preview";
 
     // Wait for both elements to complete their updates
@@ -221,11 +205,7 @@ describe.skip("EFControls", () => {
       configuration: EFConfiguration;
     }>({
       configuration: async ({}, use) => {
-        const configuration = makeElement(
-          "ef-configuration",
-          {},
-          document.body,
-        );
+        const configuration = makeElement("ef-configuration", {}, document.body);
         use(configuration);
       },
       context: async ({ configuration }, use) => {
@@ -234,19 +214,11 @@ describe.skip("EFControls", () => {
           { id: "test-preview" },
           configuration,
         );
-        makeElement(
-          "ef-timegroup",
-          { mode: "fixed", duration: "10s" },
-          context,
-        );
+        makeElement("ef-timegroup", { mode: "fixed", duration: "10s" }, context);
         use(context);
       },
       controls: async ({ configuration }, use) => {
-        const controls = makeElement(
-          "ef-controls",
-          { target: "test-preview" },
-          configuration,
-        );
+        const controls = makeElement("ef-controls", { target: "test-preview" }, configuration);
         use(controls);
       },
       togglePlay: async ({ controls }, use) => {
@@ -259,30 +231,24 @@ describe.skip("EFControls", () => {
       },
     });
 
-    contextTest(
-      "propagates changes to play state",
-      async ({ context, controls, togglePlay }) => {
-        context.play();
-        await context.updateComplete;
-        await controls.updateComplete;
-        await togglePlay.updateComplete;
-        expect(togglePlay.playing).toBe(true);
-        context.pause();
-      },
-    );
+    contextTest("propagates changes to play state", async ({ context, controls, togglePlay }) => {
+      context.play();
+      await context.updateComplete;
+      await controls.updateComplete;
+      await togglePlay.updateComplete;
+      expect(togglePlay.playing).toBe(true);
+      context.pause();
+    });
 
-    contextTest(
-      "propagates changes from toggle play button",
-      async ({ context, togglePlay }) => {
-        context.play();
-        await togglePlay.updateComplete;
-        await context.updateComplete;
-        expect(togglePlay.playing).toBe(true);
-        togglePlay.click();
-        await togglePlay.updateComplete;
-        expect(context.playing).toBe(false);
-      },
-    );
+    contextTest("propagates changes from toggle play button", async ({ context, togglePlay }) => {
+      context.play();
+      await togglePlay.updateComplete;
+      await context.updateComplete;
+      expect(togglePlay.playing).toBe(true);
+      togglePlay.click();
+      await togglePlay.updateComplete;
+      expect(context.playing).toBe(false);
+    });
 
     contextTest(
       "efContext is consumed by toggle-play",
@@ -334,41 +300,30 @@ describe.skip("EFControls", () => {
       },
     );
 
-    contextTest(
-      "propagates changes to time display",
-      async ({ context, timeDisplay }) => {
-        await context.updateComplete;
-        await timeDisplay.updateComplete;
-        expect(timeDisplay.shadowRoot?.textContent?.trim()).toBe("0:00 / 0:10");
+    contextTest("propagates changes to time display", async ({ context, timeDisplay }) => {
+      await context.updateComplete;
+      await timeDisplay.updateComplete;
+      expect(timeDisplay.shadowRoot?.textContent?.trim()).toBe("0:00 / 0:10");
 
-        const timegroup = context.querySelector("ef-timegroup");
-        if (timegroup) {
-          await timegroup.seek(1000);
-        } else {
-          context.currentTimeMs = 1000;
-        }
+      const timegroup = context.querySelector("ef-timegroup");
+      if (timegroup) {
+        await timegroup.seek(1000);
+      } else {
+        context.currentTimeMs = 1000;
+      }
 
-        await new Promise((resolve) => requestAnimationFrame(resolve));
-        await context.updateComplete;
-        await timeDisplay.updateComplete;
-        expect(timeDisplay.shadowRoot?.textContent?.trim()).toBe("0:01 / 0:10");
-      },
-    );
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await context.updateComplete;
+      await timeDisplay.updateComplete;
+      expect(timeDisplay.shadowRoot?.textContent?.trim()).toBe("0:01 / 0:10");
+    });
   });
 
   test("works with child control elements - EFTogglePlay", async () => {
-    const preview = makeElement(
-      "ef-controls-test-context",
-      { id: "test-preview" },
-      document.body,
-    );
+    const preview = makeElement("ef-controls-test-context", { id: "test-preview" }, document.body);
     makeElement("ef-timegroup", { mode: "fixed", duration: "10s" }, preview);
 
-    const controls = makeElement(
-      "ef-controls",
-      { target: "test-preview" },
-      document.body,
-    );
+    const controls = makeElement("ef-controls", { target: "test-preview" }, document.body);
 
     const togglePlay = makeElement("ef-toggle-play", {}, controls);
 
@@ -397,11 +352,7 @@ describe.skip("EFControls", () => {
         document.body,
       );
 
-      const controls = makeElement(
-        "ef-controls",
-        { target: "direct-timegroup" },
-        document.body,
-      );
+      const controls = makeElement("ef-controls", { target: "direct-timegroup" }, document.body);
 
       await timegroup.updateComplete;
       await controls.updateComplete;
@@ -417,11 +368,7 @@ describe.skip("EFControls", () => {
         document.body,
       );
 
-      const controls = makeElement(
-        "ef-controls",
-        { target: "direct-timegroup" },
-        document.body,
-      );
+      const controls = makeElement("ef-controls", { target: "direct-timegroup" }, document.body);
 
       const togglePlay = makeElement("ef-toggle-play", {}, controls);
 
@@ -466,11 +413,7 @@ describe.skip("EFControls", () => {
         document.body,
       );
 
-      const controls = makeElement(
-        "ef-controls",
-        { target: "direct-timegroup" },
-        document.body,
-      );
+      const controls = makeElement("ef-controls", { target: "direct-timegroup" }, document.body);
 
       const timeDisplay = makeElement("ef-time-display", {}, controls);
 
@@ -509,11 +452,7 @@ describe.skip("EFControls", () => {
         document.body,
       );
 
-      const controls = makeElement(
-        "ef-controls",
-        { target: "direct-timegroup" },
-        document.body,
-      );
+      const controls = makeElement("ef-controls", { target: "direct-timegroup" }, document.body);
 
       // Wait for timegroup to fully initialize
       await timegroup.updateComplete;
@@ -535,11 +474,7 @@ describe.skip("EFControls", () => {
         document.body,
       );
 
-      const controls = makeElement(
-        "ef-controls",
-        { target: "direct-timegroup" },
-        document.body,
-      );
+      const controls = makeElement("ef-controls", { target: "direct-timegroup" }, document.body);
 
       // Wait for timegroup to fully initialize
       await timegroup.updateComplete;
@@ -561,11 +496,7 @@ describe.skip("EFControls", () => {
         document.body,
       );
 
-      const controls = makeElement(
-        "ef-controls",
-        { target: "direct-timegroup" },
-        document.body,
-      );
+      const controls = makeElement("ef-controls", { target: "direct-timegroup" }, document.body);
 
       const togglePlay = makeElement("ef-toggle-play", {}, controls);
 
@@ -614,11 +545,7 @@ describe.skip("EFControls", () => {
         parentTimegroup,
       );
 
-      const controls = makeElement(
-        "ef-controls",
-        { target: "child-timegroup" },
-        document.body,
-      );
+      const controls = makeElement("ef-controls", { target: "child-timegroup" }, document.body);
 
       await parentTimegroup.updateComplete;
       await childTimegroup.updateComplete;

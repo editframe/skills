@@ -41,8 +41,8 @@ export function MotionDesigner() {
     <MotionDesignerProvider actions={actions}>
       <PanZoomProvider panZoomRef={panZoomRef}>
         <style
-        dangerouslySetInnerHTML={{
-          __html: `
+          dangerouslySetInnerHTML={{
+            __html: `
           /* Hide number input spinners for cleaner look */
           input[type="number"]::-webkit-inner-spin-button,
           input[type="number"]::-webkit-outer-spin-button {
@@ -90,32 +90,32 @@ export function MotionDesigner() {
             background: rgba(75, 85, 99, 0.7);
           }
         `,
-        }}
-      />
-      <div
-        className="flex flex-col h-screen bg-gray-900 text-white"
-        style={{
-          overscrollBehavior: "none",
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          overflow: "hidden",
-        }}
-      >
-        <TopBar state={state} />
+          }}
+        />
         <div
-          className="flex flex-1 min-h-0"
-          style={{ overscrollBehavior: "none" }}
+          className="flex flex-col h-screen bg-gray-900 text-white"
+          style={{
+            overscrollBehavior: "none",
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            overflow: "hidden",
+          }}
         >
-          <HierarchyPanel state={state} />
-          <Canvas state={state} panZoomRef={panZoomRef} />
-          <PropertiesPanel state={state} />
+          <TopBar state={state} />
+          <div
+            className="flex flex-1 min-h-0"
+            style={{ overscrollBehavior: "none" }}
+          >
+            <HierarchyPanel state={state} />
+            <Canvas state={state} panZoomRef={panZoomRef} />
+            <PropertiesPanel state={state} />
+          </div>
+          <Timeline state={state} isScrubbingRef={isScrubbingRef} />
+          <HelpButton />
         </div>
-        <Timeline state={state} isScrubbingRef={isScrubbingRef} />
-        <HelpButton />
-      </div>
       </PanZoomProvider>
     </MotionDesignerProvider>
   );

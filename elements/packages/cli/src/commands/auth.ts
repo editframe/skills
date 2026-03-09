@@ -33,12 +33,8 @@ const authCommand = program
     try {
       const apiData = await getApiData();
       spinner.succeed("You are authenticated! 🎉");
-      process.stderr.write(
-        chalk.green(`You're using ${apiData.apiKeyName} API key 🚀\n`),
-      );
-      process.stderr.write(
-        chalk.blue(`Welcome to ${apiData.displayName} organization 🎉\n`),
-      );
+      process.stderr.write(chalk.green(`You're using ${apiData.apiKeyName} API key 🚀\n`));
+      process.stderr.write(chalk.blue(`Welcome to ${apiData.displayName} organization 🎉\n`));
     } catch (error: any) {
       spinner.fail("Authentication failed!");
       log("Error:", error);

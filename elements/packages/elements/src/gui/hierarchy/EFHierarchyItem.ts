@@ -1,12 +1,5 @@
 import { consume } from "@lit/context";
-import {
-  css,
-  html,
-  LitElement,
-  nothing,
-  type PropertyValues,
-  type TemplateResult,
-} from "lit";
+import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 
@@ -97,10 +90,7 @@ export function renderHierarchyChildren(
   temporalOnly = false,
 ): Array<TemplateResult<1> | typeof nothing> {
   return children.flatMap((child) => {
-    if (
-      !skipRootFiltering &&
-      !shouldRenderElement(child, hideSelectors, showSelectors)
-    ) {
+    if (!skipRootFiltering && !shouldRenderElement(child, hideSelectors, showSelectors)) {
       return nothing;
     }
 
@@ -193,9 +183,9 @@ export function renderHierarchyChildren(
 }
 
 @customElement("ef-hierarchy-item")
-export class EFHierarchyItem<
-  ElementType extends HTMLElement = HTMLElement,
-> extends TWMixin(LitElement) {
+export class EFHierarchyItem<ElementType extends HTMLElement = HTMLElement> extends TWMixin(
+  LitElement,
+) {
   static styles = [
     css`
       :host {
@@ -321,8 +311,7 @@ export class EFHierarchyItem<
   get isSelected(): boolean {
     // Try to get selection context from hierarchy parent (which can access canvas)
     const selectionCtx =
-      this.canvasSelectionContext ||
-      this.hierarchyContext?.getCanvasSelectionContext?.();
+      this.canvasSelectionContext || this.hierarchyContext?.getCanvasSelectionContext?.();
 
     if (selectionCtx && this.elementId) {
       // Check if this element's ID is in the selected IDs
@@ -336,8 +325,7 @@ export class EFHierarchyItem<
   get isAncestorSelected(): boolean {
     // Check if this element contains any selected element
     const selectionCtx =
-      this.canvasSelectionContext ||
-      this.hierarchyContext?.getCanvasSelectionContext?.();
+      this.canvasSelectionContext || this.hierarchyContext?.getCanvasSelectionContext?.();
 
     if (selectionCtx && this.element) {
       for (const selectedId of selectionCtx.selectedIds) {
@@ -444,11 +432,7 @@ export class EFHierarchyItem<
 
     const sourceId = e.dataTransfer?.getData("text/plain");
     if (sourceId && this.dropPosition) {
-      this.hierarchyContext.actions.reorder(
-        sourceId,
-        this.elementId,
-        this.dropPosition,
-      );
+      this.hierarchyContext.actions.reorder(sourceId, this.elementId, this.dropPosition);
     }
     this.hierarchyContext.actions.endDrag();
   }
@@ -478,15 +462,9 @@ export class EFHierarchyItem<
 
   protected willUpdate(changedProperties: PropertyValues): void {
     // Set up listener if context becomes available or context changed
-    if (
-      !this.selectionChangeHandler ||
-      changedProperties.has("hierarchyContext")
-    ) {
+    if (!this.selectionChangeHandler || changedProperties.has("hierarchyContext")) {
       // Remove old listener if context changed
-      if (
-        changedProperties.has("hierarchyContext") &&
-        this.selectionChangeHandler
-      ) {
+      if (changedProperties.has("hierarchyContext") && this.selectionChangeHandler) {
         this.removeSelectionListener();
         this.selectionChangeHandler = undefined;
       }
@@ -501,32 +479,20 @@ export class EFHierarchyItem<
     }
 
     const selectionCtx =
-      this.canvasSelectionContext ||
-      this.hierarchyContext?.getCanvasSelectionContext?.();
+      this.canvasSelectionContext || this.hierarchyContext?.getCanvasSelectionContext?.();
     if (selectionCtx && "addEventListener" in selectionCtx) {
       this.selectionChangeHandler = () => {
         this.requestUpdate(); // Trigger re-render to update selected state
       };
-      (selectionCtx as any).addEventListener(
-        "selectionchange",
-        this.selectionChangeHandler,
-      );
+      (selectionCtx as any).addEventListener("selectionchange", this.selectionChangeHandler);
     }
   }
 
   private removeSelectionListener(): void {
     const selectionCtx =
-      this.canvasSelectionContext ||
-      this.hierarchyContext?.getCanvasSelectionContext?.();
-    if (
-      selectionCtx &&
-      "removeEventListener" in selectionCtx &&
-      this.selectionChangeHandler
-    ) {
-      (selectionCtx as any).removeEventListener(
-        "selectionchange",
-        this.selectionChangeHandler,
-      );
+      this.canvasSelectionContext || this.hierarchyContext?.getCanvasSelectionContext?.();
+    if (selectionCtx && "removeEventListener" in selectionCtx && this.selectionChangeHandler) {
+      (selectionCtx as any).removeEventListener("selectionchange", this.selectionChangeHandler);
       this.selectionChangeHandler = undefined;
     }
   }
@@ -610,9 +576,7 @@ function getFriendlyLabel(element: HTMLElement, typeLabel: string): string {
   const parent = element.parentElement;
   if (parent) {
     const tagName = element.tagName;
-    const siblings = Array.from(parent.children).filter(
-      (child) => child.tagName === tagName,
-    );
+    const siblings = Array.from(parent.children).filter((child) => child.tagName === tagName);
     const index = siblings.indexOf(element) + 1;
 
     // If there's only one of this type, don't add number

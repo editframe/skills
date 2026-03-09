@@ -55,24 +55,38 @@ export function FeatureGridSection({
               key={i}
               className={clsx(
                 "group relative p-8 rounded-2xl border border-slate-200 dark:border-slate-800 bg-gradient-to-br hover:scale-[1.02] transition-all duration-300 hover:shadow-xl dark:hover:shadow-slate-900/50",
-                gradients[i % gradients.length]
+                gradients[i % gradients.length],
               )}
             >
               {/* Icon */}
               {feature.icon ? (
-                <div className={clsx(
-                  "inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white dark:bg-slate-800 shadow-sm mb-5",
-                  iconColors[i % iconColors.length]
-                )}>
+                <div
+                  className={clsx(
+                    "inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white dark:bg-slate-800 shadow-sm mb-5",
+                    iconColors[i % iconColors.length],
+                  )}
+                >
                   {feature.icon}
                 </div>
               ) : (
-                <div className={clsx(
-                  "inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white dark:bg-slate-800 shadow-sm mb-5",
-                  iconColors[i % iconColors.length]
-                )}>
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <div
+                  className={clsx(
+                    "inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white dark:bg-slate-800 shadow-sm mb-5",
+                    iconColors[i % iconColors.length],
+                  )}
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                 </div>
               )}
@@ -93,11 +107,3 @@ export function FeatureGridSection({
     </section>
   );
 }
-
-
-
-
-
-
-
-

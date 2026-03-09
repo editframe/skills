@@ -24,8 +24,7 @@ export function needsFitScale(
 
   const containerInfo = getContainerInfoFromElement(parentElement);
   const isInGridContainer =
-    containerInfo.displayMode === "grid" ||
-    containerInfo.displayMode === "flex";
+    containerInfo.displayMode === "grid" || containerInfo.displayMode === "flex";
 
   return isInGridContainer && !elementHasExplicitSize;
 }

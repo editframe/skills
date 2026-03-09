@@ -51,9 +51,7 @@ export class SyncCaption implements SubAssetSync<CreateFileResult> {
 
   async upload() {
     if (!this.created) {
-      throw new Error(
-        "Caption not created. Should have been prevented by .isComplete()",
-      );
+      throw new Error("Caption not created. Should have been prevented by .isComplete()");
     }
     await uploadFile(
       getClient(),
@@ -64,17 +62,13 @@ export class SyncCaption implements SubAssetSync<CreateFileResult> {
       },
       // It's not clear why we need to use Readable.from here, but it seems
       // to fix an issue where the request is closed early in tests
-      createReadableStreamFromReadable(
-        Readable.from(await fs.readFile(this.path)),
-      ),
+      createReadableStreamFromReadable(Readable.from(await fs.readFile(this.path))),
     ).whenUploaded();
   }
 
   async markSynced() {
     if (!this.created) {
-      throw new Error(
-        "Caption not created. Should have been prevented by .isComplete()",
-      );
+      throw new Error("Caption not created. Should have been prevented by .isComplete()");
     }
     const byteSize = await this.byteSize();
     await this.syncStatus.markSynced({

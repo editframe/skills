@@ -60,15 +60,11 @@ describe("EFWorkbench height consistency", () => {
 
     // Find the root hierarchy item and collapse it
     await new Promise((resolve) => setTimeout(resolve, 100));
-    const hierarchyItem = hierarchy.shadowRoot?.querySelector(
-      "ef-timegroup-hierarchy-item",
-    );
+    const hierarchyItem = hierarchy.shadowRoot?.querySelector("ef-timegroup-hierarchy-item");
 
     if (hierarchyItem) {
       // Click the expand icon to collapse
-      const expandIcon = hierarchyItem.shadowRoot?.querySelector(
-        ".expand-icon",
-      ) as HTMLElement;
+      const expandIcon = hierarchyItem.shadowRoot?.querySelector(".expand-icon") as HTMLElement;
       if (expandIcon) {
         expandIcon.click();
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -77,9 +73,7 @@ describe("EFWorkbench height consistency", () => {
         const collapsedRect = workbench.getBoundingClientRect();
 
         // CRITICAL TEST: Workbench should maintain the same height
-        expect(
-          Math.abs(collapsedRect.height - initialRect.height),
-        ).toBeLessThan(5);
+        expect(Math.abs(collapsedRect.height - initialRect.height)).toBeLessThan(5);
 
         // Also verify it's still close to container height
         expect(collapsedRect.height).toBeGreaterThan(700);

@@ -60,11 +60,7 @@ export const createTsdownConfig = (
         // Transform each export to use conditional exports structure
         for (const [key, value] of Object.entries(exports)) {
           // Skip special keys and additional exports
-          if (
-            key === "./package.json" ||
-            key === "./types.json" ||
-            additionalExports[key]
-          ) {
+          if (key === "./package.json" || key === "./types.json" || additionalExports[key]) {
             enhanced[key] = value;
             continue;
           }
