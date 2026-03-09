@@ -13,7 +13,7 @@
     "postinstall": "echo 'Skipping Playwright browser download - uses system Chrome'"
   },
   "author": "",
-  "license": "UNLICENSED",
+  "license": "SEE LICENSE IN LICENSE-FULL.md",
   "devDependencies": {
     "@types/dom-webcodecs": "^0.1.11",
     "@types/node": "^22.0.0",

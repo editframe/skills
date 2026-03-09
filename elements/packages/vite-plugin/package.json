@@ -18,7 +18,7 @@
   },
   "type": "module",
   "author": "",
-  "license": "UNLICENSED",
+  "license": "SEE LICENSE IN LICENSE-FULL.md",
   "dependencies": {
     "@editframe/api": "0.43.0",
     "@editframe/assets": "0.43.0",

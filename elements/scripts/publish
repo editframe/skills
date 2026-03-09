@@ -14,4 +14,11 @@ else
 fi
 
 echo "Publishing with npm tag: $NPM_TAG"
+
+# Copy license files into each package directory before publishing
+for dir in "${SCRIPT_DIR}"/../packages/*/; do
+  cp "${SCRIPT_DIR}/../LICENSE.md" "$dir"
+  cp "${SCRIPT_DIR}/../LICENSE-FULL.md" "$dir"
+done
+
 npm publish --tag "$NPM_TAG" --access public --workspaces

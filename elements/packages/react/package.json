@@ -37,7 +37,7 @@
     "typedoc": "(typedoc --json ./types.json --plugin typedoc-plugin-zod --excludeExternals ./src || true) && ([ -f ./types.json ] && jq -c . ./types.json > ./types.tmp.json && mv ./types.tmp.json ./types.json || true)"
   },
   "author": "",
-  "license": "UNLICENSED",
+  "license": "SEE LICENSE IN LICENSE-FULL.md",
   "dependencies": {
     "@editframe/elements": "0.43.0",
     "@lit/task": "^1.0.1",

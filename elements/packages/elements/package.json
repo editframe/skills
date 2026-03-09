@@ -19,6 +19,7 @@
   "files": [
     "dist",
     "types.json",
+    "LICENSE.md",
     "LICENSE-FULL.md"
   ],
   "dependencies": {

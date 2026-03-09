@@ -60,7 +60,7 @@ const pkg = {
     "build:watch": "tsdown --watch",
   },
   author: "",
-  license: "UNLICENSED",
+  license: "SEE LICENSE IN LICENSE-FULL.md",
   devDependencies: {
     "@types/node": "^22.0.0",
     typescript: "^5.9.3",

@@ -15,7 +15,7 @@
     "typedoc": "(typedoc --json ./types.json --plugin typedoc-plugin-zod --excludeExternals ./src || true) && ([ -f ./types.json ] && jq -c . ./types.json > ./types.tmp.json && mv ./types.tmp.json ./types.json || true)"
   },
   "author": "",
-  "license": "UNLICENSED",
+  "license": "SEE LICENSE IN LICENSE-FULL.md",
   "dependencies": {
     "debug": "^4.3.5",
     "ora": "^8.0.1",
