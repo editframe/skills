@@ -8,7 +8,7 @@
     "vscode": {
       "extensions": [
         "bradlc.vscode-tailwindcss",
-        "biomejs.biome",
+        "oxc.oxc-vscode",
         "ms-azuretools.vscode-docker"
       ],
       "settings": {
