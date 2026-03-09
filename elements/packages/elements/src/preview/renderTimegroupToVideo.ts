@@ -710,8 +710,8 @@ export async function renderTimegroupToVideo(
     await output!.finalize();
 
     if (
-      typeof process !== "undefined" &&
-      process.env.EF_TELEMETRY_ENABLED === "true"
+      typeof __EF_TELEMETRY_ENABLED__ !== "undefined" &&
+      __EF_TELEMETRY_ENABLED__
     ) {
       const elapsedMs = Math.round(performance.now() - renderStartTime);
       const endpoint = options.telemetryEndpoint ?? "https://editframe.com";

@@ -71,8 +71,8 @@ export const buildViteConfig = () => {
               ),
             }
           : {}),
-        "process.env.EF_TELEMETRY_ENABLED": JSON.stringify(
-          process.env.EF_TELEMETRY_ENABLED ?? "",
+        "__EF_TELEMETRY_ENABLED__": JSON.stringify(
+          process.env.EF_TELEMETRY_ENABLED === "true",
         ),
       },
       resolve: { 

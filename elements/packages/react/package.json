@@ -1,6 +1,6 @@
 {
   "name": "@editframe/react",
-  "version": "0.42.6",
+  "version": "0.42.8",
   "description": "",
   "repository": {
     "type": "git",
@@ -39,7 +39,7 @@
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
-    "@editframe/elements": "0.42.6",
+    "@editframe/elements": "0.42.8",
     "@lit/task": "^1.0.1",
     "@react-three/fiber": "^9.5.0",
     "@react-three/offscreen": "^0.0.8",
