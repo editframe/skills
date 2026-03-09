@@ -1,10 +1,6 @@
 import { consume } from "@lit/context";
 import { css, html, LitElement } from "lit";
-import {
-  customElement,
-  property,
-  state,
-} from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 
 import { createRef, ref } from "lit/directives/ref.js";
 import type { ControllableInterface } from "./Controllable.js";
