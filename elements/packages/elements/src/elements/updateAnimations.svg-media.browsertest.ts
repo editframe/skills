@@ -107,6 +107,99 @@ describe("EFTimegroup - SVG SMIL autoplay prevention", () => {
 });
 
 // ============================================================================
+// CSS animations — eager pause on animationstart
+// ============================================================================
+
+describe("EFTimegroup - CSS animation autoplay prevention", () => {
+  // Use element.animate() (WAAPI) to create animations we fully control.
+  // CSS class-triggered animations complete too fast in headless Chromium's
+  // accelerated timer environment, making getAnimations() return 0 by the
+  // time we query. WAAPI gives us a reference to the animation object directly.
+  //
+  // The mechanism under test: ef-timegroup attaches a capture `animationstart`
+  // listener that immediately pauses any running animation on e.target.
+  // We simulate the browser firing this event by dispatching it manually.
+
+  test("ef-timegroup pauses a running animation when animationstart fires on a descendant", () => {
+    const child = document.createElement("div");
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.setAttribute("mode", "fixed");
+    timegroup.setAttribute("duration", "2000ms");
+    timegroup.appendChild(child);
+    document.body.appendChild(timegroup);
+
+    const anim = child.animate([{ opacity: 0 }, { opacity: 1 }], {
+      duration: 10000,
+      fill: "both",
+    });
+    anim.play();
+    assert.equal(anim.playState, "running", "Animation must be running before the event");
+
+    child.dispatchEvent(
+      new AnimationEvent("animationstart", { bubbles: true }),
+    );
+
+    assert.notEqual(
+      anim.playState,
+      "running",
+      "ef-timegroup capture listener must pause the running animation when animationstart fires",
+    );
+  });
+
+  test("ef-timegroup pauses a running animation when animationstart fires on itself", () => {
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.setAttribute("mode", "fixed");
+    timegroup.setAttribute("duration", "2000ms");
+    document.body.appendChild(timegroup);
+
+    const anim = timegroup.animate([{ opacity: 0 }, { opacity: 1 }], {
+      duration: 10000,
+      fill: "both",
+    });
+    anim.play();
+    assert.equal(anim.playState, "running", "Animation must be running before the event");
+
+    timegroup.dispatchEvent(
+      new AnimationEvent("animationstart", { bubbles: true }),
+    );
+
+    assert.notEqual(
+      anim.playState,
+      "running",
+      "ef-timegroup must pause its own animation when animationstart fires on it",
+    );
+  });
+
+  test("ef-timegroup pauses running animation on late-inserted descendant", async () => {
+    const timegroup = document.createElement("ef-timegroup") as EFTimegroup;
+    timegroup.setAttribute("mode", "fixed");
+    timegroup.setAttribute("duration", "2000ms");
+    document.body.appendChild(timegroup);
+    await timegroup.updateComplete;
+
+    const child = document.createElement("div");
+    timegroup.appendChild(child);
+
+    const anim = child.animate([{ opacity: 0 }, { opacity: 1 }], {
+      duration: 10000,
+      fill: "both",
+    });
+    anim.play();
+    assert.equal(anim.playState, "running", "Animation must be running before the event");
+
+    child.dispatchEvent(
+      new AnimationEvent("animationstart", { bubbles: true }),
+    );
+
+    assert.notEqual(
+      anim.playState,
+      "running",
+      "ef-timegroup must pause late-inserted descendant animation on animationstart",
+    );
+  });
+});
+
+// ============================================================================
 // SVG SMIL
 // ============================================================================
 

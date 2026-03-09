@@ -513,6 +513,15 @@ export class EFTimegroup
     return false;
   }
 
+  #onCSSAnimationStart = (e: AnimationEvent) => {
+    const target = e.target as Element;
+    for (const anim of target.getAnimations()) {
+      if (anim.playState === "running") {
+        anim.pause();
+      }
+    }
+  };
+
   #childReadyStateHandler = () => {
     this.#recomputeAggregateReadyState();
   };
@@ -1360,6 +1369,15 @@ export class EFTimegroup
       svg.pauseAnimations();
     }
 
+    // Pause CSS animations the moment they start.
+    // CSS animations are created by the browser's style engine after
+    // connectedCallback fires, so getAnimations() returns nothing here.
+    // Listening for animationstart in capture phase lets us intercept each
+    // animation as soon as the browser creates it, before any frame is painted.
+    this.addEventListener("animationstart", this.#onCSSAnimationStart, {
+      capture: true,
+    });
+
     // Skip re-initialization when being moved for canvas preview capture.
     // EFTemporal.connectedCallback (super) already guards its own logic;
     // we guard the EFTimegroup-specific parts here (initializer, child
@@ -1473,6 +1491,10 @@ export class EFTimegroup
 
   disconnectedCallback() {
     super.disconnectedCallback();
+
+    this.removeEventListener("animationstart", this.#onCSSAnimationStart, {
+      capture: true,
+    });
 
     // Skip teardown when being moved for canvas preview capture.
     // EFTemporal.disconnectedCallback (super) already guards its own logic.
