@@ -530,7 +530,9 @@ export class EFScrubber extends TargetOrContextMixin(LitElement, efContext) {
     );
     if (this._wasPlayingBeforeScrub) {
       this._wasPlayingBeforeScrub = false;
-      this.context?.play();
+      if ((this.context as unknown as Element | null)?.isConnected) {
+        this.context!.play();
+      }
     }
   }
 }

@@ -328,6 +328,7 @@ describe("EFScrubber", () => {
     const playFn = vi.fn();
     const mockContext = {
       playing: true,
+      isConnected: true,
       currentTimeMs: 1000,
       durationMs: 5000,
       play: playFn,
