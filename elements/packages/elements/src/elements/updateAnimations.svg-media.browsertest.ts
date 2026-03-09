@@ -133,7 +133,11 @@ describe("EFTimegroup - CSS animation autoplay prevention", () => {
       fill: "both",
     });
     anim.play();
-    assert.equal(anim.playState, "running", "Animation must be running before the event");
+    assert.equal(
+      anim.playState,
+      "running",
+      "Animation must be running before the event",
+    );
 
     child.dispatchEvent(
       new AnimationEvent("animationstart", { bubbles: true }),
@@ -157,7 +161,11 @@ describe("EFTimegroup - CSS animation autoplay prevention", () => {
       fill: "both",
     });
     anim.play();
-    assert.equal(anim.playState, "running", "Animation must be running before the event");
+    assert.equal(
+      anim.playState,
+      "running",
+      "Animation must be running before the event",
+    );
 
     timegroup.dispatchEvent(
       new AnimationEvent("animationstart", { bubbles: true }),
@@ -185,7 +193,11 @@ describe("EFTimegroup - CSS animation autoplay prevention", () => {
       fill: "both",
     });
     anim.play();
-    assert.equal(anim.playState, "running", "Animation must be running before the event");
+    assert.equal(
+      anim.playState,
+      "running",
+      "Animation must be running before the event",
+    );
 
     child.dispatchEvent(
       new AnimationEvent("animationstart", { bubbles: true }),
