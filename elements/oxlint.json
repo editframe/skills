@@ -12,6 +12,15 @@
     "*.wsEndpoint.json",
     "**/__cache__/**"
   ],
-  "rules": {}
+  "rules": {
+    "no-unused-vars": [
+      "warn",
+      {
+        "varsIgnorePattern": "^_",
+        "argsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ]
+  }
 }
 

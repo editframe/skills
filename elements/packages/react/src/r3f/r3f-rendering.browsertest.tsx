@@ -8,7 +8,7 @@
  *    while main-thread WebGL may freeze.
  */
 
-import { describe, test, assert, beforeEach, beforeAll } from "vitest";
+import { describe, test, assert, beforeEach } from "vitest";
 
 function isWebGLAvailable(): boolean {
   try {

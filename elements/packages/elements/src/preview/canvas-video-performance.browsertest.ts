@@ -28,7 +28,7 @@ const PAINT_THRESHOLD_MS = 0.05;
 const test = baseTest.extend<{
   videoTimegroup: { tg: EFTimegroup; container: HTMLDivElement };
 }>({
-  videoTimegroup: async ({}, use) => {
+  videoTimegroup: async (_: unknown, use) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
     render(

@@ -33,12 +33,10 @@ export function calculateTotalTime(profile: CPUProfile): Map<number, number> {
   }
 
   // Calculate time deltas
-  let currentTime: number = profile.startTime;
   const timeDeltas = profile.timeDeltas || [];
   for (let i = 0; i < profile.samples.length; i++) {
     const sample: number = profile.samples[i] ?? 0;
     const delta: number = timeDeltas[i] ?? 0;
-    currentTime = currentTime + delta;
 
     if (nodeMap.has(sample)) {
       const existingTime = totalTime.get(sample) ?? 0;

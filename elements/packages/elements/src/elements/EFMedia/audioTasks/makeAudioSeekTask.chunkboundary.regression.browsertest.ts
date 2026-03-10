@@ -12,7 +12,7 @@ const test = baseTest.extend<{
   video: EFVideo;
   configuration: EFConfiguration;
 }>({
-  timegroup: async ({}, use) => {
+  timegroup: async (_: unknown, use) => {
     const timegroup = document.createElement("ef-timegroup");
     timegroup.setAttribute("mode", "sequence");
     timegroup.setAttribute("id", "test-timegroup"); // Required for localStorage key

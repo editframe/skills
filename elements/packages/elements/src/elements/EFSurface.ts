@@ -25,7 +25,7 @@ export class EFSurface extends LitElement implements FrameRenderable {
   canvasRef = createRef<HTMLCanvasElement>();
 
   // @ts-expect-error controller is intentionally not referenced directly
-  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: Used for side effects
+  // oxlint-disable-next-line no-unused-private-class-members -- retained for constructor side effects
   #targetController: TargetController = new TargetController(this);
 
   @state()

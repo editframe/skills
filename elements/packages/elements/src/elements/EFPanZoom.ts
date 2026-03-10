@@ -61,12 +61,14 @@ export class EFPanZoom extends LitElement {
    */
   private _onDocumentWheelCapture = (e: WheelEvent) => {
     // Check if event is over this panzoom element or its children
-    let panZoom: Element | null = null;
+    let isOverThisPanZoom = false;
     if (e.target instanceof Element) {
-      panZoom = e.target.closest("ef-pan-zoom");
-      // Also check if target is an overlay sibling (selection overlay, etc.)
-      // Overlays have pointer-events: none but can still be the event target
-      if (!panZoom && e.target.closest("ef-canvas-selection-overlay")) {
+      const targetPanZoom = e.target.closest("ef-pan-zoom");
+      if (targetPanZoom === this) {
+        isOverThisPanZoom = true;
+      } else if (!targetPanZoom && e.target.closest("ef-canvas-selection-overlay")) {
+        // Also check if target is an overlay sibling (selection overlay, etc.)
+        // Overlays have pointer-events: none but can still be the event target
         // Event is over selection overlay - check if it's over this panzoom's area
         const rect = this.getBoundingClientRect();
         if (
@@ -75,11 +77,11 @@ export class EFPanZoom extends LitElement {
           e.clientY >= rect.top &&
           e.clientY <= rect.bottom
         ) {
-          panZoom = this;
+          isOverThisPanZoom = true;
         }
       }
     }
-    if (panZoom === this) {
+    if (isOverThisPanZoom) {
       // Prevent browser navigation gestures (back/forward on swipe)
       // Don't stop propagation - let the normal wheel handler process the event
       e.preventDefault();
@@ -117,7 +119,7 @@ export class EFPanZoom extends LitElement {
     if (this._isDragging && this._capturedPointerId !== null) {
       try {
         this.releasePointerCapture(this._capturedPointerId);
-      } catch (err) {
+      } catch (_err) {
         // Ignore pointer capture errors (e.g., in test environments)
       }
     }
@@ -165,7 +167,7 @@ export class EFPanZoom extends LitElement {
 
     try {
       this.setPointerCapture(e.pointerId);
-    } catch (err) {
+    } catch (_err) {
       // Ignore pointer capture errors (e.g., in test environments)
     }
   };
@@ -187,7 +189,7 @@ export class EFPanZoom extends LitElement {
     if (this._capturedPointerId !== null) {
       try {
         this.releasePointerCapture(e.pointerId);
-      } catch (err) {
+      } catch (_err) {
         // Ignore pointer capture errors (e.g., in test environments)
       }
     }

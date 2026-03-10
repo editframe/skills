@@ -591,7 +591,7 @@ export async function renderTimegroupToVideo(
           if (audioBuffer && audioBuffer.length > 0) {
             await audioSource.add(audioBuffer);
           }
-        } catch (e) {
+        } catch (_e) {
           /* Audio render failures are non-fatal */
         }
         lastRenderedAudioEndMs = chunkEndMs;
@@ -653,7 +653,7 @@ export async function renderTimegroupToVideo(
         if (audioBuffer && audioBuffer.length > 0) {
           await audioSource.add(audioBuffer);
         }
-      } catch (e) {
+      } catch (_e) {
         /* Audio render failures are non-fatal */
       }
     }

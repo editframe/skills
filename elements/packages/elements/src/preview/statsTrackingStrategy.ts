@@ -357,9 +357,6 @@ export function createStatsTrackingStrategy(
         adaptiveTracker: options.adaptiveTracker,
       });
 
-    case "canvas":
-      return null;
-
     default:
       return null;
   }

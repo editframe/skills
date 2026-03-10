@@ -824,7 +824,7 @@ const validateAnimationFillMode = (animation: Animation, timing: AnimationTiming
         `   Example: animation: ${animationName} ${timing.duration}ms both;`,
       );
     }
-  } catch (e) {
+  } catch (_e) {
     // Silently skip keyframe analysis if it fails
   }
 

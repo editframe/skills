@@ -51,7 +51,7 @@ const test = baseTest.extend<{
   nestedAnimatedTimegroup: EFTimegroup;
   webpImageTimegroup: EFTimegroup;
 }>({
-  htmlTimegroup: async ({}, use) => {
+  htmlTimegroup: async (_: unknown, use) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
     render(
@@ -76,7 +76,7 @@ const test = baseTest.extend<{
     await use(timegroup);
     container.remove();
   },
-  videoTimegroup: async ({}, use) => {
+  videoTimegroup: async (_: unknown, use) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
     render(
@@ -99,7 +99,7 @@ const test = baseTest.extend<{
     await use(timegroup);
     container.remove();
   },
-  complexHtmlTimegroup: async ({}, use) => {
+  complexHtmlTimegroup: async (_: unknown, use) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
     render(
@@ -158,7 +158,7 @@ const test = baseTest.extend<{
     await use(timegroup);
     container.remove();
   },
-  nestedAnimatedTimegroup: async ({}, use) => {
+  nestedAnimatedTimegroup: async (_: unknown, use) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
     // Complex example with nested timegroups, video, and CSS animations
@@ -352,7 +352,7 @@ const test = baseTest.extend<{
     await use(timegroup);
     container.remove();
   },
-  webpImageTimegroup: async ({}, use) => {
+  webpImageTimegroup: async (_: unknown, use) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
     const webpSrc = "/test.webp";
@@ -1521,7 +1521,7 @@ describe("benchmark: 2026 Chromium optimizations", () => {
       ctx.drawImage(img, 0, 0);
       try {
         ctx.getImageData(0, 0, 1, 1); // Test for tainting
-      } catch (e) {
+      } catch (_e) {
         dataUriTaintError = true;
       }
     }
@@ -1532,7 +1532,7 @@ describe("benchmark: 2026 Chromium optimizations", () => {
       ctx.drawImage(img, 0, 0);
       try {
         ctx.getImageData(0, 0, 1, 1); // Test for tainting
-      } catch (e) {}
+      } catch (_e) {}
     }
 
     // Test 3: createImageBitmap
@@ -1542,7 +1542,7 @@ describe("benchmark: 2026 Chromium optimizations", () => {
       bitmap.close(); // Free GPU memory
       try {
         ctx.getImageData(0, 0, 1, 1); // Test for tainting
-      } catch (e) {}
+      } catch (_e) {}
     }
 
     // Data URI is the only method that doesn't taint (as of 2025)
@@ -1988,7 +1988,7 @@ describe("clone-timeline video rendition (reproduction)", () => {
     // Wait for media engine (this might fail if the URL isn't served with track index)
     try {
       await timegroup.waitForMediaDurations();
-    } catch (e) {
+    } catch (_e) {
       container.remove();
       // Skip this test if the URL isn't served properly
       return;

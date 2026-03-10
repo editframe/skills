@@ -1,3 +1,4 @@
+// oxlint-disable-next-line no-unused-vars -- used as base class in declare class below
 import type { LitElement } from "lit";
 
 import { isEFTemporal, type TemporalMixinInterface } from "../elements/EFTemporal.js";

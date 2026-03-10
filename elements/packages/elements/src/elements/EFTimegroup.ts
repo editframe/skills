@@ -2440,21 +2440,20 @@ export class EFTimegroup
   #seekTaskAbortController: AbortController | null = null;
 
   seekTask = (() => {
-    const self = this;
     const taskObj: {
       run(): void | Promise<number | undefined>;
       taskComplete: Promise<number | undefined>;
     } = {
       run: () => {
         // Abort any in-flight task
-        self.#seekTaskAbortController?.abort();
-        self.#seekTaskAbortController = new AbortController();
-        const signal = self.#seekTaskAbortController.signal;
+        this.#seekTaskAbortController?.abort();
+        this.#seekTaskAbortController = new AbortController();
+        const signal = this.#seekTaskAbortController.signal;
 
-        const targetTime = self.#pendingSeekTime ?? self.#currentTime;
-        self.#seekTaskPromise = self.#runSeekTask(targetTime, signal);
-        taskObj.taskComplete = self.#seekTaskPromise;
-        return self.#seekTaskPromise;
+        const targetTime = this.#pendingSeekTime ?? this.#currentTime;
+        this.#seekTaskPromise = this.#runSeekTask(targetTime, signal);
+        taskObj.taskComplete = this.#seekTaskPromise;
+        return this.#seekTaskPromise;
       },
       taskComplete: Promise.resolve(undefined),
     };

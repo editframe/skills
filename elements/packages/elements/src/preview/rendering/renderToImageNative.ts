@@ -127,8 +127,8 @@ export async function renderToImageNative(
     if (!_layoutInitializedCanvases.has(captureCanvas)) {
       void captureCanvas.offsetHeight;
       void container.offsetHeight;
-      getComputedStyle(captureCanvas).opacity;
-      getComputedStyle(container).opacity;
+      void getComputedStyle(captureCanvas).opacity;
+      void getComputedStyle(container).opacity;
       _layoutInitializedCanvases.add(captureCanvas);
     }
   } else {
@@ -162,7 +162,7 @@ export async function renderToImageNative(
   try {
     // Force style calculation to ensure CSS is computed before capture
     // This ensures both canvas and container are laid out (required for drawElementImage)
-    getComputedStyle(container).opacity;
+    void getComputedStyle(container).opacity;
 
     // When reusing canvas with layoutsubtree, wait for initial layout (first use only)
     // Use a WeakSet to track canvases that have been initialized

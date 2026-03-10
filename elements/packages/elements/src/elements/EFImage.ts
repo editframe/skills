@@ -326,7 +326,7 @@ export class EFImage
     // This is especially important for SVGs
     try {
       await image.decode();
-    } catch (decodeError) {
+    } catch (_decodeError) {
       // Image decode failed, attempting to draw anyway
     }
 

@@ -26,7 +26,7 @@
  *   - Line-level profiling for focused files (shows which lines are hot)
  */
 
-import { chromium, type Browser, type Page, type CDPSession } from "playwright";
+import { chromium, type Browser } from "playwright";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -390,7 +390,7 @@ async function main() {
 
     // Trigger export directly on timegroup (skip workbench to get buffer back)
     const exportPromise = page.evaluate(
-      async ({ maxDur, benchmark }) => {
+      async ({ maxDur: _maxDur, benchmark }) => {
         const timegroup = document.querySelector("ef-timegroup") as any;
         if (timegroup?.renderToVideo) {
           try {
@@ -543,13 +543,6 @@ interface DetailedHotspot {
   hitCount: number;
   callers: string[];
   positionTicks: { line: number; ticks: number; resolvedLine?: number }[]; // line is resolved
-}
-
-interface LineTiming {
-  line: number;
-  ticks: number;
-  timeMs: number;
-  timePct: number;
 }
 
 async function analyzeProfileDetailed(profile: CPUProfile): Promise<{

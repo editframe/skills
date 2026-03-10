@@ -202,10 +202,8 @@ async function profilePageLoad(
   page: Page,
   cdp: CDPSession,
   project: string,
-  focus?: string,
+  _focus?: string,
 ): Promise<CPUProfile> {
-  const resolver = new SourceMapResolver(page.url());
-
   // Start profiling
   await cdp.send("Profiler.enable");
   await cdp.send("Profiler.start");
@@ -224,7 +222,6 @@ async function profilePageLoad(
     return new Promise<void>((resolve) => {
       // Wait for all timegroups to finish their initialization
       const timegroups = document.querySelectorAll("ef-timegroup");
-      let resolved = 0;
 
       const checkComplete = async () => {
         for (const tg of Array.from(timegroups)) {
@@ -244,7 +241,7 @@ async function profilePageLoad(
           if (el.seekTask && el.seekTask.taskComplete) {
             try {
               await el.seekTask.taskComplete;
-            } catch (e) {
+            } catch (_e) {
               // Ignore errors
             }
           }
@@ -287,11 +284,9 @@ async function analyzeProfile(
   }
 
   // Calculate time deltas
-  let currentTime = profile.startTime;
   for (let i = 0; i < profile.samples.length; i++) {
     const sample = profile.samples[i];
     const delta = profile.timeDeltas[i] || 0;
-    currentTime += delta;
 
     if (nodeMap.has(sample)) {
       totalTime.set(sample, (totalTime.get(sample) || 0) + delta);

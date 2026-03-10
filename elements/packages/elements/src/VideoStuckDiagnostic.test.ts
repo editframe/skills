@@ -79,11 +79,11 @@ describe("Video Operations Getting Stuck Diagnosis", () => {
     for (const seekTime of seekTimes) {
       try {
         await simulatePaintTask(seekTime);
-      } catch (error) {
+      } catch (_error) {
         // Try one more operation to see if it's blocked
         try {
           await simulatePaintTask(seekTime + 100);
-        } catch (subsequentError) {
+        } catch (_subsequentError) {
           // subsequent operation also failed
         }
 

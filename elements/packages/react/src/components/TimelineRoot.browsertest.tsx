@@ -1,6 +1,6 @@
 import React from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { assert, beforeEach, afterEach, describe, test, vi } from "vitest";
+import { assert, beforeEach, describe, test, vi } from "vitest";
 import { Timegroup, Configuration } from "../index";
 import { TimelineRoot } from "./TimelineRoot";
 import type { EFTimegroup } from "@editframe/elements";

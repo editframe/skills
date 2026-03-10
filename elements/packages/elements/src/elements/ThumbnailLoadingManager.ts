@@ -361,7 +361,7 @@ export class ThumbnailLoadingManager {
           this.#activelyCapturing.delete(timeMs);
           failedTimes.push(timeMs);
         }
-      } catch (error) {
+      } catch (_error) {
         this.#activelyCapturing.delete(timeMs);
         failedTimes.push(timeMs);
       }

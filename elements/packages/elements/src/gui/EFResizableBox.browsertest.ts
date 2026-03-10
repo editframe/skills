@@ -16,7 +16,7 @@ describe("EFResizableBox", () => {
     await el.updateComplete;
 
     const box = el.shadowRoot!.querySelector(".box") as HTMLDivElement;
-    expect(box).to.exist;
+    expect(box).to.exist; // oxlint-disable-line no-unused-expressions -- chai .exist is a getter assertion
     expect(box.style.left).to.equal("0px");
     expect(box.style.top).to.equal("0px");
     expect(box.style.width).to.equal("100px");

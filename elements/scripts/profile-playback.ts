@@ -23,7 +23,7 @@
  *   npx tsx scripts/profile-playback.ts --scrub --duration 3000
  */
 
-import { chromium, type Browser, type Page, type CDPSession } from "playwright";
+import { chromium, type Browser } from "playwright";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -53,15 +53,6 @@ interface CPUProfile {
   endTime: number;
   samples: number[];
   timeDeltas: number[];
-}
-
-interface HotspotInfo {
-  functionName: string;
-  url: string;
-  line: number;
-  selfTime: number;
-  totalTime: number;
-  hitCount: number;
 }
 
 /** Resolved source location after applying source maps */
@@ -673,28 +664,6 @@ async function analyzeProfileDetailed(profile: CPUProfile): Promise<{
   hotspots.sort((a, b) => b.selfTimeMs - a.selfTimeMs);
 
   return { hotspots, totalTimeMs, sampleIntervalUs, callGraph };
-}
-
-async function analyzeProfile(profile: CPUProfile): Promise<HotspotInfo[]> {
-  const { hotspots } = await analyzeProfileDetailed(profile);
-  return hotspots.map((h) => ({
-    functionName: h.functionName,
-    url: h.file,
-    line: h.line,
-    selfTime: h.selfTimeMs,
-    totalTime: h.selfTimeMs,
-    hitCount: h.hitCount,
-  }));
-}
-
-function printHotspots(hotspots: HotspotInfo[]) {
-  for (const h of hotspots) {
-    const shortUrl = h.url.split("/").slice(-2).join("/");
-    const location = h.url ? `${shortUrl}:${h.line}` : "(native)";
-    console.log(
-      `   ${h.selfTime.toFixed(1).padStart(7)}ms  ${h.functionName.slice(0, 40).padEnd(40)} ${location}`,
-    );
-  }
 }
 
 async function printDetailedAnalysis(profile: CPUProfile, focusFile: string = "") {

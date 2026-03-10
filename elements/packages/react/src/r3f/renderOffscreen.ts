@@ -358,16 +358,16 @@ export function renderOffscreen(children: React.ReactNode) {
   ) {
     if (this.path !== undefined) url = this.path + url;
     url = this.manager.resolveURL(url);
-    const scope = this;
     const cached = THREE.Cache.get(url);
 
     if (cached !== undefined) {
-      scope.manager.itemStart(url);
+      this.manager.itemStart(url);
       if (onLoad) onLoad(cached);
-      scope.manager.itemEnd(url);
+      this.manager.itemEnd(url);
       return cached;
     }
 
+    const manager = this.manager;
     fetch(url)
       .then((res) => res.blob())
       .then((res) =>
@@ -379,7 +379,7 @@ export function renderOffscreen(children: React.ReactNode) {
       .then((bitmap) => {
         THREE.Cache.add(url, bitmap);
         if (onLoad) onLoad(bitmap);
-        scope.manager.itemEnd(url);
+        manager.itemEnd(url);
       })
       .catch(onError);
 

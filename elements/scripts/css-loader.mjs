@@ -48,7 +48,7 @@ export async function load(url, context, nextLoad) {
         shortCircuit: true,
         source: `export default ${JSON.stringify(cssContent)};`,
       };
-    } catch (error) {
+    } catch (_error) {
       // If file doesn't exist or can't be read, return empty string
       return {
         format: "module",

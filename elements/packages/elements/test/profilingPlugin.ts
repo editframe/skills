@@ -14,7 +14,6 @@
 
 import type { Plugin } from "vite";
 import * as fs from "node:fs";
-import * as path from "node:path";
 
 interface ProfileNode {
   id: number;

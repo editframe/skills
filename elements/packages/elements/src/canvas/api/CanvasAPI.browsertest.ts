@@ -8,7 +8,7 @@ const test = baseTest.extend<{
   canvas: HTMLElement;
   api: CanvasAPI;
 }>({
-  canvas: async ({}, use) => {
+  canvas: async (_: unknown, use) => {
     const container = document.createElement("div");
     container.style.width = "800px";
     container.style.height = "600px";

@@ -49,7 +49,7 @@ export async function installDependencies(projectDir: string): Promise<boolean> 
     process.stderr.write(chalk.green("\n✓ Dependencies installed successfully!\n"));
 
     return true;
-  } catch (error) {
+  } catch (_error) {
     process.stderr.write(chalk.yellow("\n⚠ Dependency installation failed\n"));
     process.stderr.write(chalk.dim("You can install manually:\n"));
     process.stderr.write(chalk.cyan(`  cd ${projectDir.split("/").pop()}\n`));
@@ -81,7 +81,7 @@ export async function installAgentSkills(projectDir: string): Promise<boolean> {
 
     process.stderr.write(chalk.green("\n✓ AI agent skills installed!\n"));
     return true;
-  } catch (error) {
+  } catch (_error) {
     process.stderr.write(chalk.yellow("\n⚠ Failed to install agent skills\n"));
     return false;
   }

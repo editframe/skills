@@ -153,7 +153,7 @@ export class EFControls extends LitElement {
   focusContext = this as FocusContext;
 
   // @ts-expect-error controller is intentionally not referenced directly
-  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: Used for side effects
+  // oxlint-disable-next-line no-unused-private-class-members -- retained for constructor side effects
   #targetController = new TargetController(this);
 
   // Subscription tracking for different target types

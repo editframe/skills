@@ -820,13 +820,6 @@ export function renderTimegroupToCanvas(
 
   const getResolutionScale = (): number => pendingResolutionScale ?? currentResolutionScale;
 
-  // Rolling timing stats for per-phase profiling
-  let frameCount = 0;
-  let totalFrameControllerMs = 0;
-  let totalCaptureMs = 0;
-  let totalCopyMs = 0;
-  let totalFrameMs = 0;
-
   const refresh = async (): Promise<void> => {
     if (disposed) return;
 
@@ -851,18 +844,12 @@ export function renderTimegroupToCanvas(
     }
 
     try {
-      const tFrame = performance.now();
-
-      const tFC0 = performance.now();
       await frameController.renderFrame(userTimeMs, {
         waitForLitUpdate: false,
         onAnimationsUpdate: (root) => {
           updateAnimations(root as AnimatableElement);
         },
       });
-      const fcMs = performance.now() - tFC0;
-
-      const tCapture0 = performance.now();
 
       if (useNative && captureCanvas && captureCtx) {
         if (captureCanvas.width !== width || captureCanvas.height !== height) {
@@ -873,9 +860,6 @@ export function renderTimegroupToCanvas(
         } else {
           captureCtx.drawElementImage(timegroup, 0, 0);
         }
-        const captureMs = performance.now() - tCapture0;
-
-        const tCopy0 = performance.now();
         const targetWidth = Math.floor(renderWidth * scale * dpr);
         const targetHeight = Math.floor(renderHeight * scale * dpr);
         if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
@@ -885,23 +869,8 @@ export function renderTimegroupToCanvas(
           ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
         ctx.drawImage(captureCanvas, 0, 0, canvas.width, canvas.height);
-        const copyMs = performance.now() - tCopy0;
-
-        const frameMs = performance.now() - tFrame;
-        frameCount++;
-        totalFrameControllerMs += fcMs;
-        totalCaptureMs += captureMs;
-        totalCopyMs += copyMs;
-        totalFrameMs += frameMs;
 
         defaultProfiler.incrementRenderCount();
-        if (defaultProfiler.shouldLogByFrameCount(60)) {
-          frameCount = 0;
-          totalFrameControllerMs = 0;
-          totalCaptureMs = 0;
-          totalCopyMs = 0;
-          totalFrameMs = 0;
-        }
       } else {
         const absoluteTimeMs = toAbsoluteTime(timegroup, userTimeMs);
 
@@ -910,11 +879,7 @@ export function renderTimegroupToCanvas(
           canvasScale: currentResolutionScale,
           timeMs: absoluteTimeMs,
         });
-        const captureMs = performance.now() - tCapture0;
-
-        const tCopy0 = performance.now();
         const image = await loadImageFromDataUri(dataUri);
-        const copyMs = performance.now() - tCopy0;
 
         const targetWidth = Math.floor(renderWidth * scale * dpr);
         const targetHeight = Math.floor(renderHeight * scale * dpr);
@@ -930,21 +895,7 @@ export function renderTimegroupToCanvas(
         ctx.drawImage(image, 0, 0, renderWidth, renderHeight);
         ctx.restore();
 
-        const frameMs = performance.now() - tFrame;
-        frameCount++;
-        totalFrameControllerMs += fcMs;
-        totalCaptureMs += captureMs;
-        totalCopyMs += copyMs;
-        totalFrameMs += frameMs;
-
         defaultProfiler.incrementRenderCount();
-        if (defaultProfiler.shouldLogByFrameCount(60)) {
-          frameCount = 0;
-          totalFrameControllerMs = 0;
-          totalCaptureMs = 0;
-          totalCopyMs = 0;
-          totalFrameMs = 0;
-        }
       }
     } catch (e) {
       logger.error("Canvas preview render failed:", e);

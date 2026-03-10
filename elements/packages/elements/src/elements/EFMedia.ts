@@ -70,6 +70,7 @@ import { EFTemporal } from "./EFTemporal.js";
 export class AsyncValue<T> {
   #value: T | undefined = undefined;
   #error: Error | undefined = undefined;
+  // oxlint-disable-next-line no-unused-private-class-members -- false positive; read via get status()
   #status: "initial" | "pending" | "complete" | "error" = "initial";
   #promise: Promise<T | undefined> = Promise.resolve(undefined);
   #resolvePromise: ((value: T | undefined) => void) | undefined;

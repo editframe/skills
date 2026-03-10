@@ -15,7 +15,8 @@ export function encodeBase64Fast(bytes: Uint8Array): string {
 
   // Pre-calculate output size: 4 chars per 3 bytes, rounded up
   const outputLen = ((len + 2) / 3) << 2;
-  const result = new Array(outputLen);
+  // oxlint-disable-next-line no-new-array -- intentional pre-allocation for performance
+  const result = new Array(outputLen) as string[];
 
   let i = 0;
   let outIndex = 0;

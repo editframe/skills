@@ -17,7 +17,7 @@
  *   --headless         Run in headless mode (default: false)
  */
 
-import { chromium, type Browser, type Page } from "playwright";
+import { chromium, type Browser } from "playwright";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -105,10 +105,6 @@ async function main() {
 
   const context = await browser.newContext();
   const page = await context.newPage();
-
-  const events: FrameDisplayEvent[] = [];
-  let lastDisplayedTime: number | null = null;
-  let lastDisplayedTimestamp: number | null = null;
 
   // Track video frame displays by intercepting canvas drawImage calls
   await page.addInitScript(() => {
@@ -234,10 +230,6 @@ async function main() {
           const targetTime = progress * totalDuration;
           const seekTimestamp = performance.now();
 
-          // Get video desired seek times before the seek
-          const videosBefore = Array.from(document.querySelectorAll("ef-video")) as any[];
-          const desiredSeekTimesBefore = videosBefore.map((v) => v.desiredSeekTimeMs || 0);
-
           timegroup.currentTimeMs = targetTime;
 
           // Wait a bit for the seek to propagate
@@ -264,24 +256,6 @@ async function main() {
 
     const scrubDuration = Date.now() - scrubStartTime;
     console.log(`⏱️  Scrubbing completed in ${(scrubDuration / 1000).toFixed(2)}s`);
-
-    // Get frame display events
-    const frameDisplayEvents = await page.evaluate(() => {
-      return (window as any).__frameDisplayEvents || [];
-    });
-
-    // Get final video states (for debugging)
-    const finalVideoStates = await page.evaluate(() => {
-      const timegroup = document.querySelector("ef-timegroup") as any;
-      const videos = Array.from(document.querySelectorAll("ef-video"));
-
-      // Get current state of videos
-      return videos.map((v: any) => ({
-        id: v.id || "unknown",
-        desiredSeekTimeMs: v.desiredSeekTimeMs || 0,
-        unifiedVideoSeekTaskStatus: v.unifiedVideoSeekTask?.status || "unknown",
-      }));
-    });
 
     // Wait a bit more to catch any delayed frame displays
     await new Promise((resolve) => setTimeout(resolve, 1000));

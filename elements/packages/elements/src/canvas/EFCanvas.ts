@@ -287,7 +287,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
       }
 
       this.registerElement(element, elementId);
-    } catch (error) {
+    } catch (_error) {
       // Silently ignore registration errors (e.g., duplicate ID)
       // This allows the canvas to work with mixed content
     }
@@ -761,7 +761,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
       if (this.capturedPointerId !== null) {
         try {
           this.releasePointerCapture(e.pointerId);
-        } catch (err) {
+        } catch (_err) {
           // Ignore release errors
         }
         this.capturedPointerId = null;
@@ -852,7 +852,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
     if (this.capturedPointerId !== null) {
       try {
         this.releasePointerCapture(e.pointerId);
-      } catch (err) {
+      } catch (_err) {
         // Ignore release errors
       }
       this.capturedPointerId = null;

@@ -582,7 +582,7 @@ function serializeImageAsCanvas(
   if (ctx) {
     try {
       ctx.drawImage(img, 0, 0);
-    } catch (e) {
+    } catch (_e) {
       // Cross-origin image - skip
       return;
     }

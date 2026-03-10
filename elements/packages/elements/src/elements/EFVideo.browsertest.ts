@@ -41,12 +41,12 @@ const test = baseTest.extend<{
   barsNtoneTimegroup: EFTimegroup;
   sequenceTimegroup: EFTimegroup;
 }>({
-  timegroup: async ({}, use) => {
+  timegroup: async (_: unknown, use) => {
     const timegroup = document.createElement("ef-timegroup");
     timegroup.setAttribute("mode", "contain");
     await use(timegroup);
   },
-  configuration: async ({}, use) => {
+  configuration: async (_: unknown, use) => {
     const configuration = document.createElement("ef-configuration");
     const apiHost = getApiHost();
     configuration.setAttribute("api-host", apiHost);
@@ -70,7 +70,7 @@ const test = baseTest.extend<{
     await video.updateComplete;
     use(video);
   },
-  barsNtoneTimegroup: async ({}, use) => {
+  barsNtoneTimegroup: async (_: unknown, use) => {
     // Clear localStorage to prevent test contamination
     localStorage.removeItem("ef-timegroup-barsNtoneTimegroup");
 
@@ -97,7 +97,7 @@ const test = baseTest.extend<{
     // Cleanup: remove from DOM
     container.remove();
   },
-  sequenceTimegroup: async ({}, use) => {
+  sequenceTimegroup: async (_: unknown, use) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
     render(

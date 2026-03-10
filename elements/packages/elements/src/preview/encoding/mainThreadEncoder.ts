@@ -50,7 +50,7 @@ export function encodeCanvasOnMainThread(
     }
 
     return { dataUrl, preserveAlpha };
-  } catch (e) {
+  } catch (_e) {
     // Cross-origin canvas or other error - skip
     return null;
   }

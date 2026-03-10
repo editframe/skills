@@ -624,7 +624,7 @@ Examples:
           ),
         );
       }
-    } catch (e) {
+    } catch (_e) {
       // Standard profiling tools might not be available, that's ok
       console.log(`\n(Standard profiling tools not available)`);
     }

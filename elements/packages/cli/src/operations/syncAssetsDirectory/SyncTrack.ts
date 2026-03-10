@@ -95,9 +95,9 @@ export class SyncTrack implements SubAssetSync<CreateISOBMFFTrackResult> {
   }
 
   async validate() {
-    this.trackId;
-    this.videoFile;
-    this.trackDuration;
+    void this.trackId;
+    void this.videoFile;
+    void this.trackDuration;
   }
 
   async create(): Promise<void> {

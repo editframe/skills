@@ -1664,7 +1664,6 @@ export class EFTimeline extends TWMixin(LitElement) {
       const rect = tracksScroll.getBoundingClientRect();
       const trackAreaLeft = rect.left + hierarchyWidth;
       const trackAreaRight = rect.right;
-      trackAreaRight - trackAreaLeft;
 
       // Calculate distance from edges (relative to track area, not full scroll container)
       const distanceFromLeft = lastClientX - trackAreaLeft;

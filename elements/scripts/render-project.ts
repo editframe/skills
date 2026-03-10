@@ -141,7 +141,6 @@ async function main() {
       };
     });
 
-    const durationSec = (timegroupInfo.durationMs / 1000).toFixed(1);
     const minutes = Math.floor(timegroupInfo.durationMs / 60000);
     const seconds = Math.floor((timegroupInfo.durationMs % 60000) / 1000);
     const durationFormatted = `${minutes}:${seconds.toString().padStart(2, "0")}`;

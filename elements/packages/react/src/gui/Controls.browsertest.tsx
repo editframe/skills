@@ -17,7 +17,7 @@ const test = baseTest.extend<{
   renderedContainer: HTMLElement;
 }>({
   // biome-ignore lint/correctness/noEmptyPattern: Required by Vitest fixture syntax
-  markup: async ({}, use) => {
+  markup: async (_: unknown, use) => {
     const markup = (
       <>
         <Configuration>
@@ -48,7 +48,7 @@ const test = baseTest.extend<{
     container.remove();
   },
   // biome-ignore lint/correctness/noEmptyPattern: Required by Vitest fixture syntax
-  renderedContainer: async ({}, use) => {
+  renderedContainer: async (_: unknown, use) => {
     const container = document.createElement("div");
     document.body.appendChild(container);
     await use(container);

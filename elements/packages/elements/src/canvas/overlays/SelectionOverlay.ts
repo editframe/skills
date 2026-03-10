@@ -209,6 +209,7 @@ export class SelectionOverlay extends LitElement {
     }
 
     // Fallback: traverse up the DOM tree (for when overlay is inside canvas shadow DOM)
+    // oxlint-disable-next-line no-this-alias -- legitimate DOM traversal starting at this element
     let current: Node | null = this;
     while (current) {
       if (current instanceof ShadowRoot) {
