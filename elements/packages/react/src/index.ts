@@ -41,4 +41,5 @@ export { Workbench } from "./gui/Workbench.js";
 export { useTimingInfo } from "./hooks/useTimingInfo.js";
 export { useMediaInfo, type MediaInfo } from "./hooks/useMediaInfo.js";
 export { usePanZoomTransform } from "./hooks/usePanZoomTransform.js";
+export { useRenderData } from "./hooks/useRenderData.js";
 export { needsFitScale, elementNeedsFitScale } from "@editframe/elements";

@@ -72,14 +72,26 @@ The browser path is suited for user-facing export features, interactive applicat
 
 ## Cloud Render (API)
 
-The cloud path uploads the composition bundle to a server, which processes it with Playwright in a controlled environment. The server handles encoding, asset resolution, and output delivery.
+The cloud path uploads a Vite bundle (tar archive) to a server, which unpacks it and processes it with Playwright in a controlled environment. The server handles encoding, asset resolution, and output delivery.
+
+React compositions require a full Vite build before submission — the bundle contains the compiled JS, CSS, and all local assets. The CLI handles this automatically:
 
 ```bash
-# POST composition bundle to render API
-curl -X POST https://api.editframe.com/v1/renders \
-  -H "Authorization: Bearer $API_KEY" \
-  -F "bundle=@composition.tgz"
+npx editframe cloud-render
 ```
+
+For programmatic use from a backend service, `bundleRender()` from `@editframe/api/node` runs the same Vite build + tar pipeline:
+
+```typescript
+import { createRender, uploadRender } from "@editframe/api";
+import { bundleRender } from "@editframe/api/node";
+
+const tarStream = await bundleRender({ root: "./my-composition", renderData: {} });
+const render = await createRender(client, { width: 1280, height: 720, fps: 30, duration_ms: 10000 });
+await uploadRender(client, render.id, tarStream);
+```
+
+Self-contained `<ef-*>` compositions with no local imports can use `createRender` with a raw HTML string — the server handles bundling for that path. See [cloud-render.md](references/cloud-render.md) for the full comparison.
 
 Results are delivered via webhook or polling. The cloud path is suited for production workflows, scalable rendering, and environments where no browser is available.
 
@@ -90,7 +102,7 @@ Results are delivered via webhook or polling. The cloud path is suited for produ
 | Runs in | Local machine | User's browser | Remote server |
 | Encoding | Server-side FFmpeg | WebCodecs + FFmpeg.wasm | Server-side FFmpeg |
 | Audio muxing | Automatic | Automatic | Automatic |
-| Dynamic data | `--data` flag | JavaScript state | Request payload |
+| Dynamic data | `--data` flag | JavaScript state | `--data` / `bundleRender({ renderData })` |
 | Progress feedback | Terminal output | `onProgress` callback | Webhook / polling |
 | Browser required | Playwright (headless) | User's browser | None (server-side) |
 | Codec control | Full FFmpeg options | Browser-supported codecs | Full FFmpeg options |
