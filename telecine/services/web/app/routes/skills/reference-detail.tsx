@@ -330,11 +330,11 @@ export default function ReferenceDetail({ loaderData }: Route.ComponentProps) {
         </main>
 
         {/* On This Page navigation */}
-        <OnThisPage />
+        <OnThisPage skillName={skillName} referenceName={referenceName} />
       </div>
 
       {/* Mobile floating TOC button */}
-      <MobileTocButton />
+      <MobileTocButton skillName={skillName} referenceName={referenceName} />
     </SkillsLayout>
   );
 }

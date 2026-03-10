@@ -1,5 +1,12 @@
 import { usePageHeadings } from "~/hooks/usePageHeadings";
 
+function scrollToHeading(id: string) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
 export function TocList({
   activeId,
   headings,
@@ -18,7 +25,11 @@ export function TocList({
         >
           <a
             href={`#${heading.id}`}
-            onClick={onNavigate}
+            onClick={(e) => {
+              e.preventDefault();
+              scrollToHeading(heading.id);
+              onNavigate?.();
+            }}
             className={`block py-0.5 transition-colors ${
               activeId === heading.id
                 ? "text-blue-600 dark:text-blue-400 font-medium border-l-2 border-blue-600 dark:border-blue-400 -ml-[2px] pl-[calc(0.5rem-2px)]"
@@ -41,8 +52,14 @@ export function TocList({
   );
 }
 
-export function OnThisPage() {
-  const { headings, activeId } = usePageHeadings();
+export function OnThisPage({
+  skillName,
+  referenceName,
+}: {
+  skillName?: string;
+  referenceName?: string;
+}) {
+  const { headings, activeId } = usePageHeadings(skillName, referenceName);
 
   if (headings.length === 0) return null;
 
