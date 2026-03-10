@@ -1,6 +1,6 @@
 ---
 title: Cloud Rendering
-description: Submit React compositions to Editframe's cloud renderer. Covers the CLI, the programmatic bundleRender() API, and how to pass dynamic data into compositions at render time.
+description: Submit React compositions to Editframe's cloud for rendering. Covers the CLI, the programmatic bundleRender() API, and how to pass dynamic data into compositions at render time.
 type: how-to
 nav:
   parent: "Rendering"
@@ -10,7 +10,7 @@ api:
   functions:
     - name: bundleRender()
       signature: bundleRender(options)
-      description: Build a Vite bundle from a local composition directory and return a tar stream ready for upload to the cloud renderer. Programmatic equivalent of `npx editframe cloud-render`.
+      description: Build a Vite bundle from a local composition directory and return a tar stream ready for upload. Programmatic equivalent of `npx editframe cloud-render`.
       returns: Promise<ReadableStream>
     - name: useRenderData()
       signature: useRenderData<T>()
@@ -20,9 +20,7 @@ api:
 
 # Cloud Rendering
 
-Cloud rendering submits a composition to Editframe's servers, where it runs in a headless browser and is captured frame-by-frame to produce an MP4. The cloud runner never sees your local filesystem — you ship a self-contained bundle.
-
-React compositions require bundling because they have static imports (fonts, local modules, Tailwind, asset files) that only exist in the project's build context. A raw HTML string cannot reference those. The bundle wraps everything the cloud runner needs into a single uploadable artifact.
+Cloud rendering submits a composition to Editframe's servers for rendering. React compositions require bundling because they have static imports — fonts, local modules, Tailwind, asset files — that only exist in the project's build context. The bundle wraps everything the render pipeline needs into a single uploadable artifact.
 
 ## Three Paths
 
@@ -32,7 +30,7 @@ React compositions require bundling because they have static imports (fonts, loc
 npx editframe cloud-render
 ```
 
-Run from your composition project directory. The CLI builds the project with Vite, launches the built `index.html` in a headless browser to extract dimensions and duration, uploads any local media assets, creates the render record, and uploads the bundle.
+Run from your composition project directory. The CLI builds the project, extracts composition metadata, uploads any local media assets, creates the render record, and uploads the bundle.
 
 Pass dynamic data into the composition at render time:
 
@@ -55,37 +53,40 @@ const tarStream = await bundleRender({
   renderData: { userName: "Alice", theme: "dark" },
 });
 
-const render = await createRender(client, {
-  width: 1280,   // match your composition's ef-timegroup dimensions
-  height: 720,
-  fps: 30,
-  duration_ms: 10000,
-});
+const render = await createRender(client);
 
 await uploadRender(client, render.id, tarStream);
 ```
 
-`bundleRender()` runs Vite programmatically inside the composition directory, inlines all assets into a single `index.html` via `vite-plugin-singlefile`, tars the output, and returns a `ReadableStream`.
+`bundleRender()` runs Vite programmatically inside the composition directory, inlines all assets into a single `index.html`, tars the output, and returns a `ReadableStream`.
 
 `renderData` is baked into the bundle at build time via Vite's `define` option — it is not passed at upload time.
 
-**Dimension and duration values** must match your composition. They are declared by the composition author — `width` and `height` come from the root `ef-timegroup` element's CSS dimensions, `fps` from the composition setup, and `duration_ms` from the composition's total duration. The `bundleRender()` path does not inspect the DOM to extract these automatically.
+Composition metadata (dimensions, duration, fps) is extracted from the uploaded bundle automatically — you do not need to pass these to `createRender`.
 
 #### Composition directory requirements
 
-`bundleRender()` calls `vite build` inside `root`. That directory must be a valid Vite project:
+`bundleRender()` calls `vite build` inside `root`. That directory must be a valid Vite project. The fastest way to generate one is with the `@editframe/create` scaffolding tool:
+
+```bash
+npm create @editframe -- react -d my-composition
+```
+
+This produces the following structure:
 
 ```
 my-composition/
-  index.html         # entry point — must load the composition JS
-  vite.config.ts     # must include viteSingleFile() plugin
-  package.json       # needs @editframe/react, @editframe/elements, react, react-dom
+  index.html           # entry point
+  vite.config.ts       # includes viteSingleFile() plugin
+  package.json         # editframe deps, react, vite
   src/
-    main.tsx         # React root mount
-    Composition.tsx  # your composition component
+    main.tsx           # React root mount
+    Video.tsx          # composition component
+    styles.css
+    assets/
 ```
 
-Your composition can import components from elsewhere in your monorepo via `tsconfig` path aliases — `vite-tsconfig-paths` is applied automatically by `bundleRender()`.
+The composition can import components from elsewhere in your monorepo via `tsconfig` path aliases — `vite-tsconfig-paths` is applied automatically by `bundleRender()`.
 
 ### Raw HTML string (self-contained compositions only)
 
@@ -100,13 +101,10 @@ await createRender(client, {
       </ef-timegroup>
     </ef-configuration>
   `,
-  width: 1280,
-  height: 720,
-  fps: 30,
 });
 ```
 
-Only suitable for compositions with no local imports — pure `<ef-*>` markup with remote asset URLs or pre-uploaded `file-id` references. The server scaffolds a Vite project around the HTML and builds it server-side. React components cannot use this path.
+Only suitable for compositions with no local imports — pure `<ef-*>` markup with pre-uploaded `file-id` references. React components cannot use this path.
 
 ## Passing Data into Compositions
 
@@ -142,6 +140,5 @@ For HTML / non-React compositions, use `getRenderData()` from `@editframe/elemen
 | React support | yes | yes | no |
 | Local imports | yes | yes | no |
 | Handles asset upload | yes | no | no |
-| Extracts dimensions automatically | yes | no | no |
 | Dynamic data | `--data` flag | `renderData` option | request payload |
 | Use case | local / CI | backend service | simple compositions |

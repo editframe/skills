@@ -6,7 +6,7 @@ export interface Heading {
   level: number;
 }
 
-export function usePageHeadings() {
+export function usePageHeadings(skillName?: string, referenceName?: string) {
   const [headings, setHeadings] = React.useState<Heading[]>([]);
   const [activeId, setActiveId] = React.useState<string>("");
 
@@ -37,6 +37,7 @@ export function usePageHeadings() {
     });
 
     setHeadings(extracted);
+    setActiveId("");
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -46,7 +47,7 @@ export function usePageHeadings() {
           }
         });
       },
-      { rootMargin: "-80px 0px -80% 0px" },
+      { root: mainElement, rootMargin: "-80px 0px -80% 0px" },
     );
 
     headingElements.forEach((h) => {
@@ -54,7 +55,7 @@ export function usePageHeadings() {
     });
 
     return () => observer.disconnect();
-  }, []);
+  }, [skillName, referenceName]);
 
   return { headings, activeId };
 }

@@ -52,8 +52,14 @@ export function TocList({
   );
 }
 
-export function OnThisPage() {
-  const { headings, activeId } = usePageHeadings();
+export function OnThisPage({
+  skillName,
+  referenceName,
+}: {
+  skillName?: string;
+  referenceName?: string;
+}) {
+  const { headings, activeId } = usePageHeadings(skillName, referenceName);
 
   if (headings.length === 0) return null;
 

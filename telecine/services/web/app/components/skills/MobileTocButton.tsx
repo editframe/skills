@@ -2,9 +2,15 @@ import * as React from "react";
 import { usePageHeadings } from "~/hooks/usePageHeadings";
 import { TocList } from "./OnThisPage";
 
-export function MobileTocButton() {
+export function MobileTocButton({
+  skillName,
+  referenceName,
+}: {
+  skillName?: string;
+  referenceName?: string;
+}) {
   const [isOpen, setIsOpen] = React.useState(false);
-  const { headings, activeId } = usePageHeadings();
+  const { headings, activeId } = usePageHeadings(skillName, referenceName);
 
   React.useEffect(() => {
     if (!isOpen) return;
