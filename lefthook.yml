@@ -4,7 +4,7 @@ pre-commit:
     elements-lint:
       root: "elements/"
       glob: "**/*.{js,ts,cjs,mjs,jsx,tsx}"
-      run: scripts/npx oxlint {staged_files}
+      run: scripts/npx oxlint --config oxlint.json {staged_files}
     elements-format:
       root: "elements/"
       glob: "**/*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"
@@ -13,7 +13,7 @@ pre-commit:
     telecine-lint:
       root: "telecine/"
       glob: "**/*.{js,ts,cjs,mjs,jsx,tsx}"
-      run: npx oxlint {staged_files}
+      run: npx oxlint --config oxlint.json {staged_files}
     telecine-format:
       root: "telecine/"
       glob: "**/*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"
@@ -21,7 +21,7 @@ pre-commit:
       stage_fixed: true
     root-lint:
       glob: "scripts/**/*.{js,ts,mjs,cjs}"
-      run: npx oxlint {staged_files}
+      run: npx oxlint --config oxlint.json {staged_files}
     root-format:
       glob: "scripts/**/*.{js,ts,mjs,cjs,json,jsonc}"
       run: npx oxfmt {staged_files}
