@@ -43,7 +43,7 @@ jobs:
           load: true
 
       - name: Install Dependencies
-        run: ./scripts/docker-compose run --rm ci-runner npm ci
+        run: ./scripts/docker-compose run --rm -e LEFTHOOK=0 ci-runner npm ci
 
       - name: Build All Packages
         run: ./scripts/build-all
