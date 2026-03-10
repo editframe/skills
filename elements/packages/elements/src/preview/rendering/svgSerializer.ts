@@ -31,10 +31,10 @@ export function encodeBase64Fast(bytes: Uint8Array): string {
 
     const bitmap = (byte1 << 16) | (byte2 << 8) | byte3;
 
-    result[outIndex++] = BASE64_CHARS[(bitmap >> 18) & 63];
-    result[outIndex++] = BASE64_CHARS[(bitmap >> 12) & 63];
-    result[outIndex++] = BASE64_CHARS[(bitmap >> 6) & 63];
-    result[outIndex++] = BASE64_CHARS[bitmap & 63];
+    result[outIndex++] = BASE64_CHARS[(bitmap >> 18) & 63]!;
+    result[outIndex++] = BASE64_CHARS[(bitmap >> 12) & 63]!;
+    result[outIndex++] = BASE64_CHARS[(bitmap >> 6) & 63]!;
+    result[outIndex++] = BASE64_CHARS[bitmap & 63]!;
   }
 
   // Handle remaining bytes (1 or 2)
@@ -44,9 +44,9 @@ export function encodeBase64Fast(bytes: Uint8Array): string {
     const byte2 = remaining > 1 ? bytes[i++]! : 0;
     const bitmap = (byte1 << 16) | (byte2 << 8);
 
-    result[outIndex++] = BASE64_CHARS[(bitmap >> 18) & 63];
-    result[outIndex++] = BASE64_CHARS[(bitmap >> 12) & 63];
-    result[outIndex++] = remaining > 1 ? BASE64_CHARS[(bitmap >> 6) & 63] : "=";
+    result[outIndex++] = BASE64_CHARS[(bitmap >> 18) & 63]!;
+    result[outIndex++] = BASE64_CHARS[(bitmap >> 12) & 63]!;
+    result[outIndex++] = remaining > 1 ? BASE64_CHARS[(bitmap >> 6) & 63]! : "=";
     result[outIndex++] = "=";
   }
 
