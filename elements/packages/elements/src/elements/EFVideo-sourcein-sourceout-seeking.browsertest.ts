@@ -31,7 +31,7 @@ const test = baseTest.extend<{
   timegroup: EFTimegroup;
   video: EFVideo;
 }>({
-  container: async (_: unknown, use) => {
+  container: async ({}, use) => {
     const container = document.createElement("div");
     document.body.appendChild(container);
     await use(container);

@@ -8,13 +8,13 @@ const test = baseTest.extend<{
   inputAtMiddle: BufferedSeekingInput;
   segment2: BufferedSeekingInput;
 }>({
-  barsNtone: async (_: unknown, use) => {
+  barsNtone: async ({}, use) => {
     const response = await fetch("/bars-n-tone.mp4");
     const arrayBuffer = await response.arrayBuffer();
     const input = new BufferedSeekingInput(arrayBuffer);
     await use(input);
   },
-  fiveSampleBuffer: async (_: unknown, use) => {
+  fiveSampleBuffer: async ({}, use) => {
     const response = await fetch("/jit-segments/segment-0ms-2s-low.mp4");
     const arrayBuffer = await response.arrayBuffer();
     const input = new BufferedSeekingInput(arrayBuffer, {
@@ -23,19 +23,19 @@ const test = baseTest.extend<{
     });
     await use(input);
   },
-  inputAtStart: async (_: unknown, use) => {
+  inputAtStart: async ({}, use) => {
     const response = await fetch("/jit-segments/segment-0ms-2s-low.mp4");
     const arrayBuffer = await response.arrayBuffer();
     const input = new BufferedSeekingInput(arrayBuffer);
     await use(input);
   },
-  inputAtMiddle: async (_: unknown, use) => {
+  inputAtMiddle: async ({}, use) => {
     const response = await fetch("/jit-segments/segment-6000ms-1s-low.mp4");
     const arrayBuffer = await response.arrayBuffer();
     const input = new BufferedSeekingInput(arrayBuffer);
     await use(input);
   },
-  segment2: async (_: unknown, use) => {
+  segment2: async ({}, use) => {
     const response = await fetch("/jit-segments/segment-2.mp4");
     const arrayBuffer = await response.arrayBuffer();
     const input = new BufferedSeekingInput(arrayBuffer);

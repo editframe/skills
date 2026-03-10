@@ -7,7 +7,7 @@ import "./overlays/SelectionOverlay.js";
 const test = baseTest.extend<{
   canvas: HTMLElement;
 }>({
-  canvas: async (_: unknown, use) => {
+  canvas: async ({}, use) => {
     const container = document.createElement("div");
     container.style.width = "800px";
     container.style.height = "600px";

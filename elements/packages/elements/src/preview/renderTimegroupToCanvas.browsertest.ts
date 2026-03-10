@@ -51,7 +51,7 @@ const test = baseTest.extend<{
   nestedAnimatedTimegroup: EFTimegroup;
   webpImageTimegroup: EFTimegroup;
 }>({
-  htmlTimegroup: async (_: unknown, use) => {
+  htmlTimegroup: async ({}, use) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
     render(
@@ -76,7 +76,7 @@ const test = baseTest.extend<{
     await use(timegroup);
     container.remove();
   },
-  videoTimegroup: async (_: unknown, use) => {
+  videoTimegroup: async ({}, use) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
     render(
@@ -99,7 +99,7 @@ const test = baseTest.extend<{
     await use(timegroup);
     container.remove();
   },
-  complexHtmlTimegroup: async (_: unknown, use) => {
+  complexHtmlTimegroup: async ({}, use) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
     render(
@@ -158,7 +158,7 @@ const test = baseTest.extend<{
     await use(timegroup);
     container.remove();
   },
-  nestedAnimatedTimegroup: async (_: unknown, use) => {
+  nestedAnimatedTimegroup: async ({}, use) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
     // Complex example with nested timegroups, video, and CSS animations
@@ -352,7 +352,7 @@ const test = baseTest.extend<{
     await use(timegroup);
     container.remove();
   },
-  webpImageTimegroup: async (_: unknown, use) => {
+  webpImageTimegroup: async ({}, use) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
     const webpSrc = "/test.webp";

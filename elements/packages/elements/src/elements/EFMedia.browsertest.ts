@@ -46,11 +46,11 @@ const test = baseTest.extend<{
   urlGenerator: UrlGenerator;
   host: EFVideo;
 }>({
-  preview: async (_: unknown, use) => {
+  preview: async ({}, use) => {
     const preview = document.createElement("ef-preview");
     await use(preview);
   },
-  timegroup: async (_: unknown, use) => {
+  timegroup: async ({}, use) => {
     const timegroup = document.createElement("ef-timegroup");
     timegroup.setAttribute("mode", "contain");
     await use(timegroup);
@@ -66,7 +66,7 @@ const test = baseTest.extend<{
     document.body.appendChild(configuration);
     await use(configuration);
   },
-  urlGenerator: async (_: unknown, use) => {
+  urlGenerator: async ({}, use) => {
     // UrlGenerator points to integrated proxy server (same host/port as test runner)
     const apiHost = `${window.location.protocol}//${window.location.host}`;
     const generator = new UrlGenerator(() => apiHost);
@@ -308,7 +308,7 @@ describe("EFMedia", () => {
   const test = baseTest.extend<{
     element: TestMedia;
   }>({
-    element: async (_: unknown, use) => {
+    element: async ({}, use) => {
       const element = document.createElement("test-media");
       document.body.appendChild(element);
       await use(element);
@@ -360,7 +360,7 @@ describe("EFMedia", () => {
         timegroup: EFTimegroup;
         configuration: EFConfiguration;
       }>({
-        timegroup: async (_: unknown, use) => {
+        timegroup: async ({}, use) => {
           const timegroup = document.createElement("ef-timegroup");
           timegroup.setAttribute("mode", "contain");
           await use(timegroup);
@@ -508,7 +508,7 @@ describe("EFMedia", () => {
       timegroup: EFTimegroup;
       configuration: EFConfiguration;
     }>({
-      timegroup: async (_: unknown, use) => {
+      timegroup: async ({}, use) => {
         const timegroup = document.createElement("ef-timegroup");
         timegroup.setAttribute("mode", "contain");
         await use(timegroup);

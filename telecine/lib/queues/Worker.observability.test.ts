@@ -84,32 +84,28 @@ describe("Worker observability", () => {
         zremrangebyscore: vi.fn().mockReturnThis(),
         exec: vi.fn().mockResolvedValue([]),
       }),
-      getQueueStats: vi
-        .fn()
-        .mockResolvedValue(
-          JSON.stringify({
-            queued: 3,
-            claimed: 1,
-            completed: 0,
-            failed: 0,
-            stalled: 0,
-          }),
-        ),
-    };
-
-    mockQueue = {
-      name: "test-queue",
-      workerConcurrency: 1,
-      storage: mockStorage,
-      getStats: vi
-        .fn()
-        .mockResolvedValue({
+      getQueueStats: vi.fn().mockResolvedValue(
+        JSON.stringify({
           queued: 3,
           claimed: 1,
           completed: 0,
           failed: 0,
           stalled: 0,
         }),
+      ),
+    };
+
+    mockQueue = {
+      name: "test-queue",
+      workerConcurrency: 1,
+      storage: mockStorage,
+      getStats: vi.fn().mockResolvedValue({
+        queued: 3,
+        claimed: 1,
+        completed: 0,
+        failed: 0,
+        stalled: 0,
+      }),
     };
   });
 

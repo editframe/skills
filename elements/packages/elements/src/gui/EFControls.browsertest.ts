@@ -145,7 +145,7 @@ describe.skip("EFControls", () => {
         await use(container);
         container.remove();
       },
-      markup: async (_: unknown, use) => {
+      markup: async ({}, use) => {
         const markup = `
           <ef-configuration>
             <ef-preview id="test-preview-html">
@@ -204,7 +204,7 @@ describe.skip("EFControls", () => {
       timeDisplay: EFTimeDisplay;
       configuration: EFConfiguration;
     }>({
-      configuration: async (_: unknown, use) => {
+      configuration: async ({}, use) => {
         const configuration = makeElement("ef-configuration", {}, document.body);
         use(configuration);
       },
