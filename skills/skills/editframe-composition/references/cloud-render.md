@@ -66,25 +66,7 @@ Composition metadata (dimensions, duration, fps) is extracted from the uploaded 
 
 #### Composition directory requirements
 
-`bundleRender()` calls `vite build` inside `root`. That directory must be a valid Vite project. The fastest way to generate one is with the `@editframe/create` scaffolding tool:
-
-```bash
-npm create @editframe -- react -d my-composition
-```
-
-This produces the following structure:
-
-```
-my-composition/
-  index.html           # entry point
-  vite.config.ts       # includes viteSingleFile() plugin
-  package.json         # editframe deps, react, vite
-  src/
-    main.tsx           # React root mount
-    Video.tsx          # composition component
-    styles.css
-    assets/
-```
+`bundleRender()` calls `vite build` inside `root`. That directory must be a valid Vite project with `viteSingleFile()` in its Vite config. Use `npm create @editframe` to scaffold one.
 
 ### Raw HTML string (self-contained compositions only)
 
