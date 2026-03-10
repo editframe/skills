@@ -17,7 +17,12 @@ api:
       returns: Promise<RenderCloneResult>
     - name: getRenderData()
       signature: getRenderData<T>()
-      description: Access custom data passed from CLI at render time
+      description: Access custom data passed at render time (CLI --data, bundleRender renderData, or window.EF_RENDER_DATA). Use useRenderData() in React components instead.
+      returns: T | undefined
+  functions:
+    - name: useRenderData()
+      signature: useRenderData<T>()
+      description: React hook equivalent of getRenderData(). Returns data injected at render time. Stable reference — reads once on mount. Import from @editframe/react.
       returns: T | undefined
 ---
 
@@ -334,22 +339,30 @@ Pass dynamic data into compositions at render time:
 npx editframe render --data '{"userName":"John","theme":"dark"}' -o video.mp4
 ```
 
-Read the data in your composition with `getRenderData()`:
+Read the data in your composition. In React, use the `useRenderData` hook:
 
 ```typescript
-import { getRenderData } from "@editframe/elements";
+import { useRenderData } from "@editframe/react";
 
 interface MyRenderData {
   userName: string;
   theme: "light" | "dark";
 }
 
-const data = getRenderData<MyRenderData>();
-if (data) {
-  console.log(data.userName);  // "John"
-  console.log(data.theme);     // "dark"
-}
+const data = useRenderData<MyRenderData>();
+// data?.userName  // "John"
+// data?.theme     // "dark"
 ```
+
+In HTML/elements compositions, use `getRenderData()` from `@editframe/elements` directly:
+
+```typescript
+import { getRenderData } from "@editframe/elements";
+
+const data = getRenderData<MyRenderData>();
+```
+
+For cloud renders, see [cloud-render.md](references/cloud-render.md) — the CLI `--data` flag, `bundleRender({ renderData })`, and `createRender` with raw HTML all feed into the same `useRenderData` / `getRenderData` call.
 
 ### When to Use CLI vs Browser
 

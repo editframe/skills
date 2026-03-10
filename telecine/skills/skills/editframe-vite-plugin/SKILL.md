@@ -26,6 +26,32 @@ You need the Vite plugin when your composition references **local video files**.
 | Adding Editframe to existing Vite project | Yes — install manually |
 | Visual regression tests with Vitest | Yes — use vitest entry point |
 
+## Bundling for Cloud Rendering
+
+For cloud rendering (`npx editframe cloud-render`), the build must produce a single self-contained `dist/index.html` with all JS and CSS inlined. Use `vite-plugin-singlefile` alongside this plugin:
+
+```typescript
+// vite.config.ts
+import { defineConfig } from "vite";
+import { vitePluginEditframe } from "@editframe/vite-plugin";
+import { viteSingleFile } from "vite-plugin-singlefile";
+import react from "@vitejs/plugin-react"; // React projects only
+
+export default defineConfig({
+  plugins: [
+    vitePluginEditframe({ root: "./src", cacheRoot: "./src/assets" }),
+    viteSingleFile(),
+    react(), // React projects only
+  ],
+});
+```
+
+```bash
+npm install vite-plugin-singlefile
+```
+
+Both plugins are already included in all `npm create @editframe` project templates — this is only needed when setting up an existing project manually.
+
 ## The Dev Loop with This Plugin
 
 ```
@@ -72,3 +98,4 @@ export default defineConfig({
 - [references/local-assets.md](references/local-assets.md) — Local image and caption serving
 - [references/file-api.md](references/file-api.md) — File API endpoints
 - [references/visual-testing.md](references/visual-testing.md) — Visual regression testing with Vitest
+```

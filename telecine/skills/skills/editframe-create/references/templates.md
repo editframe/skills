@@ -58,6 +58,7 @@ my-project/
 All templates include:
 
 - **Vite** build system with `@editframe/vite-plugin`
+- **`vite-plugin-singlefile`** inlines all JS and CSS into `dist/index.html` at build time, producing a single self-contained HTML file required by the cloud renderer and `npx editframe cloud-render`
 - **Tailwind CSS** for styling
 - **`npm start`** runs `editframe preview` for live development
 - **`src/assets/`** directory for media files (video, audio, images)
