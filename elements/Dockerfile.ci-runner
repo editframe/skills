@@ -10,6 +10,7 @@ FROM node:24-slim
 RUN apt-get -y update && \
   apt-get install -y ffmpeg && \
   apt-get install -y --fix-missing \
+  git \
   zsh \
   jq \
   && \
