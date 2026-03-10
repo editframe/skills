@@ -43,7 +43,10 @@ jobs:
           load: true
 
       - name: Install Dependencies
-        run: ./scripts/docker-compose run --rm ci-runner npm ci --ignore-scripts && ./scripts/docker-compose run --rm ci-runner node scripts/patch-rolldown-plugin-dts.mjs
+        run: |
+          ./scripts/docker-compose run --rm ci-runner npm ci --ignore-scripts
+          ./scripts/docker-compose run --rm ci-runner node scripts/patch-rolldown-plugin-dts.mjs
+          ./scripts/docker-compose run --rm ci-runner npm rebuild odiff-bin
 
       - name: Build All Packages
         run: ./scripts/build-all
