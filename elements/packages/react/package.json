@@ -40,7 +40,6 @@
   "license": "SEE LICENSE IN LICENSE-FULL.md",
   "dependencies": {
     "@editframe/elements": "0.43.0",
-    "@lit/task": "^1.0.1",
     "lit": "^3.3.1",
     "mitt": "^3.0.1"
   },
