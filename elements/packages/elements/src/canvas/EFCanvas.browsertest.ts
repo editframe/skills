@@ -7,7 +7,7 @@ import "./overlays/SelectionOverlay.js";
 const test = baseTest.extend<{
   canvas: HTMLElement;
 }>({
-  canvas: async ({}, use) => {
+  canvas: async (_: unknown, use) => {
     const container = document.createElement("div");
     container.style.width = "800px";
     container.style.height = "600px";
@@ -43,17 +43,10 @@ describe.skip("EFCanvas", () => {
     el.remove();
   });
 
-  test("registers elements with data-element-id", async ({
-    canvas,
-    expect,
-  }) => {
+  test("registers elements with data-element-id", async ({ canvas, expect }) => {
     const canvasEl = canvas as any;
-    const element1 = canvas.querySelector(
-      '[data-element-id="element-1"]',
-    ) as HTMLElement;
-    const element2 = canvas.querySelector(
-      '[data-element-id="element-2"]',
-    ) as HTMLElement;
+    const element1 = canvas.querySelector('[data-element-id="element-1"]') as HTMLElement;
+    const element2 = canvas.querySelector('[data-element-id="element-2"]') as HTMLElement;
 
     expect(element1).toBeTruthy();
     expect(element2).toBeTruthy();
@@ -69,9 +62,7 @@ describe.skip("EFCanvas", () => {
 
   test("selects element on click", async ({ canvas, expect }) => {
     const canvasEl = canvas as any;
-    const element1 = canvas.querySelector(
-      '[data-element-id="element-1"]',
-    ) as HTMLElement;
+    const element1 = canvas.querySelector('[data-element-id="element-1"]') as HTMLElement;
 
     const rect = element1.getBoundingClientRect();
     const clickX = rect.left + rect.width / 2;
@@ -87,17 +78,13 @@ describe.skip("EFCanvas", () => {
     canvas.dispatchEvent(clickEvent);
     await canvasEl.updateComplete;
 
-    const selectedIds = Array.from(
-      canvasEl.selectionController.getModel().selectedIds,
-    );
+    const selectedIds = Array.from(canvasEl.selectionController.getModel().selectedIds);
     expect(selectedIds).toContain("element-1");
   });
 
   test("clears selection on empty space click", async ({ canvas, expect }) => {
     const canvasEl = canvas as any;
-    const element1 = canvas.querySelector(
-      '[data-element-id="element-1"]',
-    ) as HTMLElement;
+    const element1 = canvas.querySelector('[data-element-id="element-1"]') as HTMLElement;
 
     // Select element first
     const rect1 = element1.getBoundingClientRect();
@@ -146,23 +133,14 @@ describe.skip("EFCanvas", () => {
     );
     await canvasEl.updateComplete;
 
-    const selectedIds = Array.from(
-      canvasEl.selectionController.getModel().selectedIds,
-    );
+    const selectedIds = Array.from(canvasEl.selectionController.getModel().selectedIds);
     expect(selectedIds.length).toBe(0);
   });
 
-  test("supports multi-select with modifier key", async ({
-    canvas,
-    expect,
-  }) => {
+  test("supports multi-select with modifier key", async ({ canvas, expect }) => {
     const canvasEl = canvas as any;
-    const element1 = canvas.querySelector(
-      '[data-element-id="element-1"]',
-    ) as HTMLElement;
-    const element2 = canvas.querySelector(
-      '[data-element-id="element-2"]',
-    ) as HTMLElement;
+    const element1 = canvas.querySelector('[data-element-id="element-1"]') as HTMLElement;
+    const element2 = canvas.querySelector('[data-element-id="element-2"]') as HTMLElement;
 
     // Click first element
     const rect1 = element1.getBoundingClientRect();
@@ -189,9 +167,7 @@ describe.skip("EFCanvas", () => {
     );
     await canvasEl.updateComplete;
 
-    const selectedIds = Array.from(
-      canvasEl.selectionController.getModel().selectedIds,
-    );
+    const selectedIds = Array.from(canvasEl.selectionController.getModel().selectedIds);
     expect(selectedIds.length).toBe(2);
     expect(selectedIds).toContain("element-1");
     expect(selectedIds).toContain("element-2");
@@ -217,14 +193,9 @@ describe.skip("EFCanvas", () => {
   });
 
   describe("selection state attributes", () => {
-    test("adds data-selected attribute to selected element", async ({
-      canvas,
-      expect,
-    }) => {
+    test("adds data-selected attribute to selected element", async ({ canvas, expect }) => {
       const canvasEl = canvas as any;
-      const element1 = canvas.querySelector(
-        '[data-element-id="element-1"]',
-      ) as HTMLElement;
+      const element1 = canvas.querySelector('[data-element-id="element-1"]') as HTMLElement;
 
       canvasEl.selectionContext.select("element-1");
       await canvasEl.updateComplete;
@@ -238,9 +209,7 @@ describe.skip("EFCanvas", () => {
       expect,
     }) => {
       const canvasEl = canvas as any;
-      const element1 = canvas.querySelector(
-        '[data-element-id="element-1"]',
-      ) as HTMLElement;
+      const element1 = canvas.querySelector('[data-element-id="element-1"]') as HTMLElement;
 
       canvasEl.selectionContext.select("element-1");
       await canvasEl.updateComplete;
@@ -251,17 +220,10 @@ describe.skip("EFCanvas", () => {
       expect(element1.hasAttribute("data-selected")).toBe(false);
     });
 
-    test("updates data-selected attributes for multiple selections", async ({
-      canvas,
-      expect,
-    }) => {
+    test("updates data-selected attributes for multiple selections", async ({ canvas, expect }) => {
       const canvasEl = canvas as any;
-      const element1 = canvas.querySelector(
-        '[data-element-id="element-1"]',
-      ) as HTMLElement;
-      const element2 = canvas.querySelector(
-        '[data-element-id="element-2"]',
-      ) as HTMLElement;
+      const element1 = canvas.querySelector('[data-element-id="element-1"]') as HTMLElement;
+      const element2 = canvas.querySelector('[data-element-id="element-2"]') as HTMLElement;
 
       canvasEl.selectionContext.selectMultiple(["element-1", "element-2"]);
       await canvasEl.updateComplete;
@@ -270,14 +232,9 @@ describe.skip("EFCanvas", () => {
       expect(element2.getAttribute("data-selected")).toBe("true");
     });
 
-    test("removes data-selected when element is unregistered", async ({
-      canvas,
-      expect,
-    }) => {
+    test("removes data-selected when element is unregistered", async ({ canvas, expect }) => {
       const canvasEl = canvas as any;
-      const element1 = canvas.querySelector(
-        '[data-element-id="element-1"]',
-      ) as HTMLElement;
+      const element1 = canvas.querySelector('[data-element-id="element-1"]') as HTMLElement;
 
       canvasEl.selectionContext.select("element-1");
       await canvasEl.updateComplete;
@@ -290,18 +247,12 @@ describe.skip("EFCanvas", () => {
   });
 
   describe("active root temporal", () => {
-    test("returns null when no element is selected", async ({
-      canvas,
-      expect,
-    }) => {
+    test("returns null when no element is selected", async ({ canvas, expect }) => {
       const canvasEl = canvas as any;
       expect(canvasEl.activeRootTemporal).toBe(null);
     });
 
-    test("returns root temporal for selected element", async ({
-      canvas,
-      expect,
-    }) => {
+    test("returns root temporal for selected element", async ({ canvas, expect }) => {
       const canvasEl = canvas as any;
       await import("../elements/EFTimegroup.js");
       const timegroup = document.createElement("ef-timegroup");
@@ -313,9 +264,7 @@ describe.skip("EFCanvas", () => {
       await timegroup.updateComplete;
       await canvasEl.updateComplete;
 
-      const element1 = canvas.querySelector(
-        '[data-element-id="element-1"]',
-      ) as HTMLElement;
+      const element1 = canvas.querySelector('[data-element-id="element-1"]') as HTMLElement;
       timegroup.appendChild(element1);
 
       canvasEl.selectionContext.select("element-1");
@@ -339,20 +288,15 @@ describe.skip("EFCanvas", () => {
       await timegroup.updateComplete;
       await canvasEl.updateComplete;
 
-      const element1 = canvas.querySelector(
-        '[data-element-id="element-1"]',
-      ) as HTMLElement;
+      const element1 = canvas.querySelector('[data-element-id="element-1"]') as HTMLElement;
       timegroup.appendChild(element1);
 
       let eventFired = false;
       let eventDetail: any = null;
-      canvasEl.addEventListener(
-        "activeroottemporalchange",
-        (e: CustomEvent) => {
-          eventFired = true;
-          eventDetail = e.detail;
-        },
-      );
+      canvasEl.addEventListener("activeroottemporalchange", (e: CustomEvent) => {
+        eventFired = true;
+        eventDetail = e.detail;
+      });
 
       canvasEl.selectionContext.select("element-1");
       await canvasEl.updateComplete;
@@ -376,9 +320,7 @@ describe.skip("EFCanvas", () => {
       await timegroup.updateComplete;
       await canvasEl.updateComplete;
 
-      const element1 = canvas.querySelector(
-        '[data-element-id="element-1"]',
-      ) as HTMLElement;
+      const element1 = canvas.querySelector('[data-element-id="element-1"]') as HTMLElement;
       timegroup.appendChild(element1);
 
       canvasEl.selectionContext.select("element-1");
@@ -387,13 +329,10 @@ describe.skip("EFCanvas", () => {
 
       let eventFired = false;
       let eventDetail: any = null;
-      canvasEl.addEventListener(
-        "activeroottemporalchange",
-        (e: CustomEvent) => {
-          eventFired = true;
-          eventDetail = e.detail;
-        },
-      );
+      canvasEl.addEventListener("activeroottemporalchange", (e: CustomEvent) => {
+        eventFired = true;
+        eventDetail = e.detail;
+      });
 
       canvasEl.selectionContext.clear();
       await canvasEl.updateComplete;

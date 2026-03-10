@@ -28,7 +28,7 @@ const mockFetch = vi.fn((url: string) => {
       new Response(JSON.stringify(mockDocs), {
         status: 200,
         headers: { "Content-Type": "application/json" },
-      })
+      }),
     );
   }
   throw new Error(`Unexpected fetch: ${url}`);

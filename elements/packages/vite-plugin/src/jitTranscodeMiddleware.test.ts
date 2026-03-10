@@ -32,9 +32,7 @@ const noopAssetFunctions = {
   generateTrackFragmentIndex: vi.fn(),
 };
 
-function makeFragmentIndex(
-  overrides?: Record<string, unknown>,
-): TrackFragmentIndex {
+function makeFragmentIndex(overrides?: Record<string, unknown>): TrackFragmentIndex {
   return {
     track: 0,
     type: "video",

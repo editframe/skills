@@ -4,10 +4,7 @@ import { webReadableFromBuffers } from "./readableFromBuffers.js";
 import { streamChunker } from "./streamChunker.js";
 
 test("chunks stream into buffers of specified size", async () => {
-  const readableStream = webReadableFromBuffers(
-    Buffer.from("hello"),
-    Buffer.from("world"),
-  );
+  const readableStream = webReadableFromBuffers(Buffer.from("hello"), Buffer.from("world"));
 
   const chunks = [];
   for await (const chunk of streamChunker(readableStream, 5)) {

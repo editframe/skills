@@ -57,10 +57,10 @@ describe("Selection Handle Positioning (via EFTransformHandles)", () => {
     // Select element
     canvas.selectionContext.select("test-element");
     // Wait for transform handles to appear (canvas reacts to selection via RAF)
-    await vi.waitUntil(
-      () => container.querySelector("ef-transform-handles") !== null,
-      { timeout: 5000, interval: 16 },
-    );
+    await vi.waitUntil(() => container.querySelector("ef-transform-handles") !== null, {
+      timeout: 5000,
+      interval: 16,
+    });
 
     // Get element metadata
     const metadata = canvas.getElementData("test-element");
@@ -71,9 +71,7 @@ describe("Selection Handle Positioning (via EFTransformHandles)", () => {
     expect(metadata?.height).toBe(100);
 
     // Transform handles should be rendered for selection (not SelectionOverlay's .selection-box)
-    const transformHandles = container.querySelector(
-      "ef-transform-handles",
-    ) as any;
+    const transformHandles = container.querySelector("ef-transform-handles") as any;
     expect(transformHandles).toBeTruthy();
 
     // Verify transform handles bounds match element dimensions
@@ -129,15 +127,13 @@ describe("Selection Handle Positioning (via EFTransformHandles)", () => {
     // Select timegroup
     canvas.selectionContext.select("test-timegroup");
     // Wait for transform handles to appear
-    await vi.waitUntil(
-      () => container.querySelector("ef-transform-handles") !== null,
-      { timeout: 5000, interval: 16 },
-    );
+    await vi.waitUntil(() => container.querySelector("ef-transform-handles") !== null, {
+      timeout: 5000,
+      interval: 16,
+    });
 
     // Transform handles should be rendered
-    const transformHandles = container.querySelector(
-      "ef-transform-handles",
-    ) as any;
+    const transformHandles = container.querySelector("ef-transform-handles") as any;
     expect(transformHandles).toBeTruthy();
 
     if (transformHandles && metadata) {
@@ -205,9 +201,7 @@ describe("Selection Handle Positioning (via EFTransformHandles)", () => {
     );
 
     // Transform handles should be rendered
-    const transformHandles = container.querySelector(
-      "ef-transform-handles",
-    ) as any;
+    const transformHandles = container.querySelector("ef-transform-handles") as any;
     expect(transformHandles).toBeTruthy();
 
     if (transformHandles) {

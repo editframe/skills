@@ -39,7 +39,10 @@ try {
       handleQueue(rest);
       break;
     case "plan":
-      if (rest.length === 0 || (rest.length === 1 && (rest[0] === "--help" || rest[0] === "-h"))) {
+      if (
+        rest.length === 0 ||
+        (rest.length === 1 && (rest[0] === "--help" || rest[0] === "-h"))
+      ) {
         // Interactive planning mode (or help)
         if (rest.length === 0) {
           startInteractivePlanner();
@@ -69,20 +72,22 @@ You can also use subcommands:
         args: rest,
         options: {
           "queue-id": { type: "string" },
-          workspace: { type: "string" }
+          workspace: { type: "string" },
         },
-        allowPositionals: true
+        allowPositionals: true,
       });
       // Run async worker loop (always uses auto model)
       startWorkerLoop({
         queueId: values["queue-id"],
-        workspace: values.workspace
-      }).then(() => {
-        process.exit(0);
-      }).catch((error: any) => {
-        console.error(chalk.red(`Error: ${error.message}`));
-        process.exit(1);
-      });
+        workspace: values.workspace,
+      })
+        .then(() => {
+          process.exit(0);
+        })
+        .catch((error: any) => {
+          console.error(chalk.red(`Error: ${error.message}`));
+          process.exit(1);
+        });
       break;
     }
     case "worker":
@@ -110,9 +115,9 @@ function handleQueue(args: string[]) {
   const { values } = parseArgs({
     args,
     options: {
-      help: { type: "boolean", short: "h" }
+      help: { type: "boolean", short: "h" },
     },
-    allowPositionals: true
+    allowPositionals: true,
   });
 
   if (values.help || args.length === 0) {
@@ -237,9 +242,9 @@ Commands:
       const { values: listValues, positionals } = parseArgs({
         args: subargs,
         options: {
-          status: { type: "string" }
+          status: { type: "string" },
         },
-        allowPositionals: true
+        allowPositionals: true,
       });
       const queueId = positionals[0];
       const plans = plan.listPlans(queueId, listValues.status as any);
@@ -273,7 +278,7 @@ Commands:
         console.error(chalk.red("Error: plan-id is required"));
         process.exit(1);
       }
-      
+
       const updates: any = {};
       for (let i = 1; i < subargs.length; i++) {
         if (subargs[i] === "--content" && i + 1 < subargs.length) {
@@ -290,7 +295,7 @@ Commands:
           i++;
         }
       }
-      
+
       plan.updatePlan(id, updates);
       console.log(chalk.green(`Plan ${id} updated`));
       break;
@@ -305,9 +310,9 @@ function handleWorker(args: string[]) {
   const { values } = parseArgs({
     args,
     options: {
-      help: { type: "boolean", short: "h" }
+      help: { type: "boolean", short: "h" },
     },
-    allowPositionals: true
+    allowPositionals: true,
   });
 
   if (values.help || args.length === 0) {
@@ -329,9 +334,9 @@ Commands:
       const { values: claimValues } = parseArgs({
         args: subargs,
         options: {
-          "queue-id": { type: "string" }
+          "queue-id": { type: "string" },
         },
-        allowPositionals: true
+        allowPositionals: true,
       });
       const nextPlan = plan.getNextReadyPlan(claimValues["queue-id"]);
       if (!nextPlan) {
@@ -351,16 +356,18 @@ Commands:
       const { values: completeValues, positionals } = parseArgs({
         args: subargs,
         options: {
-          result: { type: "string" }
+          result: { type: "string" },
         },
-        allowPositionals: true
+        allowPositionals: true,
       });
       const id = positionals[0];
       if (!id) {
         console.error(chalk.red("Error: plan-id is required"));
         process.exit(1);
       }
-      const result = completeValues.result ? JSON.parse(completeValues.result) : { success: true };
+      const result = completeValues.result
+        ? JSON.parse(completeValues.result)
+        : { success: true };
       plan.completePlan(id, result);
       console.log(chalk.green(`Plan ${id} completed`));
       break;
@@ -369,9 +376,9 @@ Commands:
       const { values: failValues, positionals } = parseArgs({
         args: subargs,
         options: {
-          reason: { type: "string" }
+          reason: { type: "string" },
         },
-        allowPositionals: true
+        allowPositionals: true,
       });
       const id = positionals[0];
       if (!id) {
@@ -392,9 +399,9 @@ function handleOutput(args: string[]) {
   const { values } = parseArgs({
     args,
     options: {
-      help: { type: "boolean", short: "h" }
+      help: { type: "boolean", short: "h" },
     },
-    allowPositionals: true
+    allowPositionals: true,
   });
 
   if (values.help || args.length === 0) {
@@ -416,9 +423,9 @@ Commands:
       const { values: writeValues, positionals } = parseArgs({
         args: subargs,
         options: {
-          "plan-id": { type: "string" }
+          "plan-id": { type: "string" },
         },
-        allowPositionals: true
+        allowPositionals: true,
       });
       const [type, ...contentParts] = positionals;
       if (!type) {
@@ -439,7 +446,7 @@ Commands:
         parentAgentId,
         depth,
         outputType: type as any,
-        content
+        content,
       });
       console.log(chalk.green(`Output written: ${id}`));
       break;
@@ -449,11 +456,14 @@ Commands:
         args: subargs,
         options: {
           "plan-id": { type: "string" },
-          type: { type: "string" }
+          type: { type: "string" },
         },
-        allowPositionals: true
+        allowPositionals: true,
       });
-      const outputs = output.readOutputs(readValues["plan-id"], readValues.type as any);
+      const outputs = output.readOutputs(
+        readValues["plan-id"],
+        readValues.type as any,
+      );
       if (outputs.length === 0) {
         console.log("No outputs found.");
       } else {
@@ -465,9 +475,9 @@ Commands:
       const { values: listValues } = parseArgs({
         args: subargs,
         options: {
-          "plan-id": { type: "string" }
+          "plan-id": { type: "string" },
         },
-        allowPositionals: true
+        allowPositionals: true,
       });
       const outputs = output.listOutputs(listValues["plan-id"]);
       if (outputs.length === 0) {
@@ -489,9 +499,9 @@ function handleSpawn(args: string[]) {
   const { values } = parseArgs({
     args,
     options: {
-      help: { type: "boolean", short: "h" }
+      help: { type: "boolean", short: "h" },
     },
-    allowPositionals: true
+    allowPositionals: true,
   });
 
   if (values.help || args.length === 0) {
@@ -514,9 +524,9 @@ Commands:
       const { values: spawnValues, positionals } = parseArgs({
         args: subargs,
         options: {
-          workspace: { type: "string" }
+          workspace: { type: "string" },
         },
-        allowPositionals: true
+        allowPositionals: true,
       });
       const planId = positionals[0];
       if (!planId) {
@@ -526,7 +536,7 @@ Commands:
       (async () => {
         try {
           const agentId = await spawn.spawnPlanner(planId, {
-            workspace: spawnValues.workspace
+            workspace: spawnValues.workspace,
           });
           console.log(chalk.green(`Spawned planner agent: ${agentId}`));
           console.log(`Plan ID: ${planId}`);
@@ -541,9 +551,9 @@ Commands:
       const { values: spawnValues, positionals } = parseArgs({
         args: subargs,
         options: {
-          workspace: { type: "string" }
+          workspace: { type: "string" },
         },
-        allowPositionals: true
+        allowPositionals: true,
       });
       const planId = positionals[0];
       if (!planId) {
@@ -553,7 +563,7 @@ Commands:
       (async () => {
         try {
           const agentId = await spawn.spawnWorker(planId, {
-            workspace: spawnValues.workspace
+            workspace: spawnValues.workspace,
           });
           console.log(chalk.green(`Spawned worker agent: ${agentId}`));
           console.log(`Plan ID: ${planId}`);
@@ -602,9 +612,9 @@ function handleStatus(args: string[]) {
   const { values } = parseArgs({
     args,
     options: {
-      help: { type: "boolean", short: "h" }
+      help: { type: "boolean", short: "h" },
     },
-    allowPositionals: true
+    allowPositionals: true,
   });
 
   if (values.help || args.length === 0) {
@@ -629,7 +639,9 @@ Commands:
         process.exit(1);
       }
       const done = status.isWorkDone(queueId);
-      console.log(done ? chalk.green("Work is done") : chalk.yellow("Work is not done"));
+      console.log(
+        done ? chalk.green("Work is done") : chalk.yellow("Work is not done"),
+      );
       process.exit(done ? 0 : 1);
     }
     case "plan": {
@@ -639,7 +651,11 @@ Commands:
         process.exit(1);
       }
       const complete = status.isPlanComplete(planId);
-      console.log(complete ? chalk.green("Plan is complete") : chalk.yellow("Plan is not complete"));
+      console.log(
+        complete
+          ? chalk.green("Plan is complete")
+          : chalk.yellow("Plan is not complete"),
+      );
       process.exit(complete ? 0 : 1);
     }
     case "show": {

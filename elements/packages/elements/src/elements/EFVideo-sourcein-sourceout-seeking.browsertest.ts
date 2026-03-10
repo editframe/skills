@@ -31,7 +31,7 @@ const test = baseTest.extend<{
   timegroup: EFTimegroup;
   video: EFVideo;
 }>({
-  container: async ({}, use) => {
+  container: async (_: unknown, use) => {
     const container = document.createElement("div");
     document.body.appendChild(container);
     await use(container);
@@ -59,10 +59,7 @@ const test = baseTest.extend<{
 });
 
 describe("sourcein/sourceout changes trigger frame re-render", () => {
-  test("changing sourcein triggers a frame render", async ({
-    timegroup,
-    video,
-  }) => {
+  test("changing sourcein triggers a frame render", async ({ timegroup, video }) => {
     expect(timegroup.currentTimeMs).toBe(0);
 
     // Change sourcein - should trigger a frame render even though
@@ -75,10 +72,7 @@ describe("sourcein/sourceout changes trigger frame re-render", () => {
     expect((video as any).currentSourceTimeMs).toBe(3000);
   });
 
-  test("changing sourceout triggers a frame render", async ({
-    timegroup,
-    video,
-  }) => {
+  test("changing sourceout triggers a frame render", async ({ timegroup, video }) => {
     expect(timegroup.currentTimeMs).toBe(0);
 
     video.setAttribute("sourceout", "7000ms");

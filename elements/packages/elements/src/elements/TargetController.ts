@@ -7,20 +7,14 @@ const EF_TARGETABLE = Symbol("EF_TARGETABLE");
 
 class TargetRegistry {
   private idMap = new Map<string, LitElement>();
-  private callbacks = new Map<
-    string,
-    Set<(target: LitElement | undefined) => void>
-  >();
+  private callbacks = new Map<string, Set<(target: LitElement | undefined) => void>>();
 
   subscribe(id: string, callback: (target: LitElement | undefined) => void) {
     this.callbacks.set(id, this.callbacks.get(id) ?? new Set());
     this.callbacks.get(id)?.add(callback);
   }
 
-  unsubscribe(
-    id: string | null,
-    callback: (target: LitElement | undefined) => void,
-  ) {
+  unsubscribe(id: string | null, callback: (target: LitElement | undefined) => void) {
     if (id === null) {
       return;
     }
@@ -70,12 +64,9 @@ export declare class TargetableMixinInterface {
   id: string;
 }
 
-export const isEFTargetable = (obj: any): obj is TargetableMixinInterface =>
-  obj[EF_TARGETABLE];
+export const isEFTargetable = (obj: any): obj is TargetableMixinInterface => obj[EF_TARGETABLE];
 
-export const EFTargetable = <T extends Constructor<LitElement>>(
-  superClass: T,
-) => {
+export const EFTargetable = <T extends Constructor<LitElement>>(superClass: T) => {
   class TargetableElement extends superClass {
     #registry: TargetRegistry | null = null;
 
@@ -107,11 +98,7 @@ export const EFTargetable = <T extends Constructor<LitElement>>(
       }
     }
 
-    attributeChangedCallback(
-      name: string,
-      old: string | null,
-      value: string | null,
-    ) {
+    attributeChangedCallback(name: string, old: string | null, value: string | null) {
       super.attributeChangedCallback(name, old, value);
       if (name === "id") {
         this.updateRegistry(old ?? "", value ?? "");
@@ -138,9 +125,7 @@ export class TargetController implements ReactiveController {
   private host: LitElement & { targetElement: Element | null; target: string };
   private currentTargetString: string | null = null;
 
-  constructor(
-    host: LitElement & { targetElement: Element | null; target: string },
-  ) {
+  constructor(host: LitElement & { targetElement: Element | null; target: string }) {
     this.host = host;
     this.host.addController(this);
     this.currentTargetString = this.host.target;
@@ -170,16 +155,14 @@ export class TargetController implements ReactiveController {
         (this.host as Element).getRootNode();
 
       if (container && "querySelector" in container) {
-        newTarget = (container as Element).querySelector(
-          `#${CSS.escape(this.host.target)}`,
-        ) as LitElement | undefined;
+        newTarget = (container as Element).querySelector(`#${CSS.escape(this.host.target)}`) as
+          | LitElement
+          | undefined;
       }
     }
 
     if (!newTarget) {
-      newTarget = document.getElementById(this.host.target) as
-        | LitElement
-        | undefined;
+      newTarget = document.getElementById(this.host.target) as LitElement | undefined;
     }
 
     if (this.host.targetElement !== newTarget) {
@@ -201,10 +184,7 @@ export class TargetController implements ReactiveController {
 
   hostUpdate() {
     if (this.currentTargetString !== this.host.target) {
-      this.registry.unsubscribe(
-        this.currentTargetString,
-        this.registryCallback,
-      );
+      this.registry.unsubscribe(this.currentTargetString, this.registryCallback);
       this.registry.subscribe(this.host.target, this.registryCallback);
       this.updateTarget();
       this.currentTargetString = this.host.target;

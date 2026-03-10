@@ -2,10 +2,7 @@ import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
 import { Client } from "../client.js";
-import {
-  getIsobmffProcessInfo,
-  getIsobmffProcessProgress,
-} from "./process-isobmff.js";
+import { getIsobmffProcessInfo, getIsobmffProcessProgress } from "./process-isobmff.js";
 
 const client = new Client("ef_TEST_TOKEN", "http://localhost");
 const server = setupServer();
@@ -52,17 +49,12 @@ describe("process-isobmff", () => {
   describe("getIsobmffProcessProgress", () => {
     test("returns the progress", async () => {
       server.use(
-        http.get(
-          "http://localhost/api/v1/process_isobmff/123/progress",
-          async () => {
-            return HttpResponse.text("event: complete\ndata: {}\n\n");
-          },
-        ),
+        http.get("http://localhost/api/v1/process_isobmff/123/progress", async () => {
+          return HttpResponse.text("event: complete\ndata: {}\n\n");
+        }),
       );
       const progress = await getIsobmffProcessProgress(client, "123");
-      await expect(progress.whenComplete()).resolves.toEqual([
-        { type: "complete", data: {} },
-      ]);
+      await expect(progress.whenComplete()).resolves.toEqual([{ type: "complete", data: {} }]);
     });
   });
 });

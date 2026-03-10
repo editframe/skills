@@ -3,10 +3,7 @@ import debug from "debug";
 import { basename } from "node:path";
 import { generateSingleTrackFromPath } from "../generateSingleTrack.js";
 
-export const generateTrackFromPath = async (
-  absolutePath: string,
-  trackId: number,
-) => {
+export const generateTrackFromPath = async (absolutePath: string, trackId: number) => {
   const log = debug("ef:generateTrackFragment");
   log(`Generating track ${trackId} for ${absolutePath}`);
 
@@ -24,15 +21,9 @@ export const generateTrackTask = idempotentTask({
   runner: generateTrackFromPath,
 });
 
-export const generateTrack = async (
-  cacheRoot: string,
-  absolutePath: string,
-  url: string,
-) => {
+export const generateTrack = async (cacheRoot: string, absolutePath: string, url: string) => {
   try {
-    const trackId = new URL(`http://localhost${url}`).searchParams.get(
-      "trackId",
-    );
+    const trackId = new URL(`http://localhost${url}`).searchParams.get("trackId");
     if (trackId === null) {
       throw new Error(
         "No trackId provided. It must be specified in the query string: ?trackId=1 (for video) or ?trackId=2 (for audio)",

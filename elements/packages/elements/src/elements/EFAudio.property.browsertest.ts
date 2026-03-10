@@ -18,9 +18,7 @@ describe("EFAudio property hack removal", () => {
     container.remove();
   });
 
-  test("inherited properties from EFMedia work correctly without hack", async ({
-    expect,
-  }) => {
+  test("inherited properties from EFMedia work correctly without hack", async ({ expect }) => {
     // Create EFAudio element
     render(
       html`
@@ -78,9 +76,7 @@ describe("EFAudio property hack removal", () => {
     expect(audio.getAttribute("volume")).toBe("0.75"); // Should reflect to attribute
 
     // Test that volume is applied to the underlying audio element
-    const audioElement = audio.shadowRoot?.querySelector(
-      "audio",
-    ) as HTMLAudioElement;
+    const audioElement = audio.shadowRoot?.querySelector("audio") as HTMLAudioElement;
     // Wait a bit for the updated() method to sync the volume
     await new Promise((resolve) => setTimeout(resolve, 10));
     expect(audioElement?.volume).toBe(0.75);

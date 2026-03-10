@@ -173,7 +173,11 @@ export async function renderWithElectronRPC({
 
     const segmentBuffers: Uint8Array[] = [];
     const segmentPaths: string[] = [];
-    const segmentTimings: { fragmentId: number | "init"; timeMs: number; sizeBytes: number }[] = [];
+    const segmentTimings: {
+      fragmentId: number | "init";
+      timeMs: number;
+      sizeBytes: number;
+    }[] = [];
 
     const renderStart = performance.now();
     for (const fragmentId of fragmentIds) {
@@ -321,7 +325,11 @@ export async function renderWithElectronRPCAndScripts({
 
     const segmentBuffers: Uint8Array[] = [];
     const segmentPaths: string[] = [];
-    const segmentTimings: { fragmentId: number | "init"; timeMs: number; sizeBytes: number }[] = [];
+    const segmentTimings: {
+      fragmentId: number | "init";
+      timeMs: number;
+      sizeBytes: number;
+    }[] = [];
 
     const renderStart = performance.now();
     for (const fragmentId of fragmentIds) {

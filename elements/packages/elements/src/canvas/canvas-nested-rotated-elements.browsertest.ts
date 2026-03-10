@@ -13,10 +13,7 @@ const test = baseTest.extend<{}>({});
  * Wait for element metadata to be registered and populated.
  * Uses vi.waitUntil() for proper condition-based waiting instead of arbitrary timeouts.
  */
-async function waitForElementMetadata(
-  canvas: EFCanvas,
-  elementId: string,
-): Promise<void> {
+async function waitForElementMetadata(canvas: EFCanvas, elementId: string): Promise<void> {
   await vi.waitUntil(
     () => {
       const metadata = canvas.getElementData(elementId);
@@ -33,8 +30,7 @@ async function waitForElementMetadata(
 async function waitForHandlesReady(handles: EFTransformHandles): Promise<void> {
   await handles.updateComplete;
   await vi.waitUntil(
-    () =>
-      handles.bounds && handles.bounds.width > 0 && handles.bounds.height > 0,
+    () => handles.bounds && handles.bounds.width > 0 && handles.bounds.height > 0,
     { timeout: 2000, interval: 16 },
   );
 }
@@ -42,13 +38,11 @@ async function waitForHandlesReady(handles: EFTransformHandles): Promise<void> {
 /**
  * Wait for transform handles element to exist in DOM.
  */
-async function waitForHandlesElement(
-  container: HTMLElement,
-): Promise<EFTransformHandles> {
-  await vi.waitUntil(
-    () => container.querySelector("ef-transform-handles") !== null,
-    { timeout: 2000, interval: 16 },
-  );
+async function waitForHandlesElement(container: HTMLElement): Promise<EFTransformHandles> {
+  await vi.waitUntil(() => container.querySelector("ef-transform-handles") !== null, {
+    timeout: 2000,
+    interval: 16,
+  });
   return container.querySelector("ef-transform-handles") as EFTransformHandles;
 }
 
@@ -82,11 +76,8 @@ describe("Canvas Nested and Rotated Element Overlays - Visual Verification", () 
   ): { matches: boolean; details: string } {
     const elementRect = element.getBoundingClientRect();
     // Get the actual visual overlay element, not the host
-    const overlayElement = handles.shadowRoot?.querySelector(
-      ".overlay",
-    ) as HTMLElement;
-    const handlesRect =
-      overlayElement?.getBoundingClientRect() ?? new DOMRect();
+    const overlayElement = handles.shadowRoot?.querySelector(".overlay") as HTMLElement;
+    const handlesRect = overlayElement?.getBoundingClientRect() ?? new DOMRect();
 
     // For rotated elements, compare centers (centers are stable under rotation)
     const elementCenterX = elementRect.left + elementRect.width / 2;
@@ -162,10 +153,7 @@ describe("Canvas Nested and Rotated Element Overlays - Visual Verification", () 
     await waitForHandlesReady(handles);
 
     const result = verifyHandlesMatchElement(element, handles);
-    expect(
-      result.matches,
-      `Handles should match element visually:\n${result.details}`,
-    ).toBe(true);
+    expect(result.matches, `Handles should match element visually:\n${result.details}`).toBe(true);
   }, 5000);
 
   test("VISUAL: transform handles match element at scale 2x (zoomed in)", async () => {
@@ -213,10 +201,9 @@ describe("Canvas Nested and Rotated Element Overlays - Visual Verification", () 
     await waitForHandlesReady(handles);
 
     const result = verifyHandlesMatchElement(element, handles);
-    expect(
-      result.matches,
-      `Handles should match element at 2x zoom:\n${result.details}`,
-    ).toBe(true);
+    expect(result.matches, `Handles should match element at 2x zoom:\n${result.details}`).toBe(
+      true,
+    );
   }, 5000);
 
   test("VISUAL: transform handles match rotated element (45deg)", async () => {
@@ -416,9 +403,7 @@ describe("Canvas Nested and Rotated Element Overlays - Visual Verification", () 
     expect(overlayLayer).toBeTruthy();
 
     const overlayRect = overlayLayer!.getBoundingClientRect();
-    const canvasContent = canvas.shadowRoot?.querySelector(
-      ".canvas-content",
-    ) as HTMLElement;
+    const canvasContent = canvas.shadowRoot?.querySelector(".canvas-content") as HTMLElement;
     expect(canvasContent).toBeTruthy();
 
     const canvasContentRect = canvasContent.getBoundingClientRect();
@@ -429,16 +414,12 @@ describe("Canvas Nested and Rotated Element Overlays - Visual Verification", () 
     const elementCenterCanvasY = metadata!.y + metadata!.height / 2;
 
     // Convert to screen coordinates
-    const elementCenterScreenX =
-      canvasContentRect.left + elementCenterCanvasX * scale;
-    const elementCenterScreenY =
-      canvasContentRect.top + elementCenterCanvasY * scale;
+    const elementCenterScreenX = canvasContentRect.left + elementCenterCanvasX * scale;
+    const elementCenterScreenY = canvasContentRect.top + elementCenterCanvasY * scale;
 
     // Expected overlay position (center minus half size, relative to overlay layer)
-    const expectedX =
-      elementCenterScreenX - overlayRect.left - (metadata!.width * scale) / 2;
-    const expectedY =
-      elementCenterScreenY - overlayRect.top - (metadata!.height * scale) / 2;
+    const expectedX = elementCenterScreenX - overlayRect.left - (metadata!.width * scale) / 2;
+    const expectedY = elementCenterScreenY - overlayRect.top - (metadata!.height * scale) / 2;
 
     const bounds = handles.bounds;
     expect(bounds).toBeTruthy();
@@ -613,9 +594,7 @@ describe("Canvas Nested and Rotated Element Overlays - Visual Verification", () 
     await vi.waitUntil(
       () => {
         const metadata = canvas.getElementData("child-3");
-        return (
-          metadata && metadata.rotation !== undefined && metadata.rotation !== 0
-        );
+        return metadata && metadata.rotation !== undefined && metadata.rotation !== 0;
       },
       { timeout: 2000, interval: 16 },
     );

@@ -63,9 +63,7 @@ export class SyncImage implements SubAssetSync<CreateFileResult> {
     const byteSize = (await fs.stat(this.path)).size;
     const [videoProbe] = this.probeResult.videoStreams;
     if (!videoProbe) {
-      throw new Error(
-        "No video stream found in image. Should have been prevented by .validate()",
-      );
+      throw new Error("No video stream found in image. Should have been prevented by .validate()");
     }
 
     const maybeFile = await lookupFileByMd5(getClient(), this.md5);
@@ -86,9 +84,7 @@ export class SyncImage implements SubAssetSync<CreateFileResult> {
   }
   async upload() {
     if (!this.created) {
-      throw new Error(
-        "Image not created. Should have been prevented by .isComplete()",
-      );
+      throw new Error("Image not created. Should have been prevented by .isComplete()");
     }
     await uploadFile(
       getClient(),
@@ -102,9 +98,7 @@ export class SyncImage implements SubAssetSync<CreateFileResult> {
   }
   async markSynced() {
     if (!this.created) {
-      throw new Error(
-        "Image not created. Should have been prevented by .isComplete()",
-      );
+      throw new Error("Image not created. Should have been prevented by .isComplete()");
     }
     const byteSize = await this.byteSize();
     return this.syncStatus.markSynced({

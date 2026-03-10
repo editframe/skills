@@ -41,8 +41,7 @@ const tiers = [
     price: "$49",
     period: "/ mo",
     color: "var(--poster-blue)",
-    description:
-      "Same SDK as Free, licensed for larger commercial teams.",
+    description: "Same SDK as Free, licensed for larger commercial teams.",
     features: [
       "Client-Side SDK",
       "Browser rendering (WebCodecs)",
@@ -77,10 +76,7 @@ const tiers = [
     color: "var(--poster-gold)",
     description:
       "Priority support and dedicated infrastructure for large organizations.",
-    features: [
-      "Everything in Cloud",
-      "Priority support",
-    ],
+    features: ["Everything in Cloud", "Priority support"],
     cta: "Get started",
     ctaHref: "/auth/register",
   },
@@ -138,7 +134,6 @@ const comparisonFeatures = [
     cloud: false,
     enterprise: true,
   },
-
 ];
 
 const tierColors = [
@@ -278,7 +273,8 @@ export default function PricingPage() {
                     ))}
                   </div>
 
-                  {tier.ctaHref.startsWith("mailto:") || tier.ctaHref.startsWith("http") ? (
+                  {tier.ctaHref.startsWith("mailto:") ||
+                  tier.ctaHref.startsWith("http") ? (
                     <a
                       href={tier.ctaHref}
                       className="block text-center px-6 py-3 font-bold text-sm uppercase tracking-wider transition-all border-2 border-[var(--ink-black)] dark:border-white hover:bg-[var(--ink-black)] hover:text-white dark:hover:bg-white dark:hover:text-black"
@@ -343,12 +339,26 @@ export default function PricingPage() {
                   </p>
                   <div className="space-y-1.5">
                     {metric.rates.map(({ label, sublabel, rate }) => (
-                      <div key={label} className="flex justify-between items-baseline text-sm">
+                      <div
+                        key={label}
+                        className="flex justify-between items-baseline text-sm"
+                      >
                         <span className="flex items-baseline gap-1.5">
-                          <span className="font-black text-sm uppercase tracking-tight">{label}</span>
-                          {sublabel && <span className="text-[var(--warm-gray)] text-xs">{sublabel}</span>}
+                          <span className="font-black text-sm uppercase tracking-tight">
+                            {label}
+                          </span>
+                          {sublabel && (
+                            <span className="text-[var(--warm-gray)] text-xs">
+                              {sublabel}
+                            </span>
+                          )}
                         </span>
-                        <span className="font-black tabular-nums" style={{ color: metric.color }}>{rate}</span>
+                        <span
+                          className="font-black tabular-nums"
+                          style={{ color: metric.color }}
+                        >
+                          {rate}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -356,8 +366,6 @@ export default function PricingPage() {
               </div>
             ))}
           </div>
-
-
         </div>
       </section>
 

@@ -19,14 +19,7 @@
  */
 
 import * as React from "react";
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { flushSync } from "react-dom";
 import type { CanvasProps } from "@react-three/fiber";
@@ -98,10 +91,7 @@ export function CompositionCanvas({
     const tg = el.closest("ef-timegroup") as
       | (HTMLElement & {
           addFrameTask?: (
-            cb: (info: {
-              ownCurrentTimeMs: number;
-              durationMs: number;
-            }) => void,
+            cb: (info: { ownCurrentTimeMs: number; durationMs: number }) => void,
           ) => () => void;
           durationMs?: number;
         })
@@ -117,19 +107,17 @@ export function CompositionCanvas({
 
     if (tg.durationMs) setDurationMs(tg.durationMs);
 
-    const cleanup = tg.addFrameTask?.(
-      ({ ownCurrentTimeMs, durationMs: dur }) => {
-        // flushSync commits the state update synchronously so the
-        // useLayoutEffect → invalidate() fires before we return.
-        // R3F's demand render then runs useFrame subscribers (which
-        // update instancedMesh matrices, cameras, etc.) and gl.render
-        // in a single pass — no duplicate GPU work.
-        flushSync(() => {
-          setTimeMs(ownCurrentTimeMs);
-          setDurationMs(dur);
-        });
-      },
-    );
+    const cleanup = tg.addFrameTask?.(({ ownCurrentTimeMs, durationMs: dur }) => {
+      // flushSync commits the state update synchronously so the
+      // useLayoutEffect → invalidate() fires before we return.
+      // R3F's demand render then runs useFrame subscribers (which
+      // update instancedMesh matrices, cameras, etc.) and gl.render
+      // in a single pass — no duplicate GPU work.
+      flushSync(() => {
+        setTimeMs(ownCurrentTimeMs);
+        setDurationMs(dur);
+      });
+    });
 
     return cleanup;
   }, []);

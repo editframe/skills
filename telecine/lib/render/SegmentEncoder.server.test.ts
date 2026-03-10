@@ -801,7 +801,9 @@ describe("SegmentEncoder", () => {
 
   describe("Stdout Isolation", () => {
     test("generateMediaSegment does not write to console.log (stdout contamination fix)", async () => {
-      const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleLogSpy = vi
+        .spyOn(console, "log")
+        .mockImplementation(() => {});
       const engine = new TestFramegenEngine(480, 270);
 
       const encoder = createSegmentEncoder({
@@ -832,7 +834,9 @@ describe("SegmentEncoder", () => {
     }, 10000);
 
     test("constructor does not write to console.error when no abort/error occurs", () => {
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
       createSegmentEncoder();
       expect(consoleErrorSpy).not.toHaveBeenCalled();
       consoleErrorSpy.mockRestore();
@@ -1051,19 +1055,24 @@ describe("SegmentEncoder", () => {
       const engine = new TestFramegenEngine(480, 270);
 
       const originalCaptureFrame = engine.captureFrame.bind(engine);
-      engine.captureFrame = vi.fn().mockImplementation(async (frameNumber: number, fps: number) => {
-        const result = await originalCaptureFrame(frameNumber, fps);
-        captureEndedForFrame[frameNumber] = true;
-        return result;
-      });
+      engine.captureFrame = vi
+        .fn()
+        .mockImplementation(async (frameNumber: number, fps: number) => {
+          const result = await originalCaptureFrame(frameNumber, fps);
+          captureEndedForFrame[frameNumber] = true;
+          return result;
+        });
 
       const originalBeginFrame = engine.beginFrame.bind(engine);
-      engine.beginFrame = vi.fn().mockImplementation(async (frameNumber: number, isLast: boolean) => {
-        if (frameNumber > 0) {
-          beginFrameStartedWithPriorCaptureDone[frameNumber] = captureEndedForFrame[frameNumber - 1] === true;
-        }
-        return originalBeginFrame(frameNumber, isLast);
-      });
+      engine.beginFrame = vi
+        .fn()
+        .mockImplementation(async (frameNumber: number, isLast: boolean) => {
+          if (frameNumber > 0) {
+            beginFrameStartedWithPriorCaptureDone[frameNumber] =
+              captureEndedForFrame[frameNumber - 1] === true;
+          }
+          return originalBeginFrame(frameNumber, isLast);
+        });
 
       const encoder = createSegmentEncoder({
         engine,
@@ -1072,7 +1081,13 @@ describe("SegmentEncoder", () => {
           encoderOptions: {
             ...createTestRenderOptions().encoderOptions,
             toMs: 200,
-            video: { width: 480, height: 270, framerate: 15, codec: "avc1", bitrate: 250000 },
+            video: {
+              width: 480,
+              height: 270,
+              framerate: 15,
+              codec: "avc1",
+              bitrate: 250000,
+            },
           },
         },
       });
@@ -1108,14 +1123,21 @@ describe("SegmentEncoder", () => {
       const engine = new TestFramegenEngine(480, 270);
 
       // Defer write(0)'s callback via setImmediate to simulate async drain
-      const originalBuildVideoEncoder = SegmentEncoder.prototype.buildVideoEncoder;
-      SegmentEncoder.prototype.buildVideoEncoder = function(paths: any) {
+      const originalBuildVideoEncoder =
+        SegmentEncoder.prototype.buildVideoEncoder;
+      SegmentEncoder.prototype.buildVideoEncoder = function (paths: any) {
         const encoder = originalBuildVideoEncoder.call(this, paths);
-        const originalWrite = encoder.process.stdin.write.bind(encoder.process.stdin);
+        const originalWrite = encoder.process.stdin.write.bind(
+          encoder.process.stdin,
+        );
         let writeCount = 0;
-        (encoder.process.stdin as any).write = function(chunk: any, encoding: any, callback: any) {
+        (encoder.process.stdin as any).write = function (
+          chunk: any,
+          encoding: any,
+          callback: any,
+        ) {
           const idx = writeCount++;
-          if (idx === 0 && typeof callback === 'function') {
+          if (idx === 0 && typeof callback === "function") {
             const cb = callback;
             return (originalWrite as any)(chunk, encoding, (err: any) => {
               // Defer the callback to ensure async gap for pipelining to be observable
@@ -1131,12 +1153,14 @@ describe("SegmentEncoder", () => {
       };
 
       const originalBeginFrame = engine.beginFrame.bind(engine);
-      engine.beginFrame = vi.fn().mockImplementation(async (frameNumber: number, isLast: boolean) => {
-        if (frameNumber === 1) {
-          write0CompleteWhenBeginFrame1Started = write0Complete;
-        }
-        return originalBeginFrame(frameNumber, isLast);
-      });
+      engine.beginFrame = vi
+        .fn()
+        .mockImplementation(async (frameNumber: number, isLast: boolean) => {
+          if (frameNumber === 1) {
+            write0CompleteWhenBeginFrame1Started = write0Complete;
+          }
+          return originalBeginFrame(frameNumber, isLast);
+        });
 
       const encoder = createSegmentEncoder({
         engine,
@@ -1145,7 +1169,13 @@ describe("SegmentEncoder", () => {
           encoderOptions: {
             ...createTestRenderOptions().encoderOptions,
             toMs: 200,
-            video: { width: 480, height: 270, framerate: 15, codec: "avc1", bitrate: 250000 },
+            video: {
+              width: 480,
+              height: 270,
+              framerate: 15,
+              codec: "avc1",
+              bitrate: 250000,
+            },
           },
         },
       });

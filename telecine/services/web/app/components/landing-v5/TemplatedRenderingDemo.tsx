@@ -9,7 +9,17 @@
    Design: Swissted poster aesthetic
    ============================================================================== */
 
-import { useState, useEffect, useLayoutEffect, useId, useCallback, useRef, createContext, useContext, Suspense } from "react";
+import {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useId,
+  useCallback,
+  useRef,
+  createContext,
+  useContext,
+  Suspense,
+} from "react";
 import { flushSync } from "react-dom";
 import { Canvas } from "@react-three/fiber";
 import * as THREE from "three";
@@ -23,7 +33,13 @@ import {
   TogglePlay,
   TimeDisplay,
 } from "@editframe/react";
-import { InvalidateOnTimeChange, flushR3F, yieldToScheduler, getR3FState, r3fFlushSync } from "./r3f-sync";
+import {
+  InvalidateOnTimeChange,
+  flushR3F,
+  yieldToScheduler,
+  getR3FState,
+  r3fFlushSync,
+} from "./r3f-sync";
 import { CodeBlock } from "~/components/CodeBlock";
 import { ExportButton } from "./ExportButton";
 
@@ -93,7 +109,10 @@ const SAMPLE_DATA: UserData[] = [
 ];
 
 /* ━━ Context for passing selected data to the TimelineRoot component ━━━━━ */
-const DemoDataContext = createContext<{ selectedData: UserData; selectedIndex: number }>({
+const DemoDataContext = createContext<{
+  selectedData: UserData;
+  selectedIndex: number;
+}>({
   selectedData: SAMPLE_DATA[0]!,
   selectedIndex: 0,
 });
@@ -118,7 +137,11 @@ function FloatingShape({
 
   return (
     <mesh
-      position={[position[0], position[1] + Math.sin(t * 2) * 0.15, position[2]]}
+      position={[
+        position[0],
+        position[1] + Math.sin(t * 2) * 0.15,
+        position[2],
+      ]}
       rotation={[rotationAxis[0] * t, rotationAxis[1] * t, rotationAxis[2] * t]}
       scale={scale}
     >
@@ -131,11 +154,46 @@ function FloatingShape({
 function BackgroundScene({ color, timeMs }: { color: string; timeMs: number }) {
   return (
     <>
-      <FloatingShape position={[-2.5, 1.2, -3]} speed={0.3} rotationAxis={[1, 0.5, 0]} color={color} scale={1.2} timeMs={timeMs} />
-      <FloatingShape position={[2.8, -0.8, -4]} speed={0.2} rotationAxis={[0, 1, 0.3]} color={color} scale={0.9} timeMs={timeMs} />
-      <FloatingShape position={[0, 2, -5]} speed={0.15} rotationAxis={[0.3, 0, 1]} color={color} scale={1.5} timeMs={timeMs} />
-      <FloatingShape position={[-1.5, -1.5, -3.5]} speed={0.25} rotationAxis={[0.5, 1, 0.5]} color={color} scale={0.7} timeMs={timeMs} />
-      <FloatingShape position={[1.8, 1.8, -4.5]} speed={0.18} rotationAxis={[1, 0, 0.7]} color={color} scale={1.0} timeMs={timeMs} />
+      <FloatingShape
+        position={[-2.5, 1.2, -3]}
+        speed={0.3}
+        rotationAxis={[1, 0.5, 0]}
+        color={color}
+        scale={1.2}
+        timeMs={timeMs}
+      />
+      <FloatingShape
+        position={[2.8, -0.8, -4]}
+        speed={0.2}
+        rotationAxis={[0, 1, 0.3]}
+        color={color}
+        scale={0.9}
+        timeMs={timeMs}
+      />
+      <FloatingShape
+        position={[0, 2, -5]}
+        speed={0.15}
+        rotationAxis={[0.3, 0, 1]}
+        color={color}
+        scale={1.5}
+        timeMs={timeMs}
+      />
+      <FloatingShape
+        position={[-1.5, -1.5, -3.5]}
+        speed={0.25}
+        rotationAxis={[0.5, 1, 0.5]}
+        color={color}
+        scale={0.7}
+        timeMs={timeMs}
+      />
+      <FloatingShape
+        position={[1.8, 1.8, -4.5]}
+        speed={0.18}
+        rotationAxis={[1, 0, 0.7]}
+        color={color}
+        scale={1.0}
+        timeMs={timeMs}
+      />
     </>
   );
 }
@@ -146,7 +204,11 @@ function GrowthChart({ data, color }: { data: number[]; color: string }) {
   const gap = 3;
 
   return (
-    <svg viewBox="0 0 100 50" className="w-full h-full" preserveAspectRatio="none">
+    <svg
+      viewBox="0 0 100 50"
+      className="w-full h-full"
+      preserveAspectRatio="none"
+    >
       {data.map((value, i) => {
         const height = value * 45;
         return (
@@ -167,7 +229,9 @@ function GrowthChart({ data, color }: { data: number[]; color: string }) {
       })}
       {/* Trend line */}
       <polyline
-        points={data.map((v, i) => `${i * barWidth + barWidth / 2},${50 - v * 45}`).join(" ")}
+        points={data
+          .map((v, i) => `${i * barWidth + barWidth / 2},${50 - v * 45}`)
+          .join(" ")}
         fill="none"
         stroke="white"
         strokeWidth="1.2"
@@ -210,30 +274,34 @@ function TemplatedVideoContent() {
 
     let r3fReady = false;
 
-    return tg.addFrameTask(async ({ currentTimeMs }: { currentTimeMs: number }) => {
-      // 1. Flush react-dom: updates timeMs state, re-renders Canvas component
-      flushSync(() => setTimeMs(currentTimeMs));
+    return tg.addFrameTask(
+      async ({ currentTimeMs }: { currentTimeMs: number }) => {
+        // 1. Flush react-dom: updates timeMs state, re-renders Canvas component
+        flushSync(() => setTimeMs(currentTimeMs));
 
-      // 2. On first frame, R3F Canvas needs a macrotask for ResizeObserver
-      if (!r3fReady) {
-        await yieldToScheduler();
-        flushSync(() => {});
-      }
+        // 2. On first frame, R3F Canvas needs a macrotask for ResizeObserver
+        if (!r3fReady) {
+          await yieldToScheduler();
+          flushSync(() => {});
+        }
 
-      // 3. Microtask yield: lets Canvas async run() call render(children)
-      await Promise.resolve();
+        // 3. Microtask yield: lets Canvas async run() call render(children)
+        await Promise.resolve();
 
-      // 4. Flush R3F's reconciler so Three.js scene graph reflects latest props
-      r3fFlushSync(() => {});
+        // 4. Flush R3F's reconciler so Three.js scene graph reflects latest props
+        r3fFlushSync(() => {});
 
-      if (!r3fReady) {
-        const canvas = canvasContainerRef.current?.querySelector('canvas') as HTMLCanvasElement | null;
-        if (getR3FState(canvas)?.gl) r3fReady = true;
-      }
+        if (!r3fReady) {
+          const canvas = canvasContainerRef.current?.querySelector(
+            "canvas",
+          ) as HTMLCanvasElement | null;
+          if (getR3FState(canvas)?.gl) r3fReady = true;
+        }
 
-      // 5. Imperatively render: runs useFrame subscribers + gl.render + gl.finish
-      flushR3F(canvasContainerRef.current);
-    });
+        // 5. Imperatively render: runs useFrame subscribers + gl.render + gl.finish
+        flushR3F(canvasContainerRef.current);
+      },
+    );
   }, []);
 
   return (
@@ -271,7 +339,10 @@ function TemplatedVideoContent() {
         />
 
         {/* Content overlay — keyed so Text elements remount on user switch */}
-        <div key={selectedIndex} className="absolute inset-0 z-[2] flex flex-col items-center justify-center text-center gap-3">
+        <div
+          key={selectedIndex}
+          className="absolute inset-0 z-[2] flex flex-col items-center justify-center text-center gap-3"
+        >
           <Avatar initials={selectedData.initials} color={selectedData.color} />
 
           <Text
@@ -317,7 +388,10 @@ function TemplatedVideoContent() {
             {selectedData.role} at {selectedData.company}
           </Text>
 
-          <div className="w-64 h-20 mt-2" style={{ animation: "tmpl-fade-in 0.5s ease-out 0.7s both" }}>
+          <div
+            className="w-64 h-20 mt-2"
+            style={{ animation: "tmpl-fade-in 0.5s ease-out 0.7s both" }}
+          >
             <GrowthChart data={selectedData.chartData} color="white" />
           </div>
 
@@ -382,7 +456,13 @@ export function WelcomeVideo() {
 function generateCliCode(data: UserData): string {
   const firstName = data.name.split(" ")[0]?.toLowerCase();
   const jsonData = JSON.stringify(
-    { name: data.name, role: data.role, company: data.company, metric: data.metric, color: data.color },
+    {
+      name: data.name,
+      role: data.role,
+      company: data.company,
+      metric: data.metric,
+      color: data.color,
+    },
     null,
     2,
   );
@@ -435,7 +515,10 @@ export function TemplatedRenderingDemo() {
         <div className="grid lg:grid-cols-5 gap-4 mb-4">
           {/* Preview (3 cols) */}
           <div className="lg:col-span-3 relative">
-            <div className="absolute -bottom-2 -right-2 w-full h-full" style={{ backgroundColor: selectedData.color }} />
+            <div
+              className="absolute -bottom-2 -right-2 w-full h-full"
+              style={{ backgroundColor: selectedData.color }}
+            />
             <div className="relative border-4 border-black dark:border-white bg-[#1a1a1a] overflow-hidden">
               {/* Video header */}
               <div className="px-3 py-1.5 border-b border-white/20 flex items-center justify-between">
@@ -452,8 +535,17 @@ export function TemplatedRenderingDemo() {
               {/* Live Preview — fixed 960×540 internal resolution, CSS-scaled to fit */}
               {isClient ? (
                 <div className="aspect-video w-full overflow-hidden">
-                  <Preview id={previewId} ref={previewRef as any} loop className="block" style={{ width: "100%", height: "100%" }}>
-                    <TimelineRoot id={previewId} component={TemplatedVideoContent} />
+                  <Preview
+                    id={previewId}
+                    ref={previewRef as any}
+                    loop
+                    className="block"
+                    style={{ width: "100%", height: "100%" }}
+                  >
+                    <TimelineRoot
+                      id={previewId}
+                      component={TemplatedVideoContent}
+                    />
                   </Preview>
                 </div>
               ) : (
@@ -464,14 +556,18 @@ export function TemplatedRenderingDemo() {
                   <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center text-white text-lg font-black mb-2">
                     {selectedData.initials}
                   </div>
-                  <p className="text-white/80 text-xs uppercase tracking-wider">Welcome</p>
+                  <p className="text-white/80 text-xs uppercase tracking-wider">
+                    Welcome
+                  </p>
                   <h3 className="text-white text-3xl font-black uppercase tracking-tight mt-1">
                     {selectedData.name}!
                   </h3>
                   <p className="text-white/70 text-xs mt-1">
                     {selectedData.role} at {selectedData.company}
                   </p>
-                  <p className="text-white text-4xl font-black mt-3">{selectedData.metric}</p>
+                  <p className="text-white text-4xl font-black mt-3">
+                    {selectedData.metric}
+                  </p>
                   <p className="text-white/70 text-sm mt-1">growth</p>
                 </div>
               )}
@@ -481,26 +577,34 @@ export function TemplatedRenderingDemo() {
                 {isClient ? (
                   <div className="flex items-center">
                     <TogglePlay target={previewId}>
-                       <button
-                         slot="pause"
-                         aria-label="Pause video"
-                         className="w-10 h-10 flex items-center justify-center hover:brightness-110 transition-all"
-                         style={{ backgroundColor: selectedData.color }}
-                       >
-                         <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                           <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                         </svg>
-                       </button>
-                       <button
-                         slot="play"
-                         aria-label="Play video"
-                         className="w-10 h-10 flex items-center justify-center hover:brightness-110 transition-all"
-                         style={{ backgroundColor: selectedData.color }}
-                       >
-                         <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                           <path d="M8 5v14l11-7z" />
-                         </svg>
-                       </button>
+                      <button
+                        slot="pause"
+                        aria-label="Pause video"
+                        className="w-10 h-10 flex items-center justify-center hover:brightness-110 transition-all"
+                        style={{ backgroundColor: selectedData.color }}
+                      >
+                        <svg
+                          className="w-3.5 h-3.5 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                        </svg>
+                      </button>
+                      <button
+                        slot="play"
+                        aria-label="Play video"
+                        className="w-10 h-10 flex items-center justify-center hover:brightness-110 transition-all"
+                        style={{ backgroundColor: selectedData.color }}
+                      >
+                        <svg
+                          className="w-3.5 h-3.5 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </button>
                     </TogglePlay>
 
                     <div className="flex-1 px-3 h-10 flex items-center border-l border-white/10">
@@ -519,7 +623,11 @@ export function TemplatedRenderingDemo() {
 
                     <ExportButton
                       compact
-                      getTarget={() => previewRef.current?.querySelector("ef-timegroup") as HTMLElement}
+                      getTarget={() =>
+                        previewRef.current?.querySelector(
+                          "ef-timegroup",
+                        ) as HTMLElement
+                      }
                       name={`Welcome — ${selectedData.name}`}
                       fileName={`welcome-${selectedData.name.split(" ")[0]?.toLowerCase()}.mp4`}
                       className="border-l border-white/10"
@@ -531,7 +639,11 @@ export function TemplatedRenderingDemo() {
                       className="w-10 h-10 flex items-center justify-center"
                       style={{ backgroundColor: selectedData.color }}
                     >
-                      <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <svg
+                        className="w-3.5 h-3.5 text-white"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
                         <path d="M8 5v14l11-7z" />
                       </svg>
                     </div>
@@ -539,7 +651,9 @@ export function TemplatedRenderingDemo() {
                       <div className="w-full h-1 bg-white/20 rounded-full" />
                     </div>
                     <div className="px-3 border-l border-white/10 h-10 flex items-center">
-                      <span className="text-[10px] text-white/60 font-mono">0:00 / 0:05</span>
+                      <span className="text-[10px] text-white/60 font-mono">
+                        0:00 / 0:05
+                      </span>
                     </div>
                   </div>
                 )}
@@ -567,7 +681,14 @@ export function TemplatedRenderingDemo() {
                         ? "text-white border-transparent"
                         : "text-black/50 dark:text-white/50 border-transparent hover:text-black dark:hover:text-white"
                     }`}
-                    style={selectedIndex === i ? { backgroundColor: data.color, borderColor: data.color } : undefined}
+                    style={
+                      selectedIndex === i
+                        ? {
+                            backgroundColor: data.color,
+                            borderColor: data.color,
+                          }
+                        : undefined
+                    }
                   >
                     {data.name.split(" ")[0]}
                   </button>
@@ -592,7 +713,9 @@ export function TemplatedRenderingDemo() {
               <div className="w-2.5 h-2.5 rounded-full bg-[var(--poster-red)]" />
               <div className="w-2.5 h-2.5 rounded-full bg-[var(--poster-gold)]" />
               <div className="w-2.5 h-2.5 rounded-full bg-[var(--poster-green)]" />
-              <span className="ml-2 text-white/40 text-xs font-mono">welcome-video.tsx</span>
+              <span className="ml-2 text-white/40 text-xs font-mono">
+                welcome-video.tsx
+              </span>
             </div>
             <div className="overflow-auto max-h-[160px] md:max-h-[220px]">
               <CodeBlock className="language-tsx">{currentCode}</CodeBlock>
@@ -603,7 +726,9 @@ export function TemplatedRenderingDemo() {
           <div className="border-4 border-black dark:border-white bg-black overflow-hidden">
             <div className="px-3 py-1.5 border-b border-white/20 flex items-center gap-2">
               <span className="text-[#4CAF50] font-mono text-sm">$</span>
-              <span className="text-white/50 text-xs font-mono uppercase">Terminal</span>
+              <span className="text-white/50 text-xs font-mono uppercase">
+                Terminal
+              </span>
             </div>
             <div className="overflow-auto max-h-[160px] md:max-h-[220px]">
               <CodeBlock className="language-bash">{cliCode}</CodeBlock>

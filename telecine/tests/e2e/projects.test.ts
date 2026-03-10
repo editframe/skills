@@ -1,12 +1,7 @@
 import { describe, test } from "vitest";
 import { safeRegisterUser } from "@/sql-client.server/safeRegisterUser";
 import { safeCreateOrg } from "@/sql-client.server/safeCreateOrg";
-import {
-  setupBrowser,
-  getPage,
-  getContext,
-  playwrightExpect,
-} from "./setup";
+import { setupBrowser, getPage, getContext, playwrightExpect } from "./setup";
 import { signInAsEmailAddress } from "../util/signInAsEmailAddress";
 
 setupBrowser();

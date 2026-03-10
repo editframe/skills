@@ -39,12 +39,8 @@ describe("settings page", () => {
 
     await playwrightExpect(firstNameInput).toBeVisible();
     await playwrightExpect(lastNameInput).toBeVisible();
-    await playwrightExpect(firstNameInput).toHaveValue(
-      org.primary.first_name!,
-    );
-    await playwrightExpect(lastNameInput).toHaveValue(
-      org.primary.last_name!,
-    );
+    await playwrightExpect(firstNameInput).toHaveValue(org.primary.first_name!);
+    await playwrightExpect(lastNameInput).toHaveValue(org.primary.last_name!);
   });
 
   test("Disables submission until data has changed", async () => {
@@ -101,10 +97,7 @@ describe("settings page", () => {
       page.getByText("Verification email sent"),
     ).toBeVisible();
 
-    await waitForEmail(
-      user.email_address,
-      "Confirm your email address",
-    );
+    await waitForEmail(user.email_address, "Confirm your email address");
     await followEmailLink("Confirm your email address");
 
     await playwrightExpect(page.getByText("Verified")).toBeVisible();

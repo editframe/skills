@@ -151,11 +151,7 @@ export class EFTreeItem extends LitElement {
             `
             : html`<span class="expand-icon"></span>`
         }
-        ${
-          this.item.icon
-            ? html`<span class="icon">${this.item.icon}</span>`
-            : nothing
-        }
+        ${this.item.icon ? html`<span class="icon">${this.item.icon}</span>` : nothing}
         <span class="label">${this.item.label}</span>
       </div>
       ${

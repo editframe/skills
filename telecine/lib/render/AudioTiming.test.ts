@@ -54,9 +54,18 @@ describe("AudioTiming", () => {
 
     test("handles common video timing values", () => {
       const testCases = [
-        { inputMs: 1000, expectedFrames: Math.round(1000000 / AUDIO_FRAME_DURATION_US) },
-        { inputMs: 2000, expectedFrames: Math.round(2000000 / AUDIO_FRAME_DURATION_US) },
-        { inputMs: 5000, expectedFrames: Math.round(5000000 / AUDIO_FRAME_DURATION_US) },
+        {
+          inputMs: 1000,
+          expectedFrames: Math.round(1000000 / AUDIO_FRAME_DURATION_US),
+        },
+        {
+          inputMs: 2000,
+          expectedFrames: Math.round(2000000 / AUDIO_FRAME_DURATION_US),
+        },
+        {
+          inputMs: 5000,
+          expectedFrames: Math.round(5000000 / AUDIO_FRAME_DURATION_US),
+        },
       ];
 
       testCases.forEach(({ inputMs, expectedFrames }) => {
@@ -178,12 +187,8 @@ describe("AudioTiming", () => {
     test("returns frame indices and durations for first segment", () => {
       const result = generateConcatTimings(0, 1000, 0);
 
-      expect(result.fromIndex).toBe(
-        getClosestAlignedAACFrameIndex(0),
-      );
-      expect(result.toIndex).toBe(
-        getClosestAlignedAACFrameIndex(1000 * 1000),
-      );
+      expect(result.fromIndex).toBe(getClosestAlignedAACFrameIndex(0));
+      expect(result.toIndex).toBe(getClosestAlignedAACFrameIndex(1000 * 1000));
       expect(result.durationFrames).toBe(result.toIndex - result.fromIndex);
       expect(result.seekToUs).toBe(0);
       expect(result.seekToMs).toBe(0);

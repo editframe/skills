@@ -11,9 +11,13 @@ const server = createServer((req, res) => {
 
 console.log(`worker-render-fragment binding to port ${PORT}`);
 server.listen(PORT, () => {
-  console.log(`worker-render-fragment listening on port ${PORT} (health checks ready)`);
-  import("./boot").then(({ init }) => init(server)).catch((err) => {
-    console.error("Worker boot failed:", err);
-    process.exit(1);
-  });
+  console.log(
+    `worker-render-fragment listening on port ${PORT} (health checks ready)`,
+  );
+  import("./boot")
+    .then(({ init }) => init(server))
+    .catch((err) => {
+      console.error("Worker boot failed:", err);
+      process.exit(1);
+    });
 });

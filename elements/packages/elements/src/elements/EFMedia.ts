@@ -47,10 +47,7 @@ const getChildrenIncludingSlotted = (element: Element): Element[] => {
   return Array.from(element.children);
 };
 
-export const deepGetMediaElements = (
-  element: Element,
-  medias: EFMedia[] = [],
-) => {
+export const deepGetMediaElements = (element: Element, medias: EFMedia[] = []) => {
   const children = getChildrenIncludingSlotted(element);
   for (const child of children) {
     if (child instanceof EFMedia) {
@@ -73,6 +70,7 @@ import { EFTemporal } from "./EFTemporal.js";
 export class AsyncValue<T> {
   #value: T | undefined = undefined;
   #error: Error | undefined = undefined;
+  // oxlint-disable-next-line no-unused-private-class-members -- false positive; read via get status()
   #status: "initial" | "pending" | "complete" | "error" = "initial";
   #promise: Promise<T | undefined> = Promise.resolve(undefined);
   #resolvePromise: ((value: T | undefined) => void) | undefined;
@@ -160,10 +158,7 @@ export class AsyncValue<T> {
 // Audio analysis helper functions
 const DECAY_WEIGHT = 0.8;
 
-function processFFTData(
-  fftData: Uint8Array,
-  zeroThresholdPercent = 0.1,
-): Uint8Array {
+function processFFTData(fftData: Uint8Array, zeroThresholdPercent = 0.1): Uint8Array {
   const totalBins = fftData.length;
   const zeroThresholdCount = Math.floor(totalBins * zeroThresholdPercent);
 
@@ -282,11 +277,7 @@ export class EFMedia extends EFTargetable(
     `,
   ];
 
-  attributeChangedCallback(
-    name: string,
-    oldValue: string | null,
-    newValue: string | null,
-  ): void {
+  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     if (name === "asset-id") {
       this.fileId = newValue;
       return;
@@ -438,9 +429,7 @@ export class EFMedia extends EFTargetable(
     return loadPromise;
   }
 
-  async #loadMediaEngine(
-    signal?: AbortSignal,
-  ): Promise<MediaEngine | undefined> {
+  async #loadMediaEngine(signal?: AbortSignal): Promise<MediaEngine | undefined> {
     try {
       this.#mediaEngine = await this.#createMediaEngine(signal);
       this.#mediaEngineError = undefined;
@@ -454,8 +443,7 @@ export class EFMedia extends EFTargetable(
       }
       return this.#mediaEngine;
     } catch (error) {
-      this.#mediaEngineError =
-        error instanceof Error ? error : new Error(String(error));
+      this.#mediaEngineError = error instanceof Error ? error : new Error(String(error));
       this.mediaEngineTask.setError(this.#mediaEngineError);
       this.setContentReadyState("error");
 
@@ -476,9 +464,7 @@ export class EFMedia extends EFTargetable(
     }
   }
 
-  async #createMediaEngine(
-    signal?: AbortSignal,
-  ): Promise<MediaEngine | undefined> {
+  async #createMediaEngine(signal?: AbortSignal): Promise<MediaEngine | undefined> {
     const { src, fileId, apiHost, requiredTracks } = this;
     const urlGenerator = this.getUrlGenerator();
     return createMediaEngineFromSource({
@@ -526,10 +512,7 @@ export class EFMedia extends EFTargetable(
   /**
    * Get frequency data for audio visualization at a given time.
    */
-  async getFrequencyData(
-    timeMs: number,
-    signal?: AbortSignal,
-  ): Promise<Uint8Array | null> {
+  async getFrequencyData(timeMs: number, signal?: AbortSignal): Promise<Uint8Array | null> {
     if (timeMs < 0) return null;
 
     const cacheKey = `${this.getShouldInterpolateFrequencies()}:${this.fftSize}:${this.fftDecay}:${this.fftGain}:${timeMs}`;
@@ -554,10 +537,7 @@ export class EFMedia extends EFTargetable(
   /**
    * Get time domain data for audio visualization at a given time.
    */
-  async getTimeDomainData(
-    timeMs: number,
-    signal?: AbortSignal,
-  ): Promise<Uint8Array | null> {
+  async getTimeDomainData(timeMs: number, signal?: AbortSignal): Promise<Uint8Array | null> {
     if (timeMs < 0) return null;
 
     const cacheKey = `${this.fftSize}:${timeMs}`;
@@ -592,13 +572,11 @@ export class EFMedia extends EFTargetable(
 
     // Calculate exact audio window needed based on fftDecay and frame timing
     const frameIntervalMs = 1000 / 30;
-    const earliestFrameMs =
-      currentTimeMs - (this.fftDecay - 1) * frameIntervalMs;
+    const earliestFrameMs = currentTimeMs - (this.fftDecay - 1) * frameIntervalMs;
     const fromMs = Math.max(0, earliestFrameMs);
     const maxToMs = currentTimeMs + frameIntervalMs;
     const videoDurationMs = this.intrinsicDurationMs || 0;
-    const toMs =
-      videoDurationMs > 0 ? Math.min(maxToMs, videoDurationMs) : maxToMs;
+    const toMs = videoDurationMs > 0 ? Math.min(maxToMs, videoDurationMs) : maxToMs;
 
     if (fromMs >= toMs) {
       return null;
@@ -639,10 +617,7 @@ export class EFMedia extends EFTargetable(
     const framesData = await Promise.all(
       Array.from({ length: this.fftDecay }, async (_, i) => {
         const frameOffset = i * (1000 / 30);
-        const startTime = Math.max(
-          0,
-          (currentTimeMs - frameOffset - startOffsetMs) / 1000,
-        );
+        const startTime = Math.max(0, (currentTimeMs - frameOffset - startOffsetMs) / 1000);
 
         const SIZE = 48000 / 30;
         const audioContext = new OfflineAudioContext(2, SIZE, 48000);
@@ -707,13 +682,8 @@ export class EFMedia extends EFTargetable(
     });
 
     // Only return the lower half of the frequency data
-    const slicedData = smoothedData.slice(
-      0,
-      Math.floor(smoothedData.length / 2),
-    );
-    return this.getShouldInterpolateFrequencies()
-      ? processFFTData(slicedData)
-      : slicedData;
+    const slicedData = smoothedData.slice(0, Math.floor(smoothedData.length / 2));
+    return this.getShouldInterpolateFrequencies() ? processFFTData(slicedData) : slicedData;
   }
 
   async #analyzeTimeDomain(
@@ -728,13 +698,11 @@ export class EFMedia extends EFTargetable(
     }
 
     const frameIntervalMs = 1000 / 30;
-    const earliestFrameMs =
-      currentTimeMs - (this.fftDecay - 1) * frameIntervalMs;
+    const earliestFrameMs = currentTimeMs - (this.fftDecay - 1) * frameIntervalMs;
     const fromMs = Math.max(0, earliestFrameMs);
     const maxToMs = currentTimeMs + frameIntervalMs;
     const videoDurationMs = this.intrinsicDurationMs || 0;
-    const toMs =
-      videoDurationMs > 0 ? Math.min(maxToMs, videoDurationMs) : maxToMs;
+    const toMs = videoDurationMs > 0 ? Math.min(maxToMs, videoDurationMs) : maxToMs;
 
     if (fromMs >= toMs) {
       return null;
@@ -774,10 +742,7 @@ export class EFMedia extends EFTargetable(
     const framesData = await Promise.all(
       Array.from({ length: this.fftDecay }, async (_, i) => {
         const frameOffset = i * (1000 / 30);
-        const startTime = Math.max(
-          0,
-          (currentTimeMs - frameOffset - startOffsetMs) / 1000,
-        );
+        const startTime = Math.max(0, (currentTimeMs - frameOffset - startOffsetMs) / 1000);
 
         const SIZE = 48000 / 30;
         const audioContext = new OfflineAudioContext(2, SIZE, 48000);
@@ -868,9 +833,7 @@ export class EFMedia extends EFTargetable(
     return this.#mediaEngine?.durationMs;
   }
 
-  protected updated(
-    changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>,
-  ): void {
+  protected updated(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     super.updated(changedProperties);
 
     // Trigger media engine load when src or fileId changes
@@ -896,16 +859,9 @@ export class EFMedia extends EFTargetable(
     }
 
     // Check if trim/source properties changed that affect duration
-    const durationAffectingProps = [
-      "_trimStartMs",
-      "_trimEndMs",
-      "_sourceInMs",
-      "_sourceOutMs",
-    ];
+    const durationAffectingProps = ["_trimStartMs", "_trimEndMs", "_sourceInMs", "_sourceOutMs"];
 
-    const hasDurationChange = durationAffectingProps.some((prop) =>
-      changedProperties.has(prop),
-    );
+    const hasDurationChange = durationAffectingProps.some((prop) => changedProperties.has(prop));
 
     if (hasDurationChange) {
       this.emitContentChange("bounds");
@@ -977,8 +933,7 @@ export class EFMedia extends EFTargetable(
       async () => {
         // Create a default signal if not provided (public API convenience)
         const effectiveSignal = signal ?? new AbortController().signal;
-        const { fetchAudioSpanningTime } =
-          await import("./EFMedia/shared/AudioSpanUtils.js");
+        const { fetchAudioSpanningTime } = await import("./EFMedia/shared/AudioSpanUtils.js");
         return fetchAudioSpanningTime(this, fromMs, toMs, effectiveSignal);
       },
     );

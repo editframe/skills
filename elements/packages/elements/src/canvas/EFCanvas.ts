@@ -16,10 +16,7 @@ import type { EFOverlayLayer } from "../gui/EFOverlayLayer.js";
 import type { EFTransformHandles } from "../gui/EFTransformHandles.js";
 import type { TransformBounds } from "../gui/EFTransformHandles.js";
 import type { SelectionOverlay } from "./overlays/SelectionOverlay.js";
-import {
-  getRotatedBoundingBox,
-  parseRotationFromTransform,
-} from "../gui/transformCalculations.js";
+import { getRotatedBoundingBox, parseRotationFromTransform } from "../gui/transformCalculations.js";
 import { EFTargetable } from "../elements/TargetController.js";
 import { findRootTemporal } from "../elements/findRootTemporal.js";
 import type { TemporalMixinInterface } from "../elements/EFTemporal.js";
@@ -149,10 +146,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
   private dragStarted = false; // True once threshold is crossed
   private dragStartPos: { x: number; y: number } | null = null;
   private dragStartCanvasPos: { x: number; y: number } | null = null;
-  private dragStartElementPositions = new Map<
-    string,
-    { x: number; y: number }
-  >(); // Store initial positions for all selected elements
+  private dragStartElementPositions = new Map<string, { x: number; y: number }>(); // Store initial positions for all selected elements
   private draggedElementId: string | null = null;
   private capturedPointerId: number | null = null;
   private readonly DRAG_THRESHOLD = 5; // pixels of movement before drag starts
@@ -170,8 +164,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
   >();
 
   @state()
-  private _activeRootTemporal: (TemporalMixinInterface & HTMLElement) | null =
-    null;
+  private _activeRootTemporal: (TemporalMixinInterface & HTMLElement) | null = null;
 
   @provide({ context: selectionContext })
   @state()
@@ -265,8 +258,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
    */
   tryRegisterElement(element: HTMLElement): void {
     // Skip if already registered
-    const existingId =
-      element.getAttribute(this.elementIdAttribute) || element.id;
+    const existingId = element.getAttribute(this.elementIdAttribute) || element.id;
     if (existingId && this.elementRegistry.has(existingId)) {
       return;
     }
@@ -281,9 +273,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
       if (!elementId) {
         // Generate a unique ID based on tag name and index
         const tagName = element.tagName.toLowerCase();
-        const index = Array.from(element.parentElement?.children || []).indexOf(
-          element,
-        );
+        const index = Array.from(element.parentElement?.children || []).indexOf(element);
         elementId = `${tagName}-${index}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       }
 
@@ -297,7 +287,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
       }
 
       this.registerElement(element, elementId);
-    } catch (error) {
+    } catch (_error) {
       // Silently ignore registration errors (e.g., duplicate ID)
       // This allows the canvas to work with mixed content
     }
@@ -368,15 +358,11 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
    */
   unregisterElement(element: HTMLElement | string): void {
     const elementId =
-      typeof element === "string"
-        ? element
-        : element.getAttribute(this.elementIdAttribute);
+      typeof element === "string" ? element : element.getAttribute(this.elementIdAttribute);
 
     if (elementId) {
       const elementToUnregister =
-        typeof element === "string"
-          ? this.elementRegistry.get(elementId)
-          : element;
+        typeof element === "string" ? this.elementRegistry.get(elementId) : element;
       if (elementToUnregister) {
         elementToUnregister.removeAttribute("data-selected");
         elementToUnregister.removeAttribute("data-highlighted");
@@ -395,10 +381,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
    * Setup hover event listeners for an element to update highlightedElement.
    * The canvas is the source of truth for highlight state.
    */
-  private setupElementHoverListeners(
-    element: HTMLElement,
-    elementId: string,
-  ): void {
+  private setupElementHoverListeners(element: HTMLElement, elementId: string): void {
     // Remove existing listeners if any
     this.removeElementHoverListeners(elementId);
 
@@ -485,9 +468,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
     }
 
     const shadowRoot = this.shadowRoot;
-    const canvasContent = shadowRoot?.querySelector(
-      ".canvas-content",
-    ) as HTMLElement;
+    const canvasContent = shadowRoot?.querySelector(".canvas-content") as HTMLElement;
 
     // STEP 1: Get dimensions from offsetWidth/offsetHeight (unified, no special cases)
     // These are layout dimensions, unaffected by ANY transforms
@@ -573,10 +554,8 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
         canvasRect,
         this.panZoomTransform,
       );
-      const elementCanvasWidth =
-        elementBounds.width / (this.panZoomTransform?.scale || 1);
-      const elementCanvasHeight =
-        elementBounds.height / (this.panZoomTransform?.scale || 1);
+      const elementCanvasWidth = elementBounds.width / (this.panZoomTransform?.scale || 1);
+      const elementCanvasHeight = elementBounds.height / (this.panZoomTransform?.scale || 1);
 
       const elementRect = new DOMRect(
         elementCanvasPos.x,
@@ -658,8 +637,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
       while (current && current !== this) {
         try {
           this.tryRegisterElement(current);
-          const elementId =
-            current.id || current.getAttribute(this.elementIdAttribute);
+          const elementId = current.id || current.getAttribute(this.elementIdAttribute);
 
           if (elementId && this.elementRegistry.has(elementId)) {
             topmostElementId = elementId;
@@ -680,9 +658,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
     if (topmostElementId) {
       // Clicking on an element - handle it
       const elementId = topmostElementId;
-      const isSelected = this.selectionController
-        .getModel()
-        .selectedIds.has(elementId);
+      const isSelected = this.selectionController.getModel().selectedIds.has(elementId);
 
       if (e.shiftKey) {
         // Shift + Click: Add to selection (never remove)
@@ -704,9 +680,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
         // Drag will only start after threshold distance is crossed
         // Store initial positions for all selected elements (for multi-selection dragging)
         // After selection change, get current selected IDs
-        const selectedIds = Array.from(
-          this.selectionController.getModel().selectedIds,
-        );
+        const selectedIds = Array.from(this.selectionController.getModel().selectedIds);
 
         // Update metadata for all selected elements that will be dragged
         for (const id of selectedIds) {
@@ -738,12 +712,8 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
         // Calculate drag start position in canvas coordinates once
         // Use .canvas-content as reference to match metadata calculation
         const shadowRoot = this.shadowRoot;
-        const canvasContent = shadowRoot?.querySelector(
-          ".canvas-content",
-        ) as HTMLElement;
-        const canvasRect =
-          canvasContent?.getBoundingClientRect() ||
-          this.getBoundingClientRect();
+        const canvasContent = shadowRoot?.querySelector(".canvas-content") as HTMLElement;
+        const canvasRect = canvasContent?.getBoundingClientRect() || this.getBoundingClientRect();
         this.dragStartCanvasPos = screenToCanvas(
           e.clientX,
           e.clientY,
@@ -757,17 +727,9 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
       // Clicking on empty space - start box selection by default
       // Use .canvas-content as reference to match metadata calculation
       const shadowRoot = this.shadowRoot;
-      const canvasContent = shadowRoot?.querySelector(
-        ".canvas-content",
-      ) as HTMLElement;
-      const canvasRect =
-        canvasContent?.getBoundingClientRect() || this.getBoundingClientRect();
-      const canvasPos = screenToCanvas(
-        e.clientX,
-        e.clientY,
-        canvasRect,
-        this.panZoomTransform,
-      );
+      const canvasContent = shadowRoot?.querySelector(".canvas-content") as HTMLElement;
+      const canvasRect = canvasContent?.getBoundingClientRect() || this.getBoundingClientRect();
+      const canvasPos = screenToCanvas(e.clientX, e.clientY, canvasRect, this.panZoomTransform);
 
       // Track if modifier keys were pressed (for adding to selection)
       this.boxSelectModifierKeys = e.shiftKey || e.ctrlKey || e.metaKey;
@@ -775,10 +737,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
       // Start box selection (works by default, modifier keys determine if we add to selection)
       this.isBoxSelecting = true;
       this.boxSelectStart = canvasPos;
-      this.selectionController.selectionContext.startBoxSelect(
-        canvasPos.x,
-        canvasPos.y,
-      );
+      this.selectionController.selectionContext.startBoxSelect(canvasPos.x, canvasPos.y);
 
       // Capture pointer for box selection
       this.capturedPointerId = e.pointerId;
@@ -802,16 +761,12 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
       if (this.capturedPointerId !== null) {
         try {
           this.releasePointerCapture(e.pointerId);
-        } catch (err) {
+        } catch (_err) {
           // Ignore release errors
         }
         this.capturedPointerId = null;
       }
-      if (
-        this.isDragging ||
-        this.dragStarted ||
-        this.draggedElementId !== null
-      ) {
+      if (this.isDragging || this.dragStarted || this.draggedElementId !== null) {
         this.isDragging = false;
         this.dragStarted = false;
         this.dragStartPos = null;
@@ -829,11 +784,8 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
 
     // Use .canvas-content as reference to match metadata calculation
     const shadowRoot = this.shadowRoot;
-    const canvasContent = shadowRoot?.querySelector(
-      ".canvas-content",
-    ) as HTMLElement;
-    const canvasRect =
-      canvasContent?.getBoundingClientRect() || this.getBoundingClientRect();
+    const canvasContent = shadowRoot?.querySelector(".canvas-content") as HTMLElement;
+    const canvasRect = canvasContent?.getBoundingClientRect() || this.getBoundingClientRect();
 
     // Check if we're preparing for a drag (pointerdown on element but threshold not crossed)
     if (
@@ -845,8 +797,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
     ) {
       // Check if we've moved enough to start dragging
       const distance = Math.sqrt(
-        Math.pow(e.clientX - this.dragStartPos.x, 2) +
-          Math.pow(e.clientY - this.dragStartPos.y, 2),
+        Math.pow(e.clientX - this.dragStartPos.x, 2) + Math.pow(e.clientY - this.dragStartPos.y, 2),
       );
 
       if (distance >= this.DRAG_THRESHOLD) {
@@ -868,22 +819,14 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
       this.dragStartElementPositions.size > 0
     ) {
       // Drag all selected elements - use pre-calculated canvas start position to avoid quantization
-      const canvasPos = screenToCanvas(
-        e.clientX,
-        e.clientY,
-        canvasRect,
-        this.panZoomTransform,
-      );
+      const canvasPos = screenToCanvas(e.clientX, e.clientY, canvasRect, this.panZoomTransform);
 
       // Calculate delta using pre-calculated start position (avoids rounding errors)
       const deltaX = canvasPos.x - this.dragStartCanvasPos.x;
       const deltaY = canvasPos.y - this.dragStartCanvasPos.y;
 
       // Move all elements that were selected when drag started
-      for (const [
-        elementId,
-        startPos,
-      ] of this.dragStartElementPositions.entries()) {
+      for (const [elementId, startPos] of this.dragStartElementPositions.entries()) {
         const newX = startPos.x + deltaX;
         const newY = startPos.y + deltaY;
         this.updateElementPosition(elementId, newX, newY);
@@ -891,16 +834,8 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
       e.stopPropagation();
     } else if (this.isBoxSelecting && this.boxSelectStart) {
       // Update box select
-      const canvasPos = screenToCanvas(
-        e.clientX,
-        e.clientY,
-        canvasRect,
-        this.panZoomTransform,
-      );
-      this.selectionController.selectionContext.updateBoxSelect(
-        canvasPos.x,
-        canvasPos.y,
-      );
+      const canvasPos = screenToCanvas(e.clientX, e.clientY, canvasRect, this.panZoomTransform);
+      this.selectionController.selectionContext.updateBoxSelect(canvasPos.x, canvasPos.y);
       e.stopPropagation();
     }
   };
@@ -917,7 +852,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
     if (this.capturedPointerId !== null) {
       try {
         this.releasePointerCapture(e.pointerId);
-      } catch (err) {
+      } catch (_err) {
         // Ignore release errors
       }
       this.capturedPointerId = null;
@@ -971,10 +906,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
       this.updateSelectionAttributes();
     };
 
-    this.selectionContext.addEventListener(
-      "selectionchange",
-      this.selectionChangeHandler,
-    );
+    this.selectionContext.addEventListener("selectionchange", this.selectionChangeHandler);
     // Update immediately to set initial state
     this.updateSelectionAttributes();
   }
@@ -984,10 +916,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
    */
   private removeSelectionListener(): void {
     if (this.selectionChangeHandler) {
-      this.selectionContext.removeEventListener(
-        "selectionchange",
-        this.selectionChangeHandler,
-      );
+      this.selectionContext.removeEventListener("selectionchange", this.selectionChangeHandler);
       this.selectionChangeHandler = undefined;
     }
   }
@@ -1026,8 +955,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
 
     // Update active root temporal
     const previousActiveRootTemporal = this._activeRootTemporal;
-    let newActiveRootTemporal: (TemporalMixinInterface & HTMLElement) | null =
-      null;
+    let newActiveRootTemporal: (TemporalMixinInterface & HTMLElement) | null = null;
 
     if (selectedIds.length > 0) {
       const selectedElement = document.getElementById(selectedIds[0] || "");
@@ -1061,10 +989,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
   updateElementPosition(elementId: string, x: number, y: number): void {
     const element = this.elementRegistry.get(elementId);
     if (!element) {
-      console.warn(
-        "[EFCanvas] updateElementPosition: element not found",
-        elementId,
-      );
+      console.warn("[EFCanvas] updateElementPosition: element not found", elementId);
       return;
     }
 
@@ -1085,8 +1010,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
 
     // Walk up to find registered parent (or canvas itself)
     while (parent && parent !== this) {
-      const parentId =
-        parent.id || parent.getAttribute(this.elementIdAttribute);
+      const parentId = parent.id || parent.getAttribute(this.elementIdAttribute);
       if (parentId && this.elementRegistry.has(parentId)) {
         // Use SAME unified calculation as updateElementMetadata:
         // 1. Get dimensions from offsetWidth/offsetHeight
@@ -1099,9 +1023,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
         const parentScreenCenterY = parentRect.top + parentRect.height / 2;
 
         const shadowRoot = this.shadowRoot;
-        const canvasContent = shadowRoot?.querySelector(
-          ".canvas-content",
-        ) as HTMLElement;
+        const canvasContent = shadowRoot?.querySelector(".canvas-content") as HTMLElement;
         if (canvasContent) {
           const referenceRect = canvasContent.getBoundingClientRect();
           const parentCanvasCenter = screenToCanvas(
@@ -1145,10 +1067,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
   /**
    * Convert screen coordinates to canvas coordinates (for API).
    */
-  screenToCanvasCoords(
-    screenX: number,
-    screenY: number,
-  ): { x: number; y: number } {
+  screenToCanvasCoords(screenX: number, screenY: number): { x: number; y: number } {
     const canvasRect = this.getBoundingClientRect();
     return screenToCanvas(screenX, screenY, canvasRect, this.panZoomTransform);
   }
@@ -1156,10 +1075,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
   /**
    * Convert canvas coordinates to screen coordinates (for API).
    */
-  canvasToScreenCoords(
-    canvasX: number,
-    canvasY: number,
-  ): { x: number; y: number } {
+  canvasToScreenCoords(canvasX: number, canvasY: number): { x: number; y: number } {
     const canvasRect = this.getBoundingClientRect();
     return canvasToScreen(canvasX, canvasY, canvasRect, this.panZoomTransform);
   }
@@ -1177,9 +1093,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
     // Check if overlay layer already exists (application provided it)
     const panZoomParent = panZoom.parentElement;
     if (panZoomParent) {
-      const existing = panZoomParent.querySelector(
-        "ef-overlay-layer",
-      ) as EFOverlayLayer | null;
+      const existing = panZoomParent.querySelector("ef-overlay-layer") as EFOverlayLayer | null;
       if (existing) {
         this.overlayLayer = existing;
         return;
@@ -1188,9 +1102,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
 
     // Create overlay layer as sibling of panzoom
     if (panZoomParent) {
-      const overlayLayer = document.createElement(
-        "ef-overlay-layer",
-      ) as EFOverlayLayer;
+      const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
       overlayLayer.style.position = "absolute";
       overlayLayer.style.inset = "0";
       overlayLayer.style.zIndex = "1";
@@ -1297,9 +1209,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
       // On unpause, force a full metadata refresh for all selected elements
       if (this.wasPaused) {
         this.wasPaused = false;
-        const selectedIds = Array.from(
-          this.selectionController.getModel().selectedIds,
-        );
+        const selectedIds = Array.from(this.selectionController.getModel().selectedIds);
         for (const id of selectedIds) {
           this.updateElementMetadata(id);
         }
@@ -1340,9 +1250,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
       return;
     }
 
-    const selectedIds = Array.from(
-      this.selectionController.getModel().selectedIds,
-    );
+    const selectedIds = Array.from(this.selectionController.getModel().selectedIds);
 
     // Remove handles for unselected elements and old multi-selection handles
     // When switching between single/multi, we need to clean up the old handle key
@@ -1372,8 +1280,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
 
     // Use a single handle set for multi-selection (keyed by "multi-selection")
     // For single selection, use the element ID as the key
-    const handleKey =
-      selectedIds.length > 1 ? "multi-selection" : (selectedIds[0] ?? "none");
+    const handleKey = selectedIds.length > 1 ? "multi-selection" : (selectedIds[0] ?? "none");
 
     if (handleKey === "none") {
       return;
@@ -1383,9 +1290,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
 
     if (!handles) {
       // Create handles
-      handles = document.createElement(
-        "ef-transform-handles",
-      ) as EFTransformHandles;
+      handles = document.createElement("ef-transform-handles") as EFTransformHandles;
       handles.setAttribute("enable-rotation", "true");
       handles.setAttribute("enable-resize", "true");
       handles.setAttribute("enable-drag", "false");
@@ -1400,19 +1305,11 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
         const customEvent = e as CustomEvent<{ bounds: TransformBounds }>;
         const bounds = customEvent.detail.bounds;
         // Get current selection (not from closure)
-        const currentSelectedIds = Array.from(
-          this.selectionController.getModel().selectedIds,
-        );
+        const currentSelectedIds = Array.from(this.selectionController.getModel().selectedIds);
         if (currentSelectedIds.length > 1) {
-          this.handleMultiSelectionTransformHandlesBoundsChange(
-            currentSelectedIds,
-            bounds,
-          );
+          this.handleMultiSelectionTransformHandlesBoundsChange(currentSelectedIds, bounds);
         } else if (currentSelectedIds[0]) {
-          this.handleTransformHandlesBoundsChange(
-            currentSelectedIds[0],
-            bounds,
-          );
+          this.handleTransformHandlesBoundsChange(currentSelectedIds[0], bounds);
         }
       });
 
@@ -1421,19 +1318,11 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
         const customEvent = e as CustomEvent<{ rotation: number }>;
         const rotation = customEvent.detail.rotation;
         // Get current selection (not from closure)
-        const currentSelectedIds = Array.from(
-          this.selectionController.getModel().selectedIds,
-        );
+        const currentSelectedIds = Array.from(this.selectionController.getModel().selectedIds);
         if (currentSelectedIds.length > 1) {
-          this.handleMultiSelectionTransformHandlesRotationChange(
-            currentSelectedIds,
-            rotation,
-          );
+          this.handleMultiSelectionTransformHandlesRotationChange(currentSelectedIds, rotation);
         } else if (currentSelectedIds[0]) {
-          this.handleTransformHandlesRotationChange(
-            currentSelectedIds[0],
-            rotation,
-          );
+          this.handleTransformHandlesRotationChange(currentSelectedIds[0], rotation);
         }
       });
 
@@ -1509,18 +1398,8 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
         } else {
           // Fallback: use canvasToScreen helper
           const canvasRect = this.getBoundingClientRect();
-          const topLeft = canvasToScreen(
-            minX,
-            minY,
-            canvasRect,
-            this.panZoomTransform,
-          );
-          const bottomRight = canvasToScreen(
-            maxX,
-            maxY,
-            canvasRect,
-            this.panZoomTransform,
-          );
+          const topLeft = canvasToScreen(minX, minY, canvasRect, this.panZoomTransform);
+          const bottomRight = canvasToScreen(maxX, maxY, canvasRect, this.panZoomTransform);
           screenX = topLeft.x;
           screenY = topLeft.y;
           screenWidth = bottomRight.x - topLeft.x;
@@ -1529,10 +1408,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
 
         // During rotation or resize, don't recalculate bounds from elements
         // (the interaction handler manages bounds directly to avoid feedback loops)
-        if (
-          handles.interactionMode === "rotating" ||
-          handles.interactionMode === "resizing"
-        ) {
+        if (handles.interactionMode === "rotating" || handles.interactionMode === "resizing") {
           // Just update canvas scale if needed
           const newScale = this.panZoomTransform?.scale || 1;
           if (handles.canvasScale !== newScale) {
@@ -1558,9 +1434,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
             Math.abs(currentBounds.y - newBounds.y) > 0.1 ||
             Math.abs(currentBounds.width - newBounds.width) > 0.1 ||
             Math.abs(currentBounds.height - newBounds.height) > 0.1 ||
-            Math.abs(
-              (currentBounds.rotation ?? 0) - (newBounds.rotation ?? 0),
-            ) > 0.1
+            Math.abs((currentBounds.rotation ?? 0) - (newBounds.rotation ?? 0)) > 0.1
           ) {
             handles.bounds = newBounds;
           }
@@ -1611,9 +1485,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
     const overlayRect = this.overlayLayer.getBoundingClientRect();
     // Use .canvas-content as reference to match metadata calculation
     const shadowRoot = this.shadowRoot;
-    const canvasContent = shadowRoot?.querySelector(
-      ".canvas-content",
-    ) as HTMLElement;
+    const canvasContent = shadowRoot?.querySelector(".canvas-content") as HTMLElement;
     if (!canvasContent) {
       return;
     }
@@ -1730,13 +1602,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
     }
 
     // Use INITIAL positions for all calculations (prevents feedback loops)
-    const {
-      elements: initialElements,
-      minX,
-      minY,
-      maxX,
-      maxY,
-    } = this.multiSelectionResizeInitial;
+    const { elements: initialElements, minX, minY, maxX, maxY } = this.multiSelectionResizeInitial;
     const oldWidth = maxX - minX;
     const oldHeight = maxY - minY;
 
@@ -1885,9 +1751,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
     }
 
     // Calculate delta rotation
-    const deltaRotation = isFirstCall
-      ? 0
-      : rotation - this.lastMultiSelectionRotation!;
+    const deltaRotation = isFirstCall ? 0 : rotation - this.lastMultiSelectionRotation!;
     this.lastMultiSelectionRotation = rotation;
 
     // Use the fixed center (calculated at start of rotation)
@@ -1973,10 +1837,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
    * Handle transform handles bounds-change event for single element.
    * Converts bounds from overlay-relative screen coordinates to canvas coordinates.
    */
-  private handleTransformHandlesBoundsChange(
-    elementId: string,
-    bounds: TransformBounds,
-  ): void {
+  private handleTransformHandlesBoundsChange(elementId: string, bounds: TransformBounds): void {
     if (!this.overlayLayer) {
       return;
     }
@@ -2003,10 +1864,7 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
 
       // Note: Rotation is handled separately via rotation-change event
       // Only update rotation here if it's explicitly set (for initial sync)
-      if (
-        bounds.rotation !== undefined &&
-        bounds.rotation !== (metadata?.rotation || 0)
-      ) {
+      if (bounds.rotation !== undefined && bounds.rotation !== (metadata?.rotation || 0)) {
         element.style.transform = `rotate(${bounds.rotation}deg)`;
         if (metadata) {
           metadata.rotation = bounds.rotation;
@@ -2055,16 +1913,10 @@ export class EFCanvas extends EFTargetable(TWMixin(LitElement)) {
   /**
    * Handle transform handles rotation-change event for single element.
    */
-  private handleTransformHandlesRotationChange(
-    elementId: string,
-    rotation: number,
-  ): void {
+  private handleTransformHandlesRotationChange(elementId: string, rotation: number): void {
     const element = this.elementRegistry.get(elementId);
     if (!element) {
-      console.warn(
-        "[EFCanvas] handleTransformHandlesRotationChange: element not found",
-        elementId,
-      );
+      console.warn("[EFCanvas] handleTransformHandlesRotationChange: element not found", elementId);
       return;
     }
 

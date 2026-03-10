@@ -1,6 +1,6 @@
 /**
  * Test different Chromium flags in Docker to find a working VideoDecoder config
- * 
+ *
  * Run with: ./scripts/npx tsx lib/electron-exec/test-docker-flags.ts
  */
 
@@ -17,8 +17,14 @@ if (!existsSync(TEST_DIR)) {
 }
 
 // Read the raw bytes
-const trackFile = join(__dirname, "../../data/video2/546d22e2-28cc-420b-949e-41429b2effca/01f6edbd-a850-4db9-afb4-1352d3135972/track-1.mp4");
-const tracksJsonFile = join(__dirname, "../../data/video2/546d22e2-28cc-420b-949e-41429b2effca/01f6edbd-a850-4db9-afb4-1352d3135972/tracks.json");
+const trackFile = join(
+  __dirname,
+  "../../data/video2/546d22e2-28cc-420b-949e-41429b2effca/01f6edbd-a850-4db9-afb4-1352d3135972/track-1.mp4",
+);
+const tracksJsonFile = join(
+  __dirname,
+  "../../data/video2/546d22e2-28cc-420b-949e-41429b2effca/01f6edbd-a850-4db9-afb4-1352d3135972/tracks.json",
+);
 
 if (!existsSync(trackFile) || !existsSync(tracksJsonFile)) {
   console.error("Track files not found!");
@@ -29,8 +35,14 @@ const tracksJson = JSON.parse(readFileSync(tracksJsonFile, "utf-8"));
 const track = tracksJson["1"];
 const trackData = readFileSync(trackFile);
 
-const initBytes = trackData.subarray(track.initSegment.offset, track.initSegment.offset + track.initSegment.size);
-const seg0Bytes = trackData.subarray(track.segments[0].offset, track.segments[0].offset + track.segments[0].size);
+const initBytes = trackData.subarray(
+  track.initSegment.offset,
+  track.initSegment.offset + track.initSegment.size,
+);
+const seg0Bytes = trackData.subarray(
+  track.segments[0].offset,
+  track.segments[0].offset + track.segments[0].size,
+);
 const combinedBytes = Buffer.concat([initBytes, seg0Bytes]);
 
 console.log("=== Docker VideoDecoder Flag Test ===");
@@ -48,30 +60,19 @@ const flagConfigs = [
   },
   {
     name: "software rendering",
-    flags: [
-      "disable-gpu",
-      "disable-software-rasterizer", 
-    ],
+    flags: ["disable-gpu", "disable-software-rasterizer"],
   },
   {
     name: "swiftshader",
-    flags: [
-      "use-gl=swiftshader",
-      "disable-gpu-sandbox",
-    ],
+    flags: ["use-gl=swiftshader", "disable-gpu-sandbox"],
   },
   {
     name: "angle on vulkan",
-    flags: [
-      "use-gl=angle",
-      "use-angle=vulkan",
-    ],
+    flags: ["use-gl=angle", "use-angle=vulkan"],
   },
   {
     name: "in-process-gpu",
-    flags: [
-      "in-process-gpu",
-    ],
+    flags: ["in-process-gpu"],
   },
 ];
 
@@ -232,10 +233,14 @@ contextBridge.exposeInMainWorld('testData', {
 writeFileSync(join(TEST_DIR, "preload.cjs"), preloadCode);
 
 // Electron main with configurable flags
-const flagsCode = config.flags.map(f => {
-  const [key, val] = f.split('=');
-  return val ? `app.commandLine.appendSwitch('${key}', '${val}');` : `app.commandLine.appendSwitch('${key}');`;
-}).join('\n');
+const flagsCode = config.flags
+  .map((f) => {
+    const [key, val] = f.split("=");
+    return val
+      ? `app.commandLine.appendSwitch('${key}', '${val}');`
+      : `app.commandLine.appendSwitch('${key}');`;
+  })
+  .join("\n");
 
 const electronCode = `
 const { app, BrowserWindow } = require('electron');
@@ -286,7 +291,10 @@ console.log("\nRunning...\n");
 const electron = spawn(
   join(__dirname, "../../node_modules/.bin/electron"),
   ["--no-sandbox", join(TEST_DIR, "electron-test.cjs")],
-  { stdio: "inherit", env: { ...process.env, DISPLAY: process.env.DISPLAY || ":99" } }
+  {
+    stdio: "inherit",
+    env: { ...process.env, DISPLAY: process.env.DISPLAY || ":99" },
+  },
 );
 
 electron.on("close", (code) => {

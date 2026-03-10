@@ -1,7 +1,15 @@
 import { progressiveQuery } from "@/graphql.client";
 import { graphql } from "@/graphql";
 import type { ResourceView } from ".";
-import { CreatedAt, CompletedAt, ExpiresAt, ID, MD5, RelatedOrg, RelatedUser } from "../blocks";
+import {
+  CreatedAt,
+  CompletedAt,
+  ExpiresAt,
+  ID,
+  MD5,
+  RelatedOrg,
+  RelatedUser,
+} from "../blocks";
 import {
   Dimensions,
   FileSize,
@@ -121,9 +129,7 @@ const Filter = () => {
 
   return (
     <div
-      className={clsx(
-        "flex items-center gap-4 pb-3 text-xs transition-colors",
-      )}
+      className={clsx("flex items-center gap-4 pb-3 text-xs transition-colors")}
     >
       <div className="flex items-center gap-2">
         <span
@@ -202,7 +208,12 @@ export const Files: ResourceView<typeof IndexQuery, typeof DetailQuery> = {
   detail: {
     query: DetailQuery,
     fields: [
-      { name: "Progress", content: Progress, noHighlight: true, vertical: true },
+      {
+        name: "Progress",
+        content: Progress,
+        noHighlight: true,
+        vertical: true,
+      },
       { name: "ID", content: ID },
       { name: "Type", content: Type },
       { name: "Status", content: Status },

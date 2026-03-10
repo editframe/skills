@@ -86,7 +86,15 @@ interface UnprocessedFileWebhookPayload extends Pick<
 
 interface FileWebhookPayload extends Pick<
   Selectable<Video2Files>,
-  "id" | "type" | "status" | "filename" | "byte_size" | "md5" | "mime_type" | "width" | "height"
+  | "id"
+  | "type"
+  | "status"
+  | "filename"
+  | "byte_size"
+  | "md5"
+  | "mime_type"
+  | "width"
+  | "height"
 > {}
 
 const fileStatusTopics: Record<string, string> = {

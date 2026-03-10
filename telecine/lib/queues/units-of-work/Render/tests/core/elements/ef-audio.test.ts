@@ -21,14 +21,17 @@ describe("ef-audio Element", { timeout: 30000 }, () => {
 
   describe("Basic audio playback", () => {
     test("renders audio-only composition", async () => {
-      const result = await render(`
+      const result = await render(
+        `
         <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="2s">
           <ef-audio asset-id="${cardJoker.id}" />
           <div class="w-full h-full bg-blue-500 flex items-center justify-center">
             <span class="text-white text-6xl font-bold">Audio Test</span>
           </div>
         </ef-timegroup>
-      `, { testAgent });
+      `,
+        { testAgent },
+      );
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
       expect(result.durationMs).toBeCloseTo(2000, 100);
@@ -40,14 +43,17 @@ describe("ef-audio Element", { timeout: 30000 }, () => {
     });
 
     test("renders composition with visual content and audio", async () => {
-      const result = await render(`
+      const result = await render(
+        `
         <ef-timegroup class="w-[1280px] h-[720px]" mode="fixed" duration="1.5s">
           <ef-audio asset-id="${cardJoker.id}" />
           <div class="w-full h-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
             <span class="text-white text-5xl font-bold">Music Playing</span>
           </div>
         </ef-timegroup>
-      `, { testAgent });
+      `,
+        { testAgent },
+      );
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
       expect(result.durationMs).toBeCloseTo(1500, 100);
@@ -56,12 +62,15 @@ describe("ef-audio Element", { timeout: 30000 }, () => {
 
   describe("Audio with sourceIn/sourceOut", () => {
     test("renders audio with sourceIn", async () => {
-      const result = await render(`
+      const result = await render(
+        `
         <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="1s">
           <ef-audio asset-id="${cardJoker.id}" source-in="0.5s" />
           <div class="w-full h-full bg-green-500"></div>
         </ef-timegroup>
-      `, { testAgent });
+      `,
+        { testAgent },
+      );
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
       expect(result.durationMs).toBeCloseTo(1000, 100);
@@ -71,24 +80,30 @@ describe("ef-audio Element", { timeout: 30000 }, () => {
     });
 
     test("renders audio with sourceOut", async () => {
-      const result = await render(`
+      const result = await render(
+        `
         <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="1s">
           <ef-audio asset-id="${cardJoker.id}" source-out="1s" />
           <div class="w-full h-full bg-yellow-500"></div>
         </ef-timegroup>
-      `, { testAgent });
+      `,
+        { testAgent },
+      );
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
       expect(result.durationMs).toBeCloseTo(1000, 100);
     });
 
     test("renders audio with both sourceIn and sourceOut", async () => {
-      const result = await render(`
+      const result = await render(
+        `
         <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="1s">
           <ef-audio asset-id="${cardJoker.id}" source-in="0.5s" source-out="1.5s" />
           <div class="w-full h-full bg-red-500"></div>
         </ef-timegroup>
-      `, { testAgent });
+      `,
+        { testAgent },
+      );
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
       expect(result.durationMs).toBeCloseTo(1000, 100);
@@ -97,7 +112,8 @@ describe("ef-audio Element", { timeout: 30000 }, () => {
 
   describe("Multiple audio tracks", () => {
     test("renders composition with multiple audio tracks", async () => {
-      const result = await render(`
+      const result = await render(
+        `
         <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="2s">
           <ef-audio asset-id="${cardJoker.id}" />
           <ef-audio asset-id="${cardJoker.id}" source-in="0.5s" />
@@ -105,7 +121,9 @@ describe("ef-audio Element", { timeout: 30000 }, () => {
             <span class="text-white text-6xl font-bold">Layered Audio</span>
           </div>
         </ef-timegroup>
-      `, { testAgent });
+      `,
+        { testAgent },
+      );
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
       expect(result.durationMs).toBeCloseTo(2000, 100);
@@ -114,14 +132,17 @@ describe("ef-audio Element", { timeout: 30000 }, () => {
 
   describe("Audio from video source", () => {
     test("renders audio track from video file", async () => {
-      const result = await render(`
+      const result = await render(
+        `
         <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="2s">
           <ef-audio asset-id="${barsNTone.id}" />
           <div class="w-full h-full bg-orange-500 flex items-center justify-center">
             <span class="text-white text-6xl font-bold">Video Audio</span>
           </div>
         </ef-timegroup>
-      `, { testAgent });
+      `,
+        { testAgent },
+      );
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
       expect(result.durationMs).toBeCloseTo(2000, 100);
@@ -133,12 +154,15 @@ describe("ef-audio Element", { timeout: 30000 }, () => {
 
   describe("Audio-only output", () => {
     test("renders pure audio composition", async () => {
-      const result = await render(`
+      const result = await render(
+        `
         <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="1s">
           <ef-audio asset-id="${cardJoker.id}" />
           <div class="w-full h-full bg-black"></div>
         </ef-timegroup>
-      `, { testAgent });
+      `,
+        { testAgent },
+      );
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
 
@@ -150,14 +174,17 @@ describe("ef-audio Element", { timeout: 30000 }, () => {
 
   describe("Audio timing", () => {
     test("renders audio at specific start time within composition", async () => {
-      const result = await render(`
+      const result = await render(
+        `
         <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="3s">
           <ef-timegroup class="w-full h-full" mode="fixed" duration="3s" style="animation-delay: 1s;">
             <ef-audio asset-id="${cardJoker.id}" />
             <div class="w-full h-full bg-teal-500"></div>
           </ef-timegroup>
         </ef-timegroup>
-      `, { testAgent });
+      `,
+        { testAgent },
+      );
 
       expect(result.videoBuffer.length).toBeGreaterThan(1000);
       expect(result.durationMs).toBeCloseTo(3000, 150);

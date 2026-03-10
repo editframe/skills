@@ -154,10 +154,7 @@ export class QualityUpgradeScheduler {
   #processQueue(): void {
     if (this.#abortController.signal.aborted) return;
 
-    while (
-      this.#activeTasks.size < this.#maxConcurrent &&
-      this.#queue.length > 0
-    ) {
+    while (this.#activeTasks.size < this.#maxConcurrent && this.#queue.length > 0) {
       const task = this.#queue.shift();
       if (!task) break;
 
@@ -203,8 +200,7 @@ export class QualityUpgradeScheduler {
         this.#activeTasks.delete(task.key);
 
         // Don't track AbortError as failure (intentional cancellation)
-        const isAbortError =
-          error instanceof DOMException && error.name === "AbortError";
+        const isAbortError = error instanceof DOMException && error.name === "AbortError";
 
         if (!isAbortError) {
           this.#completedTasks.set(task.key, {

@@ -27,8 +27,7 @@ export function quantizeToFrameTimeMs(timeMs: number, fps: number): number {
   if (!fps || fps <= 0) return timeMs;
   const frameDurationS = 1 / fps;
   const timeSeconds = timeMs / 1000;
-  const quantizedSeconds =
-    Math.round(timeSeconds / frameDurationS) * frameDurationS;
+  const quantizedSeconds = Math.round(timeSeconds / frameDurationS) * frameDurationS;
   return quantizedSeconds * 1000;
 }
 
@@ -45,10 +44,7 @@ export function calculateFrameIntervalMs(fps: number): number {
  * @param frameIntervalMs Duration of one frame in ms
  * @param pixelsPerMs Current zoom level (pixels per millisecond)
  */
-export function calculatePixelsPerFrame(
-  frameIntervalMs: number,
-  pixelsPerMs: number,
-): number {
+export function calculatePixelsPerFrame(frameIntervalMs: number, pixelsPerMs: number): number {
   return frameIntervalMs * pixelsPerMs;
 }
 
@@ -178,8 +174,7 @@ export class EFTimelineRuler extends LitElement {
 
     // Get visible region from scroll position
     const viewportScrollLeft = this.scrollLeft;
-    const viewportWidth =
-      this.timelineState?.viewportWidth ?? this.viewportWidth;
+    const viewportWidth = this.timelineState?.viewportWidth ?? this.viewportWidth;
 
     // Calculate canvas viewport with buffer for smooth scrolling
     const canvasLeft = Math.max(0, viewportScrollLeft - RULER_CANVAS_BUFFER);
@@ -225,25 +220,19 @@ export class EFTimelineRuler extends LitElement {
     }
   }
 
-  protected updated(
-    changedProperties: Map<string | number | symbol, unknown>,
-  ): void {
+  protected updated(changedProperties: Map<string | number | symbol, unknown>): void {
     // Check if scroll position or viewport changed from context
     const currentScrollLeft = this.scrollLeft;
-    const currentViewportWidth =
-      this.timelineState?.viewportWidth ?? this.viewportWidth;
+    const currentViewportWidth = this.timelineState?.viewportWidth ?? this.viewportWidth;
 
     // Check if scroll changed, viewport changed, or other relevant properties changed
     const scrollChanged = currentScrollLeft !== this._lastRenderedScrollLeft;
-    const viewportChanged =
-      currentViewportWidth !== this._lastRenderedViewportWidth;
+    const viewportChanged = currentViewportWidth !== this._lastRenderedViewportWidth;
     const pixelsPerMsChanged =
-      changedProperties.has("timelineState") ||
-      changedProperties.has("pixelsPerMs");
+      changedProperties.has("timelineState") || changedProperties.has("pixelsPerMs");
     const contentWidthChanged = changedProperties.has("contentWidth");
     const durationChanged =
-      changedProperties.has("durationMs") ||
-      changedProperties.has("contextDurationMs");
+      changedProperties.has("durationMs") || changedProperties.has("contextDurationMs");
 
     // Only render if something actually changed
     if (
@@ -286,12 +275,8 @@ export class EFTimelineRuler extends LitElement {
     const intervalMs = this.calculateLabelInterval();
 
     // Generate labels for the canvas viewport range
-    const visibleStartTimeMs = Math.max(
-      0,
-      canvasLeft / pixelsPerMs - intervalMs,
-    );
-    const visibleEndTimeMs =
-      (canvasLeft + canvasWidth) / pixelsPerMs + intervalMs;
+    const visibleStartTimeMs = Math.max(0, canvasLeft / pixelsPerMs - intervalMs);
+    const visibleEndTimeMs = (canvasLeft + canvasWidth) / pixelsPerMs + intervalMs;
 
     const firstLabelIndex = Math.floor(visibleStartTimeMs / intervalMs);
     const lastLabelIndex = Math.ceil(visibleEndTimeMs / intervalMs);
@@ -308,10 +293,7 @@ export class EFTimelineRuler extends LitElement {
 
       if (viewportX >= -50 && viewportX <= canvasWidth + 50) {
         const timeSeconds = timeMs / 1000;
-        const text =
-          timeSeconds % 1 === 0
-            ? `${timeSeconds}s`
-            : `${timeSeconds.toFixed(1)}s`;
+        const text = timeSeconds % 1 === 0 ? `${timeSeconds}s` : `${timeSeconds.toFixed(1)}s`;
 
         labels.push({ timeMs, viewportX, text });
       }
@@ -358,12 +340,8 @@ export class EFTimelineRuler extends LitElement {
 
     const labelIntervalMs = this.calculateLabelInterval();
     // Fill the canvas viewport with ticks
-    const visibleStartTimeMs = Math.max(
-      0,
-      canvasLeft / pixelsPerMs - labelIntervalMs,
-    );
-    const visibleEndTimeMs =
-      (canvasLeft + width) / pixelsPerMs + labelIntervalMs;
+    const visibleStartTimeMs = Math.max(0, canvasLeft / pixelsPerMs - labelIntervalMs);
+    const visibleEndTimeMs = (canvasLeft + width) / pixelsPerMs + labelIntervalMs;
 
     const firstTickIndex = Math.floor(visibleStartTimeMs / labelIntervalMs);
     const lastTickIndex = Math.ceil(visibleEndTimeMs / labelIntervalMs);
@@ -390,9 +368,8 @@ export class EFTimelineRuler extends LitElement {
     if (pixelsPerFrame >= MIN_FRAME_SPACING_PX) {
       // Frame markers should be lighter than background to be visible
       ctx.strokeStyle =
-        getComputedStyle(this)
-          .getPropertyValue("--ef-color-border-subtle")
-          .trim() || "rgb(107, 114, 128)";
+        getComputedStyle(this).getPropertyValue("--ef-color-border-subtle").trim() ||
+        "rgb(107, 114, 128)";
       ctx.lineWidth = 1;
 
       const firstFrameIndex = Math.floor(visibleStartTimeMs / frameIntervalMs);

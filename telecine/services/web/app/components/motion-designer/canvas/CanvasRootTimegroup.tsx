@@ -33,20 +33,20 @@ export function CanvasRootTimegroup({
   useLayoutEffect(() => {
     if (!wrapperRef.current) return;
 
-      // Find the actual ef-timegroup element inside the wrapper
-      const timegroupElement = wrapperRef.current.querySelector(
-        `ef-timegroup#${element.id}`,
-      ) as HTMLElement;
-      const measureElement = timegroupElement || wrapperRef.current;
+    // Find the actual ef-timegroup element inside the wrapper
+    const timegroupElement = wrapperRef.current.querySelector(
+      `ef-timegroup#${element.id}`,
+    ) as HTMLElement;
+    const measureElement = timegroupElement || wrapperRef.current;
 
-      // Use offsetWidth/offsetHeight which gives us the intrinsic size
-      const width = measureElement.offsetWidth;
-      const height = measureElement.offsetHeight;
+    // Use offsetWidth/offsetHeight which gives us the intrinsic size
+    const width = measureElement.offsetWidth;
+    const height = measureElement.offsetHeight;
 
     // Update if dimensions are valid
-      if (width > 0 && height > 0) {
+    if (width > 0 && height > 0) {
       setDisplaySize({ width, height });
-      }
+    }
   }, [element.id, element.props?.size]);
 
   return (
@@ -66,10 +66,7 @@ export function CanvasRootTimegroup({
         containerType: "size",
       }}
     >
-      <ElementRenderer
-        element={element}
-        state={state}
-      />
+      <ElementRenderer element={element} state={state} />
     </div>
   );
 }

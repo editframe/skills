@@ -35,9 +35,7 @@ describe("CreateImageFilePayload", () => {
       filename: "test.txt",
     });
 
-    expect(
-      payload.error?.issues.some((issue) => issue.path.includes("mime_type")),
-    ).toBe(true);
+    expect(payload.error?.issues.some((issue) => issue.path.includes("mime_type"))).toBe(true);
   });
 });
 
@@ -96,10 +94,7 @@ describe("ImageFile", () => {
     test("Returns json data from the http response", async () => {
       server.use(
         http.post("http://localhost/api/v1/image_files", () =>
-          HttpResponse.json(
-            { md5: "test-md5" },
-            { status: 200, statusText: "OK" },
-          ),
+          HttpResponse.json({ md5: "test-md5" }, { status: 200, statusText: "OK" }),
         ),
       );
 
@@ -124,17 +119,14 @@ describe("ImageFile", () => {
           { id: "test-file-id", byte_size: 1024 * 1024 * 17 },
           webReadableFromBuffers(Buffer.from("test")),
         ).whenUploaded(),
-      ).rejects.toThrowError(
-        "File size 17825792 bytes exceeds limit 16777216 bytes",
-      );
+      ).rejects.toThrowError("File size 17825792 bytes exceeds limit 16777216 bytes");
     });
 
     test("Throws if upload fails", async () => {
       server.use(
         UploadMustContinue("test-file-id"),
-        http.post(
-          "http://localhost/api/v1/image_files/test-file-id/upload",
-          () => HttpResponse.text("Internal Server Error", { status: 500 }),
+        http.post("http://localhost/api/v1/image_files/test-file-id/upload", () =>
+          HttpResponse.text("Internal Server Error", { status: 500 }),
         ),
       );
 
@@ -152,9 +144,8 @@ describe("ImageFile", () => {
     test("Uploads file", async () => {
       server.use(
         UploadMustContinue("test-file-id"),
-        http.post(
-          "http://localhost/api/v1/image_files/test-file-id/upload",
-          () => HttpResponse.json(null, { status: 201 }),
+        http.post("http://localhost/api/v1/image_files/test-file-id/upload", () =>
+          HttpResponse.json(null, { status: 201 }),
         ),
       );
 
@@ -210,9 +201,7 @@ describe("ImageFile", () => {
         ),
       );
 
-      await expect(
-        lookupImageFileByMd5(client, "test-md5"),
-      ).rejects.toThrowError(
+      await expect(lookupImageFileByMd5(client, "test-md5")).rejects.toThrowError(
         "Failed to lookup image by md5 test-md5 500 Internal Server Error",
       );
     });

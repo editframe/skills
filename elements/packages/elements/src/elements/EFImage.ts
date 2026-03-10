@@ -42,11 +42,7 @@ export class EFImage
     return [...parentAttributes, "asset-id"];
   }
 
-  attributeChangedCallback(
-    name: string,
-    oldValue: string | null,
-    newValue: string | null,
-  ): void {
+  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     if (name === "asset-id") {
       this.fileId = newValue;
       return;
@@ -95,11 +91,7 @@ export class EFImage
   }
 
   get fileId() {
-    return (
-      this.#fileId ??
-      this.getAttribute("file-id") ??
-      this.getAttribute("asset-id")
-    );
+    return this.#fileId ?? this.getAttribute("file-id") ?? this.getAttribute("asset-id");
   }
 
   /** @deprecated Use fileId instead */
@@ -134,9 +126,7 @@ export class EFImage
       return this.src;
     }
     // Normalize local paths: remove leading slashes (remote URLs are passed as-is)
-    const normalizedSrc = this.src.startsWith("/")
-      ? this.src.replace(/^\/+/, "")
-      : this.src;
+    const normalizedSrc = this.src.startsWith("/") ? this.src.replace(/^\/+/, "") : this.src;
     return `/api/v1/assets/image?src=${encodeURIComponent(normalizedSrc)}`;
   }
 
@@ -336,7 +326,7 @@ export class EFImage
     // This is especially important for SVGs
     try {
       await image.decode();
-    } catch (decodeError) {
+    } catch (_decodeError) {
       // Image decode failed, attempting to draw anyway
     }
 
@@ -397,9 +387,7 @@ export class EFImage
   // End FrameRenderable Implementation
   // ============================================================================
 
-  protected updated(
-    changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>,
-  ): void {
+  protected updated(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     super.updated(changedProperties);
 
     if (changedProperties.has("src") || changedProperties.has("fileId")) {

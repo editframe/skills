@@ -21,6 +21,4 @@ export interface PreviewSettings {
  * Context for propagating preview settings through the component tree.
  * Provided by EFWorkbench, consumable by any descendant.
  */
-export const previewSettingsContext = createContext<PreviewSettings>(
-  Symbol("preview-settings"),
-);
+export const previewSettingsContext = createContext<PreviewSettings>(Symbol("preview-settings"));

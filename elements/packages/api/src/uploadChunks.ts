@@ -17,20 +17,12 @@ interface UploadChunkOptions {
 /**
  * @internal
  */
-export interface IteratorWithPromise<T> extends AsyncGenerator<
-  T,
-  void,
-  unknown
-> {
+export interface IteratorWithPromise<T> extends AsyncGenerator<T, void, unknown> {
   whenUploaded: () => Promise<T[]>;
 }
 
 export const fakeCompleteUpload = (): IteratorWithPromise<UploadChunkEvent> => {
-  const makeGenerator = async function* (): AsyncGenerator<
-    UploadChunkEvent,
-    void,
-    unknown
-  > {
+  const makeGenerator = async function* (): AsyncGenerator<UploadChunkEvent, void, unknown> {
     yield { type: "progress", progress: 1 };
   };
 
@@ -95,23 +87,11 @@ export interface UploadChunkEvent {
 
 export function uploadChunks(
   client: Client,
-  {
-    url,
-    fileSize,
-    fileStream,
-    maxSize,
-    chunkSizeBytes = CHUNK_SIZE_BYTES,
-  }: UploadChunksOptions,
+  { url, fileSize, fileStream, maxSize, chunkSizeBytes = CHUNK_SIZE_BYTES }: UploadChunksOptions,
 ): IteratorWithPromise<UploadChunkEvent> {
-  const makeGenerator = async function* (): AsyncGenerator<
-    UploadChunkEvent,
-    void,
-    unknown
-  > {
+  const makeGenerator = async function* (): AsyncGenerator<UploadChunkEvent, void, unknown> {
     if (fileSize > maxSize) {
-      throw new Error(
-        `File size ${fileSize} bytes exceeds limit ${maxSize} bytes`,
-      );
+      throw new Error(`File size ${fileSize} bytes exceeds limit ${maxSize} bytes`);
     }
 
     log("Checking upload status", url);
@@ -150,9 +130,7 @@ export function uploadChunks(
   const generator = makeGenerator() as IteratorWithPromise<UploadChunkEvent>;
   generator.whenUploaded = async () => {
     if (fileSize > maxSize) {
-      throw new Error(
-        `File size ${fileSize} bytes exceeds limit ${maxSize} bytes`,
-      );
+      throw new Error(`File size ${fileSize} bytes exceeds limit ${maxSize} bytes`);
     }
     const events: UploadChunkEvent[] = [];
     for await (const event of generator) {

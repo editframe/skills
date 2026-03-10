@@ -69,9 +69,7 @@ describe("Canvas addFrameTask render clone synchronous rendering", () => {
 
     try {
       // Find the canvas in the clone
-      const cloneCanvas = clone.querySelector(
-        "[data-test-canvas='sync']",
-      ) as HTMLCanvasElement;
+      const cloneCanvas = clone.querySelector("[data-test-canvas='sync']") as HTMLCanvasElement;
       expect(cloneCanvas).toBeTruthy();
       expect(cloneCanvas.width).toBe(400);
       expect(cloneCanvas.height).toBe(300);
@@ -149,9 +147,7 @@ describe("Canvas addFrameTask render clone synchronous rendering", () => {
     const { clone, cleanup } = await tg.createRenderClone();
 
     try {
-      const cloneCanvas = clone.querySelector(
-        "[data-test-canvas='det']",
-      ) as HTMLCanvasElement;
+      const cloneCanvas = clone.querySelector("[data-test-canvas='det']") as HTMLCanvasElement;
       const cloneCtx = cloneCanvas.getContext("2d")!;
 
       // Seek to 500ms twice and verify pixels are identical

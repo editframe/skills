@@ -10,9 +10,7 @@ export const CreateTranscriptionPayload = z.object({
   track_id: z.number().int(),
 });
 
-export type CreateTranscriptionPayload = z.infer<
-  typeof CreateTranscriptionPayload
->;
+export type CreateTranscriptionPayload = z.infer<typeof CreateTranscriptionPayload>;
 
 export interface CreateTranscriptionResult {
   id: string;
@@ -24,10 +22,7 @@ export interface TranscriptionInfoResult {
   status: "complete" | "created" | "failed" | "pending" | "transcribing";
 }
 
-export const createTranscription = async (
-  client: Client,
-  payload: CreateTranscriptionPayload,
-) => {
+export const createTranscription = async (client: Client, payload: CreateTranscriptionPayload) => {
   log("Creating transcription", payload);
   const response = await client.authenticatedFetch("/api/v1/transcriptions", {
     method: "POST",
@@ -39,9 +34,7 @@ export const createTranscription = async (
     return (await response.json()) as CreateTranscriptionResult;
   }
 
-  throw new Error(
-    `Failed to create transcription ${response.status} ${response.statusText}`,
-  );
+  throw new Error(`Failed to create transcription ${response.status} ${response.statusText}`);
 };
 
 export const getTranscriptionProgress = async (client: Client, id: string) => {
@@ -53,15 +46,11 @@ export const getTranscriptionProgress = async (client: Client, id: string) => {
 };
 
 export const getTranscriptionInfo = async (client: Client, id: string) => {
-  const response = await client.authenticatedFetch(
-    `/api/v1/transcriptions/${id}`,
-  );
+  const response = await client.authenticatedFetch(`/api/v1/transcriptions/${id}`);
 
   if (response.ok) {
     return (await response.json()) as TranscriptionInfoResult;
   }
 
-  throw new Error(
-    `Failed to get transcription info ${response.status} ${response.statusText}`,
-  );
+  throw new Error(`Failed to get transcription info ${response.status} ${response.statusText}`);
 };

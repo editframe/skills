@@ -11,9 +11,7 @@ interface TopBarProps {
 export function TopBar({ state }: TopBarProps) {
   const actions = useMotionDesignerActions();
   const panZoom = usePanZoom();
-  const zoomPercent = panZoom
-    ? Math.round(panZoom.scale * 100)
-    : 100;
+  const zoomPercent = panZoom ? Math.round(panZoom.scale * 100) : 100;
 
   return (
     <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">

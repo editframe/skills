@@ -2,12 +2,7 @@ import { provide } from "@lit/context";
 import { css, html, LitElement, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
-import type {
-  TreeItem,
-  TreeContext,
-  TreeState,
-  TreeActions,
-} from "./treeContext.js";
+import type { TreeItem, TreeContext, TreeState, TreeActions } from "./treeContext.js";
 import { treeContext, collectAllIds } from "./treeContext.js";
 import "./EFTreeItem.js";
 
@@ -176,10 +171,7 @@ export class EFTree extends LitElement {
 
   protected willUpdate(changedProperties: PropertyValues): void {
     // Sync external selectedId with internal state
-    if (
-      changedProperties.has("selectedId") &&
-      this.selectedId !== this.treeState.selectedId
-    ) {
+    if (changedProperties.has("selectedId") && this.selectedId !== this.treeState.selectedId) {
       this.treeState = {
         ...this.treeState,
         selectedId: this.selectedId,
@@ -215,9 +207,7 @@ export class EFTree extends LitElement {
         ${this.showHeader ? html`<div class="header">${this.header}</div>` : nothing}
         ${
           this.items.length > 0
-            ? this.items.map(
-                (item) => html`<ef-tree-item .item=${item}></ef-tree-item>`,
-              )
+            ? this.items.map((item) => html`<ef-tree-item .item=${item}></ef-tree-item>`)
             : html`<div class="empty">No items</div>`
         }
       </div>

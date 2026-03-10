@@ -32,11 +32,7 @@ export class SyncStatus {
       const info = await fs.readFile(this.infoPath, "utf-8");
       return SyncStatusSchema.parse(JSON.parse(info));
     } catch (error) {
-      if (
-        error instanceof Error &&
-        "code" in error &&
-        error.code === "ENOENT"
-      ) {
+      if (error instanceof Error && "code" in error && error.code === "ENOENT") {
         return null;
       }
       throw error;

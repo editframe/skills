@@ -3,15 +3,7 @@ import path, { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { md5FilePath } from "./md5.js";
 import debug from "debug";
-import {
-  mkdir,
-  writeFile,
-  stat,
-  rename,
-  readdir,
-  readFile,
-  rm,
-} from "node:fs/promises";
+import { mkdir, writeFile, stat, rename, readdir, readFile, rm } from "node:fs/promises";
 import { Readable } from "node:stream";
 
 // @ts-ignore - import.meta.url is available at runtime; tsconfig uses CommonJS module for type-checking only
@@ -45,9 +37,7 @@ async function ensureCacheVersion(cacheDirRoot: string): Promise<void> {
     );
 
     // Delete computed output directories; preserve downloaded .file entries
-    const entries = await readdir(cacheDirRoot, { withFileTypes: true }).catch(
-      () => [],
-    );
+    const entries = await readdir(cacheDirRoot, { withFileTypes: true }).catch(() => []);
     await Promise.all(
       entries
         .filter((e) => e.isDirectory())
@@ -110,10 +100,7 @@ export const idempotentTask = <T extends unknown[]>({
   const downloadTasks: Record<string, Promise<string>> = {};
 
   // Helper function to validate cache file completeness
-  const isValidCacheFile = async (
-    filePath: string,
-    allowEmpty = false,
-  ): Promise<boolean> => {
+  const isValidCacheFile = async (filePath: string, allowEmpty = false): Promise<boolean> => {
     try {
       const stats = await stat(filePath);
       // File must exist and either have content or be explicitly allowed to be empty
@@ -123,11 +110,7 @@ export const idempotentTask = <T extends unknown[]>({
     }
   };
 
-  return async (
-    rootDir: string,
-    absolutePath: string,
-    ...args: T
-  ): Promise<TaskResult> => {
+  return async (rootDir: string, absolutePath: string, ...args: T): Promise<TaskResult> => {
     const log = debug(`ef:${label}`);
     const cacheDirRoot = path.join(rootDir, ".cache");
     await mkdir(cacheDirRoot, { recursive: true });
@@ -136,22 +119,12 @@ export const idempotentTask = <T extends unknown[]>({
     log(`Running ef:${label} task for ${absolutePath} in ${rootDir}`);
 
     // Handle HTTP downloads with proper race condition protection
-    if (
-      absolutePath.startsWith("http://") ||
-      absolutePath.startsWith("https://")
-    ) {
+    if (absolutePath.startsWith("http://") || absolutePath.startsWith("https://")) {
       const safePath = absolutePath.replace(/[^a-zA-Z0-9]/g, "_");
-      const downloadCachePath = path.join(
-        rootDir,
-        ".cache",
-        `${safePath}.file`,
-      );
+      const downloadCachePath = path.join(rootDir, ".cache", `${safePath}.file`);
 
       // Check if already downloaded and valid (allow empty downloads)
-      if (
-        existsSync(downloadCachePath) &&
-        (await isValidCacheFile(downloadCachePath, true))
-      ) {
+      if (existsSync(downloadCachePath) && (await isValidCacheFile(downloadCachePath, true))) {
         log(`Already cached ${absolutePath}`);
         absolutePath = downloadCachePath;
       } else {
@@ -229,41 +202,26 @@ export const idempotentTask = <T extends unknown[]>({
           const cacheDirs = await readdir(cacheDirRoot, {
             withFileTypes: true,
           });
-          log(
-            `Scanning ${cacheDirs.length} cache directories for ${expectedFilename}`,
-          );
+          log(`Scanning ${cacheDirs.length} cache directories for ${expectedFilename}`);
           for (const dir of cacheDirs) {
             if (dir.isDirectory()) {
-              const candidatePath = path.join(
-                cacheDirRoot,
-                dir.name,
-                expectedFilename,
-              );
-              if (
-                existsSync(candidatePath) &&
-                (await isValidCacheFile(candidatePath))
-              ) {
+              const candidatePath = path.join(cacheDirRoot, dir.name, expectedFilename);
+              if (existsSync(candidatePath) && (await isValidCacheFile(candidatePath))) {
                 cachePath = candidatePath;
                 md5 = dir.name; // Directory name is the MD5
                 const scanElapsed = Date.now() - scanStartTime;
-                log(
-                  `Found existing cache in ${scanElapsed}ms: ${candidatePath} (skipped MD5)`,
-                );
+                log(`Found existing cache in ${scanElapsed}ms: ${candidatePath} (skipped MD5)`);
                 break;
               }
             }
           }
           if (!cachePath) {
             const scanElapsed = Date.now() - scanStartTime;
-            log(
-              `Cache scan completed in ${scanElapsed}ms, no cache found - will compute MD5`,
-            );
+            log(`Cache scan completed in ${scanElapsed}ms, no cache found - will compute MD5`);
           }
         } catch (error) {
           const scanElapsed = Date.now() - scanStartTime;
-          log(
-            `Cache scan failed after ${scanElapsed}ms, will compute MD5: ${error}`,
-          );
+          log(`Cache scan failed after ${scanElapsed}ms, will compute MD5: ${error}`);
         }
 
         const resolvedMd5 =
@@ -281,14 +239,10 @@ export const idempotentTask = <T extends unknown[]>({
         log(`Cache dir: ${cacheDir}`);
         await mkdir(cacheDir, { recursive: true });
 
-        const resolvedCachePath =
-          cachePath ?? path.join(cacheDir, expectedFilename);
+        const resolvedCachePath = cachePath ?? path.join(cacheDir, expectedFilename);
 
         // Check if cache exists and is valid (not zero-byte)
-        if (
-          existsSync(resolvedCachePath) &&
-          (await isValidCacheFile(resolvedCachePath))
-        ) {
+        if (existsSync(resolvedCachePath) && (await isValidCacheFile(resolvedCachePath))) {
           log(`Returning cached ef:${label} task for ${resolvedCachePath}`);
           return { cachePath: resolvedCachePath, md5Sum: resolvedMd5 };
         }

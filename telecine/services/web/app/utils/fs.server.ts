@@ -230,8 +230,12 @@ const buildDocMenuItem = async (
     // Extract numerical prefix
     const prefixMatchA = nameA.match(/^(\d+)-/);
     const prefixMatchB = nameB.match(/^(\d+)-/);
-    const prefixA = prefixMatchA?.[1] ? parseInt(prefixMatchA[1], 10) : Infinity;
-    const prefixB = prefixMatchB?.[1] ? parseInt(prefixMatchB[1], 10) : Infinity;
+    const prefixA = prefixMatchA?.[1]
+      ? parseInt(prefixMatchA[1], 10)
+      : Infinity;
+    const prefixB = prefixMatchB?.[1]
+      ? parseInt(prefixMatchB[1], 10)
+      : Infinity;
 
     // Sort by numerical prefix first
     if (prefixA !== prefixB) {
@@ -446,7 +450,9 @@ export function loadMdxSingle(filepath: string) {
   const relativeFilePath = filepath.replace(/^\/blog\//, "").replace(/\/$/, "");
   const fileContents = readFileSync(
     join(blogBasePath, `${relativeFilePath}.mdx`),
-    { encoding: "utf-8" },
+    {
+      encoding: "utf-8",
+    },
   );
 
   const { attributes } = fm(fileContents);

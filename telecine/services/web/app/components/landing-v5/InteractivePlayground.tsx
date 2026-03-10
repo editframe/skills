@@ -32,10 +32,10 @@ interface Template {
 
 const templates: Record<string, Template> = {
   landscape: {
-    name: '16:9',
-    dimensions: '1920 × 1080',
-    containerClass: 'aspect-video max-w-[480px]',
-    description: 'YouTube, presentations',
+    name: "16:9",
+    dimensions: "1920 × 1080",
+    containerClass: "aspect-video max-w-[480px]",
+    description: "YouTube, presentations",
     code: `<ef-timegroup mode="contain" style="width:100%;height:100%;position:relative">
   <ef-video
     src="${VIDEO_SRC}"
@@ -49,10 +49,10 @@ const templates: Record<string, Template> = {
 </ef-timegroup>`,
   },
   portrait: {
-    name: '9:16',
-    dimensions: '1080 × 1920',
-    containerClass: 'aspect-[9/16] max-w-[200px]',
-    description: 'TikTok, Reels, Shorts',
+    name: "9:16",
+    dimensions: "1080 × 1920",
+    containerClass: "aspect-[9/16] max-w-[200px]",
+    description: "TikTok, Reels, Shorts",
     code: `<ef-timegroup mode="contain" style="width:100%;height:100%;position:relative">
   <ef-video
     src="${VIDEO_SRC}"
@@ -66,10 +66,10 @@ const templates: Record<string, Template> = {
 </ef-timegroup>`,
   },
   square: {
-    name: '1:1',
-    dimensions: '1080 × 1080',
-    containerClass: 'aspect-square max-w-[300px]',
-    description: 'Instagram, LinkedIn',
+    name: "1:1",
+    dimensions: "1080 × 1080",
+    containerClass: "aspect-square max-w-[300px]",
+    description: "Instagram, LinkedIn",
     code: `<ef-timegroup mode="contain" style="width:100%;height:100%;position:relative">
   <ef-video
     src="${VIDEO_SRC}"
@@ -87,53 +87,56 @@ const templates: Record<string, Template> = {
 
 function InteractivePlayground() {
   const id = useId();
-  const [selectedTemplate, setSelectedTemplate] = useState<string>('landscape');
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("landscape");
   const [code, setCode] = useState(templates.landscape!.code);
   const [liveCode, setLiveCode] = useState(templates.landscape!.code);
   const [copied, setCopied] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const previewRef = useRef<HTMLElement>(null);
-  
+
   const previewId = `playground-preview-${id}`;
-  
+
   useEffect(() => {
     setIsClient(true);
   }, []);
-  
+
   const currentTemplate = templates[selectedTemplate]!;
-  
-  const handleTemplateChange = useCallback((templateId: string) => {
-    if (templateId === selectedTemplate) return;
-    setSelectedTemplate(templateId);
-    const newCode = templates[templateId]!.code;
-    setCode(newCode);
-    setLiveCode(newCode);
-  }, [selectedTemplate]);
-  
+
+  const handleTemplateChange = useCallback(
+    (templateId: string) => {
+      if (templateId === selectedTemplate) return;
+      setSelectedTemplate(templateId);
+      const newCode = templates[templateId]!.code;
+      setCode(newCode);
+      setLiveCode(newCode);
+    },
+    [selectedTemplate],
+  );
+
   const handleCodeChange = useCallback((value: string | undefined) => {
     if (value !== undefined) {
       setCode(value);
       setLiveCode(value);
     }
   }, []);
-  
+
   const handleCopyCode = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(code);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      const textarea = document.createElement('textarea');
+      const textarea = document.createElement("textarea");
       textarea.value = code;
       document.body.appendChild(textarea);
       textarea.select();
-      document.execCommand('copy');
+      document.execCommand("copy");
       document.body.removeChild(textarea);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
   }, [code]);
-  
+
   return (
     <div>
       {/* Format selector */}
@@ -145,8 +148,8 @@ function InteractivePlayground() {
               onClick={() => handleTemplateChange(templateId)}
               className={`px-4 py-2 text-sm font-medium rounded transition-colors ${
                 selectedTemplate === templateId
-                  ? 'bg-[var(--accent-blue)] text-white'
-                  : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  ? "bg-[var(--accent-blue)] text-white"
+                  : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
               }`}
             >
               {tmpl.name}
@@ -160,7 +163,7 @@ function InteractivePlayground() {
           Explore agent skills
         </Link>
       </div>
-      
+
       {/* Editor + Preview */}
       <div className="bg-[#1a1a1a] rounded-lg overflow-hidden">
         {/* Window chrome */}
@@ -178,17 +181,37 @@ function InteractivePlayground() {
             title="Copy code"
           >
             {copied ? (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             ) : (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                />
               </svg>
             )}
           </button>
         </div>
-        
+
         <div className="grid md:grid-cols-2 min-h-[300px] md:min-h-[450px]">
           {/* Code editor - real Monaco */}
           <div className="border-r border-white/10">
@@ -200,11 +223,17 @@ function InteractivePlayground() {
               className="w-full h-[300px] md:h-[450px]"
             />
           </div>
-          
+
           {/* Live Preview */}
           <div className="bg-[#111] flex flex-col">
             {isClient ? (
-              <Preview id={previewId} ref={previewRef as any} loop className="flex-1 flex flex-col" key={liveCode}>
+              <Preview
+                id={previewId}
+                ref={previewRef as any}
+                loop
+                className="flex-1 flex flex-col"
+                key={liveCode}
+              >
                 <div className="flex-1 flex items-center justify-center p-4 bg-black min-h-[280px]">
                   <div className={`${currentTemplate.containerClass} w-full`}>
                     <div
@@ -213,7 +242,7 @@ function InteractivePlayground() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="h-16 bg-black border-t border-white/10">
                   <Filmstrip autoScale className="w-full h-full" />
                 </div>
@@ -223,7 +252,7 @@ function InteractivePlayground() {
                 <div className="text-white/50 text-xs">Loading...</div>
               </div>
             )}
-            
+
             <div className="px-4 py-3 bg-[#1a1a1a] border-t border-white/10">
               <p className="text-xs text-white/50 text-center">
                 <span>{currentTemplate.dimensions}</span>
@@ -233,38 +262,59 @@ function InteractivePlayground() {
             </div>
           </div>
         </div>
-        
+
         {/* Playback Controls */}
         <div className="border-t border-white/10">
           {isClient ? (
             <div className="flex items-center">
               <TogglePlay target={previewId}>
-                <button slot="pause" className="w-12 h-12 flex items-center justify-center bg-[var(--accent-red)] hover:brightness-110 transition-all">
-                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <button
+                  slot="pause"
+                  className="w-12 h-12 flex items-center justify-center bg-[var(--accent-red)] hover:brightness-110 transition-all"
+                >
+                  <svg
+                    className="w-4 h-4 text-white"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
                   </svg>
                 </button>
-                <button slot="play" className="w-12 h-12 flex items-center justify-center bg-[var(--accent-blue)] hover:brightness-110 transition-all">
-                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <button
+                  slot="play"
+                  className="w-12 h-12 flex items-center justify-center bg-[var(--accent-blue)] hover:brightness-110 transition-all"
+                >
+                  <svg
+                    className="w-4 h-4 text-white"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path d="M8 5v14l11-7z" />
                   </svg>
                 </button>
               </TogglePlay>
-              
+
               <div className="flex-1 px-4 h-12 flex items-center border-l border-white/10">
-                <Scrubber 
+                <Scrubber
                   target={previewId}
                   className="w-full h-1.5 bg-white/20 rounded-full cursor-pointer [&::part(progress)]:bg-[var(--accent-red)] [&::part(progress)]:rounded-full [&::part(handle)]:bg-white [&::part(handle)]:w-3 [&::part(handle)]:h-3 [&::part(handle)]:rounded-full"
                 />
               </div>
-              
+
               <div className="px-4 border-l border-white/10 h-12 flex items-center">
-                <TimeDisplay target={previewId} className="text-xs text-white/70 font-mono tabular-nums" />
+                <TimeDisplay
+                  target={previewId}
+                  className="text-xs text-white/70 font-mono tabular-nums"
+                />
               </div>
-              
+
               <ExportButton
                 compact
-                getTarget={() => previewRef.current?.querySelector("ef-timegroup") as HTMLElement}
+                getTarget={() =>
+                  previewRef.current?.querySelector(
+                    "ef-timegroup",
+                  ) as HTMLElement
+                }
                 name={`Playground (${currentTemplate.name})`}
                 fileName={`playground-${selectedTemplate}.mp4`}
                 renderOpts={{ includeAudio: true }}
@@ -274,7 +324,11 @@ function InteractivePlayground() {
           ) : (
             <div className="flex items-center">
               <div className="w-12 h-12 flex items-center justify-center bg-[var(--accent-blue)]">
-                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-4 h-4 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M8 5v14l11-7z" />
                 </svg>
               </div>
@@ -282,7 +336,9 @@ function InteractivePlayground() {
                 <div className="w-full h-1.5 bg-white/20 rounded-full" />
               </div>
               <div className="px-4 border-l border-white/10 h-12 flex items-center">
-                <span className="text-xs text-white/70 font-mono">0:00 / 0:00</span>
+                <span className="text-xs text-white/70 font-mono">
+                  0:00 / 0:00
+                </span>
               </div>
             </div>
           )}

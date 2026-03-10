@@ -12,7 +12,7 @@
  */
 
 import { spawn, execSync } from "node:child_process";
-import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { join, relative, basename } from "node:path";
 import { glob } from "glob";
 import chalk from "chalk";
@@ -119,33 +119,23 @@ export function hasStdin(): boolean {
   return !process.stdin.isTTY;
 }
 
-export async function findFiles(
-  selector: FileSelector,
-  workspace: string,
-): Promise<string[]> {
+export async function findFiles(selector: FileSelector, workspace: string): Promise<string[]> {
   let files: string[] = [];
   const baseDir = selector.baseDir || workspace;
 
   // Start with explicit files if provided
   if (selector.files && selector.files.length > 0) {
-    files = selector.files.map((f) =>
-      f.startsWith("/") ? f : join(workspace, f),
-    );
+    files = selector.files.map((f) => (f.startsWith("/") ? f : join(workspace, f)));
   }
   // Or use glob pattern
   else if (selector.glob) {
-    const pattern = selector.glob.startsWith("/")
-      ? selector.glob
-      : join(baseDir, selector.glob);
+    const pattern = selector.glob.startsWith("/") ? selector.glob : join(baseDir, selector.glob);
     files = await glob(pattern, { nodir: true });
   }
 
   // Apply grep filter
   if (selector.grep) {
-    const regex =
-      typeof selector.grep === "string"
-        ? new RegExp(selector.grep)
-        : selector.grep;
+    const regex = typeof selector.grep === "string" ? new RegExp(selector.grep) : selector.grep;
 
     files = files.filter((file) => {
       try {
@@ -177,10 +167,7 @@ export async function findFiles(
 // Prompt Generation
 // ============================================================================
 
-export function buildPrompt(
-  template: PromptTemplate,
-  filePath: string,
-): string {
+export function buildPrompt(template: PromptTemplate, filePath: string): string {
   const preamble = template.preamble ?? DEFAULT_PREAMBLE;
   const body = template.template.replace(/\{file\}/g, filePath);
   return preamble + body;
@@ -322,13 +309,7 @@ async function worker(
 
     onProgress(workerId, `starting: ${basename(filePath)}`);
     const prompt = buildPrompt(promptTemplate, filePath);
-    const result = await runAgent(
-      filePath,
-      prompt,
-      workerId,
-      config,
-      onProgress,
-    );
+    const result = await runAgent(filePath, prompt, workerId, config, onProgress);
     results.push(result);
     onComplete(result);
   }
@@ -346,18 +327,15 @@ function updateProgressLine(
 ): void {
   const statusParts: string[] = [];
   for (const [id, status] of workerStatus) {
-    statusParts.push(
-      chalk.cyan(`W${id}:`) + chalk.gray(status.substring(0, 20)),
-    );
+    statusParts.push(chalk.cyan(`W${id}:`) + chalk.gray(status.substring(0, 20)));
   }
 
   const progress = `${completed}/${total}`;
   const failedStr = failed > 0 ? chalk.red(` ✗${failed}`) : "";
 
   process.stdout.write(
-    `\r${chalk.yellow("⏳")} ${progress}${failedStr} | ${statusParts.join(" | ")}`.padEnd(
-      120,
-    ) + "\r",
+    `\r${chalk.yellow("⏳")} ${progress}${failedStr} | ${statusParts.join(" | ")}`.padEnd(120) +
+      "\r",
   );
 }
 
@@ -429,9 +407,7 @@ export async function runParallelAgents(
   const workerPromises: Promise<void>[] = [];
   for (let i = 0; i < config.maxAgents; i++) {
     workerStatus.set(i, "starting");
-    workerPromises.push(
-      worker(i, queue, promptTemplate, config, results, onProgress, onComplete),
-    );
+    workerPromises.push(worker(i, queue, promptTemplate, config, results, onProgress, onComplete));
   }
 
   await Promise.all(workerPromises);
@@ -571,9 +547,7 @@ async function main() {
 
   // Validate options
   if (!stdinAvailable && !options.glob && !options.files?.length) {
-    console.error(
-      chalk.red("Error: Must pipe files or specify --glob or --files"),
-    );
+    console.error(chalk.red("Error: Must pipe files or specify --glob or --files"));
     console.error(chalk.gray("Run with --help for usage"));
     process.exit(1);
   }
@@ -588,9 +562,7 @@ async function main() {
   let promptText = options.prompt || "";
   if (options.promptFile) {
     if (!existsSync(options.promptFile)) {
-      console.error(
-        chalk.red(`Error: Prompt file not found: ${options.promptFile}`),
-      );
+      console.error(chalk.red(`Error: Prompt file not found: ${options.promptFile}`));
       process.exit(1);
     }
     promptText = readFileSync(options.promptFile, "utf-8").trim();
@@ -604,9 +576,7 @@ async function main() {
     console.error(chalk.cyan("Reading files from stdin..."));
     files = await readFilesFromStdin();
     // Normalize paths relative to workspace
-    files = files.map((f) =>
-      f.startsWith("/") ? relative(options.workspace, f) : f,
-    );
+    files = files.map((f) => (f.startsWith("/") ? relative(options.workspace, f) : f));
   } else {
     console.error(chalk.cyan("Finding files..."));
     files = await findFiles(
@@ -642,11 +612,7 @@ async function main() {
   // Summary
   console.error("");
   console.error(chalk.cyan("━".repeat(60)));
-  console.error(
-    options.execute
-      ? chalk.green("✓ Complete")
-      : chalk.green("✓ Dry run complete"),
-  );
+  console.error(options.execute ? chalk.green("✓ Complete") : chalk.green("✓ Dry run complete"));
   console.error(chalk.cyan("━".repeat(60)));
   console.error(`  Total: ${result.total}`);
   if (options.execute) {

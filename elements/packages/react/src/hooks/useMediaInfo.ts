@@ -55,9 +55,7 @@ export class MediaInfoController implements ReactiveController {
   }
 }
 
-export const useMediaInfo = (
-  mediaRef: React.RefObject<MediaElement | null>,
-) => {
+export const useMediaInfo = (mediaRef: React.RefObject<MediaElement | null>) => {
   const [mediaInfo, setMediaInfo] = useState<MediaInfo>({
     intrinsicDurationMs: undefined,
     loading: true,

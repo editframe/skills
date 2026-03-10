@@ -156,17 +156,14 @@ describe("native vs foreignObject output comparison", () => {
     await tg.updateComplete;
 
     // Import dynamically to test the actual preview path
-    const { renderTimegroupToCanvas } =
-      await import("./renderTimegroupToCanvas.js");
+    const { renderTimegroupToCanvas } = await import("./renderTimegroupToCanvas.js");
     const preview = renderTimegroupToCanvas(tg, {
       scale: 1,
       resolutionScale: 1,
     });
 
     // Wait for initial render
-    await new Promise((r) =>
-      requestAnimationFrame(() => requestAnimationFrame(r)),
-    );
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
     // The canvas should have content
     const c = preview.canvas;
@@ -208,8 +205,7 @@ describe("native vs foreignObject output comparison", () => {
     expect(tg.parentNode).toBe(container);
     expect(tg.nextSibling).toBe(marker);
 
-    const { renderTimegroupToCanvas } =
-      await import("./renderTimegroupToCanvas.js");
+    const { renderTimegroupToCanvas } = await import("./renderTimegroupToCanvas.js");
     const preview = renderTimegroupToCanvas(tg, 1);
 
     // During: timegroup has been reparented to capture canvas

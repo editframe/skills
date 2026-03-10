@@ -3,8 +3,7 @@
  */
 
 // Pre-computed base64 lookup table as Uint8Array for faster indexing
-const BASE64_CHARS =
-  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const BASE64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /**
  * Fast base64 encoding directly from Uint8Array.
@@ -16,7 +15,8 @@ export function encodeBase64Fast(bytes: Uint8Array): string {
 
   // Pre-calculate output size: 4 chars per 3 bytes, rounded up
   const outputLen = ((len + 2) / 3) << 2;
-  const result = new Array(outputLen);
+  // oxlint-disable-next-line no-new-array -- intentional pre-allocation for performance
+  const result = new Array(outputLen) as string[];
 
   let i = 0;
   let outIndex = 0;
@@ -31,10 +31,10 @@ export function encodeBase64Fast(bytes: Uint8Array): string {
 
     const bitmap = (byte1 << 16) | (byte2 << 8) | byte3;
 
-    result[outIndex++] = BASE64_CHARS[(bitmap >> 18) & 63];
-    result[outIndex++] = BASE64_CHARS[(bitmap >> 12) & 63];
-    result[outIndex++] = BASE64_CHARS[(bitmap >> 6) & 63];
-    result[outIndex++] = BASE64_CHARS[bitmap & 63];
+    result[outIndex++] = BASE64_CHARS[(bitmap >> 18) & 63]!;
+    result[outIndex++] = BASE64_CHARS[(bitmap >> 12) & 63]!;
+    result[outIndex++] = BASE64_CHARS[(bitmap >> 6) & 63]!;
+    result[outIndex++] = BASE64_CHARS[bitmap & 63]!;
   }
 
   // Handle remaining bytes (1 or 2)
@@ -44,9 +44,9 @@ export function encodeBase64Fast(bytes: Uint8Array): string {
     const byte2 = remaining > 1 ? bytes[i++]! : 0;
     const bitmap = (byte1 << 16) | (byte2 << 8);
 
-    result[outIndex++] = BASE64_CHARS[(bitmap >> 18) & 63];
-    result[outIndex++] = BASE64_CHARS[(bitmap >> 12) & 63];
-    result[outIndex++] = remaining > 1 ? BASE64_CHARS[(bitmap >> 6) & 63] : "=";
+    result[outIndex++] = BASE64_CHARS[(bitmap >> 18) & 63]!;
+    result[outIndex++] = BASE64_CHARS[(bitmap >> 12) & 63]!;
+    result[outIndex++] = remaining > 1 ? BASE64_CHARS[(bitmap >> 6) & 63]! : "=";
     result[outIndex++] = "=";
   }
 

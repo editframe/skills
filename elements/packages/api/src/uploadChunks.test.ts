@@ -172,9 +172,7 @@ describe("uploadChunks", () => {
 describe("fakeCompleteUpload", () => {
   test("can be awaited", async () => {
     const uploader = fakeCompleteUpload();
-    await expect(uploader.whenUploaded()).resolves.toEqual([
-      { type: "progress", progress: 1 },
-    ]);
+    await expect(uploader.whenUploaded()).resolves.toEqual([{ type: "progress", progress: 1 }]);
   });
 
   test("can be iterated", async () => {

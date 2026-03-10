@@ -21,9 +21,7 @@ describe("URL Token", () => {
         ),
       );
 
-      await expect(
-        createURLToken(client, "http://example.com"),
-      ).rejects.toThrowError(
+      await expect(createURLToken(client, "http://example.com")).rejects.toThrowError(
         "Failed to create signed url: 500 Internal Server Error Internal Server Error",
       );
     });
@@ -31,16 +29,11 @@ describe("URL Token", () => {
     test("Returns token from the http response", async () => {
       server.use(
         http.post("http://localhost/api/v1/url-token", () =>
-          HttpResponse.json(
-            { token: "test-token" },
-            { status: 200, statusText: "OK" },
-          ),
+          HttpResponse.json({ token: "test-token" }, { status: 200, statusText: "OK" }),
         ),
       );
 
-      await expect(createURLToken(client, "http://example.com")).resolves.toBe(
-        "test-token",
-      );
+      await expect(createURLToken(client, "http://example.com")).resolves.toBe("test-token");
     });
   });
 });

@@ -23,7 +23,7 @@ describe("MP4 Structure Validation", { timeout: 30000 }, () => {
       expect(validation.isValid).toBe(true);
       expect(validation.hasVideoTrack).toBe(true);
       expect(validation.errors).toHaveLength(0);
-      
+
       // Basic structure checks
       expect(validation.width).toBe(1920);
       expect(validation.height).toBe(1080);

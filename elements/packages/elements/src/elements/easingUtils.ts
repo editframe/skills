@@ -45,13 +45,7 @@ export function evaluateEasing(easing: string, progress: number): number {
  * Evaluates a cubic-bezier curve at a given progress (0-1)
  * Uses binary search to find the t value that corresponds to the given x
  */
-function cubicBezier(
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number,
-  x: number,
-): number {
+function cubicBezier(x1: number, y1: number, x2: number, y2: number, x: number): number {
   // Clamp x to 0-1
   x = Math.max(0, Math.min(1, x));
 

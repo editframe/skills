@@ -527,16 +527,13 @@ describe("computeFitScale", () => {
 
         // At least one dimension should match container (content fills one axis)
         const widthFills = Math.abs(scaledWidth - input.containerWidth) < 0.001;
-        const heightFills =
-          Math.abs(scaledHeight - input.containerHeight) < 0.001;
+        const heightFills = Math.abs(scaledHeight - input.containerHeight) < 0.001;
         expect(widthFills || heightFills).toBe(true);
 
         // Translation should keep content within container bounds
         expect(result!.translateX).toBeGreaterThanOrEqual(-0.001);
         expect(result!.translateY).toBeGreaterThanOrEqual(-0.001);
-        expect(result!.translateX + scaledWidth).toBeLessThanOrEqual(
-          input.containerWidth + 0.001,
-        );
+        expect(result!.translateX + scaledWidth).toBeLessThanOrEqual(input.containerWidth + 0.001);
         expect(result!.translateY + scaledHeight).toBeLessThanOrEqual(
           input.containerHeight + 0.001,
         );

@@ -1,9 +1,6 @@
 import type { TrackFragmentIndex } from "@editframe/assets";
 import type { ManifestResponse } from "../../transcoding/types/index.js";
-import {
-  convertToScaledTime,
-  roundToMilliseconds,
-} from "./shared/PrecisionUtils.js";
+import { convertToScaledTime, roundToMilliseconds } from "./shared/PrecisionUtils.js";
 
 export type TrackRole = "video" | "audio" | "scrub";
 
@@ -32,11 +29,7 @@ export interface SegmentIndex {
   readonly durationMs: number;
   readonly tracks: TrackSet;
   segmentAt(timeMs: number, track: TrackRef): number | undefined;
-  segmentsInRange(
-    fromMs: number,
-    toMs: number,
-    track: TrackRef,
-  ): SegmentTimeRange[];
+  segmentsInRange(fromMs: number, toMs: number, track: TrackRef): SegmentTimeRange[];
 }
 
 // ---------------------------------------------------------------------------
@@ -81,9 +74,7 @@ export function createFragmentIndex(
   if (scrubTrack && scrubTrack.track !== undefined) {
     const segmentDurationsMs =
       scrubTrack.segments.length > 0
-        ? scrubTrack.segments.map(
-            (s) => (s.duration / scrubTrack.timescale) * 1000,
-          )
+        ? scrubTrack.segments.map((s) => (s.duration / scrubTrack.timescale) * 1000)
         : undefined;
     tracks.scrub = {
       role: "scrub",
@@ -100,8 +91,7 @@ export function createFragmentIndex(
     tracks,
 
     segmentAt(timeMs: number, track: TrackRef): number | undefined {
-      const trackId =
-        typeof track.id === "number" ? track.id : Number.parseInt(track.id, 10);
+      const trackId = typeof track.id === "number" ? track.id : Number.parseInt(track.id, 10);
       const trackData = data[trackId];
       if (!trackData) {
         throw new Error(`Track ${trackId} not found`);
@@ -146,15 +136,10 @@ export function createFragmentIndex(
       return nearestSegmentIndex;
     },
 
-    segmentsInRange(
-      fromMs: number,
-      toMs: number,
-      track: TrackRef,
-    ): SegmentTimeRange[] {
+    segmentsInRange(fromMs: number, toMs: number, track: TrackRef): SegmentTimeRange[] {
       if (fromMs >= toMs) return [];
 
-      const trackId =
-        typeof track.id === "number" ? track.id : Number.parseInt(track.id, 10);
+      const trackId = typeof track.id === "number" ? track.id : Number.parseInt(track.id, 10);
       const trackData = data[trackId];
       if (!trackData) return [];
 
@@ -164,8 +149,7 @@ export function createFragmentIndex(
       for (let i = 0; i < segments.length; i++) {
         const segment = segments[i]!;
         const segmentStartMs = (segment.cts / timescale) * 1000;
-        const segmentEndMs =
-          ((segment.cts + segment.duration) / timescale) * 1000;
+        const segmentEndMs = ((segment.cts + segment.duration) / timescale) * 1000;
 
         if (segmentStartMs < toMs && segmentEndMs > fromMs) {
           ranges.push({
@@ -200,9 +184,7 @@ export function createManifestIndex(manifest: ManifestResponse): SegmentIndex {
       startTimeOffsetMs: r.startTimeOffsetMs,
     };
 
-    const scrubRendition = manifest.videoRenditions.find(
-      (v) => v.id === "scrub",
-    );
+    const scrubRendition = manifest.videoRenditions.find((v) => v.id === "scrub");
     if (scrubRendition) {
       tracks.scrub = {
         role: "scrub",
@@ -246,8 +228,7 @@ export function createManifestIndex(manifest: ManifestResponse): SegmentIndex {
         const segmentEndMs = cumulativeTime + segmentDuration;
 
         const isLastSegment = i === track.segmentDurationsMs.length - 1;
-        const includesEndTime =
-          isLastSegment && desiredSeekTimeMs === durationMs;
+        const includesEndTime = isLastSegment && desiredSeekTimeMs === durationMs;
 
         if (
           desiredSeekTimeMs >= segmentStartMs &&
@@ -266,9 +247,7 @@ export function createManifestIndex(manifest: ManifestResponse): SegmentIndex {
       throw new Error("Segment duration is required for JIT metadata");
     }
 
-    const segmentIndex = Math.floor(
-      desiredSeekTimeMs / track.segmentDurationMs,
-    );
+    const segmentIndex = Math.floor(desiredSeekTimeMs / track.segmentDurationMs);
     const segmentStartMs = segmentIndex * track.segmentDurationMs;
     if (segmentStartMs >= durationMs) {
       return undefined;
@@ -284,11 +263,7 @@ export function createManifestIndex(manifest: ManifestResponse): SegmentIndex {
       return computeSegmentIdForTrack(timeMs, track);
     },
 
-    segmentsInRange(
-      fromMs: number,
-      toMs: number,
-      track: TrackRef,
-    ): SegmentTimeRange[] {
+    segmentsInRange(fromMs: number, toMs: number, track: TrackRef): SegmentTimeRange[] {
       if (fromMs >= toMs) return [];
 
       const segments: SegmentTimeRange[] = [];
@@ -299,10 +274,7 @@ export function createManifestIndex(manifest: ManifestResponse): SegmentIndex {
           const segmentDuration = track.segmentDurationsMs[i];
           if (segmentDuration === undefined) continue;
           const segmentStartMs = cumulativeTime;
-          const segmentEndMs = Math.min(
-            cumulativeTime + segmentDuration,
-            durationMs,
-          );
+          const segmentEndMs = Math.min(cumulativeTime + segmentDuration, durationMs);
 
           if (segmentStartMs >= durationMs) break;
 

@@ -207,10 +207,7 @@ describe("captureTimegroupAtTime", () => {
 
       const result = await captureTimegroupAtTime(timegroup, { timeMs: 0 });
 
-      expect(
-        result instanceof HTMLCanvasElement ||
-          result instanceof HTMLImageElement,
-      ).toBe(true);
+      expect(result instanceof HTMLCanvasElement || result instanceof HTMLImageElement).toBe(true);
       expect((result as any).width).toBeGreaterThan(0);
       expect((result as any).height).toBeGreaterThan(0);
     } finally {
@@ -236,14 +233,9 @@ describe("captureTimegroupAtTime", () => {
         scale: 0.5,
       });
 
-      expect(
-        result instanceof HTMLCanvasElement ||
-          result instanceof HTMLImageElement,
-      ).toBe(true);
+      expect(result instanceof HTMLCanvasElement || result instanceof HTMLImageElement).toBe(true);
       expect((result as any).width).toBeGreaterThan(0);
-      expect((result as any).width).toBeLessThanOrEqual(
-        400 * window.devicePixelRatio,
-      );
+      expect((result as any).width).toBeLessThanOrEqual(400 * window.devicePixelRatio);
     } finally {
       document.body.removeChild(container);
     }
@@ -275,10 +267,9 @@ describe("captureTimegroupAtTime", () => {
 
       // All should produce valid image sources
       for (const result of [canvas0, canvas1000, canvas2500]) {
-        expect(
-          result instanceof HTMLCanvasElement ||
-            result instanceof HTMLImageElement,
-        ).toBe(true);
+        expect(result instanceof HTMLCanvasElement || result instanceof HTMLImageElement).toBe(
+          true,
+        );
       }
     } finally {
       document.body.removeChild(container);
@@ -422,10 +413,7 @@ describe("canvas preview lastTimeMs guard", () => {
     const origRenderFrame = FrameController.prototype.renderFrame;
     FrameController.prototype.renderFrame = function (...args) {
       renderFrameCallCount++;
-      return origRenderFrame.apply(
-        this,
-        args as Parameters<typeof origRenderFrame>,
-      );
+      return origRenderFrame.apply(this, args as Parameters<typeof origRenderFrame>);
     };
 
     try {

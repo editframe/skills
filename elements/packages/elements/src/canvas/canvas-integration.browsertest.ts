@@ -58,9 +58,7 @@ describe.skip("Canvas-Hierarchy-Timeline Sync", () => {
         "ef-timegroup-hierarchy-item",
       ) as any;
       await hierarchyItem?.updateComplete;
-      const itemRow = hierarchyItem?.shadowRoot?.querySelector(
-        ".item-row",
-      ) as HTMLElement;
+      const itemRow = hierarchyItem?.shadowRoot?.querySelector(".item-row") as HTMLElement;
 
       expect(itemRow.hasAttribute("data-selected")).toBe(true);
       expect(api.getSelectedIds()).toEqual([timegroup1Id]);
@@ -99,9 +97,7 @@ describe.skip("Canvas-Hierarchy-Timeline Sync", () => {
       const hierarchyItem = hierarchy.shadowRoot?.querySelector(
         "ef-timegroup-hierarchy-item",
       ) as any;
-      const itemRow = hierarchyItem?.shadowRoot?.querySelector(
-        ".item-row",
-      ) as HTMLElement;
+      const itemRow = hierarchyItem?.shadowRoot?.querySelector(".item-row") as HTMLElement;
 
       itemRow.click();
       await hierarchy.updateComplete;
@@ -152,9 +148,7 @@ describe.skip("Canvas-Hierarchy-Timeline Sync", () => {
         "ef-timegroup-hierarchy-item",
       ) as any;
       await hierarchyItem?.updateComplete;
-      const itemRow = hierarchyItem?.shadowRoot?.querySelector(
-        ".item-row",
-      ) as HTMLElement;
+      const itemRow = hierarchyItem?.shadowRoot?.querySelector(".item-row") as HTMLElement;
 
       expect(api.getSelectedIds()).toEqual([]);
       expect(itemRow.hasAttribute("data-selected")).toBe(false);
@@ -195,17 +189,15 @@ describe.skip("Canvas-Hierarchy-Timeline Sync", () => {
       const hierarchyItem = hierarchy.shadowRoot?.querySelector(
         "ef-timegroup-hierarchy-item",
       ) as any;
-      const itemRow = hierarchyItem?.shadowRoot?.querySelector(
-        ".item-row",
-      ) as HTMLElement;
+      const itemRow = hierarchyItem?.shadowRoot?.querySelector(".item-row") as HTMLElement;
 
       itemRow.click();
       await hierarchy.updateComplete;
 
       expect(selectEventDetail).toBeTruthy();
-      expect(
-        (selectEventDetail as { elementId: string | null } | null)?.elementId,
-      ).toBe(timegroup1Id);
+      expect((selectEventDetail as { elementId: string | null } | null)?.elementId).toBe(
+        timegroup1Id,
+      );
     }, 1000);
   });
 
@@ -311,9 +303,7 @@ describe.skip("Canvas-Hierarchy-Timeline Sync", () => {
       const hierarchyItem = hierarchy.shadowRoot?.querySelector(
         "ef-timegroup-hierarchy-item",
       ) as any;
-      const itemRow = hierarchyItem?.shadowRoot?.querySelector(
-        ".item-row",
-      ) as HTMLElement;
+      const itemRow = hierarchyItem?.shadowRoot?.querySelector(".item-row") as HTMLElement;
 
       itemRow.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
       await hierarchyItem.updateComplete;
@@ -354,13 +344,9 @@ describe.skip("Canvas-Hierarchy-Timeline Sync", () => {
 
       expect(canvas.highlightedElement).toBe(null);
 
-      const timelineRow = timeline.shadowRoot?.querySelector(
-        "ef-timeline-row",
-      ) as any;
+      const timelineRow = timeline.shadowRoot?.querySelector("ef-timeline-row") as any;
 
-      timelineRow?.dispatchEvent(
-        new MouseEvent("mouseenter", { bubbles: true }),
-      );
+      timelineRow?.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
       await timeline.updateComplete;
 
       expect(canvas.highlightedElement).toBe(timegroup);

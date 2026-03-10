@@ -7,9 +7,7 @@ export interface TestFragmentIndexOptions {
   duration?: number;
 }
 
-export function createTestFragmentIndex(
-  options: TestFragmentIndexOptions = {},
-) {
+export function createTestFragmentIndex(options: TestFragmentIndexOptions = {}) {
   return {
     fragment_count: options.fragment_count ?? 10,
     base_url: options.base_url ?? "http://localhost/test",

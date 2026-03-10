@@ -137,11 +137,7 @@ export class CanvasStatsStrategy implements StatsTrackingStrategy {
     return true;
   }
 
-  private updateStats(
-    renderWidth: number,
-    renderHeight: number,
-    resolutionScale: number,
-  ): void {
+  private updateStats(renderWidth: number, renderHeight: number, resolutionScale: number): void {
     const trackerStats = this.adaptiveTracker.getStats();
 
     this.currentStats = {
@@ -182,10 +178,7 @@ export class DomStatsStrategy implements StatsTrackingStrategy {
   private readonly ROLLING_WINDOW_SIZE = 30; // ~1 second at 30fps
   private readonly TARGET_FRAME_TIME_MS = 33.33; // 30fps target
 
-  constructor(options: {
-    timegroup: EFTimegroup;
-    adaptiveTracker: AdaptiveResolutionTracker;
-  }) {
+  constructor(options: { timegroup: EFTimegroup; adaptiveTracker: AdaptiveResolutionTracker }) {
     this.timegroup = options.timegroup;
     this.adaptiveTracker = options.adaptiveTracker;
   }
@@ -287,8 +280,7 @@ export class DomStatsStrategy implements StatsTrackingStrategy {
     // Calculate FPS from frame intervals
     const avgFrameInterval =
       this.frameIntervals.length > 0
-        ? this.frameIntervals.reduce((a, b) => a + b, 0) /
-          this.frameIntervals.length
+        ? this.frameIntervals.reduce((a, b) => a + b, 0) / this.frameIntervals.length
         : 16.67;
     const fps = avgFrameInterval > 0 ? 1000 / avgFrameInterval : 0;
 
@@ -299,8 +291,7 @@ export class DomStatsStrategy implements StatsTrackingStrategy {
         : 0;
 
     // Calculate headroom (positive = faster than target, negative = slower)
-    const headroom =
-      avgSeekTime > 0 ? this.TARGET_FRAME_TIME_MS - avgSeekTime : 0;
+    const headroom = avgSeekTime > 0 ? this.TARGET_FRAME_TIME_MS - avgSeekTime : 0;
 
     // Get CPU pressure from adaptive tracker
     const trackerStats = this.adaptiveTracker.getStats();
@@ -365,9 +356,6 @@ export function createStatsTrackingStrategy(
         timegroup: options.timegroup,
         adaptiveTracker: options.adaptiveTracker,
       });
-
-    case "canvas":
-      return null;
 
     default:
       return null;

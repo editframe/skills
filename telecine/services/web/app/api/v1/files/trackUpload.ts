@@ -13,7 +13,11 @@ export const loader = async ({
 
   const track = await db
     .selectFrom("video2.isobmff_tracks")
-    .innerJoin("video2.files", "video2.files.id", "video2.isobmff_tracks.file_id")
+    .innerJoin(
+      "video2.files",
+      "video2.files.id",
+      "video2.isobmff_tracks.file_id",
+    )
     .select(["video2.isobmff_tracks.complete"])
     .where("video2.isobmff_tracks.file_id", "=", id)
     .where("video2.isobmff_tracks.track_id", "=", Number(trackId))
@@ -40,7 +44,11 @@ export const action = async ({
 
   const track = await db
     .selectFrom("video2.isobmff_tracks")
-    .innerJoin("video2.files", "video2.files.id", "video2.isobmff_tracks.file_id")
+    .innerJoin(
+      "video2.files",
+      "video2.files.id",
+      "video2.isobmff_tracks.file_id",
+    )
     .select([
       "video2.isobmff_tracks.byte_size",
       "video2.isobmff_tracks.next_byte",

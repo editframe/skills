@@ -2,7 +2,14 @@ import * as React from "react";
 import { Link } from "react-router";
 import { CodeBlock } from "~/components/CodeBlock";
 import { MermaidDiagram } from "~/components/MermaidDiagram";
-import { Preview, FitScale, FocusOverlay, TogglePlay, Scrubber, TimeDisplay } from "@editframe/react";
+import {
+  Preview,
+  FitScale,
+  FocusOverlay,
+  TogglePlay,
+  Scrubber,
+  TimeDisplay,
+} from "@editframe/react";
 import { ApiReference } from "~/components/skills/ApiReference";
 import type { ApiMetadata } from "~/utils/skills.server";
 import clsx from "clsx";
@@ -77,10 +84,7 @@ function LiveDemo({ code }: { code: string }) {
 
       <div className="border-2 border-[var(--ink-black)] dark:border-white overflow-hidden">
         <div className="h-[calc(50vh-4rem)] min-h-[300px] w-full">
-          <Preview
-            loop
-            className="h-full w-full grid grid-rows-[1fr_auto]"
-          >
+          <Preview loop className="h-full w-full grid grid-rows-[1fr_auto]">
             <div className="overflow-hidden bg-slate-300 dark:bg-slate-700 min-h-0 min-w-0 w-full h-full max-w-full">
               <FitScale className="w-full h-full max-w-full min-w-0">
                 <div
@@ -96,19 +100,29 @@ function LiveDemo({ code }: { code: string }) {
                   slot="play"
                   className="w-10 h-10 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
                 >
-                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
                 </button>
                 <button
                   slot="pause"
                   className="w-10 h-10 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
                 >
-                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" /></svg>
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                  </svg>
                 </button>
               </TogglePlay>
               <div className="flex-1 px-3 h-10 flex items-center border-l border-white/10">
-                <Scrubber
-                  className="w-full h-1 bg-white/20 rounded-full cursor-pointer [&::part(progress)]:bg-[var(--poster-blue)] [&::part(progress)]:rounded-full [&::part(handle)]:bg-white [&::part(handle)]:w-2.5 [&::part(handle)]:h-2.5 [&::part(handle)]:rounded-full"
-                />
+                <Scrubber className="w-full h-1 bg-white/20 rounded-full cursor-pointer [&::part(progress)]:bg-[var(--poster-blue)] [&::part(progress)]:rounded-full [&::part(handle)]:bg-white [&::part(handle)]:w-2.5 [&::part(handle)]:h-2.5 [&::part(handle)]:rounded-full" />
               </div>
               <div className="px-3 border-l border-white/10 h-10 flex items-center">
                 <TimeDisplay className="text-[10px] text-white/60 font-mono tabular-nums" />
@@ -129,7 +143,10 @@ const SOURCE_ONLY_SKILLS = new Set(["editframe-editor-gui"]);
 
 // --- SkillsPreBlock: Detects html live blocks and mermaid diagrams ---
 
-function SkillsPreBlock({ skillName, ...props }: React.HTMLAttributes<HTMLPreElement> & { skillName: string }) {
+function SkillsPreBlock({
+  skillName,
+  ...props
+}: React.HTMLAttributes<HTMLPreElement> & { skillName: string }) {
   const childArray = React.Children.toArray(props.children);
   const codeElement = childArray[0];
 
@@ -143,8 +160,7 @@ function SkillsPreBlock({ skillName, ...props }: React.HTMLAttributes<HTMLPreEle
 
     if (isHtml && isLive) {
       const codeContent = codeProps.children;
-      const code =
-        typeof codeContent === "string" ? codeContent.trim() : "";
+      const code = typeof codeContent === "string" ? codeContent.trim() : "";
       if (code) {
         return <LiveDemo code={code} />;
       }
@@ -152,8 +168,7 @@ function SkillsPreBlock({ skillName, ...props }: React.HTMLAttributes<HTMLPreEle
 
     if (isMermaid) {
       const codeContent = codeProps.children;
-      const chart =
-        typeof codeContent === "string" ? codeContent.trim() : "";
+      const chart = typeof codeContent === "string" ? codeContent.trim() : "";
       if (chart) {
         return <MermaidDiagram chart={chart} />;
       }
@@ -168,9 +183,7 @@ function SkillsPreBlock({ skillName, ...props }: React.HTMLAttributes<HTMLPreEle
 function detectAttributeTable(children: React.ReactNode): boolean {
   const text = extractText(children);
   return (
-    /Attribute/i.test(text) &&
-    /Type/i.test(text) &&
-    /Description/i.test(text)
+    /Attribute/i.test(text) && /Type/i.test(text) && /Description/i.test(text)
   );
 }
 

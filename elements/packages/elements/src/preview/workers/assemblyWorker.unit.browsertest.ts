@@ -1,15 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { getAssemblyWorkerUrl } from "./assemblyWorkerInline.js";
 
-function waitForWorkerMessage(
-  worker: Worker,
-  timeout: number = 5000,
-): Promise<MessageEvent> {
+function waitForWorkerMessage(worker: Worker, timeout: number = 5000): Promise<MessageEvent> {
   return new Promise<MessageEvent>((resolve, reject) => {
     const timer = setTimeout(() => {
-      reject(
-        new Error(`Timeout waiting for worker message after ${timeout}ms`),
-      );
+      reject(new Error(`Timeout waiting for worker message after ${timeout}ms`));
     }, timeout);
 
     const handler = (event: MessageEvent) => {

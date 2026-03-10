@@ -26,9 +26,7 @@ export interface ContainerInfo {
  * Helper function to get container info from any HTMLElement.
  * Reads computed styles to determine display mode.
  */
-export function getContainerInfoFromElement(
-  element: HTMLElement | null,
-): ContainerInfo {
+export function getContainerInfoFromElement(element: HTMLElement | null): ContainerInfo {
   if (!element) {
     return {
       isContainer: false,

@@ -35,9 +35,7 @@ describe("org settings", () => {
     ).toBeVisible();
 
     const nameInput = page.getByLabel("Organization Name");
-    const websiteInput = page.getByPlaceholder(
-      "Enter organization website",
-    );
+    const websiteInput = page.getByPlaceholder("Enter organization website");
 
     await playwrightExpect(nameInput).toBeVisible();
     await playwrightExpect(websiteInput).toBeVisible();
@@ -51,9 +49,7 @@ describe("org settings", () => {
     await page.goto(`/org/settings?org=${org.id}`);
 
     const nameInput = page.getByLabel("Organization Name");
-    const websiteInput = page.getByPlaceholder(
-      "Enter organization website",
-    );
+    const websiteInput = page.getByPlaceholder("Enter organization website");
     const saveButton = page.getByRole("button", { name: "Save Changes" });
 
     await playwrightExpect(nameInput).toBeDisabled();
@@ -68,9 +64,7 @@ describe("org settings", () => {
     await page.goto(`/org/settings?org=${freshOrg.id}`);
 
     const nameInput = page.getByLabel("Organization Name");
-    const websiteInput = page.getByPlaceholder(
-      "Enter organization website",
-    );
+    const websiteInput = page.getByPlaceholder("Enter organization website");
 
     await nameInput.fill("Updated Org Name");
     await websiteInput.fill("https://example.com");
@@ -104,9 +98,7 @@ describe("org settings", () => {
     await signInAs(org.primary);
     await page.goto(`/org/settings?org=${org.id}`);
 
-    const websiteInput = page.getByPlaceholder(
-      "Enter organization website",
-    );
+    const websiteInput = page.getByPlaceholder("Enter organization website");
     await websiteInput.fill("not-a-url");
 
     await page.getByRole("button", { name: "Save Changes" }).click();

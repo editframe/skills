@@ -11,10 +11,7 @@ export class RequestDeduplicator {
    * If a request with the same key is already pending, return the existing promise
    * Otherwise, execute the request factory and track the promise
    */
-  async executeRequest<T>(
-    key: string,
-    requestFactory: () => Promise<T>,
-  ): Promise<T> {
+  async executeRequest<T>(key: string, requestFactory: () => Promise<T>): Promise<T> {
     // Check if there's already a pending request for this key
     const existingRequest = this.pendingRequests.get(key);
     if (existingRequest) {

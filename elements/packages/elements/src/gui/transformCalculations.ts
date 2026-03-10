@@ -78,10 +78,7 @@ type CursorType =
  * @param rotationDegrees - Current rotation in degrees (0-360)
  * @returns CSS cursor value
  */
-export function getResizeHandleCursor(
-  handle: ResizeHandle,
-  rotationDegrees: number,
-): CursorType {
+export function getResizeHandleCursor(handle: ResizeHandle, rotationDegrees: number): CursorType {
   // Map handles to their base angles (in degrees, where 0° is north, clockwise)
   const handleAngles: Record<ResizeHandle, number> = {
     n: 0,
@@ -97,8 +94,7 @@ export function getResizeHandleCursor(
   // Calculate the effective angle after rotation
   const baseAngle = handleAngles[handle];
   const effectiveAngle = (baseAngle + rotationDegrees) % 360;
-  const normalizedAngle =
-    effectiveAngle < 0 ? effectiveAngle + 360 : effectiveAngle;
+  const normalizedAngle = effectiveAngle < 0 ? effectiveAngle + 360 : effectiveAngle;
 
   // Map angle back to cursor
   // Edge handles (n, e, s, w) map to cardinal directions
@@ -290,9 +286,7 @@ export function calculateResizeBounds(
       const widthScale = newWidth / startSize.width;
       const heightScale = newHeight / startSize.height;
       const uniformScale =
-        Math.abs(widthScale - 1) > Math.abs(heightScale - 1)
-          ? widthScale
-          : heightScale;
+        Math.abs(widthScale - 1) > Math.abs(heightScale - 1) ? widthScale : heightScale;
       newWidth = startSize.width * uniformScale;
       newHeight = startSize.height * uniformScale;
     } else if (isHorizontalOnly) {

@@ -38,9 +38,7 @@ export class StreamEventSource {
   private decoder = new TextDecoder();
   private parser;
   private listeners: {
-    [K in keyof StreamEventSourceEventMap]?: EventCallback<
-      StreamEventSourceEventMap[K]
-    >[];
+    [K in keyof StreamEventSourceEventMap]?: EventCallback<StreamEventSourceEventMap[K]>[];
   } = {};
   private abortController: AbortController;
   constructor(stream: ReadableStream, abortController: AbortController) {
@@ -95,10 +93,7 @@ export class StreamEventSource {
               this.emit("error", new Error(event.data));
               break;
             default:
-              this.emit(
-                "error",
-                new Error(`Unknown event: ${event.event} data: ${event.data}`),
-              );
+              this.emit("error", new Error(`Unknown event: ${event.event} data: ${event.data}`));
           }
         } else {
           this.emit("message", {

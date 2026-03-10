@@ -52,9 +52,7 @@ describe("WorkerPool", () => {
     ctx.fillRect(0, 0, 100, 100);
 
     // Encode using worker pool
-    const dataUrl = await pool.execute((worker) =>
-      encodeCanvasInWorker(worker, canvas, false),
-    );
+    const dataUrl = await pool.execute((worker) => encodeCanvasInWorker(worker, canvas, false));
 
     expect(dataUrl).toMatch(/^data:image\/jpeg;base64,/);
 
@@ -88,9 +86,7 @@ describe("WorkerPool", () => {
     ctx.fillRect(0, 0, 100, 100);
 
     // Encode using worker pool with preserveAlpha
-    const dataUrl = await pool.execute((worker) =>
-      encodeCanvasInWorker(worker, canvas, true),
-    );
+    const dataUrl = await pool.execute((worker) => encodeCanvasInWorker(worker, canvas, true));
 
     expect(dataUrl).toMatch(/^data:image\/png;base64,/);
   });
@@ -173,9 +169,7 @@ describe("WorkerPool", () => {
 
     // Try to encode - should handle error gracefully
     try {
-      await pool.execute((worker) =>
-        encodeCanvasInWorker(worker, canvas, false),
-      );
+      await pool.execute((worker) => encodeCanvasInWorker(worker, canvas, false));
       // If it succeeds, that's fine too
     } catch (error) {
       // Expected for cross-origin canvases

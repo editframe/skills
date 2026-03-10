@@ -22,7 +22,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     .split("\n")
     .map((id) => id.trim())
     .filter((id) => id !== "");
-  
+
   auditAdminAction(session, "reprocess-html", {
     renderCount: renderIdsArray.length,
     renderIds: renderIdsArray,

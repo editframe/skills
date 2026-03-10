@@ -4,12 +4,36 @@ export function RenderAnywhereSection() {
   return (
     <section className="relative py-24 bg-[var(--poster-red)] dark:bg-[#3a1a1a] text-white overflow-hidden">
       {/* Three-way split pattern - three equal paths */}
-      <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 w-[500px] h-[500px] opacity-[0.08]" aria-hidden="true">
+      <div
+        className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 w-[500px] h-[500px] opacity-[0.08]"
+        aria-hidden="true"
+      >
         <svg viewBox="0 0 100 100" className="w-full h-full">
           <circle cx="20" cy="50" r="8" fill="white" />
-          <line x1="28" y1="50" x2="45" y2="30" stroke="white" strokeWidth="4" />
-          <line x1="28" y1="50" x2="45" y2="50" stroke="white" strokeWidth="4" />
-          <line x1="28" y1="50" x2="45" y2="70" stroke="white" strokeWidth="4" />
+          <line
+            x1="28"
+            y1="50"
+            x2="45"
+            y2="30"
+            stroke="white"
+            strokeWidth="4"
+          />
+          <line
+            x1="28"
+            y1="50"
+            x2="45"
+            y2="50"
+            stroke="white"
+            strokeWidth="4"
+          />
+          <line
+            x1="28"
+            y1="50"
+            x2="45"
+            y2="70"
+            stroke="white"
+            strokeWidth="4"
+          />
           <circle cx="50" cy="30" r="6" fill="white" />
           <circle cx="50" cy="50" r="6" fill="white" />
           <circle cx="50" cy="70" r="6" fill="white" />
@@ -20,7 +44,9 @@ export function RenderAnywhereSection() {
         {/* Header */}
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-5xl md:text-7xl font-black tracking-tighter uppercase mb-6 text-white">
-            Render<br />Anywhere
+            Render
+            <br />
+            Anywhere
           </h2>
           <div className="flex justify-center gap-2 mb-6">
             <div className="w-12 h-1 bg-white" />
@@ -42,13 +68,17 @@ export function RenderAnywhereSection() {
                 <div className="w-10 h-10 bg-[var(--poster-red)] text-white flex items-center justify-center">
                   <Globe size={24} weight="bold" aria-hidden="true" />
                 </div>
-                <h3 className="text-2xl font-black uppercase tracking-tight">Browser</h3>
+                <h3 className="text-2xl font-black uppercase tracking-tight">
+                  Browser
+                </h3>
               </div>
               <p className="text-sm mb-4 text-[var(--warm-gray)]">
-                Export video directly from the browser. No server round-trip. Nothing to install.
+                Export video directly from the browser. No server round-trip.
+                Nothing to install.
               </p>
               <div className="font-mono text-xs bg-[var(--ink-black)] text-white p-3 mb-4">
-                <span className="text-[var(--poster-gold)]">renderToVideo</span>(comp)
+                <span className="text-[var(--poster-gold)]">renderToVideo</span>
+                (comp)
               </div>
               <div className="space-y-2 text-xs">
                 <div className="flex items-center gap-2">
@@ -75,13 +105,19 @@ export function RenderAnywhereSection() {
                 <div className="w-10 h-10 bg-[var(--poster-red)] text-white flex items-center justify-center">
                   <Terminal size={24} weight="bold" aria-hidden="true" />
                 </div>
-                <h3 className="text-2xl font-black uppercase tracking-tight">CLI</h3>
+                <h3 className="text-2xl font-black uppercase tracking-tight">
+                  CLI
+                </h3>
               </div>
               <p className="text-sm mb-4 text-[var(--warm-gray)]">
-                Render from the command line. Same composition, headless Chrome under the hood.
+                Render from the command line. Same composition, headless Chrome
+                under the hood.
               </p>
               <div className="font-mono text-xs bg-[var(--ink-black)] text-white p-3 mb-4">
-                $ <span className="text-[var(--poster-gold)]">editframe render</span>
+                ${" "}
+                <span className="text-[var(--poster-gold)]">
+                  editframe render
+                </span>
               </div>
               <div className="space-y-2 text-xs">
                 <div className="flex items-center gap-2">
@@ -108,13 +144,19 @@ export function RenderAnywhereSection() {
                 <div className="w-10 h-10 bg-[var(--poster-red)] text-white flex items-center justify-center">
                   <Cloud size={24} weight="bold" aria-hidden="true" />
                 </div>
-                <h3 className="text-2xl font-black uppercase tracking-tight">Cloud</h3>
+                <h3 className="text-2xl font-black uppercase tracking-tight">
+                  Cloud
+                </h3>
               </div>
               <p className="text-sm mb-4 text-[var(--warm-gray)]">
-                Parallel fragment rendering. Split your video into segments, encode concurrently, reassemble.
+                Parallel fragment rendering. Split your video into segments,
+                encode concurrently, reassemble.
               </p>
               <div className="font-mono text-xs bg-[var(--ink-black)] text-white p-3 mb-4">
-                $ <span className="text-[var(--poster-gold)]">editframe cloud-render</span>
+                ${" "}
+                <span className="text-[var(--poster-gold)]">
+                  editframe cloud-render
+                </span>
               </div>
               <div className="space-y-2 text-xs">
                 <div className="flex items-center gap-2">
@@ -133,7 +175,6 @@ export function RenderAnywhereSection() {
             </div>
           </div>
         </div>
-
       </div>
     </section>
   );

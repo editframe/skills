@@ -17,7 +17,7 @@ const test = baseTest.extend<{
   renderedContainer: HTMLElement;
 }>({
   // biome-ignore lint/correctness/noEmptyPattern: Required by Vitest fixture syntax
-  markup: async ({}, use) => {
+  markup: async (_: unknown, use) => {
     const markup = (
       <>
         <Configuration>
@@ -48,7 +48,7 @@ const test = baseTest.extend<{
     container.remove();
   },
   // biome-ignore lint/correctness/noEmptyPattern: Required by Vitest fixture syntax
-  renderedContainer: async ({}, use) => {
+  renderedContainer: async (_: unknown, use) => {
     const container = document.createElement("div");
     document.body.appendChild(container);
     await use(container);
@@ -87,14 +87,10 @@ describe("Controls", () => {
   });
 
   describe("hydratedContainer", () => {
-    test.skip("proxies contexts following hydration", async ({
-      hydratedContainer,
-      expect,
-    }) => {
-      await vi.waitUntil(
-        () => hydratedContainer.innerHTML.includes("ef-controls"),
-        { timeout: 5000 },
-      );
+    test.skip("proxies contexts following hydration", async ({ hydratedContainer, expect }) => {
+      await vi.waitUntil(() => hydratedContainer.innerHTML.includes("ef-controls"), {
+        timeout: 5000,
+      });
       const controls =
         // biome-ignore lint/style/noNonNullAssertion: Safe in tests where elements are guaranteed to exist
         hydratedContainer.getElementsByTagName("ef-controls")[0]!;

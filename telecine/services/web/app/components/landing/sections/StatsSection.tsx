@@ -10,7 +10,7 @@ export function StatsSection({ stats }: StatsSectionProps) {
       {/* Background pattern */}
       <div className="absolute inset-0 bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-500/5 via-transparent to-transparent" />
-      
+
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-4">
@@ -45,11 +45,3 @@ export function StatsSection({ stats }: StatsSectionProps) {
     </section>
   );
 }
-
-
-
-
-
-
-
-

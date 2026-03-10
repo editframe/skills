@@ -61,12 +61,14 @@ export class EFPanZoom extends LitElement {
    */
   private _onDocumentWheelCapture = (e: WheelEvent) => {
     // Check if event is over this panzoom element or its children
-    let panZoom: Element | null = null;
+    let isOverThisPanZoom = false;
     if (e.target instanceof Element) {
-      panZoom = e.target.closest("ef-pan-zoom");
-      // Also check if target is an overlay sibling (selection overlay, etc.)
-      // Overlays have pointer-events: none but can still be the event target
-      if (!panZoom && e.target.closest("ef-canvas-selection-overlay")) {
+      const targetPanZoom = e.target.closest("ef-pan-zoom");
+      if (targetPanZoom === this) {
+        isOverThisPanZoom = true;
+      } else if (!targetPanZoom && e.target.closest("ef-canvas-selection-overlay")) {
+        // Also check if target is an overlay sibling (selection overlay, etc.)
+        // Overlays have pointer-events: none but can still be the event target
         // Event is over selection overlay - check if it's over this panzoom's area
         const rect = this.getBoundingClientRect();
         if (
@@ -75,11 +77,11 @@ export class EFPanZoom extends LitElement {
           e.clientY >= rect.top &&
           e.clientY <= rect.bottom
         ) {
-          panZoom = this;
+          isOverThisPanZoom = true;
         }
       }
     }
-    if (panZoom === this) {
+    if (isOverThisPanZoom) {
       // Prevent browser navigation gestures (back/forward on swipe)
       // Don't stop propagation - let the normal wheel handler process the event
       e.preventDefault();
@@ -117,7 +119,7 @@ export class EFPanZoom extends LitElement {
     if (this._isDragging && this._capturedPointerId !== null) {
       try {
         this.releasePointerCapture(this._capturedPointerId);
-      } catch (err) {
+      } catch (_err) {
         // Ignore pointer capture errors (e.g., in test environments)
       }
     }
@@ -127,16 +129,11 @@ export class EFPanZoom extends LitElement {
     const newTransform = {
       x: updates.x !== undefined ? updates.x : this.x,
       y: updates.y !== undefined ? updates.y : this.y,
-      scale:
-        updates.scale !== undefined
-          ? Math.max(0.1, Math.min(5, updates.scale))
-          : this.scale,
+      scale: updates.scale !== undefined ? Math.max(0.1, Math.min(5, updates.scale)) : this.scale,
     };
 
     const changed =
-      newTransform.x !== this.x ||
-      newTransform.y !== this.y ||
-      newTransform.scale !== this.scale;
+      newTransform.x !== this.x || newTransform.y !== this.y || newTransform.scale !== this.scale;
 
     if (changed) {
       this.x = newTransform.x;
@@ -170,18 +167,13 @@ export class EFPanZoom extends LitElement {
 
     try {
       this.setPointerCapture(e.pointerId);
-    } catch (err) {
+    } catch (_err) {
       // Ignore pointer capture errors (e.g., in test environments)
     }
   };
 
   private _onPointerMove = (e: PointerEvent) => {
-    if (
-      !this._isDragging ||
-      !this._dragStartPointerPos ||
-      !this._dragStartTransform
-    )
-      return;
+    if (!this._isDragging || !this._dragStartPointerPos || !this._dragStartTransform) return;
 
     const deltaX = e.clientX - this._dragStartPointerPos.x;
     const deltaY = e.clientY - this._dragStartPointerPos.y;
@@ -197,7 +189,7 @@ export class EFPanZoom extends LitElement {
     if (this._capturedPointerId !== null) {
       try {
         this.releasePointerCapture(e.pointerId);
-      } catch (err) {
+      } catch (_err) {
         // Ignore pointer capture errors (e.g., in test environments)
       }
     }
@@ -330,9 +322,9 @@ export class EFPanZoom extends LitElement {
 
     // Find the first child element to measure
     const contentWrapper = this.shadowRoot?.querySelector(".content-wrapper");
-    const slottedContent = contentWrapper
-      ?.querySelector("slot")
-      ?.assignedElements()[0] as HTMLElement | undefined;
+    const slottedContent = contentWrapper?.querySelector("slot")?.assignedElements()[0] as
+      | HTMLElement
+      | undefined;
 
     if (!slottedContent) return;
 

@@ -43,9 +43,11 @@ export const RenderFragmentGpuQueue = new Queue<{
             started_at: new Date(Number(msg.timestamp)),
           })
           .onConflict((oc) =>
-            oc.columns(["render_id", "segment_id", "attempt_number"]).doUpdateSet({
-              started_at: new Date(Number(msg.timestamp)),
-            }),
+            oc
+              .columns(["render_id", "segment_id", "attempt_number"])
+              .doUpdateSet({
+                started_at: new Date(Number(msg.timestamp)),
+              }),
           )
           .execute();
       } catch (error) {
@@ -62,7 +64,9 @@ export const RenderFragmentGpuQueue = new Queue<{
       const segmentId = extractSegmentId(msg.jobId, msg.workflowId);
       const attemptNumber = Number(msg.attemptNumber);
       const errorDetail =
-        msg.details?.error != null ? String((msg.details.error as any).message ?? msg.details.error) : null;
+        msg.details?.error != null
+          ? String((msg.details.error as any).message ?? msg.details.error)
+          : null;
       try {
         await db
           .insertInto("video2.render_fragments")
@@ -75,10 +79,12 @@ export const RenderFragmentGpuQueue = new Queue<{
             last_error: errorDetail,
           })
           .onConflict((oc) =>
-            oc.columns(["render_id", "segment_id", "attempt_number"]).doUpdateSet({
-              failed_at: new Date(Number(msg.timestamp)),
-              last_error: errorDetail,
-            }),
+            oc
+              .columns(["render_id", "segment_id", "attempt_number"])
+              .doUpdateSet({
+                failed_at: new Date(Number(msg.timestamp)),
+                last_error: errorDetail,
+              }),
           )
           .execute();
       } catch (error) {

@@ -1,14 +1,19 @@
 import { lazy, Suspense, useRef, useState, useEffect } from "react";
 import { Link } from "react-router";
 
-const TrimTool = lazy(() => import("../tools/TrimTool").then(m => ({ default: m.TrimTool })));
+const TrimTool = lazy(() =>
+  import("../tools/TrimTool").then((m) => ({ default: m.TrimTool })),
+);
 
-const PROMPT_TEXT = "Build a video trim tool. Video preview on top that respects trim bounds. Below it a trim bar: play/pause toggle on the left, thumbnail strip with overlaid draggable trim handles on the right. Info bar with in/out/duration timecodes.";
+const PROMPT_TEXT =
+  "Build a video trim tool. Video preview on top that respects trim bounds. Below it a trim bar: play/pause toggle on the left, thumbnail strip with overlaid draggable trim handles on the right. Info bar with in/out/duration timecodes.";
 
 function ToolSkeleton() {
   return (
     <div className="flex items-center justify-center min-h-[300px]">
-      <div className="text-white/40 dark:text-white/40 text-sm">Loading tool...</div>
+      <div className="text-white/40 dark:text-white/40 text-sm">
+        Loading tool...
+      </div>
     </div>
   );
 }
@@ -21,8 +26,13 @@ function LazyTrimTool() {
     const el = ref.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      (entries) => { if (entries[0]?.isIntersecting) { setVisible(true); observer.disconnect(); } },
-      { rootMargin: "200px" }
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" },
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -45,7 +55,10 @@ export function PromptToToolSection() {
   return (
     <section className="relative py-24 bg-[var(--poster-green)] dark:bg-[#1a3a1a] text-white overflow-hidden">
       {/* Stacked blocks pattern - composable, modular, building */}
-      <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 w-[500px] h-[500px] opacity-[0.08]" aria-hidden="true">
+      <div
+        className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 w-[500px] h-[500px] opacity-[0.08]"
+        aria-hidden="true"
+      >
         <svg viewBox="0 0 100 100" className="w-full h-full">
           <rect x="10" y="70" width="80" height="15" fill="white" />
           <rect x="20" y="55" width="60" height="15" fill="white" />
@@ -67,8 +80,8 @@ export function PromptToToolSection() {
             <div className="w-8 h-2 bg-white/40" />
           </div>
           <p className="text-xl text-white/90 max-w-2xl mx-auto">
-            Skills are documentation your agent can use as tools.
-            Describe what you want. Get working code.
+            Skills are documentation your agent can use as tools. Describe what
+            you want. Get working code.
           </p>
         </div>
 
@@ -84,12 +97,16 @@ export function PromptToToolSection() {
                   <div className="w-3 h-3 rounded-full bg-[var(--poster-red)]" />
                   <div className="w-3 h-3 rounded-full bg-[var(--poster-gold)]" />
                   <div className="w-3 h-3 rounded-full bg-[var(--poster-green)]" />
-                  <span className="ml-3 text-white/70 text-xs font-mono uppercase tracking-wider">prompt</span>
+                  <span className="ml-3 text-white/70 text-xs font-mono uppercase tracking-wider">
+                    prompt
+                  </span>
                 </div>
 
                 {/* Prompt Content */}
                 <div className="p-4 md:p-6 font-mono text-sm flex-1">
-                  <div className="text-[var(--poster-gold)] mb-3">@editor-gui</div>
+                  <div className="text-[var(--poster-gold)] mb-3">
+                    @editor-gui
+                  </div>
                   <div className="text-white text-base leading-relaxed">
                     {PROMPT_TEXT}
                   </div>
@@ -116,8 +133,18 @@ export function PromptToToolSection() {
             className="inline-flex items-center px-8 py-4 bg-white text-[var(--poster-green)] dark:text-[#1a3a1a] font-bold text-sm uppercase tracking-wider hover:bg-[var(--poster-gold)] hover:text-[var(--ink-black)] transition-colors shadow-poster-hard"
           >
             Explore docs
-            <svg className="ml-3 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            <svg
+              className="ml-3 w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M17 8l4 4m0 0l-4 4m4-4H3"
+              />
             </svg>
           </Link>
         </div>

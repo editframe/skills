@@ -4,16 +4,19 @@ export function ArchitectureSection() {
   return (
     <section className="relative py-24 bg-[var(--paper-cream)] border-t-4 border-[var(--ink-black)] dark:border-white overflow-hidden">
       {/* Parallel horizontal lines - representing parallel rendering/processing */}
-      <div className="absolute top-0 left-0 w-full h-full opacity-[0.04] dark:opacity-[0.03] pointer-events-none" aria-hidden="true">
+      <div
+        className="absolute top-0 left-0 w-full h-full opacity-[0.04] dark:opacity-[0.03] pointer-events-none"
+        aria-hidden="true"
+      >
         <svg className="w-full h-full" preserveAspectRatio="none">
           {Array.from({ length: 12 }).map((_, i) => (
-            <rect 
-              key={i} 
-              x="0" 
-              y={`${i * 8.33}%`} 
-              width="100%" 
-              height="2%" 
-              fill="var(--poster-gold)" 
+            <rect
+              key={i}
+              x="0"
+              y={`${i * 8.33}%`}
+              width="100%"
+              height="2%"
+              fill="var(--poster-gold)"
             />
           ))}
         </svg>
@@ -43,7 +46,9 @@ export function ArchitectureSection() {
                   Parallel Fragments
                 </span>
               </div>
-              <p className="text-xs text-[var(--warm-gray)] mt-1">Split, process, recombine</p>
+              <p className="text-xs text-[var(--warm-gray)] mt-1">
+                Split, process, recombine
+              </p>
             </div>
             <FanOutDiagram />
           </div>
@@ -56,7 +61,9 @@ export function ArchitectureSection() {
                   JIT Streaming
                 </span>
               </div>
-              <p className="text-xs text-[var(--warm-gray)] mt-1">On-demand transcoding, zero wait</p>
+              <p className="text-xs text-[var(--warm-gray)] mt-1">
+                On-demand transcoding, zero wait
+              </p>
             </div>
             <JITStreamingDiagram />
           </div>

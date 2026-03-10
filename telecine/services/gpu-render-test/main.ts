@@ -133,7 +133,11 @@ async function bundleHTML(html: string, bundleDir: string): Promise<string> {
 async function doRender(
   mode: "cpu" | "gpu",
   indexPath: string,
-): Promise<{ timings: Record<string, number>; totalBytes: number; gcsUrl: string }> {
+): Promise<{
+  timings: Record<string, number>;
+  totalBytes: number;
+  gcsUrl: string;
+}> {
   step(`RENDER [${mode.toUpperCase()}]`);
 
   // Both modes use headless ozone (hasGpu() returns true on Cloud Run because
@@ -234,7 +238,9 @@ async function doRender(
 // ---------------------------------------------------------------------------
 step("0. Quick GPU check");
 try {
-  const { stdout } = await execFileAsync("nvidia-smi", ["-L"], { timeout: 5000 });
+  const { stdout } = await execFileAsync("nvidia-smi", ["-L"], {
+    timeout: 5000,
+  });
   log(stdout.trim());
 } catch (e: any) {
   log(`nvidia-smi: ${e.message}`);

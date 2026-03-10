@@ -24,15 +24,9 @@ export interface ScaleOutput {
  * Returns `null` when any dimension is zero or negative (cannot compute).
  */
 export function computeFitScale(input: ScaleInput): ScaleOutput | null {
-  const { containerWidth, containerHeight, contentWidth, contentHeight } =
-    input;
+  const { containerWidth, containerHeight, contentWidth, contentHeight } = input;
 
-  if (
-    containerWidth <= 0 ||
-    containerHeight <= 0 ||
-    contentWidth <= 0 ||
-    contentHeight <= 0
-  ) {
+  if (containerWidth <= 0 || containerHeight <= 0 || contentWidth <= 0 || contentHeight <= 0) {
     return null;
   }
 
@@ -40,9 +34,7 @@ export function computeFitScale(input: ScaleInput): ScaleOutput | null {
   const contentRatio = contentWidth / contentHeight;
 
   const scale =
-    containerRatio > contentRatio
-      ? containerHeight / contentHeight
-      : containerWidth / contentWidth;
+    containerRatio > contentRatio ? containerHeight / contentHeight : containerWidth / contentWidth;
 
   const scaledWidth = contentWidth * scale;
   const scaledHeight = contentHeight * scale;
@@ -98,14 +90,7 @@ export class EFFitScale extends LitElement {
 
     const isNonContentElement = (element: Element): boolean => {
       const tagName = element.tagName.toLowerCase();
-      const nonContentTags = [
-        "style",
-        "script",
-        "meta",
-        "link",
-        "title",
-        "noscript",
-      ];
+      const nonContentTags = ["style", "script", "meta", "link", "title", "noscript"];
       if (nonContentTags.includes(tagName)) return true;
 
       try {
@@ -175,14 +160,11 @@ export class EFFitScale extends LitElement {
     let contentHeight = 0;
 
     if (typeof (this.contentChild as any).getNaturalDimensions === "function") {
-      const naturalDimensions = (
-        this.contentChild as any
-      ).getNaturalDimensions() as { width: number; height: number } | null;
-      if (
-        naturalDimensions &&
-        naturalDimensions.width > 0 &&
-        naturalDimensions.height > 0
-      ) {
+      const naturalDimensions = (this.contentChild as any).getNaturalDimensions() as {
+        width: number;
+        height: number;
+      } | null;
+      if (naturalDimensions && naturalDimensions.width > 0 && naturalDimensions.height > 0) {
         contentWidth = naturalDimensions.width;
         contentHeight = naturalDimensions.height;
 
@@ -193,11 +175,7 @@ export class EFFitScale extends LitElement {
           const canvas = (this.contentChild as any).canvasElement;
           if (canvas) {
             canvas.style.setProperty("width", `${contentWidth}px`, "important");
-            canvas.style.setProperty(
-              "height",
-              `${contentHeight}px`,
-              "important",
-            );
+            canvas.style.setProperty("height", `${contentHeight}px`, "important");
           }
         }
       } else {
@@ -242,8 +220,7 @@ export class EFFitScale extends LitElement {
   private updateScale = (): void => {
     if (!this.isConnected || this.paused) return;
 
-    const { containerWidth, containerHeight, contentWidth, contentHeight } =
-      this.scaleInfo;
+    const { containerWidth, containerHeight, contentWidth, contentHeight } = this.scaleInfo;
 
     // Warn on zero container dimensions
     if (containerWidth === 0 || containerHeight === 0) {

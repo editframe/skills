@@ -15,9 +15,7 @@ describe("timing coordination", () => {
     try {
       await access(testFilePath);
     } catch (error) {
-      throw new Error(
-        `Test file not found: ${testFilePath}. Current directory: ${process.cwd()}`,
-      );
+      throw new Error(`Test file not found: ${testFilePath}. Current directory: ${process.cwd()}`);
     }
 
     testDir = join(process.cwd(), "test-assets", ".cache", "timing-test");
@@ -30,8 +28,7 @@ describe("timing coordination", () => {
   });
 
   test("stream should not end until fragment index is complete", async () => {
-    const { generateSingleTrackFromPath } =
-      await import("./generateSingleTrack.js");
+    const { generateSingleTrackFromPath } = await import("./generateSingleTrack.js");
 
     // Track timing of events
     let streamEndTime: number | null = null;

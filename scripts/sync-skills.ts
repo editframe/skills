@@ -12,22 +12,22 @@
  *   npx tsx scripts/sync-skills.ts --include-external  # Include generated external skills
  */
 
-import fs from 'fs/promises';
-import fsSync from 'fs';
-import path from 'path';
-import crypto from 'crypto';
-import { parseArgs } from 'node:util';
+import fs from "fs/promises";
+import fsSync from "fs";
+import path from "path";
+import crypto from "crypto";
+import { parseArgs } from "node:util";
 
 // ============================================================================
 // Type Definitions
 // ============================================================================
 
 interface FileState {
-  path: string;                              // Relative path from skill directory root
-  mtime: number;                             // Unix timestamp (seconds)
-  size: number;                              // File size in bytes
-  hash: string;                              // MD5 hash of content
-  location: '.skills' | '.cursor' | '.claude' | '.opencode';
+  path: string; // Relative path from skill directory root
+  mtime: number; // Unix timestamp (seconds)
+  size: number; // File size in bytes
+  hash: string; // MD5 hash of content
+  location: ".skills" | ".cursor" | ".claude" | ".opencode";
 }
 
 interface SkillFileMap {
@@ -40,9 +40,9 @@ interface SkillFileMap {
 }
 
 interface SyncOperation {
-  type: 'copy' | 'delete' | 'skip';
-  from: '.skills' | '.cursor' | '.claude' | '.opencode' | null;
-  to: '.skills' | '.cursor' | '.claude' | '.opencode';
+  type: "copy" | "delete" | "skip";
+  from: ".skills" | ".cursor" | ".claude" | ".opencode" | null;
+  to: ".skills" | ".cursor" | ".claude" | ".opencode";
   path: string;
   reason: string;
 }
@@ -76,16 +76,19 @@ function getMonorepoRoot(): string {
 }
 
 function hash(content: Buffer): string {
-  return crypto.createHash('md5').update(content).digest('hex');
+  return crypto.createHash("md5").update(content).digest("hex");
 }
 
-function log(message: string, color: 'green' | 'yellow' | 'red' | 'blue' = 'blue'): void {
+function log(
+  message: string,
+  color: "green" | "yellow" | "red" | "blue" = "blue",
+): void {
   const colors: Record<string, string> = {
-    green: '\x1b[32m',
-    yellow: '\x1b[33m',
-    red: '\x1b[31m',
-    blue: '\x1b[36m',
-    reset: '\x1b[0m',
+    green: "\x1b[32m",
+    yellow: "\x1b[33m",
+    red: "\x1b[31m",
+    blue: "\x1b[36m",
+    reset: "\x1b[0m",
   };
   console.log(`${colors[color]}${message}${colors.reset}`);
 }
@@ -100,7 +103,11 @@ function logVerbose(message: string, verbose: boolean): void {
 // File State Management
 // ============================================================================
 
-async function getFileState(filePath: string, location: '.skills' | '.cursor' | '.claude' | '.opencode', relativePath: string): Promise<FileState | null> {
+async function getFileState(
+  filePath: string,
+  location: ".skills" | ".cursor" | ".claude" | ".opencode",
+  relativePath: string,
+): Promise<FileState | null> {
   try {
     const stat = await fs.stat(filePath);
     const content = await fs.readFile(filePath);
@@ -119,11 +126,14 @@ async function getFileState(filePath: string, location: '.skills' | '.cursor' | 
 
 async function buildFileMap(root: string): Promise<SkillFileMap> {
   const fileMap: SkillFileMap = {};
-  const skillDirs: { path: string; location: '.skills' | '.cursor' | '.claude' | '.opencode' }[] = [
-    { path: path.join(root, '.skills/internal'), location: '.skills' },
-    { path: path.join(root, '.cursor/skills'), location: '.cursor' },
-    { path: path.join(root, '.claude/skills'), location: '.claude' },
-    { path: path.join(root, '.opencode/skills'), location: '.opencode' },
+  const skillDirs: {
+    path: string;
+    location: ".skills" | ".cursor" | ".claude" | ".opencode";
+  }[] = [
+    { path: path.join(root, ".skills/internal"), location: ".skills" },
+    { path: path.join(root, ".cursor/skills"), location: ".cursor" },
+    { path: path.join(root, ".claude/skills"), location: ".claude" },
+    { path: path.join(root, ".opencode/skills"), location: ".opencode" },
   ];
 
   for (const { path: skillDir, location } of skillDirs) {
@@ -131,18 +141,23 @@ async function buildFileMap(root: string): Promise<SkillFileMap> {
       continue;
     }
 
-    async function traverse(dir: string, relativePath: string = ''): Promise<void> {
+    async function traverse(
+      dir: string,
+      relativePath: string = "",
+    ): Promise<void> {
       try {
         const entries = await fs.readdir(dir, { withFileTypes: true });
         for (const entry of entries) {
-          if (entry.name.startsWith('.')) continue; // Skip hidden files
+          if (entry.name.startsWith(".")) continue; // Skip hidden files
 
-          const rel = relativePath ? path.join(relativePath, entry.name) : entry.name;
+          const rel = relativePath
+            ? path.join(relativePath, entry.name)
+            : entry.name;
           const fullPath = path.join(dir, entry.name);
 
           if (entry.isDirectory()) {
             await traverse(fullPath, rel);
-          } else if (entry.isFile() && entry.name.endsWith('.md')) {
+          } else if (entry.isFile() && entry.name.endsWith(".md")) {
             const state = await getFileState(fullPath, location, rel);
             if (state) {
               if (!fileMap[rel]) {
@@ -167,26 +182,29 @@ async function buildFileMap(root: string): Promise<SkillFileMap> {
 // File Comparison
 // ============================================================================
 
-function compareFiles(fileA: FileState, fileB: FileState): 'identical' | 'different' {
+function compareFiles(
+  fileA: FileState,
+  fileB: FileState,
+): "identical" | "different" {
   // Fast path: mtime and size match, assume identical
   if (fileA.mtime === fileB.mtime && fileA.size === fileB.size) {
-    return 'identical';
+    return "identical";
   }
 
   // Medium path: compare content hash
-  return fileA.hash === fileB.hash ? 'identical' : 'different';
+  return fileA.hash === fileB.hash ? "identical" : "different";
 }
 
 function detectSimultaneousEdits(files: FileState[]): boolean {
   if (files.length < 2) return false;
 
-  const times = files.map(f => f.mtime);
+  const times = files.map((f) => f.mtime);
   const maxDiff = Math.max(...times) - Math.min(...times);
 
   // If all files modified within 60 seconds
   if (maxDiff <= 60) {
     // Check if content differs
-    const hashes = new Set(files.map(f => f.hash));
+    const hashes = new Set(files.map((f) => f.hash));
     if (hashes.size > 1) {
       return true; // Simultaneous conflicting edits
     }
@@ -203,13 +221,15 @@ function determineSyncOperations(fileMap: SkillFileMap): SyncOperation[] {
   const operations: SyncOperation[] = [];
 
   for (const [relativePath, locations] of Object.entries(fileMap)) {
-    const skills = locations['.skills'];
-    const cursor = locations['.cursor'];
-    const claude = locations['.claude'];
-    const opencode = locations['.opencode'];
+    const skills = locations[".skills"];
+    const cursor = locations[".cursor"];
+    const claude = locations[".claude"];
+    const opencode = locations[".opencode"];
 
     // Collect all present files with their mtimes
-    const present: FileState[] = [skills, cursor, claude, opencode].filter(Boolean);
+    const present: FileState[] = [skills, cursor, claude, opencode].filter(
+      Boolean,
+    );
 
     if (present.length === 0) {
       continue; // File doesn't exist anywhere
@@ -218,15 +238,15 @@ function determineSyncOperations(fileMap: SkillFileMap): SyncOperation[] {
     if (present.length === 1) {
       // File exists in only one location - copy to all others
       const source = present[0];
-      const targets = ['.skills', '.cursor', '.claude', '.opencode'].filter(
-        loc => loc !== source.location
+      const targets = [".skills", ".cursor", ".claude", ".opencode"].filter(
+        (loc) => loc !== source.location,
       );
 
       for (const target of targets) {
         operations.push({
-          type: 'copy',
+          type: "copy",
           from: source.location,
-          to: target as '.skills' | '.cursor' | '.claude',
+          to: target as ".skills" | ".cursor" | ".claude",
           path: relativePath,
           reason: `New file in ${source.location}`,
         });
@@ -237,30 +257,35 @@ function determineSyncOperations(fileMap: SkillFileMap): SyncOperation[] {
     // Multiple locations have the file
     // Find the newest by mtime
     const newest = present.reduce((newest, current) =>
-      current.mtime > newest.mtime ? current : newest
+      current.mtime > newest.mtime ? current : newest,
     );
 
     // Check if all files are identical (by hash)
-    const allSame = present.every(f => f.hash === newest.hash);
+    const allSame = present.every((f) => f.hash === newest.hash);
 
     if (allSame) {
       // All present copies identical - but copy to any missing locations
-      const allLocations = ['.skills', '.cursor', '.claude', '.opencode'] as const;
-      const presentLocations = new Set(present.map(f => f.location));
-      const missing = allLocations.filter(loc => !presentLocations.has(loc));
+      const allLocations = [
+        ".skills",
+        ".cursor",
+        ".claude",
+        ".opencode",
+      ] as const;
+      const presentLocations = new Set(present.map((f) => f.location));
+      const missing = allLocations.filter((loc) => !presentLocations.has(loc));
 
       if (missing.length === 0) {
         operations.push({
-          type: 'skip',
+          type: "skip",
           from: null,
           to: newest.location,
           path: relativePath,
-          reason: 'All copies identical',
+          reason: "All copies identical",
         });
       } else {
         for (const target of missing) {
           operations.push({
-            type: 'copy',
+            type: "copy",
             from: newest.location,
             to: target,
             path: relativePath,
@@ -272,20 +297,23 @@ function determineSyncOperations(fileMap: SkillFileMap): SyncOperation[] {
     }
 
     // Files differ - copy newest to other locations
-    for (const target of ['.skills', '.cursor', '.claude', '.opencode']) {
+    for (const target of [".skills", ".cursor", ".claude", ".opencode"]) {
       if (target === newest.location) continue;
 
       const targetFile =
-        target === '.skills' ? skills :
-        target === '.cursor' ? cursor :
-        target === '.claude' ? claude :
-        opencode;
+        target === ".skills"
+          ? skills
+          : target === ".cursor"
+            ? cursor
+            : target === ".claude"
+              ? claude
+              : opencode;
 
       if (!targetFile || targetFile.hash !== newest.hash) {
         operations.push({
-          type: 'copy',
+          type: "copy",
           from: newest.location,
-          to: target as '.skills' | '.cursor' | '.claude',
+          to: target as ".skills" | ".cursor" | ".claude",
           path: relativePath,
           reason: `Update from ${newest.location} (newer: ${new Date(newest.mtime * 1000).toISOString()})`,
         });
@@ -300,21 +328,25 @@ function handleDeletions(fileMap: SkillFileMap): SyncOperation[] {
   const operations: SyncOperation[] = [];
 
   for (const [relativePath, locations] of Object.entries(fileMap)) {
-    const skills = locations['.skills'];
-    const cursor = locations['.cursor'];
-    const claude = locations['.claude'];
-    const opencode = locations['.opencode'];
+    const skills = locations[".skills"];
+    const cursor = locations[".cursor"];
+    const claude = locations[".claude"];
+    const opencode = locations[".opencode"];
 
     // If deleted from .skills/ (canonical source), delete everywhere
     if (!skills && (cursor || claude || opencode)) {
-      for (const [loc, state] of [['.cursor', cursor], ['.claude', claude], ['.opencode', opencode]] as const) {
+      for (const [loc, state] of [
+        [".cursor", cursor],
+        [".claude", claude],
+        [".opencode", opencode],
+      ] as const) {
         if (state) {
           operations.push({
-            type: 'delete',
+            type: "delete",
             from: null,
             to: loc,
             path: relativePath,
-            reason: 'Deleted from canonical source (.skills/)',
+            reason: "Deleted from canonical source (.skills/)",
           });
         }
       }
@@ -332,27 +364,33 @@ async function executeOperation(
   root: string,
   op: SyncOperation,
   options: SyncOptions,
-  syncLog: SyncLog
+  syncLog: SyncLog,
 ): Promise<void> {
-  if (op.type === 'skip') {
+  if (op.type === "skip") {
     syncLog.summary.skipped++;
     logVerbose(`⊘ SKIP  ${op.path} (${op.reason})`, options.verbose);
     return;
   }
 
   try {
-    if (op.type === 'copy') {
+    if (op.type === "copy") {
       const sourceDir =
-        op.from === '.skills' ? '.skills/internal' :
-        op.from === '.cursor' ? '.cursor/skills' :
-        op.from === '.claude' ? '.claude/skills' :
-        '.opencode/skills';
+        op.from === ".skills"
+          ? ".skills/internal"
+          : op.from === ".cursor"
+            ? ".cursor/skills"
+            : op.from === ".claude"
+              ? ".claude/skills"
+              : ".opencode/skills";
 
       const targetDir =
-        op.to === '.skills' ? '.skills/internal' :
-        op.to === '.cursor' ? '.cursor/skills' :
-        op.to === '.claude' ? '.claude/skills' :
-        '.opencode/skills';
+        op.to === ".skills"
+          ? ".skills/internal"
+          : op.to === ".cursor"
+            ? ".cursor/skills"
+            : op.to === ".claude"
+              ? ".claude/skills"
+              : ".opencode/skills";
 
       const sourcePath = path.join(root, sourceDir, op.path);
       const targetPath = path.join(root, targetDir, op.path);
@@ -373,12 +411,15 @@ async function executeOperation(
 
       syncLog.summary.copied++;
       logVerbose(`→  COPY  ${op.path} (from ${op.from})`, options.verbose);
-    } else if (op.type === 'delete') {
+    } else if (op.type === "delete") {
       const targetDir =
-        op.to === '.skills' ? '.skills/internal' :
-        op.to === '.cursor' ? '.cursor/skills' :
-        op.to === '.claude' ? '.claude/skills' :
-        '.opencode/skills';
+        op.to === ".skills"
+          ? ".skills/internal"
+          : op.to === ".cursor"
+            ? ".cursor/skills"
+            : op.to === ".claude"
+              ? ".claude/skills"
+              : ".opencode/skills";
 
       const targetPath = path.join(root, targetDir, op.path);
 
@@ -415,11 +456,11 @@ async function executeOperation(
 async function executeSyncOperations(
   root: string,
   operations: SyncOperation[],
-  options: SyncOptions
+  options: SyncOptions,
 ): Promise<SyncLog> {
   const syncLog: SyncLog = {
     timestamp: new Date().toISOString(),
-    operations: operations.filter(op => op.type !== 'skip'),
+    operations: operations.filter((op) => op.type !== "skip"),
     conflicts: [],
     errors: [],
     summary: {
@@ -430,7 +471,7 @@ async function executeSyncOperations(
     },
   };
 
-  log(`\nExecuting ${operations.length} operations...`, 'blue');
+  log(`\nExecuting ${operations.length} operations...`, "blue");
 
   for (const op of operations) {
     await executeOperation(root, op, options, syncLog);
@@ -443,16 +484,23 @@ async function executeSyncOperations(
 // External Skills Sync
 // ============================================================================
 
-async function syncExternalSkills(root: string, options: SyncOptions, syncLog: SyncLog): Promise<void> {
-  const generatedDir = path.join(root, 'skills/skills-generated');
-  const externalDir = path.join(root, '.skills/external');
+async function syncExternalSkills(
+  root: string,
+  options: SyncOptions,
+  syncLog: SyncLog,
+): Promise<void> {
+  const generatedDir = path.join(root, "skills/skills-generated");
+  const externalDir = path.join(root, ".skills/external");
 
   if (!fsSync.existsSync(generatedDir)) {
-    log('\n⚠️  skills-generated not found. Run: npx tsx scripts/generate-skills.ts', 'yellow');
+    log(
+      "\n⚠️  skills-generated not found. Run: npx tsx scripts/generate-skills.ts",
+      "yellow",
+    );
     return;
   }
 
-  log('\n📦 Syncing external skills from skills-generated/', 'blue');
+  log("\n📦 Syncing external skills from skills-generated/", "blue");
 
   // Clear external directory and copy generated skills
   if (!options.dryRun) {
@@ -481,9 +529,9 @@ async function syncExternalSkills(root: string, options: SyncOptions, syncLog: S
     }
 
     await copyDir(generatedDir, externalDir);
-    log('✅ External skills synced', 'green');
+    log("✅ External skills synced", "green");
   } else {
-    log('(dry-run) Would sync external skills', 'yellow');
+    log("(dry-run) Would sync external skills", "yellow");
   }
 }
 
@@ -491,39 +539,48 @@ async function syncExternalSkills(root: string, options: SyncOptions, syncLog: S
 // Logging and Reporting
 // ============================================================================
 
-async function writeSyncLog(root: string, syncLog: SyncLog, options: SyncOptions): Promise<void> {
+async function writeSyncLog(
+  root: string,
+  syncLog: SyncLog,
+  options: SyncOptions,
+): Promise<void> {
   if (!options.dryRun) {
-    const logPath = path.join(root, '.skills/.sync-log.json');
+    const logPath = path.join(root, ".skills/.sync-log.json");
     await fs.mkdir(path.dirname(logPath), { recursive: true });
     await fs.writeFile(logPath, JSON.stringify(syncLog, null, 2));
   }
 }
 
 function printSummary(syncLog: SyncLog, options: SyncOptions): void {
-  log('\n═══════════════════════════════════════════════════════════', 'blue');
-  log('  Sync Summary', 'blue');
-  log('═══════════════════════════════════════════════════════════', 'blue');
+  log("\n═══════════════════════════════════════════════════════════", "blue");
+  log("  Sync Summary", "blue");
+  log("═══════════════════════════════════════════════════════════", "blue");
 
   if (options.dryRun) {
-    log('  Mode: DRY RUN (no changes made)', 'yellow');
+    log("  Mode: DRY RUN (no changes made)", "yellow");
   }
 
-  log(`  Copied:  ${syncLog.summary.copied}`, 'green');
-  log(`  Deleted: ${syncLog.summary.deleted}`, 'green');
-  log(`  Skipped: ${syncLog.summary.skipped}`, 'green');
-  log(`  Errors:  ${syncLog.summary.errors}`, syncLog.summary.errors > 0 ? 'red' : 'green');
+  log(`  Copied:  ${syncLog.summary.copied}`, "green");
+  log(`  Deleted: ${syncLog.summary.deleted}`, "green");
+  log(`  Skipped: ${syncLog.summary.skipped}`, "green");
+  log(
+    `  Errors:  ${syncLog.summary.errors}`,
+    syncLog.summary.errors > 0 ? "red" : "green",
+  );
 
   if (syncLog.conflicts.length > 0) {
-    log(`\n  ⚠️  Conflicts (${syncLog.conflicts.length}):`, 'yellow');
-    syncLog.conflicts.forEach(conflict => log(`     - ${conflict}`, 'yellow'));
+    log(`\n  ⚠️  Conflicts (${syncLog.conflicts.length}):`, "yellow");
+    syncLog.conflicts.forEach((conflict) =>
+      log(`     - ${conflict}`, "yellow"),
+    );
   }
 
   if (syncLog.errors.length > 0) {
-    log(`\n  ✗ Errors (${syncLog.errors.length}):`, 'red');
-    syncLog.errors.forEach(error => log(`     - ${error}`, 'red'));
+    log(`\n  ✗ Errors (${syncLog.errors.length}):`, "red");
+    syncLog.errors.forEach((error) => log(`     - ${error}`, "red"));
   }
 
-  log('═══════════════════════════════════════════════════════════', 'blue');
+  log("═══════════════════════════════════════════════════════════", "blue");
 }
 
 // ============================================================================
@@ -535,47 +592,45 @@ async function main(): Promise<void> {
     // Parse command-line arguments
     const { values } = parseArgs({
       options: {
-        'dry-run': { type: 'boolean', default: false },
-        'verbose': { type: 'boolean', default: false },
-        'interactive': { type: 'boolean', default: false },
-        'include-external': { type: 'boolean', default: false },
+        "dry-run": { type: "boolean", default: false },
+        verbose: { type: "boolean", default: false },
+        interactive: { type: "boolean", default: false },
+        "include-external": { type: "boolean", default: false },
       },
     });
 
     const options: SyncOptions = {
-      dryRun: values['dry-run'] as boolean,
-      verbose: values['verbose'] as boolean,
-      interactive: values['interactive'] as boolean,
-      includeExternal: values['include-external'] as boolean,
+      dryRun: values["dry-run"] as boolean,
+      verbose: values["verbose"] as boolean,
+      interactive: values["interactive"] as boolean,
+      includeExternal: values["include-external"] as boolean,
     };
 
     const root = getMonorepoRoot();
 
-    log('\n🔄 Skills Sync System', 'blue');
-    log('═══════════════════════════════════════════════════════════', 'blue');
+    log("\n🔄 Skills Sync System", "blue");
+    log("═══════════════════════════════════════════════════════════", "blue");
 
     // Build file map from all skill directories
-    log('Scanning skill directories...', 'blue');
+    log("Scanning skill directories...", "blue");
     const fileMap = await buildFileMap(root);
     const fileCount = Object.keys(fileMap).length;
-    log(`Found ${fileCount} files across skill directories`, 'green');
-
+    log(`Found ${fileCount} files across skill directories`, "green");
 
     // Determine sync operations
     const syncOps = determineSyncOperations(fileMap);
     const deleteOps = handleDeletions(fileMap);
     const allOps = [...syncOps, ...deleteOps];
 
-
     // Group operations by type
-    const copyCount = allOps.filter(op => op.type === 'copy').length;
-    const deleteCount = allOps.filter(op => op.type === 'delete').length;
-    const skipCount = allOps.filter(op => op.type === 'skip').length;
+    const copyCount = allOps.filter((op) => op.type === "copy").length;
+    const deleteCount = allOps.filter((op) => op.type === "delete").length;
+    const skipCount = allOps.filter((op) => op.type === "skip").length;
 
-    log(`\nOperations to perform:`, 'blue');
-    log(`  Copy:   ${copyCount}`, copyCount > 0 ? 'green' : 'blue');
-    log(`  Delete: ${deleteCount}`, deleteCount > 0 ? 'yellow' : 'blue');
-    log(`  Skip:   ${skipCount}`, 'blue');
+    log(`\nOperations to perform:`, "blue");
+    log(`  Copy:   ${copyCount}`, copyCount > 0 ? "green" : "blue");
+    log(`  Delete: ${deleteCount}`, deleteCount > 0 ? "yellow" : "blue");
+    log(`  Skip:   ${skipCount}`, "blue");
 
     // Execute operations
     const syncLog = await executeSyncOperations(root, allOps, options);
@@ -595,7 +650,7 @@ async function main(): Promise<void> {
       process.exit(1);
     }
   } catch (error) {
-    log(`\n✗ Fatal error: ${error}`, 'red');
+    log(`\n✗ Fatal error: ${error}`, "red");
     process.exit(1);
   }
 }

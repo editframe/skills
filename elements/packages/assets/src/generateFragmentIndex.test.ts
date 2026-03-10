@@ -112,9 +112,7 @@ function createErrorStream(errorMessage: string): Readable {
 // =============================================================================
 
 /** Type guard: determines if track is a video track */
-function isVideoTrack(
-  track: TrackFragmentIndex,
-): track is VideoTrackFragmentIndex {
+function isVideoTrack(track: TrackFragmentIndex): track is VideoTrackFragmentIndex {
   return track.type === "video";
 }
 
@@ -131,15 +129,11 @@ function assertVideoTrackMetadata(
 
   if (expected.track !== undefined) assert.equal(actual.track, expected.track);
   if (expected.width !== undefined) assert.equal(actual.width, expected.width);
-  if (expected.height !== undefined)
-    assert.equal(actual.height, expected.height);
-  if (expected.timescale !== undefined)
-    assert.equal(actual.timescale, expected.timescale);
+  if (expected.height !== undefined) assert.equal(actual.height, expected.height);
+  if (expected.timescale !== undefined) assert.equal(actual.timescale, expected.timescale);
   if (expected.codec !== undefined) assert.equal(actual.codec, expected.codec);
-  if (expected.duration !== undefined)
-    assert.equal(actual.duration, expected.duration);
-  if (expected.sample_count !== undefined)
-    assert.equal(actual.sample_count, expected.sample_count);
+  if (expected.duration !== undefined) assert.equal(actual.duration, expected.duration);
+  if (expected.sample_count !== undefined) assert.equal(actual.sample_count, expected.sample_count);
   if (expected.startTimeOffsetMs !== undefined) {
     assert.equal(actual.startTimeOffsetMs, expected.startTimeOffsetMs);
   }
@@ -178,9 +172,7 @@ function assertSegmentsValid(segments: TrackFragmentIndex["segments"]): void {
 describe("generateFragmentIndex", () => {
   describe("single video track files", () => {
     test("frame-count.mp4 generates correct track metadata and segments", async () => {
-      const testStream = await createTestStreamFromFile(
-        "test-assets/frame-count.mp4",
-      );
+      const testStream = await createTestStreamFromFile("test-assets/frame-count.mp4");
       const result = await generateFragmentIndex(testStream);
 
       // Validate structure
@@ -194,20 +186,14 @@ describe("generateFragmentIndex", () => {
       assertInitSegment(track, FRAME_COUNT_VIDEO_TRACK.initSegment!);
 
       // Validate segmentation
-      assert.equal(
-        track.segments.length,
-        5,
-        "Should have 5 consolidated segments",
-      );
+      assert.equal(track.segments.length, 5, "Should have 5 consolidated segments");
       assertSegmentsValid(track.segments);
     }, 15000);
   });
 
   describe("multi-track files", () => {
     test.skip("10s-bars.mp4 generates expected multi-track structure", async () => {
-      const testStream = await createTestStreamFromFile(
-        "test-assets/10s-bars.mp4",
-      );
+      const testStream = await createTestStreamFromFile("test-assets/10s-bars.mp4");
       const result = await generateFragmentIndex(testStream);
 
       const expected: Record<number, TrackFragmentIndex> = {
@@ -315,9 +301,7 @@ describe("generateFragmentIndex", () => {
     }, 20000);
 
     test.skip("10s-bars.frag.mp4 generates expected fragmented structure", async () => {
-      const testStream = await createTestStreamFromFile(
-        "test-assets/10s-bars.frag.mp4",
-      );
+      const testStream = await createTestStreamFromFile("test-assets/10s-bars.frag.mp4");
       const result = await generateFragmentIndex(testStream);
 
       const expected: Record<number, TrackFragmentIndex> = {
@@ -425,9 +409,7 @@ describe("generateFragmentIndex", () => {
     }, 20000);
 
     test("bars-n-tone.mp4 generates expected multi-track structure", async () => {
-      const testStream = await createTestStreamFromFile(
-        "test-assets/bars-n-tone.mp4",
-      );
+      const testStream = await createTestStreamFromFile("test-assets/bars-n-tone.mp4");
       const result = await generateFragmentIndex(testStream);
 
       assert.deepEqual(result, BARS_N_TONE_EXPECTED);
@@ -486,19 +468,12 @@ describe("generateFragmentIndex", () => {
     });
 
     test("writes temp file to tmpDir and cleans it up after probing", async () => {
-      const testStream = await createTestStreamFromFile(
-        "test-assets/frame-count.mp4",
-      );
+      const testStream = await createTestStreamFromFile("test-assets/frame-count.mp4");
 
       // Spy on tmpDir: sample for files during execution using polling
       let peakFileCount = 0;
       // Use a polling approach: check the dir after a small delay inside the promise
-      const resultPromise = generateFragmentIndex(
-        testStream,
-        undefined,
-        undefined,
-        { tmpDir },
-      );
+      const resultPromise = generateFragmentIndex(testStream, undefined, undefined, { tmpDir });
 
       // Poll tmpDir while the promise is running
       const poll = setInterval(async () => {
@@ -526,27 +501,14 @@ describe("generateFragmentIndex", () => {
 
       // No temp files should remain in tmpDir after completion
       const remaining = await readdir(tmpDir);
-      assert.deepEqual(
-        remaining,
-        [],
-        "No temp files should remain in tmpDir after completion",
-      );
+      assert.deepEqual(remaining, [], "No temp files should remain in tmpDir after completion");
     }, 15000);
 
     test("produces identical output with and without tmpDir", async () => {
-      const stream1 = await createTestStreamFromFile(
-        "test-assets/bars-n-tone.mp4",
-      );
-      const stream2 = await createTestStreamFromFile(
-        "test-assets/bars-n-tone.mp4",
-      );
+      const stream1 = await createTestStreamFromFile("test-assets/bars-n-tone.mp4");
+      const stream2 = await createTestStreamFromFile("test-assets/bars-n-tone.mp4");
 
-      const withTmpDir = await generateFragmentIndex(
-        stream1,
-        undefined,
-        undefined,
-        { tmpDir },
-      );
+      const withTmpDir = await generateFragmentIndex(stream1, undefined, undefined, { tmpDir });
       const withoutTmpDir = await generateFragmentIndex(stream2);
 
       assert.deepEqual(withTmpDir, withoutTmpDir);

@@ -7,11 +7,7 @@ import debug from "debug";
 import { forbidRelativePaths } from "./forbidRelativePaths.js";
 import { sendTaskResult } from "./sendTaskResult.js";
 
-type Middleware = (
-  req: IncomingMessage,
-  res: ServerResponse,
-  next: NextFunction,
-) => void;
+type Middleware = (req: IncomingMessage, res: ServerResponse, next: NextFunction) => void;
 
 interface PluginOptions {
   root: string;
@@ -24,20 +20,13 @@ interface AssetsDeps {
 }
 
 interface FilesDeps {
-  generateTrack: (
-    cacheRoot: string,
-    src: string,
-    trackUrl: string,
-  ) => Promise<any>;
+  generateTrack: (cacheRoot: string, src: string, trackUrl: string) => Promise<any>;
   generateScrubTrack: (cacheRoot: string, src: string) => Promise<any>;
   generateTrackFragmentIndex: (cacheRoot: string, src: string) => Promise<any>;
   md5FilePath: (src: string) => Promise<string>;
 }
 
-export function createAssetsApiMiddleware(
-  options: PluginOptions,
-  deps: AssetsDeps,
-): Middleware {
+export function createAssetsApiMiddleware(options: PluginOptions, deps: AssetsDeps): Middleware {
   const { cacheImage, findOrCreateCaptions } = deps;
   return async (req, res, next) => {
     const log = debug("ef:vite-plugin:assets");
@@ -60,9 +49,7 @@ export function createAssetsApiMiddleware(
     }
 
     const isRemote = src.startsWith("http://") || src.startsWith("https://");
-    const absolutePath = isRemote
-      ? src
-      : path.join(options.root, src).replace("dist/", "src/");
+    const absolutePath = isRemote ? src : path.join(options.root, src).replace("dist/", "src/");
 
     log(`Handling assets API: ${urlPath} src=${src}`);
 
@@ -75,8 +62,7 @@ export function createAssetsApiMiddleware(
             res.end();
             return;
           }
-          const contentType =
-            response.headers.get("content-type") ?? "application/octet-stream";
+          const contentType = response.headers.get("content-type") ?? "application/octet-stream";
           const buffer = await response.arrayBuffer();
           res.writeHead(200, { "Content-Type": contentType });
           res.end(Buffer.from(buffer));
@@ -88,10 +74,7 @@ export function createAssetsApiMiddleware(
       }
 
       if (urlPath === "/api/v1/assets/captions") {
-        const taskResult = await findOrCreateCaptions(
-          options.cacheRoot,
-          absolutePath,
-        );
+        const taskResult = await findOrCreateCaptions(options.cacheRoot, absolutePath);
         sendTaskResult(req, res, taskResult);
         return;
       }
@@ -111,16 +94,8 @@ export function createAssetsApiMiddleware(
   };
 }
 
-export function createLocalFilesApiMiddleware(
-  options: PluginOptions,
-  deps: FilesDeps,
-): Middleware {
-  const {
-    generateTrack,
-    generateScrubTrack,
-    generateTrackFragmentIndex,
-    md5FilePath,
-  } = deps;
+export function createLocalFilesApiMiddleware(options: PluginOptions, deps: FilesDeps): Middleware {
+  const { generateTrack, generateScrubTrack, generateTrackFragmentIndex, md5FilePath } = deps;
   return async (req, res, next) => {
     const log = debug("ef:vite-plugin:files");
     const reqUrl = req.url || "";
@@ -149,10 +124,7 @@ export function createLocalFilesApiMiddleware(
     try {
       if (urlPath === "/api/v1/files/index") {
         log(`Serving track fragment index for ${absolutePath}`);
-        const taskResult = await generateTrackFragmentIndex(
-          options.cacheRoot,
-          absolutePath,
-        );
+        const taskResult = await generateTrackFragmentIndex(options.cacheRoot, absolutePath);
         sendTaskResult(req, res, taskResult);
         return;
       }
@@ -189,23 +161,14 @@ export function createLocalFilesApiMiddleware(
 
         if (trackId === -1) {
           log(`Serving scrub track for ${absolutePath}`);
-          const taskResult = await generateScrubTrack(
-            options.cacheRoot,
-            absolutePath,
-          );
+          const taskResult = await generateScrubTrack(options.cacheRoot, absolutePath);
           sendTaskResult(req, res, taskResult);
           return;
         }
 
-        log(
-          `Serving track ${trackId} segment ${segmentIdStr || "all"} for ${absolutePath}`,
-        );
+        log(`Serving track ${trackId} segment ${segmentIdStr || "all"} for ${absolutePath}`);
         const trackUrl = `/@ef-track/${src}?trackId=${trackId}${segmentIdStr ? `&segmentId=${segmentIdStr}` : ""}`;
-        const taskResult = await generateTrack(
-          options.cacheRoot,
-          absolutePath,
-          trackUrl,
-        );
+        const taskResult = await generateTrack(options.cacheRoot, absolutePath, trackUrl);
         sendTaskResult(req, res, taskResult);
         return;
       }
@@ -245,18 +208,12 @@ export async function handleClearCache(
         break;
       }
       if (error.code === "ENOTEMPTY" && attempt < maxRetries - 1) {
-        await new Promise((resolve) =>
-          setTimeout(resolve, 100 * (attempt + 1)),
-        );
+        await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
         continue;
       }
-      log(
-        `Warning: Cache clear attempt ${attempt + 1} failed: ${error.message}`,
-      );
+      log(`Warning: Cache clear attempt ${attempt + 1} failed: ${error.message}`);
       if (attempt === maxRetries - 1) {
-        log(
-          `Cache clear failed after ${maxRetries} attempts, continuing anyway`,
-        );
+        log(`Cache clear failed after ${maxRetries} attempts, continuing anyway`);
       }
     }
   }

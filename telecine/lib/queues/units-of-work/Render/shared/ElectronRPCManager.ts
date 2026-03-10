@@ -28,7 +28,10 @@ export class ElectronRPCManager {
       try {
         ElectronRPCManager.rpcClient = await ElectronRPCManager.rpcPromise;
         const electronStartMs = Math.round(performance.now() - startMs);
-        logger.info({ event: "electronColdStart", electronStartMs }, "Electron RPC client started");
+        logger.info(
+          { event: "electronColdStart", electronStartMs },
+          "Electron RPC client started",
+        );
         return ElectronRPCManager.rpcClient;
       } catch (error) {
         logger.error(
@@ -49,9 +52,15 @@ export class ElectronRPCManager {
     try {
       await ElectronRPCManager.getRPCClient();
       const electronStartMs = Math.round(performance.now() - startMs);
-      logger.info({ event: "electronPrewarm", electronStartMs }, "Electron RPC prewarmed");
+      logger.info(
+        { event: "electronPrewarm", electronStartMs },
+        "Electron RPC prewarmed",
+      );
     } catch (error) {
-      logger.warn({ event: "electronPrewarmFailed", error }, "Electron RPC prewarm failed, will retry on first job");
+      logger.warn(
+        { event: "electronPrewarmFailed", error },
+        "Electron RPC prewarm failed, will retry on first job",
+      );
     }
   }
 

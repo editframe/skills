@@ -90,9 +90,7 @@ function createLaunchConfig(): TestConfiguration {
   };
 }
 
-function resolveTestConfiguration(
-  mode: ViteTestBrowserMode,
-): TestConfiguration {
+function resolveTestConfiguration(mode: ViteTestBrowserMode): TestConfiguration {
   switch (mode) {
     case "connect": {
       const wsEndpoint = loadWebSocketEndpoint();
@@ -118,8 +116,7 @@ log("resolved test configuration", config);
 
 export default defineConfig(async () => {
   log("VITEST_BROWSER_MODE", process.env.VITEST_BROWSER_MODE);
-  const { vitePluginEditframe } =
-    await import("./packages/vite-plugin/src/index.vitest.js");
+  const { vitePluginEditframe } = await import("./packages/vite-plugin/src/index.vitest.js");
 
   // Get worktree domain for Traefik URL rewriting
   // Test server uses its own Traefik entrypoint (port 4322) to avoid conflict with dev-projects
@@ -137,10 +134,7 @@ export default defineConfig(async () => {
       // So we'll do it in configureServer
     },
     configureServer(server) {
-      log(
-        "[Traefik URL Plugin] Configuring server, original port:",
-        server.config.server?.port,
-      );
+      log("[Traefik URL Plugin] Configuring server, original port:", server.config.server?.port);
       log("[Traefik URL Plugin] Overriding server URLs to:", traefikUrl);
 
       // Ensure the server is configured to listen on the correct port
@@ -171,10 +165,7 @@ export default defineConfig(async () => {
       // Also override the getter in case Vite tries to recompute it
       Object.defineProperty(server, "resolvedUrls", {
         get() {
-          log(
-            "[Traefik URL Plugin] resolvedUrls accessed, returning:",
-            traefikResolvedUrls,
-          );
+          log("[Traefik URL Plugin] resolvedUrls accessed, returning:", traefikResolvedUrls);
           return traefikResolvedUrls;
         },
         set(_value) {
@@ -199,18 +190,13 @@ export default defineConfig(async () => {
         const address = server.httpServer?.address();
         log("[Traefik URL Plugin] Server is listening on:", address);
         log("[Traefik URL Plugin] Server URL:", server.resolvedUrls);
-        log(
-          "[Traefik URL Plugin] Server middleware count:",
-          server.middlewares.stack?.length || 0,
-        );
+        log("[Traefik URL Plugin] Server middleware count:", server.middlewares.stack?.length || 0);
       });
 
       // Ensure server actually starts listening
       // Vitest browser mode should start the server automatically, but we ensure it's ready
       if (!server.httpServer?.listening) {
-        log(
-          "[Traefik URL Plugin] Server not yet listening, waiting for Vitest to start it...",
-        );
+        log("[Traefik URL Plugin] Server not yet listening, waiting for Vitest to start it...");
       } else {
         log("[Traefik URL Plugin] Server is already listening");
       }
@@ -229,10 +215,7 @@ export default defineConfig(async () => {
     name: "ci-mode-inject",
     transformIndexHtml(html: string) {
       // Inject script that sets CI mode flag in browser
-      return html.replace(
-        "</head>",
-        `<script>window.__CI_MODE__ = ${isCI};</script></head>`,
-      );
+      return html.replace("</head>", `<script>window.__CI_MODE__ = ${isCI};</script></head>`);
     },
   };
 
@@ -378,9 +361,7 @@ export default defineConfig(async () => {
               const blob = new Blob([workerSrc], {
                 type: "application/javascript",
               });
-              (window as any)._testWorker = new Worker(
-                URL.createObjectURL(blob),
-              );
+              (window as any)._testWorker = new Worker(URL.createObjectURL(blob));
               (window as any)._workerResults = null;
               (window as any)._workerDone = false;
               (window as any)._testWorker.onmessage = (e: any) => {
@@ -409,15 +390,9 @@ export default defineConfig(async () => {
                   const gl =
                     canvas.getContext("webgl2", {
                       preserveDrawingBuffer: true,
-                    }) ||
-                    canvas.getContext("webgl", { preserveDrawingBuffer: true });
+                    }) || canvas.getContext("webgl", { preserveDrawingBuffer: true });
                   if (!gl) return;
-                  gl.clearColor(
-                    frame.color[0],
-                    frame.color[1],
-                    frame.color[2],
-                    1.0,
-                  );
+                  gl.clearColor(frame.color[0], frame.color[1], frame.color[2], 1.0);
                   gl.clear(gl.COLOR_BUFFER_BIT);
                   gl.finish();
                   const px = new Uint8Array(4);
@@ -470,12 +445,8 @@ export default defineConfig(async () => {
             // Wait for main-thread catch-up
             await new Promise((r) => setTimeout(r, 2000));
 
-            const workerResults = await page.evaluate(
-              () => (window as any)._workerResults,
-            );
-            const mainResults = await page.evaluate(
-              () => (window as any)._mainResults,
-            );
+            const workerResults = await page.evaluate(() => (window as any)._workerResults);
+            const mainResults = await page.evaluate(() => (window as any)._mainResults);
 
             // Cleanup
             await page.evaluate(() => {

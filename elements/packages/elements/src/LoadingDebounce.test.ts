@@ -20,11 +20,7 @@ describe("Loading Indicator Debouncing", () => {
   };
 
   // Simulate the debounced loading state setter
-  const setLoadingState = (
-    isLoading: boolean,
-    operation: string | null = null,
-    message = "",
-  ) => {
+  const setLoadingState = (isLoading: boolean, operation: string | null = null, message = "") => {
     if (isLoading) {
       // Don't show loading immediately - start grace period timer
       if (loadingTimeout) {

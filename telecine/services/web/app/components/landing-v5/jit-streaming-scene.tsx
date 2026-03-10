@@ -38,7 +38,7 @@ import { useCompositionTime } from "@editframe/react/r3f";
 
 /* ━━ Sizing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 const BAR_W = 3.6;
-const BAR_H = 0.20;
+const BAR_H = 0.2;
 const BAR_D = 0.28;
 const NUM_SEGS = 6;
 const SEG_W = BAR_W / NUM_SEGS;
@@ -126,26 +126,63 @@ const COL_BG = "#3d4158";
 const COL_DONE = "#69f0ae";
 
 /* ━━ Easing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-function easeOut(t: number) { return 1 - Math.pow(1 - t, 3); }
-function easeInOut(t: number) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
-function clamp01(t: number) { return Math.max(0, Math.min(1, t)); }
-function prog(ms: number, s: number, e: number) { return clamp01((ms - s) / (e - s)); }
-function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
+function easeOut(t: number) {
+  return 1 - Math.pow(1 - t, 3);
+}
+function easeInOut(t: number) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+function clamp01(t: number) {
+  return Math.max(0, Math.min(1, t));
+}
+function prog(ms: number, s: number, e: number) {
+  return clamp01((ms - s) / (e - s));
+}
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t;
+}
 
-function segX(i: number) { return -BAR_W / 2 + SEG_W / 2 + i * SEG_W; }
+function segX(i: number) {
+  return -BAR_W / 2 + SEG_W / 2 + i * SEG_W;
+}
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    COMPONENTS
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-function SceneLabel({ children, position, opacity, color, fontSize, bold, anchorX }: {
-  children: string; position: [number, number, number]; opacity: number;
-  color?: string; fontSize?: number; bold?: boolean; anchorX?: "left" | "center" | "right";
+function SceneLabel({
+  children,
+  position,
+  opacity,
+  color,
+  fontSize,
+  bold,
+  anchorX,
+}: {
+  children: string;
+  position: [number, number, number];
+  opacity: number;
+  color?: string;
+  fontSize?: number;
+  bold?: boolean;
+  anchorX?: "left" | "center" | "right";
 }) {
   if (opacity < 0.01) return null;
   const fs = fontSize ?? 0.18;
   return (
-    <Text position={position} rotation={[-0.35, 0, 0]} fontSize={fs} color={color ?? "white"} anchorX={anchorX ?? "center"} anchorY="middle" fillOpacity={opacity} fontWeight={bold ? "bold" : "normal"} outlineWidth={fs * 0.08} outlineColor="#000000" outlineOpacity={opacity * 0.6}>
+    <Text
+      position={position}
+      rotation={[-0.35, 0, 0]}
+      fontSize={fs}
+      color={color ?? "white"}
+      anchorX={anchorX ?? "center"}
+      anchorY="middle"
+      fillOpacity={opacity}
+      fontWeight={bold ? "bold" : "normal"}
+      outlineWidth={fs * 0.08}
+      outlineColor="#000000"
+      outlineOpacity={opacity * 0.6}
+    >
       {children}
     </Text>
   );
@@ -156,19 +193,42 @@ function BarBackdrop({ width, opacity }: { width: number; opacity: number }) {
   return (
     <mesh>
       <boxGeometry args={[width + 0.06, BAR_H + 0.06, BAR_D * 0.5]} />
-      <meshStandardMaterial color={COL_BG} roughness={0.8} transparent opacity={opacity * 0.5} depthWrite={false} />
+      <meshStandardMaterial
+        color={COL_BG}
+        roughness={0.8}
+        transparent
+        opacity={opacity * 0.5}
+        depthWrite={false}
+      />
     </mesh>
   );
 }
 
-function BarSegment({ position, color, opacity, emissive }: {
-  position: [number, number, number]; color: string; opacity: number; emissive?: number;
+function BarSegment({
+  position,
+  color,
+  opacity,
+  emissive,
+}: {
+  position: [number, number, number];
+  color: string;
+  opacity: number;
+  emissive?: number;
 }) {
   if (opacity < 0.01) return null;
   return (
     <mesh position={position} castShadow>
       <boxGeometry args={[SEG_W - SEG_GAP, BAR_H, BAR_D]} />
-      <meshPhysicalMaterial color={color} roughness={0.12} metalness={0.15} clearcoat={0.8} transparent opacity={opacity} emissive={color} emissiveIntensity={emissive ?? 0.06} />
+      <meshPhysicalMaterial
+        color={color}
+        roughness={0.12}
+        metalness={0.15}
+        clearcoat={0.8}
+        transparent
+        opacity={opacity}
+        emissive={color}
+        emissiveIntensity={emissive ?? 0.06}
+      />
     </mesh>
   );
 }
@@ -176,8 +236,17 @@ function BarSegment({ position, color, opacity, emissive }: {
 /** Solid bar — always renders as a single continuous block.
  *  progressOut (0→1) subtly dims the bar as content is being extracted,
  *  but the shape stays whole — never shows segment gaps. */
-function SolidBar({ opacity, position, label, color, progressOut }: {
-  opacity: number; position: [number, number, number]; label?: string; color?: string;
+function SolidBar({
+  opacity,
+  position,
+  label,
+  color,
+  progressOut,
+}: {
+  opacity: number;
+  position: [number, number, number];
+  label?: string;
+  color?: string;
   progressOut?: number;
 }) {
   if (opacity < 0.01) return null;
@@ -189,28 +258,71 @@ function SolidBar({ opacity, position, label, color, progressOut }: {
       <BarBackdrop width={BAR_W} opacity={opacity} />
       <mesh castShadow>
         <boxGeometry args={[BAR_W, BAR_H, BAR_D]} />
-        <meshPhysicalMaterial color={c} roughness={0.12} metalness={0.15} clearcoat={0.8} transparent opacity={opacity * 0.85 * dimFactor} emissive={c} emissiveIntensity={0.06} />
+        <meshPhysicalMaterial
+          color={c}
+          roughness={0.12}
+          metalness={0.15}
+          clearcoat={0.8}
+          transparent
+          opacity={opacity * 0.85 * dimFactor}
+          emissive={c}
+          emissiveIntensity={0.06}
+        />
       </mesh>
-      {label && <SceneLabel position={[0, BAR_H / 2 + 0.14, BAR_D]} fontSize={0.09} opacity={opacity * 0.8}>{label}</SceneLabel>}
+      {label && (
+        <SceneLabel
+          position={[0, BAR_H / 2 + 0.14, BAR_D]}
+          fontSize={0.09}
+          opacity={opacity * 0.8}
+        >
+          {label}
+        </SceneLabel>
+      )}
     </group>
   );
 }
 
-function Chunk({ opacity, color, position }: {
-  opacity: number; color: string; position: [number, number, number];
+function Chunk({
+  opacity,
+  color,
+  position,
+}: {
+  opacity: number;
+  color: string;
+  position: [number, number, number];
 }) {
   if (opacity < 0.01) return null;
   return (
     <mesh position={position} castShadow>
       <boxGeometry args={[SEG_W - SEG_GAP, BAR_H, BAR_D]} />
-      <meshPhysicalMaterial color={color} roughness={0.12} metalness={0.15} clearcoat={0.8} transparent opacity={opacity} emissive={color} emissiveIntensity={0.25} />
+      <meshPhysicalMaterial
+        color={color}
+        roughness={0.12}
+        metalness={0.15}
+        clearcoat={0.8}
+        transparent
+        opacity={opacity}
+        emissive={color}
+        emissiveIntensity={0.25}
+      />
     </mesh>
   );
 }
 
-function VariantBar({ opacity, color, position, label, scale, filledSegs }: {
-  opacity: number; color: string; position: [number, number, number]; label: string;
-  scale?: number; filledSegs?: number[];
+function VariantBar({
+  opacity,
+  color,
+  position,
+  label,
+  scale,
+  filledSegs,
+}: {
+  opacity: number;
+  color: string;
+  position: [number, number, number];
+  label: string;
+  scale?: number;
+  filledSegs?: number[];
 }) {
   if (opacity < 0.01) return null;
   const s = scale ?? 1;
@@ -222,17 +334,42 @@ function VariantBar({ opacity, color, position, label, scale, filledSegs }: {
         const isFilled = filled.includes(i);
         if (!isFilled) return null;
         return (
-          <BarSegment key={i} position={[segX(i), 0, BAR_D * 0.25]} color={color} opacity={opacity} emissive={0.15} />
+          <BarSegment
+            key={i}
+            position={[segX(i), 0, BAR_D * 0.25]}
+            color={color}
+            opacity={opacity}
+            emissive={0.15}
+          />
         );
       })}
-      <SceneLabel position={[BAR_W / 2 + 0.12, 0, BAR_D * 0.3]} fontSize={0.08} color="#ccddff" opacity={opacity * 0.8} anchorX="left">{label}</SceneLabel>
+      <SceneLabel
+        position={[BAR_W / 2 + 0.12, 0, BAR_D * 0.3]}
+        fontSize={0.08}
+        color="#ccddff"
+        opacity={opacity * 0.8}
+        anchorX="left"
+      >
+        {label}
+      </SceneLabel>
     </group>
   );
 }
 
-function GhostVariantBar({ opacity, color, position, label, scale, filledSegs }: {
-  opacity: number; color: string; position: [number, number, number]; label: string;
-  scale?: number; filledSegs?: number[];
+function GhostVariantBar({
+  opacity,
+  color,
+  position,
+  label,
+  scale,
+  filledSegs,
+}: {
+  opacity: number;
+  color: string;
+  position: [number, number, number];
+  label: string;
+  scale?: number;
+  filledSegs?: number[];
 }) {
   if (opacity < 0.01) return null;
   const s = scale ?? 1;
@@ -252,7 +389,15 @@ function GhostVariantBar({ opacity, color, position, label, scale, filledSegs }:
           />
         );
       })}
-      <SceneLabel position={[BAR_W / 2 + 0.12, 0, BAR_D * 0.3]} fontSize={0.08} color="#ccddff" opacity={opacity * 0.5} anchorX="left">{label}</SceneLabel>
+      <SceneLabel
+        position={[BAR_W / 2 + 0.12, 0, BAR_D * 0.3]}
+        fontSize={0.08}
+        color="#ccddff"
+        opacity={opacity * 0.5}
+        anchorX="left"
+      >
+        {label}
+      </SceneLabel>
     </group>
   );
 }
@@ -267,9 +412,18 @@ function scrubSegX(i: number) {
   return -PLAYER_SCREEN_W / 2 + SCRUB_SEG_W / 2 + i * SCRUB_SEG_W;
 }
 
-function VideoPlayer({ opacity, playing, position, bufferedSegs, bufferColor }: {
-  opacity: number; playing: number; position: [number, number, number];
-  bufferedSegs?: number[]; bufferColor?: string;
+function VideoPlayer({
+  opacity,
+  playing,
+  position,
+  bufferedSegs,
+  bufferColor,
+}: {
+  opacity: number;
+  playing: number;
+  position: [number, number, number];
+  bufferedSegs?: number[];
+  bufferColor?: string;
 }) {
   if (opacity < 0.01) return null;
   const playBtnOpa = opacity * (1 - playing * 0.8);
@@ -279,47 +433,103 @@ function VideoPlayer({ opacity, playing, position, bufferedSegs, bufferColor }: 
     <group position={position}>
       <mesh castShadow>
         <boxGeometry args={[PLAYER_W, 0.8, 0.06]} />
-        <meshPhysicalMaterial color="#1a1a2e" roughness={0.4} metalness={0.5} transparent opacity={opacity} />
+        <meshPhysicalMaterial
+          color="#1a1a2e"
+          roughness={0.4}
+          metalness={0.5}
+          transparent
+          opacity={opacity}
+        />
       </mesh>
       <mesh position={[0, 0, 0.04]}>
         <boxGeometry args={[PLAYER_SCREEN_W, 0.64, 0.02]} />
-        <meshStandardMaterial color="#0a0a18" transparent opacity={opacity * 0.95} emissive={COL_EF} emissiveIntensity={playing * 0.35} />
+        <meshStandardMaterial
+          color="#0a0a18"
+          transparent
+          opacity={opacity * 0.95}
+          emissive={COL_EF}
+          emissiveIntensity={playing * 0.35}
+        />
       </mesh>
       {playBtnOpa > 0.01 && (
         <mesh position={[0, 0, 0.06]} rotation={[0, 0, -Math.PI / 2]}>
           <coneGeometry args={[0.12, 0.16, 3]} />
-          <meshBasicMaterial color="#ffffff" transparent opacity={playBtnOpa * 0.5} depthWrite={false} />
+          <meshBasicMaterial
+            color="#ffffff"
+            transparent
+            opacity={playBtnOpa * 0.5}
+            depthWrite={false}
+          />
         </mesh>
       )}
-      <mesh position={[0, -0.30, 0.04]}>
+      <mesh position={[0, -0.3, 0.04]}>
         <boxGeometry args={[PLAYER_SCREEN_W, SCRUB_H, 0.02]} />
-        <meshBasicMaterial color="#333355" transparent opacity={opacity * 0.4} depthWrite={false} />
+        <meshBasicMaterial
+          color="#333355"
+          transparent
+          opacity={opacity * 0.4}
+          depthWrite={false}
+        />
       </mesh>
       {Array.from({ length: NUM_SEGS }, (_, i) => {
         if (!buffered.includes(i)) return null;
         return (
-          <mesh key={i} position={[scrubSegX(i), -0.30, 0.05]}>
-            <boxGeometry args={[SCRUB_SEG_W - SCRUB_GAP, SCRUB_H + 0.01, 0.02]} />
-            <meshBasicMaterial color={bCol} transparent opacity={opacity * 0.8} depthWrite={false} />
+          <mesh key={i} position={[scrubSegX(i), -0.3, 0.05]}>
+            <boxGeometry
+              args={[SCRUB_SEG_W - SCRUB_GAP, SCRUB_H + 0.01, 0.02]}
+            />
+            <meshBasicMaterial
+              color={bCol}
+              transparent
+              opacity={opacity * 0.8}
+              depthWrite={false}
+            />
           </mesh>
         );
       })}
       {playing > 0.01 && (
-        <mesh position={[-PLAYER_SCREEN_W / 2 + PLAYER_SCREEN_W * playing, -0.30, 0.06]}>
+        <mesh
+          position={[
+            -PLAYER_SCREEN_W / 2 + PLAYER_SCREEN_W * playing,
+            -0.3,
+            0.06,
+          ]}
+        >
           <boxGeometry args={[0.02, SCRUB_H + 0.03, 0.02]} />
-          <meshBasicMaterial color="#ffffff" transparent opacity={opacity * 0.9} depthWrite={false} />
+          <meshBasicMaterial
+            color="#ffffff"
+            transparent
+            opacity={opacity * 0.9}
+            depthWrite={false}
+          />
         </mesh>
       )}
-      <SceneLabel position={[0, -0.48, 0.04]} fontSize={0.07} color="#666688" opacity={opacity * 0.4}>player</SceneLabel>
+      <SceneLabel
+        position={[0, -0.48, 0.04]}
+        fontSize={0.07}
+        color="#666688"
+        opacity={opacity * 0.4}
+      >
+        player
+      </SceneLabel>
     </group>
   );
 }
 
 /** Beam connecting two points. progress controls draw-in animation (0→1).
  *  Once progress reaches 1, beam stays fully drawn as long as opacity > 0. */
-function RequestBeam({ from, to, progress, opacity, color }: {
-  from: [number, number, number]; to: [number, number, number];
-  progress: number; opacity: number; color: string;
+function RequestBeam({
+  from,
+  to,
+  progress,
+  opacity,
+  color,
+}: {
+  from: [number, number, number];
+  to: [number, number, number];
+  progress: number;
+  opacity: number;
+  color: string;
 }) {
   if (opacity < 0.01 || progress <= 0) return null;
   const p = clamp01(progress);
@@ -338,12 +548,20 @@ function RequestBeam({ from, to, progress, opacity, color }: {
   const cz = (from[2] + endZ) / 2;
 
   const dir = new THREE.Vector3(dx, dy, dz).normalize();
-  const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+  const quat = new THREE.Quaternion().setFromUnitVectors(
+    new THREE.Vector3(0, 1, 0),
+    dir,
+  );
 
   return (
     <mesh position={[cx, cy, cz]} quaternion={quat}>
       <cylinderGeometry args={[0.012, 0.012, len, 4]} />
-      <meshBasicMaterial color={color} transparent opacity={opacity} depthWrite={false} />
+      <meshBasicMaterial
+        color={color}
+        transparent
+        opacity={opacity}
+        depthWrite={false}
+      />
     </mesh>
   );
 }
@@ -352,11 +570,22 @@ function RequestBeam({ from, to, progress, opacity, color }: {
 function Floor() {
   return (
     <>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.7, 0]} receiveShadow>
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, -0.7, 0]}
+        receiveShadow
+      >
         <planeGeometry args={[50, 35]} />
-        <meshStandardMaterial color="#2a2e42" roughness={0.75} metalness={0.1} />
+        <meshStandardMaterial
+          color="#2a2e42"
+          roughness={0.75}
+          metalness={0.1}
+        />
       </mesh>
-      <gridHelper args={[30, 30, "#3a3f58", "#3a3f58"]} position={[0, -0.69, 0]}>
+      <gridHelper
+        args={[30, 30, "#3a3f58", "#3a3f58"]}
+        position={[0, -0.69, 0]}
+      >
         {/* @ts-expect-error gridHelper material access */}
         <meshBasicMaterial transparent opacity={0.25} />
       </gridHelper>
@@ -367,15 +596,43 @@ function Floor() {
 function Lighting({ timeMs }: { timeMs: number }) {
   const rimRef = useRef<THREE.PointLight>(null);
   useFrame(() => {
-    if (rimRef.current) rimRef.current.intensity = 0.9 + Math.sin(timeMs * 0.0015) * 0.15;
+    if (rimRef.current)
+      rimRef.current.intensity = 0.9 + Math.sin(timeMs * 0.0015) * 0.15;
   });
   return (
     <>
       <ambientLight color="#d0d8f0" intensity={0.9} />
-      <directionalLight position={[3, 8, 5]} intensity={1.8} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-left={-10} shadow-camera-right={10} shadow-camera-top={8} shadow-camera-bottom={-8} />
-      <directionalLight position={[-3, 4, -2]} color="#aaccff" intensity={0.6} />
-      <pointLight ref={rimRef} position={[0, 2, 3]} color={COL_EF} intensity={0.9} distance={20} />
-      <spotLight position={[0, 6, 5]} intensity={2.0} distance={20} angle={Math.PI / 5} penumbra={0.4} decay={1} />
+      <directionalLight
+        position={[3, 8, 5]}
+        intensity={1.8}
+        castShadow
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
+        shadow-camera-left={-10}
+        shadow-camera-right={10}
+        shadow-camera-top={8}
+        shadow-camera-bottom={-8}
+      />
+      <directionalLight
+        position={[-3, 4, -2]}
+        color="#aaccff"
+        intensity={0.6}
+      />
+      <pointLight
+        ref={rimRef}
+        position={[0, 2, 3]}
+        color={COL_EF}
+        intensity={0.9}
+        distance={20}
+      />
+      <spotLight
+        position={[0, 6, 5]}
+        intensity={2.0}
+        distance={20}
+        angle={Math.PI / 5}
+        penumbra={0.4}
+        decay={1}
+      />
     </>
   );
 }
@@ -402,12 +659,16 @@ function CameraController({ timeMs }: { timeMs: number }) {
     let tz = 0;
 
     // Phase 2: track forward as chunks transfer (camera X already at TRAD_X)
-    const transferTrack = easeInOut(prog(timeMs, TRAD_TRANSFER_START, TRAD_TRANSFER_END));
+    const transferTrack = easeInOut(
+      prog(timeMs, TRAD_TRANSFER_START, TRAD_TRANSFER_END),
+    );
     cz = lerp(3.0, PIPELINE_Z + 3.0, transferTrack);
     tz = lerp(0, PIPELINE_Z, transferTrack);
 
     // Phase 3: continue forward to variants
-    const transcodeTrack = easeInOut(prog(timeMs, TRAD_TRANSCODE_START, TRAD_TRANSCODE_END));
+    const transcodeTrack = easeInOut(
+      prog(timeMs, TRAD_TRANSCODE_START, TRAD_TRANSCODE_END),
+    );
     if (timeMs >= TRAD_TRANSCODE_START) {
       cz = lerp(PIPELINE_Z + 3.0, VARIANT_Z + 3.0, transcodeTrack);
       tz = lerp(PIPELINE_Z, VARIANT_Z, transcodeTrack);
@@ -415,7 +676,9 @@ function CameraController({ timeMs }: { timeMs: number }) {
     }
 
     // Phase 4: arrive at player
-    const requestTrack = easeInOut(prog(timeMs, TRAD_REQUEST_START, TRAD_REQUEST_END));
+    const requestTrack = easeInOut(
+      prog(timeMs, TRAD_REQUEST_START, TRAD_REQUEST_END),
+    );
     if (timeMs >= TRAD_REQUEST_START) {
       cz = lerp(VARIANT_Z + 3.0, PLAYER_Z + 3.0, requestTrack);
       tz = lerp(VARIANT_Z, PLAYER_Z, requestTrack);
@@ -433,7 +696,9 @@ function CameraController({ timeMs }: { timeMs: number }) {
     }
 
     // Phase 6: pan right to JIT side, settle and hold
-    const jitZoom = easeInOut(prog(timeMs, JIT_SETUP_START, JIT_SETUP_START + 2500));
+    const jitZoom = easeInOut(
+      prog(timeMs, JIT_SETUP_START, JIT_SETUP_START + 2500),
+    );
     if (timeMs >= JIT_SETUP_START) {
       cx = lerp(cx, JIT_X, jitZoom);
       cy = lerp(cy, 3.5, jitZoom);
@@ -453,7 +718,9 @@ function CameraController({ timeMs }: { timeMs: number }) {
 }
 
 /* ━━ SCENE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-export function JITStreamingScene({ currentTimeMs }: { currentTimeMs?: number } = {}) {
+export function JITStreamingScene({
+  currentTimeMs,
+}: { currentTimeMs?: number } = {}) {
   // Use composition time from worker context, or fallback to prop for main-thread rendering
   const { timeMs: workerTimeMs } = useCompositionTime();
   const timeMs = currentTimeMs ?? workerTimeMs;
@@ -465,8 +732,11 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs?: number } 
      PHASE 1: Hero — solid bar
      ═══════════════════════════════════════════════════════════════ */
   const heroOpa = easeOut(prog(timeMs, HERO_IN, HERO_IN + 600));
-  const heroFade = 1 - easeOut(prog(timeMs, TRAD_TRANSFER_START, TRAD_TRANSFER_START + 800));
-  const titleOpa = easeOut(prog(timeMs, HERO_IN, HERO_IN + 400)) * (1 - easeOut(prog(timeMs, HERO_HOLD - 500, HERO_HOLD)));
+  const heroFade =
+    1 - easeOut(prog(timeMs, TRAD_TRANSFER_START, TRAD_TRANSFER_START + 800));
+  const titleOpa =
+    easeOut(prog(timeMs, HERO_IN, HERO_IN + 400)) *
+    (1 - easeOut(prog(timeMs, HERO_HOLD - 500, HERO_HOLD)));
 
   /* ═══════════════════════════════════════════════════════════════
      PHASE 2: Traditional — Transfer to pipeline
@@ -485,11 +755,21 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs?: number } 
     if (p >= 1) tradTransferred.push(i);
   }
 
-  const pipelineOpa = tradTransferred.length > 0 ? easeOut(tradTransferred.length / NUM_SEGS) : 0;
+  const pipelineOpa =
+    tradTransferred.length > 0 ? easeOut(tradTransferred.length / NUM_SEGS) : 0;
 
   const transferCaptionOpa =
-    easeOut(prog(timeMs, TRAD_TRANSFER_CAPTION_IN, TRAD_TRANSFER_CAPTION_IN + 500)) *
-    (1 - easeOut(prog(timeMs, TRAD_TRANSFER_CAPTION_OUT, TRAD_TRANSFER_CAPTION_OUT + 500)));
+    easeOut(
+      prog(timeMs, TRAD_TRANSFER_CAPTION_IN, TRAD_TRANSFER_CAPTION_IN + 500),
+    ) *
+    (1 -
+      easeOut(
+        prog(
+          timeMs,
+          TRAD_TRANSFER_CAPTION_OUT,
+          TRAD_TRANSFER_CAPTION_OUT + 500,
+        ),
+      ));
 
   /* ═══════════════════════════════════════════════════════════════
      PHASE 3: Traditional — Transcode to variants
@@ -529,14 +809,23 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs?: number } 
     }
   }
 
-
   const transcodeCaptionOpa =
-    easeOut(prog(timeMs, TRAD_TRANSCODE_CAPTION_IN, TRAD_TRANSCODE_CAPTION_IN + 500)) *
-    (1 - easeOut(prog(timeMs, TRAD_TRANSCODE_CAPTION_OUT, TRAD_TRANSCODE_CAPTION_OUT + 500)));
+    easeOut(
+      prog(timeMs, TRAD_TRANSCODE_CAPTION_IN, TRAD_TRANSCODE_CAPTION_IN + 500),
+    ) *
+    (1 -
+      easeOut(
+        prog(
+          timeMs,
+          TRAD_TRANSCODE_CAPTION_OUT,
+          TRAD_TRANSCODE_CAPTION_OUT + 500,
+        ),
+      ));
 
   // Variant bar appearance: each row fades in as its first segment starts
   const variantRowOpa = VARIANT_ROWS.map((_, row) => {
-    const firstStepStart = TRAD_TRANSCODE_START + row * NUM_SEGS * transcodeStepDur;
+    const firstStepStart =
+      TRAD_TRANSCODE_START + row * NUM_SEGS * transcodeStepDur;
     return easeOut(prog(timeMs, firstStepStart, firstStepStart + 400));
   });
 
@@ -545,14 +834,21 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs?: number } 
      Request lines from player → 1080p variant.
      Chunks travel along line to player. Lines persist until arrival.
      ═══════════════════════════════════════════════════════════════ */
-  const tradPlayerOpa = easeOut(prog(timeMs, TRAD_PLAYER_IN, TRAD_PLAYER_IN + 500));
+  const tradPlayerOpa = easeOut(
+    prog(timeMs, TRAD_PLAYER_IN, TRAD_PLAYER_IN + 500),
+  );
   const tradPlaying = easeOut(prog(timeMs, TRAD_PLAY, TRAD_PLAY + 500));
 
   const tradRequestDur = TRAD_REQUEST_END - TRAD_REQUEST_START;
   const tradReqDelay = tradRequestDur / 3;
   const tradReqTravel = tradReqDelay * 1.2;
 
-  type TradReq = { seg: number; reqP: number; chunkP: number; delivered: boolean };
+  type TradReq = {
+    seg: number;
+    reqP: number;
+    chunkP: number;
+    delivered: boolean;
+  };
   const tradRequests: TradReq[] = [];
   const tradBufferedSegs: number[] = [];
   const tradReqSegs = [0, 1, 2];
@@ -560,17 +856,25 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs?: number } 
     const reqStart = TRAD_REQUEST_START + i * tradReqDelay;
     const reqP = easeInOut(prog(timeMs, reqStart, reqStart + 400));
     const chunkStart = reqStart + 300;
-    const chunkP = easeInOut(prog(timeMs, chunkStart, chunkStart + tradReqTravel));
+    const chunkP = easeInOut(
+      prog(timeMs, chunkStart, chunkStart + tradReqTravel),
+    );
     const delivered = chunkP >= 0.98;
     tradRequests.push({ seg: tradReqSegs[i], reqP, chunkP, delivered });
     if (delivered) tradBufferedSegs.push(tradReqSegs[i]);
   }
 
   const requestCaptionOpa =
-    easeOut(prog(timeMs, TRAD_REQUEST_CAPTION_IN, TRAD_REQUEST_CAPTION_IN + 500)) *
-    (1 - easeOut(prog(timeMs, TRAD_REQUEST_CAPTION_OUT, TRAD_REQUEST_CAPTION_OUT + 500)));
+    easeOut(
+      prog(timeMs, TRAD_REQUEST_CAPTION_IN, TRAD_REQUEST_CAPTION_IN + 500),
+    ) *
+    (1 -
+      easeOut(
+        prog(timeMs, TRAD_REQUEST_CAPTION_OUT, TRAD_REQUEST_CAPTION_OUT + 500),
+      ));
 
-  const tradSummaryOpa = easeOut(prog(timeMs, TRAD_PLAY + 200, TRAD_PLAY + 600)) * tradDim;
+  const tradSummaryOpa =
+    easeOut(prog(timeMs, TRAD_PLAY + 200, TRAD_PLAY + 600)) * tradDim;
 
   /* ═══════════════════════════════════════════════════════════════
      PHASE 5: Transition
@@ -582,13 +886,20 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs?: number } 
   /* ═══════════════════════════════════════════════════════════════
      PHASE 6: JIT setup
      ═══════════════════════════════════════════════════════════════ */
-  const jitSourceOpa = easeOut(prog(timeMs, JIT_SETUP_START, JIT_SETUP_START + 600));
+  const jitSourceOpa = easeOut(
+    prog(timeMs, JIT_SETUP_START, JIT_SETUP_START + 600),
+  );
   const jitGhostOpa = easeOut(prog(timeMs, JIT_GHOST_IN, JIT_GHOST_IN + 800));
-  const jitPlayerOpa = easeOut(prog(timeMs, JIT_PLAYER_IN, JIT_PLAYER_IN + 500));
+  const jitPlayerOpa = easeOut(
+    prog(timeMs, JIT_PLAYER_IN, JIT_PLAYER_IN + 500),
+  );
 
   const jitSetupCaptionOpa =
     easeOut(prog(timeMs, JIT_SETUP_CAPTION_IN, JIT_SETUP_CAPTION_IN + 500)) *
-    (1 - easeOut(prog(timeMs, JIT_SETUP_CAPTION_OUT, JIT_SETUP_CAPTION_OUT + 500)));
+    (1 -
+      easeOut(
+        prog(timeMs, JIT_SETUP_CAPTION_OUT, JIT_SETUP_CAPTION_OUT + 500),
+      ));
 
   /* ═══════════════════════════════════════════════════════════════
      PHASE 7: JIT cycles — two-phase beams + chunk delivery
@@ -650,12 +961,22 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs?: number } 
         position={[0, SIDE_Y, SOURCE_Z]}
         label="video.mp4"
       />
-      <SceneLabel position={[0, 0.65, SOURCE_Z + 0.2]} opacity={titleOpa} fontSize={0.18} bold>
+      <SceneLabel
+        position={[0, 0.65, SOURCE_Z + 0.2]}
+        opacity={titleOpa}
+        fontSize={0.18}
+        bold
+      >
         A video on a remote URL.
       </SceneLabel>
 
       {/* ── Phase 2: Transfer caption ── */}
-      <SceneLabel position={[TRAD_X, 0.65, PIPELINE_Z - 0.5]} opacity={transferCaptionOpa * tradDim} color="#cccccc" fontSize={0.12}>
+      <SceneLabel
+        position={[TRAD_X, 0.65, PIPELINE_Z - 0.5]}
+        opacity={transferCaptionOpa * tradDim}
+        color="#cccccc"
+        fontSize={0.12}
+      >
         File must be transferred into a processing pipeline
       </SceneLabel>
 
@@ -675,14 +996,18 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs?: number } 
         const r = Math.round(lerp(0x7e, 0xff, p));
         const g = Math.round(lerp(0x57, 0x8a, p));
         const b = Math.round(lerp(0xc2, 0x65, p));
-        const chunkColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        const chunkColor = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
         return (
-          <Chunk key={`xfer-${i}`} opacity={0.85 * tradDim} color={chunkColor}
+          <Chunk
+            key={`xfer-${i}`}
+            opacity={0.85 * tradDim}
+            color={chunkColor}
             position={[
               TRAD_X + segX(i),
               SIDE_Y + Math.sin(p * Math.PI) * 0.25,
               lerp(SOURCE_Z, PIPELINE_Z, p),
-            ]} />
+            ]}
+          />
         );
       })}
 
@@ -697,7 +1022,12 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs?: number } 
       )}
 
       {/* ── Phase 3: Transcode caption ── */}
-      <SceneLabel position={[TRAD_X, 0.65, VARIANT_Z - 0.5]} opacity={transcodeCaptionOpa * tradDim} color="#cccccc" fontSize={0.12}>
+      <SceneLabel
+        position={[TRAD_X, 0.65, VARIANT_Z - 0.5]}
+        opacity={transcodeCaptionOpa * tradDim}
+        color="#cccccc"
+        fontSize={0.12}
+      >
         Different streaming bitrates are generated
       </SceneLabel>
 
@@ -722,13 +1052,17 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs?: number } 
         if (p <= 0 || p >= 1) return null;
         const rowData = VARIANT_ROWS[row];
         // Color interpolation: orange (COL_TRAD) → variant color
-        const srcR = 0xff, srcG = 0x8a, srcB = 0x65;
+        const srcR = 0xff,
+          srcG = 0x8a,
+          srcB = 0x65;
         const dstCol = new THREE.Color(rowData.color);
-        const dstR = Math.round(dstCol.r * 255), dstG = Math.round(dstCol.g * 255), dstB = Math.round(dstCol.b * 255);
+        const dstR = Math.round(dstCol.r * 255),
+          dstG = Math.round(dstCol.g * 255),
+          dstB = Math.round(dstCol.b * 255);
         const cr = Math.round(lerp(srcR, dstR, p));
         const cg = Math.round(lerp(srcG, dstG, p));
         const cb = Math.round(lerp(srcB, dstB, p));
-        const tcColor = `#${cr.toString(16).padStart(2, '0')}${cg.toString(16).padStart(2, '0')}${cb.toString(16).padStart(2, '0')}`;
+        const tcColor = `#${cr.toString(16).padStart(2, "0")}${cg.toString(16).padStart(2, "0")}${cb.toString(16).padStart(2, "0")}`;
         // Start X: full-scale segment position on pipeline bar
         // End X: 0.75-scale segment position on variant bar
         const startX = TRAD_X + segX(seg);
@@ -748,7 +1082,12 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs?: number } 
       })}
 
       {/* ── Phase 4: Client requests caption ── */}
-      <SceneLabel position={[TRAD_X, 0.65, PLAYER_Z - 0.5]} opacity={requestCaptionOpa * tradDim} color="#cccccc" fontSize={0.12}>
+      <SceneLabel
+        position={[TRAD_X, 0.65, PLAYER_Z - 0.5]}
+        opacity={requestCaptionOpa * tradDim}
+        color="#cccccc"
+        fontSize={0.12}
+      >
         Finally, the client can request segments
       </SceneLabel>
 
@@ -767,7 +1106,12 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs?: number } 
         // Beam from player → 1080p variant segment
         const varSegX = TRAD_X + segX(seg) * 0.75;
         const varSegY = SIDE_Y + VARIANT_ROWS[0].yOff;
-        const beamOpa = reqP > 0.01 ? (delivered ? Math.max(0, 1 - (chunkP - 0.98) * 50) : 1) * 0.5 * tradDim : 0;
+        const beamOpa =
+          reqP > 0.01
+            ? (delivered ? Math.max(0, 1 - (chunkP - 0.98) * 50) : 1) *
+              0.5 *
+              tradDim
+            : 0;
 
         return (
           <React.Fragment key={`treq-${i}`}>
@@ -786,7 +1130,8 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs?: number } 
                 color={COL_1080}
                 position={[
                   lerp(varSegX, TRAD_X, chunkP),
-                  lerp(varSegY, -0.35, chunkP) + Math.sin(chunkP * Math.PI) * 0.15,
+                  lerp(varSegY, -0.35, chunkP) +
+                    Math.sin(chunkP * Math.PI) * 0.15,
                   lerp(VARIANT_Z, PLAYER_Z, chunkP),
                 ]}
               />
@@ -796,12 +1141,22 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs?: number } 
       })}
 
       {/* Traditional summary */}
-      <SceneLabel position={[TRAD_X, -0.75, PLAYER_Z + 0.5]} opacity={tradSummaryOpa} color="#888888" fontSize={0.10}>
+      <SceneLabel
+        position={[TRAD_X, -0.75, PLAYER_Z + 0.5]}
+        opacity={tradSummaryOpa}
+        color="#888888"
+        fontSize={0.1}
+      >
         Upload. Transcode. Store. Then play.
       </SceneLabel>
 
       {/* ── Phase 5: Transition ── */}
-      <SceneLabel position={[0, 0.65, PIPELINE_Z + 1]} opacity={transOpa} fontSize={0.22} bold>
+      <SceneLabel
+        position={[0, 0.65, PIPELINE_Z + 1]}
+        opacity={transOpa}
+        fontSize={0.22}
+        bold
+      >
         What if you didn't need all that?
       </SceneLabel>
 
@@ -819,9 +1174,28 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs?: number } 
       {/* Ghost variant grid — 1080p row fills as chunks arrive from source */}
       {jitGhostOpa > 0.01 && (
         <group position={[JIT_X, SIDE_Y, VARIANT_Z]}>
-          <GhostVariantBar opacity={jitGhostOpa} color={COL_1080} position={[0, 0.28, 0]} label="1080p" scale={0.75} filledSegs={jitGhostFilledSegs} />
-          <GhostVariantBar opacity={jitGhostOpa * 0.7} color={COL_720} position={[0, 0, 0]} label="720p" scale={0.75} />
-          <GhostVariantBar opacity={jitGhostOpa * 0.5} color={COL_480} position={[0, -0.28, 0]} label="480p" scale={0.75} />
+          <GhostVariantBar
+            opacity={jitGhostOpa}
+            color={COL_1080}
+            position={[0, 0.28, 0]}
+            label="1080p"
+            scale={0.75}
+            filledSegs={jitGhostFilledSegs}
+          />
+          <GhostVariantBar
+            opacity={jitGhostOpa * 0.7}
+            color={COL_720}
+            position={[0, 0, 0]}
+            label="720p"
+            scale={0.75}
+          />
+          <GhostVariantBar
+            opacity={jitGhostOpa * 0.5}
+            color={COL_480}
+            position={[0, -0.28, 0]}
+            label="480p"
+            scale={0.75}
+          />
         </group>
       )}
 
@@ -835,7 +1209,12 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs?: number } 
       />
 
       {/* JIT setup caption */}
-      <SceneLabel position={[JIT_X, 0.65, VARIANT_Z - 0.5]} opacity={jitSetupCaptionOpa} color={COL_EF} fontSize={0.12}>
+      <SceneLabel
+        position={[JIT_X, 0.65, VARIANT_Z - 0.5]}
+        opacity={jitSetupCaptionOpa}
+        color={COL_EF}
+        fontSize={0.12}
+      >
         Client requests before content is processed
       </SceneLabel>
 
@@ -914,11 +1293,12 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs?: number } 
                   const r = Math.round(lerp(0x7e, 0x44, chunkToGhostP));
                   const g = Math.round(lerp(0x57, 0x8a, chunkToGhostP));
                   const b = Math.round(lerp(0xc2, 0xff, chunkToGhostP));
-                  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+                  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
                 })()}
                 position={[
                   lerp(sourceSegX, ghostSegX, chunkToGhostP),
-                  lerp(sourceSegY, ghostSegY, chunkToGhostP) + Math.sin(chunkToGhostP * Math.PI) * 0.12,
+                  lerp(sourceSegY, ghostSegY, chunkToGhostP) +
+                    Math.sin(chunkToGhostP * Math.PI) * 0.12,
                   lerp(SOURCE_Z, VARIANT_Z, chunkToGhostP),
                 ]}
               />
@@ -940,7 +1320,8 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs?: number } 
                 color={COL_1080}
                 position={[
                   lerp(ghostSegX, JIT_X, chunkToPlayerP),
-                  lerp(ghostSegY, -0.35, chunkToPlayerP) + Math.sin(chunkToPlayerP * Math.PI) * 0.12,
+                  lerp(ghostSegY, -0.35, chunkToPlayerP) +
+                    Math.sin(chunkToPlayerP * Math.PI) * 0.12,
                   lerp(VARIANT_Z, PLAYER_Z, chunkToPlayerP),
                 ]}
               />
@@ -952,13 +1333,18 @@ export function JITStreamingScene({ currentTimeMs }: { currentTimeMs?: number } 
       {/* ── Phase 8: Punchline ── */}
       <SceneLabel
         position={[JIT_X + 0.3, -0.15, PLAYER_Z + 1.5 + punchOpa * 0.4]}
-        opacity={punchOpa} color={COL_DONE} fontSize={0.30} bold
+        opacity={punchOpa}
+        color={COL_DONE}
+        fontSize={0.3}
+        bold
       >
         Instant playback
       </SceneLabel>
       <SceneLabel
         position={[JIT_X + 0.3, -0.42, PLAYER_Z + 1.5 + tagOpa * 0.4]}
-        opacity={tagOpa} color="#aaaaaa" fontSize={0.11}
+        opacity={tagOpa}
+        color="#aaaaaa"
+        fontSize={0.11}
       >
         No upload. No transcoding queue. Just the chunks you need.
       </SceneLabel>

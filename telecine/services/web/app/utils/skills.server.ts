@@ -7,19 +7,19 @@ import fm from "front-matter";
 // In development: process.cwd() might be monorepo root or telecine
 function getSkillsBasePath(): string {
   const cwd = process.cwd();
-  
+
   // Check if skills/skills exists relative to current directory
   const path1 = join(cwd, "skills", "skills");
   if (existsSync(path1)) {
     return path1;
   }
-  
+
   // Check parent directory (fallback for non-Docker environments)
   const path2 = join(cwd, "..", "skills", "skills");
   if (existsSync(path2)) {
     return path2;
   }
-  
+
   // Fallback to path1 (will fail but at least it's predictable)
   return path1;
 }
@@ -28,10 +28,10 @@ function getSkillsBasePath(): string {
 function toYAML(obj: Record<string, any>, indent = 0): string {
   const lines: string[] = [];
   const prefix = "  ".repeat(indent);
-  
+
   for (const [key, value] of Object.entries(obj)) {
     if (value === undefined || value === null) continue;
-    
+
     if (typeof value === "string") {
       // Escape strings with special characters
       if (value.includes("\n") || value.includes(":") || value.includes("#")) {
@@ -47,7 +47,12 @@ function toYAML(obj: Record<string, any>, indent = 0): string {
         if (typeof item === "object") {
           lines.push(`${prefix}  -`);
           const itemYaml = toYAML(item, indent + 2);
-          lines.push(itemYaml.split("\n").map(l => `  ${l}`).join("\n"));
+          lines.push(
+            itemYaml
+              .split("\n")
+              .map((l) => `  ${l}`)
+              .join("\n"),
+          );
         } else {
           lines.push(`${prefix}  - ${item}`);
         }
@@ -57,24 +62,22 @@ function toYAML(obj: Record<string, any>, indent = 0): string {
       lines.push(toYAML(value, indent + 1));
     }
   }
-  
+
   return lines.join("\n");
 }
 
 const TOPIC_LABELS: Record<string, string> = {
   "core-concepts": "Core Concepts",
-  "video": "Video",
-  "timegroup": "Timegroup",
-  "guides": "How-to Guides",
-  "components": "Components",
-  "tools": "Tools & UI",
-  "advanced": "Advanced",
+  video: "Video",
+  timegroup: "Timegroup",
+  guides: "How-to Guides",
+  components: "Components",
+  tools: "Tools & UI",
+  advanced: "Advanced",
 };
 
 function humanize(slug: string): string {
-  return slug
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function getTopicLabel(topic: string | null): string {
@@ -216,21 +219,27 @@ const TYPE_ORDER: Record<string, number> = {
 const TOPIC_ORDER: Record<string, number> = {
   // Learning path order
   "core-concepts": 10,
-  "video": 15,
-  "timegroup": 16,
-  "guides": 30,
-  "components": 60,
-  "tools": 100,
-  "advanced": 120,
+  video: 15,
+  timegroup: 16,
+  guides: 30,
+  components: 60,
+  tools: 100,
+  advanced: 120,
 };
 
 // --- Conditional section processing ---
 
-function processConditionalSections(body: string, target: "html" | "react"): string {
+function processConditionalSections(
+  body: string,
+  target: "html" | "react",
+): string {
   const remove = target === "html" ? "react-only" : "html-only";
   const keep = target === "html" ? "html-only" : "react-only";
 
-  body = body.replace(new RegExp(`<!-- ${remove} -->[\\s\\S]*?<!-- \\/${remove} -->`, "g"), "");
+  body = body.replace(
+    new RegExp(`<!-- ${remove} -->[\\s\\S]*?<!-- \\/${remove} -->`, "g"),
+    "",
+  );
   body = body.replace(new RegExp(`<!-- ${keep} -->\\n?`, "g"), "");
   body = body.replace(new RegExp(`<!-- \\/${keep} -->\\n?`, "g"), "");
   body = body.replace(/<!-- shared -->\n?/g, "");
@@ -258,8 +267,6 @@ function prepareForMdx(content: string): string {
   return `${frontmatter}\n\n${body}`;
 }
 
-
-
 export const getSkillReferencesMeta = (skillName: string): SkillReference[] => {
   const skillsBasePath = getSkillsBasePath();
   const referencesPath = join(skillsBasePath, skillName, "references");
@@ -279,7 +286,10 @@ export const getSkillReferencesMeta = (skillName: string): SkillReference[] => {
     try {
       attributes = fm<ReferenceFrontmatter>(content).attributes;
     } catch (err) {
-      console.error(`Failed to parse frontmatter in ${skillName}/references/${file}:`, err);
+      console.error(
+        `Failed to parse frontmatter in ${skillName}/references/${file}:`,
+        err,
+      );
       continue;
     }
 
@@ -311,7 +321,9 @@ export const getSkillReferencesMeta = (skillName: string): SkillReference[] => {
           topic: attributes.topic || undefined,
           order: attributes.order ?? 999,
           parentRef: name,
-          nav: section.nav ? { ...attributes.nav, ...section.nav } : attributes.nav,
+          nav: section.nav
+            ? { ...attributes.nav, ...section.nav }
+            : attributes.nav,
           track: attributes.track,
           track_step: attributes.track_step,
           track_title: attributes.track_title,
@@ -403,17 +415,17 @@ export const getSkillNav = (skillName: string): NavGroup[] => {
 const TOP_LEVEL_SECTIONS: Record<string, { priority: number; icon: string }> = {
   // composition skill
   "Quick Start": { priority: 0, icon: "🚀" },
-  "Concepts": { priority: 10, icon: "💡" },
-  "Media": { priority: 20, icon: "🎬" },
+  Concepts: { priority: 10, icon: "💡" },
+  Media: { priority: 20, icon: "🎬" },
   "Layout & Timing": { priority: 30, icon: "⏱" },
-  "Rendering": { priority: 40, icon: "📹" },
-  "React": { priority: 50, icon: "⚛" },
-  "Advanced": { priority: 60, icon: "⚙" },
+  Rendering: { priority: 40, icon: "📹" },
+  React: { priority: 50, icon: "⚛" },
+  Advanced: { priority: 60, icon: "⚙" },
   // editor-gui skill
   "Getting Started": { priority: 0, icon: "🚀" },
   "Preview & Canvas": { priority: 10, icon: "🖥" },
   "Playback Controls": { priority: 20, icon: "▶" },
-  "Timeline": { priority: 30, icon: "🎞" },
+  Timeline: { priority: 30, icon: "🎞" },
   "Transform & Manipulation": { priority: 40, icon: "🔧" },
   "Overlay System": { priority: 50, icon: "📐" },
   "Editor Shells": { priority: 60, icon: "🧩" },
@@ -421,17 +433,17 @@ const TOP_LEVEL_SECTIONS: Record<string, { priority: number; icon: string }> = {
 
 function buildNavTree(refs: SkillReference[]): NavNode[] {
   const nodeMap = new Map<string, NavNode>();
-  
+
   // Helper to get or create a node
   const getNode = (path: string): NavNode => {
     if (nodeMap.has(path)) {
       return nodeMap.get(path)!;
     }
-    
+
     const parts = path.split(" / ");
     const label = parts[parts.length - 1] || "";
     const topLevel = parts[0] || "";
-    
+
     const node: NavNode = {
       path,
       label,
@@ -440,47 +452,50 @@ function buildNavTree(refs: SkillReference[]): NavNode[] {
       children: [],
       items: [],
     };
-    
+
     // Apply top-level priority if this is a top-level node
     if (parts.length === 1 && topLevel && TOP_LEVEL_SECTIONS[topLevel]) {
       node.priority = TOP_LEVEL_SECTIONS[topLevel].priority;
     }
-    
+
     nodeMap.set(path, node);
     return node;
   };
-  
+
   // Process all references
   for (const ref of refs) {
     if (ref.nav?.parent) {
       // Get or create the parent node
       const parentNode = getNode(ref.nav.parent);
-      
+
       // Add this reference to the parent's items
       parentNode.items.push(ref);
-      
+
       // Update parent priority if this ref has a lower priority
-      if (ref.nav.priority !== undefined && ref.nav.priority < parentNode.priority) {
+      if (
+        ref.nav.priority !== undefined &&
+        ref.nav.priority < parentNode.priority
+      ) {
         parentNode.priority = ref.nav.priority;
       }
-      
+
       // Build parent hierarchy
       const parts = ref.nav.parent.split(" / ");
       for (let i = parts.length - 1; i > 0; i--) {
         const childPath = parts.slice(0, i + 1).join(" / ");
         const parentPath = parts.slice(0, i).join(" / ");
-        
+
         const childNode = getNode(childPath);
         const parentNode = getNode(parentPath);
-        
+
         // Add child to parent if not already present
-        if (!parentNode.children.find(c => c.path === childPath)) {
+        if (!parentNode.children.find((c) => c.path === childPath)) {
           parentNode.children.push(childNode);
         }
       }
     }
   }
-  
+
   // Sort items within each node by priority
   for (const node of nodeMap.values()) {
     node.items.sort((a, b) => {
@@ -488,31 +503,31 @@ function buildNavTree(refs: SkillReference[]): NavNode[] {
       const bPriority = b.nav?.priority ?? 999;
       return aPriority - bPriority;
     });
-    
+
     // Sort children by priority
     node.children.sort((a, b) => a.priority - b.priority);
   }
-  
+
   // Find root nodes (nodes with no parent in the map)
   const allPaths = new Set(nodeMap.keys());
   const childPaths = new Set<string>();
-  
+
   for (const node of nodeMap.values()) {
     for (const child of node.children) {
       childPaths.add(child.path);
     }
   }
-  
+
   const rootNodes: NavNode[] = [];
   for (const path of allPaths) {
     if (!childPaths.has(path)) {
       rootNodes.push(nodeMap.get(path)!);
     }
   }
-  
+
   // Sort root nodes by priority
   rootNodes.sort((a, b) => a.priority - b.priority);
-  
+
   return rootNodes;
 }
 
@@ -521,7 +536,11 @@ export const getSkillNavTree = (skillName: string): NavNode[] => {
   return buildNavTree(refs);
 };
 
-export const getSkillNames = (): { name: string; title: string; description: string }[] => {
+export const getSkillNames = (): {
+  name: string;
+  title: string;
+  description: string;
+}[] => {
   const skillsBasePath = getSkillsBasePath();
 
   if (!existsSync(skillsBasePath)) {
@@ -547,13 +566,22 @@ export const getSkillNames = (): { name: string; title: string; description: str
         order: attributes.order ?? 999,
       };
     })
-    .filter((s): s is { name: string; title: string; description: string; order: number } => s !== null)
+    .filter(
+      (
+        s,
+      ): s is {
+        name: string;
+        title: string;
+        description: string;
+        order: number;
+      } => s !== null,
+    )
     .sort((a, b) => a.order - b.order);
 };
 
 export const getSkillCatalog = (): SkillSummary[] => {
   const skillsBasePath = getSkillsBasePath();
-  
+
   if (!existsSync(skillsBasePath)) {
     return [];
   }
@@ -563,34 +591,35 @@ export const getSkillCatalog = (): SkillSummary[] => {
     return statSync(fullPath).isDirectory();
   });
 
-  return skillDirs.map((skillDir) => {
-    const skillPath = join(skillsBasePath, skillDir, "SKILL.md");
-    
-    if (!existsSync(skillPath)) {
-      return null;
-    }
+  return skillDirs
+    .map((skillDir) => {
+      const skillPath = join(skillsBasePath, skillDir, "SKILL.md");
 
-    const content = readFileSync(skillPath, "utf8");
-    const { attributes } = fm<SkillFrontmatter>(content);
+      if (!existsSync(skillPath)) {
+        return null;
+      }
 
-    if (attributes.status === "draft") return null;
+      const content = readFileSync(skillPath, "utf8");
+      const { attributes } = fm<SkillFrontmatter>(content);
 
-    const referencesMeta = getSkillReferencesMeta(skillDir);
-    const references = referencesMeta.map((r) => r.name);
+      if (attributes.status === "draft") return null;
 
-    return {
-      name: attributes.name,
-      title: attributes.title || humanize(attributes.name),
-      description: attributes.description,
-      metadata: attributes.metadata,
-      order: attributes.order ?? 999,
-      referenceCount: references.length,
-      references,
-      referencesMeta,
-    };
-  })
-  .filter((skill): skill is SkillSummary => skill !== null)
-  .sort((a, b) => a.order - b.order);
+      const referencesMeta = getSkillReferencesMeta(skillDir);
+      const references = referencesMeta.map((r) => r.name);
+
+      return {
+        name: attributes.name,
+        title: attributes.title || humanize(attributes.name),
+        description: attributes.description,
+        metadata: attributes.metadata,
+        order: attributes.order ?? 999,
+        referenceCount: references.length,
+        references,
+        referencesMeta,
+      };
+    })
+    .filter((skill): skill is SkillSummary => skill !== null)
+    .sort((a, b) => a.order - b.order);
 };
 
 export const getSkillContent = (skillName: string): SkillContent | null => {
@@ -618,7 +647,12 @@ export const getSkillReference = (
   refName: string,
 ): string | null => {
   const skillsBasePath = getSkillsBasePath();
-  const refPath = join(skillsBasePath, skillName, "references", `${refName}.md`);
+  const refPath = join(
+    skillsBasePath,
+    skillName,
+    "references",
+    `${refName}.md`,
+  );
 
   if (!existsSync(refPath)) {
     return null;
@@ -633,7 +667,7 @@ export const getSkillReference = (
     if (firstSection) {
       const h2Pattern = new RegExp(`^## ${firstSection.heading}`, "m");
       const match = parsed.body.match(h2Pattern);
-      
+
       if (match && match.index !== undefined) {
         // Extract original frontmatter from content
         const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
@@ -656,7 +690,12 @@ export const getSkillReferenceSection = (
   sectionSlug: string,
 ): string | null => {
   const skillsBasePath = getSkillsBasePath();
-  const refPath = join(skillsBasePath, skillName, "references", `${refName}.md`);
+  const refPath = join(
+    skillsBasePath,
+    skillName,
+    "references",
+    `${refName}.md`,
+  );
 
   if (!existsSync(refPath)) {
     return null;
@@ -670,7 +709,9 @@ export const getSkillReferenceSection = (
   }
 
   // Find the section definition
-  const sectionIndex = attributes.sections.findIndex((s) => s.slug === sectionSlug);
+  const sectionIndex = attributes.sections.findIndex(
+    (s) => s.slug === sectionSlug,
+  );
   if (sectionIndex === -1) {
     return null;
   }
@@ -695,13 +736,14 @@ export const getSkillReferenceSection = (
   if (nextSection) {
     // Extract content from this section heading to the next section heading
     const nextHeadingPattern = new RegExp(`^## ${nextSection.heading}`, "m");
-    const nextMatch = body.substring(sectionMatch.index).match(nextHeadingPattern);
+    const nextMatch = body
+      .substring(sectionMatch.index)
+      .match(nextHeadingPattern);
 
     if (nextMatch && nextMatch.index !== undefined) {
-      sectionBody = body.substring(
-        sectionMatch.index,
-        sectionMatch.index + nextMatch.index
-      ).trim();
+      sectionBody = body
+        .substring(sectionMatch.index, sectionMatch.index + nextMatch.index)
+        .trim();
     } else {
       // Next section heading not found, take to end
       sectionBody = body.substring(sectionMatch.index).trim();
@@ -717,12 +759,15 @@ export const getSkillReferenceSection = (
     description: section.description || attributes.description || "",
     type: section.type,
   };
-  
+
   // Only include optional fields if they exist
   if (attributes.topic) sectionFrontmatter.topic = attributes.topic;
-  if (attributes.order !== undefined) sectionFrontmatter.order = attributes.order;
+  if (attributes.order !== undefined)
+    sectionFrontmatter.order = attributes.order;
 
-  return prepareForMdx(`---\n${toYAML(sectionFrontmatter)}\n---\n\n${sectionBody}`);
+  return prepareForMdx(
+    `---\n${toYAML(sectionFrontmatter)}\n---\n\n${sectionBody}`,
+  );
 };
 
 export const getSkillReferences = (skillName: string): string[] => {

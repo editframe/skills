@@ -96,9 +96,7 @@ export interface PreviewContainerOptions {
  * Create a preview container with standard styling.
  * Consolidates the repeated container creation pattern across preview functions.
  */
-export function createPreviewContainer(
-  options: PreviewContainerOptions,
-): HTMLDivElement {
+export function createPreviewContainer(options: PreviewContainerOptions): HTMLDivElement {
   const { width, height, background = "#000", position = "relative" } = options;
 
   const container = document.createElement("div");

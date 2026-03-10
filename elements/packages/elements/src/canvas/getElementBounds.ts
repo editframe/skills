@@ -32,10 +32,7 @@ import type { CanvasElementBounds } from "./api/types.js";
  * These return layout dimensions unaffected by CSS transforms.
  */
 export function getElementBounds(element: HTMLElement): DOMRect {
-  if (
-    "getCanvasBounds" in element &&
-    typeof (element as any).getCanvasBounds === "function"
-  ) {
+  if ("getCanvasBounds" in element && typeof (element as any).getCanvasBounds === "function") {
     return (element as CanvasElementBounds).getCanvasBounds();
   }
   return element.getBoundingClientRect();

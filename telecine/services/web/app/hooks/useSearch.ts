@@ -44,7 +44,11 @@ export function useSearch(): UseSearchReturn {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err : new Error("Failed to initialize search"));
+          setError(
+            err instanceof Error
+              ? err
+              : new Error("Failed to initialize search"),
+          );
         }
       } finally {
         if (!cancelled) {
@@ -89,4 +93,3 @@ export function useSearch(): UseSearchReturn {
     isInitialized,
   };
 }
-

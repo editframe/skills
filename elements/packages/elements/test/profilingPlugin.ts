@@ -14,7 +14,6 @@
 
 import type { Plugin } from "vite";
 import * as fs from "node:fs";
-import * as path from "node:path";
 
 interface ProfileNode {
   id: number;
@@ -111,9 +110,7 @@ export async function startProfiling(page: any): Promise<void> {
  * Stop CDP profiling and save the profile
  * Call this from test teardown or afterAll
  */
-export async function stopProfiling(
-  outputPath?: string,
-): Promise<CPUProfile | null> {
+export async function stopProfiling(outputPath?: string): Promise<CPUProfile | null> {
   if (!cdpSession) return null;
 
   try {
@@ -151,8 +148,7 @@ function printProfileSummary(profile: CPUProfile, wallClockMs: number): void {
 
   const sampleIntervalUs =
     profile.timeDeltas.length > 0
-      ? profile.timeDeltas.reduce((a, b) => a + b, 0) /
-        profile.timeDeltas.length
+      ? profile.timeDeltas.reduce((a, b) => a + b, 0) / profile.timeDeltas.length
       : 1000;
 
   const totalSamples = profile.samples.length;
@@ -165,8 +161,7 @@ function printProfileSummary(profile: CPUProfile, wallClockMs: number): void {
     if (hitCount === 0) continue;
 
     const selfTimeMs = (hitCount * sampleIntervalUs) / 1000;
-    const file =
-      node.callFrame.url?.split("/").slice(-1)[0]?.split("?")[0] || "(native)";
+    const file = node.callFrame.url?.split("/").slice(-1)[0]?.split("?")[0] || "(native)";
 
     hotspots.push({
       name: node.callFrame.functionName || "(anonymous)",
@@ -190,9 +185,7 @@ function printProfileSummary(profile: CPUProfile, wallClockMs: number): void {
   console.log(`\n   Top files:`);
   for (const [file, time] of sortedFiles.slice(0, 10)) {
     const pct = ((time / profileTimeMs) * 100).toFixed(1);
-    console.log(
-      `   ${time.toFixed(1).padStart(8)}ms (${pct.padStart(5)}%)  ${file}`,
-    );
+    console.log(`   ${time.toFixed(1).padStart(8)}ms (${pct.padStart(5)}%)  ${file}`);
   }
 
   // Our code

@@ -59,13 +59,7 @@ describe("ef-video object-fit inheritance", () => {
     expect(getComputedStyle(canvas).objectPosition).toBe("50% 50%");
   });
 
-  for (const value of [
-    "contain",
-    "cover",
-    "fill",
-    "none",
-    "scale-down",
-  ] as const) {
+  for (const value of ["contain", "cover", "fill", "none", "scale-down"] as const) {
     test(`object-fit: ${value} on host propagates to canvas`, async () => {
       const video = track(document.createElement("ef-video"));
       video.style.width = "400px";
@@ -262,13 +256,7 @@ describe("ef-image object-fit inheritance", () => {
     expect(getComputedStyle(canvas).objectFit).toBe("contain");
   });
 
-  for (const value of [
-    "contain",
-    "cover",
-    "fill",
-    "none",
-    "scale-down",
-  ] as const) {
+  for (const value of ["contain", "cover", "fill", "none", "scale-down"] as const) {
     test(`object-fit: ${value} on host propagates to canvas`, async () => {
       const image = track(document.createElement("ef-image"));
       image.style.width = "400px";
@@ -422,18 +410,12 @@ describe("pixel-level object-fit verification", () => {
     document.body.appendChild(native);
 
     // Both canvases have identical computed properties → identical rendering
-    expect(getComputedStyle(canvas).objectFit).toBe(
-      getComputedStyle(native).objectFit,
-    );
-    expect(getComputedStyle(canvas).objectPosition).toBe(
-      getComputedStyle(native).objectPosition,
-    );
+    expect(getComputedStyle(canvas).objectFit).toBe(getComputedStyle(native).objectFit);
+    expect(getComputedStyle(canvas).objectPosition).toBe(getComputedStyle(native).objectPosition);
     expect(canvas.width).toBe(native.width);
     expect(canvas.height).toBe(native.height);
     expect(getComputedStyle(canvas).width).toBe(getComputedStyle(native).width);
-    expect(getComputedStyle(canvas).height).toBe(
-      getComputedStyle(native).height,
-    );
+    expect(getComputedStyle(canvas).height).toBe(getComputedStyle(native).height);
   });
 
   test("cover: 2:1 buffer in 1:1 box fills entire box", async () => {
@@ -467,12 +449,8 @@ describe("pixel-level object-fit verification", () => {
     native.style.objectFit = "cover";
     document.body.appendChild(native);
 
-    expect(getComputedStyle(canvas).objectFit).toBe(
-      getComputedStyle(native).objectFit,
-    );
-    expect(getComputedStyle(canvas).objectPosition).toBe(
-      getComputedStyle(native).objectPosition,
-    );
+    expect(getComputedStyle(canvas).objectFit).toBe(getComputedStyle(native).objectFit);
+    expect(getComputedStyle(canvas).objectPosition).toBe(getComputedStyle(native).objectPosition);
   });
 
   test("fill: buffer stretches to fill box (no aspect preservation)", async () => {
@@ -498,8 +476,6 @@ describe("pixel-level object-fit verification", () => {
     native.style.objectFit = "fill";
     document.body.appendChild(native);
 
-    expect(getComputedStyle(canvas).objectFit).toBe(
-      getComputedStyle(native).objectFit,
-    );
+    expect(getComputedStyle(canvas).objectFit).toBe(getComputedStyle(native).objectFit);
   });
 });

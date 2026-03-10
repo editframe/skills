@@ -26,16 +26,13 @@ export const testWebhookURL = async ({
   webhookURL: string;
   topic: string;
 }) => {
-  const response = await getClient().authenticatedFetch(
-    "/api/v1/test_webhook",
-    {
-      method: "POST",
-      body: JSON.stringify({
-        webhookURL,
-        topic,
-      }),
-    },
-  );
+  const response = await getClient().authenticatedFetch("/api/v1/test_webhook", {
+    method: "POST",
+    body: JSON.stringify({
+      webhookURL,
+      topic,
+    }),
+  });
   return response.json() as Promise<APITestWebhhokResult>;
 };
 

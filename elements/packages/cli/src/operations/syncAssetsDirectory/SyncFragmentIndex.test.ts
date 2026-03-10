@@ -159,12 +159,8 @@ describe("SyncFragmentIndex", async () => {
           );
           await syncFragmentIndex.create();
           await syncFragmentIndex.markSynced();
-          await expect(syncFragmentIndex.syncStatus.isSynced()).resolves.toBe(
-            true,
-          );
-          await expect(
-            syncFragmentIndex.syncStatus.readInfo(),
-          ).resolves.toEqual({
+          await expect(syncFragmentIndex.syncStatus.isSynced()).resolves.toBe(true);
+          await expect(syncFragmentIndex.syncStatus.readInfo()).resolves.toEqual({
             version: "1",
             complete: true,
             id: "123",
@@ -172,9 +168,7 @@ describe("SyncFragmentIndex", async () => {
             byte_size: 31,
           });
 
-          await expect(
-            syncFragmentIndex.fileSyncStatus.readInfo(),
-          ).resolves.toEqual({
+          await expect(syncFragmentIndex.fileSyncStatus.readInfo()).resolves.toEqual({
             version: "1",
             complete: true,
             id: "123",

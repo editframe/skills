@@ -32,9 +32,7 @@ describe("panZoomTransformContext", () => {
 
     await panZoom.updateComplete;
 
-    const overlayLayer = document.createElement(
-      "ef-overlay-layer",
-    ) as EFOverlayLayer;
+    const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
     panZoom.appendChild(overlayLayer);
     testElements.push(overlayLayer);
 
@@ -56,9 +54,7 @@ describe("panZoomTransformContext", () => {
 
     await panZoom.updateComplete;
 
-    const overlayLayer = document.createElement(
-      "ef-overlay-layer",
-    ) as EFOverlayLayer;
+    const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
     panZoom.appendChild(overlayLayer);
     testElements.push(overlayLayer);
 
@@ -80,9 +76,7 @@ describe("panZoomTransformContext", () => {
     expect(overlayLayer.style.transform).toBe("none");
 
     // Verify panzoom itself has the transform applied
-    const contentWrapper = panZoom.shadowRoot?.querySelector(
-      ".content-wrapper",
-    ) as HTMLElement;
+    const contentWrapper = panZoom.shadowRoot?.querySelector(".content-wrapper") as HTMLElement;
     expect(contentWrapper).toBeTruthy();
     if (contentWrapper) {
       const wrapperTransform = contentWrapper.style.transform;
@@ -93,9 +87,7 @@ describe("panZoomTransformContext", () => {
 
   test("standalone overlay layer applies transform from prop", async () => {
     // When overlay is NOT a child of panzoom, it applies transform directly from prop
-    const overlayLayer = document.createElement(
-      "ef-overlay-layer",
-    ) as EFOverlayLayer;
+    const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
     overlayLayer.panZoomTransform = { x: 50, y: 75, scale: 1.2 };
     document.body.appendChild(overlayLayer);
     testElements.push(overlayLayer);
@@ -125,9 +117,7 @@ describe("panZoomTransformContext", () => {
     panZoom.scale = 1;
     container.appendChild(panZoom);
 
-    const overlayLayer = document.createElement(
-      "ef-overlay-layer",
-    ) as EFOverlayLayer;
+    const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
     container.appendChild(overlayLayer);
 
     await panZoom.updateComplete;

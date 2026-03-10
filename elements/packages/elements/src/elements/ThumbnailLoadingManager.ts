@@ -40,8 +40,7 @@ export function getCacheIdentifiers(element: EFVideo | EFTimegroup): {
   elementId: string;
 } {
   const rootTemporal = findRootTemporal(element);
-  const rootTimegroup =
-    rootTemporal && isEFTimegroup(rootTemporal) ? rootTemporal : null;
+  const rootTimegroup = rootTemporal && isEFTimegroup(rootTemporal) ? rootTemporal : null;
   const rootId = rootTimegroup?.id || "default";
 
   const elementId = isEFVideo(element)
@@ -108,9 +107,7 @@ export class ThumbnailLoadingManager {
    * Check if a specific time is in any loading state.
    */
   isLoading(timeMs: number): boolean {
-    return (
-      this.#activelyCapturing.has(timeMs) || this.#pendingRetry.has(timeMs)
-    );
+    return this.#activelyCapturing.has(timeMs) || this.#pendingRetry.has(timeMs);
   }
 
   /**
@@ -274,10 +271,8 @@ export class ThumbnailLoadingManager {
    * Check if a canvas has actual content (not blank/white/transparent).
    */
   #hasContent(canvas: CanvasImageSource): boolean {
-    const width =
-      (canvas as any).width || (canvas as HTMLImageElement).naturalWidth || 0;
-    const height =
-      (canvas as any).height || (canvas as HTMLImageElement).naturalHeight || 0;
+    const width = (canvas as any).width || (canvas as HTMLImageElement).naturalWidth || 0;
+    const height = (canvas as any).height || (canvas as HTMLImageElement).naturalHeight || 0;
 
     if (width === 0 || height === 0) return false;
 
@@ -309,11 +304,7 @@ export class ThumbnailLoadingManager {
         hasNonWhite = true;
       }
 
-      if (
-        Math.abs(r - firstR!) > 10 ||
-        Math.abs(g - firstG!) > 10 ||
-        Math.abs(b - firstB!) > 10
-      ) {
+      if (Math.abs(r - firstR!) > 10 || Math.abs(g - firstG!) > 10 || Math.abs(b - firstB!) > 10) {
         hasVariation = true;
       }
 
@@ -370,7 +361,7 @@ export class ThumbnailLoadingManager {
           this.#activelyCapturing.delete(timeMs);
           failedTimes.push(timeMs);
         }
-      } catch (error) {
+      } catch (_error) {
         this.#activelyCapturing.delete(timeMs);
         failedTimes.push(timeMs);
       }

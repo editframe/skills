@@ -14,7 +14,7 @@ declare global {
 const test = baseTest.extend<{
   element: TestCacheIntegration;
 }>({
-  element: async ({}, use) => {
+  element: async (_: unknown, use) => {
     const element = document.createElement("test-cache-integration");
     document.body.appendChild(element);
     await use(element);

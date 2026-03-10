@@ -32,13 +32,7 @@ export const loader = async ({ params: { id }, context }: Route.LoaderArgs) => {
     const tracks = await db
       .selectFrom("video2.isobmff_tracks")
       .where("file_id", "=", id)
-      .select([
-        "track_id",
-        "type",
-        "codec_name",
-        "duration_ms",
-        "byte_size",
-      ])
+      .select(["track_id", "type", "codec_name", "duration_ms", "byte_size"])
       .execute();
 
     return { ...file, tracks };

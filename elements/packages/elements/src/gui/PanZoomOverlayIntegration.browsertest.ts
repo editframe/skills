@@ -111,9 +111,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       testElements.push(target);
 
       // Create sibling OverlayLayer with transform from prop
-      const overlayLayer = document.createElement(
-        "ef-overlay-layer",
-      ) as EFOverlayLayer;
+      const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
       overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 1 };
       overlayLayer.style.position = "absolute";
       overlayLayer.style.inset = "0";
@@ -121,9 +119,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       testElements.push(overlayLayer);
 
       // Create OverlayItem tracking the target
-      const overlayItem = document.createElement(
-        "ef-overlay-item",
-      ) as EFOverlayItem;
+      const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
       overlayItem.elementId = "test-target";
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
@@ -139,14 +135,8 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
 
       expect(parseFloat(overlayItem.style.left)).toBeCloseTo(expectedX, 1);
       expect(parseFloat(overlayItem.style.top)).toBeCloseTo(expectedY, 1);
-      expect(parseFloat(overlayItem.style.width)).toBeCloseTo(
-        targetRect.width,
-        1,
-      );
-      expect(parseFloat(overlayItem.style.height)).toBeCloseTo(
-        targetRect.height,
-        1,
-      );
+      expect(parseFloat(overlayItem.style.width)).toBeCloseTo(targetRect.width, 1);
+      expect(parseFloat(overlayItem.style.height)).toBeCloseTo(targetRect.height, 1);
     });
 
     test("overlay item stays aligned when PanZoom pans (siblings)", async () => {
@@ -176,18 +166,14 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       panZoom.appendChild(target);
       testElements.push(target);
 
-      const overlayLayer = document.createElement(
-        "ef-overlay-layer",
-      ) as EFOverlayLayer;
+      const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
       overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 1 };
       overlayLayer.style.position = "absolute";
       overlayLayer.style.inset = "0";
       container.appendChild(overlayLayer);
       testElements.push(overlayLayer);
 
-      const overlayItem = document.createElement(
-        "ef-overlay-item",
-      ) as EFOverlayItem;
+      const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
       overlayItem.elementId = "test-target";
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
@@ -200,9 +186,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       overlayLayer.panZoomTransform = { x: 50, y: 75, scale: 1 };
 
       await panZoom.updateComplete;
-      await waitFor(
-        () => overlayLayer.style.transform === "translate(50px, 75px)",
-      );
+      await waitFor(() => overlayLayer.style.transform === "translate(50px, 75px)");
 
       // The overlay item should still visually overlay the target
       // Both target and overlay layer have moved by the same amount
@@ -243,18 +227,14 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       panZoom.appendChild(target);
       testElements.push(target);
 
-      const overlayLayer = document.createElement(
-        "ef-overlay-layer",
-      ) as EFOverlayLayer;
+      const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
       overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 1 };
       overlayLayer.style.position = "absolute";
       overlayLayer.style.inset = "0";
       container.appendChild(overlayLayer);
       testElements.push(overlayLayer);
 
-      const overlayItem = document.createElement(
-        "ef-overlay-item",
-      ) as EFOverlayItem;
+      const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
       overlayItem.elementId = "test-target";
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
@@ -265,9 +245,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       panZoom.scale = 2;
       overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 2 };
 
-      await waitFor(
-        () => parseFloat((overlayItem as HTMLElement).style.width) > 300,
-      );
+      await waitFor(() => parseFloat((overlayItem as HTMLElement).style.width) > 300);
 
       // Target is now scaled by 2x, so its screen size is 400x300
       // Overlay item should match this screen size
@@ -279,14 +257,8 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       expect(targetRect.height).toBeCloseTo(300, 1); // 150 * 2
 
       // Overlay item should match the target's screen dimensions
-      expect(parseFloat(overlayItem.style.width)).toBeCloseTo(
-        targetRect.width,
-        1,
-      );
-      expect(parseFloat(overlayItem.style.height)).toBeCloseTo(
-        targetRect.height,
-        1,
-      );
+      expect(parseFloat(overlayItem.style.width)).toBeCloseTo(targetRect.width, 1);
+      expect(parseFloat(overlayItem.style.height)).toBeCloseTo(targetRect.height, 1);
 
       // Position should still be correct relative to overlay layer
       const expectedX = targetRect.left - overlayLayerRect.left;
@@ -322,18 +294,14 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       panZoom.appendChild(target);
       testElements.push(target);
 
-      const overlayLayer = document.createElement(
-        "ef-overlay-layer",
-      ) as EFOverlayLayer;
+      const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
       overlayLayer.panZoomTransform = { x: 100, y: 50, scale: 1.5 };
       overlayLayer.style.position = "absolute";
       overlayLayer.style.inset = "0";
       container.appendChild(overlayLayer);
       testElements.push(overlayLayer);
 
-      const overlayItem = document.createElement(
-        "ef-overlay-item",
-      ) as EFOverlayItem;
+      const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
       overlayItem.elementId = "test-target";
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
@@ -349,14 +317,8 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
 
       expect(parseFloat(overlayItem.style.left)).toBeCloseTo(expectedX, 1);
       expect(parseFloat(overlayItem.style.top)).toBeCloseTo(expectedY, 1);
-      expect(parseFloat(overlayItem.style.width)).toBeCloseTo(
-        targetRect.width,
-        1,
-      );
-      expect(parseFloat(overlayItem.style.height)).toBeCloseTo(
-        targetRect.height,
-        1,
-      );
+      expect(parseFloat(overlayItem.style.width)).toBeCloseTo(targetRect.width, 1);
+      expect(parseFloat(overlayItem.style.height)).toBeCloseTo(targetRect.height, 1);
     });
   });
 
@@ -380,9 +342,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       await panZoom.updateComplete;
 
       // Create overlay layer as child of PanZoom (will consume context)
-      const overlayLayer = document.createElement(
-        "ef-overlay-layer",
-      ) as EFOverlayLayer;
+      const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
       overlayLayer.style.position = "absolute";
       overlayLayer.style.inset = "0";
       panZoom.appendChild(overlayLayer);
@@ -395,9 +355,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       expect(overlayLayer.style.transform).toBe("none");
 
       // The parent's content-wrapper handles the actual visual transform
-      const contentWrapper = panZoom.shadowRoot?.querySelector(
-        ".content-wrapper",
-      ) as HTMLElement;
+      const contentWrapper = panZoom.shadowRoot?.querySelector(".content-wrapper") as HTMLElement;
       expect(contentWrapper).toBeTruthy();
       if (contentWrapper) {
         const wrapperTransform = contentWrapper.style.transform;
@@ -435,18 +393,14 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       panZoom.appendChild(target);
       testElements.push(target);
 
-      const overlayLayer = document.createElement(
-        "ef-overlay-layer",
-      ) as EFOverlayLayer;
+      const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
       overlayLayer.panZoomTransform = { x: 50, y: 75, scale: 1.5 };
       overlayLayer.style.position = "absolute";
       overlayLayer.style.inset = "0";
       container.appendChild(overlayLayer);
       testElements.push(overlayLayer);
 
-      const overlayItem = document.createElement(
-        "ef-overlay-item",
-      ) as EFOverlayItem;
+      const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
       overlayItem.elementId = "test-target";
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
@@ -457,21 +411,14 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       await waitFor(() => positionChangedHandler.mock.calls.length > 0);
 
       expect(positionChangedHandler).toHaveBeenCalled();
-      const event = positionChangedHandler.mock
-        .calls[0]![0] as CustomEvent<OverlayItemPosition>;
+      const event = positionChangedHandler.mock.calls[0]![0] as CustomEvent<OverlayItemPosition>;
 
       // The position should be relative to the overlay layer
       const targetRect = target.getBoundingClientRect();
       const overlayLayerRect = overlayLayer.getBoundingClientRect();
 
-      expect(event.detail.x).toBeCloseTo(
-        targetRect.left - overlayLayerRect.left,
-        1,
-      );
-      expect(event.detail.y).toBeCloseTo(
-        targetRect.top - overlayLayerRect.top,
-        1,
-      );
+      expect(event.detail.x).toBeCloseTo(targetRect.left - overlayLayerRect.left, 1);
+      expect(event.detail.y).toBeCloseTo(targetRect.top - overlayLayerRect.top, 1);
       expect(event.detail.width).toBeCloseTo(targetRect.width, 1);
       expect(event.detail.height).toBeCloseTo(targetRect.height, 1);
     });
@@ -503,18 +450,14 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       panZoom.appendChild(target);
       testElements.push(target);
 
-      const overlayLayer = document.createElement(
-        "ef-overlay-layer",
-      ) as EFOverlayLayer;
+      const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
       overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 1 };
       overlayLayer.style.position = "absolute";
       overlayLayer.style.inset = "0";
       container.appendChild(overlayLayer);
       testElements.push(overlayLayer);
 
-      const overlayItem = document.createElement(
-        "ef-overlay-item",
-      ) as EFOverlayItem;
+      const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
       overlayItem.elementId = "test-target";
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
@@ -522,27 +465,25 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       // Wait for Lit elements to finish initial render and RAF loop to establish position
       await panZoom.updateComplete;
       await overlayLayer.updateComplete;
-      await new Promise<void>((r) =>
-        requestAnimationFrame(() => requestAnimationFrame(() => r())),
-      );
+      await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
 
       // Set up event listener before triggering the change
-      const positionChangedPromise = new Promise<
-        CustomEvent<OverlayItemPosition>
-      >((resolve, reject) => {
-        const timeout = setTimeout(
-          () => reject(new Error("position-changed event not fired within 5s")),
-          5000,
-        );
-        overlayItem.addEventListener(
-          "position-changed",
-          (e) => {
-            clearTimeout(timeout);
-            resolve(e as CustomEvent<OverlayItemPosition>);
-          },
-          { once: true },
-        );
-      });
+      const positionChangedPromise = new Promise<CustomEvent<OverlayItemPosition>>(
+        (resolve, reject) => {
+          const timeout = setTimeout(
+            () => reject(new Error("position-changed event not fired within 5s")),
+            5000,
+          );
+          overlayItem.addEventListener(
+            "position-changed",
+            (e) => {
+              clearTimeout(timeout);
+              resolve(e as CustomEvent<OverlayItemPosition>);
+            },
+            { once: true },
+          );
+        },
+      );
 
       // Zoom changes the target's screen size, which should trigger position-changed
       panZoom.scale = 2;
@@ -585,18 +526,14 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       panZoom.appendChild(target);
       testElements.push(target);
 
-      const overlayLayer = document.createElement(
-        "ef-overlay-layer",
-      ) as EFOverlayLayer;
+      const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
       overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 1 };
       overlayLayer.style.position = "absolute";
       overlayLayer.style.inset = "0";
       container.appendChild(overlayLayer);
       testElements.push(overlayLayer);
 
-      const overlayItem = document.createElement(
-        "ef-overlay-item",
-      ) as EFOverlayItem;
+      const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
       overlayItem.elementId = "test-target";
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
@@ -608,8 +545,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
 
       // Verify rotation is captured
       expect(positionChangedHandler).toHaveBeenCalled();
-      const event = positionChangedHandler.mock
-        .calls[0]![0] as CustomEvent<OverlayItemPosition>;
+      const event = positionChangedHandler.mock.calls[0]![0] as CustomEvent<OverlayItemPosition>;
       expect(event.detail.rotation).toBeCloseTo(45, 1);
 
       // Overlay item should apply the rotation
@@ -644,25 +580,19 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       panZoom.appendChild(target);
       testElements.push(target);
 
-      const overlayLayer = document.createElement(
-        "ef-overlay-layer",
-      ) as EFOverlayLayer;
+      const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
       overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 1 };
       overlayLayer.style.position = "absolute";
       overlayLayer.style.inset = "0";
       container.appendChild(overlayLayer);
       testElements.push(overlayLayer);
 
-      const overlayItem = document.createElement(
-        "ef-overlay-item",
-      ) as EFOverlayItem;
+      const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
       overlayItem.elementId = "test-target";
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
 
-      await waitFor(() =>
-        (overlayItem as HTMLElement).style.transform.includes("rotate(30deg)"),
-      );
+      await waitFor(() => (overlayItem as HTMLElement).style.transform.includes("rotate(30deg)"));
 
       // Initial rotation
       expect(overlayItem.style.transform).toContain("rotate(30deg)");
@@ -671,9 +601,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       panZoom.scale = 2;
       overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 2 };
 
-      await waitFor(
-        () => parseFloat((overlayItem as HTMLElement).style.width) > 300,
-      );
+      await waitFor(() => parseFloat((overlayItem as HTMLElement).style.width) > 300);
 
       // Rotation should still be 30deg
       expect(overlayItem.style.transform).toContain("rotate(30deg)");
@@ -718,25 +646,19 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       panZoom.appendChild(target2);
       testElements.push(target2);
 
-      const overlayLayer = document.createElement(
-        "ef-overlay-layer",
-      ) as EFOverlayLayer;
+      const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
       overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 1 };
       overlayLayer.style.position = "absolute";
       overlayLayer.style.inset = "0";
       container.appendChild(overlayLayer);
       testElements.push(overlayLayer);
 
-      const overlayItem1 = document.createElement(
-        "ef-overlay-item",
-      ) as EFOverlayItem;
+      const overlayItem1 = document.createElement("ef-overlay-item") as EFOverlayItem;
       overlayItem1.elementId = "target-1";
       overlayLayer.appendChild(overlayItem1);
       testElements.push(overlayItem1);
 
-      const overlayItem2 = document.createElement(
-        "ef-overlay-item",
-      ) as EFOverlayItem;
+      const overlayItem2 = document.createElement("ef-overlay-item") as EFOverlayItem;
       overlayItem2.elementId = "target-2";
       overlayLayer.appendChild(overlayItem2);
       testElements.push(overlayItem2);
@@ -748,23 +670,11 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       const target2Rect = target2.getBoundingClientRect();
 
       // Verify each overlay tracks its own target
-      expect(parseFloat(overlayItem1.style.width)).toBeCloseTo(
-        target1Rect.width,
-        1,
-      );
-      expect(parseFloat(overlayItem1.style.height)).toBeCloseTo(
-        target1Rect.height,
-        1,
-      );
+      expect(parseFloat(overlayItem1.style.width)).toBeCloseTo(target1Rect.width, 1);
+      expect(parseFloat(overlayItem1.style.height)).toBeCloseTo(target1Rect.height, 1);
 
-      expect(parseFloat(overlayItem2.style.width)).toBeCloseTo(
-        target2Rect.width,
-        1,
-      );
-      expect(parseFloat(overlayItem2.style.height)).toBeCloseTo(
-        target2Rect.height,
-        1,
-      );
+      expect(parseFloat(overlayItem2.style.width)).toBeCloseTo(target2Rect.width, 1);
+      expect(parseFloat(overlayItem2.style.height)).toBeCloseTo(target2Rect.height, 1);
 
       // Different positions
       const item1X = parseFloat(overlayItem1.style.left);
@@ -801,18 +711,14 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       panZoom.appendChild(target);
       testElements.push(target);
 
-      const overlayLayer = document.createElement(
-        "ef-overlay-layer",
-      ) as EFOverlayLayer;
+      const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
       overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 1 };
       overlayLayer.style.position = "absolute";
       overlayLayer.style.inset = "0";
       container.appendChild(overlayLayer);
       testElements.push(overlayLayer);
 
-      const overlayItem = document.createElement(
-        "ef-overlay-item",
-      ) as EFOverlayItem;
+      const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
       overlayItem.elementId = "test-target";
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
@@ -826,16 +732,10 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       target.style.left = "300px";
       target.style.top = "250px";
 
-      await waitFor(
-        () =>
-          parseFloat((overlayItem as HTMLElement).style.left) !== initialLeft,
-      );
+      await waitFor(() => parseFloat((overlayItem as HTMLElement).style.left) !== initialLeft);
 
       // Overlay should have moved
-      expect(parseFloat(overlayItem.style.left)).not.toBeCloseTo(
-        initialLeft,
-        0,
-      );
+      expect(parseFloat(overlayItem.style.left)).not.toBeCloseTo(initialLeft, 0);
       expect(parseFloat(overlayItem.style.top)).not.toBeCloseTo(initialTop, 0);
     });
 
@@ -866,18 +766,14 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       panZoom.appendChild(target);
       testElements.push(target);
 
-      const overlayLayer = document.createElement(
-        "ef-overlay-layer",
-      ) as EFOverlayLayer;
+      const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
       overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 1 };
       overlayLayer.style.position = "absolute";
       overlayLayer.style.inset = "0";
       container.appendChild(overlayLayer);
       testElements.push(overlayLayer);
 
-      const overlayItem = document.createElement(
-        "ef-overlay-item",
-      ) as EFOverlayItem;
+      const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
       overlayItem.elementId = "test-target";
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
@@ -888,9 +784,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       target.style.width = "400px";
       target.style.height = "300px";
 
-      await waitFor(
-        () => parseFloat((overlayItem as HTMLElement).style.width) > 350,
-      );
+      await waitFor(() => parseFloat((overlayItem as HTMLElement).style.width) > 350);
 
       // Overlay should have resized
       expect(parseFloat(overlayItem.style.width)).toBeCloseTo(400, 1);
@@ -949,9 +843,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       testElements.push(childElement);
 
       // Create sibling OverlayLayer
-      const overlayLayer = document.createElement(
-        "ef-overlay-layer",
-      ) as EFOverlayLayer;
+      const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
       overlayLayer.panZoomTransform = { x: 50, y: 30, scale: 1 };
       overlayLayer.style.position = "absolute";
       overlayLayer.style.inset = "0";
@@ -959,9 +851,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       testElements.push(overlayLayer);
 
       // Create OverlayItem tracking the child element
-      const overlayItem = document.createElement(
-        "ef-overlay-item",
-      ) as EFOverlayItem;
+      const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
       overlayItem.elementId = "child-rect-1";
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
@@ -978,21 +868,12 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       // The overlay should be positioned at the child element's position relative to overlay layer
       expect(parseFloat(overlayItem.style.left)).toBeCloseTo(expectedX, 1);
       expect(parseFloat(overlayItem.style.top)).toBeCloseTo(expectedY, 1);
-      expect(parseFloat(overlayItem.style.width)).toBeCloseTo(
-        childRect.width,
-        1,
-      );
-      expect(parseFloat(overlayItem.style.height)).toBeCloseTo(
-        childRect.height,
-        1,
-      );
+      expect(parseFloat(overlayItem.style.width)).toBeCloseTo(childRect.width, 1);
+      expect(parseFloat(overlayItem.style.height)).toBeCloseTo(childRect.height, 1);
 
       // The overlay should NOT be at the child's absolute screen position
       // This would happen if overlayLayerRect was incorrectly (0,0)
-      expect(parseFloat(overlayItem.style.left)).not.toBeCloseTo(
-        childRect.left,
-        1,
-      );
+      expect(parseFloat(overlayItem.style.left)).not.toBeCloseTo(childRect.left, 1);
     });
 
     test("overlay tracks child element with pan and zoom combined", async () => {
@@ -1032,18 +913,14 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       timegroupWrapper.appendChild(childElement);
       testElements.push(childElement);
 
-      const overlayLayer = document.createElement(
-        "ef-overlay-layer",
-      ) as EFOverlayLayer;
+      const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
       overlayLayer.panZoomTransform = { x: 100, y: 50, scale: 1.5 };
       overlayLayer.style.position = "absolute";
       overlayLayer.style.inset = "0";
       container.appendChild(overlayLayer);
       testElements.push(overlayLayer);
 
-      const overlayItem = document.createElement(
-        "ef-overlay-item",
-      ) as EFOverlayItem;
+      const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
       overlayItem.elementId = "child-rect-2";
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
@@ -1058,14 +935,8 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       expect(childRect.height).toBeCloseTo(120, 1);
 
       // Overlay should match
-      expect(parseFloat(overlayItem.style.width)).toBeCloseTo(
-        childRect.width,
-        1,
-      );
-      expect(parseFloat(overlayItem.style.height)).toBeCloseTo(
-        childRect.height,
-        1,
-      );
+      expect(parseFloat(overlayItem.style.width)).toBeCloseTo(childRect.width, 1);
+      expect(parseFloat(overlayItem.style.height)).toBeCloseTo(childRect.height, 1);
 
       // Position should be correct relative to overlay layer
       const expectedX = childRect.left - overlayLayerRect.left;
@@ -1103,9 +974,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       testElements.push(target);
 
       // Create overlay layer - important: set transform BEFORE adding overlay item
-      const overlayLayer = document.createElement(
-        "ef-overlay-layer",
-      ) as EFOverlayLayer;
+      const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
       overlayLayer.panZoomTransform = { x: 200, y: 150, scale: 1 };
       overlayLayer.style.position = "absolute";
       overlayLayer.style.inset = "0";
@@ -1113,9 +982,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       testElements.push(overlayLayer);
 
       // Wait for overlay layer's transform to be applied
-      await waitFor(
-        () => overlayLayer.style.transform === "translate(200px, 150px)",
-      );
+      await waitFor(() => overlayLayer.style.transform === "translate(200px, 150px)");
 
       // Verify overlay layer has correct transform
       expect(overlayLayer.style.transform).toBe("translate(200px, 150px)");
@@ -1126,9 +993,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       expect(overlayLayerRect.top).toBeCloseTo(150, 0);
 
       // NOW add overlay item
-      const overlayItem = document.createElement(
-        "ef-overlay-item",
-      ) as EFOverlayItem;
+      const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
       overlayItem.elementId = "timing-test";
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
@@ -1173,18 +1038,14 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       panZoom.appendChild(target);
       testElements.push(target);
 
-      const overlayLayer = document.createElement(
-        "ef-overlay-layer",
-      ) as EFOverlayLayer;
+      const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
       overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 0.1 };
       overlayLayer.style.position = "absolute";
       overlayLayer.style.inset = "0";
       container.appendChild(overlayLayer);
       testElements.push(overlayLayer);
 
-      const overlayItem = document.createElement(
-        "ef-overlay-item",
-      ) as EFOverlayItem;
+      const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
       overlayItem.elementId = "test-target";
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
@@ -1193,14 +1054,8 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
 
       // Should still position correctly at minimum scale
       const targetRect = target.getBoundingClientRect();
-      expect(parseFloat(overlayItem.style.width)).toBeCloseTo(
-        targetRect.width,
-        1,
-      );
-      expect(parseFloat(overlayItem.style.height)).toBeCloseTo(
-        targetRect.height,
-        1,
-      );
+      expect(parseFloat(overlayItem.style.width)).toBeCloseTo(targetRect.width, 1);
+      expect(parseFloat(overlayItem.style.height)).toBeCloseTo(targetRect.height, 1);
     });
 
     test("overlay item handles maximum scale", async () => {
@@ -1230,18 +1085,14 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       panZoom.appendChild(target);
       testElements.push(target);
 
-      const overlayLayer = document.createElement(
-        "ef-overlay-layer",
-      ) as EFOverlayLayer;
+      const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
       overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 5 };
       overlayLayer.style.position = "absolute";
       overlayLayer.style.inset = "0";
       container.appendChild(overlayLayer);
       testElements.push(overlayLayer);
 
-      const overlayItem = document.createElement(
-        "ef-overlay-item",
-      ) as EFOverlayItem;
+      const overlayItem = document.createElement("ef-overlay-item") as EFOverlayItem;
       overlayItem.elementId = "test-target";
       overlayLayer.appendChild(overlayItem);
       testElements.push(overlayItem);
@@ -1254,20 +1105,12 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       expect(targetRect.height).toBeCloseTo(750, 1);
 
       // Overlay should match
-      expect(parseFloat(overlayItem.style.width)).toBeCloseTo(
-        targetRect.width,
-        1,
-      );
-      expect(parseFloat(overlayItem.style.height)).toBeCloseTo(
-        targetRect.height,
-        1,
-      );
+      expect(parseFloat(overlayItem.style.width)).toBeCloseTo(targetRect.width, 1);
+      expect(parseFloat(overlayItem.style.height)).toBeCloseTo(targetRect.height, 1);
     });
 
     test("overlay layer handles missing transform gracefully", async () => {
-      const overlayLayer = document.createElement(
-        "ef-overlay-layer",
-      ) as EFOverlayLayer;
+      const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
       // Don't set panZoomTransform
       overlayLayer.style.position = "absolute";
       overlayLayer.style.left = "0px";
@@ -1277,9 +1120,7 @@ describe("PanZoom + OverlayLayer + OverlayItem Integration", () => {
       document.body.appendChild(overlayLayer);
       testElements.push(overlayLayer);
 
-      await waitFor(() =>
-        overlayLayer.style.transform.includes("translate(0px, 0px)"),
-      );
+      await waitFor(() => overlayLayer.style.transform.includes("translate(0px, 0px)"));
 
       // Should default to translate(0, 0)
       const transform = overlayLayer.style.transform;

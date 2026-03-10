@@ -9,10 +9,7 @@ export type CloneFactory = (container: HTMLElement) => CloneFactoryResult;
 
 const registry = new WeakMap<EFTimegroup, CloneFactory>();
 
-export function registerCloneFactory(
-  element: EFTimegroup,
-  factory: CloneFactory,
-): void {
+export function registerCloneFactory(element: EFTimegroup, factory: CloneFactory): void {
   registry.set(element, factory);
 }
 
@@ -20,8 +17,6 @@ export function unregisterCloneFactory(element: EFTimegroup): void {
   registry.delete(element);
 }
 
-export function getCloneFactory(
-  element: EFTimegroup,
-): CloneFactory | undefined {
+export function getCloneFactory(element: EFTimegroup): CloneFactory | undefined {
   return registry.get(element);
 }

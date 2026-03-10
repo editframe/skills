@@ -11,10 +11,7 @@ describe("MD5 Error Scenarios", () => {
 
   beforeEach(async () => {
     // Create unique test directory
-    testDir = join(
-      tmpdir(),
-      `md5-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-    );
+    testDir = join(tmpdir(), `md5-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     await mkdir(testDir, { recursive: true });
   });
 
@@ -33,9 +30,7 @@ describe("MD5 Error Scenarios", () => {
       const result = md5Buffer(emptyBuffer);
 
       // Should return a valid UUID format
-      expect(result).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-      );
+      expect(result).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     });
 
     test("handles very large buffer", () => {
@@ -44,9 +39,7 @@ describe("MD5 Error Scenarios", () => {
 
       expect(() => {
         const result = md5Buffer(largeBuffer);
-        expect(result).toMatch(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-        );
+        expect(result).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
       }).not.toThrow();
     });
 
@@ -82,9 +75,7 @@ describe("MD5 Error Scenarios", () => {
       await writeFile(emptyFilePath, "");
 
       const result = await md5FilePath(emptyFilePath);
-      expect(result).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-      );
+      expect(result).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     });
 
     test("handles directory instead of file", async () => {
@@ -101,9 +92,7 @@ describe("MD5 Error Scenarios", () => {
       await writeFile(weirdFilePath, "test content");
 
       const result = await md5FilePath(weirdFilePath);
-      expect(result).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-      );
+      expect(result).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     });
 
     test("handles very large file", async () => {
@@ -124,9 +113,7 @@ describe("MD5 Error Scenarios", () => {
       });
 
       const result = await md5FilePath(largeFilePath);
-      expect(result).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-      );
+      expect(result).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     });
   });
 
@@ -138,9 +125,7 @@ describe("MD5 Error Scenarios", () => {
         },
       });
 
-      await expect(md5ReadStream(errorStream as any)).rejects.toThrow(
-        "Stream error",
-      );
+      await expect(md5ReadStream(errorStream as any)).rejects.toThrow("Stream error");
     });
 
     test("handles stream that closes without data", async () => {
@@ -151,9 +136,7 @@ describe("MD5 Error Scenarios", () => {
       });
 
       const result = await md5ReadStream(emptyStream as any);
-      expect(result).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-      );
+      expect(result).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     });
 
     test("handles stream with binary data", async () => {
@@ -166,9 +149,7 @@ describe("MD5 Error Scenarios", () => {
       });
 
       const result = await md5ReadStream(binaryStream as any);
-      expect(result).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-      );
+      expect(result).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     });
 
     test("handles stream with multiple chunks", async () => {
@@ -187,9 +168,7 @@ describe("MD5 Error Scenarios", () => {
       });
 
       const result = await md5ReadStream(multiChunkStream as any);
-      expect(result).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-      );
+      expect(result).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     });
   });
 
@@ -205,9 +184,7 @@ describe("MD5 Error Scenarios", () => {
       await mkdir(emptyDir);
 
       const result = await md5Directory(emptyDir);
-      expect(result).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-      );
+      expect(result).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     });
 
     test("handles directory with only subdirectories", async () => {
@@ -217,9 +194,7 @@ describe("MD5 Error Scenarios", () => {
       await mkdir(childDir);
 
       const result = await md5Directory(parentDir);
-      expect(result).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-      );
+      expect(result).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     });
 
     test("handles deeply nested directory structure", async () => {
@@ -235,9 +210,7 @@ describe("MD5 Error Scenarios", () => {
       await writeFile(join(currentDir, "deep-file.txt"), "deep content");
 
       const result = await md5Directory(testDir);
-      expect(result).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-      );
+      expect(result).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     });
 
     test("handles directory with mixed file types", async () => {
@@ -247,19 +220,14 @@ describe("MD5 Error Scenarios", () => {
       // Create various file types
       await writeFile(join(mixedDir, "text.txt"), "text content");
       await writeFile(join(mixedDir, "empty.dat"), "");
-      await writeFile(
-        join(mixedDir, "binary.bin"),
-        new Uint8Array([0x00, 0xff, 0x42]),
-      );
+      await writeFile(join(mixedDir, "binary.bin"), new Uint8Array([0x00, 0xff, 0x42]));
 
       const subDir = join(mixedDir, "subdir");
       await mkdir(subDir);
       await writeFile(join(subDir, "nested.txt"), "nested content");
 
       const result = await md5Directory(mixedDir);
-      expect(result).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-      );
+      expect(result).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     });
 
     test("produces consistent results for same directory", async () => {
@@ -284,9 +252,7 @@ describe("MD5 Error Scenarios", () => {
       // Attempt to hash the directory - should either succeed or fail gracefully
       try {
         const result = await md5Directory(restrictedDir);
-        expect(result).toMatch(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-        );
+        expect(result).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
       } catch (error) {
         // Permission errors should be proper Error objects
         expect(error).toBeInstanceOf(Error);
@@ -304,12 +270,8 @@ describe("MD5 Error Scenarios", () => {
       const fileHash = await md5FilePath(testFile);
 
       // Both should be valid UUID format
-      expect(bufferHash).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-      );
-      expect(fileHash).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-      );
+      expect(bufferHash).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+      expect(fileHash).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
 
       // Same content should produce same hash
       expect(bufferHash).toBe(fileHash);

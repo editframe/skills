@@ -17,9 +17,7 @@ export const CreateUnprocessedFilePayload = z.object({
 
 export const UpdateUnprocessedFilePayload = z.object({});
 
-export type CreateUnprocessedFilePayload = z.infer<
-  typeof CreateUnprocessedFilePayload
->;
+export type CreateUnprocessedFilePayload = z.infer<typeof CreateUnprocessedFilePayload>;
 
 /** @deprecated Use the unified file API from ./file.js instead */
 export interface UnprocessedFile {
@@ -38,10 +36,7 @@ export interface UnprocessedFileUploadDetails {
 
 // Ensure that the UnprocessedFileUploadDetails type matches the shape of the
 // UnprocessedFile type, but without the optional fields.
-assertTypesMatch<
-  Pick<UnprocessedFile, "id" | "byte_size">,
-  UnprocessedFileUploadDetails
->(true);
+assertTypesMatch<Pick<UnprocessedFile, "id" | "byte_size">, UnprocessedFileUploadDetails>(true);
 
 /** @deprecated Use the unified file API from ./file.js instead */
 export interface CreateUnprocessedFileResult extends UnprocessedFile {}
@@ -64,28 +59,18 @@ export const createUnprocessedFile = async (
 ) => {
   log("Creating an unprocessed file", payload);
   CreateUnprocessedFilePayload.parse(payload);
-  const response = await client.authenticatedFetch(
-    "/api/v1/unprocessed_files",
-    {
-      method: "POST",
-      body: JSON.stringify(payload),
-    },
-  );
+  const response = await client.authenticatedFetch("/api/v1/unprocessed_files", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 
-  log(
-    "Unprocessed file created",
-    response.status,
-    response.statusText,
-    response.headers,
-  );
+  log("Unprocessed file created", response.status, response.statusText, response.headers);
 
   if (response.ok) {
     return (await response.json()) as CreateUnprocessedFileResult;
   }
 
-  throw new Error(
-    `Failed to create unprocessed file ${response.status} ${response.statusText}`,
-  );
+  throw new Error(`Failed to create unprocessed file ${response.status} ${response.statusText}`);
 };
 
 /** @deprecated Use the unified file API from ./file.js instead */
@@ -109,12 +94,9 @@ export const lookupUnprocessedFileByMd5 = async (
   client: Client,
   md5: string,
 ): Promise<LookupUnprocessedFileByMd5Result | null> => {
-  const response = await client.authenticatedFetch(
-    `/api/v1/unprocessed_files/md5/${md5}`,
-    {
-      method: "GET",
-    },
-  );
+  const response = await client.authenticatedFetch(`/api/v1/unprocessed_files/md5/${md5}`, {
+    method: "GET",
+  });
 
   if (response.ok) {
     return (await response.json()) as LookupUnprocessedFileByMd5Result;
@@ -131,18 +113,13 @@ export const lookupUnprocessedFileByMd5 = async (
 
 /** @deprecated Use the unified file API from ./file.js instead */
 export const processIsobmffFile = async (client: Client, id: string) => {
-  const response = await client.authenticatedFetch(
-    `/api/v1/unprocessed_files/${id}/isobmff`,
-    {
-      method: "POST",
-    },
-  );
+  const response = await client.authenticatedFetch(`/api/v1/unprocessed_files/${id}/isobmff`, {
+    method: "POST",
+  });
 
   if (response.ok) {
     return (await response.json()) as ProcessIsobmffFileResult;
   }
 
-  throw new Error(
-    `Failed to process isobmff file ${id} ${response.status} ${response.statusText}`,
-  );
+  throw new Error(`Failed to process isobmff file ${id} ${response.status} ${response.statusText}`);
 };

@@ -1,8 +1,5 @@
 export { Client } from "./client.js";
-export type {
-  CompletionIterator,
-  ProgressIterator,
-} from "./ProgressIterator.js";
+export type { CompletionIterator, ProgressIterator } from "./ProgressIterator.js";
 export {
   CreateFilePayload,
   type CreateFileResult,

@@ -127,9 +127,7 @@ describe.skip("EFWorkbench", () => {
     // Canvas slot exists but should be inside the grid, not as the root
     const canvasSlot = shadowRoot?.querySelector('slot[name="canvas"]');
     expect(canvasSlot).toBeTruthy();
-    expect(
-      canvasSlot?.parentElement?.classList.contains("canvas-container"),
-    ).toBe(true);
+    expect(canvasSlot?.parentElement?.classList.contains("canvas-container")).toBe(true);
 
     // Now set rendering=true (simulating active rendering)
     workbench.rendering = true;
@@ -139,9 +137,7 @@ describe.skip("EFWorkbench", () => {
     expect(workbench.rendering).toBe(true);
 
     // Now it should show canvas-only view (only the canvas slot, no grid/toolbar)
-    const canvasSlotWhenRendering = shadowRoot?.querySelector(
-      'slot[name="canvas"]',
-    );
+    const canvasSlotWhenRendering = shadowRoot?.querySelector('slot[name="canvas"]');
     expect(canvasSlotWhenRendering).toBeTruthy();
 
     // When rendering=true, canvas slot should be a direct child of shadowRoot
@@ -169,14 +165,10 @@ describe.skip("EFWorkbench", () => {
     expect(gridContainerAfterRendering).toBeTruthy();
 
     // Canvas slot should be inside the grid container again
-    const canvasSlotAfterRendering = shadowRoot?.querySelector(
-      'slot[name="canvas"]',
-    );
+    const canvasSlotAfterRendering = shadowRoot?.querySelector('slot[name="canvas"]');
     expect(canvasSlotAfterRendering).toBeTruthy();
-    expect(
-      canvasSlotAfterRendering?.parentElement?.classList.contains(
-        "canvas-container",
-      ),
-    ).toBe(true);
+    expect(canvasSlotAfterRendering?.parentElement?.classList.contains("canvas-container")).toBe(
+      true,
+    );
   });
 });

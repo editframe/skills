@@ -397,10 +397,7 @@ class RedBlackTree<K> {
           sibling = node.parent.right;
         }
 
-        if (
-          sibling?.left?.color !== Color.RED &&
-          sibling?.right?.color !== Color.RED
-        ) {
+        if (sibling?.left?.color !== Color.RED && sibling?.right?.color !== Color.RED) {
           if (sibling) {
             sibling.color = Color.RED;
           }
@@ -434,10 +431,7 @@ class RedBlackTree<K> {
           sibling = node.parent?.left;
         }
 
-        if (
-          sibling?.right?.color !== Color.RED &&
-          sibling?.left?.color !== Color.RED
-        ) {
+        if (sibling?.right?.color !== Color.RED && sibling?.left?.color !== Color.RED) {
           if (sibling) {
             sibling.color = Color.RED;
           }
@@ -549,12 +543,7 @@ class RedBlackTree<K> {
     }
   }
 
-  private inorderRange(
-    node: RBTreeNode<K> | null,
-    start: K,
-    end: K,
-    result: K[],
-  ): void {
+  private inorderRange(node: RBTreeNode<K> | null, start: K, end: K, result: K[]): void {
     if (!node) return;
 
     const startCmp = this.compareFn(node.key, start);

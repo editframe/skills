@@ -2,10 +2,7 @@ import { type Context, createContext, provide } from "@lit/context";
 import { css, LitElement, type PropertyValueMap } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { attachContextRoot } from "../attachContextRoot.js";
-import {
-  isEFTemporal,
-  type TemporalMixinInterface,
-} from "../elements/EFTemporal.js";
+import { isEFTemporal, type TemporalMixinInterface } from "../elements/EFTemporal.js";
 import { TargetController } from "../elements/TargetController.js";
 import { targetTemporalContext } from "./ContextMixin.js";
 import {
@@ -156,7 +153,7 @@ export class EFControls extends LitElement {
   focusContext = this as FocusContext;
 
   // @ts-expect-error controller is intentionally not referenced directly
-  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: Used for side effects
+  // oxlint-disable-next-line no-unused-private-class-members -- retained for constructor side effects
   #targetController = new TargetController(this);
 
   // Subscription tracking for different target types
@@ -296,29 +293,26 @@ export class EFControls extends LitElement {
       return;
     }
 
-    this.#directTemporalSubscription = createDirectTemporalSubscription(
-      temporal,
-      {
-        onPlayingChange: (value) => {
-          this.playing = value;
-        },
-        onLoopChange: (value) => {
-          this.loop = value;
-        },
-        onCurrentTimeMsChange: (value) => {
-          this.currentTimeMs = value;
-        },
-        onDurationMsChange: (value) => {
-          this.durationMs = value;
-        },
-        onTargetTemporalChange: (value) => {
-          this.targetTemporal = value;
-        },
-        onFocusedElementChange: (value) => {
-          this.focusedElement = value;
-        },
+    this.#directTemporalSubscription = createDirectTemporalSubscription(temporal, {
+      onPlayingChange: (value) => {
+        this.playing = value;
       },
-    );
+      onLoopChange: (value) => {
+        this.loop = value;
+      },
+      onCurrentTimeMsChange: (value) => {
+        this.currentTimeMs = value;
+      },
+      onDurationMsChange: (value) => {
+        this.durationMs = value;
+      },
+      onTargetTemporalChange: (value) => {
+        this.targetTemporal = value;
+      },
+      onFocusedElementChange: (value) => {
+        this.focusedElement = value;
+      },
+    });
   }
 
   #resubscribe() {

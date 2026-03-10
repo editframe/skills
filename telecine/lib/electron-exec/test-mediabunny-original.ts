@@ -1,7 +1,7 @@
 /**
  * Test mediabunny with the ORIGINAL bars-n-tone.mp4 (non-fragmented)
  * to see if the crash is specific to fMP4 format
- * 
+ *
  * Run with: ./scripts/npx tsx lib/electron-exec/test-mediabunny-original.ts
  */
 
@@ -19,7 +19,10 @@ if (!existsSync(TEST_DIR)) {
 }
 
 // The ORIGINAL non-fragmented MP4
-const ORIGINAL_FILE = join(__dirname, "../../lib/process-file/test-files/bars-n-tone.mp4");
+const ORIGINAL_FILE = join(
+  __dirname,
+  "../../lib/process-file/test-files/bars-n-tone.mp4",
+);
 
 const ELECTRON_SCRIPT = join(TEST_DIR, "electron-test.cjs");
 const PRELOAD_SCRIPT = join(TEST_DIR, "preload.cjs");
@@ -39,15 +42,20 @@ const fileData = readFileSync(ORIGINAL_FILE);
 console.log("File size:", fileData.length, "bytes");
 
 // Create preload script
-writeFileSync(PRELOAD_SCRIPT, `
+writeFileSync(
+  PRELOAD_SCRIPT,
+  `
 const { contextBridge } = require('electron');
 contextBridge.exposeInMainWorld('testData', {
   fileBytes: [${Array.from(fileData).join(",")}],
 });
-`);
+`,
+);
 
 // Create HTML file - simple VideoDecoder test
-writeFileSync(HTML_FILE, `<!DOCTYPE html>
+writeFileSync(
+  HTML_FILE,
+  `<!DOCTYPE html>
 <html>
 <head><title>Mediabunny Original Test</title></head>
 <body>
@@ -124,10 +132,13 @@ runTest().then(result => {
 });
 </script>
 </body>
-</html>`);
+</html>`,
+);
 
 // Create electron main script
-writeFileSync(ELECTRON_SCRIPT, `
+writeFileSync(
+  ELECTRON_SCRIPT,
+  `
 const { app, BrowserWindow, protocol } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -187,26 +198,34 @@ app.whenReady().then(async () => {
   console.error('Test timed out');
   app.exit(1);
 });
-`);
+`,
+);
 
 console.log("\nRunning Electron test...");
 
-const electronPath = join(__dirname, "../../node_modules/electron/dist/electron");
+const electronPath = join(
+  __dirname,
+  "../../node_modules/electron/dist/electron",
+);
 
-const electronProcess = spawn("xvfb-run", [
-  "--auto-servernum",
-  "--server-args=-screen 0 1920x1080x24",
-  electronPath,
-  "--no-sandbox",
-  "--disable-dev-shm-usage",
-  ELECTRON_SCRIPT,
-], {
-  stdio: "inherit",
-  cwd: join(__dirname, "../.."),
-  env: {
-    ...process.env,
+const electronProcess = spawn(
+  "xvfb-run",
+  [
+    "--auto-servernum",
+    "--server-args=-screen 0 1920x1080x24",
+    electronPath,
+    "--no-sandbox",
+    "--disable-dev-shm-usage",
+    ELECTRON_SCRIPT,
+  ],
+  {
+    stdio: "inherit",
+    cwd: join(__dirname, "../.."),
+    env: {
+      ...process.env,
+    },
   },
-});
+);
 
 electronProcess.on("close", (code) => {
   console.log("\nElectron process exited with code:", code);

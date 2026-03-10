@@ -17,11 +17,16 @@ function CustomerLogos() {
         <div className="w-8 h-1 bg-[var(--poster-gold)]" />
       </div>
       <div className="flex items-center justify-center gap-12 flex-wrap">
-        {['Company A', 'Company B', 'Company C', 'Company D', 'Company E'].map((name, i) => (
-          <div key={i} className="text-lg font-black uppercase tracking-tight text-[var(--ink-black)] dark:text-white opacity-40 hover:opacity-100 transition-opacity">
-            {name}
-          </div>
-        ))}
+        {["Company A", "Company B", "Company C", "Company D", "Company E"].map(
+          (name, i) => (
+            <div
+              key={i}
+              className="text-lg font-black uppercase tracking-tight text-[var(--ink-black)] dark:text-white opacity-40 hover:opacity-100 transition-opacity"
+            >
+              {name}
+            </div>
+          ),
+        )}
       </div>
     </div>
   );

@@ -1,11 +1,7 @@
 import { createTestStream } from "TEST/createTestStream.js";
 import { describe, expect, test } from "vitest";
 import { ProgressIterator } from "./ProgressIterator.js";
-import {
-  type CompleteEvent,
-  type ProgressEvent,
-  StreamEventSource,
-} from "./StreamEventSource.js";
+import { type CompleteEvent, type ProgressEvent, StreamEventSource } from "./StreamEventSource.js";
 
 describe("ProgressIterator", () => {
   test("Fulfills promise when complete event is emitted", async () => {
@@ -59,16 +55,14 @@ describe("ProgressIterator", () => {
     const { stream, event, end } = createTestStream();
     const eventSource = new StreamEventSource(stream, new AbortController());
     const iterator = new ProgressIterator(eventSource);
-    const iteratorPromise = new Promise<
-      (ProgressEvent | CompleteEvent)[]
-      // biome-ignore lint/suspicious/noAsyncPromiseExecutor: Just a test. It's fine.
-    >(async (resolve) => {
+
+    const iteratorPromise = (async () => {
       const events: (ProgressEvent | CompleteEvent)[] = [];
-      for await (const event of iterator) {
-        events.push(event);
+      for await (const evt of iterator) {
+        events.push(evt);
       }
-      resolve(events);
-    });
+      return events;
+    })();
 
     event("progress", { progress: 0.1 });
     event("progress", { progress: 0.2 });
@@ -87,20 +81,13 @@ describe("ProgressIterator", () => {
     const eventSource = new StreamEventSource(stream, new AbortController());
     const iterator = new ProgressIterator(eventSource);
 
-    const iteratorPromise = new Promise<
-      (ProgressEvent | CompleteEvent)[]
-      // biome-ignore lint/suspicious/noAsyncPromiseExecutor: Just a test. It's fine.
-    >(async (resolve, reject) => {
+    const iteratorPromise = (async () => {
       const events: (ProgressEvent | CompleteEvent)[] = [];
-      try {
-        for await (const event of iterator) {
-          events.push(event);
-        }
-        resolve(events);
-      } catch (error) {
-        reject(error);
+      for await (const evt of iterator) {
+        events.push(evt);
       }
-    });
+      return events;
+    })();
 
     event("error", { error: "test" });
     end();

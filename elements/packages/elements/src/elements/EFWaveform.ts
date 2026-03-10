@@ -16,10 +16,7 @@ import type { EFVideo } from "./EFVideo.js";
 import { TargetController } from "./TargetController.ts";
 
 @customElement("ef-waveform")
-export class EFWaveform
-  extends EFTemporal(TWMixin(LitElement))
-  implements FrameRenderable
-{
+export class EFWaveform extends EFTemporal(TWMixin(LitElement)) implements FrameRenderable {
   static styles = css`
       :host {
         all: inherit;
@@ -68,15 +65,7 @@ export class EFWaveform
     type: String,
     attribute: "mode",
   })
-  mode:
-    | "roundBars"
-    | "bars"
-    | "bricks"
-    | "line"
-    | "curve"
-    | "pixel"
-    | "wave"
-    | "spikes" = "bars";
+  mode: "roundBars" | "bars" | "bricks" | "line" | "curve" | "pixel" | "wave" | "spikes" = "bars";
 
   @property({ type: String })
   color = "currentColor";
@@ -119,10 +108,7 @@ export class EFWaveform
     // Style changes are handled by FrameController
     this.mutationObserver = new MutationObserver((mutationsList) => {
       for (const mutation of mutationsList) {
-        if (
-          mutation.type === "attributes" &&
-          mutation.attributeName !== "style"
-        ) {
+        if (mutation.type === "attributes" && mutation.attributeName !== "style") {
           this.requestUpdate();
         }
       }
@@ -187,8 +173,7 @@ export class EFWaveform
     const paddingInner = this.barSpacing;
     const paddingOuter = 0.01;
     const availableWidth = waveWidth;
-    const barWidth =
-      availableWidth / (totalBars + (totalBars - 1) * paddingInner);
+    const barWidth = availableWidth / (totalBars + (totalBars - 1) * paddingInner);
 
     ctx.clearRect(0, 0, waveWidth, waveHeight);
     const path = new Path2D();
@@ -204,10 +189,7 @@ export class EFWaveform
     ctx.fill(path);
   }
 
-  protected drawBricks(
-    ctx: CanvasRenderingContext2D,
-    frequencyData: Uint8Array,
-  ) {
+  protected drawBricks(ctx: CanvasRenderingContext2D, frequencyData: Uint8Array) {
     const canvas = ctx.canvas;
     const waveWidth = canvas.width;
     const waveHeight = canvas.height;
@@ -233,10 +215,7 @@ export class EFWaveform
     ctx.fill(path);
   }
 
-  protected drawRoundBars(
-    ctx: CanvasRenderingContext2D,
-    frequencyData: Uint8Array,
-  ) {
+  protected drawRoundBars(ctx: CanvasRenderingContext2D, frequencyData: Uint8Array) {
     const canvas = ctx.canvas;
     const waveWidth = canvas.width;
     const waveHeight = canvas.height;
@@ -246,8 +225,7 @@ export class EFWaveform
     const paddingInner = this.barSpacing;
     const paddingOuter = 0.01;
     const availableWidth = waveWidth;
-    const barWidth =
-      availableWidth / (totalBars + (totalBars - 1) * paddingInner);
+    const barWidth = availableWidth / (totalBars + (totalBars - 1) * paddingInner);
 
     ctx.clearRect(0, 0, waveWidth, waveHeight);
 
@@ -291,18 +269,14 @@ export class EFWaveform
     }
     // Ensure we draw to the end
     const lastX = waveWidth;
-    const lastY =
-      (1 - (frequencyData[frequencyData.length - 1] ?? 0) / 255) * waveHeight;
+    const lastY = (1 - (frequencyData[frequencyData.length - 1] ?? 0) / 255) * waveHeight;
     path.lineTo(lastX, lastY);
 
     ctx.lineWidth = this.lineWidth;
     ctx.stroke(path);
   }
 
-  protected drawCurve(
-    ctx: CanvasRenderingContext2D,
-    frequencyData: Uint8Array,
-  ) {
+  protected drawCurve(ctx: CanvasRenderingContext2D, frequencyData: Uint8Array) {
     const canvas = ctx.canvas;
     const waveWidth = canvas.width;
     const waveHeight = canvas.height;
@@ -330,10 +304,7 @@ export class EFWaveform
     ctx.stroke(path);
   }
 
-  protected drawPixel(
-    ctx: CanvasRenderingContext2D,
-    frequencyData: Uint8Array,
-  ) {
+  protected drawPixel(ctx: CanvasRenderingContext2D, frequencyData: Uint8Array) {
     const canvas = ctx.canvas;
     const waveWidth = canvas.width;
     const waveHeight = canvas.height;
@@ -380,8 +351,7 @@ export class EFWaveform
       if (i === 0) {
         path.moveTo(x, y);
       } else {
-        const prevX =
-          startX + ((i - 1) / (frequencyData.length - 1)) * availableWidth;
+        const prevX = startX + ((i - 1) / (frequencyData.length - 1)) * availableWidth;
         const prevValue = Math.min(((frequencyData[i - 1] ?? 0) / 255) * 2, 1);
         const prevBarHeight = prevValue * waveHeight;
         const prevY = (waveHeight - prevBarHeight) / 2;
@@ -401,8 +371,7 @@ export class EFWaveform
       if (i === frequencyData.length - 1) {
         path.lineTo(x, y);
       } else {
-        const nextX =
-          startX + ((i + 1) / (frequencyData.length - 1)) * availableWidth;
+        const nextX = startX + ((i + 1) / (frequencyData.length - 1)) * availableWidth;
         const nextValue = Math.min(((frequencyData[i + 1] ?? 0) / 255) * 2, 1);
         const nextBarHeight = nextValue * waveHeight;
         const nextY = (waveHeight + nextBarHeight) / 2;
@@ -421,10 +390,7 @@ export class EFWaveform
     ctx.fill(path);
   }
 
-  protected drawSpikes(
-    ctx: CanvasRenderingContext2D,
-    frequencyData: Uint8Array,
-  ) {
+  protected drawSpikes(ctx: CanvasRenderingContext2D, frequencyData: Uint8Array) {
     const canvas = ctx.canvas;
     const waveWidth = canvas.width;
     const waveHeight = canvas.height;
@@ -450,8 +416,7 @@ export class EFWaveform
       if (i === 0) {
         path.moveTo(x, y);
       } else {
-        const prevX =
-          startX + ((i - 1) / (frequencyData.length - 1)) * availableWidth;
+        const prevX = startX + ((i - 1) / (frequencyData.length - 1)) * availableWidth;
         const prevValue = (frequencyData[i - 1] ?? 0) / 255;
         const prevBarHeight = prevValue * (waveHeight / 2);
         const prevY = (waveHeight - prevBarHeight * 2) / 2;
@@ -471,8 +436,7 @@ export class EFWaveform
       if (i === frequencyData.length - 1) {
         path.lineTo(x, y);
       } else {
-        const nextX =
-          startX + ((i + 1) / (frequencyData.length - 1)) * availableWidth;
+        const nextX = startX + ((i + 1) / (frequencyData.length - 1)) * availableWidth;
         const nextValue = (frequencyData[i + 1] ?? 0) / 255;
         const nextBarHeight = nextValue * (waveHeight / 2);
         const nextY = (waveHeight + nextBarHeight * 2) / 2;
@@ -509,8 +473,7 @@ export class EFWaveform
   getFrameState(timeMs: number): FrameState {
     // Waveform is ready when we have cached data for this time
     const hasTarget = !!this.targetElement;
-    const hasData =
-      hasTarget && this.#dataTimeMs === timeMs && this.#frequencyData !== null;
+    const hasData = hasTarget && this.#dataTimeMs === timeMs && this.#frequencyData !== null;
 
     return {
       needsPreparation: hasTarget && !hasData,

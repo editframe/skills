@@ -1,28 +1,42 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 
 const CodeExamplesSection = lazy(() =>
-  import("./sections/CodeExamplesSection").then((m) => ({ default: m.CodeExamplesSection }))
+  import("./sections/CodeExamplesSection").then((m) => ({
+    default: m.CodeExamplesSection,
+  })),
 );
 const PromptToToolSection = lazy(() =>
-  import("./sections/PromptToToolSection").then((m) => ({ default: m.PromptToToolSection }))
+  import("./sections/PromptToToolSection").then((m) => ({
+    default: m.PromptToToolSection,
+  })),
 );
 const RenderAnywhereSection = lazy(() =>
-  import("./sections/RenderAnywhereSection").then((m) => ({ default: m.RenderAnywhereSection }))
+  import("./sections/RenderAnywhereSection").then((m) => ({
+    default: m.RenderAnywhereSection,
+  })),
 );
 const ArchitectureSection = lazy(() =>
-  import("./sections/ArchitectureSection").then((m) => ({ default: m.ArchitectureSection }))
+  import("./sections/ArchitectureSection").then((m) => ({
+    default: m.ArchitectureSection,
+  })),
 );
 const TemplatedRenderingSection = lazy(() =>
-  import("./sections/TemplatedRenderingSection").then((m) => ({ default: m.TemplatedRenderingSection }))
+  import("./sections/TemplatedRenderingSection").then((m) => ({
+    default: m.TemplatedRenderingSection,
+  })),
 );
 const GettingStartedSection = lazy(() =>
-  import("./sections/GettingStartedSection").then((m) => ({ default: m.GettingStartedSection }))
+  import("./sections/GettingStartedSection").then((m) => ({
+    default: m.GettingStartedSection,
+  })),
 );
 const FooterSection = lazy(() =>
-  import("./sections/FooterSection").then((m) => ({ default: m.FooterSection }))
+  import("./sections/FooterSection").then((m) => ({
+    default: m.FooterSection,
+  })),
 );
 const RenderQueuePanel = lazy(() =>
-  import("./RenderQueue").then((m) => ({ default: m.RenderQueuePanel }))
+  import("./RenderQueue").then((m) => ({ default: m.RenderQueuePanel })),
 );
 
 // Wait for the browser to go idle after the above-fold content settles before
@@ -32,7 +46,9 @@ function useIdleReady(timeoutMs = 300) {
   const [ready, setReady] = useState(false);
   useEffect(() => {
     if (typeof requestIdleCallback !== "undefined") {
-      const id = requestIdleCallback(() => setReady(true), { timeout: timeoutMs });
+      const id = requestIdleCallback(() => setReady(true), {
+        timeout: timeoutMs,
+      });
       return () => cancelIdleCallback(id);
     } else {
       const id = setTimeout(() => setReady(true), 0);

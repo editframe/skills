@@ -56,18 +56,10 @@ describe("URLTokenDeduplicator", () => {
     const mockParseExpiration = vi.fn().mockReturnValue(futureTime);
 
     // First request
-    const token1 = await deduplicator.getToken(
-      "key1",
-      mockTokenFactory,
-      mockParseExpiration,
-    );
+    const token1 = await deduplicator.getToken("key1", mockTokenFactory, mockParseExpiration);
 
     // Second request for same key should reuse cached token
-    const token2 = await deduplicator.getToken(
-      "key1",
-      vi.fn(),
-      mockParseExpiration,
-    );
+    const token2 = await deduplicator.getToken("key1", vi.fn(), mockParseExpiration);
 
     expect(token1).toBe("cached-token");
     expect(token2).toBe("cached-token");
@@ -84,21 +76,13 @@ describe("URLTokenDeduplicator", () => {
     const mockParseExpiration2 = vi.fn().mockReturnValue(futureTime);
 
     // First request with expired token
-    await deduplicator.getToken(
-      "key1",
-      mockTokenFactory1,
-      mockParseExpiration1,
-    );
+    await deduplicator.getToken("key1", mockTokenFactory1, mockParseExpiration1);
 
     // Advance time to simulate token expiration
     vi.advanceTimersByTime(2000);
 
     // Second request should fetch new token due to expiration
-    const token2 = await deduplicator.getToken(
-      "key1",
-      mockTokenFactory2,
-      mockParseExpiration2,
-    );
+    const token2 = await deduplicator.getToken("key1", mockTokenFactory2, mockParseExpiration2);
 
     expect(token2).toBe("fresh-token");
     expect(mockTokenFactory1).toHaveBeenCalledTimes(1);
@@ -106,9 +90,7 @@ describe("URLTokenDeduplicator", () => {
   });
 
   it("should handle token factory errors by removing from cache", async () => {
-    const mockTokenFactory1 = vi
-      .fn()
-      .mockRejectedValue(new Error("Network error"));
+    const mockTokenFactory1 = vi.fn().mockRejectedValue(new Error("Network error"));
     const mockTokenFactory2 = vi.fn().mockResolvedValue("retry-token");
     const mockParseExpiration = vi.fn().mockReturnValue(Date.now() + 60000);
 
@@ -118,11 +100,7 @@ describe("URLTokenDeduplicator", () => {
     ).rejects.toThrow("Network error");
 
     // Retry should work and not be blocked by failed request
-    const token = await deduplicator.getToken(
-      "key1",
-      mockTokenFactory2,
-      mockParseExpiration,
-    );
+    const token = await deduplicator.getToken("key1", mockTokenFactory2, mockParseExpiration);
 
     expect(token).toBe("retry-token");
     expect(mockTokenFactory1).toHaveBeenCalledTimes(1);
@@ -137,11 +115,7 @@ describe("URLTokenDeduplicator", () => {
     expect(deduplicator.hasValidToken("nonexistent")).toBe(false);
 
     // Add a token to cache
-    deduplicator.getToken(
-      "key1",
-      vi.fn().mockResolvedValue("token"),
-      mockParseExpiration,
-    );
+    deduplicator.getToken("key1", vi.fn().mockResolvedValue("token"), mockParseExpiration);
 
     expect(deduplicator.getCachedCount()).toBe(1);
     expect(deduplicator.getCachedKeys()).toEqual(["key1"]);
@@ -165,11 +139,7 @@ describe("URLTokenDeduplicator", () => {
       vi.fn().mockResolvedValue("token1"),
       mockParseExpiration1,
     );
-    await deduplicator.getToken(
-      "valid",
-      vi.fn().mockResolvedValue("token2"),
-      mockParseExpiration2,
-    );
+    await deduplicator.getToken("valid", vi.fn().mockResolvedValue("token2"), mockParseExpiration2);
 
     expect(deduplicator.getCachedCount()).toBe(2);
 

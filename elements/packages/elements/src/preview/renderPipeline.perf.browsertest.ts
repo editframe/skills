@@ -77,8 +77,7 @@ function createCanvasTimegroup(): EFTimegroup {
   const videoCanvas = document.createElement("canvas");
   videoCanvas.width = W;
   videoCanvas.height = H;
-  videoCanvas.style.cssText =
-    "width:100%;height:100%;position:absolute;top:0;left:0;";
+  videoCanvas.style.cssText = "width:100%;height:100%;position:absolute;top:0;left:0;";
   const vctx = videoCanvas.getContext("2d")!;
   const gradient = vctx.createLinearGradient(0, 0, W, H);
   gradient.addColorStop(0, "#ff6b6b");
@@ -464,9 +463,7 @@ describe("render pipeline performance", () => {
     const refreshTimes: number[] = [];
 
     // Wait for initial render
-    await new Promise((r) =>
-      requestAnimationFrame(() => requestAnimationFrame(r)),
-    );
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
     for (let i = 0; i < WARMUP; i++) {
       tg.currentTimeMs = i * 100;
@@ -496,9 +493,7 @@ describe("render pipeline performance", () => {
     });
     const refreshTimes: number[] = [];
 
-    await new Promise((r) =>
-      requestAnimationFrame(() => requestAnimationFrame(r)),
-    );
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
     for (let i = 0; i < WARMUP; i++) {
       tg.currentTimeMs = i * 100;

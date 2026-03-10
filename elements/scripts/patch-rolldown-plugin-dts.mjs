@@ -50,6 +50,4 @@ for (const file of files) {
   process.exit(0);
 }
 
-console.warn(
-  "rolldown-plugin-dts patch target not found — plugin may have changed structure",
-);
+console.warn("rolldown-plugin-dts patch target not found — plugin may have changed structure");

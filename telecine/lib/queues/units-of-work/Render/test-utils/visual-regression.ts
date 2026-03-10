@@ -87,9 +87,16 @@ export const extractFramesForComparison = async (
       : testFilePath;
     const testDir = path.dirname(normalizedPath);
     const testFileName = path.basename(normalizedPath);
-    const rendersDir = testFileName.replace(/\.test\.ts$|\.ts$/, ".test.renders");
+    const rendersDir = testFileName.replace(
+      /\.test\.ts$|\.ts$/,
+      ".test.renders",
+    );
     const titleSlug = testTitle.toLowerCase().replace(/\s+/g, "-");
-    testRenderDir = path.join(testDir, rendersDir, `${titleSlug}-${templateHash.slice(0, 8)}`);
+    testRenderDir = path.join(
+      testDir,
+      rendersDir,
+      `${titleSlug}-${templateHash.slice(0, 8)}`,
+    );
   } else {
     // Fallback to temp directory
     const titleSlug = testTitle
@@ -123,9 +130,16 @@ export const getOrCreateBaseline = async (
       : testFilePath;
     const testDir = path.dirname(normalizedPath);
     const testFileName = path.basename(normalizedPath);
-    const rendersDir = testFileName.replace(/\.test\.ts$|\.ts$/, ".test.renders");
+    const rendersDir = testFileName.replace(
+      /\.test\.ts$|\.ts$/,
+      ".test.renders",
+    );
     const titleSlug = testTitle.toLowerCase().replace(/\s+/g, "-");
-    testRenderDir = path.join(testDir, rendersDir, `${titleSlug}-${templateHash.slice(0, 8)}`);
+    testRenderDir = path.join(
+      testDir,
+      rendersDir,
+      `${titleSlug}-${templateHash.slice(0, 8)}`,
+    );
   } else {
     const titleSlug = testTitle
       ? `${testTitle.toLowerCase().replace(/\s+/g, "-")}-`
@@ -207,9 +221,16 @@ export const compareFramesWithOdiff = async (
         : options.testFilePath;
       const testDir = path.dirname(normalizedPath);
       const testFileName = path.basename(normalizedPath);
-      const rendersDir = testFileName.replace(/\.test\.ts$|\.ts$/, ".test.renders");
+      const rendersDir = testFileName.replace(
+        /\.test\.ts$|\.ts$/,
+        ".test.renders",
+      );
       const titleSlug = options.testTitle.toLowerCase().replace(/\s+/g, "-");
-      testRenderDir = path.join(testDir, rendersDir, `${titleSlug}-${templateHash.slice(0, 8)}`);
+      testRenderDir = path.join(
+        testDir,
+        rendersDir,
+        `${titleSlug}-${templateHash.slice(0, 8)}`,
+      );
     } else {
       const titleSlug = options.testTitle
         ? `${options.testTitle.toLowerCase().replace(/\s+/g, "-")}-`

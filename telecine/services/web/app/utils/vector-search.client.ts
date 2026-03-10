@@ -60,9 +60,7 @@ export function computeQueryVector(
   }
 
   // Normalize vector (L2 norm)
-  const magnitude = Math.sqrt(
-    vector.reduce((sum, val) => sum + val * val, 0),
-  );
+  const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
   if (magnitude > 0) {
     for (let j = 0; j < vector.length; j++) {
       vector[j] = vector[j] / magnitude;
@@ -71,4 +69,3 @@ export function computeQueryVector(
 
   return vector;
 }
-

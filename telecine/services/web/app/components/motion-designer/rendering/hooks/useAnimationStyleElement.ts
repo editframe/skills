@@ -96,25 +96,30 @@ function buildKeyframesRule(keyframe: KeyframesDefinition): string {
   // Build keyframe rule using structured data
   // Use CSSStyleSheet.insertRule format: "@keyframes name { ... }"
   const keyframeBlocks: string[] = [];
-  
+
   for (const kf of keyframe.keyframes) {
-    const percent = kf.percent === 0 ? "0" : kf.percent === 100 ? "100" : kf.percent.toFixed(2);
+    const percent =
+      kf.percent === 0
+        ? "0"
+        : kf.percent === 100
+          ? "100"
+          : kf.percent.toFixed(2);
     const properties: string[] = [];
-    
+
     // Build properties from structured data - no manual concatenation
     for (const [prop, value] of Object.entries(kf.properties)) {
       properties.push(`${prop}: ${value}`);
     }
-    
+
     if (kf.easing) {
       properties.push(`animation-timing-function: ${kf.easing}`);
     }
-    
+
     // Build keyframe block - properties are joined with "; " (CSS syntax requirement)
     const propertyString = properties.join("; ");
     keyframeBlocks.push(`${percent}% { ${propertyString} }`);
   }
-  
+
   // Build @keyframes rule - keyframe blocks are separated by spaces (CSS syntax requirement)
   const keyframesContent = keyframeBlocks.join(" ");
   return `@keyframes ${keyframe.name} { ${keyframesContent} }`;
@@ -126,11 +131,11 @@ function buildKeyframesRule(keyframe: KeyframesDefinition): string {
  */
 function buildStyleRule(rule: CSSStyleRuleDefinition): string {
   const properties: string[] = [];
-  
+
   // Build properties from structured data
   for (const [prop, value] of Object.entries(rule.properties)) {
     properties.push(`${prop}: ${value}`);
   }
-  
+
   return `${rule.selector} { ${properties.join("; ")} }`;
 }

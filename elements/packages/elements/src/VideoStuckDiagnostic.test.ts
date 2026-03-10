@@ -74,18 +74,16 @@ describe("Video Operations Getting Stuck Diagnosis", () => {
     };
 
     // Simulate a series of seek operations like the user described
-    const seekTimes = [
-      1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000,
-    ];
+    const seekTimes = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000];
 
     for (const seekTime of seekTimes) {
       try {
         await simulatePaintTask(seekTime);
-      } catch (error) {
+      } catch (_error) {
         // Try one more operation to see if it's blocked
         try {
           await simulatePaintTask(seekTime + 100);
-        } catch (subsequentError) {
+        } catch (_subsequentError) {
           // subsequent operation also failed
         }
 
@@ -96,9 +94,7 @@ describe("Video Operations Getting Stuck Diagnosis", () => {
     // Verify our hypothesis
     expect(paintTaskCallCount).toBeGreaterThan(5);
     expect(decoderNeedsReset).toBe(true);
-    expect((lastError as any as Error)?.message).toContain(
-      "key frame is required",
-    );
+    expect((lastError as any as Error)?.message).toContain("key frame is required");
   });
 
   test("identifies the decoder reset blocking pattern", async () => {

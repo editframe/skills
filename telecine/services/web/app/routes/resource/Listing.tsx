@@ -10,7 +10,11 @@ import { identityContext } from "~/middleware/context";
 import type { ProgressiveQueryDescriptor } from "@/graphql.client/progressiveQuery";
 import { SharedResourceIndexWrapper } from "~/components/resources/SharedResourceWrappers";
 
-export const loader = async ({ request, params, context }: Route.LoaderArgs) => {
+export const loader = async ({
+  request,
+  params,
+  context,
+}: Route.LoaderArgs) => {
   const session = context.get(identityContext);
   const searchParams = new URL(request.url).searchParams;
   const orgId = requireOrgId(request);
@@ -40,7 +44,6 @@ export const loader = async ({ request, params, context }: Route.LoaderArgs) => 
     ),
   };
 };
-
 
 export default function Listing() {
   const loaderData = useLoaderData<typeof loader>();

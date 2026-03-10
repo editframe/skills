@@ -11,10 +11,7 @@ const log = debug("ef:cli:patch-mp4");
  * from a fragmented MP4 buffer. This fixes mvhd.duration=0 that mediabunny
  * writes in fragmented mode, enabling duration display in VLC, QuickTime, and WMP.
  */
-export function patchMoovDuration(
-  arrayBuffer: ArrayBuffer,
-  durationMs: number,
-): ArrayBuffer {
+export function patchMoovDuration(arrayBuffer: ArrayBuffer, durationMs: number): ArrayBuffer {
   const iso = ISOBoxer.parseBuffer(arrayBuffer);
 
   const mvhd = iso.fetch("mvhd");
@@ -53,16 +50,10 @@ export function patchMoovDuration(
  * with moov at the front, for full compatibility including Windows Explorer
  * thumbnails and social upload pipelines.
  */
-export async function patchFragmentedMp4(
-  outputPath: string,
-  durationMs: number,
-): Promise<void> {
+export async function patchFragmentedMp4(outputPath: string, durationMs: number): Promise<void> {
   // Layer 1: always patch the moov
   const buf = await readFile(outputPath);
-  const arrayBuffer = buf.buffer.slice(
-    buf.byteOffset,
-    buf.byteOffset + buf.byteLength,
-  );
+  const arrayBuffer = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
   const patched = patchMoovDuration(arrayBuffer, durationMs);
   await writeFile(outputPath, Buffer.from(patched));
   log("Patched mvhd.duration to %dms in %s", durationMs, outputPath);

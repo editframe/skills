@@ -15,9 +15,7 @@ describe("EFDial", () => {
     const el = container.querySelector<EFDial>("ef-dial")!;
     await el.updateComplete;
 
-    const centerText = el.shadowRoot!.querySelector(
-      ".center-text",
-    ) as HTMLDivElement;
+    const centerText = el.shadowRoot!.querySelector(".center-text") as HTMLDivElement;
     expect(centerText.textContent).to.equal("0°");
   });
 
@@ -28,9 +26,7 @@ describe("EFDial", () => {
     const el = container.querySelector<EFDial>("ef-dial")!;
     await el.updateComplete;
 
-    const centerText = el.shadowRoot!.querySelector(
-      ".center-text",
-    ) as HTMLDivElement;
+    const centerText = el.shadowRoot!.querySelector(".center-text") as HTMLDivElement;
     expect(centerText.textContent).to.equal("45°");
   });
 
@@ -48,9 +44,7 @@ describe("EFDial", () => {
       changedValue = (e as CustomEvent).detail.value;
     });
 
-    const dial = el.shadowRoot!.querySelector(
-      ".dial-container",
-    ) as HTMLDivElement;
+    const dial = el.shadowRoot!.querySelector(".dial-container") as HTMLDivElement;
     const pointerId = 1;
     const downEvent = new PointerEvent("pointerdown", {
       clientX: 100,

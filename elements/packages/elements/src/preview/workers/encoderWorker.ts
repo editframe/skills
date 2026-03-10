@@ -4,8 +4,7 @@
  * Uses lookup table for optimal performance.
  */
 function encodeBase64Fast(bytes: Uint8Array): string {
-  const base64Chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  const base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
   let result = "";
   let i = 0;
   const len = bytes.length;

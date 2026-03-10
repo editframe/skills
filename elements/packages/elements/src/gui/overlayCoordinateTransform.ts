@@ -65,11 +65,7 @@ export function elementScreenToOverlay(
   height: number;
   rotation: number;
 } {
-  const position = screenToOverlay(
-    elementRect.left,
-    elementRect.top,
-    overlayLayerRect,
-  );
+  const position = screenToOverlay(elementRect.left, elementRect.top, overlayLayerRect);
 
   return {
     x: position.x,

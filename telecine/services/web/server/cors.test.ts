@@ -20,7 +20,9 @@ describe("isOriginAllowed", () => {
 
     test("allows *.localhost origins in development", () => {
       process.env.NODE_ENV = "development";
-      expect(isOriginAllowed("http://feature.localhost:5173", "/api/v1/renders")).toBe(true);
+      expect(
+        isOriginAllowed("http://feature.localhost:5173", "/api/v1/renders"),
+      ).toBe(true);
       process.env.NODE_ENV = originalEnv;
     });
 
@@ -32,18 +34,27 @@ describe("isOriginAllowed", () => {
 
     test("rejects *.localhost origins in production", () => {
       process.env.NODE_ENV = "production";
-      expect(isOriginAllowed("http://feature.localhost:5173", "/api/v1/renders")).toBe(false);
+      expect(
+        isOriginAllowed("http://feature.localhost:5173", "/api/v1/renders"),
+      ).toBe(false);
       process.env.NODE_ENV = originalEnv;
     });
   });
 
   describe("telemetry endpoint", () => {
     test("allows any origin for /api/v1/telemetry", () => {
-      expect(isOriginAllowed("http://localhost:5175", "/api/v1/telemetry")).toBe(true);
+      expect(
+        isOriginAllowed("http://localhost:5175", "/api/v1/telemetry"),
+      ).toBe(true);
     });
 
     test("allows arbitrary third-party origins for /api/v1/telemetry", () => {
-      expect(isOriginAllowed("https://some-customer-app.example.com", "/api/v1/telemetry")).toBe(true);
+      expect(
+        isOriginAllowed(
+          "https://some-customer-app.example.com",
+          "/api/v1/telemetry",
+        ),
+      ).toBe(true);
     });
 
     test("allows null origin for /api/v1/telemetry", () => {
@@ -53,13 +64,17 @@ describe("isOriginAllowed", () => {
 
   describe("blocked origins", () => {
     test("rejects unknown origins for non-telemetry paths", () => {
-      expect(isOriginAllowed("https://evil.example.com", "/api/v1/renders")).toBe(false);
+      expect(
+        isOriginAllowed("https://evil.example.com", "/api/v1/renders"),
+      ).toBe(false);
     });
 
     test("rejects unknown localhost port for non-telemetry paths in production", () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = "production";
-      expect(isOriginAllowed("http://localhost:5175", "/api/v1/renders")).toBe(false);
+      expect(isOriginAllowed("http://localhost:5175", "/api/v1/renders")).toBe(
+        false,
+      );
       process.env.NODE_ENV = originalEnv;
     });
   });

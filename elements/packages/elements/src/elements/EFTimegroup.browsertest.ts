@@ -1,19 +1,10 @@
-import {
-  html,
-  LitElement,
-  render as litRender,
-  type TemplateResult,
-} from "lit";
+import { html, LitElement, render as litRender, type TemplateResult } from "lit";
 import { assert, beforeEach, describe, test, vi } from "vitest";
 import { EFTimegroup, flushSequenceDurationCache } from "./EFTimegroup.js";
 import "./EFTimegroup.js";
 import { customElement } from "lit/decorators/custom-element.js";
 import { ContextMixin } from "../gui/ContextMixin.js";
-import {
-  EFTemporal,
-  resetTemporalCache,
-  TemporalMixinInterface,
-} from "./EFTemporal.js";
+import { EFTemporal, resetTemporalCache, TemporalMixinInterface } from "./EFTemporal.js";
 // Need workbench to make workbench wrapping occurs
 import "../gui/EFWorkbench.js";
 // Import EF_INTERACTIVE to allow controlling it in tests
@@ -43,9 +34,7 @@ class TestContext extends ContextMixin(LitElement) {}
 class TimegroupTestMedia extends EFMedia {
   #mediaEngineValue: MediaEngine | null = null;
 
-  override async getMediaEngine(
-    _signal?: AbortSignal,
-  ): Promise<MediaEngine | undefined> {
+  override async getMediaEngine(_signal?: AbortSignal): Promise<MediaEngine | undefined> {
     this.setAttribute("data-media-loaded", "true");
     this.#mediaEngineValue = {} as unknown as MediaEngine;
     this.mediaEngineTask.setValue(this.#mediaEngineValue);
@@ -86,9 +75,7 @@ const renderTimegroup = (result: TemplateResult) => {
 
 describe(`<ef-timegroup mode='fit'>`, () => {
   test("duration is zero when there is no parent to fit into", () => {
-    const timegroup = renderTimegroup(
-      html`<ef-timegroup mode="fit"></ef-timegroup>`,
-    );
+    const timegroup = renderTimegroup(html`<ef-timegroup mode="fit"></ef-timegroup>`);
     assert.equal(timegroup.durationMs, 0);
   });
 
@@ -333,10 +320,7 @@ describe("durationchange event", () => {
     await child.updateComplete;
     await root.updateComplete;
 
-    assert.ok(
-      rootEvents.length >= 1,
-      "root should receive bubbled durationchange",
-    );
+    assert.ok(rootEvents.length >= 1, "root should receive bubbled durationchange");
   });
 });
 
@@ -509,11 +493,7 @@ describe("setting currentTime", () => {
       "none",
       "Root timegroup should be visible at exact end time",
     );
-    assert.equal(
-      timegroup.currentTime,
-      10,
-      "currentTime should equal duration",
-    );
+    assert.equal(timegroup.currentTime, 10, "currentTime should equal duration");
   });
 
   test("root timegroup becomes hidden only after currentTime exceeds duration", async () => {
@@ -532,11 +512,7 @@ describe("setting currentTime", () => {
       "Root timegroup should be visible even when time is clamped to duration",
     );
     // Verify that the time was actually clamped
-    assert.equal(
-      timegroup.currentTime,
-      10,
-      "Time should be clamped to duration",
-    );
+    assert.equal(timegroup.currentTime, 10, "Time should be clamped to duration");
   });
 
   test("does not persist in localStorage if the timegroup has no id", async () => {
@@ -559,10 +535,7 @@ describe("setting currentTime", () => {
         break;
       }
     }
-    assert.isFalse(
-      foundStorageEntry,
-      "No localStorage entry should be created without id",
-    );
+    assert.isFalse(foundStorageEntry, "No localStorage entry should be created without id");
     timegroup.remove();
   });
 
@@ -590,44 +563,20 @@ describe("setting currentTime", () => {
     // At time 0, root currentTime should be within A's range
     await root.seek(0);
     assert.equal(root.currentTimeMs, 0, "Root should be at 0ms");
-    assert.isAtLeast(
-      root.currentTimeMs,
-      a.startTimeMs,
-      "Root time should be >= A's start",
-    );
-    assert.isAtMost(
-      root.currentTimeMs,
-      a.endTimeMs,
-      "Root time should be <= A's end",
-    );
+    assert.isAtLeast(root.currentTimeMs, a.startTimeMs, "Root time should be >= A's start");
+    assert.isAtMost(root.currentTimeMs, a.endTimeMs, "Root time should be <= A's end");
 
     // At 2.5s, still in A's range
     await root.seek(2_500);
     assert.equal(root.currentTimeMs, 2_500, "Root should be at 2500ms");
-    assert.isAtLeast(
-      root.currentTimeMs,
-      a.startTimeMs,
-      "Root time should be >= A's start",
-    );
-    assert.isAtMost(
-      root.currentTimeMs,
-      a.endTimeMs,
-      "Root time should be <= A's end",
-    );
+    assert.isAtLeast(root.currentTimeMs, a.startTimeMs, "Root time should be >= A's start");
+    assert.isAtMost(root.currentTimeMs, a.endTimeMs, "Root time should be <= A's end");
 
     // At 7.5s, should be in B's range
     await root.seek(7_500);
     assert.equal(root.currentTimeMs, 7_500, "Root should be at 7500ms");
-    assert.isAtLeast(
-      root.currentTimeMs,
-      b.startTimeMs,
-      "Root time should be >= B's start",
-    );
-    assert.isAtMost(
-      root.currentTimeMs,
-      b.endTimeMs,
-      "Root time should be <= B's end",
-    );
+    assert.isAtLeast(root.currentTimeMs, b.startTimeMs, "Root time should be >= B's start");
+    assert.isAtMost(root.currentTimeMs, b.endTimeMs, "Root time should be <= B's end");
   });
 });
 
@@ -1079,10 +1028,7 @@ describe.skip("Dynamic content updates", () => {
 
       await new Promise((resolve) => {
         const checkComplete = async () => {
-          if (
-            timegroup.currentTime === 2.5 &&
-            receivedTimes[receivedTimes.length - 1] === 2500
-          ) {
+          if (timegroup.currentTime === 2.5 && receivedTimes[receivedTimes.length - 1] === 2500) {
             resolve(undefined);
           } else if (timegroup.currentTime === 2.5) {
             await new Promise((r) => setTimeout(r, 10));
@@ -1134,15 +1080,11 @@ describe.skip("Dynamic content updates", () => {
       timegroup.setAttribute("duration", "10s");
 
       // Add nested timegroups to trigger frame task execution
-      const innerTimegroup = document.createElement(
-        "ef-timegroup",
-      ) as EFTimegroup;
+      const innerTimegroup = document.createElement("ef-timegroup") as EFTimegroup;
       innerTimegroup.setAttribute("mode", "sequence");
       timegroup.appendChild(innerTimegroup);
 
-      const childTimegroup = document.createElement(
-        "ef-timegroup",
-      ) as EFTimegroup;
+      const childTimegroup = document.createElement("ef-timegroup") as EFTimegroup;
       childTimegroup.setAttribute("mode", "fixed");
       childTimegroup.setAttribute("duration", "5s");
       innerTimegroup.appendChild(childTimegroup);
@@ -1164,10 +1106,7 @@ describe.skip("Dynamic content updates", () => {
         timegroup.waitForMediaDurations(),
         new Promise((_, reject) =>
           setTimeout(
-            () =>
-              reject(
-                new Error("waitForMediaDurations timeout - possible lockup"),
-              ),
+            () => reject(new Error("waitForMediaDurations timeout - possible lockup")),
             3000,
           ),
         ),
@@ -1182,8 +1121,7 @@ describe.skip("Dynamic content updates", () => {
 
       // Verify the time is close to what we stored (allowing for clamping/quantization)
       assert.isTrue(
-        Math.abs(timegroup.currentTime - 5.0) < 0.1 ||
-          timegroup.currentTime === 10.0,
+        Math.abs(timegroup.currentTime - 5.0) < 0.1 || timegroup.currentTime === 10.0,
         `Time should be restored to approximately 5.0 or clamped to duration. Got: ${timegroup.currentTime}`,
       );
 
@@ -1242,11 +1180,7 @@ describe.skip("Dynamic content updates", () => {
 
       timegroup.onFrame = null;
       await timegroup.seek(2000);
-      assert.equal(
-        callbackCount,
-        1,
-        "callback should not run after set to null",
-      );
+      assert.equal(callbackCount, 1, "callback should not run after set to null");
     }, 1000);
 
     test("setting new onFrame replaces previous callback", async () => {
@@ -1338,17 +1272,12 @@ describe.skip("Dynamic content updates", () => {
       await timegroup.updateComplete;
       await timegroup.waitForMediaDurations();
 
-      const segments = await timegroup
-        .querySelector("ef-text")!
-        .whenSegmentsReady();
+      const segments = await timegroup.querySelector("ef-text")!.whenSegmentsReady();
 
       await timegroup.seek(500);
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
-      assert.equal(
-        parseFloat(window.getComputedStyle(segments[1]!).opacity),
-        0,
-      );
+      assert.equal(parseFloat(window.getComputedStyle(segments[1]!).opacity), 0);
 
       document.head.removeChild(style);
       document.body.removeChild(timegroup);
@@ -1405,9 +1334,7 @@ describe.skip("Dynamic content updates", () => {
       await parentTimegroup.updateComplete;
       await parentTimegroup.waitForMediaDurations();
 
-      const nestedTimegroup = parentTimegroup.querySelector(
-        "ef-timegroup",
-      ) as EFTimegroup;
+      const nestedTimegroup = parentTimegroup.querySelector("ef-timegroup") as EFTimegroup;
       await nestedTimegroup.updateComplete;
       await nestedTimegroup.waitForMediaDurations();
 
@@ -1417,11 +1344,7 @@ describe.skip("Dynamic content updates", () => {
         "Root timegroup with auto-init should seek to frame 0",
       );
 
-      assert.notEqual(
-        nestedTimegroup.isRootTimegroup,
-        true,
-        "Nested timegroup should not be root",
-      );
+      assert.notEqual(nestedTimegroup.isRootTimegroup, true, "Nested timegroup should not be root");
       parentTimegroup.remove();
     });
 

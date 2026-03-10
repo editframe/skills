@@ -46,18 +46,11 @@ export interface OffscreenCompositionCanvasProps {
 
 /* ━━ Helper: Wait for bitmap from worker ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-function waitForBitmap(
-  worker: Worker,
-  requestId: number,
-): Promise<ImageBitmap> {
+function waitForBitmap(worker: Worker, requestId: number): Promise<ImageBitmap> {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       worker.removeEventListener("message", handler);
-      reject(
-        new Error(
-          `[OffscreenCompositionCanvas] Timeout waiting for frame ${requestId}`,
-        ),
-      );
+      reject(new Error(`[OffscreenCompositionCanvas] Timeout waiting for frame ${requestId}`));
     }, 5000); // 5 second timeout
 
     const handler = (e: MessageEvent) => {
@@ -68,11 +61,7 @@ function waitForBitmap(
       } else if (e.data.type === "error") {
         clearTimeout(timeout);
         worker.removeEventListener("message", handler);
-        reject(
-          new Error(
-            `[OffscreenCompositionCanvas] Worker error: ${e.data.message}`,
-          ),
-        );
+        reject(new Error(`[OffscreenCompositionCanvas] Worker error: ${e.data.message}`));
       }
     };
 
@@ -117,9 +106,7 @@ export function OffscreenCompositionCanvas({
     if (!container) return;
 
     // Walk up to find the parent ef-timegroup
-    const tg = container.closest("ef-timegroup") as
-      | (HTMLElement & EFTimegroup)
-      | null;
+    const tg = container.closest("ef-timegroup") as (HTMLElement & EFTimegroup) | null;
 
     if (!tg) {
       console.warn(
@@ -130,59 +117,49 @@ export function OffscreenCompositionCanvas({
     }
 
     if (!tg.addFrameTask) {
-      console.warn(
-        "[OffscreenCompositionCanvas] ef-timegroup does not have addFrameTask method",
-      );
+      console.warn("[OffscreenCompositionCanvas] ef-timegroup does not have addFrameTask method");
       return;
     }
 
     let nextRequestId = 0;
 
-    const cleanup = tg.addFrameTask(
-      async ({ ownCurrentTimeMs, durationMs }) => {
-        const requestId = nextRequestId++;
+    const cleanup = tg.addFrameTask(async ({ ownCurrentTimeMs, durationMs }) => {
+      const requestId = nextRequestId++;
 
-        // Send render request to worker
-        worker.postMessage({
-          type: "renderFrame",
-          timeMs: ownCurrentTimeMs,
-          durationMs,
-          requestId,
-        });
+      // Send render request to worker
+      worker.postMessage({
+        type: "renderFrame",
+        timeMs: ownCurrentTimeMs,
+        durationMs,
+        requestId,
+      });
 
-        try {
-          // Wait for worker to finish rendering and return pixels
-          const bitmap = await waitForBitmap(worker, requestId);
+      try {
+        // Wait for worker to finish rendering and return pixels
+        const bitmap = await waitForBitmap(worker, requestId);
 
-          // Draw onto capture canvas so serialization pipeline can read pixels
-          const captureCanvas = captureCanvasRef.current;
-          if (captureCanvas) {
-            const ctx = captureCanvas.getContext("2d");
-            if (ctx) {
-              // Resize capture canvas to match bitmap
-              if (
-                captureCanvas.width !== bitmap.width ||
-                captureCanvas.height !== bitmap.height
-              ) {
-                captureCanvas.width = bitmap.width;
-                captureCanvas.height = bitmap.height;
-              }
-
-              // Draw the bitmap
-              ctx.drawImage(bitmap, 0, 0);
+        // Draw onto capture canvas so serialization pipeline can read pixels
+        const captureCanvas = captureCanvasRef.current;
+        if (captureCanvas) {
+          const ctx = captureCanvas.getContext("2d");
+          if (ctx) {
+            // Resize capture canvas to match bitmap
+            if (captureCanvas.width !== bitmap.width || captureCanvas.height !== bitmap.height) {
+              captureCanvas.width = bitmap.width;
+              captureCanvas.height = bitmap.height;
             }
 
-            // Close bitmap to free memory
-            bitmap.close();
+            // Draw the bitmap
+            ctx.drawImage(bitmap, 0, 0);
           }
-        } catch (error) {
-          console.error(
-            "[OffscreenCompositionCanvas] Frame render error:",
-            error,
-          );
+
+          // Close bitmap to free memory
+          bitmap.close();
         }
-      },
-    );
+      } catch (error) {
+        console.error("[OffscreenCompositionCanvas] Frame render error:", error);
+      }
+    });
 
     return cleanup;
   }, [worker]);

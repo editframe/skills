@@ -2,11 +2,7 @@ import { consume } from "@lit/context";
 import { css, html, nothing, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
-import {
-  type Caption,
-  EFCaptions,
-  type WordSegment,
-} from "../../../elements/EFCaptions.js";
+import { type Caption, EFCaptions, type WordSegment } from "../../../elements/EFCaptions.js";
 import { phosphorIcon, ICONS } from "../../icons.js";
 import { currentTimeContext } from "../../currentTimeContext.js";
 // TrackItem must be pre-loaded before this module is imported
@@ -26,11 +22,7 @@ const MAX_CACHE_SIZE = 500;
  * Matches the actual font used in word elements (font-weight: 500).
  * Results are cached to avoid repeated measurements of the same text.
  */
-function measureTextWidth(
-  text: string,
-  fontSize: number,
-  fontWeight: number = 500,
-): number {
+function measureTextWidth(text: string, fontSize: number, fontWeight: number = 500): number {
   // Check cache first
   const cacheKey = `${text}:${fontSize}:${fontWeight}`;
   const cached = textMeasurementCache.get(cacheKey);
@@ -49,18 +41,14 @@ function measureTextWidth(
   }
 
   // Match the actual font used in word elements
-  const fontFamily =
-    getComputedStyle(document.body).fontFamily || "system-ui, sans-serif";
+  const fontFamily = getComputedStyle(document.body).fontFamily || "system-ui, sans-serif";
   measurementContext.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
   const width = measurementContext.measureText(text).width;
 
   // Cache the result (with size limit to prevent memory leaks)
   if (textMeasurementCache.size >= MAX_CACHE_SIZE) {
     // Clear oldest entries (simple strategy: clear half the cache)
-    const keysToDelete = Array.from(textMeasurementCache.keys()).slice(
-      0,
-      MAX_CACHE_SIZE / 2,
-    );
+    const keysToDelete = Array.from(textMeasurementCache.keys()).slice(0, MAX_CACHE_SIZE / 2);
     for (const key of keysToDelete) {
       textMeasurementCache.delete(key);
     }
@@ -279,9 +267,7 @@ export class EFCaptionsTrack extends TrackItem {
 
   private lastPixelsPerMs = 0;
 
-  protected updated(
-    changedProperties: Map<string | number | symbol, unknown>,
-  ): void {
+  protected updated(changedProperties: Map<string | number | symbol, unknown>): void {
     super.updated(changedProperties);
 
     // Re-render when pixelsPerMs changes (zoom level changes)
@@ -357,8 +343,7 @@ export class EFCaptionsTrack extends TrackItem {
     const captions = this.element as EFCaptions;
     const rootTimegroup = captions.rootTimegroup;
     // Use context current time for reactivity, fallback to rootTimegroup
-    const currentTimeMs =
-      this.contextCurrentTimeMs || rootTimegroup?.currentTimeMs || 0;
+    const currentTimeMs = this.contextCurrentTimeMs || rootTimegroup?.currentTimeMs || 0;
     const captionsLocalTimeMs = currentTimeMs - captions.startTimeMs;
     const captionsLocalTimeSec = captionsLocalTimeMs / 1000;
 
@@ -367,8 +352,7 @@ export class EFCaptionsTrack extends TrackItem {
 
     // Find active word for highlighting
     const activeWord = captionsData.word_segments.find(
-      (word) =>
-        captionsLocalTimeSec >= word.start && captionsLocalTimeSec < word.end,
+      (word) => captionsLocalTimeSec >= word.start && captionsLocalTimeSec < word.end,
     );
 
     // Render word markers for visual density indication (subtle)
@@ -391,19 +375,15 @@ export class EFCaptionsTrack extends TrackItem {
     // Render semantic segment blocks with words positioned by their actual timing
     const segmentElements = captionsData.segments.map((segment) => {
       const isActiveSegment =
-        captionsLocalTimeSec >= segment.start &&
-        captionsLocalTimeSec < segment.end;
+        captionsLocalTimeSec >= segment.start && captionsLocalTimeSec < segment.end;
 
       const segmentStartPx = this.pixelsPerMs * segment.start * 1000;
-      const segmentWidth =
-        this.pixelsPerMs * (segment.end - segment.start) * 1000;
+      const segmentWidth = this.pixelsPerMs * (segment.end - segment.start) * 1000;
       const segmentDuration = (segment.end - segment.start) * 1000;
 
       // Get words in this segment, sorted by start time
       const wordsInSegment = captionsData.word_segments
-        .filter(
-          (word) => word.start >= segment.start && word.end <= segment.end,
-        )
+        .filter((word) => word.start >= segment.start && word.end <= segment.end)
         .sort((a, b) => a.start - b.start);
 
       // Calculate visual density based on word count
@@ -431,10 +411,8 @@ export class EFCaptionsTrack extends TrackItem {
           const word2 = wordsInSegment[i + 1];
           if (!word1 || !word2) continue;
 
-          const word1EndPx =
-            this.pixelsPerMs * (word1.end - segment.start) * 1000;
-          const word2StartPx =
-            this.pixelsPerMs * (word2.start - segment.start) * 1000;
+          const word1EndPx = this.pixelsPerMs * (word1.end - segment.start) * 1000;
+          const word2StartPx = this.pixelsPerMs * (word2.start - segment.start) * 1000;
           const spacing = word2StartPx - word1EndPx;
 
           if (spacing > 0) {
@@ -455,18 +433,9 @@ export class EFCaptionsTrack extends TrackItem {
 
       if (!useCompactText && wordsInSegment.length > 1 && avgSpacing < 8) {
         // Scale down font size proportionally, but don't go below minimum
-        const scaleFactor = Math.max(
-          MIN_READABLE_FONT_SIZE / baseFontSize,
-          avgSpacing / 8,
-        );
-        scaledFontSize = Math.max(
-          MIN_READABLE_FONT_SIZE,
-          baseFontSize * scaleFactor,
-        );
-        scaledActiveFontSize = Math.max(
-          MIN_READABLE_FONT_SIZE,
-          activeFontSize * scaleFactor,
-        );
+        const scaleFactor = Math.max(MIN_READABLE_FONT_SIZE / baseFontSize, avgSpacing / 8);
+        scaledFontSize = Math.max(MIN_READABLE_FONT_SIZE, baseFontSize * scaleFactor);
+        scaledActiveFontSize = Math.max(MIN_READABLE_FONT_SIZE, activeFontSize * scaleFactor);
       }
 
       // Render words positioned by their actual timing within the segment
@@ -481,8 +450,7 @@ export class EFCaptionsTrack extends TrackItem {
         // Positioned mode: render words at their time positions
         return wordsInSegment.map((word) => {
           // Position relative to segment start
-          const wordOffsetFromSegmentStart =
-            (word.start - segment.start) * 1000;
+          const wordOffsetFromSegmentStart = (word.start - segment.start) * 1000;
           const wordLeftPx = this.pixelsPerMs * wordOffsetFromSegmentStart;
           const wordWidthPx = this.pixelsPerMs * (word.end - word.start) * 1000;
           const isActive = word === activeWord;
@@ -496,9 +464,7 @@ export class EFCaptionsTrack extends TrackItem {
               style=${styleMap({
                 left: `${wordLeftPx}px`,
                 minWidth: `${Math.max(wordWidthPx, 8)}px`,
-                fontSize: isActive
-                  ? `${scaledActiveFontSize}px`
-                  : `${scaledFontSize}px`,
+                fontSize: isActive ? `${scaledActiveFontSize}px` : `${scaledFontSize}px`,
                 top: "50%",
               })}
               title="Word: '${word.text}' (${word.start.toFixed(2)}s - ${word.end.toFixed(2)}s)"
@@ -533,8 +499,7 @@ export class EFCaptionsTrack extends TrackItem {
           e.stopPropagation();
           // Affordance: Click to seek to segment start
           if (rootTimegroup) {
-            const absoluteStartTime =
-              captions.startTimeMs + segment.start * 1000;
+            const absoluteStartTime = captions.startTimeMs + segment.start * 1000;
             rootTimegroup.currentTimeMs = absoluteStartTime;
           }
         }}
@@ -590,8 +555,7 @@ export class EFCaptionsActiveWordTrack extends TrackItem {
       <div class="relative border h-[1.1rem] mb-[1px] w-full" style="background-color: var(--filmstrip-bg); border-color: var(--filmstrip-border);">
         ${captionsData.word_segments.map((word) => {
           const isCurrentlyActive =
-            captionsLocalTimeSec >= word.start &&
-            captionsLocalTimeSec < word.end;
+            captionsLocalTimeSec >= word.start && captionsLocalTimeSec < word.end;
 
           return html`<div
             class="absolute border text-xs overflow-visible flex items-center ${isCurrentlyActive ? "font-bold z-[5]" : ""}"
@@ -649,8 +613,7 @@ export class EFCaptionsSegmentTrack extends TrackItem {
       <div class="relative border h-[1.1rem] mb-[1px] w-full" style="background-color: var(--filmstrip-bg); border-color: var(--filmstrip-border);">
         ${captionsData.segments.map((segment) => {
           const isCurrentlyActive =
-            captionsLocalTimeSec >= segment.start &&
-            captionsLocalTimeSec < segment.end;
+            captionsLocalTimeSec >= segment.start && captionsLocalTimeSec < segment.end;
 
           return html`<div
             class="absolute border text-xs overflow-visible flex items-center ${isCurrentlyActive ? "font-bold z-[5]" : ""}"
@@ -708,8 +671,7 @@ export class EFCaptionsBeforeWordTrack extends TrackItem {
       <div class="relative border h-[1.1rem] mb-[1px] w-full" style="background-color: var(--filmstrip-bg); border-color: var(--filmstrip-border);">
         ${captionsData.word_segments.map((word) => {
           const isCurrentlyActive =
-            captionsLocalTimeSec >= word.start &&
-            captionsLocalTimeSec < word.end;
+            captionsLocalTimeSec >= word.start && captionsLocalTimeSec < word.end;
 
           return html`<div
             class="absolute border text-xs overflow-visible flex items-center ${isCurrentlyActive ? "font-bold z-[5]" : ""}"
@@ -766,8 +728,7 @@ export class EFCaptionsAfterWordTrack extends TrackItem {
       <div class="relative border h-[1.1rem] mb-[1px] w-full" style="background-color: var(--filmstrip-bg); border-color: var(--filmstrip-border);">
         ${captionsData.word_segments.map((word) => {
           const isCurrentlyActive =
-            captionsLocalTimeSec >= word.start &&
-            captionsLocalTimeSec < word.end;
+            captionsLocalTimeSec >= word.start && captionsLocalTimeSec < word.end;
 
           return html`<div
             class="absolute border text-xs overflow-visible flex items-center ${isCurrentlyActive ? "font-bold z-[5]" : ""}"

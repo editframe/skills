@@ -1,6 +1,6 @@
 /**
  * Standalone VideoDecoder test - runs on HOST machine (not Docker)
- * 
+ *
  * Run directly with: npx tsx lib/electron-exec/test-host-videodecoder.ts
  */
 
@@ -17,8 +17,14 @@ if (!existsSync(TEST_DIR)) {
 }
 
 // Read the raw bytes from disk
-const trackFile = join(__dirname, "../../data/video2/546d22e2-28cc-420b-949e-41429b2effca/01f6edbd-a850-4db9-afb4-1352d3135972/track-1.mp4");
-const tracksJsonFile = join(__dirname, "../../data/video2/546d22e2-28cc-420b-949e-41429b2effca/01f6edbd-a850-4db9-afb4-1352d3135972/tracks.json");
+const trackFile = join(
+  __dirname,
+  "../../data/video2/546d22e2-28cc-420b-949e-41429b2effca/01f6edbd-a850-4db9-afb4-1352d3135972/track-1.mp4",
+);
+const tracksJsonFile = join(
+  __dirname,
+  "../../data/video2/546d22e2-28cc-420b-949e-41429b2effca/01f6edbd-a850-4db9-afb4-1352d3135972/tracks.json",
+);
 
 if (!existsSync(trackFile) || !existsSync(tracksJsonFile)) {
   console.error("Track files not found!");
@@ -32,11 +38,11 @@ const trackData = readFileSync(trackFile);
 
 const initBytes = trackData.subarray(
   track.initSegment.offset,
-  track.initSegment.offset + track.initSegment.size
+  track.initSegment.offset + track.initSegment.size,
 );
 const seg0Bytes = trackData.subarray(
   track.segments[0].offset,
-  track.segments[0].offset + track.segments[0].size
+  track.segments[0].offset + track.segments[0].size,
 );
 
 const combinedBytes = Buffer.concat([initBytes, seg0Bytes]);
@@ -290,7 +296,7 @@ const electron = spawn(
   {
     stdio: "inherit",
     env: process.env,
-  }
+  },
 );
 
 electron.on("close", (code) => {

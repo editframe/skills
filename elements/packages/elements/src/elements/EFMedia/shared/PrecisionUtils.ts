@@ -25,10 +25,7 @@ export const roundToMilliseconds = (timeMs: number): number => {
  * Convert media time (in seconds) to scaled time units using consistent rounding.
  * This is used in segment selection to convert from milliseconds to timescale units.
  */
-export const convertToScaledTime = (
-  timeMs: number,
-  timescale: number,
-): number => {
+export const convertToScaledTime = (timeMs: number, timescale: number): number => {
   const scaledTime = (timeMs / 1000) * timescale;
   return Math.round(scaledTime);
 };
@@ -37,10 +34,7 @@ export const convertToScaledTime = (
  * Convert scaled time units back to media time (in milliseconds) using consistent rounding.
  * This is the inverse of convertToScaledTime.
  */
-export const convertFromScaledTime = (
-  scaledTime: number,
-  timescale: number,
-): number => {
+export const convertFromScaledTime = (scaledTime: number, timescale: number): number => {
   const timeMs = (scaledTime / timescale) * 1000;
   return roundToMilliseconds(timeMs);
 };

@@ -1,11 +1,17 @@
 import { describe, test, expect, beforeAll, afterAll } from "vitest";
 import { render } from "../utils/render";
-import { processTestVideoAsset, processTestImageAsset } from "../../test-utils/processTestAssets";
+import {
+  processTestVideoAsset,
+  processTestImageAsset,
+} from "../../test-utils/processTestAssets";
 import { createElectronRPC, type ElectronRPC } from "../../ElectronRPCClient";
 import { makeTestAgent } from "TEST/util/test";
 import type { Selectable } from "kysely";
 import type { TestAgent } from "TEST/util/test";
-import type { Video2IsobmffFiles, Video2ImageFiles } from "@/sql-client.server/kysely-codegen";
+import type {
+  Video2IsobmffFiles,
+  Video2ImageFiles,
+} from "@/sql-client.server/kysely-codegen";
 
 describe("Timing Analysis", { timeout: 120000 }, () => {
   let testAgent: Selectable<TestAgent>;
@@ -35,7 +41,7 @@ describe("Timing Analysis", { timeout: 120000 }, () => {
     `,
       { testAgent, electronRpc, testName: "timing-simple-timegroup" },
     );
-    
+
     expect(result.durationMs).toBeCloseTo(100, 20);
   });
 
@@ -48,7 +54,7 @@ describe("Timing Analysis", { timeout: 120000 }, () => {
     `,
       { testAgent, electronRpc, testName: "timing-video-asset" },
     );
-    
+
     expect(result.durationMs).toBeCloseTo(200, 20);
   });
 
@@ -61,7 +67,7 @@ describe("Timing Analysis", { timeout: 120000 }, () => {
     `,
       { testAgent, electronRpc, testName: "timing-image-asset" },
     );
-    
+
     expect(result.durationMs).toBeCloseTo(100, 20);
   });
 
@@ -77,7 +83,7 @@ describe("Timing Analysis", { timeout: 120000 }, () => {
     `,
       { testAgent, electronRpc, testName: "timing-complex" },
     );
-    
+
     expect(result.durationMs).toBeCloseTo(100, 20);
   });
 
@@ -92,7 +98,7 @@ describe("Timing Analysis", { timeout: 120000 }, () => {
     `,
       { testAgent, electronRpc, testName: "timing-simple-timegroup-cached" },
     );
-    
+
     expect(result.durationMs).toBeCloseTo(100, 20);
     expect(result.timing.bundleHtml).toBeLessThan(10);
   });

@@ -8,7 +8,12 @@ import { z } from "zod";
 import { Members } from "./members";
 import { Invites } from "./invites";
 import { Transcriptions } from "./transcriptions";
-import { Files, VideoFiles, ImageFiles as ImageFilesByType, CaptionFiles } from "./files";
+import {
+  Files,
+  VideoFiles,
+  ImageFiles as ImageFilesByType,
+  CaptionFiles,
+} from "./files";
 import { ImageFiles } from "./image-files";
 import { ProcessHtml } from "./process-html";
 export type {
@@ -28,7 +33,6 @@ export const relatedResourceUrl = (
   relatedType: string,
   relId: string,
 ) => `/resource/${resourceType}/${id}/${relatedType}/${relId}`;
-
 
 export const ResourceType = z.enum([
   "unprocessed_files",

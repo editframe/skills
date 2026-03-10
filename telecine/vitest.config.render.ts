@@ -10,10 +10,7 @@ export default defineConfig({
       "lib/queues/units-of-work/Render/tests/**/*.test.ts",
       "lib/render/SegmentEncoder.server.test.ts",
     ],
-    exclude: [
-      "**/node_modules/**",
-      "**/generated/**",
-    ],
+    exclude: ["**/node_modules/**", "**/generated/**"],
     globals: true,
     testTimeout: 120000,
   },

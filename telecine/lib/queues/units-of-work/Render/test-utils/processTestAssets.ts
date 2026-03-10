@@ -44,7 +44,7 @@ export async function processTestImageAsset(
   ) {
     const filePath = join(ASSETS_DIR, filenameOrUrl);
     md5Hash = await computeMD5(filePath);
-    
+
     // Check if we already processed this exact file content
     const existingByHash = await db
       .selectFrom("video2.image_files")
@@ -52,7 +52,7 @@ export async function processTestImageAsset(
       .where("org_id", "=", testAgent.org.id)
       .selectAll()
       .executeTakeFirst();
-    
+
     if (existingByHash) {
       return existingByHash;
     }
@@ -136,7 +136,7 @@ export async function processTestVideoAsset(
     ) {
       const filePath = join(ASSETS_DIR, filenameOrUrl);
       md5Hash = await computeMD5(filePath);
-      
+
       // Check if we already processed this exact file content
       const existingByHash = await db
         .selectFrom("video2.isobmff_files")
@@ -145,11 +145,11 @@ export async function processTestVideoAsset(
         .where("fragment_index_complete", "=", true)
         .selectAll()
         .executeTakeFirst();
-      
-    if (existingByHash) {
-      return existingByHash;
+
+      if (existingByHash) {
+        return existingByHash;
+      }
     }
-  }
 
     const existingFile = await db
       .selectFrom("video2.isobmff_files")
@@ -170,7 +170,6 @@ export async function processTestVideoAsset(
         .where("id", "=", existingFile.id)
         .execute();
     }
-
 
     if (
       filenameOrUrl.startsWith("http://") ||

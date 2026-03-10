@@ -19,9 +19,7 @@ export function TWMixin<T extends new (...args: any[]) => LitElement>(Base: T) {
     createRenderRoot() {
       const renderRoot = super.createRenderRoot();
       if (!(renderRoot instanceof ShadowRoot)) {
-        throw new Error(
-          "TWMixin can only be applied to elements with shadow roots",
-        );
+        throw new Error("TWMixin can only be applied to elements with shadow roots");
       }
       if (!twSheet) {
         throw new Error(
@@ -30,9 +28,9 @@ export function TWMixin<T extends new (...args: any[]) => LitElement>(Base: T) {
       }
 
       const constructorStylesheets: CSSStyleSheet[] = [];
-      const constructorStyles = (("styles" in this.constructor &&
-        this.constructor.styles) ||
-        []) as CSSResult | CSSResult[];
+      const constructorStyles = (("styles" in this.constructor && this.constructor.styles) || []) as
+        | CSSResult
+        | CSSResult[];
 
       if (Array.isArray(constructorStyles)) {
         for (const item of constructorStyles) {

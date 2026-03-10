@@ -28,7 +28,7 @@ const PAINT_THRESHOLD_MS = 0.05;
 const test = baseTest.extend<{
   videoTimegroup: { tg: EFTimegroup; container: HTMLDivElement };
 }>({
-  videoTimegroup: async ({}, use) => {
+  videoTimegroup: async (_: unknown, use) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
     render(
@@ -94,9 +94,7 @@ describe("Canvas Video Performance", () => {
     for (let i = 0; i < FRAMES; i++) {
       tg.currentTimeMs = Math.round((i / FRAMES) * tg.durationMs);
 
-      const frameStart = await new Promise<number>((resolve) =>
-        requestAnimationFrame(resolve),
-      );
+      const frameStart = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
       frameTimestamps.push(frameStart);
 
       const t0 = performance.now();
@@ -109,8 +107,7 @@ describe("Canvas Video Performance", () => {
     for (let i = 1; i < frameTimestamps.length; i++) {
       gaps.push(frameTimestamps[i]! - frameTimestamps[i - 1]!);
     }
-    const avgGap =
-      gaps.length > 0 ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 0;
+    const avgGap = gaps.length > 0 ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 0;
 
     // The key assertion: with the fix, the RAF loop should NOT be blocked
     // by video preparation. Average frame gaps should be well under the
@@ -122,9 +119,7 @@ describe("Canvas Video Performance", () => {
     dispose();
   }, 30000);
 
-  test("foreignObject: RAF loop with video+HTML content", async ({
-    videoTimegroup: { tg },
-  }) => {
+  test("foreignObject: RAF loop with video+HTML content", async ({ videoTimegroup: { tg } }) => {
     const renderContext = new RenderContext();
     const width = tg.offsetWidth || 800;
     const height = tg.offsetHeight || 450;
@@ -145,9 +140,7 @@ describe("Canvas Video Performance", () => {
     for (let i = 0; i < FRAMES; i++) {
       tg.currentTimeMs = Math.round((i / FRAMES) * tg.durationMs);
 
-      const frameStart = await new Promise<number>((resolve) =>
-        requestAnimationFrame(resolve),
-      );
+      const frameStart = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
       frameTimestamps.push(frameStart);
 
       const t0 = performance.now();
@@ -165,8 +158,7 @@ describe("Canvas Video Performance", () => {
     for (let i = 1; i < frameTimestamps.length; i++) {
       gaps.push(frameTimestamps[i]! - frameTimestamps[i - 1]!);
     }
-    const avgGap =
-      gaps.length > 0 ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 0;
+    const avgGap = gaps.length > 0 ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 0;
 
     // ForeignObject is slower due to serialization, but should not be blocked
     // by video preparation. Should achieve >20fps for interactive scrubbing.
@@ -227,8 +219,7 @@ describe("Canvas Video Performance", () => {
         nativeTimes.push(performance.now() - t0);
       }
 
-      const nativeAvg =
-        nativeTimes.reduce((a, b) => a + b, 0) / nativeTimes.length;
+      const nativeAvg = nativeTimes.reduce((a, b) => a + b, 0) / nativeTimes.length;
 
       // Native with video: drawElementImage renders live DOM including video canvas.
       // ~9-12ms for 800x450 with video is expected (capture cost, not idle time).

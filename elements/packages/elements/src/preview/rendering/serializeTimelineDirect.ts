@@ -35,10 +35,7 @@ function collectDocumentStyles(): string {
       }
     }
   } catch (e) {
-    console.warn(
-      "[collectDocumentStyles] Failed to access document.styleSheets:",
-      e,
-    );
+    console.warn("[collectDocumentStyles] Failed to access document.styleSheets:", e);
   }
   return rules.join("\n");
 }
@@ -225,10 +222,7 @@ function resolveNaturalDisplay(element: Element): string {
  * @param element - The element to serialize styles for
  * @param styles - Optional pre-computed CSSStyleDeclaration (avoids redundant getComputedStyle calls)
  */
-function serializeComputedStyles(
-  element: Element,
-  styles?: CSSStyleDeclaration,
-): string {
+function serializeComputedStyles(element: Element, styles?: CSSStyleDeclaration): string {
   const computed = styles ?? getComputedStyle(element);
   const styleParts: string[] = [];
   const tagName = element.tagName;
@@ -302,19 +296,11 @@ function serializeComputedStyles(
 /**
  * Serialize element attributes (excluding style, id, xmlns, event handlers).
  */
-function serializeAttributes(
-  element: Element,
-  parts: Array<string | Promise<string>>,
-): void {
+function serializeAttributes(element: Element, parts: Array<string | Promise<string>>): void {
   for (const attr of element.attributes) {
     const name = attr.name.toLowerCase();
     // Skip: id, style, xmlns (namespace handled separately), event handlers
-    if (
-      name === "id" ||
-      name === "style" ||
-      name === "xmlns" ||
-      name.startsWith("on")
-    ) {
+    if (name === "id" || name === "style" || name === "xmlns" || name.startsWith("on")) {
       continue;
     }
     parts.push(` ${attr.name}="${escapeXML(attr.value)}"`);
@@ -339,9 +325,7 @@ function shouldPreserveAlpha(sourceElement: Element): boolean {
     return true;
   }
   if (tagName === "EF-IMAGE") {
-    return (
-      "hasAlpha" in sourceElement && (sourceElement as any).hasAlpha === true
-    );
+    return "hasAlpha" in sourceElement && (sourceElement as any).hasAlpha === true;
   }
   // Raw canvas elements must preserve alpha
   if (sourceElement instanceof HTMLCanvasElement) {
@@ -399,10 +383,7 @@ function readWebGLPixels(canvas: HTMLCanvasElement): Uint8ClampedArray | null {
     const topOffset = y * rowSize;
     const bottomOffset = (height - 1 - y) * rowSize;
     temp.set(pixels.subarray(topOffset, topOffset + rowSize));
-    pixels.set(
-      pixels.subarray(bottomOffset, bottomOffset + rowSize),
-      topOffset,
-    );
+    pixels.set(pixels.subarray(bottomOffset, bottomOffset + rowSize), topOffset);
     pixels.set(temp, bottomOffset);
   }
 
@@ -514,9 +495,7 @@ function serializeCanvas(
   // Preserve the source element's object-fit and object-position for correct scaling.
   // These CSS properties control how the canvas content fits its container and must be
   // carried through to the serialized <img> to maintain visual fidelity.
-  const styleParts = styleStr
-    ? styleStr.split(";").filter((s) => s.trim())
-    : [];
+  const styleParts = styleStr ? styleStr.split(";").filter((s) => s.trim()) : [];
 
   // Remove width/height from computed styles (we'll set them explicitly from computed dimensions)
   const filteredParts = styleParts.filter((s) => {
@@ -554,10 +533,7 @@ function serializeCanvas(
     });
   } catch (e) {
     // Fallback to export scale if we can't get computed style
-    console.warn(
-      `[serializeCanvas] Failed to get computed style for ${sourceElement.tagName}:`,
-      e,
-    );
+    console.warn(`[serializeCanvas] Failed to get computed style for ${sourceElement.tagName}:`, e);
   }
 
   // CRITICAL: Create a snapshot of canvas pixels SYNCHRONOUSLY before any async work.
@@ -606,7 +582,7 @@ function serializeImageAsCanvas(
   if (ctx) {
     try {
       ctx.drawImage(img, 0, 0);
-    } catch (e) {
+    } catch (_e) {
       // Cross-origin image - skip
       return;
     }
@@ -632,14 +608,7 @@ function serializeSlottedContent(
         parts.push(escapeXML(text));
       }
     } else if (slottedChild.nodeType === Node.ELEMENT_NODE) {
-      serializeElement(
-        slottedChild as Element,
-        parts,
-        canvasJobs,
-        options,
-        parentIsSVG,
-        null,
-      );
+      serializeElement(slottedChild as Element, parts, canvasJobs, options, parentIsSVG, null);
     }
   }
 }
@@ -742,14 +711,7 @@ function serializeElement(
         }
       } else if (child.nodeType === Node.ELEMENT_NODE) {
         // Pass this element as slotHost so nested SLOTs can access light DOM children
-        serializeElement(
-          child as Element,
-          parts,
-          canvasJobs,
-          options,
-          parentIsSVG,
-          element,
-        );
+        serializeElement(child as Element, parts, canvasJobs, options, parentIsSVG, element);
       }
     }
 
@@ -803,14 +765,7 @@ function serializeElement(
       }
     } else if (child.nodeType === Node.ELEMENT_NODE) {
       // Preserve slotHost when recursing into standard elements inside shadow DOM
-      serializeElement(
-        child as Element,
-        parts,
-        canvasJobs,
-        options,
-        isSVG,
-        slotHost,
-      );
+      serializeElement(child as Element, parts, canvasJobs, options, isSVG, slotHost);
     }
   }
 
@@ -864,11 +819,7 @@ export function captureElementParts(
   const sourceMap = new WeakMap<HTMLCanvasElement, Element>();
 
   // Create ScaleConfig to centralize all scaling logic
-  const scaleConfig = ScaleConfig.fromOptions(
-    width,
-    height,
-    options.canvasScale,
-  );
+  const scaleConfig = ScaleConfig.fromOptions(width, height, options.canvasScale);
 
   const documentStyles =
     options.renderContext?.getCachedDocumentStyles() ?? collectDocumentStyles();
@@ -949,11 +900,7 @@ export function captureTimelineToDataUri(
   options: SerializationOptions,
 ): Promise<string> {
   // Create ScaleConfig to compute scaled dimensions
-  const scaleConfig = ScaleConfig.fromOptions(
-    width,
-    height,
-    options.canvasScale,
-  );
+  const scaleConfig = ScaleConfig.fromOptions(width, height, options.canvasScale);
 
   const parts = captureElementParts(element, width, height, options);
 
@@ -967,10 +914,7 @@ export function captureTimelineToDataUri(
     const bytes = textEncoder.encode(svg);
     let binary = "";
     for (let i = 0; i < bytes.length; i += 8192) {
-      binary += String.fromCharCode.apply(
-        null,
-        bytes.subarray(i, i + 8192) as unknown as number[],
-      );
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192) as unknown as number[]);
     }
     return `data:image/svg+xml;base64,${btoa(binary)}`;
   });

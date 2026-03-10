@@ -22,9 +22,7 @@ function getAssemblyWorker(): Worker | null {
   if (typeof Worker === "undefined") {
     if (!_workerWarningLogged) {
       _workerWarningLogged = true;
-      logger.warn(
-        "[assemblyEncoder] Workers not available, using main thread fallback",
-      );
+      logger.warn("[assemblyEncoder] Workers not available, using main thread fallback");
     }
     return null;
   }
@@ -37,9 +35,7 @@ function getAssemblyWorker(): Worker | null {
     if (!_workerWarningLogged) {
       _workerWarningLogged = true;
       const msg = error instanceof Error ? error.message : String(error);
-      logger.warn(
-        `[assemblyEncoder] Failed to create worker: ${msg} - using main thread fallback`,
-      );
+      logger.warn(`[assemblyEncoder] Failed to create worker: ${msg} - using main thread fallback`);
     }
   }
 
@@ -59,10 +55,7 @@ function assembleSvgDataUriMainThread(
   const bytes = new TextEncoder().encode(svg);
   let binary = "";
   for (let i = 0; i < bytes.length; i += 8192) {
-    binary += String.fromCharCode.apply(
-      null,
-      bytes.subarray(i, i + 8192) as unknown as number[],
-    );
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192) as unknown as number[]);
   }
   return `data:image/svg+xml;base64,${btoa(binary)}`;
 }

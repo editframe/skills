@@ -42,16 +42,7 @@ export function isVideoUrl(url: string): boolean {
   const extension = pathWithoutQuery.split(".").pop()?.toLowerCase();
 
   // Check for video file extensions
-  const videoExtensions = [
-    "mp4",
-    "avi",
-    "mov",
-    "wmv",
-    "flv",
-    "webm",
-    "mkv",
-    "m4v",
-  ];
+  const videoExtensions = ["mp4", "avi", "mov", "wmv", "flv", "webm", "mkv", "m4v"];
   return extension ? videoExtensions.includes(extension) : false;
 }
 

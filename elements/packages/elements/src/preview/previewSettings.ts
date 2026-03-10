@@ -8,8 +8,7 @@ const STORAGE_KEY_PRESENTATION_MODE = "ef-preview-presentation-mode";
 const STORAGE_KEY_RENDER_MODE = "ef-preview-render-mode";
 const STORAGE_KEY_RESOLUTION_SCALE = "ef-preview-resolution-scale";
 const STORAGE_KEY_SHOW_STATS = "ef-preview-show-stats";
-const STORAGE_KEY_SHOW_THUMBNAIL_TIMESTAMPS =
-  "ef-preview-show-thumbnail-timestamps";
+const STORAGE_KEY_SHOW_THUMBNAIL_TIMESTAMPS = "ef-preview-show-thumbnail-timestamps";
 
 /**
  * Render mode for HTML-to-canvas capture operations.
@@ -134,8 +133,7 @@ export function onPreviewSettingsChanged(
     callback((event as CustomEvent).detail);
   };
   window.addEventListener("ef-preview-settings-changed", handler);
-  return () =>
-    window.removeEventListener("ef-preview-settings-changed", handler);
+  return () => window.removeEventListener("ef-preview-settings-changed", handler);
 }
 
 /**
@@ -170,9 +168,7 @@ export function getPreviewPresentationMode(): PreviewPresentationMode {
  * Set the preview presentation mode.
  * Persists to localStorage and dispatches a change event.
  */
-export function setPreviewPresentationMode(
-  mode: PreviewPresentationMode,
-): void {
+export function setPreviewPresentationMode(mode: PreviewPresentationMode): void {
   try {
     localStorage.setItem(STORAGE_KEY_PRESENTATION_MODE, mode);
   } catch {
@@ -335,10 +331,7 @@ export function getShowThumbnailTimestamps(): boolean {
  */
 export function setShowThumbnailTimestamps(enabled: boolean): void {
   try {
-    localStorage.setItem(
-      STORAGE_KEY_SHOW_THUMBNAIL_TIMESTAMPS,
-      String(enabled),
-    );
+    localStorage.setItem(STORAGE_KEY_SHOW_THUMBNAIL_TIMESTAMPS, String(enabled));
   } catch {
     // localStorage not available
   }

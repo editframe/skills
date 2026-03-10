@@ -51,13 +51,11 @@ export function compareProfiles(
         // Check for regressions
         if (threshold && timeDiff > 0) {
           const exceededTime =
-            threshold.maxHotspotIncreaseMs &&
-            timeDiff > threshold.maxHotspotIncreaseMs;
+            threshold.maxHotspotIncreaseMs && timeDiff > threshold.maxHotspotIncreaseMs;
           const exceededPct =
             threshold.maxHotspotIncreasePercent &&
             baselineHotspot.selfTime > 0 &&
-            (timeDiff / baselineHotspot.selfTime) * 100 >
-              threshold.maxHotspotIncreasePercent;
+            (timeDiff / baselineHotspot.selfTime) * 100 > threshold.maxHotspotIncreasePercent;
 
           if (exceededTime || exceededPct) {
             const reasons: string[] = [];
@@ -113,8 +111,7 @@ export function compareProfiles(
   // Check duration regression
   if (threshold && durationDiffMs > 0) {
     const exceededTime =
-      threshold.maxDurationIncreaseMs &&
-      durationDiffMs > threshold.maxDurationIncreaseMs;
+      threshold.maxDurationIncreaseMs && durationDiffMs > threshold.maxDurationIncreaseMs;
     const exceededPct =
       threshold.maxDurationIncreasePercent &&
       durationDiffPercent > threshold.maxDurationIncreasePercent;
@@ -141,10 +138,7 @@ export function compareProfiles(
  * Check if a comparison shows regression
  */
 export function hasRegression(comparison: ProfileComparison): boolean {
-  return (
-    comparison.regressions.duration === true ||
-    comparison.regressions.hotspots.length > 0
-  );
+  return comparison.regressions.duration === true || comparison.regressions.hotspots.length > 0;
 }
 
 /**
@@ -160,9 +154,7 @@ export function getRegressionSummary(comparison: ProfileComparison): string[] {
   }
 
   for (const { hotspot, reason } of comparison.regressions.hotspots) {
-    messages.push(
-      `${hotspot.functionName} @ ${hotspot.file}:${hotspot.line} - ${reason}`,
-    );
+    messages.push(`${hotspot.functionName} @ ${hotspot.file}:${hotspot.line} - ${reason}`);
   }
 
   return messages;

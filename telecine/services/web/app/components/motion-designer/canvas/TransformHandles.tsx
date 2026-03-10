@@ -7,10 +7,7 @@ import {
   getSizeDimensions,
   convertToFixedSize,
 } from "~/lib/motion-designer/sizingUtils";
-import {
-  normalizeSize,
-  isLegacySize,
-} from "~/lib/motion-designer/sizingTypes";
+import { normalizeSize, isLegacySize } from "~/lib/motion-designer/sizingTypes";
 import { useMotionDesignerActions } from "../context/MotionDesignerContext";
 import { hasRotateAnimations } from "../rendering/styleGenerators/rotationUtils";
 import { evaluateOverlayPositionForElement } from "./overlayEvaluation";
@@ -158,8 +155,7 @@ export function TransformHandles({
   const hasDraggedRef = useRef(false);
 
   const parentId = findParentId(element.id, state);
-  const isRootTimegroup =
-    element.type === "timegroup" && parentId === null;
+  const isRootTimegroup = element.type === "timegroup" && parentId === null;
   const showRotateHandle = !isRootTimegroup;
   const hasRotateAnims = hasRotateAnimations(element);
 

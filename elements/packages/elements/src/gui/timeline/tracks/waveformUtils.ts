@@ -56,11 +56,7 @@ export async function extractWaveformData(
     }
 
     const abortSignal = signal ?? new AbortController().signal;
-    const audioSpan = await element.fetchAudioSpanningTime(
-      0,
-      durationMs,
-      abortSignal,
-    );
+    const audioSpan = await element.fetchAudioSpanningTime(0, durationMs, abortSignal);
     signal?.throwIfAborted();
 
     if (!audioSpan) {
@@ -84,10 +80,7 @@ export async function extractWaveformData(
     signal?.throwIfAborted();
 
     // Extract peaks from the decoded audio
-    const peaks = extractPeaksFromBuffer(
-      audioBuffer,
-      WAVEFORM_SAMPLES_PER_SECOND,
-    );
+    const peaks = extractPeaksFromBuffer(audioBuffer, WAVEFORM_SAMPLES_PER_SECOND);
     const decodedDurationMs = audioBuffer.duration * 1000;
 
     const waveformData: WaveformData = {
@@ -112,10 +105,7 @@ export async function extractWaveformData(
  * Extract min/max peaks from an AudioBuffer.
  * Returns Float32Array with alternating [min, max, min, max, ...] values.
  */
-function extractPeaksFromBuffer(
-  buffer: AudioBuffer,
-  samplesPerSecond: number,
-): Float32Array {
+function extractPeaksFromBuffer(buffer: AudioBuffer, samplesPerSecond: number): Float32Array {
   const channelData = buffer.getChannelData(0); // Use first channel
   const sampleRate = buffer.sampleRate;
   const duration = buffer.duration;
@@ -131,10 +121,7 @@ function extractPeaksFromBuffer(
 
   for (let i = 0; i < outputSamples; i++) {
     const startSample = i * samplesPerWindow;
-    const endSample = Math.min(
-      startSample + samplesPerWindow,
-      channelData.length,
-    );
+    const endSample = Math.min(startSample + samplesPerWindow, channelData.length);
 
     let min = 0;
     let max = 0;

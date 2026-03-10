@@ -1,8 +1,5 @@
 import { Resource } from "@opentelemetry/resources";
-import {
-  BatchSpanProcessor,
-  SimpleSpanProcessor,
-} from "@opentelemetry/sdk-trace-base";
+import { BatchSpanProcessor, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { WebTracerProvider } from "@opentelemetry/sdk-trace-web";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 import { BridgeSpanExporter } from "./BridgeSpanExporter.js";
@@ -21,9 +18,7 @@ export interface BrowserTracingConfig {
   useBatching?: boolean;
 }
 
-export async function setupBrowserTracing(
-  config: BrowserTracingConfig,
-): Promise<void> {
+export async function setupBrowserTracing(config: BrowserTracingConfig): Promise<void> {
   if (isInitialized) {
     return;
   }

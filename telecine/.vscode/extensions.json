@@ -1,7 +1,7 @@
 {
   "recommendations": [
     "ms-playwright.playwright",
-    "biomejs.biome",
+    "oxc.oxc-vscode",
     "bradlc.vscode-tailwindcss",
     "unifiedjs.vscode-mdx"
   ]

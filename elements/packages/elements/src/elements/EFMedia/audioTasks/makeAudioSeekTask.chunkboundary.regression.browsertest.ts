@@ -12,7 +12,7 @@ const test = baseTest.extend<{
   video: EFVideo;
   configuration: EFConfiguration;
 }>({
-  timegroup: async ({}, use) => {
+  timegroup: async (_: unknown, use) => {
     const timegroup = document.createElement("ef-timegroup");
     timegroup.setAttribute("mode", "sequence");
     timegroup.setAttribute("id", "test-timegroup"); // Required for localStorage key
@@ -40,8 +40,7 @@ const test = baseTest.extend<{
     // Create the exact structure from simple-demo.html
     const innerTimegroup = document.createElement("ef-timegroup");
     innerTimegroup.mode = "contain";
-    innerTimegroup.style.cssText =
-      "position: absolute; width: 100%; height: 100%;";
+    innerTimegroup.style.cssText = "position: absolute; width: 100%; height: 100%;";
     innerTimegroup.append(video);
     timegroup.append(innerTimegroup);
     configuration.append(timegroup);

@@ -7,9 +7,7 @@ import { provide } from "@lit/context";
  * Context key for preview mode.
  * Elements can consume this to check if they're in a preview context.
  */
-export const previewContext = createContext<boolean>(
-  Symbol("ef-preview-context"),
-);
+export const previewContext = createContext<boolean>(Symbol("ef-preview-context"));
 
 /**
  * Preview context element.

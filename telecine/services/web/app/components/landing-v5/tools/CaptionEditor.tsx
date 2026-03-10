@@ -42,7 +42,11 @@ const INITIAL_CAPTIONS: CaptionEntry[] = [
 
 function buildCaptionsData(captions: CaptionEntry[]) {
   return {
-    segments: captions.map((c) => ({ start: c.start, end: c.end, text: c.text })),
+    segments: captions.map((c) => ({
+      start: c.start,
+      end: c.end,
+      text: c.text,
+    })),
     word_segments: captions.flatMap((c) => {
       const words = c.text.split(/\s+/);
       const segDuration = c.end - c.start;
@@ -74,7 +78,7 @@ function CaptionEditorInner({ previewId }: { previewId: string }) {
   const currentTimeSec = ownCurrentTimeMs / 1000;
 
   const activeCaption = captions.find(
-    (c) => currentTimeSec >= c.start && currentTimeSec < c.end
+    (c) => currentTimeSec >= c.start && currentTimeSec < c.end,
   );
 
   const selectedCaption = captions.find((c) => c.id === selectedId);
@@ -88,7 +92,7 @@ function CaptionEditorInner({ previewId }: { previewId: string }) {
     setEditText(value);
     setSelectedId((currentId) => {
       setCaptions((prev) =>
-        prev.map((c) => (c.id === currentId ? { ...c, text: value } : c))
+        prev.map((c) => (c.id === currentId ? { ...c, text: value } : c)),
       );
       return currentId;
     });
@@ -96,170 +100,176 @@ function CaptionEditorInner({ previewId }: { previewId: string }) {
 
   return (
     <>
-    <div className="grid md:grid-cols-2">
-      {/* Video Preview */}
-      <div className="border-r-4 border-black dark:border-white bg-black">
-        <Preview id={previewId} loop className="flex flex-col">
-          <div className="aspect-video relative">
-            <Timegroup
-              ref={timegroupRef}
-              mode="fixed"
-              duration="6s"
-              className="w-full h-full relative"
-            >
-              <Video
-                src={VIDEO_SRC}
+      <div className="grid md:grid-cols-2">
+        {/* Video Preview */}
+        <div className="border-r-4 border-black dark:border-white bg-black">
+          <Preview id={previewId} loop className="flex flex-col">
+            <div className="aspect-video relative">
+              <Timegroup
+                ref={timegroupRef}
+                mode="fixed"
                 duration="6s"
-                className="size-full object-cover"
-              />
-              <Captions
-                captionsData={captionsData}
-                duration="6s"
-                className="absolute bottom-4 inset-x-4 text-center"
+                className="w-full h-full relative"
               >
-                <CaptionsSegment className="hidden" />
-                <CaptionsBeforeActiveWord className="text-white/60 text-lg font-black uppercase" />
-                <CaptionsActiveWord className="text-white text-lg font-black uppercase mx-1" />
-                <CaptionsAfterActiveWord className="text-white/60 text-lg font-black uppercase" />
-              </Captions>
-            </Timegroup>
-          </div>
-        </Preview>
-
-        {/* Playback controls */}
-        <div className="border-t-4 border-black dark:border-white bg-[#111]">
-          <div className="flex items-center">
-            <TogglePlay target={previewId}>
-              <button
-                slot="pause"
-                className="w-12 h-12 flex items-center justify-center bg-[var(--accent-red)] border-r-4 border-black dark:border-white"
-              >
-                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                </svg>
-              </button>
-              <button
-                slot="play"
-                className="w-12 h-12 flex items-center justify-center bg-[var(--accent-blue)] border-r-4 border-black dark:border-white"
-              >
-                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              </button>
-            </TogglePlay>
-
-            <div className="flex-1 px-4 h-12 flex items-center">
-              <Scrubber
-                target={previewId}
-                className="w-full h-2 bg-white/20 cursor-pointer [&::part(progress)]:bg-[var(--accent-gold)] [&::part(handle)]:bg-white [&::part(handle)]:w-4 [&::part(handle)]:h-4"
-              />
-            </div>
-
-            <div className="px-4 border-l-4 border-black dark:border-white h-12 flex items-center bg-black">
-              <TimeDisplay
-                target={previewId}
-                className="text-xs text-white font-mono tabular-nums uppercase"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Caption List & Editor */}
-      <div className="flex flex-col">
-        {/* Caption list header */}
-        <div className="border-b-4 border-black dark:border-white px-4 py-2 bg-[var(--accent-gold)]">
-          <span className="text-xs font-black uppercase tracking-wider text-black">
-            Captions
-          </span>
-        </div>
-
-        {/* Caption list */}
-        <div className="flex-1 divide-y-2 divide-black dark:divide-white overflow-auto max-h-[200px]">
-          {captions.map((caption) => {
-            const isActive = activeCaption?.id === caption.id;
-            const isSelected = selectedId === caption.id;
-            return (
-              <button
-                key={caption.id}
-                onClick={() => handleSelect(caption)}
-                className={`w-full px-4 py-3 text-left transition-colors ${
-                  isSelected
-                    ? "bg-[var(--accent-blue)] text-white"
-                    : isActive
-                    ? "bg-[var(--accent-gold)]/20"
-                    : "bg-white dark:bg-[#1a1a1a] hover:bg-gray-100 dark:hover:bg-[#252525]"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  {isActive && !isSelected && (
-                    <div className="w-2 h-2 rounded-full bg-[var(--accent-gold)] animate-pulse" />
-                  )}
-                  <span
-                    className={`text-xs font-mono tabular-nums ${
-                      isSelected
-                        ? "text-white/70"
-                        : "text-black/50 dark:text-white/50"
-                    }`}
-                  >
-                    {formatTime(caption.start)} - {formatTime(caption.end)}
-                  </span>
-                </div>
-                <p
-                  className={`text-sm font-bold uppercase mt-1 truncate ${
-                    isSelected
-                      ? "text-white"
-                      : "text-black dark:text-white"
-                  }`}
+                <Video
+                  src={VIDEO_SRC}
+                  duration="6s"
+                  className="size-full object-cover"
+                />
+                <Captions
+                  captionsData={captionsData}
+                  duration="6s"
+                  className="absolute bottom-4 inset-x-4 text-center"
                 >
-                  {caption.text}
-                </p>
-              </button>
-            );
-          })}
-        </div>
+                  <CaptionsSegment className="hidden" />
+                  <CaptionsBeforeActiveWord className="text-white/60 text-lg font-black uppercase" />
+                  <CaptionsActiveWord className="text-white text-lg font-black uppercase mx-1" />
+                  <CaptionsAfterActiveWord className="text-white/60 text-lg font-black uppercase" />
+                </Captions>
+              </Timegroup>
+            </div>
+          </Preview>
 
-        {/* Editor section */}
-        <div className="border-t-4 border-black dark:border-white">
-          <div className="px-4 py-2 bg-[var(--accent-red)]">
-            <span className="text-xs font-black uppercase tracking-wider text-white">
-              Edit Caption
-            </span>
-          </div>
-          <div className="p-4 bg-white dark:bg-[#1a1a1a]">
-            {selectedCaption ? (
-              <div className="space-y-3">
-                <div className="flex gap-4 text-xs font-mono">
-                  <span className="text-black/50 dark:text-white/50 uppercase">
-                    Start: {formatTime(selectedCaption.start)}
-                  </span>
-                  <span className="text-black/50 dark:text-white/50 uppercase">
-                    End: {formatTime(selectedCaption.end)}
-                  </span>
-                </div>
-                <input
-                  type="text"
-                  value={editText}
-                  onChange={(e) => handleTextChange(e.target.value)}
-                  className="w-full px-3 py-2 border-4 border-black dark:border-white bg-white dark:bg-black text-black dark:text-white font-bold uppercase text-sm focus:outline-none focus:border-[var(--accent-blue)]"
-                  placeholder="ENTER CAPTION TEXT"
+          {/* Playback controls */}
+          <div className="border-t-4 border-black dark:border-white bg-[#111]">
+            <div className="flex items-center">
+              <TogglePlay target={previewId}>
+                <button
+                  slot="pause"
+                  className="w-12 h-12 flex items-center justify-center bg-[var(--accent-red)] border-r-4 border-black dark:border-white"
+                >
+                  <svg
+                    className="w-4 h-4 text-white"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                  </svg>
+                </button>
+                <button
+                  slot="play"
+                  className="w-12 h-12 flex items-center justify-center bg-[var(--accent-blue)] border-r-4 border-black dark:border-white"
+                >
+                  <svg
+                    className="w-4 h-4 text-white"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </button>
+              </TogglePlay>
+
+              <div className="flex-1 px-4 h-12 flex items-center">
+                <Scrubber
+                  target={previewId}
+                  className="w-full h-2 bg-white/20 cursor-pointer [&::part(progress)]:bg-[var(--accent-gold)] [&::part(handle)]:bg-white [&::part(handle)]:w-4 [&::part(handle)]:h-4"
                 />
               </div>
-            ) : (
-              <p className="text-sm text-black/50 dark:text-white/50 uppercase">
-                Select a caption to edit
-              </p>
-            )}
+
+              <div className="px-4 border-l-4 border-black dark:border-white h-12 flex items-center bg-black">
+                <TimeDisplay
+                  target={previewId}
+                  className="text-xs text-white font-mono tabular-nums uppercase"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Caption List & Editor */}
+        <div className="flex flex-col">
+          {/* Caption list header */}
+          <div className="border-b-4 border-black dark:border-white px-4 py-2 bg-[var(--accent-gold)]">
+            <span className="text-xs font-black uppercase tracking-wider text-black">
+              Captions
+            </span>
+          </div>
+
+          {/* Caption list */}
+          <div className="flex-1 divide-y-2 divide-black dark:divide-white overflow-auto max-h-[200px]">
+            {captions.map((caption) => {
+              const isActive = activeCaption?.id === caption.id;
+              const isSelected = selectedId === caption.id;
+              return (
+                <button
+                  key={caption.id}
+                  onClick={() => handleSelect(caption)}
+                  className={`w-full px-4 py-3 text-left transition-colors ${
+                    isSelected
+                      ? "bg-[var(--accent-blue)] text-white"
+                      : isActive
+                        ? "bg-[var(--accent-gold)]/20"
+                        : "bg-white dark:bg-[#1a1a1a] hover:bg-gray-100 dark:hover:bg-[#252525]"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    {isActive && !isSelected && (
+                      <div className="w-2 h-2 rounded-full bg-[var(--accent-gold)] animate-pulse" />
+                    )}
+                    <span
+                      className={`text-xs font-mono tabular-nums ${
+                        isSelected
+                          ? "text-white/70"
+                          : "text-black/50 dark:text-white/50"
+                      }`}
+                    >
+                      {formatTime(caption.start)} - {formatTime(caption.end)}
+                    </span>
+                  </div>
+                  <p
+                    className={`text-sm font-bold uppercase mt-1 truncate ${
+                      isSelected ? "text-white" : "text-black dark:text-white"
+                    }`}
+                  >
+                    {caption.text}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Editor section */}
+          <div className="border-t-4 border-black dark:border-white">
+            <div className="px-4 py-2 bg-[var(--accent-red)]">
+              <span className="text-xs font-black uppercase tracking-wider text-white">
+                Edit Caption
+              </span>
+            </div>
+            <div className="p-4 bg-white dark:bg-[#1a1a1a]">
+              {selectedCaption ? (
+                <div className="space-y-3">
+                  <div className="flex gap-4 text-xs font-mono">
+                    <span className="text-black/50 dark:text-white/50 uppercase">
+                      Start: {formatTime(selectedCaption.start)}
+                    </span>
+                    <span className="text-black/50 dark:text-white/50 uppercase">
+                      End: {formatTime(selectedCaption.end)}
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={editText}
+                    onChange={(e) => handleTextChange(e.target.value)}
+                    className="w-full px-3 py-2 border-4 border-black dark:border-white bg-white dark:bg-black text-black dark:text-white font-bold uppercase text-sm focus:outline-none focus:border-[var(--accent-blue)]"
+                    placeholder="ENTER CAPTION TEXT"
+                  />
+                </div>
+              ) : (
+                <p className="text-sm text-black/50 dark:text-white/50 uppercase">
+                  Select a caption to edit
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-    <ExportButton
-      getTarget={() => timegroupRef.current as unknown as HTMLElement}
-      name="Captioned Video"
-      fileName="captioned-video.mp4"
-      renderOpts={{ includeAudio: true }}
-    />
+      <ExportButton
+        getTarget={() => timegroupRef.current as unknown as HTMLElement}
+        name="Captioned Video"
+        fileName="captioned-video.mp4"
+        renderOpts={{ includeAudio: true }}
+      />
     </>
   );
 }
@@ -296,7 +306,11 @@ export function CaptionEditor() {
               <div className="border-t-4 border-black dark:border-white bg-[#111]">
                 <div className="flex items-center">
                   <div className="w-12 h-12 flex items-center justify-center bg-[var(--accent-blue)] border-r-4 border-black dark:border-white">
-                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <svg
+                      className="w-4 h-4 text-white"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
                       <path d="M8 5v14l11-7z" />
                     </svg>
                   </div>
@@ -311,10 +325,14 @@ export function CaptionEditor() {
             </div>
             <div className="flex flex-col">
               <div className="border-b-4 border-black dark:border-white px-4 py-2 bg-[var(--accent-gold)]">
-                <span className="text-xs font-black uppercase tracking-wider text-black">Captions</span>
+                <span className="text-xs font-black uppercase tracking-wider text-black">
+                  Captions
+                </span>
               </div>
               <div className="flex-1 p-4">
-                <span className="text-sm text-black/50 dark:text-white/50 uppercase">Loading...</span>
+                <span className="text-sm text-black/50 dark:text-white/50 uppercase">
+                  Loading...
+                </span>
               </div>
             </div>
           </div>

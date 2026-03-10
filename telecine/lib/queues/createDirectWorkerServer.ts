@@ -32,7 +32,10 @@ export const createDirectWorkerServer = <Payload>(
     serviceName: `worker:${worker.name}`,
     createRequestHandler: async () => {
       worker.warmUp().catch((err) => {
-        logger.error({ queue: worker.name, error: err }, "Worker warmUp failed");
+        logger.error(
+          { queue: worker.name, error: err },
+          "Worker warmUp failed",
+        );
       });
 
       logger.info(

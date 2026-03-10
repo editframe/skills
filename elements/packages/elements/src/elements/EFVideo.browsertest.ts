@@ -41,12 +41,12 @@ const test = baseTest.extend<{
   barsNtoneTimegroup: EFTimegroup;
   sequenceTimegroup: EFTimegroup;
 }>({
-  timegroup: async ({}, use) => {
+  timegroup: async (_: unknown, use) => {
     const timegroup = document.createElement("ef-timegroup");
     timegroup.setAttribute("mode", "contain");
     await use(timegroup);
   },
-  configuration: async ({}, use) => {
+  configuration: async (_: unknown, use) => {
     const configuration = document.createElement("ef-configuration");
     const apiHost = getApiHost();
     configuration.setAttribute("api-host", apiHost);
@@ -70,7 +70,7 @@ const test = baseTest.extend<{
     await video.updateComplete;
     use(video);
   },
-  barsNtoneTimegroup: async ({}, use) => {
+  barsNtoneTimegroup: async (_: unknown, use) => {
     // Clear localStorage to prevent test contamination
     localStorage.removeItem("ef-timegroup-barsNtoneTimegroup");
 
@@ -97,7 +97,7 @@ const test = baseTest.extend<{
     // Cleanup: remove from DOM
     container.remove();
   },
-  sequenceTimegroup: async ({}, use) => {
+  sequenceTimegroup: async (_: unknown, use) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
     render(
@@ -242,9 +242,7 @@ describe.skip("EFVideo", () => {
   });
 
   describe("frame painting and canvas updates", () => {
-    test("canvas dimensions update when frame dimensions change", async ({
-      expect,
-    }) => {
+    test("canvas dimensions update when frame dimensions change", async ({ expect }) => {
       const container = document.createElement("div");
       render(html`<ef-video></ef-video>`, container);
       document.body.appendChild(container);
@@ -279,9 +277,7 @@ describe.skip("EFVideo", () => {
       expect(canvas.height).toBe(1080);
     });
 
-    test("handles frame painting with null format gracefully", async ({
-      expect,
-    }) => {
+    test("handles frame painting with null format gracefully", async ({ expect }) => {
       const container = document.createElement("div");
       render(html`<ef-video></ef-video>`, container);
       document.body.appendChild(container);
@@ -499,9 +495,7 @@ describe.skip("EFVideo", () => {
   });
 
   describe("integration with timegroups", () => {
-    test("integrates correctly within timegroup structure", async ({
-      expect,
-    }) => {
+    test("integrates correctly within timegroup structure", async ({ expect }) => {
       const container = document.createElement("div");
       render(
         html`
@@ -528,9 +522,7 @@ describe.skip("EFVideo", () => {
       expect(video.intrinsicDurationMs).toBeGreaterThan(0);
     });
 
-    test("works as standalone root temporal in ef-preview", async ({
-      expect,
-    }) => {
+    test("works as standalone root temporal in ef-preview", async ({ expect }) => {
       const container = document.createElement("div");
       const apiHost = getApiHost();
       render(
@@ -630,9 +622,7 @@ describe.skip("EFVideo", () => {
       expect(video.loadingState.isLoading).toBe(false);
     });
 
-    test("should handle multiple concurrent loading operations", async ({
-      expect,
-    }) => {
+    test("should handle multiple concurrent loading operations", async ({ expect }) => {
       const container = document.createElement("div");
       render(html`<ef-video></ef-video>`, container);
       document.body.appendChild(container);
@@ -663,9 +653,7 @@ describe.skip("EFVideo", () => {
       expect(video.loadingState.isLoading).toBe(false);
     });
 
-    test("should not show loading for background operations", async ({
-      expect,
-    }) => {
+    test("should not show loading for background operations", async ({ expect }) => {
       const container = document.createElement("div");
       render(html`<ef-video></ef-video>`, container);
       document.body.appendChild(container);
@@ -685,9 +673,7 @@ describe.skip("EFVideo", () => {
       video.clearDelayedLoading("bg-op");
     });
 
-    test("should properly clean up loading state on disconnect", async ({
-      expect,
-    }) => {
+    test("should properly clean up loading state on disconnect", async ({ expect }) => {
       const container = document.createElement("div");
       render(html`<ef-video></ef-video>`, container);
       document.body.appendChild(container);
@@ -709,9 +695,7 @@ describe.skip("EFVideo", () => {
   describe("AssetMediaEngine", () => {
     test("seeks to 8074ms", async ({ barsNtone, barsNtoneTimegroup }) => {
       // Wait for any initial loading to complete
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
 
       // Use timegroup for seeking to ensure audio and video are synchronized
@@ -720,36 +704,22 @@ describe.skip("EFVideo", () => {
 
       // Wait for the new seek tasks to complete (ignoring any aborts from previous operations)
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
     });
 
-    test("seeks to beginning of video (0ms)", async ({
-      barsNtone,
-      barsNtoneTimegroup,
-    }) => {
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+    test("seeks to beginning of video (0ms)", async ({ barsNtone, barsNtoneTimegroup }) => {
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
       barsNtoneTimegroup.currentTimeMs = 0;
       await barsNtone.updateComplete;
 
       // Wait for the new seek tasks to complete
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
     });
 
-    test("seeks to exact segment boundary at 2066ms", async ({
-      barsNtone,
-      barsNtoneTimegroup,
-    }) => {
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+    test("seeks to exact segment boundary at 2066ms", async ({ barsNtone, barsNtoneTimegroup }) => {
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
       // This is approximately where segment 0 ends and segment 1 begins
       barsNtoneTimegroup.currentTimeMs = 2066;
@@ -757,18 +727,11 @@ describe.skip("EFVideo", () => {
 
       // Wait for the new seek tasks to complete
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
     });
 
-    test("seeks to exact segment boundary at 4033ms", async ({
-      barsNtone,
-      barsNtoneTimegroup,
-    }) => {
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+    test("seeks to exact segment boundary at 4033ms", async ({ barsNtone, barsNtoneTimegroup }) => {
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
       // This is approximately where segment 1 ends and segment 2 begins
       barsNtoneTimegroup.currentTimeMs = 4033;
@@ -776,70 +739,45 @@ describe.skip("EFVideo", () => {
 
       // Wait for the new seek tasks to complete
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
     });
 
-    test("seeks to exact segment boundary at 6066ms", async ({
-      barsNtone,
-      barsNtoneTimegroup,
-    }) => {
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+    test("seeks to exact segment boundary at 6066ms", async ({ barsNtone, barsNtoneTimegroup }) => {
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
       // Reset to 0 first to ensure clean state
       barsNtoneTimegroup.currentTimeMs = 0;
       await barsNtone.updateComplete;
       // Wait for both audio and video to complete the reset
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
 
       // Updated: Use time safely within segment boundaries (6000ms instead of 6066ms)
       // The actual boundary is at 6066.67ms, so 6000ms should be in segment 2
       barsNtoneTimegroup.currentTimeMs = 6000;
       await barsNtone.updateComplete;
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
     });
 
-    test("seeks to exact segment boundary at 8033ms", async ({
-      barsNtone,
-      barsNtoneTimegroup,
-    }) => {
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+    test("seeks to exact segment boundary at 8033ms", async ({ barsNtone, barsNtoneTimegroup }) => {
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
       // This is approximately where segment 2 ends and segment 3 begins
       barsNtoneTimegroup.currentTimeMs = 8033;
       await barsNtone.updateComplete;
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
     });
 
-    test("seeks to near end of video at 9900ms", async ({
-      barsNtone,
-      barsNtoneTimegroup,
-    }) => {
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+    test("seeks to near end of video at 9900ms", async ({ barsNtone, barsNtoneTimegroup }) => {
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
       // Seek to near the end of the video
       barsNtoneTimegroup.currentTimeMs = 9900;
       await barsNtone.updateComplete;
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
     });
 
     test("seeks backward from 8000ms to 2000ms", async ({
@@ -848,21 +786,14 @@ describe.skip("EFVideo", () => {
       expect,
     }) => {
       await barsNtoneTimegroup.seek(8000);
-      expect(barsNtone.unifiedVideoSeekTask.value?.timestamp).toBeCloseTo(
-        8.066,
-      );
+      expect(barsNtone.unifiedVideoSeekTask.value?.timestamp).toBeCloseTo(8.066);
 
       // Then seek backward
       await barsNtoneTimegroup.seek(2000);
-      expect(barsNtone.unifiedVideoSeekTask.value?.timestamp).toBeCloseTo(
-        2.066,
-      );
+      expect(barsNtone.unifiedVideoSeekTask.value?.timestamp).toBeCloseTo(2.066);
     });
 
-    test("seeks to multiple points across segments", async ({
-      barsNtone,
-      barsNtoneTimegroup,
-    }) => {
+    test("seeks to multiple points across segments", async ({ barsNtone, barsNtoneTimegroup }) => {
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
 
       // Use seek points that are within the actual media duration
@@ -873,9 +804,7 @@ describe.skip("EFVideo", () => {
         barsNtoneTimegroup.currentTimeMs = seekPoint;
         await barsNtone.updateComplete;
         await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
-        await waitForTaskIgnoringAborts(
-          barsNtone.unifiedVideoSeekTask.taskComplete,
-        );
+        await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
       }
     });
 
@@ -883,43 +812,30 @@ describe.skip("EFVideo", () => {
       barsNtone,
       barsNtoneTimegroup,
     }) => {
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
       // Use a safe seek time within the media duration
       barsNtoneTimegroup.currentTimeMs = 8030;
       await barsNtone.updateComplete;
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
     });
 
     test("seeks just after segment boundary at 8070ms", async ({
       barsNtone,
       barsNtoneTimegroup,
     }) => {
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
       // Use a safe seek time within the media duration
       barsNtoneTimegroup.currentTimeMs = 8070;
       await barsNtone.updateComplete;
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
     });
 
-    test("handles rapid scrubbing between segments", async ({
-      barsNtone,
-      barsNtoneTimegroup,
-    }) => {
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+    test("handles rapid scrubbing between segments", async ({ barsNtone, barsNtoneTimegroup }) => {
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
 
       // Simulate rapid scrubbing back and forth across segments
@@ -943,9 +859,7 @@ describe.skip("EFVideo", () => {
 
       // Final seek operations should complete without errors
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
     });
 
     test("handles concurrent seeks to different segments", async ({
@@ -953,9 +867,7 @@ describe.skip("EFVideo", () => {
       barsNtone,
       barsNtoneTimegroup,
     }) => {
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
 
       // Start multiple seeks without waiting for completion
@@ -1004,9 +916,7 @@ describe.skip("EFVideo", () => {
       barsNtone,
       barsNtoneTimegroup,
     }) => {
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
 
       // Try to reproduce the exact error scenario
@@ -1021,21 +931,13 @@ describe.skip("EFVideo", () => {
 
       // The system should recover and eventually succeed
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
     });
 
-    test("seeks to 7975ms", async ({
-      barsNtone,
-      barsNtoneTimegroup,
-      expect,
-    }) => {
+    test("seeks to 7975ms", async ({ barsNtone, barsNtoneTimegroup, expect }) => {
       await barsNtoneTimegroup.seek(7975);
 
-      expect(barsNtone.unifiedVideoSeekTask.value?.timestamp).toBeCloseTo(
-        8.033,
-      );
+      expect(barsNtone.unifiedVideoSeekTask.value?.timestamp).toBeCloseTo(8.033);
     });
 
     test("seeks to 8041.667ms in video track 1", async ({
@@ -1048,13 +950,8 @@ describe.skip("EFVideo", () => {
       expect(barsNtone.unifiedVideoSeekTask.value?.timestamp).toBe(8.1);
     });
 
-    test("seeks to 10000ms near end of file", async ({
-      barsNtone,
-      barsNtoneTimegroup,
-    }) => {
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+    test("seeks to 10000ms near end of file", async ({ barsNtone, barsNtoneTimegroup }) => {
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
 
       // Use a safe seek time within the media duration
@@ -1063,9 +960,7 @@ describe.skip("EFVideo", () => {
       await barsNtone.updateComplete;
 
       // Should not throw "Sample not found" errors
-      await waitForTaskIgnoringAborts(
-        barsNtone.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(barsNtone.unifiedVideoSeekTask.taskComplete);
       await waitForTaskIgnoringAborts(barsNtone.audioSeekTask.taskComplete);
     });
   });
@@ -1073,14 +968,8 @@ describe.skip("EFVideo", () => {
   // Skip JIT Transcoder tests - these are failing due to timing/seek accuracy issues
   // Expected exact seek times but getting ~0.08s offset. Needs investigation but not blocking for beta.
   describe.skip("JIT Transcoder", () => {
-    test("seeks to start at 0ms", async ({
-      timegroup,
-      headMoov480p,
-      expect,
-    }) => {
-      await waitForTaskIgnoringAborts(
-        headMoov480p.unifiedVideoSeekTask.taskComplete,
-      );
+    test("seeks to start at 0ms", async ({ timegroup, headMoov480p, expect }) => {
+      await waitForTaskIgnoringAborts(headMoov480p.unifiedVideoSeekTask.taskComplete);
       await waitForTaskIgnoringAborts(headMoov480p.audioSeekTask.taskComplete);
 
       timegroup.currentTimeMs = 0;
@@ -1108,36 +997,22 @@ describe.skip("EFVideo", () => {
       await timegroup.seek(7500);
 
       // JIT transcoding returns actual video frame timestamps, not idealized segment boundaries
-      expect(headMoov480p.unifiedVideoSeekTask.value?.timestamp).toBeCloseTo(
-        7.5,
-        1,
-      );
+      expect(headMoov480p.unifiedVideoSeekTask.value?.timestamp).toBeCloseTo(7.5, 1);
     });
 
     test("seeks to 8500ms", async ({ timegroup, headMoov480p, expect }) => {
       await timegroup.seek(8500);
 
-      expect(headMoov480p.unifiedVideoSeekTask.value?.timestamp).toBeCloseTo(
-        8.5,
-        1,
-      );
+      expect(headMoov480p.unifiedVideoSeekTask.value?.timestamp).toBeCloseTo(8.5, 1);
     });
 
-    test("seeks to near end at 9000ms", async ({
-      timegroup,
-      headMoov480p,
-      expect,
-    }) => {
+    test("seeks to near end at 9000ms", async ({ timegroup, headMoov480p, expect }) => {
       await timegroup.seek(9000);
 
       expect(headMoov480p.unifiedVideoSeekTask.value?.timestamp).toBe(9);
     });
 
-    test("seeks backward from 7000ms to 2000ms", async ({
-      timegroup,
-      headMoov480p,
-      expect,
-    }) => {
+    test("seeks backward from 7000ms to 2000ms", async ({ timegroup, headMoov480p, expect }) => {
       await timegroup.seek(7000);
       expect(headMoov480p.unifiedVideoSeekTask.value?.timestamp).toBe(7);
 
@@ -1145,11 +1020,7 @@ describe.skip("EFVideo", () => {
       expect(headMoov480p.unifiedVideoSeekTask.value?.timestamp).toBe(2);
     });
 
-    test("seeks to multiple points in sequence", async ({
-      timegroup,
-      headMoov480p,
-      expect,
-    }) => {
+    test("seeks to multiple points in sequence", async ({ timegroup, headMoov480p, expect }) => {
       const seekPoints = [1000, 3000, 5000, 2000, 6000, 0];
       const expectedTimestamps = [1, 3, 5, 2, 6, 0];
 
@@ -1162,11 +1033,7 @@ describe.skip("EFVideo", () => {
       }
     });
 
-    test("seeks to fractional timestamps", async ({
-      timegroup,
-      headMoov480p,
-      expect,
-    }) => {
+    test("seeks to fractional timestamps", async ({ timegroup, headMoov480p, expect }) => {
       const fractionalTimes = [1234.567, 3456.789, 5678.901];
       const expectedTimestamps = [1.234567, 3.456789, 5.678901];
 
@@ -1185,22 +1052,13 @@ describe.skip("EFVideo", () => {
       expect,
     }) => {
       await timegroup.seek(0);
-      expect(headMoov480p.unifiedVideoSeekTask.value?.timestamp).toBeCloseTo(
-        0,
-        1,
-      );
+      expect(headMoov480p.unifiedVideoSeekTask.value?.timestamp).toBeCloseTo(0, 1);
 
       await timegroup.seek(1000);
-      expect(headMoov480p.unifiedVideoSeekTask.value?.timestamp).toBeCloseTo(
-        1,
-        1,
-      );
+      expect(headMoov480p.unifiedVideoSeekTask.value?.timestamp).toBeCloseTo(1, 1);
 
       await timegroup.seek(4000);
-      expect(headMoov480p.unifiedVideoSeekTask.value?.timestamp).toBeCloseTo(
-        4,
-        1,
-      );
+      expect(headMoov480p.unifiedVideoSeekTask.value?.timestamp).toBeCloseTo(4, 1);
     });
 
     test("rapid succession seeks cause intermediate seeks to be skipped", async ({
@@ -1232,9 +1090,7 @@ describe.skip("EFVideo", () => {
       sequenceTimegroup,
     }) => {
       // Use the sequence fixture which creates two videos in sequence
-      const videos = sequenceTimegroup.querySelectorAll(
-        "ef-video",
-      ) as NodeListOf<EFVideo>;
+      const videos = sequenceTimegroup.querySelectorAll("ef-video") as NodeListOf<EFVideo>;
       const video1 = videos[0]!;
       const video2 = videos[1]!;
 
@@ -1264,9 +1120,7 @@ describe.skip("EFVideo", () => {
       const timegroup = headMoov480p.closest("ef-timegroup") as EFTimegroup;
 
       // Wait for initial loading to complete
-      await waitForTaskIgnoringAborts(
-        headMoov480p.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(headMoov480p.unifiedVideoSeekTask.taskComplete);
       await waitForTaskIgnoringAborts(headMoov480p.audioSeekTask.taskComplete);
 
       // The fix: JitMediaEngine.computeSegmentId should handle seeking to exact duration
@@ -1284,12 +1138,8 @@ describe.skip("EFVideo", () => {
         await headMoov480p.updateComplete;
 
         // This should now work without throwing "Segment ID is not available"
-        await waitForTaskIgnoringAborts(
-          headMoov480p.unifiedVideoSeekTask.taskComplete,
-        );
-        await waitForTaskIgnoringAborts(
-          headMoov480p.audioSeekTask.taskComplete,
-        );
+        await waitForTaskIgnoringAborts(headMoov480p.unifiedVideoSeekTask.taskComplete);
+        await waitForTaskIgnoringAborts(headMoov480p.audioSeekTask.taskComplete);
       }
     });
 
@@ -1300,9 +1150,7 @@ describe.skip("EFVideo", () => {
       const timegroup = headMoov480p.closest("ef-timegroup") as EFTimegroup;
 
       // Wait for initial loading to complete
-      await waitForTaskIgnoringAborts(
-        headMoov480p.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(headMoov480p.unifiedVideoSeekTask.taskComplete);
       await waitForTaskIgnoringAborts(headMoov480p.audioSeekTask.taskComplete);
 
       console.log("🧪 TESTING: Audio analysis out-of-bounds time range fix");
@@ -1325,28 +1173,21 @@ describe.skip("EFVideo", () => {
       // Let the audio analysis tasks run - they should now handle this gracefully
 
       // The basic seek should complete without errors
-      await waitForTaskIgnoringAborts(
-        headMoov480p.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(headMoov480p.unifiedVideoSeekTask.taskComplete);
 
       // Audio tasks may still throw their own errors, but not the "No segments found" error
       // We don't explicitly test the audio analysis tasks here since they might legitimately
       // return null when seeking beyond the end, which is the expected behavior
     });
 
-    test("rapid seeking only processes latest seek request", async ({
-      expect,
-      headMoov480p,
-    }) => {
+    test("rapid seeking only processes latest seek request", async ({ expect, headMoov480p }) => {
       // This test verifies that when multiple seeks occur rapidly (like during scrubbing),
       // only the latest seek is processed, not all of them queued up.
       // This prevents old frames from persisting while waiting for queued seeks.
       const timegroup = headMoov480p.closest("ef-timegroup") as EFTimegroup;
 
       // Wait for initial loading to complete
-      await waitForTaskIgnoringAborts(
-        headMoov480p.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(headMoov480p.unifiedVideoSeekTask.taskComplete);
       await waitForTaskIgnoringAborts(headMoov480p.audioSeekTask.taskComplete);
 
       console.log("🧪 TESTING: Rapid seeking only processes latest seek");
@@ -1374,18 +1215,14 @@ describe.skip("EFVideo", () => {
         const { signal } = args[1] as { signal: AbortSignal };
         seekStartCount++;
         const seekId = seekStartCount;
-        console.log(
-          `🔍 Seek task #${seekId} started for ${desiredSeekTimeMs}ms`,
-        );
+        console.log(`🔍 Seek task #${seekId} started for ${desiredSeekTimeMs}ms`);
 
         try {
           const result = await originalTask!(...args);
           // Only record if this seek wasn't aborted and returned a result
           if (!signal.aborted && result !== undefined) {
             completedSeeks.push(desiredSeekTimeMs);
-            console.log(
-              `✅ Seek #${seekId} completed for ${desiredSeekTimeMs}ms`,
-            );
+            console.log(`✅ Seek #${seekId} completed for ${desiredSeekTimeMs}ms`);
           } else {
             console.log(
               `❌ Seek #${seekId} aborted or returned undefined for ${desiredSeekTimeMs}ms`,
@@ -1394,9 +1231,7 @@ describe.skip("EFVideo", () => {
           return result;
         } catch (error) {
           if (error instanceof Error && error.name === "AbortError") {
-            console.log(
-              `❌ Seek #${seekId} aborted (AbortError) for ${desiredSeekTimeMs}ms`,
-            );
+            console.log(`❌ Seek #${seekId} aborted (AbortError) for ${desiredSeekTimeMs}ms`);
             return undefined;
           }
           throw error;
@@ -1421,9 +1256,7 @@ describe.skip("EFVideo", () => {
       const finalSeekTime = rapidSeekSequence[rapidSeekSequence.length - 1];
       expect(headMoov480p.desiredSeekTimeMs).toBe(finalSeekTime);
 
-      console.log(
-        `📊 Started ${seekStartCount} seeks, completed ${completedSeeks.length}`,
-      );
+      console.log(`📊 Started ${seekStartCount} seeks, completed ${completedSeeks.length}`);
 
       // Verify that we're not processing all seeks - only the latest should complete
       // In an ideal world, only 1 seek should complete (the final one)
@@ -1454,9 +1287,7 @@ describe.skip("EFVideo", () => {
       const timegroup = headMoov480p.closest("ef-timegroup") as EFTimegroup;
 
       // Wait for initial loading to complete
-      await waitForTaskIgnoringAborts(
-        headMoov480p.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(headMoov480p.unifiedVideoSeekTask.taskComplete);
       await waitForTaskIgnoringAborts(headMoov480p.audioSeekTask.taskComplete);
 
       console.log("🧪 TESTING: Rapid seeking race condition fix");
@@ -1479,9 +1310,7 @@ describe.skip("EFVideo", () => {
       }
 
       // The fix should prevent errors - both video and audio tasks should complete
-      await waitForTaskIgnoringAborts(
-        headMoov480p.unifiedVideoSeekTask.taskComplete,
-      );
+      await waitForTaskIgnoringAborts(headMoov480p.unifiedVideoSeekTask.taskComplete);
 
       // Audio tasks should also complete without throwing, though they may log warnings
       await waitForTaskIgnoringAborts(headMoov480p.audioSeekTask.taskComplete);
@@ -1492,13 +1321,10 @@ describe.skip("EFVideo", () => {
   });
 
   describe("loop attribute", () => {
-    test(
-      "standalone ef-video respects loop attribute",
-      { timeout: 1000 },
-      async () => {
-        const container = document.createElement("div");
-        render(
-          html`
+    test("standalone ef-video respects loop attribute", { timeout: 1000 }, async () => {
+      const container = document.createElement("div");
+      render(
+        html`
             <ef-video
               loop
               id="loop-video"
@@ -1506,61 +1332,54 @@ describe.skip("EFVideo", () => {
               sourceout="2s"
             ></ef-video>
           `,
-          container,
-        );
-        document.body.appendChild(container);
+        container,
+      );
+      document.body.appendChild(container);
 
-        const video = container.querySelector("#loop-video") as EFVideo;
-        await video.updateComplete;
+      const video = container.querySelector("#loop-video") as EFVideo;
+      await video.updateComplete;
 
-        expect(video.loop).toBe(true);
-        expect(video.playbackController).toBeDefined();
-        expect(video.playbackController?.loop).toBe(true);
+      expect(video.loop).toBe(true);
+      expect(video.playbackController).toBeDefined();
+      expect(video.playbackController?.loop).toBe(true);
 
-        container.remove();
-      },
-    );
+      container.remove();
+    });
 
-    test(
-      "loop property is reactive after initialization",
-      { timeout: 1000 },
-      async () => {
-        const container = document.createElement("div");
-        render(
-          html`
+    test("loop property is reactive after initialization", { timeout: 1000 }, async () => {
+      const container = document.createElement("div");
+      render(
+        html`
             <ef-video
               id="reactive-loop-video"
               src="bars-n-tone.mp4"
               sourceout="2s"
             ></ef-video>
           `,
-          container,
-        );
-        document.body.appendChild(container);
+        container,
+      );
+      document.body.appendChild(container);
 
-        const video = container.querySelector(
-          "#reactive-loop-video",
-        ) as EFVideo;
-        await video.updateComplete;
+      const video = container.querySelector("#reactive-loop-video") as EFVideo;
+      await video.updateComplete;
 
-        expect(video.loop).toBe(false);
-        expect(video.playbackController?.loop).toBe(false);
+      expect(video.loop).toBe(false);
+      expect(video.playbackController?.loop).toBe(false);
 
-        video.loop = true;
-        await video.updateComplete;
+      video.loop = true;
+      await video.updateComplete;
 
-        expect(video.loop).toBe(true);
-        expect(video.playbackController?.loop).toBe(true);
+      expect(video.loop).toBe(true);
+      expect(video.playbackController?.loop).toBe(true);
 
-        video.loop = false;
-        await video.updateComplete;
+      video.loop = false;
+      await video.updateComplete;
 
-        expect(video.loop).toBe(false);
-        expect(video.playbackController?.loop).toBe(false);
+      expect(video.loop).toBe(false);
+      expect(video.playbackController?.loop).toBe(false);
 
-        container.remove();
-      },
-    );
+      container.remove();
+    });
   });
 });
 

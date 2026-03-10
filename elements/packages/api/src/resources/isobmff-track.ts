@@ -196,10 +196,7 @@ export const CreateISOBMFFTrackPayload = z.discriminatedUnion("type", [
 
 export type CreateISOBMFFTrackPayload = VideoTrackPayload | AudioTrackPayload;
 
-assertTypesMatch<
-  z.infer<typeof CreateISOBMFFTrackPayload>,
-  CreateISOBMFFTrackPayload
->(true);
+assertTypesMatch<z.infer<typeof CreateISOBMFFTrackPayload>, CreateISOBMFFTrackPayload>(true);
 
 export interface CreateISOBMFFTrackResult {
   next_byte: number;
@@ -210,10 +207,7 @@ export interface CreateISOBMFFTrackResult {
 }
 
 /** @deprecated Use the unified file API from ./file.js instead */
-export const createISOBMFFTrack = async (
-  client: Client,
-  payload: CreateISOBMFFTrackPayload,
-) => {
+export const createISOBMFFTrack = async (client: Client, payload: CreateISOBMFFTrackPayload) => {
   log("Creating isobmff track", payload);
   CreateISOBMFFTrackPayload.parse(payload);
   const response = await client.authenticatedFetch("/api/v1/isobmff_tracks", {
@@ -226,9 +220,7 @@ export const createISOBMFFTrack = async (
     return (await response.json()) as CreateISOBMFFTrackResult;
   }
 
-  throw new Error(
-    `Failed to create isobmff track ${response.status} ${response.statusText}`,
-  );
+  throw new Error(`Failed to create isobmff track ${response.status} ${response.statusText}`);
 };
 
 /** @deprecated Use the unified file API from ./file.js instead */

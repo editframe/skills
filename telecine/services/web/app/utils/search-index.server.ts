@@ -20,25 +20,25 @@ export async function buildSearchIndex(
   metadata: SearchIndexMetadata | null;
 }> {
   const documents: SearchDocument[] = [];
-  
+
   // Recursively process all MDX files
   await processDirectory(docsBasePath, "", documents);
-  
+
   // Compute TF-IDF vectors only if requested
   if (includeVectors) {
     const { vectors, vocabulary, idf } = computeTFIDFVectors(documents);
-    
+
     // Add vectors to documents
     for (let i = 0; i < documents.length; i++) {
       documents[i].vector = vectors[i];
     }
-    
+
     return {
       documents,
       metadata: { vocabulary, idf },
     };
   }
-  
+
   return {
     documents,
     metadata: null,
@@ -55,12 +55,12 @@ export async function addVectorsToDocuments(
   metadata: SearchIndexMetadata;
 }> {
   const { vectors, vocabulary, idf } = computeTFIDFVectors(documents);
-  
+
   // Add vectors to documents
   for (let i = 0; i < documents.length; i++) {
     documents[i].vector = vectors[i];
   }
-  
+
   return {
     documents,
     metadata: { vocabulary, idf },
@@ -76,18 +76,18 @@ async function processDirectory(
   documents: SearchDocument[],
 ): Promise<void> {
   const entries = await readdir(directory, { withFileTypes: true });
-  
+
   for (const entry of entries) {
     // Skip non-MDX files and example directories
     if (entry.name.endsWith(".tsx") || entry.name === "examples") {
       continue;
     }
-    
+
     const fullPath = join(directory, entry.name);
-    
+
     if (entry.isDirectory()) {
       // Recursively process subdirectories
-      const newRelativePath = relativePath 
+      const newRelativePath = relativePath
         ? join(relativePath, entry.name)
         : entry.name;
       await processDirectory(fullPath, newRelativePath, documents);
@@ -96,18 +96,18 @@ async function processDirectory(
       try {
         const fileContent = await readFile(fullPath, "utf-8");
         const { attributes, body } = fm<any>(fileContent);
-        
+
         // Extract metadata
         const titleAttr = attributes.meta?.find((attr: any) => attr.title);
         const title = titleAttr?.title || entry.name.replace(".mdx", "");
         const descAttr = attributes.meta?.find(
-          (attr: any) => attr.name === "description"
+          (attr: any) => attr.name === "description",
         );
         const description = descAttr?.content || "";
-        
+
         // Extract text content
         const { content, headings } = extractTextFromMDX(fileContent);
-        
+
         // Determine slug
         let slug: string;
         if (entry.name === "index.mdx") {
@@ -126,10 +126,10 @@ async function processDirectory(
             .replace(/^\//, "");
           slug = `/docs/${fileSlug}`;
         }
-        
+
         // Determine category from first part of slug
         const category = slug.split("/")[2] || undefined;
-        
+
         // Create document
         const doc: SearchDocument = {
           id: slug,
@@ -140,7 +140,7 @@ async function processDirectory(
           headings,
           category,
         };
-        
+
         documents.push(doc);
       } catch (error) {
         console.warn(`Failed to process ${fullPath}:`, error);
@@ -161,21 +161,17 @@ export async function writeSearchIndex(
   const { writeFile } = await import("node:fs/promises");
   const { mkdir } = await import("node:fs/promises");
   const { dirname } = await import("node:path");
-  
+
   // Ensure directory exists
   await mkdir(dirname(outputPath), { recursive: true });
-  
+
   // Write index with metadata
   const indexData = {
     documents,
     metadata,
   };
-  
-  await writeFile(
-    outputPath,
-    JSON.stringify(indexData, null, 2),
-    "utf-8"
-  );
+
+  await writeFile(outputPath, JSON.stringify(indexData, null, 2), "utf-8");
 }
 
 /**
@@ -188,17 +184,12 @@ export function writeSearchIndexSync(
 ): void {
   // Ensure directory exists
   mkdirSync(dirname(outputPath), { recursive: true });
-  
+
   // Write index with metadata
   const indexData = {
     documents,
     metadata,
   };
-  
-  writeFileSync(
-    outputPath,
-    JSON.stringify(indexData, null, 2),
-    "utf-8"
-  );
-}
 
+  writeFileSync(outputPath, JSON.stringify(indexData, null, 2), "utf-8");
+}

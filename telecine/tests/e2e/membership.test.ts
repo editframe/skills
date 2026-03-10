@@ -218,9 +218,7 @@ describe.skip("invite member - send invites", () => {
     await page.getByRole("button", { name: "Invite" }).click();
 
     await playwrightExpect(
-      page.getByText(
-        `${memberEmail} is already a member of this organization`,
-      ),
+      page.getByText(`${memberEmail} is already a member of this organization`),
     ).toBeVisible();
   });
 
@@ -535,9 +533,7 @@ describe("invite member - RSVP", () => {
     await page.goto(`/invitation/${invite.invite_token}`);
 
     await playwrightExpect(
-      page.getByText(
-        "The invitation you are trying to access does not exist.",
-      ),
+      page.getByText("The invitation you are trying to access does not exist."),
     ).toBeVisible();
   });
 });

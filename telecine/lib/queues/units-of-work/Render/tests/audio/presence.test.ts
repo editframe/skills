@@ -15,7 +15,7 @@ describe("Audio Presence", { timeout: 30000 }, () => {
       const validation = validateMP4(result.videoPath);
       expect(validation.isValid).toBe(true);
       expect(validation.hasVideoTrack).toBe(true);
-      
+
       // Note: Our rendering system may add silent audio track by default
       // This test documents the expected behavior
     });
@@ -39,7 +39,7 @@ describe("Audio Presence", { timeout: 30000 }, () => {
   //       <div class="w-full h-full bg-black"></div>
   //     </ef-timegroup>
   //   `);
-  //   
+  //
   //   const validation = validateMP4(result.videoPath);
   //   expect(validation.hasAudioTrack).toBe(true);
   // });

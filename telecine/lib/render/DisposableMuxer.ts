@@ -18,7 +18,9 @@ export class DisposableMuxer {
     this.process = spawn(
       "ffmpeg",
       [...FFMPEG_ARGS, ...FFMPEG_ANALYZE_ARGS, ...this.muxerArgs],
-      { stdio: ["inherit", "pipe", "pipe"] },
+      {
+        stdio: ["inherit", "pipe", "pipe"],
+      },
     );
 
     const buffer = new BufferList();

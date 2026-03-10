@@ -53,7 +53,7 @@ function parseWorkerResources(): Record<
 > {
   const file = fs.readFileSync(
     path.join(TELECINE, "deploy/worker-resources.config.ts"),
-    "utf-8"
+    "utf-8",
   );
 
   const resources: Record<string, { cpu: string; memory: string }> = {};
@@ -68,11 +68,11 @@ function parseWorkerResources(): Record<
 }
 
 function parseWorkerConfigs(
-  workerResources: Record<string, { cpu: string; memory: string }>
+  workerResources: Record<string, { cpu: string; memory: string }>,
 ): ServiceInfo[] {
   const file = fs.readFileSync(
     path.join(TELECINE, "deploy/resources/queues/workers.ts"),
-    "utf-8"
+    "utf-8",
   );
 
   const services: ServiceInfo[] = [];
@@ -102,14 +102,14 @@ function parseWorkerConfigs(
 
 function parseCloudRunService(
   filePath: string,
-  workerResources: Record<string, { cpu: string; memory: string }>
+  workerResources: Record<string, { cpu: string; memory: string }>,
 ): ServiceInfo | null {
   if (!fs.existsSync(filePath)) return null;
   const file = fs.readFileSync(filePath, "utf-8");
 
   // Extract Cloud Run name
   const nameMatch = file.match(
-    /new gcp\.cloudrunv2\.Service\(\s*"[^"]+",\s*\{[^]*?name:\s*"([^"]+)"/
+    /new gcp\.cloudrunv2\.Service\(\s*"[^"]+",\s*\{[^]*?name:\s*"([^"]+)"/,
   );
   if (!nameMatch) return null;
   const cloudRunName = nameMatch[1];
@@ -119,9 +119,7 @@ function parseCloudRunService(
   const maxMatch = file.match(/maxInstanceCount:\s*(\d+)/);
 
   // Extract concurrency
-  const concurrencyMatch = file.match(
-    /maxInstanceRequestConcurrency:\s*(\d+)/
-  );
+  const concurrencyMatch = file.match(/maxInstanceRequestConcurrency:\s*(\d+)/);
 
   // Extract CPU -- could be inline string or workerResources reference
   let cpu = "?";
@@ -149,7 +147,10 @@ function parseCloudRunService(
   // Extract ingress
   const ingressMatch = file.match(/ingress:\s*"([^"]+)"/);
   const ingress = ingressMatch
-    ? ingressMatch[1].replace("INGRESS_TRAFFIC_", "").toLowerCase().replace(/_/g, "-")
+    ? ingressMatch[1]
+        .replace("INGRESS_TRAFFIC_", "")
+        .toLowerCase()
+        .replace(/_/g, "-")
     : "all";
 
   return {
@@ -169,7 +170,7 @@ function parseCloudRunService(
 function parseDeployWorkflowMatrix(): string[] {
   const file = fs.readFileSync(
     path.join(TELECINE, ".github/workflows/deploy.yaml"),
-    "utf-8"
+    "utf-8",
   );
 
   const services: string[] = [];
@@ -195,7 +196,7 @@ function parseDeployWorkflowMatrix(): string[] {
 function parseSecrets(): string[] {
   const file = fs.readFileSync(
     path.join(TELECINE, "deploy/resources/secrets.ts"),
-    "utf-8"
+    "utf-8",
   );
 
   const secrets: string[] = [];
@@ -210,7 +211,7 @@ function parseSecrets(): string[] {
 function parseRoutes(): { path: string; service: string }[] {
   const file = fs.readFileSync(
     path.join(TELECINE, "deploy/resources/loadbalancer/urlmap.ts"),
-    "utf-8"
+    "utf-8",
   );
 
   const routes: { path: string; service: string }[] = [];
@@ -228,14 +229,15 @@ function parseRoutes(): { path: string; service: string }[] {
     /hosts:\s*\["([^"]+)"\][^}]*pathMatcher:\s*"([^"]+)"/g;
   while ((match = hostRulePattern.exec(file)) !== null) {
     if (match[2].includes("assets")) {
-      routes.push({ path: `${match[1]} (host)`, service: "gcs-bucket-backend" });
+      routes.push({
+        path: `${match[1]} (host)`,
+        service: "gcs-bucket-backend",
+      });
     }
   }
 
   // Find default service
-  const defaultMatch = file.match(
-    /defaultService:\s*(\w+)\.backendService/
-  );
+  const defaultMatch = file.match(/defaultService:\s*(\w+)\.backendService/);
   if (defaultMatch) {
     routes.push({ path: "/* (default)", service: defaultMatch[1] });
   }
@@ -246,7 +248,7 @@ function parseRoutes(): { path: string; service: string }[] {
 function parseDomains(): string[] {
   const file = fs.readFileSync(
     path.join(TELECINE, "deploy/resources/loadbalancer/urlmap.ts"),
-    "utf-8"
+    "utf-8",
   );
 
   const domains: string[] = [];
@@ -268,7 +270,7 @@ function parseDomains(): string[] {
 function parseConstants(): Record<string, string> {
   const file = fs.readFileSync(
     path.join(TELECINE, "deploy/resources/constants.ts"),
-    "utf-8"
+    "utf-8",
   );
 
   const constants: Record<string, string> = {};
@@ -288,7 +290,9 @@ function telecine() {
   print(`project: ${constants.GCP_PROJECT ?? "editframe"}`);
   print(`region: ${constants.GCP_LOCATION ?? "us-central1"}`);
   print(`domain: ${constants.DEPLOYED_DOMAIN ?? "editframe.com"}`);
-  print(`registry: us-central1-docker.pkg.dev/${constants.GCP_PROJECT ?? "editframe"}/telecine-artifacts`);
+  print(
+    `registry: us-central1-docker.pkg.dev/${constants.GCP_PROJECT ?? "editframe"}/telecine-artifacts`,
+  );
   print(`pulumi-stack: telecine-dot-dev`);
   print(`pulumi-state: gs://deployment-state`);
 
@@ -313,10 +317,7 @@ function telecine() {
     "transcribe-ctl",
   ];
   for (const dir of serviceDirs) {
-    const filePath = path.join(
-      TELECINE,
-      `deploy/resources/${dir}/cloudrun.ts`
-    );
+    const filePath = path.join(TELECINE, `deploy/resources/${dir}/cloudrun.ts`);
     const info = parseCloudRunService(filePath, workerResources);
     if (info) standaloneServices.push(info);
   }
@@ -324,7 +325,7 @@ function telecine() {
   // Parse scheduler-go (not in a subdirectory of queues with its own cloudrun.ts)
   const schedulerPath = path.join(
     TELECINE,
-    "deploy/resources/queues/scheduler-go.ts"
+    "deploy/resources/queues/scheduler-go.ts",
   );
   const schedulerInfo = parseCloudRunService(schedulerPath, workerResources);
   if (schedulerInfo) {
@@ -387,7 +388,7 @@ function telecine() {
 
 function parsePackages(): { name: string; version: string }[] {
   const rootPkg = JSON.parse(
-    fs.readFileSync(path.join(ELEMENTS, "package.json"), "utf-8")
+    fs.readFileSync(path.join(ELEMENTS, "package.json"), "utf-8"),
   );
   const workspaceGlobs: string[] = rootPkg.workspaces ?? [];
 
@@ -414,7 +415,7 @@ function parsePackages(): { name: string; version: string }[] {
 function parseReleasePipeline(): string[] {
   const file = fs.readFileSync(
     path.join(ELEMENTS, "scripts/prepare-release"),
-    "utf-8"
+    "utf-8",
   );
 
   const steps: string[] = [];
@@ -439,9 +440,7 @@ function parseReleasePipeline(): string[] {
 
     // Extract the meaningful command
     // Pattern: "${SCRIPT_DIR}"/command args...
-    const scriptDirMatch = trimmed.match(
-      /"\$\{SCRIPT_DIR\}"\/(\S+)\s*(.*)/
-    );
+    const scriptDirMatch = trimmed.match(/"\$\{SCRIPT_DIR\}"\/(\S+)\s*(.*)/);
     if (scriptDirMatch) {
       const [, command, args] = scriptDirMatch;
       const fullCmd = args ? `${command} ${args}` : command;
@@ -461,7 +460,7 @@ function parseReleasePipeline(): string[] {
 
     // VITEST_BROWSER_MODE=connect pattern
     const envPrefixMatch = trimmed.match(
-      /\w+=\w+\s+"\$\{SCRIPT_DIR\}"\/(\S+)\s*(.*)/
+      /\w+=\w+\s+"\$\{SCRIPT_DIR\}"\/(\S+)\s*(.*)/,
     );
     if (envPrefixMatch) {
       const [, command, args] = envPrefixMatch;
@@ -493,7 +492,9 @@ function elements() {
 
   section("CI/CD Trigger");
   print("Triggered by: pushing any git tag");
-  print("Beta tags (containing 'beta'): skip typecheck + tests, publish with --tag beta");
+  print(
+    "Beta tags (containing 'beta'): skip typecheck + tests, publish with --tag beta",
+  );
   print("Release tags: full validation, publish with --tag latest");
   print("Workflow: elements/.github/workflows/release.yaml");
 

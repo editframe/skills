@@ -96,8 +96,7 @@ export function SharedResourceIndexWrapper<
       buildRowURL,
       count,
       emptyResultMessage: String(resourceType),
-      columns: resourceModules[resourceType].index
-        .columns as unknown as Array<{
+      columns: resourceModules[resourceType].index.columns as unknown as Array<{
         name: string;
         content: React.ComponentType<{ id: string; record: unknown }>;
       }>,

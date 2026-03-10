@@ -93,10 +93,7 @@ const TEST_SEGMENTS: JitTestSegment[] = [
 ];
 
 const OUTPUT_DIR = path.join(process.cwd(), "test-assets", "jit-segments");
-const SOURCE_VIDEO_DIR = path.join(
-  process.cwd(),
-  "../../lib/transcode/test-assets/transcode",
-);
+const SOURCE_VIDEO_DIR = path.join(process.cwd(), "../../lib/transcode/test-assets/transcode");
 
 /**
  * Generate a test source video if it doesn't exist
@@ -168,21 +165,14 @@ async function generateSourceVideo(): Promise<string> {
 /**
  * Generate a single JIT transcoded segment
  */
-async function generateSegment(
-  sourceVideoPath: string,
-  segment: JitTestSegment,
-): Promise<void> {
+async function generateSegment(sourceVideoPath: string, segment: JitTestSegment): Promise<void> {
   const outputPath = path.join(OUTPUT_DIR, segment.filename);
   const preset = QUALITY_PRESETS[segment.quality];
 
   console.log(`🎬 Generating: ${segment.filename}`);
   console.log(`   Source: ${sourceVideoPath}`);
-  console.log(
-    `   Time: ${segment.startTimeMs}ms - ${segment.startTimeMs + segment.durationMs}ms`,
-  );
-  console.log(
-    `   Quality: ${segment.quality} (${preset.width}x${preset.height})`,
-  );
+  console.log(`   Time: ${segment.startTimeMs}ms - ${segment.startTimeMs + segment.durationMs}ms`);
+  console.log(`   Quality: ${segment.quality} (${preset.width}x${preset.height})`);
 
   try {
     const result = await transcodeVideoSegment({
@@ -207,9 +197,7 @@ async function generateSegment(
     const sizeMB = (result.outputData.length / (1024 * 1024)).toFixed(2);
     console.log(`   ✅ Generated: ${sizeMB}MB`);
   } catch (error) {
-    console.error(
-      `   ❌ Failed: ${error instanceof Error ? error.message : String(error)}`,
-    );
+    console.error(`   ❌ Failed: ${error instanceof Error ? error.message : String(error)}`);
     throw error;
   }
 }

@@ -23,9 +23,7 @@ export async function renderTemporalAudio(
   const contextSize = alignedFrames * 1024;
 
   if (contextSize <= 0) {
-    throw new Error(
-      `Duration must be greater than 0 when rendering audio. ${contextSize}ms`,
-    );
+    throw new Error(`Duration must be greater than 0 when rendering audio. ${contextSize}ms`);
   }
 
   // Check abort before starting
@@ -58,9 +56,7 @@ export async function renderTemporalAudio(
       const mediaEndsAfterStart = mediaElement.endTimeMs >= fromMs;
       const mediaOverlaps = mediaStartsBeforeEnd && mediaEndsAfterStart;
       if (!mediaOverlaps) {
-        logger.debug(
-          `[renderTemporalAudio] ${mediaElement.tagName} does not overlap`,
-        );
+        logger.debug(`[renderTemporalAudio] ${mediaElement.tagName} does not overlap`);
         return;
       }
 
@@ -74,8 +70,7 @@ export async function renderTemporalAudio(
         return;
       }
 
-      const sourceInMs =
-        mediaElement.sourceInMs || mediaElement.trimStartMs || 0;
+      const sourceInMs = mediaElement.sourceInMs || mediaElement.trimStartMs || 0;
       const mediaSourceFromMs = mediaLocalFromMs + sourceInMs;
       const mediaSourceToMs = mediaLocalToMs + sourceInMs;
 
@@ -91,9 +86,7 @@ export async function renderTemporalAudio(
         signal,
       );
       if (!audio) {
-        logger.debug(
-          `[renderTemporalAudio] No audio returned for ${mediaElement.tagName}`,
-        );
+        logger.debug(`[renderTemporalAudio] No audio returned for ${mediaElement.tagName}`);
         return;
       }
       logger.debug(
@@ -136,20 +129,13 @@ export async function renderTemporalAudio(
 
       const requestedDurationMs = mediaSourceToMs - mediaSourceFromMs;
       const availableAudioMs = audio.endMs - audio.startMs;
-      const actualDurationMs = Math.min(
-        requestedDurationMs,
-        availableAudioMs - safeOffsetMs,
-      );
+      const actualDurationMs = Math.min(requestedDurationMs, availableAudioMs - safeOffsetMs);
 
       if (actualDurationMs <= 0) {
         return;
       }
 
-      bufferSource.start(
-        ctxStartMs / 1000,
-        safeOffsetMs / 1000,
-        actualDurationMs / 1000,
-      );
+      bufferSource.start(ctxStartMs / 1000, safeOffsetMs / 1000, actualDurationMs / 1000);
     }),
   );
 

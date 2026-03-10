@@ -15,14 +15,8 @@ import {
 
 import { quantizeToFrameTimeMs } from "../../../utils/frameTime.js";
 import { TWMixin } from "../../TWMixin.js";
-import {
-  timelineStateContext,
-  type TimelineState,
-} from "../timelineStateContext.js";
-import {
-  previewSettingsContext,
-  type PreviewSettings,
-} from "../../previewSettingsContext.js";
+import { timelineStateContext, type TimelineState } from "../timelineStateContext.js";
+import { previewSettingsContext, type PreviewSettings } from "../../previewSettingsContext.js";
 
 /** Padding for virtual rendering */
 const VIRTUAL_RENDER_PADDING_PX = 100;
@@ -247,9 +241,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     const element = this.targetElement;
     if (!element) return 0;
     if (this.useIntrinsicDuration) {
-      return (
-        (element as any).intrinsicDurationMs ?? (element as any).durationMs ?? 0
-      );
+      return (element as any).intrinsicDurationMs ?? (element as any).durationMs ?? 0;
     }
     return (element as any).durationMs ?? 0;
   }
@@ -296,9 +288,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     this.#resizeObserver = null;
   }
 
-  protected willUpdate(
-    changedProperties: Map<string | number | symbol, unknown>,
-  ): void {
+  protected willUpdate(changedProperties: Map<string | number | symbol, unknown>): void {
     super.willUpdate(changedProperties);
 
     // Create TargetController if target is set and targetElement is not directly set
@@ -309,18 +299,13 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     }
 
     // Recalculate thumbnail dimensions if target changed
-    if (
-      changedProperties.has("targetElement") ||
-      changedProperties.has("thumbnailHeight")
-    ) {
+    if (changedProperties.has("targetElement") || changedProperties.has("thumbnailHeight")) {
       this.thumbnailDimensions = this.#calculateThumbnailDimensions();
     }
 
     // Manage event listeners when target changes
     if (changedProperties.has("targetElement")) {
-      const oldTarget = changedProperties.get(
-        "targetElement",
-      ) as Element | null;
+      const oldTarget = changedProperties.get("targetElement") as Element | null;
       this.#detachTargetListeners(oldTarget);
       this.#attachTargetListeners(this.targetElement);
     }
@@ -352,17 +337,11 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   #detachTargetListeners(target: Element | null): void {
     if (!target) return;
     if (this.#targetReadyStateHandler) {
-      target.removeEventListener(
-        "readystatechange",
-        this.#targetReadyStateHandler,
-      );
+      target.removeEventListener("readystatechange", this.#targetReadyStateHandler);
       this.#targetReadyStateHandler = null;
     }
     if (this.#targetContentChangeHandler) {
-      target.removeEventListener(
-        "contentchange",
-        this.#targetContentChangeHandler,
-      );
+      target.removeEventListener("contentchange", this.#targetContentChangeHandler);
       this.#targetContentChangeHandler = null;
     }
   }
@@ -414,8 +393,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     if (!element) return [];
 
     const scrollLeft = this.#timelineState?.viewportScrollLeft ?? 0;
-    const viewportWidth =
-      this.#timelineState?.viewportWidth ?? (this.#hostWidth || 800);
+    const viewportWidth = this.#timelineState?.viewportWidth ?? (this.#hostWidth || 800);
     const pixelsPerMs = this.#effectivePixelsPerMs;
 
     const durationMs = this.#effectiveDurationMs;
@@ -433,17 +411,12 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     const { width, height } = this.#thumbnailDimensions;
 
     // Read minimum gap from CSS variable (--ef-thumbnail-gap, default 2px)
-    const gapPx =
-      parseFloat(
-        getComputedStyle(this).getPropertyValue("--ef-thumbnail-gap"),
-      ) || 2;
+    const gapPx = parseFloat(getComputedStyle(this).getPropertyValue("--ef-thumbnail-gap")) || 2;
     // Stride must be at least thumbnail width + gap to prevent overlap
     const thumbnailStride = Math.max(this.thumbnailSpacingPx, width + gapPx);
 
     // Detect zoom by checking if pixelsPerMs changed
-    const isZoom =
-      this.#previousPixelsPerMs !== null &&
-      this.#previousPixelsPerMs !== pixelsPerMs;
+    const isZoom = this.#previousPixelsPerMs !== null && this.#previousPixelsPerMs !== pixelsPerMs;
 
     if (this.#previousPixelsPerMs === null) {
       // First render: align grid to track start (t=0)
@@ -467,9 +440,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       0,
       Math.floor((visibleStartPx - this.#thumbnailPhase) / thumbnailStride),
     );
-    const endIndex = Math.ceil(
-      (visibleEndPx - this.#thumbnailPhase) / thumbnailStride,
-    );
+    const endIndex = Math.ceil((visibleEndPx - this.#thumbnailPhase) / thumbnailStride);
 
     for (let i = startIndex; i <= endIndex; i++) {
       const thumbX = this.#thumbnailPhase + i * thumbnailStride;
@@ -575,10 +546,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   /**
    * Update video thumbnail capture
    */
-  async #updateVideoCapture(
-    timestamps: number[],
-    signal: AbortSignal,
-  ): Promise<void> {
+  async #updateVideoCapture(timestamps: number[], signal: AbortSignal): Promise<void> {
     const video = this.targetElement as EFVideo;
     if (!video) return;
 
@@ -625,9 +593,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     if (!timegroup) return;
 
     // Filter out cached timestamps
-    const uncached = timestamps
-      .filter((t) => !this.#thumbnailCache.has(t))
-      .sort((a, b) => a - b);
+    const uncached = timestamps.filter((t) => !this.#thumbnailCache.has(t)).sort((a, b) => a - b);
     if (uncached.length === 0) {
       return;
     }
@@ -711,10 +677,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   /**
    * Start timegroup thumbnail generator
    */
-  async #startTimegroupGenerator(
-    timegroup: EFTimegroup,
-    timestamps: number[],
-  ): Promise<void> {
+  async #startTimegroupGenerator(timegroup: EFTimegroup, timestamps: number[]): Promise<void> {
     // Create render clone
     this.#timegroupClone = await timegroup.createRenderClone();
 
@@ -735,8 +698,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
     await Promise.all(updatePromises);
 
     // Wait AGAIN specifically for text segments (they may need to re-render after move)
-    const textSegments =
-      this.#previewContainer.querySelectorAll("ef-text-segment");
+    const textSegments = this.#previewContainer.querySelectorAll("ef-text-segment");
     const textUpdatePromises: Promise<any>[] = [];
     for (const seg of textSegments) {
       if ("updateComplete" in seg) {
@@ -883,10 +845,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
   /**
    * Draw thumbnails to canvas elements
    */
-  #drawThumbnails(
-    thumbnails: ThumbnailDescriptor[],
-    results: ThumbnailResult[],
-  ): void {
+  #drawThumbnails(thumbnails: ThumbnailDescriptor[], results: ThumbnailResult[]): void {
     const container = this.#canvasContainer.value;
     if (!container) return;
 
@@ -927,16 +886,14 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
       } else {
         // Draw placeholder with timestamp text
         const bgColor =
-          getComputedStyle(this)
-            .getPropertyValue("--ef-color-bg-inset")
-            .trim() || "rgba(100, 100, 100, 0.3)";
+          getComputedStyle(this).getPropertyValue("--ef-color-bg-inset").trim() ||
+          "rgba(100, 100, 100, 0.3)";
         ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, thumbnail.width, thumbnail.height);
 
         const borderColor =
-          getComputedStyle(this)
-            .getPropertyValue("--ef-color-border-subtle")
-            .trim() || "rgba(150, 150, 150, 0.5)";
+          getComputedStyle(this).getPropertyValue("--ef-color-border-subtle").trim() ||
+          "rgba(150, 150, 150, 0.5)";
         ctx.strokeStyle = borderColor;
         ctx.lineWidth = 1;
         ctx.strokeRect(0, 0, thumbnail.width, thumbnail.height);
@@ -971,8 +928,7 @@ export class EFThumbnailStrip extends TWMixin(LitElement) {
 
     // Error: Invalid target type
     if (!this.isValidTarget) {
-      const elementType =
-        (this.targetElement as any).tagName?.toLowerCase() || "unknown";
+      const elementType = (this.targetElement as any).tagName?.toLowerCase() || "unknown";
       return html`<div class="error-message">
         Invalid target: "${elementType}" must be ef-video or root ef-timegroup
       </div>`;

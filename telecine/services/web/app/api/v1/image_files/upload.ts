@@ -29,7 +29,11 @@ export const loader = async ({ params: { id }, context }: Route.LoaderArgs) => {
   return Response.json({}, { status: 202 });
 };
 
-export const action = async ({ params, request, context }: Route.ActionArgs) => {
+export const action = async ({
+  params,
+  request,
+  context,
+}: Route.ActionArgs) => {
   const session = context.get(apiIdentityContext);
   const imageFile = await requireQueryAs(
     session,

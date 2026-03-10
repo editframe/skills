@@ -103,9 +103,7 @@ export class WorkerPool {
       }
     }
     if (this.workers.length === 0) {
-      logger.error(
-        `[WorkerPool] Failed to create any workers. URL: ${this.workerUrl}`,
-      );
+      logger.error(`[WorkerPool] Failed to create any workers. URL: ${this.workerUrl}`);
       logger.error(`[WorkerPool] Browser support check:`, {
         Worker: typeof Worker !== "undefined",
         OffscreenCanvas: typeof OffscreenCanvas !== "undefined",
@@ -125,9 +123,7 @@ export class WorkerPool {
    * Check if workers are available and initialized.
    */
   isAvailable(): boolean {
-    return (
-      this.hasBrowserSupport() && this.workers.length > 0 && !this.isTerminated
-    );
+    return this.hasBrowserSupport() && this.workers.length > 0 && !this.isTerminated;
   }
 
   /**

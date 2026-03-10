@@ -32,9 +32,7 @@ describe("EFOverlayLayer", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    const overlayLayer = document.createElement(
-      "ef-overlay-layer",
-    ) as EFOverlayLayer;
+    const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
     overlayLayer.panZoomTransform = { x: 100, y: 200, scale: 1.5 };
     document.body.appendChild(overlayLayer);
     testElements.push(overlayLayer);
@@ -51,9 +49,7 @@ describe("EFOverlayLayer", () => {
   });
 
   test("overlay layer updates transform when PanZoom changes", async () => {
-    const overlayLayer = document.createElement(
-      "ef-overlay-layer",
-    ) as EFOverlayLayer;
+    const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
     overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 1 };
     document.body.appendChild(overlayLayer);
     testElements.push(overlayLayer);
@@ -72,9 +68,7 @@ describe("EFOverlayLayer", () => {
   });
 
   test.skip("overlay layer provides coordinate space to children via getBoundingClientRect", async () => {
-    const overlayLayer = document.createElement(
-      "ef-overlay-layer",
-    ) as EFOverlayLayer;
+    const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
     overlayLayer.panZoomTransform = { x: 50, y: 75, scale: 1 };
     overlayLayer.style.position = "absolute";
     overlayLayer.style.left = "0px";
@@ -96,9 +90,7 @@ describe("EFOverlayLayer", () => {
   });
 
   test("overlay layer transform updates when panZoomTransform prop changes", async () => {
-    const overlayLayer = document.createElement(
-      "ef-overlay-layer",
-    ) as EFOverlayLayer;
+    const overlayLayer = document.createElement("ef-overlay-layer") as EFOverlayLayer;
     overlayLayer.panZoomTransform = { x: 0, y: 0, scale: 1 };
     overlayLayer.style.position = "absolute";
     overlayLayer.style.left = "0px";

@@ -1,4 +1,9 @@
-import { chromium, type Browser, type BrowserContext, type Page } from "playwright";
+import {
+  chromium,
+  type Browser,
+  type BrowserContext,
+  type Page,
+} from "playwright";
 import { expect as playwrightExpect } from "@playwright/test";
 
 playwrightExpect.configure({ timeout: 30_000 });
@@ -20,8 +25,7 @@ import { v4 } from "uuid";
 
 export { playwrightExpect, deleteEmailsForAddress };
 
-export const BASE_URL =
-  process.env.PLAYWRIGHT_WEB_HOST || "http://web:3000";
+export const BASE_URL = process.env.PLAYWRIGHT_WEB_HOST || "http://web:3000";
 
 let browser: Browser;
 
@@ -61,9 +65,7 @@ export function setupBrowser() {
   });
 }
 
-export async function signInAs(
-  user: Selectable<IdentityEmailPasswords>,
-) {
+export async function signInAs(user: Selectable<IdentityEmailPasswords>) {
   await signInAsEmailAddressImpl(state.context, user.email_address);
 }
 
@@ -135,9 +137,7 @@ export interface OrgFixture extends Selectable<IdentityOrgs> {
   readers: UserFixture[];
 }
 
-export async function createOrgFixture(
-  prefix = "org",
-): Promise<OrgFixture> {
+export async function createOrgFixture(prefix = "org"): Promise<OrgFixture> {
   const primary = await createUniqueUser(`${prefix}-admin`);
   const editor = await createUniqueUser(`${prefix}-editor`);
   const reader = await createUniqueUser(`${prefix}-reader`);

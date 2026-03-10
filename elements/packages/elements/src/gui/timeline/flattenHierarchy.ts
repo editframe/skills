@@ -1,7 +1,4 @@
-import {
-  isEFTemporal,
-  type TemporalMixinInterface,
-} from "../../elements/EFTemporal.js";
+import { isEFTemporal, type TemporalMixinInterface } from "../../elements/EFTemporal.js";
 import { EFTimegroup } from "../../elements/EFTimegroup.js";
 
 export interface TimelineRowModel {
@@ -44,12 +41,7 @@ export function flattenHierarchy(
           continue;
         }
 
-        rows.push(
-          ...flattenHierarchy(
-            child as TemporalMixinInterface & Element,
-            startDepth + 1,
-          ),
-        );
+        rows.push(...flattenHierarchy(child as TemporalMixinInterface & Element, startDepth + 1));
       }
     }
   }

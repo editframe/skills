@@ -79,14 +79,10 @@ export class EFOverlayLayer extends LitElement {
     }
 
     // 2. Read directly from sibling PanZoom element
-    const panZoomElement = this.parentElement?.querySelector(
-      "ef-pan-zoom",
-    ) as any;
+    const panZoomElement = this.parentElement?.querySelector("ef-pan-zoom") as any;
     if (panZoomElement && typeof panZoomElement.x === "number") {
-      const contentWrapper =
-        panZoomElement.shadowRoot?.querySelector(".content-wrapper");
-      const computedTransform =
-        contentWrapper && window.getComputedStyle(contentWrapper).transform;
+      const contentWrapper = panZoomElement.shadowRoot?.querySelector(".content-wrapper");
+      const computedTransform = contentWrapper && window.getComputedStyle(contentWrapper).transform;
 
       // Parse scale from matrix(scaleX, skewY, skewX, scaleY, tx, ty)
       const matrixMatch = computedTransform?.match(/matrix\(([^)]+)\)/);

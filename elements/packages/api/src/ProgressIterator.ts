@@ -1,8 +1,4 @@
-import type {
-  CompleteEvent,
-  ProgressEvent,
-  StreamEventSource,
-} from "./StreamEventSource.js";
+import type { CompleteEvent, ProgressEvent, StreamEventSource } from "./StreamEventSource.js";
 
 const promiseWithResolvers = <T>() => {
   if (typeof Promise.withResolvers === "function") {
@@ -18,9 +14,7 @@ const promiseWithResolvers = <T>() => {
   return { promise, resolve, reject };
 };
 
-abstract class BaseEventIterator<
-  T extends CompleteEvent | any,
-> implements AsyncIterable<T> {
+abstract class BaseEventIterator<T extends CompleteEvent | any> implements AsyncIterable<T> {
   protected eventSource: StreamEventSource;
   protected queue: T[] = [];
   protected index = 0;
@@ -37,10 +31,7 @@ abstract class BaseEventIterator<
     return this.queue;
   }
 
-  declare on: (
-    event: "progress",
-    callback: (event: ProgressEvent) => void,
-  ) => this;
+  declare on: (event: "progress", callback: (event: ProgressEvent) => void) => this;
 
   protected push(event: T) {
     this.queue.push(event);
@@ -73,9 +64,7 @@ abstract class BaseEventIterator<
 }
 
 // Progress-only iterator
-export class ProgressIterator extends BaseEventIterator<
-  ProgressEvent | CompleteEvent
-> {
+export class ProgressIterator extends BaseEventIterator<ProgressEvent | CompleteEvent> {
   constructor(eventSource: StreamEventSource) {
     super(eventSource);
     this.initializeListeners();
@@ -99,9 +88,7 @@ export class ProgressIterator extends BaseEventIterator<
 }
 
 // Size and Completion iterator
-export class CompletionIterator extends BaseEventIterator<
-  CompleteEvent | ProgressEvent
-> {
+export class CompletionIterator extends BaseEventIterator<CompleteEvent | ProgressEvent> {
   private totalSize = 0;
   private currentProgress = 0;
 

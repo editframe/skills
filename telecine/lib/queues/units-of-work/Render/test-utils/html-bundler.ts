@@ -65,7 +65,11 @@ export const getTestRenderDir = (
   const testFileName = path.basename(normalizedPath);
   // Replace .test.ts or .ts with .test.renders
   const rendersDir = testFileName.replace(/\.test\.ts$|\.ts$/, ".test.renders");
-  return path.join(testDir, rendersDir, `${titleSlug}-${templateHash.slice(0, 8)}`);
+  return path.join(
+    testDir,
+    rendersDir,
+    `${titleSlug}-${templateHash.slice(0, 8)}`,
+  );
 };
 
 /**
@@ -79,10 +83,9 @@ export const bundleTestTemplate = async (
 ): Promise<TestBundleInfo> => {
   return executeSpan("bundleTestTemplate", async () => {
     // Use pre-computed hash if provided (for caching optimization)
-    const templateHash = precomputedHash ?? createHash("sha256")
-      .update(html)
-      .digest("hex")
-      .substring(0, 16);
+    const templateHash =
+      precomputedHash ??
+      createHash("sha256").update(html).digest("hex").substring(0, 16);
 
     let testRenderDir: string;
     if (testFilePath && testTitle) {

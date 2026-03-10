@@ -15,13 +15,8 @@ import type { EFVideo } from "../elements/EFVideo.js";
 /**
  * Check if an element has a renderVersion property.
  */
-function hasRenderVersion(
-  element: Element,
-): element is Element & { renderVersion: number } {
-  return (
-    "renderVersion" in element &&
-    typeof (element as any).renderVersion === "number"
-  );
+function hasRenderVersion(element: Element): element is Element & { renderVersion: number } {
+  return "renderVersion" in element && typeof (element as any).renderVersion === "number";
 }
 
 /**
@@ -195,10 +190,7 @@ export class RenderContext {
    * Get a cached video frame.
    * Returns undefined if not cached.
    */
-  getCachedVideoFrame(
-    videoElement: Element,
-    sourceTimeMs: number,
-  ): CapturedFrame | undefined {
+  getCachedVideoFrame(videoElement: Element, sourceTimeMs: number): CapturedFrame | undefined {
     if (this.#disposed) return undefined;
 
     const key = this.#getVideoFrameCacheKey(videoElement, sourceTimeMs);
@@ -214,11 +206,7 @@ export class RenderContext {
   /**
    * Cache a video frame.
    */
-  setCachedVideoFrame(
-    videoElement: Element,
-    sourceTimeMs: number,
-    frame: CapturedFrame,
-  ): void {
+  setCachedVideoFrame(videoElement: Element, sourceTimeMs: number, frame: CapturedFrame): void {
     if (this.#disposed) return;
 
     const key = this.#getVideoFrameCacheKey(videoElement, sourceTimeMs);

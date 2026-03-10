@@ -10,9 +10,8 @@ const server = setupServer();
 const client = new Client("ef_TEST_TOKEN", "http://localhost");
 
 const UploadMustContinue = (fileId = "test-file", trackId = 1) =>
-  http.get(
-    `http://localhost/api/v1/isobmff_tracks/${fileId}/${trackId}/upload`,
-    () => HttpResponse.json({}, { status: 202 }),
+  http.get(`http://localhost/api/v1/isobmff_tracks/${fileId}/${trackId}/upload`, () =>
+    HttpResponse.json({}, { status: 202 }),
   );
 
 describe("ISOBMFF Track", () => {
@@ -22,12 +21,8 @@ describe("ISOBMFF Track", () => {
 
   describe("createISOBMFFTrack", () => {
     test("Throws when track is too large", async () => {
-      await expect(
-        createISOBMFFTrack(
-          client,
-          createTestTrack({ byte_size: 1024 * 1024 * 1025 }),
-        ),
-      ).rejects.toThrowErrorMatchingInlineSnapshot(`
+      await expect(createISOBMFFTrack(client, createTestTrack({ byte_size: 1024 * 1024 * 1025 })))
+        .rejects.toThrowErrorMatchingInlineSnapshot(`
         [ZodError: [
           {
             "code": "too_big",
@@ -51,9 +46,7 @@ describe("ISOBMFF Track", () => {
         ),
       );
 
-      await expect(
-        createISOBMFFTrack(client, createTestTrack()),
-      ).rejects.toThrowError(
+      await expect(createISOBMFFTrack(client, createTestTrack())).rejects.toThrowError(
         "Failed to create isobmff track 500 Internal Server Error",
       );
     });
@@ -61,10 +54,7 @@ describe("ISOBMFF Track", () => {
     test("Returns json data from the http response", async () => {
       server.use(
         http.post("http://localhost/api/v1/isobmff_tracks", () =>
-          HttpResponse.json(
-            { testResponse: "test" },
-            { status: 200, statusText: "OK" },
-          ),
+          HttpResponse.json({ testResponse: "test" }, { status: 200, statusText: "OK" }),
         ),
       );
 
@@ -81,9 +71,8 @@ describe("ISOBMFF Track", () => {
     test("Throws when server returns an error", async () => {
       server.use(
         UploadMustContinue("test-file", 1),
-        http.post(
-          "http://localhost/api/v1/isobmff_tracks/test-file/1/upload",
-          () => HttpResponse.text("Internal Server Error", { status: 500 }),
+        http.post("http://localhost/api/v1/isobmff_tracks/test-file/1/upload", () =>
+          HttpResponse.text("Internal Server Error", { status: 500 }),
         ),
       );
 
@@ -103,9 +92,8 @@ describe("ISOBMFF Track", () => {
     test("Succeeds when server returns a success", async () => {
       server.use(
         UploadMustContinue("test-file", 1),
-        http.post(
-          "http://localhost/api/v1/isobmff_tracks/test-file/1/upload",
-          () => HttpResponse.json({}, { status: 201 }),
+        http.post("http://localhost/api/v1/isobmff_tracks/test-file/1/upload", () =>
+          HttpResponse.json({}, { status: 201 }),
         ),
       );
 

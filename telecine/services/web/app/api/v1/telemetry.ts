@@ -44,17 +44,18 @@ function parsePayload(raw: unknown): TelemetryPayload {
     if (!VALID_EVENT_TYPES.includes(rawEventType as EventType)) {
       throw new Response(
         `event_type must be one of: ${VALID_EVENT_TYPES.join(", ")}`,
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
     event_type = rawEventType as EventType;
   } else if (rawRenderPath !== undefined) {
     event_type = "render";
   } else {
-    throw new Response(
-      "event_type or render_path is required",
-      { status: 400 },
-    );
+    throw new Response("event_type or render_path is required", {
+      status: 400,
+    });
   }
 
   // Validate render_path when provided
@@ -63,7 +64,9 @@ function parsePayload(raw: unknown): TelemetryPayload {
     if (!VALID_RENDER_PATHS.includes(rawRenderPath as RenderPath)) {
       throw new Response(
         `render_path must be one of: ${VALID_RENDER_PATHS.join(", ")}`,
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
     render_path = rawRenderPath as RenderPath;
@@ -72,7 +75,8 @@ function parsePayload(raw: unknown): TelemetryPayload {
   return {
     event_type,
     render_path,
-    duration_ms: typeof obj["duration_ms"] === "number" ? obj["duration_ms"] : undefined,
+    duration_ms:
+      typeof obj["duration_ms"] === "number" ? obj["duration_ms"] : undefined,
     width: typeof obj["width"] === "number" ? obj["width"] : undefined,
     height: typeof obj["height"] === "number" ? obj["height"] : undefined,
     fps: typeof obj["fps"] === "number" ? obj["fps"] : undefined,
@@ -80,8 +84,10 @@ function parsePayload(raw: unknown): TelemetryPayload {
       typeof obj["feature_usage"] === "object" && obj["feature_usage"] !== null
         ? (obj["feature_usage"] as Record<string, unknown>)
         : undefined,
-    sdk_version: typeof obj["sdk_version"] === "string" ? obj["sdk_version"] : undefined,
-    cli_version: typeof obj["cli_version"] === "string" ? obj["cli_version"] : undefined,
+    sdk_version:
+      typeof obj["sdk_version"] === "string" ? obj["sdk_version"] : undefined,
+    cli_version:
+      typeof obj["cli_version"] === "string" ? obj["cli_version"] : undefined,
   };
 }
 

@@ -16,7 +16,14 @@
  * - Conditional sections: <!-- html-only -->, <!-- react-only -->, <!-- shared -->
  */
 
-import { readFileSync, writeFileSync, readdirSync, statSync, mkdirSync, existsSync } from "node:fs";
+import {
+  readFileSync,
+  writeFileSync,
+  readdirSync,
+  statSync,
+  mkdirSync,
+  existsSync,
+} from "node:fs";
 import { join } from "node:path";
 
 function parseYaml(yaml: string): any {
@@ -191,16 +198,22 @@ function apiToProse(api: ApiMetadata): string {
     sections.push("## Attributes\n");
     for (const attr of api.attributes) {
       const required = attr.required ? " (required)" : "";
-      const defaultVal = attr.default !== undefined ? `, default: ${attr.default}` : "";
-      sections.push(`- **${attr.name}** (${attr.type}${defaultVal})${required} - ${attr.description}`);
+      const defaultVal =
+        attr.default !== undefined ? `, default: ${attr.default}` : "";
+      sections.push(
+        `- **${attr.name}** (${attr.type}${defaultVal})${required} - ${attr.description}`,
+      );
     }
   }
 
   if (api.properties && api.properties.length > 0) {
     sections.push("\n## Properties\n");
     for (const prop of api.properties) {
-      const defaultVal = prop.default !== undefined ? `, default: ${prop.default}` : "";
-      sections.push(`- **${prop.name}** (${prop.type}${defaultVal}) - ${prop.description}`);
+      const defaultVal =
+        prop.default !== undefined ? `, default: ${prop.default}` : "";
+      sections.push(
+        `- **${prop.name}** (${prop.type}${defaultVal}) - ${prop.description}`,
+      );
     }
   }
 
@@ -265,7 +278,10 @@ function generateSkillFile(sourcePath: string, outputPath: string) {
   let body = parsed.body;
 
   // Strip conditional markers but keep all content (both HTML and React variants)
-  body = body.replace(/<!-- (?:html-only|react-only|shared|\/html-only|\/react-only|\/shared) -->\n?/g, "");
+  body = body.replace(
+    /<!-- (?:html-only|react-only|shared|\/html-only|\/react-only|\/shared) -->\n?/g,
+    "",
+  );
   body = body.replace(/\n{3,}/g, "\n\n");
 
   // If API metadata exists, convert to prose and inject after h1
@@ -275,7 +291,12 @@ function generateSkillFile(sourcePath: string, outputPath: string) {
     const h1Match = body.match(/^# .+$/m);
     if (h1Match && h1Match.index !== undefined) {
       const afterH1 = h1Match.index + h1Match[0].length;
-      body = body.substring(0, afterH1) + "\n\n" + apiProse + "\n" + body.substring(afterH1);
+      body =
+        body.substring(0, afterH1) +
+        "\n\n" +
+        apiProse +
+        "\n" +
+        body.substring(afterH1);
     }
   }
 
@@ -290,16 +311,24 @@ function generateSkillFile(sourcePath: string, outputPath: string) {
   const rt = roundTrip.attributes;
   const errors: string[] = [];
 
-  if (llmFrontmatter.name !== undefined && rt.name !== String(llmFrontmatter.name)) {
+  if (
+    llmFrontmatter.name !== undefined &&
+    rt.name !== String(llmFrontmatter.name)
+  ) {
     errors.push(`name: expected "${llmFrontmatter.name}", got "${rt.name}"`);
   }
-  if (llmFrontmatter.description !== undefined && rt.description !== String(llmFrontmatter.description)) {
+  if (
+    llmFrontmatter.description !== undefined &&
+    rt.description !== String(llmFrontmatter.description)
+  ) {
     errors.push(`description: round-trip mismatch`);
   }
   if (llmFrontmatter.metadata) {
     for (const [k, v] of Object.entries(llmFrontmatter.metadata)) {
       if (String(v) !== String(rt.metadata?.[k])) {
-        errors.push(`metadata.${k}: expected "${v}", got "${rt.metadata?.[k]}"`);
+        errors.push(
+          `metadata.${k}: expected "${v}", got "${rt.metadata?.[k]}"`,
+        );
       }
     }
   }
@@ -355,7 +384,9 @@ console.log(`Output: ${outputDir}`);
 generateSkillsRecursive(sourceDir, outputDir);
 
 if (validationErrors.length > 0) {
-  console.error(`\nFAILED: ${validationErrors.length} file(s) have invalid frontmatter after generation.`);
+  console.error(
+    `\nFAILED: ${validationErrors.length} file(s) have invalid frontmatter after generation.`,
+  );
   process.exit(1);
 }
 

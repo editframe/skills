@@ -17,7 +17,7 @@
  *   --headless         Run in headless mode (default: false)
  */
 
-import { chromium, type Browser, type Page } from "playwright";
+import { chromium, type Browser } from "playwright";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -106,10 +106,6 @@ async function main() {
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  const events: FrameDisplayEvent[] = [];
-  let lastDisplayedTime: number | null = null;
-  let lastDisplayedTimestamp: number | null = null;
-
   // Track video frame displays by intercepting canvas drawImage calls
   await page.addInitScript(() => {
     // Track when video frames are painted to canvas
@@ -121,11 +117,8 @@ async function main() {
         // Check multiple ways to detect VideoFrame
         const isVideoFrame =
           firstArg.constructor?.name === "VideoFrame" ||
-          (firstArg.timestamp !== undefined &&
-            firstArg.codedWidth !== undefined) ||
-          (typeof firstArg === "object" &&
-            "timestamp" in firstArg &&
-            "format" in firstArg);
+          (firstArg.timestamp !== undefined && firstArg.codedWidth !== undefined) ||
+          (typeof firstArg === "object" && "timestamp" in firstArg && "format" in firstArg);
 
         if (isVideoFrame) {
           const videoFrame = firstArg as VideoFrame;
@@ -133,8 +126,7 @@ async function main() {
           const now = performance.now();
 
           // Store frame display event with canvas element info
-          (window as any).__frameDisplayEvents =
-            (window as any).__frameDisplayEvents || [];
+          (window as any).__frameDisplayEvents = (window as any).__frameDisplayEvents || [];
           (window as any).__frameDisplayEvents.push({
             timestamp: now,
             videoFrameTimestamp: timestamp,
@@ -154,8 +146,7 @@ async function main() {
       (window as any).EFVideo.prototype.paint = function (...args: any[]) {
         const seekToMs = args[0] || 0;
         const now = performance.now();
-        (window as any).__frameDisplayEvents =
-          (window as any).__frameDisplayEvents || [];
+        (window as any).__frameDisplayEvents = (window as any).__frameDisplayEvents || [];
         (window as any).__frameDisplayEvents.push({
           timestamp: now,
           videoFrameTimestamp: seekToMs * 1000,
@@ -239,26 +230,14 @@ async function main() {
           const targetTime = progress * totalDuration;
           const seekTimestamp = performance.now();
 
-          // Get video desired seek times before the seek
-          const videosBefore = Array.from(
-            document.querySelectorAll("ef-video"),
-          ) as any[];
-          const desiredSeekTimesBefore = videosBefore.map(
-            (v) => v.desiredSeekTimeMs || 0,
-          );
-
           timegroup.currentTimeMs = targetTime;
 
           // Wait a bit for the seek to propagate
           await new Promise((resolve) => setTimeout(resolve, 10));
 
           // Get video desired seek times after the seek
-          const videosAfter = Array.from(
-            document.querySelectorAll("ef-video"),
-          ) as any[];
-          const desiredSeekTimesAfter = videosAfter.map(
-            (v) => v.desiredSeekTimeMs || 0,
-          );
+          const videosAfter = Array.from(document.querySelectorAll("ef-video")) as any[];
+          const desiredSeekTimesAfter = videosAfter.map((v) => v.desiredSeekTimeMs || 0);
 
           seekEvents.push({
             timestamp: seekTimestamp,
@@ -276,27 +255,7 @@ async function main() {
     );
 
     const scrubDuration = Date.now() - scrubStartTime;
-    console.log(
-      `⏱️  Scrubbing completed in ${(scrubDuration / 1000).toFixed(2)}s`,
-    );
-
-    // Get frame display events
-    const frameDisplayEvents = await page.evaluate(() => {
-      return (window as any).__frameDisplayEvents || [];
-    });
-
-    // Get final video states (for debugging)
-    const finalVideoStates = await page.evaluate(() => {
-      const timegroup = document.querySelector("ef-timegroup") as any;
-      const videos = Array.from(document.querySelectorAll("ef-video"));
-
-      // Get current state of videos
-      return videos.map((v: any) => ({
-        id: v.id || "unknown",
-        desiredSeekTimeMs: v.desiredSeekTimeMs || 0,
-        unifiedVideoSeekTaskStatus: v.unifiedVideoSeekTask?.status || "unknown",
-      }));
-    });
+    console.log(`⏱️  Scrubbing completed in ${(scrubDuration / 1000).toFixed(2)}s`);
 
     // Wait a bit more to catch any delayed frame displays
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -312,14 +271,12 @@ async function main() {
     // Analyze frame intervals
     const frameIntervals: number[] = [];
     for (let i = 1; i < finalFrameEvents.length; i++) {
-      const interval =
-        finalFrameEvents[i].timestamp - finalFrameEvents[i - 1].timestamp;
+      const interval = finalFrameEvents[i].timestamp - finalFrameEvents[i - 1].timestamp;
       frameIntervals.push(interval);
     }
 
     if (frameIntervals.length > 0) {
-      const avgInterval =
-        frameIntervals.reduce((a, b) => a + b, 0) / frameIntervals.length;
+      const avgInterval = frameIntervals.reduce((a, b) => a + b, 0) / frameIntervals.length;
       const maxInterval = Math.max(...frameIntervals);
       const minInterval = Math.min(...frameIntervals);
 
@@ -330,12 +287,8 @@ async function main() {
       console.log(`     Expected (scrub speed): ${scrubSpeed}ms`);
 
       // Count frames that are displayed within expected time
-      const framesOnTime = frameIntervals.filter(
-        (interval) => interval <= scrubSpeed * 2,
-      ).length;
-      const framesLate = frameIntervals.filter(
-        (interval) => interval > scrubSpeed * 2,
-      ).length;
+      const framesOnTime = frameIntervals.filter((interval) => interval <= scrubSpeed * 2).length;
+      const framesLate = frameIntervals.filter((interval) => interval > scrubSpeed * 2).length;
 
       console.log(`\n   Frame Timing:`);
       console.log(`     On time (≤${scrubSpeed * 2}ms): ${framesOnTime}`);
@@ -347,17 +300,11 @@ async function main() {
     const usedFrames = new Set<number>();
 
     // Sort frame events by timestamp
-    const sortedFrames = [...finalFrameEvents].sort(
-      (a, b) => a.timestamp - b.timestamp,
-    );
+    const sortedFrames = [...finalFrameEvents].sort((a, b) => a.timestamp - b.timestamp);
 
-    console.log(
-      `\n   Debug: ${seekEvents.length} seeks, ${sortedFrames.length} frames`,
-    );
+    console.log(`\n   Debug: ${seekEvents.length} seeks, ${sortedFrames.length} frames`);
     if (seekEvents.length > 0 && sortedFrames.length > 0) {
-      console.log(
-        `   First seek: ${seekEvents[0].seekTimeMs}ms at ${seekEvents[0].timestamp}ms`,
-      );
+      console.log(`   First seek: ${seekEvents[0].seekTimeMs}ms at ${seekEvents[0].timestamp}ms`);
       console.log(
         `   First frame: ${sortedFrames[0].videoFrameTimestampMs}ms at ${sortedFrames[0].timestamp}ms`,
       );
@@ -401,11 +348,7 @@ async function main() {
       }
 
       // Use best match if it's reasonable
-      if (
-        bestMatch &&
-        bestMatch.timeDiff < 500 &&
-        bestMatch.timestampDiff < 3000
-      ) {
+      if (bestMatch && bestMatch.timeDiff < 500 && bestMatch.timestampDiff < 3000) {
         matchingFrame = bestMatch.frame;
         matchingFrameIndex = bestMatch.index;
       }
@@ -430,9 +373,7 @@ async function main() {
       }
     }
 
-    const framesDisplayed = matchedEvents.filter(
-      (e) => e.frameDisplayed,
-    ).length;
+    const framesDisplayed = matchedEvents.filter((e) => e.frameDisplayed).length;
     const framesDropped = matchedEvents.filter((e) => !e.frameDisplayed).length;
 
     console.log(`\n   Frame Display vs Drops:`);
@@ -451,8 +392,7 @@ async function main() {
         .filter((e) => e.seekLatencyMs !== null)
         .map((e) => e.seekLatencyMs!);
 
-      const avgLatency =
-        latencies.reduce((a, b) => a + b, 0) / latencies.length;
+      const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
       const maxLatency = Math.max(...latencies);
       const minLatency = Math.min(...latencies);
 
@@ -508,9 +448,7 @@ async function main() {
       console.log(`\n   Frame Interval Distribution:`);
       for (const [range, count] of Object.entries(intervalsByRange)) {
         const pct = ((count / frameIntervals.length) * 100).toFixed(1);
-        console.log(
-          `     ${range.padEnd(10)}: ${count.toString().padStart(3)} (${pct}%)`,
-        );
+        console.log(`     ${range.padEnd(10)}: ${count.toString().padStart(3)} (${pct}%)`);
       }
     }
 
@@ -523,21 +461,16 @@ async function main() {
         frameIntervals.length > 0
           ? frameIntervals.reduce((a, b) => a + b, 0) / frameIntervals.length
           : 0,
-      maxFrameIntervalMs:
-        frameIntervals.length > 0 ? Math.max(...frameIntervals) : 0,
-      minFrameIntervalMs:
-        frameIntervals.length > 0 ? Math.min(...frameIntervals) : 0,
+      maxFrameIntervalMs: frameIntervals.length > 0 ? Math.max(...frameIntervals) : 0,
+      minFrameIntervalMs: frameIntervals.length > 0 ? Math.min(...frameIntervals) : 0,
       averageSeekLatencyMs:
         matchedEvents.filter((e) => e.seekLatencyMs !== null).length > 0
           ? matchedEvents
               .filter((e) => e.seekLatencyMs !== null)
-              .reduce((sum, e) => sum + (e.seekLatencyMs || 0), 0) /
-            framesDisplayed
+              .reduce((sum, e) => sum + (e.seekLatencyMs || 0), 0) / framesDisplayed
           : 0,
       maxSeekLatencyMs: Math.max(
-        ...matchedEvents
-          .filter((e) => e.seekLatencyMs !== null)
-          .map((e) => e.seekLatencyMs || 0),
+        ...matchedEvents.filter((e) => e.seekLatencyMs !== null).map((e) => e.seekLatencyMs || 0),
       ),
       events: matchedEvents,
     };

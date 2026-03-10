@@ -168,20 +168,21 @@ const spawnElectronBootloader = async (script: string) => {
             env: {
               ...process.env,
               ...(gpuMode
-                // No DISPLAY in GPU mode: ozone-platform=headless bypasses X11.
-                // VK_ICD_FILENAMES restricts the Vulkan loader to ONLY the NVIDIA ICD.
-                // DISABLE_LAYER_NV_OPTIMUS_1 disables the broken NV optimus implicit
-                // layer which fails to resolve vkGetInstanceProcAddr on Cloud Run.
-                // LD_PRELOAD: fake_sysfs_access.so intercepts access("/sys/bus/pci/")
-                // so ANGLE's libpci loader proceeds to dlopen our fake libpci.so.3.
-                ? {
+                ? // No DISPLAY in GPU mode: ozone-platform=headless bypasses X11.
+                  // VK_ICD_FILENAMES restricts the Vulkan loader to ONLY the NVIDIA ICD.
+                  // DISABLE_LAYER_NV_OPTIMUS_1 disables the broken NV optimus implicit
+                  // layer which fails to resolve vkGetInstanceProcAddr on Cloud Run.
+                  // LD_PRELOAD: fake_sysfs_access.so intercepts access("/sys/bus/pci/")
+                  // so ANGLE's libpci loader proceeds to dlopen our fake libpci.so.3.
+                  {
                     EF_GPU_RENDER: "1",
                     __GLX_VENDOR_LIBRARY_NAME: "nvidia",
                     LIBGL_ALWAYS_SOFTWARE: "0",
                     VK_ICD_FILENAMES: "/etc/vulkan/icd.d/nvidia_icd.json",
                     DISABLE_LAYER_NV_OPTIMUS_1: "1",
                     VK_LOADER_DEBUG: "error",
-                    LD_PRELOAD: "/usr/lib/x86_64-linux-gnu/fake_sysfs_access.so",
+                    LD_PRELOAD:
+                      "/usr/lib/x86_64-linux-gnu/fake_sysfs_access.so",
                   }
                 : { DISPLAY: XVFB_DISPLAY }),
               EF_ELECTRON_SCRIPT: script,

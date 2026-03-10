@@ -91,11 +91,7 @@ export class EFResizableBox extends LitElement {
     this.cleanup();
   }
 
-  private handlePointerDown = (
-    e: PointerEvent,
-    mode: "move" | "resize",
-    handle?: ResizeHandle,
-  ) => {
+  private handlePointerDown = (e: PointerEvent, mode: "move" | "resize", handle?: ResizeHandle) => {
     e.preventDefault();
     e.stopPropagation();
     this.isDragging = true;
@@ -164,14 +160,8 @@ export class EFResizableBox extends LitElement {
         newHeight = this.resizeStartSize.height - deltaY;
       }
 
-      newWidth = Math.max(
-        this.minSize,
-        Math.min(this.containerWidth - this.bounds.x, newWidth),
-      );
-      newHeight = Math.max(
-        this.minSize,
-        Math.min(this.containerHeight - this.bounds.y, newHeight),
-      );
+      newWidth = Math.max(this.minSize, Math.min(this.containerWidth - this.bounds.x, newWidth));
+      newHeight = Math.max(this.minSize, Math.min(this.containerHeight - this.bounds.y, newHeight));
 
       const newOppositeCorner = getCornerPoint(
         this.resizeStartPosition.x,
@@ -188,17 +178,11 @@ export class EFResizableBox extends LitElement {
 
       const newX = Math.max(
         0,
-        Math.min(
-          this.containerWidth - newWidth,
-          this.resizeStartPosition.x + offsetX,
-        ),
+        Math.min(this.containerWidth - newWidth, this.resizeStartPosition.x + offsetX),
       );
       const newY = Math.max(
         0,
-        Math.min(
-          this.containerHeight - newHeight,
-          this.resizeStartPosition.y + offsetY,
-        ),
+        Math.min(this.containerHeight - newHeight, this.resizeStartPosition.y + offsetY),
       );
 
       this.bounds = {
@@ -210,17 +194,11 @@ export class EFResizableBox extends LitElement {
     } else {
       const constrainedX = Math.max(
         0,
-        Math.min(
-          this.containerWidth - this.bounds.width,
-          this.dragStartPosition.x + deltaX,
-        ),
+        Math.min(this.containerWidth - this.bounds.width, this.dragStartPosition.x + deltaX),
       );
       const constrainedY = Math.max(
         0,
-        Math.min(
-          this.containerHeight - this.bounds.height,
-          this.dragStartPosition.y + deltaY,
-        ),
+        Math.min(this.containerHeight - this.bounds.height, this.dragStartPosition.y + deltaY),
       );
 
       this.bounds = {
@@ -268,16 +246,7 @@ export class EFResizableBox extends LitElement {
       height: `${this.bounds.height}px`,
     };
 
-    const handles: ResizeHandle[] = [
-      "nw",
-      "n",
-      "ne",
-      "e",
-      "se",
-      "s",
-      "sw",
-      "w",
-    ];
+    const handles: ResizeHandle[] = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
 
     return html`
       <div

@@ -16,7 +16,7 @@ describe("EFResizableBox", () => {
     await el.updateComplete;
 
     const box = el.shadowRoot!.querySelector(".box") as HTMLDivElement;
-    expect(box).to.exist;
+    expect(box).to.exist; // oxlint-disable-line no-unused-expressions -- chai .exist is a getter assertion
     expect(box.style.left).to.equal("0px");
     expect(box.style.top).to.equal("0px");
     expect(box.style.width).to.equal("100px");
@@ -27,10 +27,7 @@ describe("EFResizableBox", () => {
     const container = document.createElement("div");
     document.body.appendChild(container);
     const bounds = { x: 50, y: 50, width: 200, height: 150 };
-    render(
-      html`<ef-resizable-box .bounds=${bounds}></ef-resizable-box>`,
-      container,
-    );
+    render(html`<ef-resizable-box .bounds=${bounds}></ef-resizable-box>`, container);
     const el = container.querySelector<EFResizableBox>("ef-resizable-box")!;
     await el.updateComplete;
 
@@ -48,10 +45,7 @@ describe("EFResizableBox", () => {
     container.style.position = "relative";
     document.body.appendChild(container);
     const bounds = { x: 250, y: 250, width: 100, height: 100 };
-    render(
-      html`<ef-resizable-box .bounds=${bounds}></ef-resizable-box>`,
-      container,
-    );
+    render(html`<ef-resizable-box .bounds=${bounds}></ef-resizable-box>`, container);
     const el = container.querySelector<EFResizableBox>("ef-resizable-box")!;
     await el.updateComplete;
 

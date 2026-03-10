@@ -13,7 +13,7 @@ export function isWorkDone(queueId: string): boolean {
   if (plans.length === 0) return false;
 
   const hasIncomplete = plans.some(
-    (p) => p.status !== "completed" && p.status !== "failed"
+    (p) => p.status !== "completed" && p.status !== "failed",
   );
 
   return !hasIncomplete;
@@ -42,7 +42,9 @@ export function getQueueStatus(queueId: string): {
 
   const plans = listPlans(queueId);
   const ready = plans.filter((p) => p.status === "ready").length;
-  const inProgress = plans.filter((p) => p.status === "in_progress" || p.status === "claimed").length;
+  const inProgress = plans.filter(
+    (p) => p.status === "in_progress" || p.status === "claimed",
+  ).length;
   const completed = plans.filter((p) => p.status === "completed").length;
   const failed = plans.filter((p) => p.status === "failed").length;
 
@@ -53,6 +55,6 @@ export function getQueueStatus(queueId: string): {
     inProgressPlans: inProgress,
     completedPlans: completed,
     failedPlans: failed,
-    isComplete: isWorkDone(queueId)
+    isComplete: isWorkDone(queueId),
   };
 }

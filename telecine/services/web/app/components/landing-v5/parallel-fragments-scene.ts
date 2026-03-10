@@ -1,12 +1,27 @@
 import * as THREE from "three";
 
 /* ━━ Easing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-function easeOut(t: number) { return 1 - Math.pow(1 - t, 3); }
-function easeInOut(t: number) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
-function clamp01(t: number) { return Math.max(0, Math.min(1, t)); }
-function prog(ms: number, s: number, e: number) { return clamp01((ms - s) / (e - s)); }
-function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
-function lerpV3(out: THREE.Vector3, a: THREE.Vector3, b: THREE.Vector3, t: number) {
+function easeOut(t: number) {
+  return 1 - Math.pow(1 - t, 3);
+}
+function easeInOut(t: number) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+function clamp01(t: number) {
+  return Math.max(0, Math.min(1, t));
+}
+function prog(ms: number, s: number, e: number) {
+  return clamp01((ms - s) / (e - s));
+}
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t;
+}
+function lerpV3(
+  out: THREE.Vector3,
+  a: THREE.Vector3,
+  b: THREE.Vector3,
+  t: number,
+) {
   out.set(lerp(a.x, b.x, t), lerp(a.y, b.y, t), lerp(a.z, b.z, t));
 }
 
@@ -23,17 +38,33 @@ const NUM_SEGS = 4;
 const SEG_W = 1.1;
 const SEG_GAP = 0.06;
 const TRACK_D = 0.35;
-const TRACK_H = [0.16, 0.10, 0.06] as const;
+const TRACK_H = [0.16, 0.1, 0.06] as const;
 const TRACK_COLOR = [COL_VIDEO, COL_AUDIO, COL_TEXT] as const;
 const TRACK_Y = [0.15, 0.0, -0.09] as const;
 const TOTAL_W = SEG_W * NUM_SEGS + SEG_GAP * (NUM_SEGS - 1);
 
 // Per-segment clip layouts (used after splitting)
 const CLIP_LAYOUTS = [
-  [{ wPct: 1.0, xPct: 0 }, { wPct: 0.85, xPct: 0.05 }, { wPct: 0.35, xPct: 0.32 }],
-  [{ wPct: 1.0, xPct: 0 }, { wPct: 0.65, xPct: 0.20 }, { wPct: 0.50, xPct: 0.05 }],
-  [{ wPct: 1.0, xPct: 0 }, { wPct: 0.90, xPct: 0 },    { wPct: 0.30, xPct: 0.55 }],
-  [{ wPct: 1.0, xPct: 0 }, { wPct: 0.55, xPct: 0.25 }, { wPct: 0.45, xPct: 0.28 }],
+  [
+    { wPct: 1.0, xPct: 0 },
+    { wPct: 0.85, xPct: 0.05 },
+    { wPct: 0.35, xPct: 0.32 },
+  ],
+  [
+    { wPct: 1.0, xPct: 0 },
+    { wPct: 0.65, xPct: 0.2 },
+    { wPct: 0.5, xPct: 0.05 },
+  ],
+  [
+    { wPct: 1.0, xPct: 0 },
+    { wPct: 0.9, xPct: 0 },
+    { wPct: 0.3, xPct: 0.55 },
+  ],
+  [
+    { wPct: 1.0, xPct: 0 },
+    { wPct: 0.55, xPct: 0.25 },
+    { wPct: 0.45, xPct: 0.28 },
+  ],
 ] as const;
 
 // Full-width clip layouts for the unified (pre-split) timeline
@@ -83,7 +114,12 @@ const NODE_Z = 2.2;
 
 /* ━━ Scene ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+  const renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: true,
+    alpha: true,
+    preserveDrawingBuffer: true,
+  });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -106,9 +142,19 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
   keyLight.castShadow = true;
   keyLight.shadow.mapSize.set(1024, 1024);
   const sc = keyLight.shadow.camera;
-  sc.left = -10; sc.right = 10; sc.top = 8; sc.bottom = -8; sc.near = 0.5; sc.far = 30;
+  sc.left = -10;
+  sc.right = 10;
+  sc.top = 8;
+  sc.bottom = -8;
+  sc.near = 0.5;
+  sc.far = 30;
   scene.add(keyLight);
-  scene.add(new THREE.DirectionalLight(0xaaccff, 0.6).translateX(-3).translateY(4).translateZ(-2));
+  scene.add(
+    new THREE.DirectionalLight(0xaaccff, 0.6)
+      .translateX(-3)
+      .translateY(4)
+      .translateZ(-2),
+  );
   const rimLight = new THREE.PointLight(COL_BLUE_LT, 0.9, 25);
   rimLight.position.set(0, 2, -3);
   scene.add(rimLight);
@@ -119,7 +165,11 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
   scene.add(spotLight.target);
 
   /* ── Floor with grid ───────────────────────────────────────────── */
-  const floorMat = new THREE.MeshStandardMaterial({ color: 0x2a2e42, roughness: 0.75, metalness: 0.1 });
+  const floorMat = new THREE.MeshStandardMaterial({
+    color: 0x2a2e42,
+    roughness: 0.75,
+    metalness: 0.1,
+  });
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(50, 35), floorMat);
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -0.7;
@@ -133,11 +183,20 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
   scene.add(gridHelper);
 
   /* ── Build track meshes ────────────────────────────────────────── */
-  function buildTrackMeshes(parent: THREE.Group, segIndex: number, xOffset: number) {
+  function buildTrackMeshes(
+    parent: THREE.Group,
+    segIndex: number,
+    xOffset: number,
+  ) {
     const meshes: THREE.Mesh[] = [];
     const bg = new THREE.Mesh(
-      new THREE.BoxGeometry(SEG_W, 0.40, TRACK_D + 0.02),
-      new THREE.MeshStandardMaterial({ color: 0x3d4158, roughness: 0.8, transparent: true, opacity: 0 }),
+      new THREE.BoxGeometry(SEG_W, 0.4, TRACK_D + 0.02),
+      new THREE.MeshStandardMaterial({
+        color: 0x3d4158,
+        roughness: 0.8,
+        transparent: true,
+        opacity: 0,
+      }),
     );
     bg.position.set(xOffset, 0.02, 0);
     bg.receiveShadow = true;
@@ -152,10 +211,15 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
       const mesh = new THREE.Mesh(
         new THREE.BoxGeometry(clipW, TRACK_H[t]!, TRACK_D),
         new THREE.MeshPhysicalMaterial({
-          color: TRACK_COLOR[t]!, roughness: 0.12, metalness: 0.15,
-          clearcoat: 1.0, clearcoatRoughness: 0.15,
-          transparent: true, opacity: 0,
-          emissive: new THREE.Color(TRACK_COLOR[t]!), emissiveIntensity: 0.1,
+          color: TRACK_COLOR[t]!,
+          roughness: 0.12,
+          metalness: 0.15,
+          clearcoat: 1.0,
+          clearcoatRoughness: 0.15,
+          transparent: true,
+          opacity: 0,
+          emissive: new THREE.Color(TRACK_COLOR[t]!),
+          emissiveIntensity: 0.1,
         }),
       );
       mesh.position.set(clipX, TRACK_Y[t]!, 0);
@@ -180,8 +244,13 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
     const totalTight = SEG_W * NUM_SEGS;
     // Full-width container backdrop
     const bg = new THREE.Mesh(
-      new THREE.BoxGeometry(totalTight, 0.40, TRACK_D + 0.02),
-      new THREE.MeshStandardMaterial({ color: 0x3d4158, roughness: 0.8, transparent: true, opacity: 0 }),
+      new THREE.BoxGeometry(totalTight, 0.4, TRACK_D + 0.02),
+      new THREE.MeshStandardMaterial({
+        color: 0x3d4158,
+        roughness: 0.8,
+        transparent: true,
+        opacity: 0,
+      }),
     );
     bg.position.set(0, 0.02, 0);
     bg.receiveShadow = true;
@@ -194,10 +263,15 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
       const mesh = new THREE.Mesh(
         new THREE.BoxGeometry(clipW, TRACK_H[clip.track]!, TRACK_D),
         new THREE.MeshPhysicalMaterial({
-          color: TRACK_COLOR[clip.track]!, roughness: 0.12, metalness: 0.15,
-          clearcoat: 1.0, clearcoatRoughness: 0.15,
-          transparent: true, opacity: 0,
-          emissive: new THREE.Color(TRACK_COLOR[clip.track]!), emissiveIntensity: 0.1,
+          color: TRACK_COLOR[clip.track]!,
+          roughness: 0.12,
+          metalness: 0.15,
+          clearcoat: 1.0,
+          clearcoatRoughness: 0.15,
+          transparent: true,
+          opacity: 0,
+          emissive: new THREE.Color(TRACK_COLOR[clip.track]!),
+          emissiveIntensity: 0.1,
         }),
       );
       mesh.position.set(clipX, TRACK_Y[clip.track]!, 0);
@@ -237,8 +311,11 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
   const cutMats: THREE.MeshBasicMaterial[] = [];
   for (let i = 1; i < NUM_SEGS; i++) {
     const mat = new THREE.MeshBasicMaterial({
-      color: 0xffffff, transparent: true, opacity: 0,
-      blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
     });
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.04, 1.5), mat);
     mesh.position.set(0, 0.4, 0.01);
@@ -256,16 +333,25 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
 
   function makeNode(x: number, z: number) {
     const mat = new THREE.MeshPhysicalMaterial({
-      color: 0x505870, roughness: 0.2, metalness: 0.4,
-      clearcoat: 0.7, clearcoatRoughness: 0.2,
-      transparent: true, opacity: 0,
-      emissive: new THREE.Color(COL_BLUE_LT), emissiveIntensity: 0,
+      color: 0x505870,
+      roughness: 0.2,
+      metalness: 0.4,
+      clearcoat: 0.7,
+      clearcoatRoughness: 0.2,
+      transparent: true,
+      opacity: 0,
+      emissive: new THREE.Color(COL_BLUE_LT),
+      emissiveIntensity: 0,
     });
     const mesh = new THREE.Mesh(nodeGeo, mat);
     mesh.position.set(x, -0.7, z);
     mesh.castShadow = true;
     scene.add(mesh);
-    const edgeMat = new THREE.LineBasicMaterial({ color: COL_BLUE_LT, transparent: true, opacity: 0 });
+    const edgeMat = new THREE.LineBasicMaterial({
+      color: COL_BLUE_LT,
+      transparent: true,
+      opacity: 0,
+    });
     mesh.add(new THREE.LineSegments(edgeGeo, edgeMat));
     return { mesh, mat, edgeMat };
   }
@@ -276,26 +362,57 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
   );
 
   /* ── Progress bars (tall, visible, color-coded) ────────────────── */
-  function makeProgressBar(x: number, z: number, w: number, fillColor: number, emitColor: number) {
-    const bgMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.8, transparent: true, opacity: 0 });
+  function makeProgressBar(
+    x: number,
+    z: number,
+    w: number,
+    fillColor: number,
+    emitColor: number,
+  ) {
+    const bgMat = new THREE.MeshStandardMaterial({
+      color: 0x555555,
+      roughness: 0.8,
+      transparent: true,
+      opacity: 0,
+    });
     const bg = new THREE.Mesh(new THREE.BoxGeometry(w, PROG_H, 0.15), bgMat);
     bg.position.set(x, -0.68, z);
     scene.add(bg);
     const fillMat = new THREE.MeshPhysicalMaterial({
-      color: fillColor, roughness: 0.2, metalness: 0.3,
-      clearcoat: 0.5, transparent: true, opacity: 0,
-      emissive: new THREE.Color(emitColor), emissiveIntensity: 0.25,
+      color: fillColor,
+      roughness: 0.2,
+      metalness: 0.3,
+      clearcoat: 0.5,
+      transparent: true,
+      opacity: 0,
+      emissive: new THREE.Color(emitColor),
+      emissiveIntensity: 0.25,
     });
-    const fill = new THREE.Mesh(new THREE.BoxGeometry(w, PROG_H + 0.02, 0.16), fillMat);
+    const fill = new THREE.Mesh(
+      new THREE.BoxGeometry(w, PROG_H + 0.02, 0.16),
+      fillMat,
+    );
     fill.position.set(x, -0.68, z);
     fill.scale.x = 0;
     scene.add(fill);
     return { bg, bgMat, fill, fillMat, width: w, baseX: x };
   }
 
-  const seqBar = makeProgressBar(SEQ_X, NODE_Z + 0.8, TOTAL_W * 0.7, COL_SEQ_FILL, COL_SEQ_FILL);
+  const seqBar = makeProgressBar(
+    SEQ_X,
+    NODE_Z + 0.8,
+    TOTAL_W * 0.7,
+    COL_SEQ_FILL,
+    COL_SEQ_FILL,
+  );
   const parBars = parNodes.map((n) =>
-    makeProgressBar(n.mesh.position.x, NODE_Z + 0.8, SEG_W * 0.9, COL_VIDEO, COL_BLUE_LT),
+    makeProgressBar(
+      n.mesh.position.x,
+      NODE_Z + 0.8,
+      SEG_W * 0.9,
+      COL_VIDEO,
+      COL_BLUE_LT,
+    ),
   );
 
   /* ── Particles (larger, brighter) ──────────────────────────────── */
@@ -309,24 +426,41 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
   }
   particleGeo.setAttribute("position", new THREE.BufferAttribute(pPos, 3));
   const particleMat = new THREE.PointsMaterial({
-    color: COL_BLUE_LT, size: 0.08, transparent: true, opacity: 0,
-    sizeAttenuation: true, blending: THREE.AdditiveBlending, depthWrite: false,
+    color: COL_BLUE_LT,
+    size: 0.08,
+    transparent: true,
+    opacity: 0,
+    sizeAttenuation: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
   });
   scene.add(new THREE.Points(particleGeo, particleMat));
 
   /* ── Complete block ────────────────────────────────────────────── */
   const completeMat = new THREE.MeshPhysicalMaterial({
-    color: COL_DONE, roughness: 0.2, metalness: 0.3,
-    clearcoat: 0.8, transparent: true, opacity: 0,
-    emissive: new THREE.Color(COL_DONE), emissiveIntensity: 0,
+    color: COL_DONE,
+    roughness: 0.2,
+    metalness: 0.3,
+    clearcoat: 0.8,
+    transparent: true,
+    opacity: 0,
+    emissive: new THREE.Color(COL_DONE),
+    emissiveIntensity: 0,
   });
-  const completeBlock = new THREE.Mesh(new THREE.BoxGeometry(TOTAL_W * 0.7, 0.25, 0.35), completeMat);
+  const completeBlock = new THREE.Mesh(
+    new THREE.BoxGeometry(TOTAL_W * 0.7, 0.25, 0.35),
+    completeMat,
+  );
   completeBlock.position.set(PAR_X, -0.65, NODE_Z + 1.4);
   completeBlock.castShadow = true;
   scene.add(completeBlock);
 
   /* ── Helpers ───────────────────────────────────────────────────── */
-  function setTrackOpacity(meshes: THREE.Mesh[], bgOpa: number, clipOpa: number) {
+  function setTrackOpacity(
+    meshes: THREE.Mesh[],
+    bgOpa: number,
+    clipOpa: number,
+  ) {
     for (let m = 0; m < meshes.length; m++) {
       const opa = m === 0 ? bgOpa : clipOpa;
       (meshes[m]!.material as THREE.MeshStandardMaterial).opacity = opa;
@@ -335,15 +469,17 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
   }
   function setTrackEmissive(meshes: THREE.Mesh[], intensity: number) {
     for (let m = 1; m < meshes.length; m++) {
-      (meshes[m]!.material as THREE.MeshStandardMaterial).emissiveIntensity = intensity;
+      (meshes[m]!.material as THREE.MeshStandardMaterial).emissiveIntensity =
+        intensity;
     }
   }
 
   /* ━━ UPDATE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
   function update(timeMs: number, _durationMs: number) {
-
     // ── CAMERA ────────────────────────────────────────────────────
-    const camPullBack = easeInOut(prog(timeMs, P_PULLBACK_START, P_PULLBACK_END));
+    const camPullBack = easeInOut(
+      prog(timeMs, P_PULLBACK_START, P_PULLBACK_END),
+    );
     const camOrbit = easeOut(prog(timeMs, P5_START, P5_END));
 
     lerpV3(camPos, CAM_CLOSE_POS, CAM_WIDE_POS, camPullBack);
@@ -392,14 +528,27 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
     setTrackOpacity(seqMeshes, 0, 0);
 
     // Reset everything else
-    seqNode.mat.opacity = 0; seqNode.edgeMat.opacity = 0; seqNode.mesh.castShadow = false;
-    for (const n of parNodes) { n.mat.opacity = 0; n.edgeMat.opacity = 0; n.mesh.castShadow = false; }
-    completeMat.opacity = 0; completeBlock.castShadow = false;
+    seqNode.mat.opacity = 0;
+    seqNode.edgeMat.opacity = 0;
+    seqNode.mesh.castShadow = false;
+    for (const n of parNodes) {
+      n.mat.opacity = 0;
+      n.edgeMat.opacity = 0;
+      n.mesh.castShadow = false;
+    }
+    completeMat.opacity = 0;
+    completeBlock.castShadow = false;
     particleMat.opacity = 0;
     for (const m of cutMats) m.opacity = 0;
     cutFlash.intensity = 0;
-    seqBar.bgMat.opacity = 0; seqBar.fillMat.opacity = 0; seqBar.fill.scale.x = 0;
-    for (const b of parBars) { b.bgMat.opacity = 0; b.fillMat.opacity = 0; b.fill.scale.x = 0; }
+    seqBar.bgMat.opacity = 0;
+    seqBar.fillMat.opacity = 0;
+    seqBar.fill.scale.x = 0;
+    for (const b of parBars) {
+      b.bgMat.opacity = 0;
+      b.fillMat.opacity = 0;
+      b.fill.scale.x = 0;
+    }
 
     // ── PHASE 2: Laser cut, crossfade unified→segments, duplicate ─
     if (timeMs >= P2_START) {
@@ -408,18 +557,33 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
       // Laser sweep L→R
       for (let c = 0; c < cutLines.length; c++) {
         const sweepDelay = c * 120;
-        const cutProg = prog(timeMs, P2_START + sweepDelay, P2_START + sweepDelay + 200);
-        const cutFade = prog(timeMs, P2_START + sweepDelay + 150, P2_START + sweepDelay + 600);
+        const cutProg = prog(
+          timeMs,
+          P2_START + sweepDelay,
+          P2_START + sweepDelay + 200,
+        );
+        const cutFade = prog(
+          timeMs,
+          P2_START + sweepDelay + 150,
+          P2_START + sweepDelay + 600,
+        );
         const brightness = cutProg * (1 - cutFade);
         cutMats[c]!.opacity = brightness;
         cutLines[c]!.position.x = segTightX(c) + SEG_W / 2;
         cutLines[c]!.position.y = 0.3;
       }
-      cutFlash.intensity = prog(timeMs, P2_START, P2_START + 200) * (1 - prog(timeMs, P2_START + 150, P2_START + 500)) * 8;
+      cutFlash.intensity =
+        prog(timeMs, P2_START, P2_START + 200) *
+        (1 - prog(timeMs, P2_START + 150, P2_START + 500)) *
+        8;
 
       // Crossfade: unified fades out, segments fade in
       const crossfade = easeOut(prog(timeMs, P2_START + 200, P2_START + 600));
-      setTrackOpacity(unifiedMeshes, (1 - crossfade) * 0.6, (1 - crossfade) * 1.0);
+      setTrackOpacity(
+        unifiedMeshes,
+        (1 - crossfade) * 0.6,
+        (1 - crossfade) * 1.0,
+      );
       if (crossfade >= 1) unifiedGroup.visible = false;
 
       // Segments appear and separate
@@ -431,7 +595,11 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
         const parLaneX = PAR_X + (s - 1.5) * LANE_SPREAD;
         const gapOpen = easeOut(prog(timeMs, P2_START + 200, P2_START + 700));
         const slideRight = easeInOut(prog(timeMs, P2_START + 500, P2_END));
-        const currentX = lerp(lerp(tightX, gappedX, gapOpen), parLaneX, slideRight);
+        const currentX = lerp(
+          lerp(tightX, gappedX, gapOpen),
+          parLaneX,
+          slideRight,
+        );
         parSegGroups[s]!.position.set(currentX, 0.3, lerp(0, 0.5, p2));
         setTrackEmissive(parTrackMeshes[s]!, lerp(0.1, 0.2, p2));
       }
@@ -468,18 +636,21 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
       // Sequential flies to node, dims
       seqGroup.position.y = lerp(0.3, 0, flyIn);
       seqGroup.position.z = lerp(0.5, NODE_Z - 0.3, flyIn);
-      seqGroup.scale.setScalar(lerp(1, 0.50, flyIn));
+      seqGroup.scale.setScalar(lerp(1, 0.5, flyIn));
       setTrackOpacity(seqMeshes, 0.25, lerp(0.55, 0.3, processing));
       setTrackEmissive(seqMeshes, 0.02);
-      seqNode.mat.emissiveIntensity = 0.05 + Math.sin(processing * Math.PI * 3) * 0.03;
+      seqNode.mat.emissiveIntensity =
+        0.05 + Math.sin(processing * Math.PI * 3) * 0.03;
       seqNode.mesh.rotation.y = Math.sin(processing * Math.PI * 2) * 0.02;
 
       // Sequential progress — slow, orange-tinted
       const seqElapsed = timeMs - P4_START;
-      const seqTotalTime = (P5_END - P4_START);
+      const seqTotalTime = P5_END - P4_START;
       seqBar.fillMat.opacity = flyIn * 0.8;
       seqBar.fill.scale.x = easeOut(clamp01(seqElapsed / seqTotalTime));
-      seqBar.fill.position.x = seqBar.baseX - seqBar.width / 2 * (1 - easeOut(clamp01(seqElapsed / seqTotalTime)));
+      seqBar.fill.position.x =
+        seqBar.baseX -
+        (seqBar.width / 2) * (1 - easeOut(clamp01(seqElapsed / seqTotalTime)));
 
       // Parallel segments fly to nodes, stay bright
       for (let s = 0; s < NUM_SEGS; s++) {
@@ -487,12 +658,13 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
         parSegGroups[s]!.position.x = laneX;
         parSegGroups[s]!.position.y = lerp(0.3, -0.15, flyIn);
         parSegGroups[s]!.position.z = lerp(0.5, NODE_Z, flyIn);
-        parSegGroups[s]!.scale.setScalar(lerp(1, 0.60, flyIn));
+        parSegGroups[s]!.scale.setScalar(lerp(1, 0.6, flyIn));
 
         const pulse = Math.sin(processing * Math.PI * 6 + s * 1.5) * 0.12;
         parNodes[s]!.mat.emissiveIntensity = processing > 0 ? 0.3 + pulse : 0;
         parNodes[s]!.edgeMat.opacity = 0.5 + processing * 0.4;
-        parNodes[s]!.mesh.rotation.y = Math.sin(processing * Math.PI * 4 + s) * 0.08;
+        parNodes[s]!.mesh.rotation.y =
+          Math.sin(processing * Math.PI * 4 + s) * 0.08;
         setTrackEmissive(parTrackMeshes[s]!, 0.2 + pulse * 0.5);
       }
 
@@ -500,28 +672,37 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
       const barJitter = [0, 0.06, -0.04, 0.03] as const;
       for (let bi = 0; bi < parBars.length; bi++) {
         const b = parBars[bi]!;
-        const barProg = clamp01(processing + barJitter[bi]! * Math.sin(processing * Math.PI));
+        const barProg = clamp01(
+          processing + barJitter[bi]! * Math.sin(processing * Math.PI),
+        );
         b.fillMat.opacity = flyIn * 0.95;
         b.fill.scale.x = easeOut(barProg);
-        b.fill.position.x = b.baseX - b.width / 2 * (1 - easeOut(barProg));
+        b.fill.position.x = b.baseX - (b.width / 2) * (1 - easeOut(barProg));
       }
 
       // Particles — larger, brighter
       if (processing > 0 && processing < 1) {
         particleMat.opacity = 0.85;
-        const positions = particleGeo.attributes.position!.array as Float32Array;
+        const positions = particleGeo.attributes.position!
+          .array as Float32Array;
         for (let p = 0; p < PARTICLE_COUNT; p++) {
           const lane = pLane[p]!;
           const speed = pSpd[p]!;
           const lx = PAR_X + (lane - 1.5) * LANE_SPREAD;
-          const t = ((timeMs - P4_START) * speed * 0.001 + p * 0.1) % 3.5 - 1.75;
+          const t =
+            (((timeMs - P4_START) * speed * 0.001 + p * 0.1) % 3.5) - 1.75;
           positions[p * 3] = lx + (Math.random() - 0.5) * 0.4;
-          positions[p * 3 + 1] = -0.7 + Math.sin(t * 2) * 0.25 + (Math.random() - 0.5) * 0.12;
+          positions[p * 3 + 1] =
+            -0.7 + Math.sin(t * 2) * 0.25 + (Math.random() - 0.5) * 0.12;
           positions[p * 3 + 2] = NODE_Z + t * 0.5;
         }
         particleGeo.attributes.position!.needsUpdate = true;
       } else if (timeMs >= P4_PAR_DONE) {
-        particleMat.opacity = lerp(0.85, 0, prog(timeMs, P4_PAR_DONE, P4_PAR_DONE + 400));
+        particleMat.opacity = lerp(
+          0.85,
+          0,
+          prog(timeMs, P4_PAR_DONE, P4_PAR_DONE + 400),
+        );
       }
 
       // Complete block
@@ -549,8 +730,8 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
       completeMat.emissiveIntensity = 0.6 + Math.sin(p5 * Math.PI * 3) * 0.2;
 
       // Sequential recedes and dims heavily
-      seqGroup.position.z = (NODE_Z - 0.3) - p5 * 1.5;
-      seqGroup.scale.setScalar(lerp(0.50, 0.35, p5));
+      seqGroup.position.z = NODE_Z - 0.3 - p5 * 1.5;
+      seqGroup.scale.setScalar(lerp(0.5, 0.35, p5));
       seqNode.mesh.position.z = NODE_Z - p5 * 1.5;
       setTrackOpacity(seqMeshes, lerp(0.25, 0.08, p5), lerp(0.3, 0.12, p5));
       seqNode.mat.opacity = lerp(0.6, 0.15, p5);
@@ -575,7 +756,8 @@ export function createParallelFragmentsScene(canvas: HTMLCanvasElement) {
     scene.traverse((obj: THREE.Object3D) => {
       if (obj instanceof THREE.Mesh) {
         obj.geometry.dispose();
-        if (Array.isArray(obj.material)) obj.material.forEach((m: THREE.Material) => m.dispose());
+        if (Array.isArray(obj.material))
+          obj.material.forEach((m: THREE.Material) => m.dispose());
         else obj.material.dispose();
       }
       if (obj instanceof THREE.LineSegments) {

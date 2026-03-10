@@ -1,13 +1,17 @@
 /**
  * React Three Fiber synchronization utilities for Editframe timeline integration.
- * 
+ *
  * These utilities handle the coordination between R3F's render loop and Editframe's
  * timeline system, ensuring that 3D content renders correctly in both live playback
  * and render clones.
  */
 
 import { useLayoutEffect } from "react";
-import { useThree, _roots, flushSync as r3fFlushSync } from "@react-three/fiber";
+import {
+  useThree,
+  _roots,
+  flushSync as r3fFlushSync,
+} from "@react-three/fiber";
 import type { RootState } from "@react-three/fiber";
 
 /**
@@ -18,7 +22,7 @@ import type { RootState } from "@react-three/fiber";
  * Unlike setTimeout(0), MessageChannel is NOT throttled in hidden tabs.
  */
 export function yieldToScheduler(): Promise<void> {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     const ch = new MessageChannel();
     ch.port1.onmessage = () => resolve();
     ch.port2.postMessage(null);
@@ -48,7 +52,9 @@ export function InvalidateOnTimeChange({ timeMs }: { timeMs: number }) {
  * R3F v9 stores root state in a module-level Map (`_roots`), keyed by the
  * canvas DOM element. The legacy `canvas.__r3f` property does not exist in v9.
  */
-export function getR3FState(canvas: HTMLCanvasElement | null): RootState | undefined {
+export function getR3FState(
+  canvas: HTMLCanvasElement | null,
+): RootState | undefined {
   if (!canvas) return undefined;
   return _roots.get(canvas)?.store?.getState?.();
 }
@@ -80,7 +86,9 @@ export { r3fFlushSync };
 export function flushR3F(canvasContainer: HTMLElement | null): void {
   if (!canvasContainer) return;
 
-  const canvas = canvasContainer.querySelector('canvas') as HTMLCanvasElement | null;
+  const canvas = canvasContainer.querySelector(
+    "canvas",
+  ) as HTMLCanvasElement | null;
   const state = getR3FState(canvas);
 
   if (!state?.gl || !state?.scene || !state?.camera) return;
@@ -93,7 +101,7 @@ export function flushR3F(canvasContainer: HTMLElement | null): void {
         const sub = subs[i]!;
         sub.ref.current(sub.store.getState(), 0);
       } catch (e) {
-        console.warn('[flushR3F] useFrame subscriber error:', e);
+        console.warn("[flushR3F] useFrame subscriber error:", e);
       }
     }
   }

@@ -55,15 +55,9 @@ const validatedAnimations = new Set<string>();
  * - Their effect is null (animation was removed)
  * - Their target is no longer in the DOM
  */
-const isAnimationValid = (
-  animation: Animation,
-  currentAnimations: Animation[],
-): boolean => {
+const isAnimationValid = (animation: Animation, currentAnimations: Animation[]): boolean => {
   // Check if animation has been cancelled
-  if (
-    animation.playState === "idle" &&
-    !currentAnimations.includes(animation)
-  ) {
+  if (animation.playState === "idle" && !currentAnimations.includes(animation)) {
     return false;
   }
 
@@ -115,8 +109,7 @@ const discoverAndTrackAnimations = (
   // For prime timeline or first discovery: get current animations from the browser (includes subtree)
   // CRITICAL: This is expensive, so we return it to avoid calling it again
   // If animations were provided by caller (to avoid redundant calls), use those
-  const currentAnimations =
-    providedAnimations ?? element.getAnimations({ subtree: true });
+  const currentAnimations = providedAnimations ?? element.getAnimations({ subtree: true });
 
   // Mark structure as stable after discovery
   // This prevents redundant getAnimations() calls when DOM hasn't changed
@@ -128,8 +121,7 @@ const discoverAndTrackAnimations = (
   // Track animations on each element where they exist
   for (const animation of currentAnimations) {
     const effect = animation.effect;
-    const target =
-      effect && effect instanceof KeyframeEffect ? effect.target : null;
+    const target = effect && effect instanceof KeyframeEffect ? effect.target : null;
     if (target && target instanceof Element) {
       let tracked = animationTracker.get(target);
       if (!tracked) {
@@ -165,8 +157,7 @@ const discoverAndTrackAnimations = (
   const elementAnimationsMap = new Map<Element, Animation[]>();
   for (const animation of currentAnimations) {
     const effect = animation.effect;
-    const target =
-      effect && effect instanceof KeyframeEffect ? effect.target : null;
+    const target = effect && effect instanceof KeyframeEffect ? effect.target : null;
     if (target && target instanceof Element) {
       let anims = elementAnimationsMap.get(target);
       if (!anims) {
@@ -225,11 +216,7 @@ export const markDomStructureChanged = (element: Element): void => {
  * Represents the phase an element is in relative to the timeline.
  * This is the primary concept that drives all visibility and animation decisions.
  */
-export type ElementPhase =
-  | "before-start"
-  | "active"
-  | "at-end-boundary"
-  | "after-end";
+export type ElementPhase = "before-start" | "active" | "at-end-boundary" | "after-end";
 
 /**
  * Represents the temporal state of an element relative to the timeline
@@ -359,8 +346,7 @@ class VisibilityPolicy implements BoundaryPolicy {
     }
 
     // Elements aligned with composition end should remain visible at exact end time
-    const isLastElementInComposition =
-      element.endTimeMs === element.rootTimegroup?.endTimeMs;
+    const isLastElementInComposition = element.endTimeMs === element.rootTimegroup?.endTimeMs;
     if (isLastElementInComposition) {
       return true;
     }
@@ -389,10 +375,7 @@ const visibilityPolicy = new VisibilityPolicy();
 /**
  * Determines if an element should be visible based on its phase and visibility policy.
  */
-const shouldBeVisible = (
-  phase: ElementPhase,
-  element: AnimatableElement,
-): boolean => {
+const shouldBeVisible = (phase: ElementPhase, element: AnimatableElement): boolean => {
   if (phase === "before-start" || phase === "after-end") {
     return false;
   }
@@ -417,10 +400,7 @@ const shouldBeVisible = (
  * - Paused animation updates are optimized by the browser
  * - The benefit is correct animation state at all times, regardless of phase
  */
-const shouldCoordinateAnimations = (
-  _phase: ElementPhase,
-  _element: AnimatableElement,
-): boolean => {
+const shouldCoordinateAnimations = (_phase: ElementPhase, _element: AnimatableElement): boolean => {
   return true;
 };
 
@@ -434,9 +414,7 @@ const shouldCoordinateAnimations = (
  * WHY: This function determines the complete temporal state including phase,
  * which becomes the primary driver for all subsequent decisions.
  */
-export const evaluateTemporalState = (
-  element: AnimatableElement,
-): TemporalState => {
+export const evaluateTemporalState = (element: AnimatableElement): TemporalState => {
   // Get timeline time from root timegroup, or use element's own time if it IS a timegroup
   const timelineTimeMs = (element.rootTimegroup ?? element).currentTimeMs;
 
@@ -458,9 +436,7 @@ export const evaluateTemporalState = (
  * This is exported for external use cases that need animation-specific visibility
  * evaluation without the full ElementUpdateContext.
  */
-export const evaluateAnimationVisibilityState = (
-  element: AnimatableElement,
-): TemporalState => {
+export const evaluateAnimationVisibilityState = (element: AnimatableElement): TemporalState => {
   const state = evaluateTemporalState(element);
   // Override visibility based on animation policy
   const shouldCoordinate = shouldCoordinateAnimations(state.phase, element);
@@ -475,9 +451,7 @@ export const evaluateAnimationVisibilityState = (
  * Capability check: determines if an element supports stagger offset.
  * Encapsulates the knowledge of which element types support this feature.
  */
-const supportsStaggerOffset = (
-  element: AnimatableElement,
-): element is StaggerableElement => {
+const supportsStaggerOffset = (element: AnimatableElement): element is StaggerableElement => {
   // Currently only text segments support stagger offset
   return element.tagName === "EF-TEXT-SEGMENT";
 };
@@ -489,31 +463,20 @@ const supportsStaggerOffset = (
  * start at different times while keeping their visibility timing unchanged.
  * This enables staggered animation effects within a single timegroup.
  */
-const calculateEffectiveDelay = (
-  delay: number,
-  element: AnimatableElement,
-): number => {
+const calculateEffectiveDelay = (delay: number, element: AnimatableElement): number => {
   if (supportsStaggerOffset(element)) {
     // Read stagger offset - try property first (more reliable), then CSS variable
     // The staggerOffsetMs property is set directly on the element and is always available
     const segment = element as any;
-    if (
-      segment.staggerOffsetMs !== undefined &&
-      segment.staggerOffsetMs !== null
-    ) {
+    if (segment.staggerOffsetMs !== undefined && segment.staggerOffsetMs !== null) {
       return delay + segment.staggerOffsetMs;
     }
 
     // Fallback to CSS variable if property not available
-    let cssValue = (element as HTMLElement).style
-      .getPropertyValue("--ef-stagger-offset")
-      .trim();
+    let cssValue = (element as HTMLElement).style.getPropertyValue("--ef-stagger-offset").trim();
 
     if (!cssValue) {
-      cssValue = window
-        .getComputedStyle(element)
-        .getPropertyValue("--ef-stagger-offset")
-        .trim();
+      cssValue = window.getComputedStyle(element).getPropertyValue("--ef-stagger-offset").trim();
     }
 
     if (cssValue) {
@@ -544,20 +507,14 @@ const calculateEffectiveDelay = (
  * we ensure the animation remains in a controllable state, allowing us to synchronize it
  * with the timeline even when it would naturally be complete.
  */
-const calculateMaxSafeAnimationTime = (
-  duration: number,
-  iterations: number,
-): number => {
+const calculateMaxSafeAnimationTime = (duration: number, iterations: number): number => {
   return duration * iterations - ANIMATION_PRECISION_OFFSET;
 };
 
 /**
  * Determines if the current iteration should be reversed based on direction
  */
-const shouldReverseIteration = (
-  direction: string,
-  currentIteration: number,
-): boolean => {
+const shouldReverseIteration = (direction: string, currentIteration: number): boolean => {
   return (
     direction === "reverse" ||
     (direction === "alternate" && currentIteration % 2 === 1) ||
@@ -676,13 +633,7 @@ const mapElementTimeToAnimationTime = (
     return mapReverseDirectionTime(adjustedTime, duration, maxSafeTime);
   }
   if (direction === "alternate" || direction === "alternate-reverse") {
-    return mapAlternateDirectionTime(
-      elementTime,
-      effectiveDelay,
-      duration,
-      direction,
-      maxSafeTime,
-    );
+    return mapAlternateDirectionTime(elementTime, effectiveDelay, duration, direction, maxSafeTime);
   }
   // normal direction - use adjustedTime to account for delay
   return mapNormalDirectionTime(adjustedTime, duration, maxSafeTime);
@@ -691,10 +642,7 @@ const mapElementTimeToAnimationTime = (
 /**
  * Determines the animation time for a completed animation based on direction.
  */
-const getCompletedAnimationTime = (
-  timing: AnimationTiming,
-  maxSafeTime: number,
-): number => {
+const getCompletedAnimationTime = (timing: AnimationTiming, maxSafeTime: number): number => {
   const { direction, iterations, duration } = timing;
 
   if (direction === "alternate" || direction === "alternate-reverse") {
@@ -720,11 +668,7 @@ const getCompletedAnimationTime = (
 const validateAnimationEffect = (
   effect: AnimationEffect | null,
 ): effect is KeyframeEffect & { target: Element } => {
-  return (
-    effect !== null &&
-    effect instanceof KeyframeEffect &&
-    effect.target !== null
-  );
+  return effect !== null && effect instanceof KeyframeEffect && effect.target !== null;
 };
 
 /**
@@ -751,18 +695,14 @@ const extractAnimationTiming = (effect: KeyframeEffect): AnimationTiming => {
  * Analyzes keyframes to detect if animation is a fade-in or fade-out effect.
  * Returns 'fade-in', 'fade-out', 'both', or null.
  */
-const detectFadePattern = (
-  keyframes: Keyframe[],
-): "fade-in" | "fade-out" | "both" | null => {
+const detectFadePattern = (keyframes: Keyframe[]): "fade-in" | "fade-out" | "both" | null => {
   if (!keyframes || keyframes.length < 2) return null;
 
   const firstFrame = keyframes[0];
   const lastFrame = keyframes[keyframes.length - 1];
 
-  const firstOpacity =
-    firstFrame && "opacity" in firstFrame ? Number(firstFrame.opacity) : null;
-  const lastOpacity =
-    lastFrame && "opacity" in lastFrame ? Number(lastFrame.opacity) : null;
+  const firstOpacity = firstFrame && "opacity" in firstFrame ? Number(firstFrame.opacity) : null;
+  const lastOpacity = lastFrame && "opacity" in lastFrame ? Number(lastFrame.opacity) : null;
 
   if (firstOpacity === null || lastOpacity === null) return null;
 
@@ -783,10 +723,7 @@ const hasTransformAnimation = (keyframes: Keyframe[]): boolean => {
 
   return keyframes.some(
     (frame) =>
-      "transform" in frame ||
-      "translate" in frame ||
-      "scale" in frame ||
-      "rotate" in frame,
+      "transform" in frame || "translate" in frame || "scale" in frame || "rotate" in frame,
   );
 };
 
@@ -805,15 +742,9 @@ const hasTransformAnimation = (keyframes: Keyframe[]): boolean => {
  *
  * Only runs in development mode to avoid performance impact in production.
  */
-const validateAnimationFillMode = (
-  animation: Animation,
-  timing: AnimationTiming,
-): void => {
+const validateAnimationFillMode = (animation: Animation, timing: AnimationTiming): void => {
   // Only validate in development mode
-  if (
-    typeof process !== "undefined" &&
-    process.env?.NODE_ENV === "production"
-  ) {
+  if (typeof process !== "undefined" && process.env?.NODE_ENV === "production") {
     return;
   }
 
@@ -866,11 +797,7 @@ const validateAnimationFillMode = (
     const hasTransform = hasTransformAnimation(keyframes);
 
     // Fade-in or transform-in animations should use backwards
-    if (
-      (fadePattern === "fade-in" || hasTransform) &&
-      fill !== "backwards" &&
-      fill !== "both"
-    ) {
+    if ((fadePattern === "fade-in" || hasTransform) && fill !== "backwards" && fill !== "both") {
       warnings.push(
         `⚠️  Animation "${animationName}" modifies initial state but lacks 'backwards' fill-mode.`,
         `   The element will be visible in its natural state before the animation starts.`,
@@ -897,7 +824,7 @@ const validateAnimationFillMode = (
         `   Example: animation: ${animationName} ${timing.duration}ms both;`,
       );
     }
-  } catch (e) {
+  } catch (_e) {
     // Silently skip keyframe analysis if it fails
   }
 
@@ -981,10 +908,7 @@ const mapAndSetAnimationTime = (
   if (currentIteration >= iterations) {
     // Animation is completed - use completed time mapping
     const maxSafeTime = calculateMaxSafeAnimationTime(duration, iterations);
-    const completedAnimationTime = getCompletedAnimationTime(
-      timing,
-      maxSafeTime,
-    );
+    const completedAnimationTime = getCompletedAnimationTime(timing, maxSafeTime);
 
     // CRITICAL: For CSS animations, currentTime behavior differs based on whether delay > 0:
     // - If timing.delay > 0: currentTime includes the delay (absolute timeline time)
@@ -999,11 +923,7 @@ const mapAndSetAnimationTime = (
     }
   } else {
     // Animation is in progress - map element time to animation time
-    const animationTime = mapElementTimeToAnimationTime(
-      elementTime,
-      timing,
-      effectiveDelay,
-    );
+    const animationTime = mapElementTimeToAnimationTime(elementTime, timing, effectiveDelay);
 
     // CRITICAL: For CSS animations, currentTime behavior differs based on whether delay > 0:
     // - If timing.delay > 0: currentTime includes the delay (absolute timeline time)
@@ -1017,8 +937,7 @@ const mapAndSetAnimationTime = (
       // stagger offset shifts each segment's window without cancelling out.
       const staggerShift = effectiveDelay - timing.delay;
       const isAlternateWithDelay =
-        (direction === "alternate" || direction === "alternate-reverse") &&
-        effectiveDelay > 0;
+        (direction === "alternate" || direction === "alternate-reverse") && effectiveDelay > 0;
       if (isAlternateWithDelay && currentIteration === 0) {
         animation.currentTime = elementTime - staggerShift;
       } else {
@@ -1038,10 +957,7 @@ const mapAndSetAnimationTime = (
  * For animations in this element's subtree, always use this element as the time source.
  * This handles both animations directly on the temporal element and on its non-temporal children.
  */
-const synchronizeAnimation = (
-  animation: Animation,
-  element: AnimatableElement,
-): void => {
+const synchronizeAnimation = (animation: Animation, element: AnimatableElement): void => {
   const effect = animation.effect;
   if (!validateAnimationEffect(effect)) {
     return;
@@ -1083,10 +999,7 @@ const synchronizeAnimation = (
     } else {
       // Target might be a child element - find the parent text segment
       const parentSegment = target.closest("ef-text-segment");
-      if (
-        parentSegment &&
-        supportsStaggerOffset(parentSegment as AnimatableElement)
-      ) {
+      if (parentSegment && supportsStaggerOffset(parentSegment as AnimatableElement)) {
         staggerElement = parentSegment as AnimatableElement;
       }
     }
@@ -1114,8 +1027,10 @@ const coordinateElementAnimations = (
   // Discover and track animations (includes both current and previously completed ones)
   // Reuse the current animations array to avoid calling getAnimations() twice
   // Accept pre-discovered animations to avoid redundant getAnimations() calls
-  const { tracked: trackedAnimations, current: currentAnimations } =
-    discoverAndTrackAnimations(element, providedAnimations);
+  const { tracked: trackedAnimations, current: currentAnimations } = discoverAndTrackAnimations(
+    element,
+    providedAnimations,
+  );
 
   for (const animation of trackedAnimations) {
     // Skip invalid animations (cancelled, removed from DOM, etc.)
@@ -1138,10 +1053,7 @@ const coordinateElementAnimations = (
  * WHY: This function applies visual state based on the element's phase and state.
  * Phase determines what should be visible, and this function applies that decision.
  */
-const applyVisualState = (
-  element: AnimatableElement,
-  state: TemporalState,
-): void => {
+const applyVisualState = (element: AnimatableElement, state: TemporalState): void => {
   // Always set progress (needed for many use cases)
   element.style.setProperty(PROGRESS_PROPERTY, `${state.progress}`);
 
@@ -1252,9 +1164,7 @@ const synchronizeMediaElements = (root: AnimatableElement): void => {
  * Evaluates the complete state for an element update.
  * This separates evaluation (what should the state be?) from application (apply that state).
  */
-const evaluateElementState = (
-  element: AnimatableElement,
-): ElementUpdateContext => {
+const evaluateElementState = (element: AnimatableElement): ElementUpdateContext => {
   return {
     element,
     state: evaluateTemporalState(element),
@@ -1277,10 +1187,7 @@ export const updateAnimations = (element: AnimatableElement): void => {
 
   const rootContext = evaluateElementState(element);
   const timelineTimeMs = (element.rootTimegroup ?? element).currentTimeMs;
-  const { elements: collectedElements, pruned } = deepGetTemporalElements(
-    element,
-    timelineTimeMs,
-  );
+  const { elements: collectedElements, pruned } = deepGetTemporalElements(element, timelineTimeMs);
 
   // For pruned elements (invisible containers whose subtrees were skipped),
   // just set display:none directly — no need to evaluate phase/state since
@@ -1312,15 +1219,12 @@ export const updateAnimations = (element: AnimatableElement): void => {
   // Only visible elements need their animations partitioned and coordinated.
   // Build a Set of visible temporal elements for O(1) lookup, then walk up
   // from each animation target to find its closest temporal owner.
-  const temporalSet = new Set<Element>(
-    visibleChildContexts.map((c) => c.element),
-  );
+  const temporalSet = new Set<Element>(visibleChildContexts.map((c) => c.element));
   temporalSet.add(element); // Include root
   const childAnimations = new Map<AnimatableElement, Animation[]>();
   for (const animation of allAnimations) {
     const effect = animation.effect;
-    const target =
-      effect && effect instanceof KeyframeEffect ? effect.target : null;
+    const target = effect && effect instanceof KeyframeEffect ? effect.target : null;
     if (!target || !(target instanceof Element)) continue;
 
     let node: Element | null = target;
@@ -1341,11 +1245,7 @@ export const updateAnimations = (element: AnimatableElement): void => {
   // Coordinate animations for root and VISIBLE children only.
   // Invisible children (display:none) have no CSS animations to coordinate,
   // and when they become visible again, coordination runs on that frame.
-  applyAnimationCoordination(
-    rootContext.element,
-    rootContext.state.phase,
-    allAnimations,
-  );
+  applyAnimationCoordination(rootContext.element, rootContext.state.phase, allAnimations);
   for (const context of visibleChildContexts) {
     applyAnimationCoordination(
       context.element,

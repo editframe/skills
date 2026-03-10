@@ -6,7 +6,13 @@ export interface PlanDocument {
   plan_queue_id: string;
   parent_plan_id?: string;
   depth: number;
-  status: "draft" | "ready" | "claimed" | "in_progress" | "completed" | "failed";
+  status:
+    | "draft"
+    | "ready"
+    | "claimed"
+    | "in_progress"
+    | "completed"
+    | "failed";
   title: string;
   description: string;
   plan_content: string;
@@ -34,12 +40,16 @@ export function createPlan(
     requirements?: string[];
     dependencies?: string[];
     createdBy?: string;
-  }
+  },
 ): string {
   const db = getDb();
   const id = randomUUID();
   const now = Date.now();
-  const depth = options?.depth ?? (options?.parentPlanId ? getPlan(options.parentPlanId)?.depth ?? 0 + 1 : 0);
+  const depth =
+    options?.depth ??
+    (options?.parentPlanId
+      ? (getPlan(options.parentPlanId)?.depth ?? 0 + 1)
+      : 0);
 
   db.prepare(`
     INSERT INTO plan_documents (
@@ -58,7 +68,7 @@ export function createPlan(
     options?.dependencies ? JSON.stringify(options.dependencies) : null,
     options?.createdBy || null,
     now,
-    now
+    now,
   );
 
   return id;
@@ -66,23 +76,47 @@ export function createPlan(
 
 export function getPlan(id: string): PlanDocument | null {
   const db = getDb();
-  return db.prepare("SELECT * FROM plan_documents WHERE id = ?").get(id) as PlanDocument | null;
+  return db
+    .prepare("SELECT * FROM plan_documents WHERE id = ?")
+    .get(id) as PlanDocument | null;
 }
 
-export function listPlans(queueId?: string, status?: PlanDocument["status"]): PlanDocument[] {
+export function listPlans(
+  queueId?: string,
+  status?: PlanDocument["status"],
+): PlanDocument[] {
   const db = getDb();
   if (queueId && status) {
-    return db.prepare("SELECT * FROM plan_documents WHERE plan_queue_id = ? AND status = ? ORDER BY created_at ASC").all(queueId, status) as PlanDocument[];
+    return db
+      .prepare(
+        "SELECT * FROM plan_documents WHERE plan_queue_id = ? AND status = ? ORDER BY created_at ASC",
+      )
+      .all(queueId, status) as PlanDocument[];
   } else if (queueId) {
-    return db.prepare("SELECT * FROM plan_documents WHERE plan_queue_id = ? ORDER BY created_at ASC").all(queueId) as PlanDocument[];
+    return db
+      .prepare(
+        "SELECT * FROM plan_documents WHERE plan_queue_id = ? ORDER BY created_at ASC",
+      )
+      .all(queueId) as PlanDocument[];
   } else if (status) {
-    return db.prepare("SELECT * FROM plan_documents WHERE status = ? ORDER BY created_at ASC").all(status) as PlanDocument[];
+    return db
+      .prepare(
+        "SELECT * FROM plan_documents WHERE status = ? ORDER BY created_at ASC",
+      )
+      .all(status) as PlanDocument[];
   } else {
-    return db.prepare("SELECT * FROM plan_documents ORDER BY created_at ASC").all() as PlanDocument[];
+    return db
+      .prepare("SELECT * FROM plan_documents ORDER BY created_at ASC")
+      .all() as PlanDocument[];
   }
 }
 
-export function updatePlan(id: string, updates: Partial<Pick<PlanDocument, "plan_content" | "status" | "title" | "description">>): void {
+export function updatePlan(
+  id: string,
+  updates: Partial<
+    Pick<PlanDocument, "plan_content" | "status" | "title" | "description">
+  >,
+): void {
   const db = getDb();
   const setParts: string[] = [];
   const values: any[] = [];
@@ -110,7 +144,9 @@ export function updatePlan(id: string, updates: Partial<Pick<PlanDocument, "plan
   values.push(Date.now());
   values.push(id);
 
-  db.prepare(`UPDATE plan_documents SET ${setParts.join(", ")} WHERE id = ?`).run(...values);
+  db.prepare(
+    `UPDATE plan_documents SET ${setParts.join(", ")} WHERE id = ?`,
+  ).run(...values);
 }
 
 export function claimPlan(id: string, workerId: string): void {
@@ -156,8 +192,16 @@ export function failPlan(id: string, reason?: string): void {
 export function getNextReadyPlan(queueId?: string): PlanDocument | null {
   const db = getDb();
   if (queueId) {
-    return db.prepare("SELECT * FROM plan_documents WHERE plan_queue_id = ? AND status = 'ready' ORDER BY created_at ASC LIMIT 1").get(queueId) as PlanDocument | null;
+    return db
+      .prepare(
+        "SELECT * FROM plan_documents WHERE plan_queue_id = ? AND status = 'ready' ORDER BY created_at ASC LIMIT 1",
+      )
+      .get(queueId) as PlanDocument | null;
   } else {
-    return db.prepare("SELECT * FROM plan_documents WHERE status = 'ready' ORDER BY created_at ASC LIMIT 1").get() as PlanDocument | null;
+    return db
+      .prepare(
+        "SELECT * FROM plan_documents WHERE status = 'ready' ORDER BY created_at ASC LIMIT 1",
+      )
+      .get() as PlanDocument | null;
   }
 }

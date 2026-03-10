@@ -25,9 +25,7 @@ function createTrimHandles(
     mode: "standalone" | "track";
   }> = {},
 ) {
-  const trimHandles = document.createElement(
-    "ef-trim-handles",
-  ) as EFTrimHandles;
+  const trimHandles = document.createElement("ef-trim-handles") as EFTrimHandles;
   trimHandles.elementId = nextId();
   trimHandles.pixelsPerMs = overrides.pixelsPerMs ?? 0.1;
   trimHandles.trimStartMs = overrides.trimStartMs ?? 0;
@@ -40,9 +38,7 @@ function createTrimHandles(
 
 function collectTrimChanges(trimHandles: EFTrimHandles) {
   const changes: TrimChangeDetail[] = [];
-  trimHandles.addEventListener("trim-change", ((
-    e: CustomEvent<TrimChangeDetail>,
-  ) => {
+  trimHandles.addEventListener("trim-change", ((e: CustomEvent<TrimChangeDetail>) => {
     changes.push(e.detail);
   }) as EventListener);
   return changes;
@@ -98,17 +94,9 @@ describe("EFTrimHandles", () => {
     await trimHandles.updateComplete;
 
     const changes = collectTrimChanges(trimHandles);
-    const startHandle = trimHandles.shadowRoot?.querySelector(
-      ".handle-start",
-    ) as HTMLElement;
+    const startHandle = trimHandles.shadowRoot?.querySelector(".handle-start") as HTMLElement;
 
-    await simulateDrag(
-      startHandle,
-      container,
-      10,
-      50,
-      trimHandles.updateComplete,
-    );
+    await simulateDrag(startHandle, container, 10, 50, trimHandles.updateComplete);
 
     expect(changes.length).toBeGreaterThan(0);
     const detail = changes[changes.length - 1]!;
@@ -127,9 +115,7 @@ describe("EFTrimHandles", () => {
     await trimHandles.updateComplete;
 
     const changes = collectTrimChanges(trimHandles);
-    const endHandle = trimHandles.shadowRoot?.querySelector(
-      ".handle-end",
-    ) as HTMLElement;
+    const endHandle = trimHandles.shadowRoot?.querySelector(".handle-end") as HTMLElement;
     const rect = container.getBoundingClientRect();
 
     await simulateDrag(
@@ -160,17 +146,9 @@ describe("EFTrimHandles", () => {
     await trimHandles.updateComplete;
 
     const changes = collectTrimChanges(trimHandles);
-    const startHandle = trimHandles.shadowRoot?.querySelector(
-      ".handle-start",
-    ) as HTMLElement;
+    const startHandle = trimHandles.shadowRoot?.querySelector(".handle-start") as HTMLElement;
 
-    await simulateDrag(
-      startHandle,
-      container,
-      10,
-      90000,
-      trimHandles.updateComplete,
-    );
+    await simulateDrag(startHandle, container, 10, 90000, trimHandles.updateComplete);
 
     expect(changes.length).toBeGreaterThan(0);
     const lastChange = changes[changes.length - 1]!;
@@ -188,9 +166,7 @@ describe("EFTrimHandles", () => {
     await trimHandles.updateComplete;
 
     const changes = collectTrimChanges(trimHandles);
-    const endHandle = trimHandles.shadowRoot?.querySelector(
-      ".handle-end",
-    ) as HTMLElement;
+    const endHandle = trimHandles.shadowRoot?.querySelector(".handle-end") as HTMLElement;
     const rect = container.getBoundingClientRect();
 
     await simulateDrag(
@@ -214,17 +190,9 @@ describe("EFTrimHandles", () => {
     await trimHandles.updateComplete;
 
     const changes = collectTrimChanges(trimHandles);
-    const startHandle = trimHandles.shadowRoot?.querySelector(
-      ".handle-start",
-    ) as HTMLElement;
+    const startHandle = trimHandles.shadowRoot?.querySelector(".handle-start") as HTMLElement;
 
-    await simulateDrag(
-      startHandle,
-      container,
-      10,
-      -20000,
-      trimHandles.updateComplete,
-    );
+    await simulateDrag(startHandle, container, 10, -20000, trimHandles.updateComplete);
 
     expect(changes.length).toBeGreaterThan(0);
     const lastChange = changes[changes.length - 1]!;
@@ -245,9 +213,7 @@ describe("EFTrimHandles", () => {
       endDetail = e.detail;
     }) as EventListener);
 
-    const startHandle = trimHandles.shadowRoot?.querySelector(
-      ".handle-start",
-    ) as HTMLElement;
+    const startHandle = trimHandles.shadowRoot?.querySelector(".handle-start") as HTMLElement;
     const rect = container.getBoundingClientRect();
 
     startHandle.dispatchEvent(
@@ -271,12 +237,10 @@ describe("EFTrimHandles", () => {
     await trimHandles.updateComplete;
 
     expect(endDetail).toBeTruthy();
-    expect(
-      (endDetail as { elementId: string; type: string } | null)?.elementId,
-    ).toBe(trimHandles.elementId);
-    expect(
-      (endDetail as { elementId: string; type: string } | null)?.type,
-    ).toBe("start");
+    expect((endDetail as { elementId: string; type: string } | null)?.elementId).toBe(
+      trimHandles.elementId,
+    );
+    expect((endDetail as { elementId: string; type: string } | null)?.type).toBe("start");
   }, 1000);
 
   // ============================================================================
@@ -293,9 +257,7 @@ describe("EFTrimHandles", () => {
     });
     await trimHandles.updateComplete;
 
-    const startHandle = trimHandles.shadowRoot?.querySelector(
-      ".handle-start",
-    ) as HTMLElement;
+    const startHandle = trimHandles.shadowRoot?.querySelector(".handle-start") as HTMLElement;
     // trimStartMs=2000, pixelsPerMs=0.1 → handle at 200px
     expect(startHandle.style.left).toBe("200px");
   }, 1000);
@@ -310,9 +272,7 @@ describe("EFTrimHandles", () => {
     });
     await trimHandles.updateComplete;
 
-    const endHandle = trimHandles.shadowRoot?.querySelector(
-      ".handle-end",
-    ) as HTMLElement;
+    const endHandle = trimHandles.shadowRoot?.querySelector(".handle-end") as HTMLElement;
     // trimEndMs=3000, pixelsPerMs=0.1 → handle at right: 300px
     expect(endHandle.style.right).toBe("300px");
   }, 1000);
@@ -330,12 +290,8 @@ describe("EFTrimHandles", () => {
     });
     await trimHandles.updateComplete;
 
-    const startHandle = trimHandles.shadowRoot?.querySelector(
-      ".handle-start",
-    ) as HTMLElement;
-    const endHandle = trimHandles.shadowRoot?.querySelector(
-      ".handle-end",
-    ) as HTMLElement;
+    const startHandle = trimHandles.shadowRoot?.querySelector(".handle-start") as HTMLElement;
+    const endHandle = trimHandles.shadowRoot?.querySelector(".handle-end") as HTMLElement;
 
     // In track mode, handles stay at edges regardless of trim values
     expect(startHandle.style.left).toBe("");
@@ -354,9 +310,7 @@ describe("EFTrimHandles", () => {
     });
     await trimHandles.updateComplete;
 
-    const region = trimHandles.shadowRoot?.querySelector(
-      ".region",
-    ) as HTMLElement;
+    const region = trimHandles.shadowRoot?.querySelector(".region") as HTMLElement;
     expect(region).toBeTruthy();
   }, 1000);
 
@@ -371,9 +325,7 @@ describe("EFTrimHandles", () => {
     await trimHandles.updateComplete;
 
     const changes = collectTrimChanges(trimHandles);
-    const region = trimHandles.shadowRoot?.querySelector(
-      ".region",
-    ) as HTMLElement;
+    const region = trimHandles.shadowRoot?.querySelector(".region") as HTMLElement;
     expect(region).toBeTruthy();
 
     // Drag region 100px to the right → 1000ms
@@ -402,18 +354,10 @@ describe("EFTrimHandles", () => {
     await trimHandles.updateComplete;
 
     const changes = collectTrimChanges(trimHandles);
-    const region = trimHandles.shadowRoot?.querySelector(
-      ".region",
-    ) as HTMLElement;
+    const region = trimHandles.shadowRoot?.querySelector(".region") as HTMLElement;
 
     // Drag far to the left — should clamp trimStartMs at 0
-    await simulateDrag(
-      region,
-      container,
-      500,
-      -5000,
-      trimHandles.updateComplete,
-    );
+    await simulateDrag(region, container, 500, -5000, trimHandles.updateComplete);
 
     expect(changes.length).toBeGreaterThan(0);
     const detail = changes[changes.length - 1]!;
@@ -432,18 +376,10 @@ describe("EFTrimHandles", () => {
     await trimHandles.updateComplete;
 
     const changes = collectTrimChanges(trimHandles);
-    const region = trimHandles.shadowRoot?.querySelector(
-      ".region",
-    ) as HTMLElement;
+    const region = trimHandles.shadowRoot?.querySelector(".region") as HTMLElement;
 
     // Drag far to the right — should clamp trimEndMs at 0
-    await simulateDrag(
-      region,
-      container,
-      500,
-      6000,
-      trimHandles.updateComplete,
-    );
+    await simulateDrag(region, container, 500, 6000, trimHandles.updateComplete);
 
     expect(changes.length).toBeGreaterThan(0);
     const detail = changes[changes.length - 1]!;
@@ -459,9 +395,9 @@ describe("EFTrimHandles", () => {
     const container = createContainer(1000);
 
     // Create a mock seek target with a currentTimeMs property
-    const seekTarget = document.createElement(
-      "div",
-    ) as unknown as HTMLElement & { currentTimeMs: number };
+    const seekTarget = document.createElement("div") as unknown as HTMLElement & {
+      currentTimeMs: number;
+    };
     seekTarget.id = "seek-target-start";
     (seekTarget as any).currentTimeMs = 5000;
     container.appendChild(seekTarget);
@@ -475,16 +411,8 @@ describe("EFTrimHandles", () => {
     trimHandles.seekTarget = seekTarget.id;
     await trimHandles.updateComplete;
 
-    const startHandle = trimHandles.shadowRoot?.querySelector(
-      ".handle-start",
-    ) as HTMLElement;
-    await simulateDrag(
-      startHandle,
-      container,
-      100,
-      200,
-      trimHandles.updateComplete,
-    );
+    const startHandle = trimHandles.shadowRoot?.querySelector(".handle-start") as HTMLElement;
+    await simulateDrag(startHandle, container, 100, 200, trimHandles.updateComplete);
 
     expect((seekTarget as any).currentTimeMs).toBe(0);
   }, 1000);
@@ -492,9 +420,9 @@ describe("EFTrimHandles", () => {
   test("seeks target to end of kept duration when dragging end handle", async () => {
     const container = createContainer(1000);
 
-    const seekTarget = document.createElement(
-      "div",
-    ) as unknown as HTMLElement & { currentTimeMs: number };
+    const seekTarget = document.createElement("div") as unknown as HTMLElement & {
+      currentTimeMs: number;
+    };
     seekTarget.id = "seek-target-end";
     (seekTarget as any).currentTimeMs = 0;
     container.appendChild(seekTarget);
@@ -508,9 +436,7 @@ describe("EFTrimHandles", () => {
     trimHandles.seekTarget = seekTarget.id;
     await trimHandles.updateComplete;
 
-    const endHandle = trimHandles.shadowRoot?.querySelector(
-      ".handle-end",
-    ) as HTMLElement;
+    const endHandle = trimHandles.shadowRoot?.querySelector(".handle-end") as HTMLElement;
     const rect = container.getBoundingClientRect();
     await simulateDrag(
       endHandle,
@@ -527,9 +453,9 @@ describe("EFTrimHandles", () => {
   test("seeks target to 0 when dragging region", async () => {
     const container = createContainer(1000);
 
-    const seekTarget = document.createElement(
-      "div",
-    ) as unknown as HTMLElement & { currentTimeMs: number };
+    const seekTarget = document.createElement("div") as unknown as HTMLElement & {
+      currentTimeMs: number;
+    };
     seekTarget.id = "seek-target-region";
     (seekTarget as any).currentTimeMs = 5000;
     container.appendChild(seekTarget);
@@ -543,9 +469,7 @@ describe("EFTrimHandles", () => {
     trimHandles.seekTarget = seekTarget.id;
     await trimHandles.updateComplete;
 
-    const region = trimHandles.shadowRoot?.querySelector(
-      ".region",
-    ) as HTMLElement;
+    const region = trimHandles.shadowRoot?.querySelector(".region") as HTMLElement;
     await simulateDrag(region, container, 500, 600, trimHandles.updateComplete);
 
     expect((seekTarget as any).currentTimeMs).toBe(0);
@@ -563,17 +487,9 @@ describe("EFTrimHandles", () => {
     });
     await trimHandles.updateComplete;
 
-    const startHandle = trimHandles.shadowRoot?.querySelector(
-      ".handle-start",
-    ) as HTMLElement;
+    const startHandle = trimHandles.shadowRoot?.querySelector(".handle-start") as HTMLElement;
     // Should not throw
-    await simulateDrag(
-      startHandle,
-      container,
-      100,
-      200,
-      trimHandles.updateComplete,
-    );
+    await simulateDrag(startHandle, container, 100, 200, trimHandles.updateComplete);
   }, 1000);
 
   test("region zone is not rendered in track mode", async () => {
@@ -585,9 +501,7 @@ describe("EFTrimHandles", () => {
     });
     await trimHandles.updateComplete;
 
-    const region = trimHandles.shadowRoot?.querySelector(
-      ".region",
-    ) as HTMLElement;
+    const region = trimHandles.shadowRoot?.querySelector(".region") as HTMLElement;
     expect(region).toBeNull();
   }, 1000);
 });

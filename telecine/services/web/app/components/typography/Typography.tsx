@@ -2,7 +2,16 @@ import type { ReactNode } from "react";
 import clsx from "clsx";
 import { typographyClasses, getTypographyClasses } from "~/utils/typography";
 
-type TypographyVariant = "body" | "small" | "large" | "h1" | "h2" | "h3" | "h4" | "lead" | "paragraph";
+type TypographyVariant =
+  | "body"
+  | "small"
+  | "large"
+  | "h1"
+  | "h2"
+  | "h3"
+  | "h4"
+  | "lead"
+  | "paragraph";
 
 interface TypographyProps {
   /**
@@ -31,17 +40,18 @@ interface TypographyProps {
   includeSpacing?: boolean;
 }
 
-const defaultElements: Record<TypographyVariant, keyof JSX.IntrinsicElements> = {
-  body: "p",
-  small: "p",
-  large: "p",
-  h1: "h1",
-  h2: "h2",
-  h3: "h3",
-  h4: "h4",
-  lead: "p",
-  paragraph: "p",
-};
+const defaultElements: Record<TypographyVariant, keyof JSX.IntrinsicElements> =
+  {
+    body: "p",
+    small: "p",
+    large: "p",
+    h1: "h1",
+    h2: "h2",
+    h3: "h3",
+    h4: "h4",
+    lead: "p",
+    paragraph: "p",
+  };
 
 /**
  * Typography component for consistent text styling across the application.
@@ -56,23 +66,12 @@ export function Typography({
   includeSpacing = true,
 }: TypographyProps) {
   const Component = as || defaultElements[variant];
-  const baseClasses = variant === "paragraph" 
-    ? typographyClasses.paragraph
-    : getTypographyClasses(variant, { includeColor, includeSpacing });
+  const baseClasses =
+    variant === "paragraph"
+      ? typographyClasses.paragraph
+      : getTypographyClasses(variant, { includeColor, includeSpacing });
 
   return (
-    <Component className={clsx(baseClasses, className)}>
-      {children}
-    </Component>
+    <Component className={clsx(baseClasses, className)}>{children}</Component>
   );
 }
-
-
-
-
-
-
-
-
-
-

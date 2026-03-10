@@ -21,11 +21,7 @@ function canvasHasContent(canvas: HTMLCanvasElement): boolean {
   if (!ctx) return false;
 
   // Sample pixels from center region (faster than checking all pixels)
-  const sampleSize = Math.min(
-    100,
-    Math.floor(canvas.width / 4),
-    Math.floor(canvas.height / 4),
-  );
+  const sampleSize = Math.min(100, Math.floor(canvas.width / 4), Math.floor(canvas.height / 4));
   const startX = Math.floor((canvas.width - sampleSize) / 2);
   const startY = Math.floor((canvas.height - sampleSize) / 2);
 
@@ -120,12 +116,9 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
   beforeEach(() => {
     // Save original values
     originalPresentationMode =
-      (localStorage.getItem(
-        "ef-preview-presentation-mode",
-      ) as PreviewPresentationMode) || "dom";
+      (localStorage.getItem("ef-preview-presentation-mode") as PreviewPresentationMode) || "dom";
     originalRenderMode =
-      (localStorage.getItem("ef-preview-render-mode") as RenderMode) ||
-      "foreignObject";
+      (localStorage.getItem("ef-preview-render-mode") as RenderMode) || "foreignObject";
 
     // Enable interactive mode for workbench wrapping
     setEFInteractive(true);
@@ -152,9 +145,7 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
   // Skip canvas initialization tests - these are failing due to timing/assertion issues
   // Canvas rendering tests need more investigation. Not blocking for beta release.
   describe.skip("Rendering Mode Tests", () => {
-    test("canvas mode renders first frame in native mode with autoInit", async ({
-      expect,
-    }) => {
+    test("canvas mode renders first frame in native mode with autoInit", async ({ expect }) => {
       // Set presentation mode to canvas
       setPreviewPresentationMode("canvas");
       setRenderMode("native");
@@ -270,9 +261,7 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
       }
     });
 
-    test("canvas mode renders first frame in native mode without autoInit", async ({
-      expect,
-    }) => {
+    test("canvas mode renders first frame in native mode without autoInit", async ({ expect }) => {
       // Set presentation mode to canvas
       setPreviewPresentationMode("canvas");
       setRenderMode("native");
@@ -380,9 +369,7 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
       }
     });
 
-    test("DOM mode renders content directly (no canvas)", async ({
-      expect,
-    }) => {
+    test("DOM mode renders content directly (no canvas)", async ({ expect }) => {
       // Set presentation mode to original (DOM mode)
       setPreviewPresentationMode("dom");
 
@@ -436,9 +423,7 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
   // Skip initialization race condition tests - failing due to timing issues
   // These tests need more investigation but aren't blocking for beta release.
   describe.skip("Initialization Race Condition Tests", () => {
-    test("canvas renders after workbench wraps timegroup", async ({
-      expect,
-    }) => {
+    test("canvas renders after workbench wraps timegroup", async ({ expect }) => {
       setPreviewPresentationMode("canvas");
       setRenderMode("foreignObject");
 
@@ -488,9 +473,7 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
       }
     });
 
-    test("canvas renders with pure DOM content (no media)", async ({
-      expect,
-    }) => {
+    test("canvas renders with pure DOM content (no media)", async ({ expect }) => {
       setPreviewPresentationMode("canvas");
       setRenderMode("foreignObject");
 
@@ -593,17 +576,14 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
       }
     });
 
-    test(
-      "canvas renders correctly after mode switch",
-      { timeout: 10000 },
-      async ({ expect }) => {
-        // This test requires more time for mode switching and canvas rendering
-        // Skip for now as it's timing out with 3s limit - needs investigation
-        // Start in DOM mode
-        setPreviewPresentationMode("dom");
+    test("canvas renders correctly after mode switch", { timeout: 10000 }, async ({ expect }) => {
+      // This test requires more time for mode switching and canvas rendering
+      // Skip for now as it's timing out with 3s limit - needs investigation
+      // Start in DOM mode
+      setPreviewPresentationMode("dom");
 
-        render(
-          html`
+      render(
+        html`
           <ef-timegroup
             id="test-timegroup"
             workbench
@@ -617,38 +597,37 @@ describe("EFWorkbench Canvas Mode Initialization", () => {
             </div>
           </ef-timegroup>
         `,
-          container,
-        );
+        container,
+      );
 
-        await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
-        const timegroup = document.querySelector("ef-timegroup") as EFTimegroup;
-        const workbench = timegroup?.closest("ef-workbench") as EFWorkbench;
+      const timegroup = document.querySelector("ef-timegroup") as EFTimegroup;
+      const workbench = timegroup?.closest("ef-workbench") as EFWorkbench;
 
-        await workbench?.updateComplete;
+      await workbench?.updateComplete;
 
-        if (timegroup?.isRootTimegroup) {
-          await timegroup.waitForMediaDurations().catch(() => {});
-          await timegroup.seek(0).catch(() => {});
-        }
+      if (timegroup?.isRootTimegroup) {
+        await timegroup.waitForMediaDurations().catch(() => {});
+        await timegroup.seek(0).catch(() => {});
+      }
 
-        // Switch to canvas mode
-        setPreviewPresentationMode("canvas");
-        setRenderMode("foreignObject");
+      // Switch to canvas mode
+      setPreviewPresentationMode("canvas");
+      setRenderMode("foreignObject");
 
-        // Trigger mode change
-        await workbench?.updateComplete;
-        await new Promise((resolve) => setTimeout(resolve, 200));
+      // Trigger mode change
+      await workbench?.updateComplete;
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
-        // Wait for canvas to appear and render
-        const canvas = await waitForWorkbenchCanvas(workbench!, 3000);
-        expect(canvas).toBeTruthy();
+      // Wait for canvas to appear and render
+      const canvas = await waitForWorkbenchCanvas(workbench!, 3000);
+      expect(canvas).toBeTruthy();
 
-        if (canvas) {
-          const hasContent = await waitForCanvasContent(canvas, 3000);
-          expect(hasContent).toBe(true);
-        }
-      },
-    );
+      if (canvas) {
+        const hasContent = await waitForCanvasContent(canvas, 3000);
+        expect(hasContent).toBe(true);
+      }
+    });
   });
 });

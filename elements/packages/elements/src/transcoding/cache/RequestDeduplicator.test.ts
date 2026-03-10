@@ -50,9 +50,9 @@ describe("RequestDeduplicator", () => {
       const error = new Error("Request failed");
       const mockFactory = vi.fn().mockRejectedValue(error);
 
-      await expect(
-        deduplicator.executeRequest("key1", mockFactory),
-      ).rejects.toThrow("Request failed");
+      await expect(deduplicator.executeRequest("key1", mockFactory)).rejects.toThrow(
+        "Request failed",
+      );
 
       // Should allow new request with same key after failure
       const mockFactory2 = vi.fn().mockResolvedValue("success");

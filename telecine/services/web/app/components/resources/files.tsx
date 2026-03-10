@@ -446,4 +446,7 @@ export function createFileTypeView(
 
 export const VideoFiles = createFileTypeView("video", "/resource/upload-file");
 export const ImageFiles = createFileTypeView("image", "/resource/upload-file");
-export const CaptionFiles = createFileTypeView("caption", "/resource/upload-file");
+export const CaptionFiles = createFileTypeView(
+  "caption",
+  "/resource/upload-file",
+);

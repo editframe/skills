@@ -233,11 +233,7 @@ export class EFTransformHandles extends LitElement {
    * Ensures only one mode is active at a time (invariant).
    */
   private transitionInteractionMode(
-    event:
-      | "mousedown-drag"
-      | "mousedown-resize"
-      | "mousedown-rotate"
-      | "mouseup",
+    event: "mousedown-drag" | "mousedown-resize" | "mousedown-rotate" | "mouseup",
   ): InteractionMode {
     if (event === "mouseup") {
       return "idle";
@@ -339,9 +335,7 @@ export class EFTransformHandles extends LitElement {
 
         const zoomScale = this.getZoomScale();
         const initialCanvas = this.screenToCanvas(this.initialBounds);
-        const rotation = this.enableRotation
-          ? (this.initialBounds.rotation ?? 0)
-          : 0;
+        const rotation = this.enableRotation ? (this.initialBounds.rotation ?? 0) : 0;
 
         // Calculate the fixed corner (opposite to handle being dragged)
         const oppositeCorner = getOppositeCorner(this.activeResizeHandle);
@@ -384,24 +378,15 @@ export class EFTransformHandles extends LitElement {
           left: 0,
           top: 0,
         };
-        const centerX =
-          overlayRect.left +
-          this.initialBounds.x +
-          this.initialBounds.width / 2;
-        const centerY =
-          overlayRect.top +
-          this.initialBounds.y +
-          this.initialBounds.height / 2;
+        const centerX = overlayRect.left + this.initialBounds.x + this.initialBounds.width / 2;
+        const centerY = overlayRect.top + this.initialBounds.y + this.initialBounds.height / 2;
 
         // Calculate angle from mouse start to current position
         const startAngle =
-          Math.atan2(this.mouseStart.y - centerY, this.mouseStart.x - centerX) *
-            (180 / Math.PI) +
+          Math.atan2(this.mouseStart.y - centerY, this.mouseStart.x - centerX) * (180 / Math.PI) +
           90;
         const currentAngle =
-          Math.atan2(e.clientY - centerY, e.clientX - centerX) *
-            (180 / Math.PI) +
-          90;
+          Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI) + 90;
 
         // Normalize angle difference to [-180, 180] to avoid wrapping issues
         let deltaAngle = currentAngle - startAngle;
@@ -410,8 +395,7 @@ export class EFTransformHandles extends LitElement {
 
         let newRotation = (this.initialBounds.rotation ?? 0) + deltaAngle;
         if (this.rotationStep !== undefined && this.rotationStep > 0) {
-          newRotation =
-            Math.round(newRotation / this.rotationStep) * this.rotationStep;
+          newRotation = Math.round(newRotation / this.rotationStep) * this.rotationStep;
         }
 
         this.dispatchEvent(
@@ -461,16 +445,7 @@ export class EFTransformHandles extends LitElement {
       overlayStyles.transformOrigin = "center";
     }
 
-    const allHandles: ResizeHandle[] = [
-      "nw",
-      "n",
-      "ne",
-      "e",
-      "se",
-      "s",
-      "sw",
-      "w",
-    ];
+    const allHandles: ResizeHandle[] = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
     const cornerHandles: ResizeHandle[] = ["nw", "ne", "se", "sw"];
     const handles = this.cornersOnly ? cornerHandles : allHandles;
 
@@ -492,9 +467,7 @@ export class EFTransformHandles extends LitElement {
         ${
           this.enableResize
             ? handles.map((handle) => {
-                const rotation = this.enableRotation
-                  ? (currentBounds.rotation ?? 0)
-                  : 0;
+                const rotation = this.enableRotation ? (currentBounds.rotation ?? 0) : 0;
                 const cursor = getResizeHandleCursor(handle, rotation);
                 return html`
                 <div

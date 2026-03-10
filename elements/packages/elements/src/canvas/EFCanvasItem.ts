@@ -59,9 +59,7 @@ export class EFCanvasItem extends LitElement {
     // Find parent ef-canvas
     this.canvas = this.closest("ef-canvas") as EFCanvas | null;
     if (!this.canvas) {
-      console.warn(
-        "[EFCanvasItem] No parent ef-canvas found. Element will not be registered.",
-      );
+      console.warn("[EFCanvasItem] No parent ef-canvas found. Element will not be registered.");
       return;
     }
 

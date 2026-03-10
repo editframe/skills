@@ -22,7 +22,9 @@ export function MobileTocButton() {
       {/* Backdrop */}
       <div
         className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-200 xl:hidden ${
-          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          isOpen
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
         }`}
         onClick={() => setIsOpen(false)}
         aria-hidden="true"
@@ -54,7 +56,11 @@ export function MobileTocButton() {
                 stroke="currentColor"
                 strokeWidth={2}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -79,7 +85,11 @@ export function MobileTocButton() {
           stroke="currentColor"
           strokeWidth={2}
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h10M4 14h12M4 18h8" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M4 6h16M4 10h10M4 14h12M4 18h8"
+          />
         </svg>
       </button>
     </>

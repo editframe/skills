@@ -4,10 +4,7 @@
  */
 
 import { describe, it, expect, beforeAll } from "vitest";
-import {
-  serializeElementToXHTML,
-  captureTimelineToDataUri,
-} from "./serializeTimelineDirect.js";
+import { serializeElementToXHTML, captureTimelineToDataUri } from "./serializeTimelineDirect.js";
 import { loadImageFromDataUri } from "./loadImage.js";
 import type { EFTimegroup } from "../../elements/EFTimegroup.js";
 import "../../elements/EFTimegroup.js";
@@ -160,8 +157,7 @@ describe("serialization pipeline performance", () => {
       title.style.cssText = "color:white;margin:0;font-size:14px;";
       title.textContent = `Card ${i + 1}`;
       const body = document.createElement("p");
-      body.style.cssText =
-        "color:rgba(255,255,255,0.7);margin:4px 0;font-size:11px;";
+      body.style.cssText = "color:rgba(255,255,255,0.7);margin:4px 0;font-size:11px;";
       body.textContent =
         "Sample card content with text that wraps to multiple lines for testing serialization performance.";
       const footer = document.createElement("div");
@@ -270,11 +266,9 @@ describe("serialization pipeline performance", () => {
     // Direct worker encoding benchmark. Shows the cost difference between
     // JPEG and PNG at different resolutions — this is the bottleneck for
     // canvas-heavy compositions.
-    const { encodeCanvasInWorker } =
-      await import("../encoding/workerEncoder.js");
+    const { encodeCanvasInWorker } = await import("../encoding/workerEncoder.js");
     const { WorkerPool } = await import("../workers/WorkerPool.js");
-    const { getEncoderWorkerUrl } =
-      await import("../workers/encoderWorkerInline.js");
+    const { getEncoderWorkerUrl } = await import("../workers/encoderWorkerInline.js");
 
     const workerUrl = getEncoderWorkerUrl();
     const pool = new WorkerPool(workerUrl);
@@ -303,21 +297,13 @@ describe("serialization pipeline performance", () => {
 
       // Warmup
       for (let i = 0; i < 2; i++) {
-        await pool.execute((worker) =>
-          encodeCanvasInWorker(worker, canvas, false),
-        );
-        await pool.execute((worker) =>
-          encodeCanvasInWorker(worker, canvas, true),
-        );
+        await pool.execute((worker) => encodeCanvasInWorker(worker, canvas, false));
+        await pool.execute((worker) => encodeCanvasInWorker(worker, canvas, true));
       }
 
       for (let i = 0; i < 10; i++) {
-        await pool.execute((worker) =>
-          encodeCanvasInWorker(worker, canvas, false),
-        );
-        await pool.execute((worker) =>
-          encodeCanvasInWorker(worker, canvas, true),
-        );
+        await pool.execute((worker) => encodeCanvasInWorker(worker, canvas, false));
+        await pool.execute((worker) => encodeCanvasInWorker(worker, canvas, true));
       }
     }
 
@@ -334,15 +320,11 @@ describe("serialization pipeline performance", () => {
 
     // Warmup
     for (let i = 0; i < 2; i++) {
-      await pool.execute((worker) =>
-        encodeCanvasInWorker(worker, bigCanvas, false),
-      );
+      await pool.execute((worker) => encodeCanvasInWorker(worker, bigCanvas, false));
     }
 
     for (let i = 0; i < 10; i++) {
-      await pool.execute((worker) =>
-        encodeCanvasInWorker(worker, bigCanvas, false),
-      );
+      await pool.execute((worker) => encodeCanvasInWorker(worker, bigCanvas, false));
     }
 
     pool.terminate();

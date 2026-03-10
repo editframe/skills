@@ -83,8 +83,7 @@ export const CodeBlock: FC<CodeBlockProps> = ({ children, className = "" }) => {
       className?: string;
     }>;
     code = removeCommonIndentation(codeElement.props.children.trim());
-    language =
-      codeElement.props.className?.replace("language-", "") || "text";
+    language = codeElement.props.className?.replace("language-", "") || "text";
   }
 
   const resolvedLanguage = languageAliases[language] || language;

@@ -22,9 +22,7 @@ describe("Loading Indicator", () => {
     document.body.innerHTML = "";
   });
 
-  test("should render loading overlay when loading state is active", async ({
-    expect,
-  }) => {
+  test("should render loading overlay when loading state is active", async ({ expect }) => {
     const container = document.createElement("div");
     render(
       html`<ef-workbench>
@@ -148,9 +146,7 @@ describe("Loading Indicator Behavior", () => {
     };
 
     expect(loadingLifecycle.start).toContain("set when operation begins");
-    expect(loadingLifecycle.completion).toContain(
-      "cleared when operation completes",
-    );
+    expect(loadingLifecycle.completion).toContain("cleared when operation completes");
   });
 
   test("should validate DelayedLoadingState configuration", ({ expect }) => {
@@ -163,8 +159,6 @@ describe("Loading Indicator Behavior", () => {
 
     expect(delayedLoadingBehavior.gracePeriod).toContain("250ms");
     expect(delayedLoadingBehavior.purpose).toContain("Prevents flashing");
-    expect(delayedLoadingBehavior.threshold).toContain(
-      "longer than grace period",
-    );
+    expect(delayedLoadingBehavior.threshold).toContain("longer than grace period");
   });
 });

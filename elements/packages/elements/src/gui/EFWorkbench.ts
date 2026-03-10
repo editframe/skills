@@ -1,10 +1,5 @@
 import { css, html, LitElement, type PropertyValueMap } from "lit";
-import {
-  customElement,
-  eventOptions,
-  property,
-  state,
-} from "lit/decorators.js";
+import { customElement, eventOptions, property, state } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
 
 import { ContextMixin } from "./ContextMixin.js";
@@ -37,10 +32,7 @@ import { AdaptiveResolutionTracker } from "../preview/AdaptiveResolutionTracker.
 import { RenderStats, type PlaybackStats } from "../preview/RenderStats.js";
 import { DomStatsStrategy } from "../preview/statsTrackingStrategy.js";
 import { provide } from "@lit/context";
-import {
-  previewSettingsContext,
-  type PreviewSettings,
-} from "./previewSettingsContext.js";
+import { previewSettingsContext, type PreviewSettings } from "./previewSettingsContext.js";
 import { phosphorIcon, ICONS } from "./icons.js";
 
 // Side-effect import for template usage (pan-zoom is created in light DOM by wrapWithWorkbench)
@@ -533,12 +525,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   private exportProgress: RenderProgress | null = null;
 
   @state()
-  private exportStatus:
-    | "idle"
-    | "rendering"
-    | "complete"
-    | "error"
-    | "cancelled" = "idle";
+  private exportStatus: "idle" | "rendering" | "complete" | "error" | "cancelled" = "idle";
 
   @provide({ context: previewSettingsContext })
   @state()
@@ -555,12 +542,10 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   private renderMode: RenderMode = this.previewSettings.renderMode;
 
   @state()
-  private presentationMode: PreviewPresentationMode =
-    this.previewSettings.presentationMode;
+  private presentationMode: PreviewPresentationMode = this.previewSettings.presentationMode;
 
   @state()
-  private previewResolutionScale: PreviewResolutionScale =
-    this.previewSettings.resolutionScale;
+  private previewResolutionScale: PreviewResolutionScale = this.previewSettings.resolutionScale;
 
   @state()
   private exportOptions = {
@@ -667,10 +652,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     }
 
     // Listen for pan-zoom transform changes
-    this.addEventListener(
-      "transform-changed",
-      this.boundHandleTransformChanged as EventListener,
-    );
+    this.addEventListener("transform-changed", this.boundHandleTransformChanged as EventListener);
 
     // Start motion state polling (checks playing state and scrubbing ref)
     this.startMotionStateTracking();
@@ -704,18 +686,13 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
 
     // Listen for system theme changes when in system mode
     if (typeof window !== "undefined") {
-      this.systemThemeMediaQuery = window.matchMedia(
-        "(prefers-color-scheme: dark)",
-      );
+      this.systemThemeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
       this.systemThemeListener = () => {
         if (this.themeMode === "system") {
           this.applyTheme();
         }
       };
-      this.systemThemeMediaQuery.addEventListener(
-        "change",
-        this.systemThemeListener,
-      );
+      this.systemThemeMediaQuery.addEventListener("change", this.systemThemeListener);
     }
   }
 
@@ -743,10 +720,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
 
     // Clean up theme listener
     if (this.systemThemeMediaQuery && this.systemThemeListener) {
-      this.systemThemeMediaQuery.removeEventListener(
-        "change",
-        this.systemThemeListener,
-      );
+      this.systemThemeMediaQuery.removeEventListener("change", this.systemThemeListener);
     }
 
     // Clean up motion state tracking
@@ -772,10 +746,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
 
     // Clean up timegroup ready state listener
     if (this.#trackedTimegroup && this.#readyStateHandler) {
-      this.#trackedTimegroup.removeEventListener(
-        "readystatechange",
-        this.#readyStateHandler,
-      );
+      this.#trackedTimegroup.removeEventListener("readystatechange", this.#readyStateHandler);
       this.#trackedTimegroup = null;
       this.#readyStateHandler = null;
     }
@@ -813,9 +784,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   private lastCanvasZoom = 1;
   private zoomReinitTimeout: number | null = null;
 
-  private handleTransformChanged(
-    e: CustomEvent<{ x: number; y: number; scale: number }>,
-  ) {
+  private handleTransformChanged(e: CustomEvent<{ x: number; y: number; scale: number }>) {
     this.panZoomTransform = e.detail;
 
     // Save pan/zoom state to localStorage
@@ -868,10 +837,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     if (timegroup === this.#trackedTimegroup) return;
 
     if (this.#trackedTimegroup && this.#readyStateHandler) {
-      this.#trackedTimegroup.removeEventListener(
-        "readystatechange",
-        this.#readyStateHandler,
-      );
+      this.#trackedTimegroup.removeEventListener("readystatechange", this.#readyStateHandler);
     }
 
     this.#trackedTimegroup = timegroup;
@@ -883,8 +849,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     }
 
     this.#readyStateHandler = () => {
-      this.previewIsLoading =
-        (timegroup as any).contentReadyState === "loading";
+      this.previewIsLoading = (timegroup as any).contentReadyState === "loading";
     };
     timegroup.addEventListener("readystatechange", this.#readyStateHandler);
     this.previewIsLoading = (timegroup as any).contentReadyState === "loading";
@@ -975,10 +940,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
         });
       }
     } catch (error) {
-      console.warn(
-        "Failed to restore preview pan/zoom from localStorage",
-        error,
-      );
+      console.warn("Failed to restore preview pan/zoom from localStorage", error);
     }
   }
 
@@ -1056,18 +1018,14 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
   private setOverlaysPaused(paused: boolean): void {
     const canvasSlot = this.querySelector("[slot='canvas']");
     if (!canvasSlot) return;
-    const efCanvas = canvasSlot.querySelector(
-      "ef-canvas",
-    ) as HTMLElement | null;
+    const efCanvas = canvasSlot.querySelector("ef-canvas") as HTMLElement | null;
     if (efCanvas && "paused" in efCanvas) {
       (efCanvas as any).paused = paused;
     }
     // SelectionOverlay is a sibling of ef-pan-zoom inside the workbench shadow DOM,
     // or a child of the canvas slot container. Search both locations.
     const overlay =
-      (canvasSlot.querySelector(
-        "ef-canvas-selection-overlay",
-      ) as HTMLElement | null) ??
+      (canvasSlot.querySelector("ef-canvas-selection-overlay") as HTMLElement | null) ??
       (this.querySelector("ef-canvas-selection-overlay") as HTMLElement | null);
     if (overlay && "paused" in overlay) {
       (overlay as any).paused = paused;
@@ -1110,9 +1068,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
 
         // Set canvas to the initial adaptive scale (instant - no rebuild)
         if (this.canvasPreviewResult) {
-          this.canvasPreviewResult.setResolutionScale(
-            this.currentAdaptiveScale,
-          );
+          this.canvasPreviewResult.setResolutionScale(this.currentAdaptiveScale);
         }
       }
     }
@@ -1144,10 +1100,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     this.setOverlaysPaused(false);
 
     // If in auto mode, set full resolution (instant - no rebuild needed)
-    if (
-      this.previewResolutionScale === "auto" &&
-      this.presentationMode === "canvas"
-    ) {
+    if (this.previewResolutionScale === "auto" && this.presentationMode === "canvas") {
       // Reset tracker and set full resolution
       this.adaptiveTracker?.reset();
       this.currentAdaptiveScale = 1;
@@ -1257,9 +1210,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
 
     // Pause the ef-fit-scale to prevent it from applying transforms
     const fitScale = this.querySelector("[slot='canvas']") as any;
-    const hasFitScaleMethods = !!(
-      fitScale?.removeScale && fitScale?.paused !== undefined
-    );
+    const hasFitScaleMethods = !!(fitScale?.removeScale && fitScale?.paused !== undefined);
     if (hasFitScaleMethods) {
       fitScale.paused = true;
       fitScale.removeScale();
@@ -1314,10 +1265,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
    *
    * Note: For "auto" mode, use getEffectiveResolutionScale() instead.
    */
-  private getResolutionScale(
-    timegroup: EFTimegroup,
-    _canvasContainer: HTMLElement,
-  ): number {
+  private getResolutionScale(timegroup: EFTimegroup, _canvasContainer: HTMLElement): number {
     // For "auto" mode, delegate to getEffectiveResolutionScale
     if (this.previewResolutionScale === "auto") {
       return this.getEffectiveResolutionScale(timegroup, _canvasContainer);
@@ -1417,8 +1365,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
 
       // Create canvas preview - this builds the clone structure ONCE
       // Dynamic import to avoid loading render utilities during SSR
-      const { renderTimegroupToCanvas } =
-        await import("../preview/renderTimegroupToCanvas.js");
+      const { renderTimegroupToCanvas } = await import("../preview/renderTimegroupToCanvas.js");
       const result = renderTimegroupToCanvas(timegroup, {
         scale: 1,
         resolutionScale: initialResolutionScale,
@@ -1451,11 +1398,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
 
             // Always record render stats (regardless of display visibility)
             if (this.renderStats) {
-              this.renderStats.recordFrame(
-                renderTime,
-                performance.now(),
-                this.isAtRest,
-              );
+              this.renderStats.recordFrame(renderTime, performance.now(), this.isAtRest);
             }
 
             this.updateCanvasTransform();
@@ -1523,8 +1466,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
 
     try {
       // Dynamic import to avoid loading render utilities during SSR
-      const { renderTimegroupToCanvas } =
-        await import("../preview/renderTimegroupToCanvas.js");
+      const { renderTimegroupToCanvas } = await import("../preview/renderTimegroupToCanvas.js");
       const { canvas, refresh } = renderTimegroupToCanvas(timegroup, 1);
       return { canvas, refresh };
     } catch (e) {
@@ -1553,8 +1495,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
 
     try {
       // Dynamic import to avoid loading render utilities during SSR
-      const { renderTimegroupToVideo } =
-        await import("../preview/renderTimegroupToVideo.js");
+      const { renderTimegroupToVideo } = await import("../preview/renderTimegroupToVideo.js");
       await renderTimegroupToVideo(timegroup, {
         ...options,
         signal: this.exportAbortController.signal,
@@ -1572,8 +1513,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       }, 2000);
     } catch (e) {
       // Need to re-import to check error type
-      const { RenderCancelledError } =
-        await import("../preview/renderTimegroupToVideo.js");
+      const { RenderCancelledError } = await import("../preview/renderTimegroupToVideo.js");
       if (e instanceof RenderCancelledError) {
         console.log("Export cancelled by user");
         this.exportStatus = "cancelled";
@@ -1728,11 +1668,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
    */
   private handleThemeToggle(): void {
     const nextTheme =
-      this.themeMode === "light"
-        ? "dark"
-        : this.themeMode === "dark"
-          ? "system"
-          : "light";
+      this.themeMode === "light" ? "dark" : this.themeMode === "dark" ? "system" : "light";
     this.themeMode = nextTheme;
     localStorage.setItem("ef-theme", nextTheme);
     this.applyTheme();
@@ -2258,9 +2194,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     `;
   }
 
-  update(
-    changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>,
-  ): void {
+  update(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     super.update(changedProperties);
 
     if (changedProperties.has("focusedElement")) {
@@ -2268,9 +2202,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     }
   }
 
-  updated(
-    changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>,
-  ): void {
+  updated(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
     super.updated(changedProperties);
 
     // Restore preview pan/zoom when timegroup becomes available
@@ -2362,11 +2294,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
       const renderWidth = Math.floor(compositionWidth * resolutionScale);
       const renderHeight = Math.floor(compositionHeight * resolutionScale);
 
-      stats = this.renderStats.getStats(
-        renderWidth,
-        renderHeight,
-        resolutionScale,
-      );
+      stats = this.renderStats.getStats(renderWidth, renderHeight, resolutionScale);
     } else if (this.presentationMode === "dom" && this.domStatsStrategy) {
       // DOM mode: use DomStatsStrategy (has its own loop)
       stats = this.domStatsStrategy.getStats();
@@ -2377,8 +2305,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     }
 
     // Determine FPS color (based on frame interval, not render time)
-    const fpsClass =
-      stats.fps >= 55 ? "good" : stats.fps >= 25 ? "warning" : "bad";
+    const fpsClass = stats.fps >= 55 ? "good" : stats.fps >= 25 ? "warning" : "bad";
 
     // Determine render time color (target is 33ms for 30fps)
     const renderClass =
@@ -2425,8 +2352,7 @@ export class EFWorkbench extends ContextMixin(TWMixin(LitElement)) {
     const showRenderTime = isCanvasMode;
     const showHeadroom = isCanvasMode;
     const showResolutionScale = isCanvasMode;
-    const showAdaptiveResolution =
-      isCanvasMode && this.previewResolutionScale === "auto";
+    const showAdaptiveResolution = isCanvasMode && this.previewResolutionScale === "auto";
 
     // Motion state
     const motionState = this.isAtRest

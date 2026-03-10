@@ -14,8 +14,8 @@ describe("files.delete", () => {
     const result = await deleteFile(client, created.id);
     expect(result.success).toBe(true);
 
-    await expect(
-      getFileDetail(client, created.id),
-    ).rejects.toThrowError("File not found");
+    await expect(getFileDetail(client, created.id)).rejects.toThrowError(
+      "File not found",
+    );
   });
 });

@@ -30,10 +30,7 @@ import {
 import type { EFTimegroup } from "../elements/EFTimegroup.js";
 import type { RenderToVideoOptions } from "./renderTimegroupToVideo.types.js";
 import type { ContentReadyMode } from "./renderTimegroupToCanvas.types.js";
-import {
-  resetRenderState,
-  waitForVideoContent,
-} from "./renderTimegroupToCanvas.js";
+import { resetRenderState, waitForVideoContent } from "./renderTimegroupToCanvas.js";
 import { captureTimelineToDataUri } from "./rendering/serializeTimelineDirect.js";
 import { renderToImageNative } from "./rendering/renderToImageNative.js";
 import { isNativeCanvasApiAvailable } from "./previewSettings.js";
@@ -45,10 +42,7 @@ import { RenderContext } from "./RenderContext.js";
 // ============================================================================
 
 // Re-export types from type-only module (zero side effects)
-export type {
-  RenderProgress,
-  RenderToVideoOptions,
-} from "./renderTimegroupToVideo.types.js";
+export type { RenderProgress, RenderToVideoOptions } from "./renderTimegroupToVideo.types.js";
 
 // ============================================================================
 // Errors
@@ -104,10 +98,7 @@ interface ResolvedConfig {
   canvasMode: "native" | "foreignObject";
 }
 
-function resolveConfig(
-  timegroup: EFTimegroup,
-  options: RenderToVideoOptions = {},
-): ResolvedConfig {
+function resolveConfig(timegroup: EFTimegroup, options: RenderToVideoOptions = {}): ResolvedConfig {
   const fps = options.fps ?? timegroup.effectiveFps ?? 30;
   const codec = options.codec ?? "avc";
   const bitrate = options.bitrate ?? 8_000_000;
@@ -133,9 +124,7 @@ function resolveConfig(
 
   const startMs = Math.max(0, options.fromMs ?? 0);
   const endMs =
-    options.toMs !== undefined
-      ? Math.min(options.toMs, totalDurationMs)
-      : totalDurationMs;
+    options.toMs !== undefined ? Math.min(options.toMs, totalDurationMs) : totalDurationMs;
   const renderDurationMs = endMs - startMs;
 
   if (renderDurationMs <= 0) {
@@ -281,10 +270,7 @@ async function selectAudioCodec(
       logger.warn(`[selectAudioCodec] Check failed for ${codec}:`, e);
     }
   }
-  const availableCodecs = await getEncodableAudioCodecs(
-    undefined,
-    encodingOptions,
-  );
+  const availableCodecs = await getEncodableAudioCodecs(undefined, encodingOptions);
   throw new NoSupportedAudioCodecError(preferredCodecs, availableCodecs);
 }
 
@@ -308,11 +294,7 @@ export async function getSupportedAudioCodecs(options?: {
   sampleRate?: number;
   bitrate?: number;
 }): Promise<AudioCodec[]> {
-  const {
-    numberOfChannels = 2,
-    sampleRate = 48000,
-    bitrate = 128000,
-  } = options ?? {};
+  const { numberOfChannels = 2, sampleRate = 48000, bitrate = 128000 } = options ?? {};
   return getEncodableAudioCodecs(undefined, {
     numberOfChannels,
     sampleRate,
@@ -416,14 +398,11 @@ export async function renderTimegroupToVideo(
     output.addVideoTrack(videoSource);
 
     if (config.includeAudio) {
-      const selectedCodec = await selectAudioCodec(
-        config.preferredAudioCodecs,
-        {
-          numberOfChannels: 2,
-          sampleRate: 48000,
-          bitrate: config.audioBitrate,
-        },
-      );
+      const selectedCodec = await selectAudioCodec(config.preferredAudioCodecs, {
+        numberOfChannels: 2,
+        sampleRate: 48000,
+        bitrate: config.audioBitrate,
+      });
       const audioConfig: AudioEncodingConfig = {
         codec: selectedCodec,
         bitrate: config.audioBitrate,
@@ -488,9 +467,7 @@ export async function renderTimegroupToVideo(
   let thumbCtx: CanvasRenderingContext2D | null = null;
   if (onProgress && config.progressPreviewInterval > 0) {
     const previewWidth = 160;
-    const previewHeight = Math.round(
-      previewWidth * (config.videoHeight / config.videoWidth),
-    );
+    const previewHeight = Math.round(previewWidth * (config.videoHeight / config.videoWidth));
     thumbCanvas = document.createElement("canvas");
     thumbCanvas.width = previewWidth;
     thumbCanvas.height = previewHeight;
@@ -529,10 +506,7 @@ export async function renderTimegroupToVideo(
       // ==================================================================
       // PHASE 1: Fill pipeline — seek+serialize ahead while images load
       // ==================================================================
-      while (
-        nextSeekFrame < config.totalFrames &&
-        pendingFrames.length < MAX_AHEAD
-      ) {
+      while (nextSeekFrame < config.totalFrames && pendingFrames.length < MAX_AHEAD) {
         const fi = nextSeekFrame;
         const timeMs = timestamps[fi]!;
         const timestampS = (fi * config.frameDurationMs) / 1000;
@@ -549,22 +523,13 @@ export async function renderTimegroupToVideo(
 
         // Wait for video content if using blocking mode
         if (config.contentReadyMode === "blocking") {
-          await waitForVideoContent(
-            renderClone,
-            timeMs,
-            config.blockingTimeoutMs,
-          );
+          await waitForVideoContent(renderClone, timeMs, config.blockingTimeoutMs);
         }
 
         if (config.canvasMode === "native") {
-          const canvas = await renderToImageNative(
-            renderClone,
-            config.width,
-            config.height,
-            {
-              skipDprScaling: true,
-            },
-          );
+          const canvas = await renderToImageNative(renderClone, config.width, config.height, {
+            skipDprScaling: true,
+          });
           entry.resolved = canvas as any as HTMLImageElement;
           entry.promise = Promise.resolve(entry.resolved);
         } else {
@@ -615,14 +580,8 @@ export async function renderTimegroupToVideo(
         image = await head.promise;
       }
 
-      if (
-        audioSource &&
-        head.timeMs >= lastRenderedAudioEndMs + audioChunkDurationMs
-      ) {
-        const chunkEndMs = Math.min(
-          head.timeMs + audioChunkDurationMs,
-          config.endMs,
-        );
+      if (audioSource && head.timeMs >= lastRenderedAudioEndMs + audioChunkDurationMs) {
+        const chunkEndMs = Math.min(head.timeMs + audioChunkDurationMs, config.endMs);
         try {
           const audioBuffer = await timegroup.renderAudio(
             lastRenderedAudioEndMs,
@@ -632,7 +591,7 @@ export async function renderTimegroupToVideo(
           if (audioBuffer && audioBuffer.length > 0) {
             await audioSource.add(audioBuffer);
           }
-        } catch (e) {
+        } catch (_e) {
           /* Audio render failures are non-fatal */
         }
         lastRenderedAudioEndMs = chunkEndMs;
@@ -666,11 +625,7 @@ export async function renderTimegroupToVideo(
       const estimatedRemainingMs = remainingFrames * msPerFrame;
       const speedMultiplier = renderedMs / elapsedMs;
 
-      if (
-        thumbCanvas &&
-        thumbCtx &&
-        head.frameIndex % config.progressPreviewInterval === 0
-      ) {
+      if (thumbCanvas && thumbCtx && head.frameIndex % config.progressPreviewInterval === 0) {
         thumbCtx.drawImage(image, 0, 0, thumbCanvas.width, thumbCanvas.height);
       }
 
@@ -698,7 +653,7 @@ export async function renderTimegroupToVideo(
         if (audioBuffer && audioBuffer.length > 0) {
           await audioSource.add(audioBuffer);
         }
-      } catch (e) {
+      } catch (_e) {
         /* Audio render failures are non-fatal */
       }
     }
@@ -709,14 +664,10 @@ export async function renderTimegroupToVideo(
 
     await output!.finalize();
 
-    if (
-      typeof __EF_TELEMETRY_ENABLED__ !== "undefined" &&
-      __EF_TELEMETRY_ENABLED__
-    ) {
+    if (typeof __EF_TELEMETRY_ENABLED__ !== "undefined" && __EF_TELEMETRY_ENABLED__) {
       const elapsedMs = Math.round(performance.now() - renderStartTime);
       const endpoint = options.telemetryEndpoint ?? "https://editframe.com";
-      const efMediaCount =
-        timegroup.querySelectorAll("ef-video,ef-audio").length;
+      const efMediaCount = timegroup.querySelectorAll("ef-video,ef-audio").length;
       const efImageCount = timegroup.querySelectorAll("ef-image").length;
       const efCaptionsCount = timegroup.querySelectorAll("ef-captions").length;
       const efTextCount = timegroup.querySelectorAll("ef-text").length;

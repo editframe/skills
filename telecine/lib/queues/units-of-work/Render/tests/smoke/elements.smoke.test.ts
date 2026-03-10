@@ -2,14 +2,20 @@ import { describe, test, expect, beforeAll, afterAll } from "vitest";
 import path from "node:path";
 import { render, getSharedOutputDir } from "../utils/render";
 import { validateMP4 } from "../utils/video-validator";
-import { processTestVideoAsset, processTestImageAsset } from "../../test-utils/processTestAssets";
+import {
+  processTestVideoAsset,
+  processTestImageAsset,
+} from "../../test-utils/processTestAssets";
 import { createElectronRPC, type ElectronRPC } from "../../ElectronRPCClient";
 import { getStrategiesToTest, ALL_STRATEGIES } from "./strategies";
 import { compareStrategies } from "../utils/visual-diff";
 import { makeTestAgent } from "TEST/util/test";
 import type { Selectable } from "kysely";
 import type { TestAgent } from "TEST/util/test";
-import type { Video2IsobmffFiles, Video2ImageFiles } from "@/sql-client.server/kysely-codegen";
+import type {
+  Video2IsobmffFiles,
+  Video2ImageFiles,
+} from "@/sql-client.server/kysely-codegen";
 
 const strategies = getStrategiesToTest();
 
@@ -25,10 +31,10 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
     barsNTone = await processTestVideoAsset("bars-n-tone.mp4", testAgent);
     testImage = await processTestImageAsset("test.jpg", testAgent);
     webpImage = await processTestImageAsset("test.webp", testAgent);
-    
+
     // Create electronRPC once for all browser render strategies
     // Only needed if we're testing browser strategies
-    const needsElectronRpc = strategies.some(s => s.renderMode !== "server");
+    const needsElectronRpc = strategies.some((s) => s.renderMode !== "server");
     if (needsElectronRpc) {
       electronRpc = await createElectronRPC();
     }
@@ -55,7 +61,12 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
           <div class="w-full h-full bg-blue-500"></div>
         </ef-timegroup>
       `,
-        { ...renderOpts, testAgent, electronRpc, testName: `elements-smoke-ef-timegroup-${strategy.name}` },
+        {
+          ...renderOpts,
+          testAgent,
+          electronRpc,
+          testName: `elements-smoke-ef-timegroup-${strategy.name}`,
+        },
       );
 
       expect(result.durationMs).toBeCloseTo(100, 20);
@@ -65,14 +76,19 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
       expect(validation.isValid).toBe(true);
     });
 
-      test("ef-image renders", async () => {
+    test("ef-image renders", async () => {
       const result = await render(
         `
         <ef-timegroup class="w-[640px] h-[360px]" mode="fixed" duration="100ms">
           <ef-image asset-id="${testImage.id}" class="w-full h-full object-cover" />
         </ef-timegroup>
       `,
-        { ...renderOpts, testAgent, electronRpc, testName: `elements-smoke-ef-image-${strategy.name}` },
+        {
+          ...renderOpts,
+          testAgent,
+          electronRpc,
+          testName: `elements-smoke-ef-image-${strategy.name}`,
+        },
       );
 
       expect(result.durationMs).toBeCloseTo(100, 20);
@@ -89,7 +105,12 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
           <ef-image asset-id="${webpImage.id}" class="w-full h-full object-cover" />
         </ef-timegroup>
       `,
-        { ...renderOpts, testAgent, electronRpc, testName: `elements-smoke-ef-image-webp-${strategy.name}` },
+        {
+          ...renderOpts,
+          testAgent,
+          electronRpc,
+          testName: `elements-smoke-ef-image-webp-${strategy.name}`,
+        },
       );
 
       expect(result.durationMs).toBeCloseTo(100, 20);
@@ -108,7 +129,12 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
           </div>
         </ef-timegroup>
       `,
-        { ...renderOpts, testAgent, electronRpc, testName: `elements-smoke-ef-text-${strategy.name}` },
+        {
+          ...renderOpts,
+          testAgent,
+          electronRpc,
+          testName: `elements-smoke-ef-text-${strategy.name}`,
+        },
       );
 
       expect(result.durationMs).toBeCloseTo(100, 20);
@@ -127,7 +153,12 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
           </ef-timegroup>
         </ef-timegroup>
       `,
-        { ...renderOpts, testAgent, electronRpc, testName: `elements-smoke-nested-timegroups-${strategy.name}` },
+        {
+          ...renderOpts,
+          testAgent,
+          electronRpc,
+          testName: `elements-smoke-nested-timegroups-${strategy.name}`,
+        },
       );
 
       expect(result.durationMs).toBeCloseTo(100, 20);
@@ -147,7 +178,12 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
           </div>
         </ef-timegroup>
       `,
-        { ...renderOpts, testAgent, electronRpc, testName: `elements-smoke-multiple-elements-${strategy.name}` },
+        {
+          ...renderOpts,
+          testAgent,
+          electronRpc,
+          testName: `elements-smoke-multiple-elements-${strategy.name}`,
+        },
       );
 
       expect(result.durationMs).toBeCloseTo(100, 20);
@@ -165,7 +201,12 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
           <ef-video asset-id="${barsNTone.id}" class="w-full" source-out="200ms"></ef-video>
         </ef-timegroup>
       `,
-        { ...renderOpts, testAgent, electronRpc, testName: `elements-smoke-ef-video-${strategy.name}` },
+        {
+          ...renderOpts,
+          testAgent,
+          electronRpc,
+          testName: `elements-smoke-ef-video-${strategy.name}`,
+        },
       );
 
       expect(result.durationMs).toBeCloseTo(200, 20);
@@ -186,7 +227,12 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
           </div>
         </ef-timegroup>
       `,
-        { ...renderOpts, testAgent, electronRpc, testName: `elements-smoke-ef-audio-${strategy.name}` },
+        {
+          ...renderOpts,
+          testAgent,
+          electronRpc,
+          testName: `elements-smoke-ef-audio-${strategy.name}`,
+        },
       );
 
       expect(result.durationMs).toBeCloseTo(100, 20);
@@ -194,7 +240,7 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
 
       const validation = validateMP4(result.videoPath);
       expect(validation.isValid).toBe(true);
-      
+
       // Frame-by-frame browser rendering doesn't support audio encoding
       if (strategy.renderMode !== "browser-frame-by-frame") {
         expect(validation.hasAudioTrack).toBe(true);
@@ -209,7 +255,12 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
           <ef-waveform target="test-audio" mode="bars" class="color-blue-500 bg-white w-full h-full"></ef-waveform>
         </ef-timegroup>
       `,
-        { ...renderOpts, testAgent, electronRpc, testName: `elements-smoke-ef-waveform-${strategy.name}` },
+        {
+          ...renderOpts,
+          testAgent,
+          electronRpc,
+          testName: `elements-smoke-ef-waveform-${strategy.name}`,
+        },
       );
 
       expect(result.durationMs).toBeCloseTo(100, 20);
@@ -218,7 +269,7 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
       const validation = validateMP4(result.videoPath);
       expect(validation.isValid).toBe(true);
       expect(validation.hasVideoTrack).toBe(true);
-      
+
       // Frame-by-frame browser rendering doesn't support audio encoding
       if (strategy.renderMode !== "browser-frame-by-frame") {
         expect(validation.hasAudioTrack).toBe(true);
@@ -303,32 +354,40 @@ describe("Elements Smoke Tests", { timeout: 60000 }, () => {
           const testOutputDir = path.join(getSharedOutputDir(), testName);
 
           // Compare all strategies
-          const strategyNames = ALL_STRATEGIES.map(s => 
-            s.canvasMode ? `${s.renderMode}-${s.canvasMode}` : s.renderMode
+          const strategyNames = ALL_STRATEGIES.map((s) =>
+            s.canvasMode ? `${s.renderMode}-${s.canvasMode}` : s.renderMode,
           );
 
           const results = await compareStrategies(
             testOutputDir,
             strategyNames,
-            { threshold: 0.1, framesPerSecond: 30 }
+            {
+              threshold: 0.1,
+              framesPerSecond: 30,
+            },
           );
 
           // Check for failures
-          const failures = results.filter(r => !r.passed);
-          
+          const failures = results.filter((r) => !r.passed);
+
           if (failures.length > 0) {
-            const summary = failures.map(f =>
-              `  ${f.strategy1} vs ${f.strategy2} frame ${f.frameIndex}: ${f.diffPercentage.toFixed(2)}% diff (${f.diffPixels} pixels)\n` +
-              `    Diff image: ${f.diffImagePath}`
-            ).join("\n");
+            const summary = failures
+              .map(
+                (f) =>
+                  `  ${f.strategy1} vs ${f.strategy2} frame ${f.frameIndex}: ${f.diffPercentage.toFixed(2)}% diff (${f.diffPixels} pixels)\n` +
+                  `    Diff image: ${f.diffImagePath}`,
+              )
+              .join("\n");
 
             console.warn(
               `⚠️  Visual differences detected in ${testName}:\n` +
-              `${failures.length} frame(s) exceeded 10% threshold\n` +
-              summary
+                `${failures.length} frame(s) exceeded 10% threshold\n` +
+                summary,
             );
           } else {
-            console.log(`✅ All strategies match for ${testName} (${results.length} comparisons)`);
+            console.log(
+              `✅ All strategies match for ${testName} (${results.length} comparisons)`,
+            );
           }
 
           // For now, just warn about differences - don't fail the test

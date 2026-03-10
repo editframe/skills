@@ -37,11 +37,7 @@ export {
 } from "./analyzer.js";
 
 // Comparison and regression detection
-export {
-  compareProfiles,
-  hasRegression,
-  getRegressionSummary,
-} from "./comparator.js";
+export { compareProfiles, hasRegression, getRegressionSummary } from "./comparator.js";
 
 // Output formatting
 export {
@@ -67,8 +63,4 @@ export { resolveSourceLocation, SourceMapResolver } from "./source-maps.js";
 
 // Pattern detection
 export type { Pattern } from "./patterns.js";
-export {
-  detectPatterns,
-  formatPatterns,
-  formatPatternsJSON,
-} from "./patterns.js";
+export { detectPatterns, formatPatterns, formatPatternsJSON } from "./patterns.js";

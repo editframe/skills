@@ -11,10 +11,7 @@ import {
 import { withSpan } from "../../otel/tracingHelpers.js";
 import { type MediaSample, SampleBuffer } from "../SampleBuffer";
 import { roundToMilliseconds } from "./shared/PrecisionUtils";
-import {
-  withTimeout,
-  DEFAULT_MEDIABUNNY_TIMEOUT_MS,
-} from "./shared/timeoutUtils";
+import { withTimeout, DEFAULT_MEDIABUNNY_TIMEOUT_MS } from "./shared/timeoutUtils";
 
 interface BufferedSeekingInputOptions {
   videoBufferSize?: number;
@@ -108,9 +105,7 @@ export class BufferedSeekingInput {
       5000,
       "BufferedSeekingInput.getAudioTracks",
     );
-    const track = tracks.find(
-      (track) => track.id === trackId && track.type === "audio",
-    );
+    const track = tracks.find((track) => track.id === trackId && track.type === "audio");
     if (!track) {
       throw new Error(`Track ${trackId} not found`);
     }
@@ -123,9 +118,7 @@ export class BufferedSeekingInput {
       5000,
       "BufferedSeekingInput.getVideoTracks",
     );
-    const track = tracks.find(
-      (track) => track.id === trackId && track.type === "video",
-    );
+    const track = tracks.find((track) => track.id === trackId && track.type === "video");
     if (!track) {
       throw new Error(`Track ${trackId} not found`);
     }
@@ -242,9 +235,7 @@ export class BufferedSeekingInput {
     const trackBuffer = this.trackBuffers.get(track.id);
     trackBuffer?.clear();
     // Clean up iterator safely - wait for any ongoing iterator creation
-    const ongoingIteratorCreation = this.trackIteratorCreationPromises.get(
-      track.id,
-    );
+    const ongoingIteratorCreation = this.trackIteratorCreationPromises.get(track.id);
     if (ongoingIteratorCreation) {
       await ongoingIteratorCreation;
     }
@@ -292,10 +283,7 @@ export class BufferedSeekingInput {
             track.getFirstTimestamp(),
             new Promise<number>((_, reject) =>
               setTimeout(
-                () =>
-                  reject(
-                    new Error(`getFirstTimestamp timeout after ${timeoutMs}ms`),
-                  ),
+                () => reject(new Error(`getFirstTimestamp timeout after ${timeoutMs}ms`)),
                 timeoutMs,
               ),
             ),
@@ -321,9 +309,7 @@ export class BufferedSeekingInput {
           span.setAttribute("bufferContentsLength", bufferContents.length);
 
           if (bufferContents.length > 0) {
-            const bufferStartMs = roundToMilliseconds(
-              trackBuffer.firstTimestamp * 1000,
-            );
+            const bufferStartMs = roundToMilliseconds(trackBuffer.firstTimestamp * 1000);
             span.setAttribute("bufferStartMs", bufferStartMs);
 
             if (roundedTimeMs < bufferStartMs) {
@@ -359,19 +345,13 @@ export class BufferedSeekingInput {
             const firstSample = contents[0];
             const lastSample = contents[contents.length - 1];
             if (firstSample && lastSample) {
-              const bufferStartMs = Math.round(
-                (firstSample.timestamp || 0) * 1000,
-              );
+              const bufferStartMs = Math.round((firstSample.timestamp || 0) * 1000);
               const bufferEndMs = Math.round(
-                ((lastSample.timestamp || 0) + (lastSample.duration || 0)) *
-                  1000,
+                ((lastSample.timestamp || 0) + (lastSample.duration || 0)) * 1000,
               );
               span.setAttribute("bufferStartMs", bufferStartMs);
               span.setAttribute("bufferEndMs", bufferEndMs);
-              span.setAttribute(
-                "bufferRangeMs",
-                `${bufferStartMs}-${bufferEndMs}`,
-              );
+              span.setAttribute("bufferRangeMs", `${bufferStartMs}-${bufferEndMs}`);
             }
           }
 
@@ -411,20 +391,13 @@ export class BufferedSeekingInput {
             if (foundSample) {
               const decodeEnd = performance.now();
               span.setAttribute("iterationCount", iterationCount);
-              span.setAttribute(
-                "decodeMs",
-                Math.round((decodeEnd - decodeStart) * 100) / 100,
-              );
+              span.setAttribute("decodeMs", Math.round((decodeEnd - decodeStart) * 100) / 100);
               span.setAttribute(
                 "avgIterMs",
-                Math.round(((decodeEnd - decodeStart) / iterationCount) * 100) /
-                  100,
+                Math.round(((decodeEnd - decodeStart) / iterationCount) * 100) / 100,
               );
               span.setAttribute("foundSample", true);
-              span.setAttribute(
-                "foundTimestamp",
-                Math.round((foundSample.timestamp || 0) * 1000),
-              );
+              span.setAttribute("foundTimestamp", Math.round((foundSample.timestamp || 0) * 1000));
               return foundSample;
             }
             if (done) {
@@ -438,21 +411,17 @@ export class BufferedSeekingInput {
           // Check if we're seeking to the exact end of the track (legitimate use case)
           const finalBufferContents = trackBuffer.getContents();
           if (finalBufferContents.length > 0) {
-            const lastSample =
-              finalBufferContents[finalBufferContents.length - 1];
+            const lastSample = finalBufferContents[finalBufferContents.length - 1];
             const lastSampleEndMs = roundToMilliseconds(
-              ((lastSample?.timestamp || 0) + (lastSample?.duration || 0)) *
-                1000,
+              ((lastSample?.timestamp || 0) + (lastSample?.duration || 0)) * 1000,
             );
 
             // Only return last sample if seeking to exactly the track duration
             // (end of video) AND we have the final segment loaded
             const trackDurationMs = (await track.computeDuration()) * 1000;
             const isSeekingToTrackEnd =
-              roundToMilliseconds(timeMs) ===
-              roundToMilliseconds(trackDurationMs);
-            const isAtEndOfTrack =
-              roundToMilliseconds(timeMs) >= lastSampleEndMs;
+              roundToMilliseconds(timeMs) === roundToMilliseconds(trackDurationMs);
+            const isAtEndOfTrack = roundToMilliseconds(timeMs) >= lastSampleEndMs;
 
             if (isSeekingToTrackEnd && isAtEndOfTrack) {
               span.setAttribute("returnedLastSample", true);

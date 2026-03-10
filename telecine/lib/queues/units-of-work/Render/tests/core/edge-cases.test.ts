@@ -208,9 +208,10 @@ describe("Edge Cases", { timeout: 30000 }, () => {
     });
 
     test("handles many child elements", async () => {
-      const children = Array.from({ length: 100 }, (_, i) => 
-        `<div class="text-white text-sm">Item ${i}</div>`
-      ).join('');
+      const children = Array.from(
+        { length: 100 },
+        (_, i) => `<div class="text-white text-sm">Item ${i}</div>`,
+      ).join("");
 
       const result = await render(`
         <ef-timegroup class="w-[1920px] h-[1080px]" mode="fixed" duration="1s">

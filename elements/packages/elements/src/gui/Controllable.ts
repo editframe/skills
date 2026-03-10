@@ -1,9 +1,7 @@
+// oxlint-disable-next-line no-unused-vars -- used as base class in declare class below
 import type { LitElement } from "lit";
 
-import {
-  isEFTemporal,
-  type TemporalMixinInterface,
-} from "../elements/EFTemporal.js";
+import { isEFTemporal, type TemporalMixinInterface } from "../elements/EFTemporal.js";
 import { type ContextMixinInterface, isContextMixin } from "./ContextMixin.js";
 import type { PlaybackControllerUpdateEvent } from "./PlaybackController.js";
 
@@ -36,9 +34,7 @@ export function isControllable(value: any): value is ControllableInterface {
 export type ControllableElement =
   | ContextMixinInterface
   | (TemporalMixinInterface & {
-      playbackController: NonNullable<
-        TemporalMixinInterface["playbackController"]
-      >;
+      playbackController: NonNullable<TemporalMixinInterface["playbackController"]>;
     });
 
 // ============================================================================
@@ -49,10 +45,7 @@ export type ControllableElement =
 // This enumeration makes the mental model explicit.
 // ============================================================================
 
-export type ControllableTargetType =
-  | "context-provider"
-  | "direct-temporal"
-  | "none";
+export type ControllableTargetType = "context-provider" | "direct-temporal" | "none";
 
 /**
  * Determines the type of controllable target for subscription purposes.
@@ -139,13 +132,7 @@ export function createDirectTemporalSubscription(
   });
   durationObserver.observe(target, {
     attributes: true,
-    attributeFilter: [
-      "duration",
-      "trimstart",
-      "trimend",
-      "sourcein",
-      "sourceout",
-    ],
+    attributeFilter: ["duration", "trimstart", "trimend", "sourcein", "sourceout"],
     subtree: true,
   });
 

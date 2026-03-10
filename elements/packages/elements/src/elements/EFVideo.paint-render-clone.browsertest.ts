@@ -27,8 +27,7 @@ describe("EFVideo paint in render clones", () => {
     tg.style.height = "300px";
 
     const video = document.createElement("ef-video") as EFVideo;
-    video.src =
-      "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+    video.src = "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
     video.style.width = "100%";
     video.style.height = "100%";
 
@@ -88,8 +87,7 @@ describe("EFVideo paint in render clones", () => {
     tg.style.height = "300px";
 
     const video = document.createElement("ef-video") as EFVideo;
-    video.src =
-      "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+    video.src = "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
     video.style.width = "100%";
     video.style.height = "100%";
 
@@ -137,8 +135,7 @@ describe("EFVideo paint in render clones", () => {
     tg.style.height = "300px";
 
     const video = document.createElement("ef-video") as EFVideo;
-    video.src =
-      "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+    video.src = "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
     video.style.width = "100%";
     video.style.height = "100%";
 

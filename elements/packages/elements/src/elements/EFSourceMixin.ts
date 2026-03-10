@@ -34,15 +34,11 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
 
     productionSrc() {
       if (!this.#md5Value) {
-        throw new Error(
-          `MD5 sum not available for ${this}. Cannot generate production URL`,
-        );
+        throw new Error(`MD5 sum not available for ${this}. Cannot generate production URL`);
       }
 
       if (!this.apiHost) {
-        throw new Error(
-          `apiHost not available for ${this}. Cannot generate production URL`,
-        );
+        throw new Error(`apiHost not available for ${this}. Cannot generate production URL`);
       }
 
       return `${this.apiHost}/api/v1/${options.assetType}/${this.#md5Value}`;
@@ -77,10 +73,7 @@ export function EFSourceMixin<T extends Constructor<LitElement>>(
       }
     }
 
-    async #doLoadMd5(
-      src: string,
-      signal?: AbortSignal,
-    ): Promise<string | undefined> {
+    async #doLoadMd5(src: string, signal?: AbortSignal): Promise<string | undefined> {
       // Normalize the path: remove leading slash and any double slashes
       let normalizedSrc = src.startsWith("/") ? src.slice(1) : src;
       normalizedSrc = normalizedSrc.replace(/^\/+/, "");

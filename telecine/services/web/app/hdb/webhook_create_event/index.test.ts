@@ -57,7 +57,9 @@ describe.skip("webhook_create_event", () => {
     // Call the function with the mock request
     await expect(
       routeModule.action({ request: makeRequest() } as any),
-    ).resolves.toEqual({ message: "No matching webhooks found" });
+    ).resolves.toEqual({
+      message: "No matching webhooks found",
+    });
   });
 
   test("Returns okay if webhook is registered, but doesn't match topic", async () => {

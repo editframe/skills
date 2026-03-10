@@ -45,22 +45,14 @@ export const RenderOutputConfiguration = z.discriminatedUnion("container", [
   WebpConfiguration,
 ]);
 
-export type RenderOutputConfiguration = z.infer<
-  typeof RenderOutputConfiguration
->;
+export type RenderOutputConfiguration = z.infer<typeof RenderOutputConfiguration>;
 
 export const CreateRenderPayload = z.object({
   md5: z.string().optional(),
   fps: z.number().int().min(1).max(120).default(30).optional(),
   width: z.number().int().min(2).optional(),
   height: z.number().int().min(2).optional(),
-  work_slice_ms: z
-    .number()
-    .int()
-    .min(1000)
-    .max(10_000)
-    .default(4_000)
-    .optional(),
+  work_slice_ms: z.number().int().min(1000).max(10_000).default(4_000).optional(),
   html: z.string().optional(),
   metadata: z.record(z.string(), z.string()).optional(),
   duration_ms: z.number().int().optional(),
@@ -157,9 +149,7 @@ export interface CreateRenderPayload {
   output?: z.infer<typeof RenderOutputConfiguration>;
 }
 
-assertTypesMatch<CreateRenderPayload, z.infer<typeof CreateRenderPayload>>(
-  true,
-);
+assertTypesMatch<CreateRenderPayload, z.infer<typeof CreateRenderPayload>>(true);
 
 export interface CreateRenderResult {
   id: string;
@@ -175,10 +165,7 @@ export interface LookupRenderByMd5Result {
   metadata: Record<string, string>;
 }
 
-export const createRender = async (
-  client: Client,
-  payload: CreateRenderPayload,
-) => {
+export const createRender = async (client: Client, payload: CreateRenderPayload) => {
   log("Creating render", payload);
   // FIXME: The order of optional/default matters in zod
   // And if we set the default last, the type is not inferred correctly
@@ -216,22 +203,17 @@ export const uploadRender = async (
   fileStream: ReadableStream,
 ) => {
   log("Uploading render", renderId);
-  const response = await client.authenticatedFetch(
-    `/api/v1/renders/${renderId}/upload`,
-    {
-      method: "POST",
-      body: fileStream,
-      duplex: "half",
-    },
-  );
+  const response = await client.authenticatedFetch(`/api/v1/renders/${renderId}/upload`, {
+    method: "POST",
+    body: fileStream,
+    duplex: "half",
+  });
 
   if (response.ok) {
     return response.json();
   }
 
-  throw new Error(
-    `Failed to upload render ${response.status} ${response.statusText}`,
-  );
+  throw new Error(`Failed to upload render ${response.status} ${response.statusText}`);
 };
 
 export const getRenderInfo = async (client: Client, id: string) => {
@@ -243,12 +225,9 @@ export const lookupRenderByMd5 = async (
   client: Client,
   md5: string,
 ): Promise<LookupRenderByMd5Result | null> => {
-  const response = await client.authenticatedFetch(
-    `/api/v1/renders/md5/${md5}`,
-    {
-      method: "GET",
-    },
-  );
+  const response = await client.authenticatedFetch(`/api/v1/renders/md5/${md5}`, {
+    method: "GET",
+  });
 
   if (response.ok) {
     return (await response.json()) as LookupRenderByMd5Result;
@@ -264,9 +243,7 @@ export const lookupRenderByMd5 = async (
 };
 
 export const getRenderProgress = async (client: Client, id: string) => {
-  const eventSource = await client.authenticatedEventSource(
-    `/api/v1/renders/${id}/progress`,
-  );
+  const eventSource = await client.authenticatedEventSource(`/api/v1/renders/${id}/progress`);
 
   return new CompletionIterator(eventSource);
 };
@@ -278,7 +255,5 @@ export const downloadRender = async (client: Client, id: string) => {
     return response;
   }
 
-  throw new Error(
-    `Failed to download render ${id} ${response.status} ${response.statusText}`,
-  );
+  throw new Error(`Failed to download render ${id} ${response.status} ${response.statusText}`);
 };

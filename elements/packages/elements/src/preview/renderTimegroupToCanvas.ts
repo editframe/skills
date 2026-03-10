@@ -11,10 +11,7 @@ import type {
 import { RenderContext } from "./RenderContext.js";
 import { FrameController } from "./FrameController.js";
 import { captureTimelineToDataUri } from "./rendering/serializeTimelineDirect.js";
-import {
-  updateAnimations,
-  type AnimatableElement,
-} from "../elements/updateAnimations.js";
+import { updateAnimations, type AnimatableElement } from "../elements/updateAnimations.js";
 
 // Re-export renderer types for external use
 export type { RenderOptions, RenderResult, Renderer } from "./renderers.js";
@@ -32,22 +29,10 @@ import { logger } from "./logger.js";
 
 // Import rendering modules
 import { loadImageFromDataUri } from "./rendering/loadImage.js";
-import {
-  createDprCanvas,
-  renderToImageNative,
-} from "./rendering/renderToImageNative.js";
-import {
-  clearInlineImageCache,
-  getInlineImageCacheSize,
-} from "./rendering/inlineImages.js";
-import {
-  isNativeCanvasApiAvailable,
-  getRenderMode,
-} from "./previewSettings.js";
-import type {
-  HtmlInCanvasContext,
-  HtmlInCanvasElement,
-} from "./rendering/types.js";
+import { createDprCanvas, renderToImageNative } from "./rendering/renderToImageNative.js";
+import { clearInlineImageCache, getInlineImageCacheSize } from "./rendering/inlineImages.js";
+import { isNativeCanvasApiAvailable, getRenderMode } from "./previewSettings.js";
+import type { HtmlInCanvasContext, HtmlInCanvasElement } from "./rendering/types.js";
 
 // Re-export rendering types and functions for external use
 export { loadImageFromDataUri };
@@ -193,8 +178,7 @@ if (typeof window !== "undefined") {
       } else if (result instanceof HTMLImageElement) {
         img.src = result.src;
       }
-      img.style.cssText =
-        "position:fixed;top:10px;right:10px;border:2px solid red;z-index:99999;";
+      img.style.cssText = "position:fixed;top:10px;right:10px;border:2px solid red;z-index:99999;";
       document.body.appendChild(img);
 
       return result;
@@ -232,12 +216,7 @@ function canvasHasContent(canvas: HTMLCanvasElement): boolean {
     // Sample a horizontal strip across the middle of the canvas
     // This catches most video content even if edges are black
     const stripY = Math.floor(height / 2);
-    const imageData = ctx.getImageData(
-      0,
-      stripY,
-      width,
-      CANVAS_SAMPLE_STRIP_HEIGHT,
-    );
+    const imageData = ctx.getImageData(0, stripY, width, CANVAS_SAMPLE_STRIP_HEIGHT);
     const data = imageData.data;
 
     // Check if ANY pixel has non-zero alpha (is not transparent)
@@ -285,10 +264,7 @@ export async function waitForVideoContent(
     // Check if all ancestor timegroups are in time range
     let parent = video.parentElement;
     while (parent && parent !== timegroup) {
-      if (
-        parent.tagName === "EF-TIMEGROUP" &&
-        !isVisibleAtTime(parent, timeMs)
-      ) {
+      if (parent.tagName === "EF-TIMEGROUP" && !isVisibleAtTime(parent, timeMs)) {
         return false;
       }
       parent = parent.parentElement;
@@ -367,17 +343,9 @@ export async function captureFromClone(
   // No need to call frameController.renderFrame() again - it would fire tasks redundantly
 
   if (contentReadyMode === "blocking") {
-    const result = await waitForVideoContent(
-      renderClone,
-      timeMs,
-      blockingTimeoutMs,
-    );
+    const result = await waitForVideoContent(renderClone, timeMs, blockingTimeoutMs);
     if (!result.ready) {
-      throw new ContentNotReadyError(
-        timeMs,
-        blockingTimeoutMs,
-        result.blankVideos,
-      );
+      throw new ContentNotReadyError(timeMs, blockingTimeoutMs, result.blankVideos);
     }
   }
 
@@ -428,16 +396,11 @@ export async function captureFromClone(
       // No additional RAF wait needed - can serialize immediately
 
       const t0 = performance.now();
-      const dataUri = await captureTimelineToDataUri(
-        renderClone,
-        width,
-        height,
-        {
-          renderContext,
-          canvasScale: scale,
-          timeMs,
-        },
-      );
+      const dataUri = await captureTimelineToDataUri(renderClone, width, height, {
+        renderContext,
+        canvasScale: scale,
+        timeMs,
+      });
       const serializeTime = performance.now() - t0;
 
       const t1 = performance.now();
@@ -699,10 +662,7 @@ const DEFAULT_RESOLUTION_SCALE = 1;
  * Nested timegroup children have ABSOLUTE startTimeMs values,
  * so relative capture times must be converted for temporal culling.
  */
-function toAbsoluteTime(
-  timegroup: EFTimegroup,
-  relativeTimeMs: number,
-): number {
+function toAbsoluteTime(timegroup: EFTimegroup, relativeTimeMs: number): number {
   return relativeTimeMs + (timegroup.startTimeMs ?? 0);
 }
 
@@ -728,19 +688,15 @@ export function renderTimegroupToCanvas(
 ): CanvasPreviewResult {
   // Normalize options
   const options: CanvasPreviewOptions =
-    typeof scaleOrOptions === "number"
-      ? { scale: scaleOrOptions }
-      : scaleOrOptions;
+    typeof scaleOrOptions === "number" ? { scale: scaleOrOptions } : scaleOrOptions;
 
   const scale = options.scale ?? DEFAULT_PREVIEW_SCALE;
   // These are mutable to support dynamic resolution changes
-  let currentResolutionScale =
-    options.resolutionScale ?? DEFAULT_RESOLUTION_SCALE;
+  let currentResolutionScale = options.resolutionScale ?? DEFAULT_RESOLUTION_SCALE;
 
   const width = timegroup.offsetWidth || DEFAULT_WIDTH;
   const height = timegroup.offsetHeight || DEFAULT_HEIGHT;
-  const dpr =
-    (typeof window !== "undefined" ? window.devicePixelRatio : 1) || 1;
+  const dpr = (typeof window !== "undefined" ? window.devicePixelRatio : 1) || 1;
 
   // Calculate effective render dimensions (internal resolution) - mutable
   let renderWidth = Math.floor(width * currentResolutionScale);
@@ -795,8 +751,7 @@ export function renderTimegroupToCanvas(
 
   // Use the user's render mode preference. Native requires the timegroup to be
   // inside a <canvas layoutsubtree> for drawElementImage to work.
-  const useNative =
-    getRenderMode() === "native" && isNativeCanvasApiAvailable();
+  const useNative = getRenderMode() === "native" && isNativeCanvasApiAvailable();
   let captureCanvas: HTMLCanvasElement | null = null;
   let captureCtx: HtmlInCanvasContext | null = null;
   let originalParent: ParentNode | null = null;
@@ -854,8 +809,7 @@ export function renderTimegroupToCanvas(
     // Clamp to valid range
     newScale = Math.max(0.1, Math.min(1, newScale));
 
-    if (newScale === currentResolutionScale && pendingResolutionScale === null)
-      return;
+    if (newScale === currentResolutionScale && pendingResolutionScale === null) return;
 
     // Queue the change - will be applied at start of next refresh
     pendingResolutionScale = newScale;
@@ -864,15 +818,7 @@ export function renderTimegroupToCanvas(
     lastTimeMs = -1;
   };
 
-  const getResolutionScale = (): number =>
-    pendingResolutionScale ?? currentResolutionScale;
-
-  // Rolling timing stats for per-phase profiling
-  let frameCount = 0;
-  let totalFrameControllerMs = 0;
-  let totalCaptureMs = 0;
-  let totalCopyMs = 0;
-  let totalFrameMs = 0;
+  const getResolutionScale = (): number => pendingResolutionScale ?? currentResolutionScale;
 
   const refresh = async (): Promise<void> => {
     if (disposed) return;
@@ -898,34 +844,22 @@ export function renderTimegroupToCanvas(
     }
 
     try {
-      const tFrame = performance.now();
-
-      const tFC0 = performance.now();
       await frameController.renderFrame(userTimeMs, {
         waitForLitUpdate: false,
         onAnimationsUpdate: (root) => {
           updateAnimations(root as AnimatableElement);
         },
       });
-      const fcMs = performance.now() - tFC0;
-
-      const tCapture0 = performance.now();
 
       if (useNative && captureCanvas && captureCtx) {
         if (captureCanvas.width !== width || captureCanvas.height !== height) {
           captureCtx.save();
-          captureCtx.scale(
-            captureCanvas.width / width,
-            captureCanvas.height / height,
-          );
+          captureCtx.scale(captureCanvas.width / width, captureCanvas.height / height);
           captureCtx.drawElementImage(timegroup, 0, 0);
           captureCtx.restore();
         } else {
           captureCtx.drawElementImage(timegroup, 0, 0);
         }
-        const captureMs = performance.now() - tCapture0;
-
-        const tCopy0 = performance.now();
         const targetWidth = Math.floor(renderWidth * scale * dpr);
         const targetHeight = Math.floor(renderHeight * scale * dpr);
         if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
@@ -935,41 +869,17 @@ export function renderTimegroupToCanvas(
           ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
         ctx.drawImage(captureCanvas, 0, 0, canvas.width, canvas.height);
-        const copyMs = performance.now() - tCopy0;
-
-        const frameMs = performance.now() - tFrame;
-        frameCount++;
-        totalFrameControllerMs += fcMs;
-        totalCaptureMs += captureMs;
-        totalCopyMs += copyMs;
-        totalFrameMs += frameMs;
 
         defaultProfiler.incrementRenderCount();
-        if (defaultProfiler.shouldLogByFrameCount(60)) {
-          frameCount = 0;
-          totalFrameControllerMs = 0;
-          totalCaptureMs = 0;
-          totalCopyMs = 0;
-          totalFrameMs = 0;
-        }
       } else {
         const absoluteTimeMs = toAbsoluteTime(timegroup, userTimeMs);
 
-        const dataUri = await captureTimelineToDataUri(
-          timegroup,
-          width,
-          height,
-          {
-            renderContext,
-            canvasScale: currentResolutionScale,
-            timeMs: absoluteTimeMs,
-          },
-        );
-        const captureMs = performance.now() - tCapture0;
-
-        const tCopy0 = performance.now();
+        const dataUri = await captureTimelineToDataUri(timegroup, width, height, {
+          renderContext,
+          canvasScale: currentResolutionScale,
+          timeMs: absoluteTimeMs,
+        });
         const image = await loadImageFromDataUri(dataUri);
-        const copyMs = performance.now() - tCopy0;
 
         const targetWidth = Math.floor(renderWidth * scale * dpr);
         const targetHeight = Math.floor(renderHeight * scale * dpr);
@@ -985,21 +895,7 @@ export function renderTimegroupToCanvas(
         ctx.drawImage(image, 0, 0, renderWidth, renderHeight);
         ctx.restore();
 
-        const frameMs = performance.now() - tFrame;
-        frameCount++;
-        totalFrameControllerMs += fcMs;
-        totalCaptureMs += captureMs;
-        totalCopyMs += copyMs;
-        totalFrameMs += frameMs;
-
         defaultProfiler.incrementRenderCount();
-        if (defaultProfiler.shouldLogByFrameCount(60)) {
-          frameCount = 0;
-          totalFrameControllerMs = 0;
-          totalCaptureMs = 0;
-          totalCopyMs = 0;
-          totalFrameMs = 0;
-        }
       }
     } catch (e) {
       logger.error("Canvas preview render failed:", e);

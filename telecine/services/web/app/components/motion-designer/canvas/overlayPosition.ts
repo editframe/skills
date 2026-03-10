@@ -43,12 +43,10 @@ export function readElementComputedPosition(
   if (!element) return null;
 
   // Use element's getPositionInfo() API if available (e.g., ef-timegroup)
-  if (
-    typeof (element as any).getPositionInfo === "function"
-  ) {
-    const positionInfo = (element as any).getPositionInfo() as
-      | ElementPositionInfo
-      | null;
+  if (typeof (element as any).getPositionInfo === "function") {
+    const positionInfo = (
+      element as any
+    ).getPositionInfo() as ElementPositionInfo | null;
     if (positionInfo) {
       return {
         screenX: positionInfo.bounds.left,

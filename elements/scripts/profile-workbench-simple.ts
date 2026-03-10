@@ -30,8 +30,7 @@ function findMonorepoRoot(): string | null {
 }
 
 async function main() {
-  const testFile =
-    "packages/elements/src/preview/renderTimegroupToVideo.workbench.browsertest.ts";
+  const testFile = "packages/elements/src/preview/renderTimegroupToVideo.workbench.browsertest.ts";
 
   console.log(`\n🔬 Simple Workbench Test CPU Profiler\n`);
 
@@ -43,9 +42,7 @@ async function main() {
 
   const wsEndpointPath = path.join(monorepoRoot, ".wsEndpoint.json");
   if (!fs.existsSync(wsEndpointPath)) {
-    console.error(
-      "Browser server not running. Start with: ./scripts/start-host-chrome",
-    );
+    console.error("Browser server not running. Start with: ./scripts/start-host-chrome");
     process.exit(1);
   }
 
@@ -107,9 +104,7 @@ async function main() {
   }
 
   const nonIdleNodes = profile.nodes.filter(
-    (n: any) =>
-      n.callFrame.functionName !== "(idle)" &&
-      n.callFrame.functionName !== "(program)",
+    (n: any) => n.callFrame.functionName !== "(idle)" && n.callFrame.functionName !== "(program)",
   );
 
   const nonIdleSamples = profile.samples.filter((sampleId: number) => {
@@ -128,9 +123,7 @@ async function main() {
 
   if (nonIdleSamples.length < 10) {
     console.log(`⚠️  Warning: Very few non-idle samples captured`);
-    console.log(
-      `   The profiler may not have captured meaningful test execution\n`,
-    );
+    console.log(`   The profiler may not have captured meaningful test execution\n`);
   } else {
     // Print top functions
     const hotspots: Array<{ name: string; hits: number; pct: number }> = [];

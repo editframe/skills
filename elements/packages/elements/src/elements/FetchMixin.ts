@@ -49,9 +49,7 @@ export function FetchMixin<T extends Constructor<LitElement>>(superClass: T) {
           // These occur when the browser aborts a request due to page navigation,
           // but doesn't throw a proper AbortError
           const isNavigationAbort =
-            isDisconnected &&
-            error instanceof TypeError &&
-            error.message === "Failed to fetch";
+            isDisconnected && error instanceof TypeError && error.message === "Failed to fetch";
 
           // For AbortErrors, navigation aborts, and disconnected elements,
           // re-throw the original error without enhancement to preserve error type
@@ -60,16 +58,10 @@ export function FetchMixin<T extends Constructor<LitElement>>(superClass: T) {
           }
 
           // Log unexpected errors
-          console.error(
-            "FetchMixin fetch error",
-            url,
-            error,
-            window.location.href,
-          );
+          console.error("FetchMixin fetch error", url, error, window.location.href);
 
           // Create a new error with the URL in the message, preserving the original error type
-          const ErrorConstructor =
-            error instanceof Error ? error.constructor : Error;
+          const ErrorConstructor = error instanceof Error ? error.constructor : Error;
           const enhancedError = new (ErrorConstructor as typeof Error)(
             `Failed to fetch: ${url}. Original error: ${error instanceof Error ? error.message : String(error)}`,
           );

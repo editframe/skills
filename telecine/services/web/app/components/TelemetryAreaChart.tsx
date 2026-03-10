@@ -27,7 +27,9 @@ const CustomTooltip = ({
   const total = payload.reduce((s, p) => s + p.value, 0);
   return (
     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg rounded-md px-3 py-2 text-xs">
-      <p className="font-medium text-slate-700 dark:text-slate-200 mb-1">{label}</p>
+      <p className="font-medium text-slate-700 dark:text-slate-200 mb-1">
+        {label}
+      </p>
       {payload.map((p) => (
         <p key={p.name} style={{ color: p.color }}>
           {p.name}: {p.value.toLocaleString()}
@@ -45,7 +47,10 @@ const CustomTooltip = ({
 export const TelemetryAreaChart = ({ data }: { data: TelemetryBucket[] }) => {
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <AreaChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
+      <AreaChart
+        data={data}
+        margin={{ top: 10, right: 20, left: 10, bottom: 0 }}
+      >
         <defs>
           <linearGradient id="colorAttributed" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="#52427F" stopOpacity={0.3} />
@@ -67,7 +72,9 @@ export const TelemetryAreaChart = ({ data }: { data: TelemetryBucket[] }) => {
           tickLine={false}
           axisLine={false}
           width={40}
-          tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v))}
+          tickFormatter={(v: number) =>
+            v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)
+          }
         />
         <Tooltip content={<CustomTooltip />} />
         <Legend

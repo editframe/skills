@@ -100,8 +100,7 @@ export async function launchBrowserAndWaitForSDK(
     if (options.nativeRender) {
       urlParams.set("EF_NATIVE_RENDER", "1");
     }
-    const url =
-      options.url + (urlParams.toString() ? `?${urlParams.toString()}` : "");
+    const url = options.url + (urlParams.toString() ? `?${urlParams.toString()}` : "");
 
     browserLog("Loading url:", url);
     await page.goto(url);

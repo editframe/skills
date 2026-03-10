@@ -25,7 +25,7 @@ const testWithElement = baseTest.extend<{
   element: TestMediaEngine;
   configuration: HTMLElement;
 }>({
-  element: async ({}, use) => {
+  element: async (_: unknown, use) => {
     const apiHost = getApiHost();
     const config = document.createElement("ef-configuration") as any;
     config.setAttribute("api-host", apiHost);
@@ -38,7 +38,7 @@ const testWithElement = baseTest.extend<{
     await use(element);
     config.remove();
   },
-  configuration: async ({}, use) => {
+  configuration: async (_: unknown, use) => {
     const apiHost = getApiHost();
     const config = document.createElement("ef-configuration") as any;
     config.setAttribute("api-host", apiHost);

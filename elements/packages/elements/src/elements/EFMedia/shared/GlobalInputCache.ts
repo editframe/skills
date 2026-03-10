@@ -13,11 +13,7 @@ class GlobalInputCache {
    * Generate standardized cache key for Input objects
    * Format: "input:{src}:{segmentId}:{renditionId}"
    */
-  private generateKey(
-    src: string,
-    segmentId: number,
-    renditionId?: string,
-  ): string {
+  private generateKey(src: string, segmentId: number, renditionId?: string): string {
     return `input:${src}:${segmentId}:${renditionId || "default"}`;
   }
 
@@ -32,12 +28,7 @@ class GlobalInputCache {
   /**
    * Cache Input object
    */
-  set(
-    src: string,
-    segmentId: number,
-    input: Input,
-    renditionId?: string,
-  ): void {
+  set(src: string, segmentId: number, input: Input, renditionId?: string): void {
     const key = this.generateKey(src, segmentId, renditionId);
     this.cache.set(key, input);
   }
@@ -72,6 +63,5 @@ class GlobalInputCache {
 export const globalInputCache = new GlobalInputCache();
 
 // Export for debugging (works in both browser and server)
-(
-  globalThis as typeof globalThis & { debugInputCache: typeof globalInputCache }
-).debugInputCache = globalInputCache;
+(globalThis as typeof globalThis & { debugInputCache: typeof globalInputCache }).debugInputCache =
+  globalInputCache;

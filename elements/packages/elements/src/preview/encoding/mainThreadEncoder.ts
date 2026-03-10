@@ -34,8 +34,7 @@ export function encodeCanvasOnMainThread(
       const scaledCtx = scaledCanvas.getContext("2d");
       if (scaledCtx) {
         scaledCtx.drawImage(canvas, 0, 0, scaledWidth, scaledHeight);
-        const quality =
-          canvasScale < 0.5 ? JPEG_QUALITY_MEDIUM : JPEG_QUALITY_HIGH;
+        const quality = canvasScale < 0.5 ? JPEG_QUALITY_MEDIUM : JPEG_QUALITY_HIGH;
         dataUrl = preserveAlpha
           ? scaledCanvas.toDataURL("image/png")
           : scaledCanvas.toDataURL("image/jpeg", quality);
@@ -51,7 +50,7 @@ export function encodeCanvasOnMainThread(
     }
 
     return { dataUrl, preserveAlpha };
-  } catch (e) {
+  } catch (_e) {
     // Cross-origin canvas or other error - skip
     return null;
   }

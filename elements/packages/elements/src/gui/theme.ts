@@ -30,13 +30,9 @@ export function getElementTypeColor(
   element: Element = document.documentElement,
 ): string {
   const varName = `--ef-color-type-${type}`;
-  const computedValue = getComputedStyle(element)
-    .getPropertyValue(varName)
-    .trim();
+  const computedValue = getComputedStyle(element).getPropertyValue(varName).trim();
 
-  return (
-    computedValue || fallbackTypeColors[type] || fallbackTypeColors.timegroup!
-  );
+  return computedValue || fallbackTypeColors[type] || fallbackTypeColors.timegroup!;
 }
 
 /**

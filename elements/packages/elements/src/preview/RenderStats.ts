@@ -112,14 +112,12 @@ export class RenderStats {
     // Calculate FPS from frame intervals
     const avgFrameInterval =
       this.frameIntervals.length > 0
-        ? this.frameIntervals.reduce((a, b) => a + b, 0) /
-          this.frameIntervals.length
+        ? this.frameIntervals.reduce((a, b) => a + b, 0) / this.frameIntervals.length
         : 16.67;
     const fps = avgFrameInterval > 0 ? 1000 / avgFrameInterval : 0;
 
     // Calculate headroom (positive = faster than target, negative = slower)
-    const headroom =
-      avgRenderTime !== null ? this.TARGET_FRAME_TIME_MS - avgRenderTime : null;
+    const headroom = avgRenderTime !== null ? this.TARGET_FRAME_TIME_MS - avgRenderTime : null;
 
     // Get adaptive tracker stats
     const trackerStats = this.adaptiveTracker.getStats();

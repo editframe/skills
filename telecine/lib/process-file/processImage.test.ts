@@ -184,7 +184,9 @@ describe("processImageFile via URL", () => {
       res.end(webpBytes);
     });
 
-    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    await new Promise<void>((resolve) =>
+      server.listen(0, "127.0.0.1", resolve),
+    );
     const { port } = server.address() as AddressInfo;
     const url = `http://127.0.0.1:${port}/test.webp`;
 

@@ -1,8 +1,4 @@
-import type {
-  AudioSpan,
-  MediaEngine,
-  SegmentTimeRange,
-} from "../../../transcoding/types";
+import type { AudioSpan, MediaEngine, SegmentTimeRange } from "../../../transcoding/types";
 import type { EFMedia } from "../../EFMedia";
 
 /**
@@ -44,10 +40,7 @@ const fetchAudioSegmentData = async (
  * Create audio span blob from init segment and media segments
  * Pure function for blob creation
  */
-const createAudioSpanBlob = (
-  initSegment: ArrayBuffer,
-  mediaSegments: ArrayBuffer[],
-): Blob => {
+const createAudioSpanBlob = (initSegment: ArrayBuffer, mediaSegments: ArrayBuffer[]): Blob => {
   const chunks = [initSegment, ...mediaSegments];
   return new Blob(chunks, { type: "audio/mp4" });
 };
@@ -77,10 +70,7 @@ export const fetchAudioSpanningTime = async (
   }
 
   // Fetch the init segment
-  const initSegment = await mediaEngine.transport.fetchInitSegment(
-    audioTrack,
-    signal,
-  );
+  const initSegment = await mediaEngine.transport.fetchInitSegment(audioTrack, signal);
   signal.throwIfAborted();
 
   if (!initSegment) {
@@ -88,11 +78,7 @@ export const fetchAudioSpanningTime = async (
   }
 
   // Calculate segments needed
-  const segmentRanges = mediaEngine.index.segmentsInRange(
-    fromMs,
-    toMs,
-    audioTrack,
-  );
+  const segmentRanges = mediaEngine.index.segmentsInRange(fromMs, toMs, audioTrack);
 
   if (segmentRanges.length === 0) {
     throw new Error(`No segments found for time range ${fromMs}-${toMs}ms`);
@@ -100,11 +86,7 @@ export const fetchAudioSpanningTime = async (
 
   // Fetch segment data
   const segmentIds = segmentRanges.map((r: SegmentTimeRange) => r.segmentId);
-  const segmentData = await fetchAudioSegmentData(
-    segmentIds,
-    mediaEngine,
-    signal,
-  );
+  const segmentData = await fetchAudioSegmentData(segmentIds, mediaEngine, signal);
 
   // Create ordered array of segments
   const orderedSegments = segmentIds.map((id: number) => {
@@ -119,12 +101,8 @@ export const fetchAudioSpanningTime = async (
   const blob = createAudioSpanBlob(initSegment, orderedSegments);
 
   // Calculate actual time boundaries
-  const actualStartMs = Math.min(
-    ...segmentRanges.map((r: SegmentTimeRange) => r.startMs),
-  );
-  const actualEndMs = Math.max(
-    ...segmentRanges.map((r: SegmentTimeRange) => r.endMs),
-  );
+  const actualStartMs = Math.min(...segmentRanges.map((r: SegmentTimeRange) => r.startMs));
+  const actualEndMs = Math.max(...segmentRanges.map((r: SegmentTimeRange) => r.endMs));
 
   return {
     startMs: actualStartMs,

@@ -29,9 +29,7 @@ export const RenderInfoSchema = z.object({
 export type RenderInfo = z.infer<typeof RenderInfoSchema>;
 
 export const getRenderInfo = async () => {
-  const rootTimeGroup = document.querySelector("ef-timegroup") as
-    | EFTimegroup
-    | undefined;
+  const rootTimeGroup = document.querySelector("ef-timegroup") as EFTimegroup | undefined;
   if (!rootTimeGroup) {
     throw new Error("No ef-timegroup found");
   }
@@ -62,9 +60,7 @@ export const getRenderInfo = async () => {
   const fps = 30;
   const durationMs = Math.round(rootTimeGroup.durationMs);
 
-  const elements = document.querySelectorAll(
-    "ef-audio, ef-video, ef-image, ef-captions",
-  );
+  const elements = document.querySelectorAll("ef-audio, ef-video, ef-image, ef-captions");
 
   const assets = {
     efMedia: <Record<string, any>>{},

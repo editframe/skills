@@ -2,7 +2,10 @@ import { db } from "@/sql-client.server";
 import { sql } from "kysely";
 import clsx from "clsx";
 import { useSearchParams, Link } from "react-router";
-import { TelemetryAreaChart, type TelemetryBucket } from "~/components/TelemetryAreaChart";
+import {
+  TelemetryAreaChart,
+  type TelemetryBucket,
+} from "~/components/TelemetryAreaChart";
 import type { Route } from "./+types/telemetry";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -20,15 +23,20 @@ interface TelemetryFilters {
 }
 
 function parseFilters(url: URL): TelemetryFilters {
-  const eventType = (url.searchParams.get("eventType") ?? "all") as EventTypeFilter;
-  const renderPath = (url.searchParams.get("renderPath") ?? "all") as RenderPathFilter;
+  const eventType = (url.searchParams.get("eventType") ??
+    "all") as EventTypeFilter;
+  const renderPath = (url.searchParams.get("renderPath") ??
+    "all") as RenderPathFilter;
   const preset = (url.searchParams.get("preset") ?? "30d") as DatePreset;
   const from = url.searchParams.get("from");
   const to = url.searchParams.get("to");
   return { eventType, renderPath, preset, from, to };
 }
 
-function dateRangeFromFilters(filters: TelemetryFilters): { from: Date | null; to: Date | null } {
+function dateRangeFromFilters(filters: TelemetryFilters): {
+  from: Date | null;
+  to: Date | null;
+} {
   if (filters.from && filters.to) {
     return { from: new Date(filters.from), to: new Date(filters.to) };
   }
@@ -55,9 +63,11 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   // 1. Summary counts
   const summaryQuery = db
     .selectFrom("telemetry.events")
-    .$if(filters.eventType !== "all", (q) => q.where("event_type", "=", filters.eventType))
+    .$if(filters.eventType !== "all", (q) =>
+      q.where("event_type", "=", filters.eventType),
+    )
     .$if(filters.renderPath !== "all" && filters.eventType !== "load", (q) =>
-      q.where("render_path", "=", filters.renderPath)
+      q.where("render_path", "=", filters.renderPath),
     )
     .$if(!!from, (q) => q.where("created_at", ">=", from!))
     .$if(!!to, (q) => q.where("created_at", "<=", to!))
@@ -65,8 +75,12 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
       sql<number>`COUNT(*)`.as("total"),
       sql<number>`COUNT(*) FILTER (WHERE org_id IS NOT NULL)`.as("attributed"),
       sql<number>`COUNT(*) FILTER (WHERE org_id IS NULL)`.as("anonymous"),
-      sql<number>`COUNT(DISTINCT org_id) FILTER (WHERE org_id IS NOT NULL)`.as("unique_orgs"),
-      sql<number>`ROUND(AVG(duration_ms) FILTER (WHERE duration_ms IS NOT NULL))`.as("avg_duration_ms"),
+      sql<number>`COUNT(DISTINCT org_id) FILTER (WHERE org_id IS NOT NULL)`.as(
+        "unique_orgs",
+      ),
+      sql<number>`ROUND(AVG(duration_ms) FILTER (WHERE duration_ms IS NOT NULL))`.as(
+        "avg_duration_ms",
+      ),
     ])
     .executeTakeFirstOrThrow();
 
@@ -76,14 +90,18 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 
   const timeSeriesQuery = db
     .selectFrom("telemetry.events")
-    .$if(filters.eventType !== "all", (q) => q.where("event_type", "=", filters.eventType))
+    .$if(filters.eventType !== "all", (q) =>
+      q.where("event_type", "=", filters.eventType),
+    )
     .$if(filters.renderPath !== "all" && filters.eventType !== "load", (q) =>
-      q.where("render_path", "=", filters.renderPath)
+      q.where("render_path", "=", filters.renderPath),
     )
     .$if(!!from, (q) => q.where("created_at", ">=", from!))
     .$if(!!to, (q) => q.where("created_at", "<=", to!))
     .select([
-      sql<string>`DATE_TRUNC(${sql.lit(bucketSize)}, created_at)::date::text`.as("date"),
+      sql<string>`DATE_TRUNC(${sql.lit(bucketSize)}, created_at)::date::text`.as(
+        "date",
+      ),
       sql<number>`COUNT(*) FILTER (WHERE org_id IS NOT NULL)`.as("attributed"),
       sql<number>`COUNT(*) FILTER (WHERE org_id IS NULL)`.as("anonymous"),
     ])
@@ -94,17 +112,16 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   // 3. Top orgs by event count (top 20 attributed)
   const topOrgsQuery = db
     .selectFrom("telemetry.events")
-    .$if(filters.eventType !== "all", (q) => q.where("event_type", "=", filters.eventType))
+    .$if(filters.eventType !== "all", (q) =>
+      q.where("event_type", "=", filters.eventType),
+    )
     .$if(filters.renderPath !== "all" && filters.eventType !== "load", (q) =>
-      q.where("render_path", "=", filters.renderPath)
+      q.where("render_path", "=", filters.renderPath),
     )
     .$if(!!from, (q) => q.where("created_at", ">=", from!))
     .$if(!!to, (q) => q.where("created_at", "<=", to!))
     .where("org_id", "is not", null)
-    .select([
-      "org_id",
-      sql<number>`COUNT(*)`.as("count"),
-    ])
+    .select(["org_id", sql<number>`COUNT(*)`.as("count")])
     .groupBy("org_id")
     .orderBy(sql`COUNT(*)`, "desc")
     .limit(20)
@@ -113,9 +130,11 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   // 4. Top origins
   const topOriginsQuery = db
     .selectFrom("telemetry.events")
-    .$if(filters.eventType !== "all", (q) => q.where("event_type", "=", filters.eventType))
+    .$if(filters.eventType !== "all", (q) =>
+      q.where("event_type", "=", filters.eventType),
+    )
     .$if(filters.renderPath !== "all" && filters.eventType !== "load", (q) =>
-      q.where("render_path", "=", filters.renderPath)
+      q.where("render_path", "=", filters.renderPath),
     )
     .$if(!!from, (q) => q.where("created_at", ">=", from!))
     .$if(!!to, (q) => q.where("created_at", "<=", to!))
@@ -135,7 +154,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     .$if(!!from, (q) => q.where("created_at", ">=", from!))
     .$if(!!to, (q) => q.where("created_at", "<=", to!))
     .$if(filters.renderPath !== "all", (q) =>
-      q.where("render_path", "=", filters.renderPath as string)
+      q.where("render_path", "=", filters.renderPath as string),
     )
     .select([
       sql<string>`COALESCE(render_path, 'unknown')`.as("render_path"),
@@ -148,14 +167,13 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   // 6. SDK / CLI version breakdown
   const sdkVersionQuery = db
     .selectFrom("telemetry.events")
-    .$if(filters.eventType !== "all", (q) => q.where("event_type", "=", filters.eventType))
+    .$if(filters.eventType !== "all", (q) =>
+      q.where("event_type", "=", filters.eventType),
+    )
     .$if(!!from, (q) => q.where("created_at", ">=", from!))
     .$if(!!to, (q) => q.where("created_at", "<=", to!))
     .where("sdk_version", "is not", null)
-    .select([
-      "sdk_version",
-      sql<number>`COUNT(*)`.as("count"),
-    ])
+    .select(["sdk_version", sql<number>`COUNT(*)`.as("count")])
     .groupBy("sdk_version")
     .orderBy(sql`COUNT(*)`, "desc")
     .limit(15)
@@ -163,14 +181,13 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 
   const cliVersionQuery = db
     .selectFrom("telemetry.events")
-    .$if(filters.eventType !== "all", (q) => q.where("event_type", "=", filters.eventType))
+    .$if(filters.eventType !== "all", (q) =>
+      q.where("event_type", "=", filters.eventType),
+    )
     .$if(!!from, (q) => q.where("created_at", ">=", from!))
     .$if(!!to, (q) => q.where("created_at", "<=", to!))
     .where("cli_version", "is not", null)
-    .select([
-      "cli_version",
-      sql<number>`COUNT(*)`.as("count"),
-    ])
+    .select(["cli_version", sql<number>`COUNT(*)`.as("count")])
     .groupBy("cli_version")
     .orderBy(sql`COUNT(*)`, "desc")
     .limit(15)
@@ -183,25 +200,43 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     .$if(!!from, (q) => q.where("created_at", ">=", from!))
     .$if(!!to, (q) => q.where("created_at", "<=", to!))
     .select([
-      sql<number>`ROUND(AVG((feature_usage->>'efMediaCount')::numeric), 1)`.as("avg_media"),
-      sql<number>`ROUND(AVG((feature_usage->>'efImageCount')::numeric), 1)`.as("avg_image"),
-      sql<number>`ROUND(AVG((feature_usage->>'efCaptionsCount')::numeric), 1)`.as("avg_captions"),
-      sql<number>`ROUND(AVG((feature_usage->>'efTextCount')::numeric), 1)`.as("avg_text"),
-      sql<number>`COUNT(*) FILTER (WHERE feature_usage != '{}')`.as("events_with_usage"),
+      sql<number>`ROUND(AVG((feature_usage->>'efMediaCount')::numeric), 1)`.as(
+        "avg_media",
+      ),
+      sql<number>`ROUND(AVG((feature_usage->>'efImageCount')::numeric), 1)`.as(
+        "avg_image",
+      ),
+      sql<number>`ROUND(AVG((feature_usage->>'efCaptionsCount')::numeric), 1)`.as(
+        "avg_captions",
+      ),
+      sql<number>`ROUND(AVG((feature_usage->>'efTextCount')::numeric), 1)`.as(
+        "avg_text",
+      ),
+      sql<number>`COUNT(*) FILTER (WHERE feature_usage != '{}')`.as(
+        "events_with_usage",
+      ),
     ])
     .executeTakeFirstOrThrow();
 
-  const [summary, timeSeries, topOrgs, topOrigins, renderPaths, sdkVersions, cliVersions, featureUsage] =
-    await Promise.all([
-      summaryQuery,
-      timeSeriesQuery,
-      topOrgsQuery,
-      topOriginsQuery,
-      renderPathQuery,
-      sdkVersionQuery,
-      cliVersionQuery,
-      featureUsageQuery,
-    ]);
+  const [
+    summary,
+    timeSeries,
+    topOrgs,
+    topOrigins,
+    renderPaths,
+    sdkVersions,
+    cliVersions,
+    featureUsage,
+  ] = await Promise.all([
+    summaryQuery,
+    timeSeriesQuery,
+    topOrgsQuery,
+    topOriginsQuery,
+    renderPathQuery,
+    sdkVersionQuery,
+    cliVersionQuery,
+    featureUsageQuery,
+  ]);
 
   return {
     filters,
@@ -210,26 +245,47 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
       attributed: Number(summary.attributed),
       anonymous: Number(summary.anonymous),
       unique_orgs: Number(summary.unique_orgs),
-      avg_duration_ms: summary.avg_duration_ms != null ? Number(summary.avg_duration_ms) : null,
+      avg_duration_ms:
+        summary.avg_duration_ms != null
+          ? Number(summary.avg_duration_ms)
+          : null,
     },
     timeSeries: timeSeries.map((r) => ({
       date: r.date,
       attributed: Number(r.attributed),
       anonymous: Number(r.anonymous),
     })) as TelemetryBucket[],
-    topOrgs: topOrgs.map((r) => ({ org_id: r.org_id!, count: Number(r.count) })),
-    topOrigins: topOrigins.map((r) => ({ origin: r.origin!, count: Number(r.count) })),
+    topOrgs: topOrgs.map((r) => ({
+      org_id: r.org_id!,
+      count: Number(r.count),
+    })),
+    topOrigins: topOrigins.map((r) => ({
+      origin: r.origin!,
+      count: Number(r.count),
+    })),
     renderPaths: renderPaths.map((r) => ({
       render_path: r.render_path as string,
       count: Number(r.count),
     })),
-    sdkVersions: sdkVersions.map((r) => ({ version: r.sdk_version!, count: Number(r.count) })),
-    cliVersions: cliVersions.map((r) => ({ version: r.cli_version!, count: Number(r.count) })),
+    sdkVersions: sdkVersions.map((r) => ({
+      version: r.sdk_version!,
+      count: Number(r.count),
+    })),
+    cliVersions: cliVersions.map((r) => ({
+      version: r.cli_version!,
+      count: Number(r.count),
+    })),
     featureUsage: {
-      avg_media: featureUsage.avg_media != null ? Number(featureUsage.avg_media) : null,
-      avg_image: featureUsage.avg_image != null ? Number(featureUsage.avg_image) : null,
-      avg_captions: featureUsage.avg_captions != null ? Number(featureUsage.avg_captions) : null,
-      avg_text: featureUsage.avg_text != null ? Number(featureUsage.avg_text) : null,
+      avg_media:
+        featureUsage.avg_media != null ? Number(featureUsage.avg_media) : null,
+      avg_image:
+        featureUsage.avg_image != null ? Number(featureUsage.avg_image) : null,
+      avg_captions:
+        featureUsage.avg_captions != null
+          ? Number(featureUsage.avg_captions)
+          : null,
+      avg_text:
+        featureUsage.avg_text != null ? Number(featureUsage.avg_text) : null,
       events_with_usage: Number(featureUsage.events_with_usage),
     },
   };
@@ -271,7 +327,9 @@ function StatCard({
         {typeof value === "number" ? value.toLocaleString() : value}
       </div>
       {sub && (
-        <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">{sub}</div>
+        <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+          {sub}
+        </div>
       )}
     </div>
   );
@@ -321,8 +379,10 @@ function RenderPathBadge({ path }: { path: string }) {
   const colors: Record<string, string> = {
     client: "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200",
     cli: "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200",
-    server: "bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-200",
-    unknown: "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400",
+    server:
+      "bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-200",
+    unknown:
+      "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400",
   };
   return (
     <span
@@ -338,7 +398,9 @@ function RenderPathBadge({ path }: { path: string }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function TelemetryDashboard({ loaderData }: Route.ComponentProps) {
+export default function TelemetryDashboard({
+  loaderData,
+}: Route.ComponentProps) {
   const {
     filters,
     summary,
@@ -365,7 +427,10 @@ export default function TelemetryDashboard({ loaderData }: Route.ComponentProps)
           Client Telemetry
         </h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          SDK render and load events from <code className="text-xs bg-slate-100 dark:bg-slate-800 px-1 rounded">telemetry.events</code>
+          SDK render and load events from{" "}
+          <code className="text-xs bg-slate-100 dark:bg-slate-800 px-1 rounded">
+            telemetry.events
+          </code>
         </p>
       </div>
 
@@ -396,15 +461,17 @@ export default function TelemetryDashboard({ loaderData }: Route.ComponentProps)
               Render path
             </span>
             <div className="flex gap-1">
-              {(["all", "client", "cli", "server"] as RenderPathFilter[]).map((p) => (
-                <FilterButton
-                  key={p}
-                  active={filters.renderPath === p}
-                  href={buildFilterUrl(searchParams, { renderPath: p })}
-                >
-                  {p === "all" ? "All" : p}
-                </FilterButton>
-              ))}
+              {(["all", "client", "cli", "server"] as RenderPathFilter[]).map(
+                (p) => (
+                  <FilterButton
+                    key={p}
+                    active={filters.renderPath === p}
+                    href={buildFilterUrl(searchParams, { renderPath: p })}
+                  >
+                    {p === "all" ? "All" : p}
+                  </FilterButton>
+                ),
+              )}
             </div>
           </div>
         )}
@@ -474,12 +541,20 @@ export default function TelemetryDashboard({ loaderData }: Route.ComponentProps)
         <StatCard
           label="Attributed"
           value={summary.attributed}
-          sub={summary.total > 0 ? `${Math.round((summary.attributed / summary.total) * 100)}% of total` : undefined}
+          sub={
+            summary.total > 0
+              ? `${Math.round((summary.attributed / summary.total) * 100)}% of total`
+              : undefined
+          }
         />
         <StatCard
           label="Anonymous"
           value={summary.anonymous}
-          sub={summary.total > 0 ? `${Math.round((summary.anonymous / summary.total) * 100)}% of total` : undefined}
+          sub={
+            summary.total > 0
+              ? `${Math.round((summary.anonymous / summary.total) * 100)}% of total`
+              : undefined
+          }
         />
         <StatCard label="Unique orgs" value={summary.unique_orgs} />
         {showRenderFields && summary.avg_duration_ms != null && (
@@ -501,7 +576,9 @@ export default function TelemetryDashboard({ loaderData }: Route.ComponentProps)
         <h2 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">
           Events over time
           <span className="ml-2 text-xs font-normal text-slate-400 dark:text-slate-500">
-            {filters.preset === "all" || filters.preset === "90d" ? "weekly buckets" : "daily buckets"}
+            {filters.preset === "all" || filters.preset === "90d"
+              ? "weekly buckets"
+              : "daily buckets"}
           </span>
         </h2>
         {timeSeries.length === 0 ? (
@@ -529,7 +606,9 @@ export default function TelemetryDashboard({ loaderData }: Route.ComponentProps)
               Render path
             </h2>
             {renderPaths.length === 0 ? (
-              <p className="text-xs text-slate-400 dark:text-slate-500">No render events</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500">
+                No render events
+              </p>
             ) : (
               <div className="space-y-2">
                 {renderPaths.map((r) => (
@@ -586,12 +665,19 @@ export default function TelemetryDashboard({ loaderData }: Route.ComponentProps)
             Top orgs by event count
           </h2>
           {topOrgs.length === 0 ? (
-            <p className="text-xs text-slate-400 dark:text-slate-500">No attributed events</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">
+              No attributed events
+            </p>
           ) : (
             <div className="space-y-1">
               {topOrgs.map((org, i) => (
-                <div key={org.org_id} className="flex items-center gap-2 text-xs">
-                  <span className="text-slate-400 w-4 text-right tabular-nums">{i + 1}</span>
+                <div
+                  key={org.org_id}
+                  className="flex items-center gap-2 text-xs"
+                >
+                  <span className="text-slate-400 w-4 text-right tabular-nums">
+                    {i + 1}
+                  </span>
                   <Link
                     to={`/admin/orgs/${org.org_id}`}
                     className="font-mono text-indigo-600 dark:text-indigo-400 hover:underline truncate flex-1 min-w-0"
@@ -619,12 +705,19 @@ export default function TelemetryDashboard({ loaderData }: Route.ComponentProps)
             Top origins
           </h2>
           {topOrigins.length === 0 ? (
-            <p className="text-xs text-slate-400 dark:text-slate-500">No origin data</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">
+              No origin data
+            </p>
           ) : (
             <div className="space-y-1">
               {topOrigins.map((origin, i) => (
-                <div key={origin.origin} className="flex items-center gap-2 text-xs">
-                  <span className="text-slate-400 w-4 text-right tabular-nums">{i + 1}</span>
+                <div
+                  key={origin.origin}
+                  className="flex items-center gap-2 text-xs"
+                >
+                  <span className="text-slate-400 w-4 text-right tabular-nums">
+                    {i + 1}
+                  </span>
                   <span
                     className={clsx(
                       "truncate flex-1 min-w-0",
@@ -659,7 +752,9 @@ export default function TelemetryDashboard({ loaderData }: Route.ComponentProps)
               Feature usage averages
             </h2>
             <span className="text-xs text-slate-400 dark:text-slate-500">
-              per render · from {featureUsage.events_with_usage.toLocaleString()} events with usage data
+              per render · from{" "}
+              {featureUsage.events_with_usage.toLocaleString()} events with
+              usage data
             </span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -676,7 +771,9 @@ export default function TelemetryDashboard({ loaderData }: Route.ComponentProps)
                   "bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700",
                 )}
               >
-                <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{label}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+                  {label}
+                </div>
                 <div className="text-xl font-semibold text-slate-900 dark:text-white tabular-nums">
                   {value != null ? value : "—"}
                 </div>
@@ -684,7 +781,8 @@ export default function TelemetryDashboard({ loaderData }: Route.ComponentProps)
             ))}
           </div>
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-3">
-            JSONB schema may be inconsistent across SDK versions — averages exclude nulls.
+            JSONB schema may be inconsistent across SDK versions — averages
+            exclude nulls.
           </p>
         </div>
       )}
@@ -722,13 +820,19 @@ export default function TelemetryDashboard({ loaderData }: Route.ComponentProps)
   );
 }
 
-function VersionTable({ rows }: { rows: { version: string; count: number }[] }) {
+function VersionTable({
+  rows,
+}: {
+  rows: { version: string; count: number }[];
+}) {
   const total = rows.reduce((s, r) => s + r.count, 0);
   return (
     <div className="space-y-1">
       {rows.map((r) => (
         <div key={r.version} className="flex items-center gap-2 text-xs">
-          <code className="text-slate-700 dark:text-slate-300 flex-1">{r.version}</code>
+          <code className="text-slate-700 dark:text-slate-300 flex-1">
+            {r.version}
+          </code>
           <span className="text-slate-700 dark:text-slate-300 tabular-nums font-medium shrink-0">
             {r.count.toLocaleString()}
           </span>

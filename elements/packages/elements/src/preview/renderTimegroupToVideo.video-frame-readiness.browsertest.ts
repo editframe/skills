@@ -42,8 +42,7 @@ describe("Video Frame Readiness", () => {
       const tg = document.createElement("ef-timegroup") as EFTimegroup;
       tg.setAttribute("mode", "fixed");
       tg.setAttribute("duration", "5s");
-      tg.style.cssText =
-        "width: 640px; height: 360px; background: black; display: block;";
+      tg.style.cssText = "width: 640px; height: 360px; background: black; display: block;";
 
       const video = document.createElement("ef-video") as EFVideo;
       video.src = "http://host.docker.internal:3000/sync-test.mp4";
@@ -93,18 +92,12 @@ describe("Video Frame Readiness", () => {
                   Math.min(10, shadowCanvas.width),
                   Math.min(10, shadowCanvas.height),
                 );
-                const hasContent = imageData.data.some(
-                  (val, idx) => idx % 4 === 3 && val > 0,
-                ); // Check for non-transparent pixels
+                const hasContent = imageData.data.some((val, idx) => idx % 4 === 3 && val > 0); // Check for non-transparent pixels
 
-                console.log(
-                  `[Frame Readiness Test] Canvas has content: ${hasContent}`,
-                );
+                console.log(`[Frame Readiness Test] Canvas has content: ${hasContent}`);
 
                 if (!hasContent) {
-                  console.log(
-                    `❌ WARNING: Canvas is empty at ${timeMs}ms after seekForRender!`,
-                  );
+                  console.log(`❌ WARNING: Canvas is empty at ${timeMs}ms after seekForRender!`);
                 }
               }
             }

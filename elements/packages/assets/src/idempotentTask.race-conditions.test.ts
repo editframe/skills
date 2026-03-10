@@ -117,9 +117,7 @@ describe("idempotentTask Race Condition Protection", () => {
       const downloadUrl = `${serverUrl}/test-file.mp4`;
 
       // Start multiple concurrent downloads of the same file
-      const downloadPromises = Array.from({ length: 5 }, () =>
-        testTask(testDir, downloadUrl),
-      );
+      const downloadPromises = Array.from({ length: 5 }, () => testTask(testDir, downloadUrl));
 
       const results = await Promise.all(downloadPromises);
 
@@ -200,9 +198,7 @@ describe("idempotentTask Race Condition Protection", () => {
       });
 
       // Start multiple concurrent tasks for the same cache key
-      const taskPromises = Array.from({ length: 10 }, () =>
-        testTask(testDir, testFilePath),
-      );
+      const taskPromises = Array.from({ length: 10 }, () => testTask(testDir, testFilePath));
 
       const results = await Promise.all(taskPromises);
 
@@ -224,8 +220,7 @@ describe("idempotentTask Race Condition Protection", () => {
     test("handles concurrent stream tasks safely", async () => {
       const streamTask = idempotentTask({
         label: "stream-safety",
-        filename: (absolutePath: string, suffix: string) =>
-          `stream-${suffix}.data`,
+        filename: (absolutePath: string, suffix: string) => `stream-${suffix}.data`,
         runner: async (absolutePath: string, suffix: string) => {
           const data = `stream data for ${suffix}`;
           return Readable.from([data]);
@@ -266,9 +261,7 @@ describe("idempotentTask Race Condition Protection", () => {
         fs.readdirSync(join(testDir, ".cache"), { recursive: true }),
       );
 
-      const tempFiles = cacheFiles.filter((file) =>
-        file.toString().includes(".tmp"),
-      );
+      const tempFiles = cacheFiles.filter((file) => file.toString().includes(".tmp"));
       expect(tempFiles.length).toBe(0);
     });
 
@@ -282,18 +275,14 @@ describe("idempotentTask Race Condition Protection", () => {
       });
 
       // Task should fail
-      await expect(failingTask(testDir, testFilePath)).rejects.toThrow(
-        "Simulated task failure",
-      );
+      await expect(failingTask(testDir, testFilePath)).rejects.toThrow("Simulated task failure");
 
       // Verify no temporary files left behind even after failure
       const cacheFiles = await import("node:fs").then((fs) =>
         fs.readdirSync(join(testDir, ".cache"), { recursive: true }),
       );
 
-      const tempFiles = cacheFiles.filter((file) =>
-        file.toString().includes(".tmp"),
-      );
+      const tempFiles = cacheFiles.filter((file) => file.toString().includes(".tmp"));
       expect(tempFiles.length).toBe(0);
     });
   });
@@ -324,9 +313,7 @@ describe("idempotentTask Race Condition Protection", () => {
         },
       });
 
-      await expect(failingStringTask(testDir, testFilePath)).rejects.toThrow(
-        "runner failure",
-      );
+      await expect(failingStringTask(testDir, testFilePath)).rejects.toThrow("runner failure");
 
       const { existsSync: exists } = await import("node:fs");
       const cacheRoot = join(testDir, ".cache");
@@ -334,9 +321,7 @@ describe("idempotentTask Race Condition Protection", () => {
         const cacheFiles = await import("node:fs").then((fs) =>
           fs.readdirSync(cacheRoot, { recursive: true }),
         );
-        const tempFiles = cacheFiles.filter((f) =>
-          f.toString().includes(".tmp"),
-        );
+        const tempFiles = cacheFiles.filter((f) => f.toString().includes(".tmp"));
         expect(tempFiles.length).toBe(0);
       }
     });
@@ -368,10 +353,7 @@ describe("idempotentTask Race Condition Protection", () => {
         filename: (_: string, id: number) => `file-${id}.txt`,
         runner: async (_: string, id: number) => {
           activeRunners++;
-          maxObservedConcurrency = Math.max(
-            maxObservedConcurrency,
-            activeRunners,
-          );
+          maxObservedConcurrency = Math.max(maxObservedConcurrency, activeRunners);
           // Hold the runner slot briefly so concurrent tasks queue up
           await new Promise((resolve) => setTimeout(resolve, 20));
           activeRunners--;

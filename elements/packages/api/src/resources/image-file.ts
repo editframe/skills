@@ -61,8 +61,7 @@ export const CreateImageFilePayload = z
     if (!parsedMimeType && !data.mime_type) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message:
-          "mime_type is required when filename extension doesn't match a known image type",
+        message: "mime_type is required when filename extension doesn't match a known image type",
         path: ["mime_type"],
       });
     }
@@ -122,10 +121,7 @@ export interface LookupImageFileByMd5Result {
 export interface GetImageFileMetadataResult extends LookupImageFileByMd5Result {}
 
 /** @deprecated Use the unified file API from ./file.js instead */
-export const createImageFile = async (
-  client: Client,
-  payload: CreateImageFilePayload,
-) => {
+export const createImageFile = async (client: Client, payload: CreateImageFilePayload) => {
   log("Creating image file", payload);
   CreateImageFilePayload.parse(payload);
   const response = await client.authenticatedFetch("/api/v1/image_files", {
@@ -139,9 +135,7 @@ export const createImageFile = async (
     return (await response.json()) as CreateImageFileResult;
   }
 
-  throw new Error(
-    `Failed to create file ${response.status} ${response.statusText}`,
-  );
+  throw new Error(`Failed to create file ${response.status} ${response.statusText}`);
 };
 
 /** @deprecated Use the unified file API from ./file.js instead */
@@ -170,12 +164,9 @@ export const getImageFileMetadata = async (
   client: Client,
   id: string,
 ): Promise<GetImageFileMetadataResult | null> => {
-  const response = await client.authenticatedFetch(
-    `/api/v1/image_files/${id}.json`,
-    {
-      method: "GET",
-    },
-  );
+  const response = await client.authenticatedFetch(`/api/v1/image_files/${id}.json`, {
+    method: "GET",
+  });
 
   if (response.ok) {
     return (await response.json()) as LookupImageFileByMd5Result;
@@ -189,12 +180,9 @@ export const lookupImageFileByMd5 = async (
   client: Client,
   md5: string,
 ): Promise<LookupImageFileByMd5Result | null> => {
-  const response = await client.authenticatedFetch(
-    `/api/v1/image_files/md5/${md5}`,
-    {
-      method: "GET",
-    },
-  );
+  const response = await client.authenticatedFetch(`/api/v1/image_files/md5/${md5}`, {
+    method: "GET",
+  });
   log("Image file lookup", response);
 
   if (response.ok) {
@@ -205,7 +193,5 @@ export const lookupImageFileByMd5 = async (
     return null;
   }
 
-  throw new Error(
-    `Failed to lookup image by md5 ${md5} ${response.status} ${response.statusText}`,
-  );
+  throw new Error(`Failed to lookup image by md5 ${md5} ${response.status} ${response.statusText}`);
 };

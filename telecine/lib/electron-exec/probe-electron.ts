@@ -31,7 +31,9 @@ registerRcpHandler("captureFrame", async () => {
   });
 
   win.webContents.setFrameRate(60);
-  await win.loadURL("data:text/html,<body style='background:red;margin:0'></body>");
+  await win.loadURL(
+    "data:text/html,<body style='background:red;margin:0'></body>",
+  );
 
   // Wait for at least one rendered frame before capturing.
   await paintPromise;
@@ -40,7 +42,11 @@ registerRcpHandler("captureFrame", async () => {
   const png = image.toPNG();
   win.destroy();
 
-  return { byteLength: png.byteLength, width: image.getSize().width, height: image.getSize().height };
+  return {
+    byteLength: png.byteLength,
+    width: image.getSize().width,
+    height: image.getSize().height,
+  };
 });
 
 await keepalive.promise;

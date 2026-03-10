@@ -10,10 +10,7 @@ describe("DelayedLoadingState", () => {
     mockStateChange = vi.fn();
     delayedLoadingState = new DelayedLoadingState(
       250,
-      mockStateChange as unknown as (
-        isLoading: boolean,
-        message: string,
-      ) => void,
+      mockStateChange as unknown as (isLoading: boolean, message: string) => void,
     );
   });
 
@@ -23,10 +20,7 @@ describe("DelayedLoadingState", () => {
 
   test("should not show loading immediately for fast operations", () => {
     // Start an operation
-    delayedLoadingState.startLoading(
-      "test-operation",
-      "Testing fast operation",
-    );
+    delayedLoadingState.startLoading("test-operation", "Testing fast operation");
 
     // Check that loading is not shown immediately
     expect(delayedLoadingState.isLoading).toBe(false);
@@ -45,10 +39,7 @@ describe("DelayedLoadingState", () => {
 
   test("should show loading indicator only after 250ms delay", () => {
     // Start an operation
-    delayedLoadingState.startLoading(
-      "slow-operation",
-      "Testing slow operation",
-    );
+    delayedLoadingState.startLoading("slow-operation", "Testing slow operation");
 
     // Check that loading is not shown immediately
     expect(delayedLoadingState.isLoading).toBe(false);
@@ -63,10 +54,7 @@ describe("DelayedLoadingState", () => {
     vi.advanceTimersByTime(1);
     expect(delayedLoadingState.isLoading).toBe(true);
     expect(delayedLoadingState.message).toBe("Testing slow operation");
-    expect(mockStateChange).toHaveBeenCalledWith(
-      true,
-      "Testing slow operation",
-    );
+    expect(mockStateChange).toHaveBeenCalledWith(true, "Testing slow operation");
 
     // Clear the operation
     delayedLoadingState.clearLoading("slow-operation");
@@ -96,11 +84,9 @@ describe("DelayedLoadingState", () => {
 
   test("should not show loading for background operations", () => {
     // Start a background operation
-    delayedLoadingState.startLoading(
-      "background-preload",
-      "Preloading segment",
-      { background: true },
-    );
+    delayedLoadingState.startLoading("background-preload", "Preloading segment", {
+      background: true,
+    });
 
     // Advance well past threshold
     vi.advanceTimersByTime(1000);

@@ -67,8 +67,7 @@ async function main() {
   }
 
   // Determine output path
-  const outputPath =
-    outputArg || path.join(monorepoRoot, "video-render-test.mp4");
+  const outputPath = outputArg || path.join(monorepoRoot, "video-render-test.mp4");
 
   console.log(`\n🎬 Video Render Test`);
   console.log(`   FPS: ${fps}`);
@@ -98,10 +97,7 @@ async function main() {
     browser = await chromium.launch({
       headless,
       channel: "chrome",
-      args: [
-        "--autoplay-policy=no-user-gesture-required",
-        "--enable-features=CanvasDrawElement",
-      ],
+      args: ["--autoplay-policy=no-user-gesture-required", "--enable-features=CanvasDrawElement"],
     });
     shouldCloseBrowser = true;
   }
@@ -148,12 +144,8 @@ async function main() {
     );
 
     // Determine render duration
-    const renderDuration = durationArg
-      ? parseInt(durationArg, 10)
-      : renderInfo.durationMs;
-    console.log(
-      `\n🎬 Starting render (${renderDuration}ms at ${fps}fps, scale=${scale})...`,
-    );
+    const renderDuration = durationArg ? parseInt(durationArg, 10) : renderInfo.durationMs;
+    console.log(`\n🎬 Starting render (${renderDuration}ms at ${fps}fps, scale=${scale})...`);
     const startTime = Date.now();
 
     // Render using EF_RENDER API (designed for programmatic/non-interactive rendering)

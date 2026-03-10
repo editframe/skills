@@ -28,9 +28,7 @@ describe("EFFitScale", () => {
     document.body.innerHTML = "";
   });
 
-  test("scales video to fit container while maintaining aspect ratio", async ({
-    expect,
-  }) => {
+  test("scales video to fit container while maintaining aspect ratio", async ({ expect }) => {
     const container = document.createElement("div");
     const apiHost = getApiHost();
 
@@ -394,8 +392,7 @@ describe("EFFitScale — container patterns", () => {
 
   test("scales content in grid row parent", async () => {
     const wrapper = document.createElement("div");
-    wrapper.style.cssText =
-      "display: grid; grid-template-rows: 1fr; width: 500px; height: 400px;";
+    wrapper.style.cssText = "display: grid; grid-template-rows: 1fr; width: 500px; height: 400px;";
     wrapper.innerHTML = `
       <ef-fit-scale>
         <div style="width: 1920px; height: 1080px; background: green;"></div>
@@ -422,8 +419,7 @@ describe("EFFitScale — container patterns", () => {
 
   test("scales content in flexbox parent with flex-1", async () => {
     const wrapper = document.createElement("div");
-    wrapper.style.cssText =
-      "display: flex; flex-direction: column; width: 500px; height: 400px;";
+    wrapper.style.cssText = "display: flex; flex-direction: column; width: 500px; height: 400px;";
     wrapper.innerHTML = `
       <div style="flex: 1; min-height: 0;">
         <ef-fit-scale>
@@ -778,8 +774,7 @@ describe("EFFitScale — ResizeObserver behavior", () => {
     originalContent.remove();
     const newContent = document.createElement("div");
     newContent.id = "replacement";
-    newContent.style.cssText =
-      "width: 1920px; height: 1080px; background: blue;";
+    newContent.style.cssText = "width: 1920px; height: 1080px; background: blue;";
     fitScale.appendChild(newContent);
 
     await waitFrames(10);
@@ -844,8 +839,7 @@ describe("EFFitScale — console warning", () => {
 
     // Should have warned about zero dimensions
     const fitScaleWarns = warnSpy.mock.calls.filter(
-      (call) =>
-        typeof call[0] === "string" && call[0].includes("[ef-fit-scale]"),
+      (call) => typeof call[0] === "string" && call[0].includes("[ef-fit-scale]"),
     );
     expect(fitScaleWarns.length).toBeGreaterThan(0);
     expect(fitScaleWarns[0]![0]).toContain("zero dimensions");
@@ -867,8 +861,7 @@ describe("EFFitScale — console warning", () => {
 
     // No FitScale warnings should appear
     const fitScaleWarns = warnSpy.mock.calls.filter(
-      (call) =>
-        typeof call[0] === "string" && call[0].includes("[ef-fit-scale]"),
+      (call) => typeof call[0] === "string" && call[0].includes("[ef-fit-scale]"),
     );
     expect(fitScaleWarns.length).toBe(0);
   });
@@ -894,8 +887,7 @@ describe("EFFitScale — console warning", () => {
 
     // Should only have warned once despite multiple triggers
     const fitScaleWarns = warnSpy.mock.calls.filter(
-      (call) =>
-        typeof call[0] === "string" && call[0].includes("[ef-fit-scale]"),
+      (call) => typeof call[0] === "string" && call[0].includes("[ef-fit-scale]"),
     );
     expect(fitScaleWarns.length).toBe(1);
   });

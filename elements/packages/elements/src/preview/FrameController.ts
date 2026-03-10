@@ -121,9 +121,7 @@ export interface FrameRenderable {
 /**
  * Type guard to check if an element implements FrameRenderable.
  */
-export function isFrameRenderable(
-  element: unknown,
-): element is FrameRenderable {
+export function isFrameRenderable(element: unknown): element is FrameRenderable {
   return (
     typeof element === "object" &&
     element !== null &&
@@ -250,19 +248,14 @@ export class FrameController {
       );
 
       if (elementsNeedingPreparation.length > 0) {
-        await Promise.all(
-          elementsNeedingPreparation.map((el) =>
-            el.prepareFrame(timeMs, signal),
-          ),
-        );
+        await Promise.all(elementsNeedingPreparation.map((el) => el.prepareFrame(timeMs, signal)));
         signal.throwIfAborted();
       }
       const prepareMs = performance.now() - tPrepare;
 
       const tRender = performance.now();
       const sortedElements = [...elements].sort(
-        (a, b) =>
-          a.getFrameState(timeMs).priority - b.getFrameState(timeMs).priority,
+        (a, b) => a.getFrameState(timeMs).priority - b.getFrameState(timeMs).priority,
       );
 
       for (const element of sortedElements) {
@@ -318,11 +311,9 @@ export class FrameController {
       if (isTemporal) {
         // Temporal element: check time-based visibility
         // Use exclusive end (< not <=) to avoid overlap at boundaries
-        const startMs =
-          (element as { startTimeMs?: number }).startTimeMs ?? -Infinity;
+        const startMs = (element as { startTimeMs?: number }).startTimeMs ?? -Infinity;
         const endMs = (element as { endTimeMs?: number }).endTimeMs ?? Infinity;
-        const isTemporallyVisible =
-          currentTimeMs >= startMs && currentTimeMs < endMs;
+        const isTemporallyVisible = currentTimeMs >= startMs && currentTimeMs < endMs;
 
         if (!isTemporallyVisible) {
           // Skip this element AND its children (children's times are relative to parent)
@@ -338,10 +329,7 @@ export class FrameController {
         // Skip getComputedStyle — it forces synchronous style recalc and is
         // unnecessary because FrameRenderable elements are always temporal.
         // We only walk non-temporal elements to reach temporal children.
-        if (
-          element instanceof HTMLElement &&
-          element.style.display === "none"
-        ) {
+        if (element instanceof HTMLElement && element.style.display === "none") {
           return;
         }
 
@@ -411,9 +399,9 @@ export const DEFAULT_FRAME_STATE: FrameState = {
  * Helper to create a FrameRenderable mixin for elements.
  * Provides default implementations that can be overridden.
  */
-export function createFrameRenderableMixin<
-  T extends { new (...args: any[]): HTMLElement },
->(Base: T) {
+export function createFrameRenderableMixin<T extends { new (...args: any[]): HTMLElement }>(
+  Base: T,
+) {
   return class FrameRenderableMixin extends Base implements FrameRenderable {
     getFrameState(_timeMs: number): FrameState {
       return DEFAULT_FRAME_STATE;

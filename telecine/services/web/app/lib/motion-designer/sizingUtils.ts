@@ -3,7 +3,10 @@ import { isLegacySize, normalizeSize } from "./sizingTypes";
 
 export function getSizeDimensions(
   size: ElementSize | LegacyElementSize | undefined,
-): { width: number; height: number } {
+): {
+  width: number;
+  height: number;
+} {
   if (!size) return { width: 0, height: 0 };
 
   const normalized = normalizeSize(size);

@@ -6,7 +6,11 @@ import { apiIdentityContext } from "~/middleware/context";
 
 import type { Route } from "./+types/indexUpload";
 
-export const action = async ({ params: { id }, request, context }: Route.ActionArgs) => {
+export const action = async ({
+  params: { id },
+  request,
+  context,
+}: Route.ActionArgs) => {
   if (!request.body) {
     throw new Response("Request MUST have body content", { status: 400 });
   }

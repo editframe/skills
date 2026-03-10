@@ -162,11 +162,11 @@ export interface ElectronRPCClient {
   ): Promise<RenderBrowserFrameByFrameResult>;
   call(
     method: "getBrowserFrameTiming",
-    args: { renderId: string }
+    args: { renderId: string },
   ): Promise<SegmentTimingData[]>;
   call(
     method: "clearBrowserFrameTiming",
-    args: { renderId: string }
+    args: { renderId: string },
   ): Promise<void>;
   call(method: "disposeContext", contextId: string): Promise<void>;
   call(method: "terminate"): Promise<void>;
@@ -490,7 +490,9 @@ export const rpcServerReady = (async () => {
         },
       );
 
-      logger.debug("🔧 [RPC_SERVER] Registering renderBrowserFullVideo handler...");
+      logger.debug(
+        "🔧 [RPC_SERVER] Registering renderBrowserFullVideo handler...",
+      );
       registerRcpHandler(
         "renderBrowserFullVideo",
         async (
@@ -535,14 +537,18 @@ export const rpcServerReady = (async () => {
           ctx.sendKeepalive();
 
           // Call renderTimegroupToVideo in the browser context
-          logger.debug("🔧 [RPC_SERVER] Calling renderTimegroupToVideo in browser...", {
-            canvasMode,
-            width,
-            height,
-            durationMs,
-            fps,
-          });
-          const videoBuffer = await renderContext.webContents.executeJavaScript(`
+          logger.debug(
+            "🔧 [RPC_SERVER] Calling renderTimegroupToVideo in browser...",
+            {
+              canvasMode,
+              width,
+              height,
+              durationMs,
+              fps,
+            },
+          );
+          const videoBuffer = await renderContext.webContents
+            .executeJavaScript(`
             (async () => {
               const rootTimegroup = document.querySelector('ef-timegroup');
               if (!rootTimegroup) {
@@ -568,13 +574,17 @@ export const rpcServerReady = (async () => {
             })();
           `);
 
-          logger.debug(`🔧 [RPC_SERVER] Browser render complete, buffer size: ${videoBuffer.length}`);
-          
+          logger.debug(
+            `🔧 [RPC_SERVER] Browser render complete, buffer size: ${videoBuffer.length}`,
+          );
+
           return new Uint8Array(videoBuffer);
         },
       );
 
-      logger.debug("🔧 [RPC_SERVER] Registering renderBrowserFrameByFrame handler...");
+      logger.debug(
+        "🔧 [RPC_SERVER] Registering renderBrowserFrameByFrame handler...",
+      );
       registerRcpHandler(
         "renderBrowserFrameByFrame",
         async (
@@ -642,11 +652,14 @@ export const rpcServerReady = (async () => {
 
           const abortController = new AbortController();
 
-          logger.debug("🔧 [RPC_SERVER] Setting up browser frame-by-frame engine...", {
-            canvasMode,
-            segmentIndex,
-            fileType,
-          });
+          logger.debug(
+            "🔧 [RPC_SERVER] Setting up browser frame-by-frame engine...",
+            {
+              canvasMode,
+              segmentIndex,
+              fileType,
+            },
+          );
 
           // Storage for per-frame timing data
           let frameTiming: FrameTimingData[] = [];
@@ -658,7 +671,13 @@ export const rpcServerReady = (async () => {
               renderContext.onError(handler);
             },
             initialize: async (renderOptions: VideoRenderOptions) => {
-              logger.debug("🔧 [RPC_SERVER] Browser frame engine initialize() called", { renderOptions, canvasMode });
+              logger.debug(
+                "🔧 [RPC_SERVER] Browser frame engine initialize() called",
+                {
+                  renderOptions,
+                  canvasMode,
+                },
+              );
               // Initialize the timegroup in the browser
               await renderContext.webContents.executeJavaScript(`
                 (async () => {
@@ -672,15 +691,20 @@ export const rpcServerReady = (async () => {
                   });
                 })();
               `);
-              logger.debug("🔧 [RPC_SERVER] Browser frame engine initialize() complete");
+              logger.debug(
+                "🔧 [RPC_SERVER] Browser frame engine initialize() complete",
+              );
             },
             beginFrame: async (frameNumber: number, _isLast: boolean) => {
               // Render audio for this frame
               const frameDurationMs = 1000 / fps;
-              const fromMs = renderOptions.encoderOptions.fromMs + frameNumber * frameDurationMs;
+              const fromMs =
+                renderOptions.encoderOptions.fromMs +
+                frameNumber * frameDurationMs;
               const toMs = fromMs + frameDurationMs;
 
-              const audioArray = await renderContext.webContents.executeJavaScript(`
+              const audioArray = await renderContext.webContents
+                .executeJavaScript(`
                 (async () => {
                   const rootTimegroup = document.querySelector('ef-timegroup');
                   if (!rootTimegroup || !rootTimegroup.renderAudio) {
@@ -701,10 +725,15 @@ export const rpcServerReady = (async () => {
             captureFrame: async (frameNumber: number, fps: number) => {
               ctx.sendKeepalive();
               const captureStartMs = performance.now();
-              logger.debug("🔧 [RPC_SERVER] captureFrame() called", { frameNumber, fps });
+              logger.debug("🔧 [RPC_SERVER] captureFrame() called", {
+                frameNumber,
+                fps,
+              });
 
               const frameDurationMs = 1000 / fps;
-              const timeMs = renderOptions.encoderOptions.fromMs + frameNumber * frameDurationMs;
+              const timeMs =
+                renderOptions.encoderOptions.fromMs +
+                frameNumber * frameDurationMs;
 
               // Capture frame with detailed timing collection
               const ipcStartMs = performance.now();
@@ -775,9 +804,10 @@ export const rpcServerReady = (async () => {
                 })();
               `);
               const ipcRoundTripMs = performance.now() - ipcStartMs;
-              
+
               // Calculate IPC overhead: total round-trip minus browser execution time
-              const ipcOverheadMs = ipcRoundTripMs - result.timing.totalBrowserMs;
+              const ipcOverheadMs =
+                ipcRoundTripMs - result.timing.totalBrowserMs;
 
               const totalCaptureMs = performance.now() - captureStartMs;
 
@@ -800,7 +830,9 @@ export const rpcServerReady = (async () => {
                 jpegSize: result.jpegSize,
               });
 
-              logger.debug(`🔧 [RPC_SERVER] Frame ${frameNumber} timing: clone=${result.timing.cloneMs.toFixed(1)}ms seek=${result.timing.seekMs.toFixed(1)}ms render=${result.timing.renderMs.toFixed(1)}ms canvas=${result.timing.canvasMs.toFixed(1)}ms blob=${result.timing.blobMs.toFixed(1)}ms serialize=${result.timing.serializeMs.toFixed(1)}ms ipcRoundTrip=${ipcRoundTripMs.toFixed(1)}ms ipcOverhead=${ipcOverheadMs.toFixed(1)}ms total=${totalCaptureMs.toFixed(1)}ms size=${result.jpegSize}b`);
+              logger.debug(
+                `🔧 [RPC_SERVER] Frame ${frameNumber} timing: clone=${result.timing.cloneMs.toFixed(1)}ms seek=${result.timing.seekMs.toFixed(1)}ms render=${result.timing.renderMs.toFixed(1)}ms canvas=${result.timing.canvasMs.toFixed(1)}ms blob=${result.timing.blobMs.toFixed(1)}ms serialize=${result.timing.serializeMs.toFixed(1)}ms ipcRoundTrip=${ipcRoundTripMs.toFixed(1)}ms ipcOverhead=${ipcOverheadMs.toFixed(1)}ms total=${totalCaptureMs.toFixed(1)}ms size=${result.jpegSize}b`,
+              );
 
               return Buffer.from(result.jpegData);
             },
@@ -828,14 +860,16 @@ export const rpcServerReady = (async () => {
           let fragmentBuffer: ArrayBuffer;
           const segmentStartMs = performance.now();
           try {
-            logger.debug("🔧 [RPC_SERVER] Starting segment encoding...", { fileType });
+            logger.debug("🔧 [RPC_SERVER] Starting segment encoding...", {
+              fileType,
+            });
             if (fileType === "standalone") {
               fragmentBuffer = await segmentEncoder.generateStandaloneSegment();
             } else {
               fragmentBuffer = await segmentEncoder.generateFragmentBuffer();
             }
-            logger.debug("🔧 [RPC_SERVER] Segment encoding complete", { 
-              bufferSize: fragmentBuffer?.byteLength ?? 0 
+            logger.debug("🔧 [RPC_SERVER] Segment encoding complete", {
+              bufferSize: fragmentBuffer?.byteLength ?? 0,
             });
             if (!fragmentBuffer) {
               throw new Error("Segment encoder returned undefined buffer");
@@ -856,8 +890,18 @@ export const rpcServerReady = (async () => {
             // Log aggregated timing stats as structured info
             if (frameTiming.length > 0) {
               const avg = (key: keyof FrameTimingData) =>
-                Number((frameTiming.reduce((sum, f) => sum + (f[key] as number), 0) / frameTiming.length).toFixed(2));
-              const totalDataSize = frameTiming.reduce((sum, f) => sum + f.jpegSize, 0);
+                Number(
+                  (
+                    frameTiming.reduce(
+                      (sum, f) => sum + (f[key] as number),
+                      0,
+                    ) / frameTiming.length
+                  ).toFixed(2),
+                );
+              const totalDataSize = frameTiming.reduce(
+                (sum, f) => sum + f.jpegSize,
+                0,
+              );
 
               logger.info(
                 {
@@ -875,7 +919,9 @@ export const rpcServerReady = (async () => {
                     avgSerializeMs: avg("serializeMs"),
                     avgIpcRoundTripMs: avg("ipcRoundTripMs"),
                     avgIpcOverheadMs: avg("ipcOverheadMs"),
-                    totalDataSizeMB: Number((totalDataSize / 1024 / 1024).toFixed(3)),
+                    totalDataSizeMB: Number(
+                      (totalDataSize / 1024 / 1024).toFixed(3),
+                    ),
                     segmentTotalMs: Number(segmentTotalMs.toFixed(0)),
                   },
                 },
@@ -885,7 +931,13 @@ export const rpcServerReady = (async () => {
 
             return new Uint8Array(fragmentBuffer);
           } catch (error) {
-            logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, "🔧 [RPC_SERVER] Segment encoding failed");
+            logger.error(
+              {
+                error,
+                stack: error instanceof Error ? error.stack : undefined,
+              },
+              "🔧 [RPC_SERVER] Segment encoding failed",
+            );
             throw error;
           } finally {
             segmentEncoder.off("frameRendered", frameRenderedHandler);
@@ -898,7 +950,9 @@ export const rpcServerReady = (async () => {
         "getBrowserFrameTiming",
         async ([{ renderId }]) => {
           const timing = renderTimingData.get(renderId) || [];
-          logger.debug(`🔧 [RPC_SERVER] getBrowserFrameTiming(renderId=${renderId}) found ${timing.length} segments`);
+          logger.debug(
+            `🔧 [RPC_SERVER] getBrowserFrameTiming(renderId=${renderId}) found ${timing.length} segments`,
+          );
           return timing;
         },
       );

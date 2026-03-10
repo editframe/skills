@@ -52,11 +52,7 @@ export class EFPreview extends EFTargetable(ContextMixin(TWMixin(LitElement))) {
       // 1. Moving outside the preview entirely, or
       // 2. Moving to the preview itself, or
       // 3. Moving to an element that's not within a temporal
-      if (
-        !this.contains(relatedTarget) ||
-        relatedTarget === this ||
-        !targetingTemporal
-      ) {
+      if (!this.contains(relatedTarget) || relatedTarget === this || !targetingTemporal) {
         this.focusedElement = undefined;
       }
     });

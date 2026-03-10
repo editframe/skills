@@ -1,6 +1,6 @@
 /**
  * Landing page components - modular, reorderable sections
- * 
+ *
  * All sections are independent and can be easily rearranged.
  */
 

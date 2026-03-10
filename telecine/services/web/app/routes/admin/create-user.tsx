@@ -88,7 +88,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         })
         .returning("id")
         .executeTakeFirstOrThrow();
-      
+
       orgId = newOrg.id;
 
       await db
@@ -101,7 +101,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         .execute();
     } else if (formData.org_choice === "existing" && formData.existing_org_id) {
       orgId = formData.existing_org_id;
-      
+
       await db
         .insertInto("identity.memberships")
         .values({

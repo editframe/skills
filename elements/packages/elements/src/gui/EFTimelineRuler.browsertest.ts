@@ -44,9 +44,7 @@ describe.skip("EFTimelineRuler", () => {
     await timegroup.updateComplete;
     await timeline.updateComplete;
 
-    const ruler = timeline.shadowRoot?.querySelector(
-      "ef-timeline-ruler",
-    ) as EFTimelineRuler;
+    const ruler = timeline.shadowRoot?.querySelector("ef-timeline-ruler") as EFTimelineRuler;
     expect(ruler).toBeTruthy();
     await ruler.updateComplete;
 
@@ -77,14 +75,12 @@ describe.skip("EFTimelineRuler", () => {
     await timegroup.updateComplete;
     await timeline.updateComplete;
 
-    const ruler = timeline.shadowRoot?.querySelector(
-      "ef-timeline-ruler",
-    ) as EFTimelineRuler;
+    const ruler = timeline.shadowRoot?.querySelector("ef-timeline-ruler") as EFTimelineRuler;
     await ruler.updateComplete;
 
-    const labels = Array.from(
-      ruler.shadowRoot?.querySelectorAll(".label") || [],
-    ).map((el) => el.textContent);
+    const labels = Array.from(ruler.shadowRoot?.querySelectorAll(".label") || []).map(
+      (el) => el.textContent,
+    );
 
     expect(labels.length).toBeGreaterThan(0);
     expect(labels[0]).toMatch(/^\d+(\.\d+)?s$/);
@@ -109,9 +105,7 @@ describe.skip("EFTimelineRuler", () => {
     await timegroup.updateComplete;
     await timeline.updateComplete;
 
-    const ruler = timeline.shadowRoot?.querySelector(
-      "ef-timeline-ruler",
-    ) as EFTimelineRuler;
+    const ruler = timeline.shadowRoot?.querySelector("ef-timeline-ruler") as EFTimelineRuler;
     await ruler.updateComplete;
 
     const canvas = ruler.shadowRoot?.querySelector("canvas");
@@ -136,9 +130,7 @@ describe.skip("EFTimelineRuler", () => {
     await timegroup.updateComplete;
     await timeline.updateComplete;
 
-    const ruler = timeline.shadowRoot?.querySelector(
-      "ef-timeline-ruler",
-    ) as EFTimelineRuler;
+    const ruler = timeline.shadowRoot?.querySelector("ef-timeline-ruler") as EFTimelineRuler;
     await ruler.updateComplete;
 
     // Ruler should show labels to fill the viewport regardless of content duration
@@ -165,14 +157,10 @@ describe.skip("EFTimelineRuler", () => {
     await timegroup.updateComplete;
     await timeline.updateComplete;
 
-    const ruler = timeline.shadowRoot?.querySelector(
-      "ef-timeline-ruler",
-    ) as EFTimelineRuler;
+    const ruler = timeline.shadowRoot?.querySelector("ef-timeline-ruler") as EFTimelineRuler;
     await ruler.updateComplete;
 
-    const labels = Array.from(
-      ruler.shadowRoot?.querySelectorAll(".label") || [],
-    )
+    const labels = Array.from(ruler.shadowRoot?.querySelectorAll(".label") || [])
       .map((m) => ({
         element: m as HTMLElement,
         x: parseTransformX(m as HTMLElement),
@@ -206,19 +194,13 @@ describe.skip("EFTimelineRuler", () => {
     await timegroup.updateComplete;
     await timeline.updateComplete;
 
-    const tracksScroll = timeline.shadowRoot?.querySelector(
-      ".tracks-scroll",
-    ) as HTMLElement;
+    const tracksScroll = timeline.shadowRoot?.querySelector(".tracks-scroll") as HTMLElement;
     expect(tracksScroll).toBeTruthy();
 
-    const ruler = timeline.shadowRoot?.querySelector(
-      "ef-timeline-ruler",
-    ) as EFTimelineRuler;
+    const ruler = timeline.shadowRoot?.querySelector("ef-timeline-ruler") as EFTimelineRuler;
     await ruler.updateComplete;
 
-    const initialLabels = Array.from(
-      ruler.shadowRoot?.querySelectorAll(".label") || [],
-    );
+    const initialLabels = Array.from(ruler.shadowRoot?.querySelectorAll(".label") || []);
     expect(initialLabels.length).toBeGreaterThan(0);
 
     const scrollPosition = 1000;
@@ -227,9 +209,7 @@ describe.skip("EFTimelineRuler", () => {
     await timeline.updateComplete;
     await ruler.updateComplete;
 
-    const scrolledLabels = Array.from(
-      ruler.shadowRoot?.querySelectorAll(".label") || [],
-    );
+    const scrolledLabels = Array.from(ruler.shadowRoot?.querySelectorAll(".label") || []);
     const labelPositions = scrolledLabels
       .map((m) => {
         const viewportX = parseTransformX(m as HTMLElement);
@@ -265,12 +245,8 @@ describe.skip("EFTimelineRuler", () => {
     await timegroup.updateComplete;
     await timeline.updateComplete;
 
-    const tracksScroll = timeline.shadowRoot?.querySelector(
-      ".tracks-scroll",
-    ) as HTMLElement;
-    const ruler = timeline.shadowRoot?.querySelector(
-      "ef-timeline-ruler",
-    ) as EFTimelineRuler;
+    const tracksScroll = timeline.shadowRoot?.querySelector(".tracks-scroll") as HTMLElement;
+    const ruler = timeline.shadowRoot?.querySelector("ef-timeline-ruler") as EFTimelineRuler;
     await ruler.updateComplete;
 
     const pixelsPerMs = timeline.pixelsPerMs;
@@ -280,9 +256,7 @@ describe.skip("EFTimelineRuler", () => {
     await timeline.updateComplete;
     await ruler.updateComplete;
 
-    const initialLabels = Array.from(
-      ruler.shadowRoot?.querySelectorAll(".label") || [],
-    );
+    const initialLabels = Array.from(ruler.shadowRoot?.querySelectorAll(".label") || []);
     const initialTimes = initialLabels
       .map((m) => {
         const viewportX = parseTransformX(m as HTMLElement);
@@ -297,9 +271,7 @@ describe.skip("EFTimelineRuler", () => {
     await timeline.updateComplete;
     await ruler.updateComplete;
 
-    const scrolledLabels = Array.from(
-      ruler.shadowRoot?.querySelectorAll(".label") || [],
-    );
+    const scrolledLabels = Array.from(ruler.shadowRoot?.querySelectorAll(".label") || []);
     const scrolledTimes = scrolledLabels
       .map((m) => {
         const viewportX = parseTransformX(m as HTMLElement);
@@ -334,12 +306,8 @@ describe.skip("EFTimelineRuler", () => {
     await timegroup.updateComplete;
     await timeline.updateComplete;
 
-    const tracksScroll = timeline.shadowRoot?.querySelector(
-      ".tracks-scroll",
-    ) as HTMLElement;
-    const ruler = timeline.shadowRoot?.querySelector(
-      "ef-timeline-ruler",
-    ) as EFTimelineRuler;
+    const tracksScroll = timeline.shadowRoot?.querySelector(".tracks-scroll") as HTMLElement;
+    const ruler = timeline.shadowRoot?.querySelector("ef-timeline-ruler") as EFTimelineRuler;
     await ruler.updateComplete;
 
     const pixelsPerMs = timeline.pixelsPerMs;
@@ -350,9 +318,7 @@ describe.skip("EFTimelineRuler", () => {
     await timeline.updateComplete;
     await ruler.updateComplete;
 
-    const labels = Array.from(
-      ruler.shadowRoot?.querySelectorAll(".label") || [],
-    );
+    const labels = Array.from(ruler.shadowRoot?.querySelectorAll(".label") || []);
     const labelTimes = labels
       .map((m) => {
         const viewportX = parseTransformX(m as HTMLElement);
@@ -389,22 +355,16 @@ describe.skip("EFTimelineRuler", () => {
     await timegroup.updateComplete;
     await timeline.updateComplete;
 
-    const ruler = timeline.shadowRoot?.querySelector(
-      "ef-timeline-ruler",
-    ) as EFTimelineRuler;
+    const ruler = timeline.shadowRoot?.querySelector("ef-timeline-ruler") as EFTimelineRuler;
     await ruler.updateComplete;
 
-    const initialLabels = Array.from(
-      ruler.shadowRoot?.querySelectorAll(".label") || [],
-    );
+    const initialLabels = Array.from(ruler.shadowRoot?.querySelectorAll(".label") || []);
 
     timeline.pixelsPerMs = DEFAULT_PIXELS_PER_MS * 3;
     await timeline.updateComplete;
     await ruler.updateComplete;
 
-    const zoomedLabels = Array.from(
-      ruler.shadowRoot?.querySelectorAll(".label") || [],
-    );
+    const zoomedLabels = Array.from(ruler.shadowRoot?.querySelectorAll(".label") || []);
     expect(zoomedLabels.length).toBeGreaterThan(0);
 
     const initialPositions = initialLabels

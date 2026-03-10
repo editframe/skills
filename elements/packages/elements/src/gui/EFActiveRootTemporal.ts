@@ -28,8 +28,7 @@ export class EFActiveRootTemporal extends LitElement {
   canvas = "";
 
   @state()
-  private activeRootTemporal: (TemporalMixinInterface & HTMLElement) | null =
-    null;
+  private activeRootTemporal: (TemporalMixinInterface & HTMLElement) | null = null;
 
   private canvasElement: EFCanvas | null = null;
   private activeroottemporalchangeHandler?: () => void;
@@ -45,9 +44,7 @@ export class EFActiveRootTemporal extends LitElement {
     this.removeListener();
   }
 
-  protected updated(
-    changedProperties: Map<string | number | symbol, unknown>,
-  ): void {
+  protected updated(changedProperties: Map<string | number | symbol, unknown>): void {
     if (changedProperties.has("canvas")) {
       this.findCanvas();
       this.setupListener();
@@ -68,9 +65,7 @@ export class EFActiveRootTemporal extends LitElement {
 
       // Try as selector
       try {
-        const bySelector = document.querySelector(
-          this.canvas,
-        ) as EFCanvas | null;
+        const bySelector = document.querySelector(this.canvas) as EFCanvas | null;
         if (bySelector && bySelector.tagName === "EF-CANVAS") {
           this.canvasElement = bySelector;
           return;
@@ -131,8 +126,7 @@ export class EFActiveRootTemporal extends LitElement {
   }
 
   render() {
-    const displayText =
-      this.activeRootTemporal?.id || this.textContent || "None";
+    const displayText = this.activeRootTemporal?.id || this.textContent || "None";
     return html`<span>${displayText}</span>`;
   }
 }

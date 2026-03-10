@@ -15,7 +15,11 @@
 import path from "node:path";
 import { writeFile, mkdir } from "node:fs/promises";
 
-import { bundleTestTemplate, type TestBundleInfo, getTestRenderDir } from "./html-bundler";
+import {
+  bundleTestTemplate,
+  type TestBundleInfo,
+  getTestRenderDir,
+} from "./html-bundler";
 import type { TestAgent } from "TEST/util/test";
 import type { ElectronRPC } from "../ElectronRPCClient";
 import type { ElectronRenderOptionsInput, RenderOutput } from "./index";
@@ -67,8 +71,12 @@ export async function renderWithBrowserFullVideo({
     });
 
     const bundleStart = performance.now();
-    const bundleInfo = existingBundleInfo ?? await bundleTestTemplate(html, testFilePath, testTitle);
-    const bundleTimeMs = existingBundleInfo ? 0 : performance.now() - bundleStart;
+    const bundleInfo =
+      existingBundleInfo ??
+      (await bundleTestTemplate(html, testFilePath, testTitle));
+    const bundleTimeMs = existingBundleInfo
+      ? 0
+      : performance.now() - bundleStart;
     const parsedOptions = ElectronRenderOptions.parse(renderOptions);
 
     // Get render info first
@@ -172,8 +180,12 @@ export async function renderWithBrowserFrameByFrame({
     });
 
     const bundleStart = performance.now();
-    const bundleInfo = existingBundleInfo ?? await bundleTestTemplate(html, testFilePath, testTitle);
-    const bundleTimeMs = existingBundleInfo ? 0 : performance.now() - bundleStart;
+    const bundleInfo =
+      existingBundleInfo ??
+      (await bundleTestTemplate(html, testFilePath, testTitle));
+    const bundleTimeMs = existingBundleInfo
+      ? 0
+      : performance.now() - bundleStart;
     const parsedOptions = ElectronRenderOptions.parse(renderOptions);
 
     // Get render info first
@@ -203,7 +215,11 @@ export async function renderWithBrowserFrameByFrame({
 
     const segmentBuffers: Uint8Array[] = [];
     const segmentPaths: string[] = [];
-    const segmentTimings: { fragmentId: number | "init"; timeMs: number; sizeBytes: number }[] = [];
+    const segmentTimings: {
+      fragmentId: number | "init";
+      timeMs: number;
+      sizeBytes: number;
+    }[] = [];
 
     const renderStart = performance.now();
     for (const fragmentId of fragmentIds) {
@@ -297,4 +313,3 @@ export async function renderWithBrowserFrameByFrame({
     };
   });
 }
-

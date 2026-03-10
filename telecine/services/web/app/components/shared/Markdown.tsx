@@ -2,7 +2,7 @@ import { Link } from "react-router";
 
 export function CustomLink(props: React.ComponentProps<typeof Link>) {
   const href = props.href || "";
-  
+
   if (href.startsWith("http")) {
     return (
       <a
@@ -15,7 +15,7 @@ export function CustomLink(props: React.ComponentProps<typeof Link>) {
       </a>
     );
   }
-  
+
   return (
     <Link
       to={href}

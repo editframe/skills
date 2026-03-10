@@ -2,10 +2,7 @@ import { css, html, LitElement } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
 import type { ContextMixinInterface } from "../gui/ContextMixin.ts";
-import type {
-  FrameRenderable,
-  FrameState,
-} from "../preview/FrameController.js";
+import type { FrameRenderable, FrameState } from "../preview/FrameController.js";
 import { TargetController } from "./TargetController.ts";
 
 @customElement("ef-surface")
@@ -28,7 +25,7 @@ export class EFSurface extends LitElement implements FrameRenderable {
   canvasRef = createRef<HTMLCanvasElement>();
 
   // @ts-expect-error controller is intentionally not referenced directly
-  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: Used for side effects
+  // oxlint-disable-next-line no-unused-private-class-members -- retained for constructor side effects
   #targetController: TargetController = new TargetController(this);
 
   @state()

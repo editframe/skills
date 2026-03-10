@@ -42,19 +42,14 @@ export class Client {
     return new StreamEventSource(response.body, abortController);
   };
 
-  authenticatedFetch = async (
-    path: string,
-    init: RequestInit & { duplex?: "half" } = {},
-  ) => {
+  authenticatedFetch = async (path: string, init: RequestInit & { duplex?: "half" } = {}) => {
     init.headers ||= {};
     const url = new URL(path, this.#efHost);
 
     log(
       "Authenticated fetch",
       { url: url.toString(), init },
-      this.#token
-        ? "(Token will be added as Bearer token)"
-        : "(Using session cookie)",
+      this.#token ? "(Token will be added as Bearer token)" : "(Using session cookie)",
     );
 
     // Only add Authorization header if token is present

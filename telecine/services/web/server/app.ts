@@ -40,8 +40,14 @@ app.use((req, res, next) => {
   }
 
   if (req.method === "OPTIONS") {
-    res.setHeader("Access-Control-Allow-Methods", "GET,HEAD,PUT,PATCH,POST,DELETE");
-    res.setHeader("Access-Control-Allow-Headers", req.headers["access-control-request-headers"] ?? "");
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "GET,HEAD,PUT,PATCH,POST,DELETE",
+    );
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      req.headers["access-control-request-headers"] ?? "",
+    );
     res.status(204).end();
     return;
   }

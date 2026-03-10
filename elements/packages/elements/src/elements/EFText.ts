@@ -144,8 +144,7 @@ export class EFText extends EFTemporal(LitElement) {
 
     // If no text content, segments will be empty - return immediately
     // Use same logic as splitText to read text content
-    const text =
-      this._textContent !== null ? this._textContent : this.getTextContent();
+    const text = this._textContent !== null ? this._textContent : this.getTextContent();
     if (!text || text.trim().length === 0) {
       return [];
     }
@@ -356,26 +355,19 @@ export class EFText extends EFTemporal(LitElement) {
     }
 
     // Read text content - use stored _textContent if set, otherwise read from DOM
-    const text =
-      this._textContent !== null ? this._textContent : this.getTextContent();
+    const text = this._textContent !== null ? this._textContent : this.getTextContent();
     const trimmedText = text.trim();
     const textStartOffset = text.indexOf(trimmedText);
 
     // GUARD: Check if segments are already correct before clearing/recreating
     // This prevents redundant splits from RAF callbacks, updated(), etc.
-    if (
-      this.#segmentsInitialized &&
-      this.segments.length > 0 &&
-      this.lastTextContent === text
-    ) {
+    if (this.#segmentsInitialized && this.segments.length > 0 && this.lastTextContent === text) {
       return;
     }
 
     if (!text || trimmedText.length === 0) {
       // Clear segments if no text
-      const existingSegments = Array.from(
-        this.querySelectorAll("ef-text-segment"),
-      );
+      const existingSegments = Array.from(this.querySelectorAll("ef-text-segment"));
       for (const segment of existingSegments) {
         segment.remove();
       }
@@ -439,9 +431,7 @@ export class EFText extends EFTemporal(LitElement) {
 
     // For word splitting, count only word segments (not whitespace) for stagger calculation
     const wordOnlySegments =
-      this.split === "word"
-        ? segments.filter((seg) => !/^\s+$/.test(seg))
-        : segments;
+      this.split === "word" ? segments.filter((seg) => !/^\s+$/.test(seg)) : segments;
     const wordSegmentCount = wordOnlySegments.length;
 
     // Track word index as we iterate (for word mode with duplicate words)
@@ -474,9 +464,7 @@ export class EFText extends EFTemporal(LitElement) {
         // Apply easing to the stagger offset
         // Normalize index to 0-1 range (0 for first segment, 1 for last segment)
         const normalizedProgress =
-          wordSegmentCount > 1
-            ? wordIndexForStagger / (wordSegmentCount - 1)
-            : 0;
+          wordSegmentCount > 1 ? wordIndexForStagger / (wordSegmentCount - 1) : 0;
 
         // Apply easing function to get eased progress
         const easedProgress = evaluateEasing(this.easing, normalizedProgress);
@@ -491,9 +479,7 @@ export class EFText extends EFTemporal(LitElement) {
       if (useTemplate && templateContent) {
         // Clone template content for each text segment
         // This allows multiple ef-text-segment elements per character/word/line
-        const clonedContent = templateContent.cloneNode(
-          true,
-        ) as DocumentFragment;
+        const clonedContent = templateContent.cloneNode(true) as DocumentFragment;
         const clonedSegments = Array.from(
           clonedContent.querySelectorAll("ef-text-segment"),
         ) as EFTextSegment[];
@@ -502,8 +488,7 @@ export class EFText extends EFTemporal(LitElement) {
           // Set properties - Lit will process these when element is connected
           segment.segmentText = segmentText;
           // Calculate segment index accounting for multiple segments per text segment
-          segment.segmentIndex =
-            textIndex * segmentsPerTextSegment + templateIndex;
+          segment.segmentIndex = textIndex * segmentsPerTextSegment + templateIndex;
           segment.segmentStartMs = 0;
           segment.segmentEndMs = durationMs;
           segment.staggerOffsetMs = staggerOffset ?? 0;
@@ -553,9 +538,7 @@ export class EFText extends EFTemporal(LitElement) {
         });
       } else {
         // No template - create default ef-text-segment
-        const segment = document.createElement(
-          "ef-text-segment",
-        ) as EFTextSegment;
+        const segment = document.createElement("ef-text-segment") as EFTextSegment;
 
         segment.segmentText = segmentText;
         segment.segmentIndex = textIndex;
@@ -731,9 +714,7 @@ export class EFText extends EFTemporal(LitElement) {
       case "line": {
         // Split on newlines and trim each line
         const lines = trimmedText.split(/\r?\n/);
-        return lines
-          .map((line) => line.trim())
-          .filter((line) => line.length > 0);
+        return lines.map((line) => line.trim()).filter((line) => line.length > 0);
       }
       case "word": {
         // Use Intl.Segmenter for locale-aware word segmentation
@@ -799,8 +780,7 @@ export class EFText extends EFTemporal(LitElement) {
 
     // Otherwise, calculate from content
     // Use _textContent if set, otherwise read from DOM
-    const text =
-      this._textContent !== null ? this._textContent : this.getTextContent();
+    const text = this._textContent !== null ? this._textContent : this.getTextContent();
     if (!text || text.trim().length === 0) {
       return 0;
     }

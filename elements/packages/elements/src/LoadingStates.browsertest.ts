@@ -28,9 +28,7 @@ describe("AudioTrack loading shimmer", () => {
     document.body.innerHTML = "";
   });
 
-  test("renders shimmer-placeholder CSS class (not inline JS hex-alpha)", async ({
-    expect,
-  }) => {
+  test("renders shimmer-placeholder CSS class (not inline JS hex-alpha)", async ({ expect }) => {
     const container = document.createElement("div");
     render(
       html`
@@ -71,9 +69,7 @@ describe("AudioTrack loading shimmer", () => {
     expect(hasHexAlphaInline).toBe(false);
   });
 
-  test("shimmer-placeholder gains is-loading class when loading", async ({
-    expect,
-  }) => {
+  test("shimmer-placeholder gains is-loading class when loading", async ({ expect }) => {
     const track = document.createElement("ef-audio-track");
     const audio = document.createElement("ef-audio");
     audio.setAttribute("duration", "10s");
@@ -91,9 +87,7 @@ describe("AudioTrack loading shimmer", () => {
     (track as any).requestUpdate();
     await (track as any).updateComplete;
 
-    expect(
-      shadow.querySelector(".shimmer-placeholder.is-loading"),
-    ).toBeTruthy();
+    expect(shadow.querySelector(".shimmer-placeholder.is-loading")).toBeTruthy();
 
     // Clear loading
     (track as any)._isLoading = false;
@@ -109,9 +103,7 @@ describe("EFThumbnailStrip loading shimmer", () => {
     document.body.innerHTML = "";
   });
 
-  test("shows .shimmer-overlay.active while thumbnails are loading", async ({
-    expect,
-  }) => {
+  test("shows .shimmer-overlay.active while thumbnails are loading", async ({ expect }) => {
     // Use a real ef-video as target so the strip renders the normal path
     const video = document.createElement("ef-video");
     document.body.appendChild(video);
@@ -158,14 +150,9 @@ describe("EFVideo loading overlay CSS variables", () => {
     document.body.innerHTML = "";
   });
 
-  test("loading bar track reflects --ef-color-loading-spinner-track", async ({
-    expect,
-  }) => {
+  test("loading bar track reflects --ef-color-loading-spinner-track", async ({ expect }) => {
     const container = document.createElement("div");
-    container.style.setProperty(
-      "--ef-color-loading-spinner-track",
-      "rgb(255, 0, 0)",
-    );
+    container.style.setProperty("--ef-color-loading-spinner-track", "rgb(255, 0, 0)");
     render(
       html`<ef-video
         src="media/bars-n-tone2.mp4"
@@ -195,14 +182,9 @@ describe("EFVideo loading overlay CSS variables", () => {
     expect(bg).toBe("rgb(255, 0, 0)");
   });
 
-  test("loading bar fill reflects --ef-color-loading-spinner-fill", async ({
-    expect,
-  }) => {
+  test("loading bar fill reflects --ef-color-loading-spinner-fill", async ({ expect }) => {
     const container = document.createElement("div");
-    container.style.setProperty(
-      "--ef-color-loading-spinner-fill",
-      "rgb(0, 255, 0)",
-    );
+    container.style.setProperty("--ef-color-loading-spinner-fill", "rgb(0, 255, 0)");
     render(
       html`<ef-video
         src="media/bars-n-tone2.mp4"
@@ -238,9 +220,7 @@ describe("EFVideo prepareFrame triggers loading overlay", () => {
     document.body.innerHTML = "";
   });
 
-  test("loading overlay appears after 100ms debounce during load", async ({
-    expect,
-  }) => {
+  test("loading overlay appears after 100ms debounce during load", async ({ expect }) => {
     const container = document.createElement("div");
     render(
       html`<ef-timegroup mode="contain" style="width:400px;height:300px;">
@@ -327,9 +307,7 @@ describe("EFWorkbench preview loading overlay", () => {
     expect(loadingOverlay).toBeTruthy();
   });
 
-  test("hides .preview-loading-overlay when timegroup is ready", async ({
-    expect,
-  }) => {
+  test("hides .preview-loading-overlay when timegroup is ready", async ({ expect }) => {
     const container = document.createElement("div");
     render(
       html`

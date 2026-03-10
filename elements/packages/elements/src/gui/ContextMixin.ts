@@ -2,17 +2,11 @@ import { ContextProvider, consume, createContext, provide } from "@lit/context";
 import type { LitElement } from "lit";
 import { property, state } from "lit/decorators.js";
 import { EF_RENDERING } from "../EF_RENDERING.ts";
-import {
-  isEFTemporal,
-  type TemporalMixinInterface,
-} from "../elements/EFTemporal.js";
+import { isEFTemporal, type TemporalMixinInterface } from "../elements/EFTemporal.js";
 import { globalURLTokenDeduplicator } from "../transcoding/cache/URLTokenDeduplicator.js";
 import { currentTimeContext } from "./currentTimeContext.js";
 import { durationContext } from "./durationContext.js";
-import {
-  type EFConfiguration,
-  efConfigurationContext,
-} from "./EFConfiguration.ts";
+import { type EFConfiguration, efConfigurationContext } from "./EFConfiguration.ts";
 import { efContext } from "./efContext.js";
 import { fetchContext } from "./fetchContext.js";
 import { type FocusContext, focusContext } from "./focusContext.js";
@@ -20,8 +14,9 @@ import { focusedElementContext } from "./focusedElementContext.js";
 import { loopContext, playingContext } from "./playingContext.js";
 import { shouldSignUrl } from "./shouldSignUrl.js";
 
-export const targetTemporalContext =
-  createContext<TemporalMixinInterface | null>(Symbol("target-temporal"));
+export const targetTemporalContext = createContext<TemporalMixinInterface | null>(
+  Symbol("target-temporal"),
+);
 
 export declare class ContextMixinInterface extends LitElement {
   signingURL?: string;
@@ -39,11 +34,7 @@ export declare class ContextMixinInterface extends LitElement {
 const contextMixinSymbol = Symbol("contextMixin");
 
 export function isContextMixin(value: any): value is ContextMixinInterface {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    contextMixinSymbol in value.constructor
-  );
+  return typeof value === "object" && value !== null && contextMixinSymbol in value.constructor;
 }
 
 type Constructor<T = {}> = new (...args: any[]) => T;
@@ -95,9 +86,7 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
      * even when they're wrapped in non-temporal elements like divs
      */
     private findRootTemporal(): TemporalMixinInterface | null {
-      const findRecursive = (
-        element: Element,
-      ): TemporalMixinInterface | null => {
+      const findRecursive = (element: Element): TemporalMixinInterface | null => {
         if (isEFTemporal(element)) {
           return element as TemporalMixinInterface & HTMLElement;
         }
@@ -194,11 +183,7 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
         });
       }
 
-      if (
-        !EF_RENDERING() &&
-        this.signingURL &&
-        shouldSignUrl(url, window.location.origin)
-      ) {
+      if (!EF_RENDERING() && this.signingURL && shouldSignUrl(url, window.location.origin)) {
         const { cacheKey, signingPayload } = this.#getTokenCacheKey(url);
 
         // Use global token deduplicator to share tokens across all context providers
@@ -257,15 +242,9 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
             throw error;
           }
 
-          console.error(
-            "ContextMixin fetch error",
-            url,
-            error,
-            window.location.href,
-          );
+          console.error("ContextMixin fetch error", url, error, window.location.href);
           // Create a new error with the URL in the message, preserving the original error type
-          const ErrorConstructor =
-            error instanceof Error ? error.constructor : Error;
+          const ErrorConstructor = error instanceof Error ? error.constructor : Error;
           const enhancedError = new (ErrorConstructor as typeof Error)(
             `Failed to fetch: ${url}. Original error: ${error instanceof Error ? error.message : String(error)}`,
           );
@@ -279,12 +258,7 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
           throw enhancedError;
         });
       } catch (error) {
-        console.error(
-          "ContextMixin fetch error (synchronous)",
-          url,
-          error,
-          window.location.href,
-        );
+        console.error("ContextMixin fetch error (synchronous)", url, error, window.location.href);
         throw error;
       }
     };
@@ -417,9 +391,7 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
 
     @property({ type: Number })
     get currentTimeMs(): number {
-      return (
-        this.targetTemporal?.playbackController?.currentTimeMs ?? Number.NaN
-      );
+      return this.targetTemporal?.playbackController?.currentTimeMs ?? Number.NaN;
     }
     set currentTimeMs(value: number) {
       if (this.targetTemporal?.playbackController) {
@@ -437,10 +409,7 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
           if (newTemporal !== this.targetTemporal) {
             this.targetTemporal = newTemporal;
             shouldUpdate = true;
-          } else if (
-            mutation.target instanceof Element &&
-            isEFTemporal(mutation.target)
-          ) {
+          } else if (mutation.target instanceof Element && isEFTemporal(mutation.target)) {
             // Handle childList changes within existing temporal elements
             shouldUpdate = true;
           }
@@ -468,11 +437,8 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
           ];
 
           if (
-            durationAffectingAttributes.includes(
-              mutation.attributeName || "",
-            ) ||
-            (mutation.target instanceof Element &&
-              isEFTemporal(mutation.target))
+            durationAffectingAttributes.includes(mutation.attributeName || "") ||
+            (mutation.target instanceof Element && isEFTemporal(mutation.target))
           ) {
             shouldUpdate = true;
           }
@@ -517,9 +483,7 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
      * retry findRootTemporal(). Mirrors the whenDefined pattern in play().
      */
     async #retryTemporalDiscovery(tags: Set<string>): Promise<void> {
-      await Promise.all(
-        [...tags].map((tag) => customElements.whenDefined(tag).catch(() => {})),
-      );
+      await Promise.all([...tags].map((tag) => customElements.whenDefined(tag).catch(() => {})));
 
       if (this.targetTemporal) return; // already found by another path
 
@@ -602,14 +566,10 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
       const currentController = this.#targetTemporal?.playbackController;
       if (
         currentController &&
-        (!this.#controllerSubscribed ||
-          this.#subscribedController !== currentController)
+        (!this.#controllerSubscribed || this.#subscribedController !== currentController)
       ) {
         // Unsubscribe from old controller if it changed
-        if (
-          this.#subscribedController &&
-          this.#subscribedController !== currentController
-        ) {
+        if (this.#subscribedController && this.#subscribedController !== currentController) {
           this.#subscribedController.removeListener(this.#onControllerUpdate);
         }
         currentController.addListener(this.#onControllerUpdate);
@@ -638,9 +598,7 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
           .filter((tag) => tag.startsWith("ef-"));
 
         await Promise.all(
-          potentialTemporalTags.map((tag) =>
-            customElements.whenDefined(tag).catch(() => {}),
-          ),
+          potentialTemporalTags.map((tag) => customElements.whenDefined(tag).catch(() => {})),
         );
 
         const foundTemporal = this.findRootTemporal();
@@ -667,14 +625,9 @@ export function ContextMixin<T extends Constructor<LitElement>>(superClass: T) {
       try {
         const audioContext = new AudioContext({ latencyHint: "playback" });
         audioContext.resume();
-        this.targetTemporal.playbackController.setPendingAudioContext(
-          audioContext,
-        );
+        this.targetTemporal.playbackController.setPendingAudioContext(audioContext);
       } catch (error) {
-        console.warn(
-          "Failed to create/resume AudioContext synchronously:",
-          error,
-        );
+        console.warn("Failed to create/resume AudioContext synchronously:", error);
       }
 
       this.targetTemporal.playbackController.play();

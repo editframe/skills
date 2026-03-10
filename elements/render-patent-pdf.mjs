@@ -32,12 +32,9 @@ markdown = markdown.replace(/```mermaid\n([\s\S]*?)```/g, (_, diagram) => {
   writeFileSync(inputFile, diagram);
 
   try {
-    execSync(
-      `mmdc -i "${inputFile}" -o "${outputFile}" --backgroundColor white 2>&1`,
-      {
-        stdio: "pipe",
-      },
-    );
+    execSync(`mmdc -i "${inputFile}" -o "${outputFile}" --backgroundColor white 2>&1`, {
+      stdio: "pipe",
+    });
     console.log(`  rendered ${name}`);
   } catch (err) {
     console.warn(`  WARN: failed to render ${name}:`, err.message);

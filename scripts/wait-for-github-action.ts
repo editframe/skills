@@ -74,7 +74,9 @@ async function checkGhInstalled(): Promise<void> {
   try {
     execSync("gh --version", { stdio: "ignore" });
   } catch {
-    console.error(chalk.red("Error: GitHub CLI (gh) is required but not installed."));
+    console.error(
+      chalk.red("Error: GitHub CLI (gh) is required but not installed."),
+    );
     console.error("Install it from: https://cli.github.com/");
     process.exit(1);
   }
@@ -178,7 +180,11 @@ function getStepIcon(status: string, conclusion: string | null): string {
   }
 }
 
-function displayJobs(jobs: Job[], spinnerChar: string, lastJobCount: number): number {
+function displayJobs(
+  jobs: Job[],
+  spinnerChar: string,
+  lastJobCount: number,
+): number {
   const showSteps = jobs.length === 1; // Only show steps if there's a single job
 
   // Calculate total lines needed
@@ -205,7 +211,7 @@ function displayJobs(jobs: Job[], spinnerChar: string, lastJobCount: number): nu
     if (showSteps && job.steps && job.steps.length > 0) {
       // Sort steps by number to show in order
       const sortedSteps = [...job.steps].sort((a, b) => a.number - b.number);
-      
+
       for (const step of sortedSteps) {
         const stepIcon = getStepIcon(step.status, step.conclusion);
         if (step.status === "in_progress" || step.status === "queued") {
@@ -224,10 +230,18 @@ async function main() {
   const args = process.argv.slice(2);
 
   if (args.length < 1) {
-    console.log("Usage: wait-for-github-action <repo> [workflow-file] [timeout-seconds]");
-    console.log("Example: wait-for-github-action editframe/elements release.yaml");
-    console.log("Example: wait-for-github-action editframe/telecine deploy.yaml 1800");
-    console.log("Example: wait-for-github-action editframe/elements  (gets most recent active run)");
+    console.log(
+      "Usage: wait-for-github-action <repo> [workflow-file] [timeout-seconds]",
+    );
+    console.log(
+      "Example: wait-for-github-action editframe/elements release.yaml",
+    );
+    console.log(
+      "Example: wait-for-github-action editframe/telecine deploy.yaml 1800",
+    );
+    console.log(
+      "Example: wait-for-github-action editframe/elements  (gets most recent active run)",
+    );
     process.exit(1);
   }
 
@@ -240,7 +254,9 @@ async function main() {
 
   if (workflowFile) {
     console.log(
-      chalk.blue(`Waiting for workflow '${workflowFile}' to be triggered in ${repo}...`),
+      chalk.blue(
+        `Waiting for workflow '${workflowFile}' to be triggered in ${repo}...`,
+      ),
     );
     await new Promise((resolve) => setTimeout(resolve, 3000));
   } else {
@@ -249,7 +265,10 @@ async function main() {
     );
   }
 
-  const { runId, workflowFile: detectedWorkflow } = await getRunId(repo, workflowFile);
+  const { runId, workflowFile: detectedWorkflow } = await getRunId(
+    repo,
+    workflowFile,
+  );
   const workflowUrl = `https://github.com/${repo}/actions/runs/${runId}`;
 
   console.log("");
@@ -271,7 +290,10 @@ async function main() {
 
   const startTime = Date.now();
   let lastStatus: string | null = null;
-  let lastJobStatuses: Map<string, { status: string; conclusion: string | null }> = new Map();
+  let lastJobStatuses: Map<
+    string,
+    { status: string; conclusion: string | null }
+  > = new Map();
 
   while (true) {
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
@@ -328,7 +350,7 @@ async function main() {
     for (const job of status.jobs) {
       const jobKey = job.name;
       const lastJobStatus = lastJobStatuses.get(jobKey);
-      
+
       if (
         !lastJobStatus ||
         lastJobStatus.status !== job.status ||
@@ -351,7 +373,9 @@ async function main() {
     if (status.status === "completed") {
       console.log("");
       if (status.conclusion === "success") {
-        console.log(chalk.green("✅ GitHub Actions workflow completed successfully"));
+        console.log(
+          chalk.green("✅ GitHub Actions workflow completed successfully"),
+        );
         console.log(`   Total time: ${formatElapsed(elapsed)}`);
         process.exit(0);
       } else {
@@ -371,4 +395,3 @@ main().catch((error) => {
   console.error(chalk.red("Error:"), error);
   process.exit(1);
 });
-

@@ -1,19 +1,9 @@
 import { consume } from "@lit/context";
-import {
-  css,
-  html,
-  LitElement,
-  nothing,
-  type PropertyValues,
-  type TemplateResult,
-} from "lit";
+import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 
-import {
-  isEFTemporal,
-  type TemporalMixinInterface,
-} from "../../elements/EFTemporal.js";
+import { isEFTemporal, type TemporalMixinInterface } from "../../elements/EFTemporal.js";
 import { EFTimegroup } from "../../elements/EFTimegroup.js";
 import { EFVideo } from "../../elements/EFVideo.js";
 import { EFAudio } from "../../elements/EFAudio.js";
@@ -23,10 +13,7 @@ import { EFCaptions } from "../../elements/EFCaptions.js";
 import { TWMixin } from "../TWMixin.js";
 import { renderTrackChildren } from "./tracks/renderTrackChildren.js";
 import { phosphorIcon, ICONS } from "../icons.js";
-import {
-  timelineEditingContext,
-  type TimelineEditingContext,
-} from "./timelineEditingContext.js";
+import { timelineEditingContext, type TimelineEditingContext } from "./timelineEditingContext.js";
 import { getElementTypeColor } from "../theme.js";
 // NOTE: Track components (ef-timegroup-track, etc.) are NOT imported here
 // to avoid circular dependencies with TrackItem. They must be registered before
@@ -245,8 +232,7 @@ export class EFTimelineRow extends TWMixin(LitElement) {
     if (!this.highlightedElement || !this.element) return false;
     // This row's element contains the highlighted element (highlighted is a descendant)
     return (
-      this.element !== this.highlightedElement &&
-      this.element.contains(this.highlightedElement)
+      this.element !== this.highlightedElement && this.element.contains(this.highlightedElement)
     );
   }
 
@@ -254,8 +240,7 @@ export class EFTimelineRow extends TWMixin(LitElement) {
     if (!this.highlightedElement || !this.element) return false;
     // The highlighted element contains this row's element (highlighted is an ancestor)
     return (
-      this.element !== this.highlightedElement &&
-      this.highlightedElement.contains(this.element)
+      this.element !== this.highlightedElement && this.highlightedElement.contains(this.element)
     );
   }
 
@@ -263,30 +248,22 @@ export class EFTimelineRow extends TWMixin(LitElement) {
     super.updated(changedProperties);
 
     // Update host classes based on interaction state
-    if (
-      changedProperties.has("highlightedElement") ||
-      changedProperties.has("element")
-    ) {
+    if (changedProperties.has("highlightedElement") || changedProperties.has("element")) {
       this.classList.toggle("hovered", this.isHovered);
       this.classList.toggle("ancestor-hovered", this.isAncestorHovered);
       this.classList.toggle("descendant-hovered", this.isDescendantHovered);
     }
 
     // Update selection classes
-    if (
-      changedProperties.has("selectedIds") ||
-      changedProperties.has("element")
-    ) {
+    if (changedProperties.has("selectedIds") || changedProperties.has("element")) {
       this.classList.toggle("selected", this.isSelected);
       this.classList.toggle("ancestor-selected", this.isAncestorSelected);
     }
 
     // Update root/nested timegroup classes
     if (changedProperties.has("element")) {
-      const isRoot =
-        this.element instanceof EFTimegroup && this.element.isRootTimegroup;
-      const isNested =
-        this.element instanceof EFTimegroup && !this.element.isRootTimegroup;
+      const isRoot = this.element instanceof EFTimegroup && this.element.isRootTimegroup;
+      const isNested = this.element instanceof EFTimegroup && !this.element.isRootTimegroup;
       this.classList.toggle("root-timegroup", isRoot);
       this.classList.toggle("nested-timegroup", isNested);
     }
@@ -422,9 +399,7 @@ export class EFTimelineRow extends TWMixin(LitElement) {
         .filter(Boolean)
         .join(" ");
       if (textContent) {
-        return textContent.length > 20
-          ? textContent.slice(0, 20) + "..."
-          : textContent;
+        return textContent.length > 20 ? textContent.slice(0, 20) + "..." : textContent;
       }
     }
     return null;

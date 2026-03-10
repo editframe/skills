@@ -8,7 +8,9 @@ import { requireActionSecretOrThrow } from "@/http/requireActionSecret";
 
 const BATCH_LIMIT = 500;
 
-async function reapTable(table: "video2.files" | "video2.image_files" | "video2.isobmff_files") {
+async function reapTable(
+  table: "video2.files" | "video2.image_files" | "video2.isobmff_files",
+) {
   const now = sql<Date>`now()`;
 
   const expired = db

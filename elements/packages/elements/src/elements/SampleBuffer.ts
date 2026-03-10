@@ -63,9 +63,7 @@ export class SampleBuffer {
     // Find the sample that contains the target time
     for (const sample of currentBuffer) {
       const sampleStartMs = roundToMilliseconds((sample.timestamp || 0) * 1000);
-      const sampleDurationMs = roundToMilliseconds(
-        (sample.duration || 0) * 1000,
-      );
+      const sampleDurationMs = roundToMilliseconds((sample.duration || 0) * 1000);
       const sampleEndMs = roundToMilliseconds(sampleStartMs + sampleDurationMs);
 
       // Check if the desired time falls within this sample's time span [start, end], inclusive of end

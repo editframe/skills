@@ -24,10 +24,7 @@ describe("SyncTrack", async () => {
     [fixture("test.mp4", "test.mp4")],
     async ({ files: [video], generateTrack }) => {
       test("Reads byte size", async () => {
-        const syncTrack = new SyncTrack(
-          await generateTrack(video!, 1),
-          video!.md5,
-        );
+        const syncTrack = new SyncTrack(await generateTrack(video!, 1), video!.md5);
         await expect(syncTrack.byteSize()).resolves.toEqual(26434);
       });
       describe("prepare()", () => {
@@ -41,10 +38,7 @@ describe("SyncTrack", async () => {
               fixture: video!,
             }),
           );
-          const syncTrack = new SyncTrack(
-            await generateTrack(video!, 1),
-            video!.md5,
-          );
+          const syncTrack = new SyncTrack(await generateTrack(video!, 1), video!.md5);
           await syncTrack.prepare();
           expect(syncTrack.videoFile).toBeDefined();
         });
@@ -61,10 +55,7 @@ describe("SyncTrack", async () => {
               fixture: video!,
             }),
           );
-          const syncTrack = new SyncTrack(
-            await generateTrack(video!, 1),
-            video!.md5,
-          );
+          const syncTrack = new SyncTrack(await generateTrack(video!, 1), video!.md5);
           await syncTrack.prepare();
           expect(syncTrack.videoFile).toBeDefined();
         });
@@ -81,10 +72,7 @@ describe("SyncTrack", async () => {
               fixture: video!,
             }),
           );
-          const syncTrack = new SyncTrack(
-            await generateTrack(video!, 1),
-            video!.md5,
-          );
+          const syncTrack = new SyncTrack(await generateTrack(video!, 1), video!.md5);
           await syncTrack.prepare();
           expect(syncTrack.probeResult).toBeDefined();
         });
@@ -92,10 +80,7 @@ describe("SyncTrack", async () => {
 
       describe("validate()", () => {
         test("throws when prepare() is not called", async () => {
-          const syncTrack = new SyncTrack(
-            await generateTrack(video!, 1),
-            video!.md5,
-          );
+          const syncTrack = new SyncTrack(await generateTrack(video!, 1), video!.md5);
           await expect(syncTrack.validate()).rejects.toThrow();
         });
 
@@ -106,10 +91,7 @@ describe("SyncTrack", async () => {
 
       describe(".create()", () => {
         test("throws if prepare() is not called", async () => {
-          const syncTrack = new SyncTrack(
-            await generateTrack(video!, 1),
-            video!.md5,
-          );
+          const syncTrack = new SyncTrack(await generateTrack(video!, 1), video!.md5);
           await expect(syncTrack.create()).rejects.toThrow();
         });
 
@@ -132,10 +114,7 @@ describe("SyncTrack", async () => {
             }),
           );
 
-          const syncTrack = new SyncTrack(
-            await generateTrack(video!, 1),
-            video!.md5,
-          );
+          const syncTrack = new SyncTrack(await generateTrack(video!, 1), video!.md5);
           await syncTrack.prepare();
           await syncTrack.create();
           expect(syncTrack.isComplete()).toBe(false);
@@ -160,10 +139,7 @@ describe("SyncTrack", async () => {
             }),
           );
 
-          const syncTrack = new SyncTrack(
-            await generateTrack(video!, 1),
-            video!.md5,
-          );
+          const syncTrack = new SyncTrack(await generateTrack(video!, 1), video!.md5);
           await syncTrack.prepare();
           await syncTrack.create();
           expect(syncTrack.isComplete()).toBe(true);
@@ -172,10 +148,7 @@ describe("SyncTrack", async () => {
 
       describe(".upload()", () => {
         test("throws when not created", async () => {
-          const syncTrack = new SyncTrack(
-            await generateTrack(video!, 1),
-            video!.md5,
-          );
+          const syncTrack = new SyncTrack(await generateTrack(video!, 1), video!.md5);
           await expect(syncTrack.upload()).rejects.toThrow();
         });
         test("uploads track", async () => {
@@ -202,10 +175,7 @@ describe("SyncTrack", async () => {
               fileId: "123",
             }),
           );
-          const syncTrack = new SyncTrack(
-            await generateTrack(video!, 1),
-            video!.md5,
-          );
+          const syncTrack = new SyncTrack(await generateTrack(video!, 1), video!.md5);
           await syncTrack.prepare();
           await syncTrack.create();
           await expect(syncTrack.upload()).resolves.toBeUndefined();
@@ -213,10 +183,7 @@ describe("SyncTrack", async () => {
       });
       describe(".markSynced()", () => {
         test("throws when not created", async () => {
-          const syncTrack = new SyncTrack(
-            await generateTrack(video!, 1),
-            video!.md5,
-          );
+          const syncTrack = new SyncTrack(await generateTrack(video!, 1), video!.md5);
           await expect(syncTrack.markSynced()).rejects.toThrow();
         });
         test("marks synced", async () => {
@@ -237,10 +204,7 @@ describe("SyncTrack", async () => {
               fixture: video!,
             }),
           );
-          const syncTrack = new SyncTrack(
-            await generateTrack(video!, 1),
-            video!.md5,
-          );
+          const syncTrack = new SyncTrack(await generateTrack(video!, 1), video!.md5);
           await syncTrack.prepare();
           await syncTrack.create();
           await syncTrack.markSynced();

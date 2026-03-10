@@ -4,10 +4,7 @@ import { md5FilePath } from "@editframe/assets";
 import { lookup } from "mime-types";
 
 import type { Client } from "./client.js";
-import {
-  CreateImageFilePayload,
-  createImageFile,
-} from "./resources/image-file.js";
+import { CreateImageFilePayload, createImageFile } from "./resources/image-file.js";
 import {
   createUnprocessedFile,
   type UnprocessedFileUploadDetails,
@@ -38,10 +35,7 @@ export const createImageFileFromPath = async (client: Client, path: string) => {
   });
 };
 
-export const createUnprocessedFileFromPath = async (
-  client: Client,
-  path: string,
-) => {
+export const createUnprocessedFileFromPath = async (client: Client, path: string) => {
   const fileInfo = await stat(path);
 
   const byte_size = fileInfo.size;
@@ -87,14 +81,7 @@ const VIDEO_EXTENSIONS = new Set([
   ".aac",
   ".m4a",
 ]);
-const IMAGE_EXTENSIONS = new Set([
-  ".jpg",
-  ".jpeg",
-  ".png",
-  ".gif",
-  ".webp",
-  ".svg",
-]);
+const IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"]);
 const CAPTION_EXTENSIONS = new Set([".vtt", ".srt", ".json"]);
 
 function inferFileType(filePath: string): FileType {

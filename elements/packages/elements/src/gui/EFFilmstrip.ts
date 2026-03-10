@@ -3,10 +3,7 @@ import { css, html, LitElement } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { createRef, ref } from "lit/directives/ref.js";
 
-import {
-  isEFTemporal,
-  type TemporalMixinInterface,
-} from "../elements/EFTemporal.js";
+import { isEFTemporal, type TemporalMixinInterface } from "../elements/EFTemporal.js";
 import { TargetController } from "../elements/TargetController.js";
 import { targetTemporalContext } from "./ContextMixin.ts";
 import { TWMixin } from "./TWMixin.js";
@@ -94,9 +91,7 @@ export class EFFilmstrip extends TWMixin(LitElement) {
     }
   }
 
-  protected willUpdate(
-    changedProperties: Map<string | number | symbol, unknown>,
-  ) {
+  protected willUpdate(changedProperties: Map<string | number | symbol, unknown>) {
     if (changedProperties.has("target")) {
       if (this.target && !this.#targetController) {
         this.#targetController = new TargetController(this);

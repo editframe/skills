@@ -105,7 +105,11 @@ export const loader = async ({ context, params }: Route.LoaderArgs) => {
   return { invite, isAuthenticated, token: params.token };
 };
 
-export const action = async ({ request, context, params }: Route.ActionArgs) => {
+export const action = async ({
+  request,
+  context,
+  params,
+}: Route.ActionArgs) => {
   const formResult = await inviteMember.parseFormData(request);
 
   const session = context.get(maybeIdentityContext);

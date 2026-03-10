@@ -3,10 +3,7 @@ import { apiIdentityContext } from "~/middleware/context";
 
 import type { Route } from "./+types/transcription";
 
-export const loader = async ({
-  params: { id },
-  context,
-}: Route.LoaderArgs) => {
+export const loader = async ({ params: { id }, context }: Route.LoaderArgs) => {
   const session = context.get(apiIdentityContext);
 
   await db

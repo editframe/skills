@@ -93,11 +93,12 @@ export default function SVGPage() {
       {/* Main Content */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-6">
-
           {/* Getting Started */}
           <div className="border-4 border-[var(--ink-black)] dark:border-white p-8 mb-8 relative">
             <div className="absolute -top-4 left-6 bg-[var(--poster-red)] px-3 py-1">
-              <span className="text-white text-xs font-bold uppercase tracking-widest">Get Started</span>
+              <span className="text-white text-xs font-bold uppercase tracking-widest">
+                Get Started
+              </span>
             </div>
             <p className="text-[var(--warm-gray)] mb-4">
               Scaffold a new project with the SVG SMIL template:
@@ -106,16 +107,33 @@ export default function SVGPage() {
               <div className="bg-[var(--ink-black)] dark:bg-[#1a1a1a] px-5 py-3 font-mono text-sm flex items-center gap-3 border-2 border-[var(--ink-black)] dark:border-white/20">
                 <span>
                   <span className="text-[var(--poster-gold)]">$</span>
-                  <span className="text-white ml-2">npm create @editframe@latest</span>
+                  <span className="text-white ml-2">
+                    npm create @editframe@latest
+                  </span>
                 </span>
                 <button
                   type="button"
-                  onClick={() => navigator.clipboard?.writeText("npm create @editframe@latest")}
+                  onClick={() =>
+                    navigator.clipboard?.writeText(
+                      "npm create @editframe@latest",
+                    )
+                  }
                   className="text-white/40 hover:text-white transition-colors flex-shrink-0"
                   aria-label="Copy npm create @editframe@latest command"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
                   </svg>
                 </button>
               </div>
@@ -124,7 +142,7 @@ export default function SVGPage() {
                 className="inline-flex items-center justify-center px-6 py-3 border-2 border-[var(--ink-black)] dark:border-white font-bold text-sm uppercase tracking-wider hover:bg-[var(--ink-black)] hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors whitespace-nowrap"
               >
                 Docs
-               </Link>
+              </Link>
             </div>
           </div>
 
@@ -199,29 +217,154 @@ export default function SVGPage() {
                       {/* 5 bars: x positions 110,200,290,380,470 width=60 gap=30 */}
                       {/* Each anchored at y=320, max height 260 → top at y=60 */}
 
-                      <rect x="110" y="300" width="60" height="20" fill="#3B82F6" rx="3">
-                        <animate attributeName="height" values="20;260;20" dur="4s" begin="0s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;1" />
-                        <animate attributeName="y" values="300;60;300" dur="4s" begin="0s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;1" />
+                      <rect
+                        x="110"
+                        y="300"
+                        width="60"
+                        height="20"
+                        fill="#3B82F6"
+                        rx="3"
+                      >
+                        <animate
+                          attributeName="height"
+                          values="20;260;20"
+                          dur="4s"
+                          begin="0s"
+                          repeatCount="indefinite"
+                          calcMode="spline"
+                          keySplines="0.4 0 0.6 1;0.4 0 0.6 1"
+                          keyTimes="0;0.5;1"
+                        />
+                        <animate
+                          attributeName="y"
+                          values="300;60;300"
+                          dur="4s"
+                          begin="0s"
+                          repeatCount="indefinite"
+                          calcMode="spline"
+                          keySplines="0.4 0 0.6 1;0.4 0 0.6 1"
+                          keyTimes="0;0.5;1"
+                        />
                       </rect>
 
-                      <rect x="200" y="300" width="60" height="20" fill="#6366F1" rx="3">
-                        <animate attributeName="height" values="20;260;20" dur="4s" begin="0.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;1" />
-                        <animate attributeName="y" values="300;60;300" dur="4s" begin="0.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;1" />
+                      <rect
+                        x="200"
+                        y="300"
+                        width="60"
+                        height="20"
+                        fill="#6366F1"
+                        rx="3"
+                      >
+                        <animate
+                          attributeName="height"
+                          values="20;260;20"
+                          dur="4s"
+                          begin="0.5s"
+                          repeatCount="indefinite"
+                          calcMode="spline"
+                          keySplines="0.4 0 0.6 1;0.4 0 0.6 1"
+                          keyTimes="0;0.5;1"
+                        />
+                        <animate
+                          attributeName="y"
+                          values="300;60;300"
+                          dur="4s"
+                          begin="0.5s"
+                          repeatCount="indefinite"
+                          calcMode="spline"
+                          keySplines="0.4 0 0.6 1;0.4 0 0.6 1"
+                          keyTimes="0;0.5;1"
+                        />
                       </rect>
 
-                      <rect x="290" y="300" width="60" height="20" fill="#8B5CF6" rx="3">
-                        <animate attributeName="height" values="20;260;20" dur="4s" begin="1.0s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;1" />
-                        <animate attributeName="y" values="300;60;300" dur="4s" begin="1.0s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;1" />
+                      <rect
+                        x="290"
+                        y="300"
+                        width="60"
+                        height="20"
+                        fill="#8B5CF6"
+                        rx="3"
+                      >
+                        <animate
+                          attributeName="height"
+                          values="20;260;20"
+                          dur="4s"
+                          begin="1.0s"
+                          repeatCount="indefinite"
+                          calcMode="spline"
+                          keySplines="0.4 0 0.6 1;0.4 0 0.6 1"
+                          keyTimes="0;0.5;1"
+                        />
+                        <animate
+                          attributeName="y"
+                          values="300;60;300"
+                          dur="4s"
+                          begin="1.0s"
+                          repeatCount="indefinite"
+                          calcMode="spline"
+                          keySplines="0.4 0 0.6 1;0.4 0 0.6 1"
+                          keyTimes="0;0.5;1"
+                        />
                       </rect>
 
-                      <rect x="380" y="300" width="60" height="20" fill="#6366F1" rx="3">
-                        <animate attributeName="height" values="20;260;20" dur="4s" begin="1.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;1" />
-                        <animate attributeName="y" values="300;60;300" dur="4s" begin="1.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;1" />
+                      <rect
+                        x="380"
+                        y="300"
+                        width="60"
+                        height="20"
+                        fill="#6366F1"
+                        rx="3"
+                      >
+                        <animate
+                          attributeName="height"
+                          values="20;260;20"
+                          dur="4s"
+                          begin="1.5s"
+                          repeatCount="indefinite"
+                          calcMode="spline"
+                          keySplines="0.4 0 0.6 1;0.4 0 0.6 1"
+                          keyTimes="0;0.5;1"
+                        />
+                        <animate
+                          attributeName="y"
+                          values="300;60;300"
+                          dur="4s"
+                          begin="1.5s"
+                          repeatCount="indefinite"
+                          calcMode="spline"
+                          keySplines="0.4 0 0.6 1;0.4 0 0.6 1"
+                          keyTimes="0;0.5;1"
+                        />
                       </rect>
 
-                      <rect x="470" y="300" width="60" height="20" fill="#3B82F6" rx="3">
-                        <animate attributeName="height" values="20;260;20" dur="4s" begin="2.0s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;1" />
-                        <animate attributeName="y" values="300;60;300" dur="4s" begin="2.0s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;1" />
+                      <rect
+                        x="470"
+                        y="300"
+                        width="60"
+                        height="20"
+                        fill="#3B82F6"
+                        rx="3"
+                      >
+                        <animate
+                          attributeName="height"
+                          values="20;260;20"
+                          dur="4s"
+                          begin="2.0s"
+                          repeatCount="indefinite"
+                          calcMode="spline"
+                          keySplines="0.4 0 0.6 1;0.4 0 0.6 1"
+                          keyTimes="0;0.5;1"
+                        />
+                        <animate
+                          attributeName="y"
+                          values="300;60;300"
+                          dur="4s"
+                          begin="2.0s"
+                          repeatCount="indefinite"
+                          calcMode="spline"
+                          keySplines="0.4 0 0.6 1;0.4 0 0.6 1"
+                          keyTimes="0;0.5;1"
+                        />
                       </rect>
                     </svg>
                   </ef-timegroup>
@@ -296,19 +439,57 @@ export default function SVGPage() {
 
                       {/* Static star field */}
                       {[
-                        [60, 40], [180, 25], [540, 50], [590, 130],
-                        [420, 20], [80, 300], [560, 310], [150, 180],
-                        [500, 80], [320, 30],
+                        [60, 40],
+                        [180, 25],
+                        [540, 50],
+                        [590, 130],
+                        [420, 20],
+                        [80, 300],
+                        [560, 310],
+                        [150, 180],
+                        [500, 80],
+                        [320, 30],
                       ].map(([x, y], i) => (
-                        <circle key={i} cx={x} cy={y} r="1.5" fill="white" opacity="0.5" />
+                        <circle
+                          key={i}
+                          cx={x}
+                          cy={y}
+                          r="1.5"
+                          fill="white"
+                          opacity="0.5"
+                        />
                       ))}
 
                       {/* Orbit rings */}
-                      <circle cx="320" cy="180" r="90" fill="none" stroke="white" strokeWidth="1" opacity="0.15" strokeDasharray="4 8" />
-                      <circle cx="320" cy="180" r="150" fill="none" stroke="white" strokeWidth="1" opacity="0.12" strokeDasharray="4 8" />
+                      <circle
+                        cx="320"
+                        cy="180"
+                        r="90"
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="1"
+                        opacity="0.15"
+                        strokeDasharray="4 8"
+                      />
+                      <circle
+                        cx="320"
+                        cy="180"
+                        r="150"
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="1"
+                        opacity="0.12"
+                        strokeDasharray="4 8"
+                      />
 
                       {/* Sun glow */}
-                      <circle cx="320" cy="180" r="40" fill="#FBBF24" opacity="0.15" />
+                      <circle
+                        cx="320"
+                        cy="180"
+                        r="40"
+                        fill="#FBBF24"
+                        opacity="0.15"
+                      />
                       {/* Sun */}
                       <circle cx="320" cy="180" r="28" fill="#FBBF24" />
 
@@ -433,21 +614,33 @@ export default function SVGPage() {
 
                       {/* Particle 1 — red, leading */}
                       <circle r="14" fill="#E63946">
-                        <animateMotion dur="5s" begin="0s" repeatCount="indefinite">
+                        <animateMotion
+                          dur="5s"
+                          begin="0s"
+                          repeatCount="indefinite"
+                        >
                           <mpath href="#orbit-path" />
                         </animateMotion>
                       </circle>
 
                       {/* Particle 2 — blue, 1/3 behind */}
                       <circle r="10" fill="#3B82F6">
-                        <animateMotion dur="5s" begin="-1.667s" repeatCount="indefinite">
+                        <animateMotion
+                          dur="5s"
+                          begin="-1.667s"
+                          repeatCount="indefinite"
+                        >
                           <mpath href="#orbit-path" />
                         </animateMotion>
                       </circle>
 
                       {/* Particle 3 — amber, 2/3 behind */}
                       <circle r="8" fill="#FBBF24">
-                        <animateMotion dur="5s" begin="-3.333s" repeatCount="indefinite">
+                        <animateMotion
+                          dur="5s"
+                          begin="-3.333s"
+                          repeatCount="indefinite"
+                        >
                           <mpath href="#orbit-path" />
                         </animateMotion>
                       </circle>
@@ -486,7 +679,6 @@ export default function SVGPage() {
               </div>
             </div>
           </div>
-
         </div>
       </section>
 

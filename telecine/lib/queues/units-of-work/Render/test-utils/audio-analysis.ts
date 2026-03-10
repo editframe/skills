@@ -22,7 +22,9 @@ export const extractAudioMetadata = async (
   try {
     const output = execSync(
       `ffprobe -v quiet -print_format json -show_streams "${videoPath}"`,
-      { encoding: "utf8" },
+      {
+        encoding: "utf8",
+      },
     );
     const data = JSON.parse(output);
 
@@ -51,7 +53,9 @@ export const analyzeAudioSpectrum = async (
     // Extract audio level information
     const output = execSync(
       `ffmpeg -i "${videoPath}" -af "volumedetect" -f null - 2>&1`,
-      { encoding: "utf8" },
+      {
+        encoding: "utf8",
+      },
     );
 
     const levelMatch = output.match(/mean_volume: ([-\d.]+) dB/);

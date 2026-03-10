@@ -11,6 +11,8 @@
     "browsertest:watch": "npx vitest --config vitest.config.browser.ts --configLoader bundle --watch",
     "lint": "oxlint . --config oxlint.json",
     "format": "oxfmt .",
+    "format:check": "oxfmt --check .",
+    "prepare": "lefthook install",
     "start": "scripts/start",
     "build:all": "node scripts/deps.js sorted 2>/dev/null | xargs -I {} npm run build --workspace {}",
     "typedoc": "typedoc --out docs/packages/ packages/api/src"
@@ -42,8 +44,6 @@
     "oxfmt": "^0.15.0",
     "oxlint": "^1.30.0",
     "playwright": "^1.53.0",
-    "prettier": "^3.3.2",
-    "prettier-plugin-tailwindcss": "^0.6.5",
     "publint": "^0.3.14",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

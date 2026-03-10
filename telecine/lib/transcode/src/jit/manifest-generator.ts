@@ -196,7 +196,9 @@ ${playlists}`;
     const actualDurationsMs = calculateSegmentDurations(
       duration * 1000,
       segmentDuration * 1000,
-      { mediaType: isVideoRendition ? "video" : "audio" },
+      {
+        mediaType: isVideoRendition ? "video" : "audio",
+      },
     );
     const actualDurations = actualDurationsMs.map((d) => d / 1000); // Convert to seconds for manifest
 

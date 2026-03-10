@@ -1,9 +1,6 @@
 import type { VideoRenderOptions } from "@editframe/assets";
 
-import {
-  shallowGetTimegroups,
-  type SeekForRenderTiming,
-} from "./elements/EFTimegroup.js";
+import { shallowGetTimegroups, type SeekForRenderTiming } from "./elements/EFTimegroup.js";
 import { setupTemporalHierarchy } from "./elements/setupTemporalHierarchy.js";
 
 import { setupBrowserTracing } from "./otel/setupBrowserTracing.js";
@@ -29,11 +26,7 @@ interface Bridge {
   initialized(): void;
 
   onBeginFrame(
-    callback: (
-      frameNumber: number,
-      isLast: boolean,
-      traceContext?: TraceContext,
-    ) => void,
+    callback: (frameNumber: number, isLast: boolean, traceContext?: TraceContext) => void,
   ): void;
 
   onTriggerCanvas(callback: (traceContext?: TraceContext) => void): void;
@@ -137,9 +130,7 @@ export class EFFramegen {
 
     const sequence = ++this.logSequence;
     const message = args
-      .map((arg) =>
-        typeof arg === "object" ? JSON.stringify(arg) : String(arg),
-      )
+      .map((arg) => (typeof arg === "object" ? JSON.stringify(arg) : String(arg)))
       .join(" ");
 
     return new Promise<void>((resolve) => {
@@ -253,9 +244,7 @@ export class EFFramegen {
           width: renderOptions.encoderOptions.video.width,
           height: renderOptions.encoderOptions.video.height,
           fps: renderOptions.encoderOptions.video.framerate,
-          durationMs:
-            renderOptions.encoderOptions.toMs -
-            renderOptions.encoderOptions.fromMs,
+          durationMs: renderOptions.encoderOptions.toMs - renderOptions.encoderOptions.fromMs,
         },
         parentContext,
         async () => {
@@ -264,10 +253,7 @@ export class EFFramegen {
           } catch (error) {
             // If initialization fails, ensure rendering state is cleared
             this.setWorkbenchRendering(false);
-            console.error(
-              "[EF_FRAMEGEN.connectToBridge] error initializing",
-              error,
-            );
+            console.error("[EF_FRAMEGEN.connectToBridge] error initializing", error);
             throw error;
           }
         },
@@ -402,17 +388,13 @@ export class EFFramegen {
     }
 
     // Calculate base frame time using normal progression
-    const frameTime =
-      this.renderOptions.encoderOptions.fromMs +
-      frameNumber * this.frameDurationMs;
+    const frameTime = this.renderOptions.encoderOptions.fromMs + frameNumber * this.frameDurationMs;
     const frameTimeMs = Number(Number(frameTime).toFixed(5));
 
     // Use seekForRender for proper time seeking during rendering
     const timing = await firstGroup.seekForRender(frameTimeMs);
     this.timingFrameCount++;
-    for (const key of Object.keys(
-      this.timingAccum,
-    ) as (keyof SeekForRenderTiming)[]) {
+    for (const key of Object.keys(this.timingAccum) as (keyof SeekForRenderTiming)[]) {
       this.timingAccum[key] += timing[key];
     }
     if (this.timingFrameCount >= 30) {
@@ -432,9 +414,7 @@ export class EFFramegen {
         `frameTasks=${(this.timingAccum.frameTasksMs / n).toFixed(1)}ms`,
       );
       this.timingFrameCount = 0;
-      for (const key of Object.keys(
-        this.timingAccum,
-      ) as (keyof SeekForRenderTiming)[]) {
+      for (const key of Object.keys(this.timingAccum) as (keyof SeekForRenderTiming)[]) {
         this.timingAccum[key] = 0;
       }
     }
@@ -459,9 +439,7 @@ export class EFFramegen {
 
       const channelCount = renderedAudio.numberOfChannels;
 
-      const interleavedSamples = new Float32Array(
-        channelCount * renderedAudio.length,
-      );
+      const interleavedSamples = new Float32Array(channelCount * renderedAudio.length);
 
       for (let i = 0; i < renderedAudio.length; i++) {
         for (let j = 0; j < channelCount; j++) {

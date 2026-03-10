@@ -77,95 +77,93 @@ self.onmessage = (event: MessageEvent) => {
     const { canvas, width, height, pixelRatio } = data;
 
     try {
+      // Shim OffscreenCanvas → HTMLCanvasElement interface for R3F
+      Object.assign(canvas, {
+        style: { touchAction: "none" },
+        ownerDocument: canvas,
+        documentElement: canvas,
+        clientWidth: width,
+        clientHeight: height,
+        getBoundingClientRect: () => ({
+          width,
+          height,
+          top: 0,
+          left: 0,
+          x: 0,
+          y: 0,
+          bottom: height,
+          right: width,
+          toJSON: () => ({}),
+        }),
+        setAttribute() {},
+        setPointerCapture() {},
+        releasePointerCapture() {},
+        addEventListener() {},
+        removeEventListener() {},
+      });
 
-    // Shim OffscreenCanvas → HTMLCanvasElement interface for R3F
-    Object.assign(canvas, {
-      style: { touchAction: "none" },
-      ownerDocument: canvas,
-      documentElement: canvas,
-      clientWidth: width,
-      clientHeight: height,
-      getBoundingClientRect: () => ({
-        width,
-        height,
-        top: 0,
-        left: 0,
-        x: 0,
-        y: 0,
-        bottom: height,
-        right: width,
-        toJSON: () => ({}),
-      }),
-      setAttribute() {},
-      setPointerCapture() {},
-      releasePointerCapture() {},
-      addEventListener() {},
-      removeEventListener() {},
-    });
+      root = createRoot(canvas);
+      root.configure({
+        frameloop: "demand",
+        shadows: true,
+        size: { width, height, top: 0, left: 0, updateStyle: false },
+        dpr: Math.min(Math.max(1, pixelRatio), 2),
+        gl: {
+          preserveDrawingBuffer: true,
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.8,
+        },
+        camera: { fov: 50, near: 0.1, far: 100 },
+        scene: {
+          background: new THREE.Color(0x1e2233),
+          fog: new THREE.Fog(0x1e2233, 12, 28),
+        },
+      });
 
-    root = createRoot(canvas);
-    root.configure({
-      frameloop: "demand",
-      shadows: true,
-      size: { width, height, top: 0, left: 0, updateStyle: false },
-      dpr: Math.min(Math.max(1, pixelRatio), 2),
-      gl: {
-        preserveDrawingBuffer: true,
-        toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.8,
-      },
-      camera: { fov: 50, near: 0.1, far: 100 },
-      scene: {
-        background: new THREE.Color(0x1e2233),
-        fog: new THREE.Fog(0x1e2233, 12, 28),
-      },
-    });
+      root.render(<WorkerApp />);
 
-    root.render(<WorkerApp />);
+      // Point window shim at the canvas (R3F stores reference on it)
+      (self as any).window = canvas;
 
-    // Point window shim at the canvas (R3F stores reference on it)
-    (self as any).window = canvas;
+      // Override ImageLoader for Worker (no DOM Image element)
+      THREE.ImageLoader.prototype.load = function (
+        url: string,
+        onLoad: any,
+        _onProgress: any,
+        onError: any,
+      ) {
+        if (this.path !== undefined) url = this.path + url;
+        url = this.manager.resolveURL(url);
+        const cached = THREE.Cache.get(url);
+        if (cached) {
+          this.manager.itemStart(url);
+          if (onLoad) onLoad(cached);
+          this.manager.itemEnd(url);
+          return cached;
+        }
+        const scope = this;
+        scope.manager.itemStart(url);
+        fetch(url)
+          .then((r) => r.blob())
+          .then((r) =>
+            createImageBitmap(r, {
+              premultiplyAlpha: "none",
+              colorSpaceConversion: "none",
+            }),
+          )
+          .then((bitmap) => {
+            THREE.Cache.add(url, bitmap);
+            if (onLoad) onLoad(bitmap);
+            scope.manager.itemEnd(url);
+          })
+          .catch((err) => {
+            scope.manager.itemError(url);
+            if (onError) onError(err);
+          });
+        return {};
+      };
 
-    // Override ImageLoader for Worker (no DOM Image element)
-    THREE.ImageLoader.prototype.load = function (
-      url: string,
-      onLoad: any,
-      _onProgress: any,
-      onError: any,
-    ) {
-      if (this.path !== undefined) url = this.path + url;
-      url = this.manager.resolveURL(url);
-      const cached = THREE.Cache.get(url);
-      if (cached) {
-        this.manager.itemStart(url);
-        if (onLoad) onLoad(cached);
-        this.manager.itemEnd(url);
-        return cached;
-      }
-      const scope = this;
-      scope.manager.itemStart(url);
-      fetch(url)
-        .then((r) => r.blob())
-        .then((r) =>
-          createImageBitmap(r, {
-            premultiplyAlpha: "none",
-            colorSpaceConversion: "none",
-          }),
-        )
-        .then((bitmap) => {
-          THREE.Cache.add(url, bitmap);
-          if (onLoad) onLoad(bitmap);
-          scope.manager.itemEnd(url);
-        })
-        .catch((err) => {
-          scope.manager.itemError(url);
-          if (onError) onError(err);
-        });
-      return {};
-    };
-
-    postMessage({ type: "ready" });
-
+      postMessage({ type: "ready" });
     } catch (err: any) {
       console.error("[jit-streaming-worker] Init failed:", err);
       postMessage({ type: "error", message: err?.message || String(err) });

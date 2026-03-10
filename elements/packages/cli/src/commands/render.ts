@@ -5,10 +5,7 @@ import { program } from "commander";
 import debug from "debug";
 import ora from "ora";
 import { launchBrowserAndWaitForSDK } from "../utils/launchBrowserAndWaitForSDK.js";
-import {
-  spawnViteServer,
-  type SpawnedViteServer,
-} from "../utils/spawnViteServer.js";
+import { spawnViteServer, type SpawnedViteServer } from "../utils/spawnViteServer.js";
 import { patchFragmentedMp4 } from "../utils/patchFragmentedMp4.js";
 import { StreamTargetChunk } from "mediabunny";
 import { withProfiling } from "../utils/profileRender.js";
@@ -71,23 +68,14 @@ program
   .option("--no-include-audio", "Exclude audio track")
   .option("--from-ms <number>", "Start time in milliseconds")
   .option("--to-ms <number>", "End time in milliseconds")
-  .option(
-    "--experimental-native-render",
-    "Use experimental canvas capture API (faster)",
-  )
+  .option("--experimental-native-render", "Use experimental canvas capture API (faster)")
   .option("--profile", "Enable CPU profiling")
-  .option(
-    "--profile-output <path>",
-    "Profile output path",
-    "./render-profile.cpuprofile",
-  )
+  .option("--profile-output <path>", "Profile output path", "./render-profile.cpuprofile")
   .action(async (directory = ".", options) => {
     const programOpts = program.opts();
     const token: string | undefined = programOpts.token || process.env.EF_TOKEN;
     const efRenderHost: string =
-      programOpts.efRenderHost ||
-      process.env.EF_RENDER_HOST ||
-      "https://editframe.com";
+      programOpts.efRenderHost || process.env.EF_RENDER_HOST || "https://editframe.com";
 
     // If running from the dev script (via tsx), ORIGINAL_CWD contains the user's actual directory
     const baseCwd = process.env.ORIGINAL_CWD || process.cwd();
@@ -165,17 +153,14 @@ program
               let totalBytes = 0;
 
               // Expose chunk handler - writes through the stream in order
-              await page.exposeFunction(
-                "onRenderChunk",
-                (chunk: StreamTargetChunk) => {
-                  outputStream.write(Buffer.from(chunk.data));
-                  chunkCount++;
-                  totalBytes += chunk.data.length;
-                  log(
-                    `Received chunk ${chunkCount}: ${chunk.data.length} bytes (total: ${totalBytes} bytes)`,
-                  );
-                },
-              );
+              await page.exposeFunction("onRenderChunk", (chunk: StreamTargetChunk) => {
+                outputStream.write(Buffer.from(chunk.data));
+                chunkCount++;
+                totalBytes += chunk.data.length;
+                log(
+                  `Received chunk ${chunkCount}: ${chunk.data.length} bytes (total: ${totalBytes} bytes)`,
+                );
+              });
 
               // Set custom render data if provided
               if (renderData) {
@@ -186,19 +171,14 @@ program
               }
 
               // Wait for EF_RENDER API to be available
-              await page.waitForFunction(
-                () => typeof window.EF_RENDER !== "undefined",
-                { timeout: 10_000 },
-              );
+              await page.waitForFunction(() => typeof window.EF_RENDER !== "undefined", {
+                timeout: 10_000,
+              });
 
               // Check if ready
-              const isReady = await page.evaluate(() =>
-                window.EF_RENDER?.isReady(),
-              );
+              const isReady = await page.evaluate(() => window.EF_RENDER?.isReady());
               if (!isReady) {
-                throw new Error(
-                  "Render API is not ready. No ef-timegroup found.",
-                );
+                throw new Error("Render API is not ready. No ef-timegroup found.");
               }
 
               // Create progress spinner
@@ -230,9 +210,7 @@ program
                   const percent = (progress.progress * 100).toFixed(1);
                   const renderedTime = formatTime(progress.renderedMs);
                   const totalTime = formatTime(progress.totalDurationMs);
-                  const remainingTime = formatTime(
-                    progress.estimatedRemainingMs,
-                  );
+                  const remainingTime = formatTime(progress.estimatedRemainingMs);
                   const speed = progress.speedMultiplier.toFixed(2);
 
                   progressSpinner.text = `Rendering: ${progress.currentFrame}/${progress.totalFrames} frames (${percent}%) | ${renderedTime}/${totalTime} | ${remainingTime} remaining | ${speed}x speed`;
@@ -312,9 +290,7 @@ program
                   }),
                   ...(renderInfo?.fps != null && { fps: renderInfo.fps }),
                   feature_usage: {
-                    efMediaCount: renderInfo
-                      ? Object.keys(renderInfo.assets.efMedia).length
-                      : 0,
+                    efMediaCount: renderInfo ? Object.keys(renderInfo.assets.efMedia).length : 0,
                     efImageCount: renderInfo?.assets.efImage.length ?? 0,
                     efCaptionsCount: renderInfo?.assets.efCaptions.length ?? 0,
                     efTextCount: 0,

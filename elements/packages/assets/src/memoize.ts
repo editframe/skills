@@ -1,8 +1,5 @@
 /** method decorator to memoize the value of a getter */
-export const memoize = <
-  Target extends object,
-  PropertyKey extends keyof Target,
->(
+export const memoize = <Target extends object, PropertyKey extends keyof Target>(
   _target: Target,
   _propertyKey: PropertyKey,
   descriptor: TypedPropertyDescriptor<Target[PropertyKey]>,

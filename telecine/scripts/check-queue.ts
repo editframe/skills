@@ -7,7 +7,11 @@ async function main() {
 
   // Check queue-level keys
   const queued = await valkey.zrange("queues:render-initializer:queued", 0, -1);
-  const claimed = await valkey.zrange("queues:render-initializer:claimed", 0, -1);
+  const claimed = await valkey.zrange(
+    "queues:render-initializer:claimed",
+    0,
+    -1,
+  );
   const failed = await valkey.zrange("queues:render-initializer:failed", 0, -1);
 
   const matchQueued = queued.filter((k) => k.includes(renderId));
@@ -15,9 +19,18 @@ async function main() {
   const matchFailed = failed.filter((k) => k.includes(renderId));
 
   console.log("Queue-level state (render-initializer):");
-  console.log(`  total queued: ${queued.length}, matching: ${matchQueued.length}`, matchQueued);
-  console.log(`  total claimed: ${claimed.length}, matching: ${matchClaimed.length}`, matchClaimed);
-  console.log(`  total failed: ${failed.length}, matching: ${matchFailed.length}`, matchFailed);
+  console.log(
+    `  total queued: ${queued.length}, matching: ${matchQueued.length}`,
+    matchQueued,
+  );
+  console.log(
+    `  total claimed: ${claimed.length}, matching: ${matchClaimed.length}`,
+    matchClaimed,
+  );
+  console.log(
+    `  total failed: ${failed.length}, matching: ${matchFailed.length}`,
+    matchFailed,
+  );
 
   // Check if job data exists
   const jobData = await valkey.get(jobKey);
@@ -26,7 +39,11 @@ async function main() {
   // Check workflow keys
   const wfQueued = await valkey.zrange(`workflows:${renderId}:queued`, 0, -1);
   const wfClaimed = await valkey.zrange(`workflows:${renderId}:claimed`, 0, -1);
-  const wfCompleted = await valkey.zrange(`workflows:${renderId}:completed`, 0, -1);
+  const wfCompleted = await valkey.zrange(
+    `workflows:${renderId}:completed`,
+    0,
+    -1,
+  );
   const wfFailed = await valkey.zrange(`workflows:${renderId}:failed`, 0, -1);
 
   console.log("\nWorkflow-level state:");

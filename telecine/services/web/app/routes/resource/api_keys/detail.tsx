@@ -40,7 +40,11 @@ const schema = z.object({
 
 export const editApiKey = formFor(schema);
 
-export const loader = async ({ request, params, context }: Route.LoaderArgs) => {
+export const loader = async ({
+  request,
+  params,
+  context,
+}: Route.LoaderArgs) => {
   const session = context.get(identityContext);
   const sessionCookie = context.get(sessionCookieContext);
 
@@ -441,7 +445,11 @@ export default function ApiKeyDetail() {
   );
 }
 
-export const action = async ({ request, params, context }: Route.ActionArgs) => {
+export const action = async ({
+  request,
+  params,
+  context,
+}: Route.ActionArgs) => {
   const session = context.get(identityContext);
   const sessionCookie = context.get(sessionCookieContext);
   const values = await editApiKey.parseFormData(request);

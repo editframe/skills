@@ -849,11 +849,9 @@ function setupExpressApp(app: express.Application) {
           !rendition ||
           !["high", "medium", "low", "audio"].includes(rendition)
         ) {
-          return res
-            .status(400)
-            .json({
-              error: "Invalid rendition. Use high, medium, low, or audio",
-            });
+          return res.status(400).json({
+            error: "Invalid rendition. Use high, medium, low, or audio",
+          });
         }
 
         // Get video duration
@@ -932,12 +930,10 @@ function setupExpressApp(app: express.Application) {
             !rendition ||
             !["high", "medium", "low", "audio", "scrub"].includes(rendition)
           ) {
-            return res
-              .status(400)
-              .json({
-                error:
-                  "Invalid rendition. Use high, medium, low, audio, or scrub",
-              });
+            return res.status(400).json({
+              error:
+                "Invalid rendition. Use high, medium, low, audio, or scrub",
+            });
           }
 
           // Detect available tracks and validate the requested rendition type exists

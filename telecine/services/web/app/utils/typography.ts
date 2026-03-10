@@ -185,7 +185,7 @@ export function getTypographyClasses(
   options?: {
     includeColor?: boolean;
     includeSpacing?: boolean;
-  }
+  },
 ): string {
   const elementStyles = typographyElements[element];
   const includeColor = options?.includeColor !== false;
@@ -207,7 +207,10 @@ export function getTypographyClasses(
       "1.625": "leading-relaxed",
       "1.75": "leading-loose",
     };
-    classes.push(lineHeightMap[elementStyles.lineHeight] || `leading-[${elementStyles.lineHeight}]`);
+    classes.push(
+      lineHeightMap[elementStyles.lineHeight] ||
+        `leading-[${elementStyles.lineHeight}]`,
+    );
   }
 
   // Font weight
@@ -218,7 +221,10 @@ export function getTypographyClasses(
       "600": "font-semibold",
       "700": "font-bold",
     };
-    classes.push(weightMap[elementStyles.fontWeight] || `font-[${elementStyles.fontWeight}]`);
+    classes.push(
+      weightMap[elementStyles.fontWeight] ||
+        `font-[${elementStyles.fontWeight}]`,
+    );
   }
 
   // Letter spacing
@@ -271,13 +277,3 @@ export const typographyClasses = {
   h3NoSpacing: getTypographyClasses("h3", { includeSpacing: false }),
   h4NoSpacing: getTypographyClasses("h4", { includeSpacing: false }),
 } as const;
-
-
-
-
-
-
-
-
-
-

@@ -18,14 +18,10 @@ export class ThumbnailExtractor {
       return [];
     }
 
-    const validTimestamps = timestamps.filter(
-      (timeMs) => timeMs >= 0 && timeMs <= durationMs,
-    );
+    const validTimestamps = timestamps.filter((timeMs) => timeMs >= 0 && timeMs <= durationMs);
 
     if (validTimestamps.length === 0) {
-      console.warn(
-        `ThumbnailExtractor: All timestamps out of bounds (0-${durationMs}ms)`,
-      );
+      console.warn(`ThumbnailExtractor: All timestamps out of bounds (0-${durationMs}ms)`);
       return timestamps.map(() => null);
     }
 
@@ -68,10 +64,7 @@ export class ThumbnailExtractor {
     });
   }
 
-  private groupTimestampsBySegment(
-    timestamps: number[],
-    track: TrackRef,
-  ): Map<number, number[]> {
+  private groupTimestampsBySegment(timestamps: number[], track: TrackRef): Map<number, number[]> {
     const segmentGroups = new Map<number, number[]>();
 
     for (const timeMs of timestamps) {
@@ -107,11 +100,7 @@ export class ThumbnailExtractor {
       signal?.throwIfAborted();
 
       const initP = this.mediaEngine.transport.fetchInitSegment(track, signal!);
-      const mediaP = this.mediaEngine.transport.fetchMediaSegment(
-        segmentId,
-        track,
-        signal!,
-      );
+      const mediaP = this.mediaEngine.transport.fetchMediaSegment(segmentId, track, signal!);
       initP.catch(() => {});
       mediaP.catch(() => {});
       const [initSegment, mediaSegment] = await Promise.all([initP, mediaP]);
@@ -172,10 +161,7 @@ export class ThumbnailExtractor {
 
         if (result?.canvas) {
           const canvas = result.canvas;
-          if (
-            canvas instanceof HTMLCanvasElement ||
-            canvas instanceof OffscreenCanvas
-          ) {
+          if (canvas instanceof HTMLCanvasElement || canvas instanceof OffscreenCanvas) {
             results.set(globalTimestamp, {
               timestamp: globalTimestamp,
               thumbnail: canvas,

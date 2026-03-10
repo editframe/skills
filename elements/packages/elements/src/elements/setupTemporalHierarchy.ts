@@ -46,12 +46,8 @@
  * await rootTimegroup.seekForRender(100); // Now all children can compute correct times
  * ```
  */
-export function setupTemporalHierarchy(
-  searchRoot: Element,
-  rootTimegroup: any,
-): void {
-  const temporalSelectors =
-    "ef-video, ef-audio, ef-image, ef-text, ef-waveform, ef-timegroup";
+export function setupTemporalHierarchy(searchRoot: Element, rootTimegroup: any): void {
+  const temporalSelectors = "ef-video, ef-audio, ef-image, ef-text, ef-waveform, ef-timegroup";
   const temporals = searchRoot.querySelectorAll(temporalSelectors);
 
   for (const el of temporals) {
@@ -62,8 +58,7 @@ export function setupTemporalHierarchy(
 
     // Find immediate parent timegroup (may be nested, e.g., timegroup within timegroup)
     // Use closest() starting from parentElement to avoid matching the element itself
-    const parentTg =
-      (el.parentElement?.closest("ef-timegroup") as any) || rootTimegroup;
+    const parentTg = (el.parentElement?.closest("ef-timegroup") as any) || rootTimegroup;
 
     // Set both parent and root references
     // - parentTimegroup: Used for start time calculations (evaluateStartTime)

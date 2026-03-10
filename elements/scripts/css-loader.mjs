@@ -9,9 +9,7 @@ export async function resolve(specifier, context, nextResolve) {
   if (specifier.endsWith(".css?inline")) {
     const cssPath = specifier.replace("?inline", "");
     // Resolve the CSS file path relative to the importing file
-    const parentPath = context.parentURL
-      ? fileURLToPath(context.parentURL)
-      : process.cwd();
+    const parentPath = context.parentURL ? fileURLToPath(context.parentURL) : process.cwd();
     const parentDir = dirname(parentPath);
     const resolvedPath = resolvePath(parentDir, cssPath);
 
@@ -25,9 +23,7 @@ export async function resolve(specifier, context, nextResolve) {
   // Handle regular CSS imports (without ?inline) - return empty string for now
   if (specifier.endsWith(".css")) {
     const cssPath = specifier;
-    const parentPath = context.parentURL
-      ? fileURLToPath(context.parentURL)
-      : process.cwd();
+    const parentPath = context.parentURL ? fileURLToPath(context.parentURL) : process.cwd();
     const parentDir = dirname(parentPath);
     const resolvedPath = resolvePath(parentDir, cssPath);
 
@@ -52,7 +48,7 @@ export async function load(url, context, nextLoad) {
         shortCircuit: true,
         source: `export default ${JSON.stringify(cssContent)};`,
       };
-    } catch (error) {
+    } catch (_error) {
       // If file doesn't exist or can't be read, return empty string
       return {
         format: "module",

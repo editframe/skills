@@ -15,10 +15,7 @@ import type {
 /**
  * Get a node by ID from the profile
  */
-export function getNodeById(
-  profile: CPUProfile,
-  id: number,
-): ProfileNode | undefined {
+export function getNodeById(profile: CPUProfile, id: number): ProfileNode | undefined {
   return profile.nodes.find((node) => node.id === id);
 }
 
@@ -36,12 +33,10 @@ export function calculateTotalTime(profile: CPUProfile): Map<number, number> {
   }
 
   // Calculate time deltas
-  let currentTime: number = profile.startTime;
   const timeDeltas = profile.timeDeltas || [];
   for (let i = 0; i < profile.samples.length; i++) {
     const sample: number = profile.samples[i] ?? 0;
     const delta: number = timeDeltas[i] ?? 0;
-    currentTime = currentTime + delta;
 
     if (nodeMap.has(sample)) {
       const existingTime = totalTime.get(sample) ?? 0;
@@ -118,10 +113,7 @@ export function calculateCallCounts(profile: CPUProfile): Map<number, number> {
 /**
  * Extract hotspots from profile, sorted by self time
  */
-export function getHotspots(
-  profile: CPUProfile,
-  options: AnalyzeOptions = {},
-): HotspotInfo[] {
+export function getHotspots(profile: CPUProfile, options: AnalyzeOptions = {}): HotspotInfo[] {
   const { filterNodeModules = false, filterInternals = false, topN } = options;
 
   const selfTime = calculateSelfTime(profile);
@@ -139,10 +131,8 @@ export function getHotspots(
       const file = url.split("/").pop()?.split("?")[0] || url || "(native)";
 
       // Apply filters
-      const isInternal =
-        functionName.startsWith("(") && functionName.endsWith(")");
-      const isNodeModules =
-        url.includes("node_modules") || url.includes("chunk-");
+      const isInternal = functionName.startsWith("(") && functionName.endsWith(")");
+      const isNodeModules = url.includes("node_modules") || url.includes("chunk-");
 
       if (filterInternals && isInternal) continue;
       if (filterNodeModules && isNodeModules) continue;
@@ -231,10 +221,7 @@ export function buildCallTree(profile: CPUProfile): CallTreeNode[] {
 /**
  * Get call stack for a specific sample
  */
-export function getCallStack(
-  profile: CPUProfile,
-  sampleIndex: number,
-): ProfileNode[] {
+export function getCallStack(profile: CPUProfile, sampleIndex: number): ProfileNode[] {
   const stack: ProfileNode[] = [];
   const sampleId = profile.samples[sampleIndex];
   if (sampleId === undefined) {
@@ -315,8 +302,7 @@ export function findHotspot(
   return (
     hotspots.find((h) => {
       const nameMatch = !functionName || h.functionName === functionName;
-      const fileMatch =
-        !fileName || h.file === fileName || h.url.includes(fileName);
+      const fileMatch = !fileName || h.file === fileName || h.url.includes(fileName);
       return nameMatch && fileMatch;
     }) || null
   );
@@ -325,18 +311,14 @@ export function findHotspot(
 /**
  * Comprehensive profile analysis
  */
-export function analyzeProfile(
-  profile: CPUProfile,
-  options: AnalyzeOptions = {},
-): ProfileAnalysis {
+export function analyzeProfile(profile: CPUProfile, options: AnalyzeOptions = {}): ProfileAnalysis {
   const hotspots = getHotspots(profile, options);
   const timeRange = getTimeRange(profile);
   const byFile = aggregateByFile(hotspots);
 
   const sampleIntervalUs =
     profile.timeDeltas.length > 0
-      ? profile.timeDeltas.reduce((a, b) => a + b, 0) /
-        profile.timeDeltas.length
+      ? profile.timeDeltas.reduce((a, b) => a + b, 0) / profile.timeDeltas.length
       : 1000;
 
   return {

@@ -23,8 +23,7 @@ interface TimingDisplayProps {
 }
 
 const TimingDisplay: FC<TimingDisplayProps> = ({ onUpdate }) => {
-  const { ownCurrentTimeMs, durationMs, percentComplete, ref } =
-    useTimingInfo();
+  const { ownCurrentTimeMs, durationMs, percentComplete, ref } = useTimingInfo();
 
   useEffect(() => {
     if (onUpdate) {
@@ -128,11 +127,7 @@ describe("useTimingInfo", () => {
     await timegroup.updateComplete;
 
     // Should have no updates since no frame tasks ran
-    assert.equal(
-      updates.length,
-      0,
-      "Should not update on Lit property changes",
-    );
+    assert.equal(updates.length, 0, "Should not update on Lit property changes");
 
     // Now trigger frame task via seek (proper API that triggers both task and update)
     await timegroup.seek(1000);
@@ -193,10 +188,7 @@ describe("useTimingInfo", () => {
       interval: 16,
     });
     const updatesAfterSecondSeek = updates.length;
-    assert.ok(
-      updatesAfterSecondSeek > updatesAfterFirstSeek,
-      "Should update after second seek",
-    );
+    assert.ok(updatesAfterSecondSeek > updatesAfterFirstSeek, "Should update after second seek");
 
     // Verify the last update has the correct time
     const lastUpdate = updates[updates.length - 1];
@@ -372,11 +364,7 @@ describe("useTimingInfo", () => {
     // Give time for any potential updates
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    assert.equal(
-      updates.length,
-      updatesBeforePost,
-      "Should not update after unmount",
-    );
+    assert.equal(updates.length, updatesBeforePost, "Should not update after unmount");
 
     container.remove();
   }, 5000);

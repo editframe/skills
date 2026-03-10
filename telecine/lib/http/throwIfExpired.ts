@@ -11,8 +11,7 @@ export function throwIfExpired(expires_at: Timestampish): void {
       JSON.stringify({
         error: "file_expired",
         expires_at: expiresDate.toISOString(),
-        message:
-          "This file expired and is no longer available for download.",
+        message: "This file expired and is no longer available for download.",
       }),
       {
         status: 410,

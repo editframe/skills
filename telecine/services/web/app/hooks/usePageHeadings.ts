@@ -23,7 +23,8 @@ export function usePageHeadings() {
         (heading.textContent
           ?.toLowerCase()
           .replace(/\s+/g, "-")
-          .replace(/[^\w-]/g, "") ?? "");
+          .replace(/[^\w-]/g, "") ??
+          "");
       if (!heading.id && id) {
         heading.id = id;
       }

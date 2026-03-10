@@ -107,8 +107,7 @@ const SYNC_PROPERTIES_KEBAB = SYNC_PROPERTIES.map((prop) =>
  * Feature detection: computedStyleMap is ~15% faster for style syncing.
  */
 const HAS_COMPUTED_STYLE_MAP =
-  typeof Element !== "undefined" &&
-  typeof Element.prototype.computedStyleMap === "function";
+  typeof Element !== "undefined" && typeof Element.prototype.computedStyleMap === "function";
 
 /**
  * CSS initial/default values for SAFE-TO-SKIP properties.
@@ -242,9 +241,7 @@ interface RemovedNodeInfo {
  * This physically removes non-visible nodes so they won't be serialized,
  * avoiding the cost of serializing hidden elements and their resources.
  */
-export function removeHiddenNodesForSerialization(
-  state: SyncState,
-): RemovedNodeInfo[] {
+export function removeHiddenNodesForSerialization(state: SyncState): RemovedNodeInfo[] {
   const removed: RemovedNodeInfo[] = [];
   const visibleSet = state.currentVisibleSet;
 
@@ -306,10 +303,7 @@ export function getVisibleCanvases(state: SyncState): Set<HTMLCanvasElement> {
 /**
  * Traverse all nodes in the clone tree, calling the callback for each.
  */
-export function traverseCloneTree(
-  state: SyncState,
-  callback: (node: CloneNode) => void,
-): void {
+export function traverseCloneTree(state: SyncState, callback: (node: CloneNode) => void): void {
   function visit(node: CloneNode): void {
     callback(node);
     for (const child of node.children) {
@@ -331,11 +325,7 @@ export function traverseCloneTree(
  * @param clone - Clone element to write styles to
  * @param contentSource - Optional content element for width/height (canvas clones only)
  */
-function syncElementStyles(
-  source: Element,
-  clone: HTMLElement,
-  contentSource?: Element,
-): void {
+function syncElementStyles(source: Element, clone: HTMLElement, contentSource?: Element): void {
   const cloneStyle = clone.style as any;
   const tagName = (source as HTMLElement).tagName;
   const isCanvasClone = !!contentSource;
@@ -418,9 +408,7 @@ function syncElementStyles(
             tagName === "EF-CAPTIONS-AFTER-ACTIVE-WORD" ||
             tagName === "EF-CAPTIONS-SEGMENT");
         const targetDisplay =
-          strVal === "none" && !isCaptionChild
-            ? resolveNaturalDisplay(source)
-            : strVal;
+          strVal === "none" && !isCaptionChild ? resolveNaturalDisplay(source) : strVal;
         cloneStyle.display = targetDisplay;
         continue;
       }
@@ -464,9 +452,7 @@ function syncElementStyles(
             tagName === "EF-CAPTIONS-AFTER-ACTIVE-WORD" ||
             tagName === "EF-CAPTIONS-SEGMENT");
         const targetDisplay =
-          srcVal === "none" && !isCaptionChild
-            ? resolveNaturalDisplay(source)
-            : srcVal;
+          srcVal === "none" && !isCaptionChild ? resolveNaturalDisplay(source) : srcVal;
         cloneStyle.display = targetDisplay;
         continue;
       }
@@ -503,8 +489,7 @@ function refreshCanvasPixels(node: CloneNode): void {
   if (shadowCanvas) {
     // Update buffer dimensions if needed
     if (canvas.width !== shadowCanvas.width) canvas.width = shadowCanvas.width;
-    if (canvas.height !== shadowCanvas.height)
-      canvas.height = shadowCanvas.height;
+    if (canvas.height !== shadowCanvas.height) canvas.height = shadowCanvas.height;
 
     // Copy pixels with explicit clear
     const ctx = canvas.getContext("2d");
@@ -518,10 +503,8 @@ function refreshCanvasPixels(node: CloneNode): void {
     }
   } else if (shadowImg?.complete && shadowImg.naturalWidth > 0) {
     // Update buffer dimensions if needed
-    if (canvas.width !== shadowImg.naturalWidth)
-      canvas.width = shadowImg.naturalWidth;
-    if (canvas.height !== shadowImg.naturalHeight)
-      canvas.height = shadowImg.naturalHeight;
+    if (canvas.width !== shadowImg.naturalWidth) canvas.width = shadowImg.naturalWidth;
+    if (canvas.height !== shadowImg.naturalHeight) canvas.height = shadowImg.naturalHeight;
 
     // Copy pixels with explicit clear
     const ctx = canvas.getContext("2d");
@@ -545,8 +528,7 @@ function syncTextContent(source: Element, clone: HTMLElement): void {
 
     if (cloneTextNode?.nodeType === Node.TEXT_NODE) {
       // Update existing text node
-      if (cloneTextNode.textContent !== srcText)
-        cloneTextNode.textContent = srcText;
+      if (cloneTextNode.textContent !== srcText) cloneTextNode.textContent = srcText;
     } else if (!clone.childNodes.length) {
       // Only create text node if clone has NO children (was empty when initially cloned)
       // Don't set textContent as it would delete element children!
@@ -582,16 +564,12 @@ export function buildCloneStructure(
   syncState: SyncState;
 } {
   const container = document.createElement("div");
-  container.style.cssText =
-    "position:absolute;top:0;left:0;width:100%;height:100%";
+  container.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%";
 
   let nodeCount = 0;
   const canvasSourceMap = new WeakMap<HTMLCanvasElement, Element>();
 
-  function cloneElement(
-    srcEl: Element,
-    parentNode: CloneNode | null,
-  ): CloneNode | null {
+  function cloneElement(srcEl: Element, parentNode: CloneNode | null): CloneNode | null {
     if (SKIP_TAGS.has(srcEl.tagName)) return null;
 
     // Get temporal bounds upfront for indexing
@@ -754,9 +732,7 @@ export function buildCloneStructure(
         srcEl.tagName,
       ) as unknown as HTMLElement;
     } else {
-      clone = document.createElement(
-        isCustom ? "div" : srcEl.tagName.toLowerCase(),
-      ) as HTMLElement;
+      clone = document.createElement(isCustom ? "div" : srcEl.tagName.toLowerCase()) as HTMLElement;
     }
 
     // Copy attributes - OPTIMIZATION: Early exit if no attributes
@@ -807,9 +783,7 @@ export function buildCloneStructure(
             const text = child.textContent?.trim();
             // Always include text for text segments (even if whitespace-only, e.g., " ")
             if (text || isTextSegment) {
-              clone.appendChild(
-                document.createTextNode(child.textContent || ""),
-              );
+              clone.appendChild(document.createTextNode(child.textContent || ""));
               hasTextNode = true;
             }
           } else if (child.nodeType === Node.ELEMENT_NODE) {
@@ -1176,10 +1150,7 @@ export const syncAnimatedStyles = syncStyles;
  * @param syncState - The sync state containing the clone tree
  * @param fullReset - If true, also resets opacity and transform (for capture operations)
  */
-export function overrideRootCloneStyles(
-  syncState: SyncState,
-  fullReset: boolean = false,
-): void {
+export function overrideRootCloneStyles(syncState: SyncState, fullReset: boolean = false): void {
   const rootClone = syncState.tree.root?.clone;
   if (!rootClone) return;
 

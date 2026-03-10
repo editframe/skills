@@ -58,9 +58,7 @@ export interface LookupCaptionFileByMd5Result {
 
 const restrictSize = (size: number) => {
   if (size > MAX_CAPTION_SIZE) {
-    throw new Error(
-      `File size ${size} bytes exceeds limit ${MAX_CAPTION_SIZE} bytes\n`,
-    );
+    throw new Error(`File size ${size} bytes exceeds limit ${MAX_CAPTION_SIZE} bytes\n`);
   }
 };
 
@@ -82,10 +80,7 @@ const restrictSize = (size: number) => {
  * @beta
  * @deprecated Use the unified file API from ./file.js instead
  */
-export const createCaptionFile = async (
-  client: Client,
-  payload: CreateCaptionFilePayload,
-) => {
+export const createCaptionFile = async (client: Client, payload: CreateCaptionFilePayload) => {
   log("Creating caption file", payload);
   restrictSize(payload.byte_size);
   const response = await client.authenticatedFetch("/api/v1/caption_files", {
@@ -98,9 +93,7 @@ export const createCaptionFile = async (
     return (await response.json()) as CreateCaptionFileResult;
   }
 
-  throw new Error(
-    `Failed to create caption ${response.status} ${response.statusText}`,
-  );
+  throw new Error(`Failed to create caption ${response.status} ${response.statusText}`);
 };
 
 /** @deprecated Use the unified file API from ./file.js instead */
@@ -113,23 +106,18 @@ export const uploadCaptionFile = async (
   log("Uploading caption file", fileId);
   restrictSize(fileSize);
 
-  const response = await client.authenticatedFetch(
-    `/api/v1/caption_files/${fileId}/upload`,
-    {
-      method: "POST",
-      body: fileStream,
-      duplex: "half",
-    },
-  );
+  const response = await client.authenticatedFetch(`/api/v1/caption_files/${fileId}/upload`, {
+    method: "POST",
+    body: fileStream,
+    duplex: "half",
+  });
   log("Caption file uploaded", response);
 
   if (response.ok) {
     return response.json();
   }
 
-  throw new Error(
-    `Failed to upload caption ${response.status} ${response.statusText}`,
-  );
+  throw new Error(`Failed to upload caption ${response.status} ${response.statusText}`);
 };
 
 /** @deprecated Use the unified file API from ./file.js instead */
@@ -137,12 +125,9 @@ export const lookupCaptionFileByMd5 = async (
   client: Client,
   md5: string,
 ): Promise<LookupCaptionFileByMd5Result | null> => {
-  const response = await client.authenticatedFetch(
-    `/api/v1/caption_files/md5/${md5}`,
-    {
-      method: "GET",
-    },
-  );
+  const response = await client.authenticatedFetch(`/api/v1/caption_files/md5/${md5}`, {
+    method: "GET",
+  });
   log("Caption file lookup", response);
 
   if (response.ok) {

@@ -165,15 +165,11 @@ const adminNavGroups: NavGroup[] = [
   },
   {
     title: "Media",
-    items: [
-      { to: "/admin/files", Icon: File, label: "Files" },
-    ],
+    items: [{ to: "/admin/files", Icon: File, label: "Files" }],
   },
   {
     title: "Workers",
-    items: [
-      { to: "/admin/scheduler", Icon: Cpu, label: "Overview" },
-    ],
+    items: [{ to: "/admin/scheduler", Icon: Cpu, label: "Overview" }],
   },
   {
     title: "API",

@@ -71,9 +71,7 @@ export async function withProfiling<T>(
     console.error("\n📊 Top 20 Hotspots:");
     for (const h of hotspots) {
       const file = h.url.split("/").pop() || h.url;
-      console.error(
-        `  ${h.hits.toString().padStart(6)} samples | ${h.name} @ ${file}:${h.line}`,
-      );
+      console.error(`  ${h.hits.toString().padStart(6)} samples | ${h.name} @ ${file}:${h.line}`);
     }
   }
 

@@ -2,20 +2,12 @@
  * Profile output formatters for LLM and human consumption
  */
 
-import type {
-  ProfileAnalysis,
-  ProfileComparison,
-  HotspotInfo,
-  FormatOptions,
-} from "./types.js";
+import type { ProfileAnalysis, ProfileComparison, HotspotInfo, FormatOptions } from "./types.js";
 
 /**
  * Format hotspots as a table for console output
  */
-export function formatHotspotsTable(
-  hotspots: HotspotInfo[],
-  options: FormatOptions = {},
-): string {
+export function formatHotspotsTable(hotspots: HotspotInfo[], options: FormatOptions = {}): string {
   const { topN = 20, verbose = false } = options;
   const lines: string[] = [];
   const displayHotspots = hotspots.slice(0, topN);
@@ -27,9 +19,7 @@ export function formatHotspotsTable(
     const pct = h.selfTimePct.toFixed(1).padStart(5);
     const location = `${h.file}:${h.line}`;
     const callInfo = verbose && h.callCount ? ` [${h.callCount} calls]` : "";
-    lines.push(
-      `  ${rank}.  ${time}ms (${pct}%) - ${h.functionName} @ ${location}${callInfo}`,
-    );
+    lines.push(`  ${rank}.  ${time}ms (${pct}%) - ${h.functionName} @ ${location}${callInfo}`);
   }
 
   return lines.join("\n");
@@ -69,8 +59,7 @@ export function generateRecommendations(hotspots: HotspotInfo[]): string[] {
   for (let i = 0; i < Math.min(3, hotspots.length); i++) {
     const h = hotspots[i]!;
     if (h.selfTimePct > 15) {
-      const callInfo =
-        h.callCount && h.callCount > 1 ? ` (called ${h.callCount} times)` : "";
+      const callInfo = h.callCount && h.callCount > 1 ? ` (called ${h.callCount} times)` : "";
       recommendations.push(
         `• ${h.functionName} @ ${h.file}:${h.line} takes ${h.selfTimePct.toFixed(1)}%${callInfo} - consider optimization`,
       );
@@ -88,9 +77,7 @@ export function generateRecommendations(hotspots: HotspotInfo[]): string[] {
   }
 
   // Look for functions with high hit count (tight loops)
-  const tightLoops = hotspots.filter(
-    (h) => h.hitCount > 100 && h.selfTimePct > 10,
-  );
+  const tightLoops = hotspots.filter((h) => h.hitCount > 100 && h.selfTimePct > 10);
   for (const h of tightLoops.slice(0, 2)) {
     recommendations.push(
       `• ${h.functionName} appears in ${h.hitCount} samples - may be in hot loop`,
@@ -245,9 +232,7 @@ export function formatProfileComparison(
   if (comparison.regressions.hotspots.length > 0) {
     lines.push("⚠️  HOTSPOT REGRESSIONS:");
     for (const { hotspot, reason } of comparison.regressions.hotspots) {
-      lines.push(
-        `  • ${hotspot.functionName} @ ${hotspot.file}:${hotspot.line}`,
-      );
+      lines.push(`  • ${hotspot.functionName} @ ${hotspot.file}:${hotspot.line}`);
       lines.push(`    ${reason}`);
     }
     lines.push("");
@@ -275,16 +260,13 @@ export function formatProfileComparison(
 /**
  * Format profile comparison as JSON
  */
-export function formatProfileComparisonJSON(
-  comparison: ProfileComparison,
-): string {
+export function formatProfileComparisonJSON(comparison: ProfileComparison): string {
   const output = {
     summary: comparison.summary,
     durationDiffMs: comparison.durationDiffMs,
     durationDiffPercent: comparison.durationDiffPercent,
     hasRegression:
-      comparison.regressions.duration === true ||
-      comparison.regressions.hotspots.length > 0,
+      comparison.regressions.duration === true || comparison.regressions.hotspots.length > 0,
     regressions: {
       duration: comparison.regressions.duration || false,
       hotspots: comparison.regressions.hotspots.map(({ hotspot, reason }) => ({
@@ -313,10 +295,7 @@ export function formatProfileComparisonJSON(
 /**
  * Print hotspots to console (legacy compatibility)
  */
-export function printHotspots(
-  hotspots: HotspotInfo[],
-  topN: number = 10,
-): void {
+export function printHotspots(hotspots: HotspotInfo[], topN: number = 10): void {
   if (hotspots.length === 0) {
     console.log("    No user code hotspots found");
     return;

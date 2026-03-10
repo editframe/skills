@@ -8,17 +8,17 @@ import { workers } from "../queues/workers";
 import { workerConfigs, type QueueConfig } from "../queues/configs";
 
 function workerUrlEnv(config: QueueConfig, service: gcp.cloudrunv2.Service) {
-  return envFromValue(
-    `WORKER_URL_${config.screaming}`,
-    service.uri,
-  );
+  return envFromValue(`WORKER_URL_${config.screaming}`, service.uri);
 }
 
 function queueLimitEnvs(config: QueueConfig) {
   return [
     envFromValue(`${config.screaming}_MAX_WORKER_COUNT`, config.maxWorkerCount),
     envFromValue(`${config.screaming}_MIN_WORKER_COUNT`, config.minWorkerCount),
-    envFromValue(`${config.screaming}_WORKER_CONCURRENCY`, config.workerConcurrency),
+    envFromValue(
+      `${config.screaming}_WORKER_CONCURRENCY`,
+      config.workerConcurrency,
+    ),
   ];
 }
 
@@ -43,12 +43,24 @@ export const cloudrun = new gcp.cloudrunv2.Service(
           envs: [
             envFromValue("VALKEY_HOST", valkeyInternalIp),
             envFromValue("VALKEY_PORT", "6379"),
-            workerUrlEnv(workerConfigs.htmlInitializer, workers.htmlInitializer),
+            workerUrlEnv(
+              workerConfigs.htmlInitializer,
+              workers.htmlInitializer,
+            ),
             workerUrlEnv(workerConfigs.htmlFinalizer, workers.htmlFinalizer),
-            workerUrlEnv(workerConfigs.renderInitializer, workers.renderInitializer),
+            workerUrlEnv(
+              workerConfigs.renderInitializer,
+              workers.renderInitializer,
+            ),
             workerUrlEnv(workerConfigs.renderFragment, workers.renderFragment),
-            workerUrlEnv(workerConfigs.renderFragmentGpu, workers.renderFragmentGpu),
-            workerUrlEnv(workerConfigs.renderFinalizer, workers.renderFinalizer),
+            workerUrlEnv(
+              workerConfigs.renderFragmentGpu,
+              workers.renderFragmentGpu,
+            ),
+            workerUrlEnv(
+              workerConfigs.renderFinalizer,
+              workers.renderFinalizer,
+            ),
             workerUrlEnv(workerConfigs.processISOBMFF, workers.processISOBMFF),
             workerUrlEnv(workerConfigs.ingestImage, workers.ingestImage),
             ...queueLimitEnvs(workerConfigs.htmlInitializer),

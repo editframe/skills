@@ -12,9 +12,8 @@
 const EF_HOST = process.env.EF_HOST ?? "https://editframe.com";
 const EF_TOKEN = process.env.EF_TOKEN;
 const timeoutIdx = process.argv.indexOf("--timeout");
-const TIMEOUT_S = timeoutIdx >= 0
-  ? parseInt(process.argv[timeoutIdx + 1] ?? "180", 10)
-  : 180;
+const TIMEOUT_S =
+  timeoutIdx >= 0 ? parseInt(process.argv[timeoutIdx + 1] ?? "180", 10) : 180;
 
 if (!EF_TOKEN) {
   console.error("EF_TOKEN environment variable is required");
@@ -87,7 +86,11 @@ async function runTest(
   }
 }
 
-const MP4_OUTPUT = { container: "mp4", video: { codec: "h264" }, audio: { codec: "aac" } };
+const MP4_OUTPUT = {
+  container: "mp4",
+  video: { codec: "h264" },
+  audio: { codec: "aac" },
+};
 const PNG_OUTPUT = { container: "png" };
 const JPEG_OUTPUT = { container: "jpeg" };
 
@@ -99,7 +102,9 @@ const COMMON = {
 
 const BACKEND = (process.env.EF_BACKEND ?? "cpu") as "cpu" | "gpu" | "both";
 
-function testsForBackend(backend: "cpu" | "gpu"): Array<{ name: string; payload: Record<string, unknown> }> {
+function testsForBackend(
+  backend: "cpu" | "gpu",
+): Array<{ name: string; payload: Record<string, unknown> }> {
   const tag = backend.toUpperCase();
   return [
     {

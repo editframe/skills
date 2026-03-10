@@ -1,5 +1,8 @@
 import React, { type MouseEvent, type ReactNode } from "react";
-import type { ElementNode, MotionDesignerState } from "~/lib/motion-designer/types";
+import type {
+  ElementNode,
+  MotionDesignerState,
+} from "~/lib/motion-designer/types";
 import {
   Timegroup,
   Video,
@@ -30,33 +33,32 @@ export interface RenderContext {
 
 export interface ElementStrategy {
   component: React.ElementType;
-  
+
   transformProps?: (
     element: ElementNode,
     context: RenderContext,
   ) => Record<string, any>;
-  
-  renderContent?: (
-    element: ElementNode,
-    context: RenderContext,
-  ) => ReactNode;
-  
+
+  renderContent?: (element: ElementNode, context: RenderContext) => ReactNode;
+
   wrapElement?: (
     element: ElementNode,
     content: ReactNode,
     context: RenderContext,
   ) => ReactNode;
-  
+
   interactionPolicy: {
     clickable: boolean;
     stopPropagation: boolean;
     cursor?: string;
   };
-  
+
   needsAnimationStyle?: (element: ElementNode) => boolean;
 }
 
-export interface ElementStrategyInput extends Partial<Omit<ElementStrategy, "component">> {
+export interface ElementStrategyInput extends Partial<
+  Omit<ElementStrategy, "component">
+> {
   component: React.ElementType;
 }
 
@@ -116,7 +118,7 @@ function applyFitScalePropsTransform(
   context: RenderContext,
 ): Record<string, any> {
   const props: Record<string, any> = { ...context.baseProps };
-  
+
   if (shouldApplyFitScale(context.parentElement, context.mergedStyle)) {
     props.style = {
       ...context.mergedStyle,
@@ -125,7 +127,7 @@ function applyFitScalePropsTransform(
       height: "auto",
     };
   }
-  
+
   return props;
 }
 
@@ -174,9 +176,7 @@ export function registerElementStrategy(
   elementStrategiesRegistry[type] = strategy;
 }
 
-export function getElementStrategy(
-  type: string,
-): ElementStrategy | undefined {
+export function getElementStrategy(type: string): ElementStrategy | undefined {
   return elementStrategiesRegistry[type];
 }
 
@@ -188,7 +188,7 @@ export const elementStrategies = elementStrategiesRegistry;
 
 registerElementStrategy("text", {
   component: Text,
-  
+
   renderContent: (_element: ElementNode, context: RenderContext) => {
     if (!context.textContent) return null;
     return (
@@ -198,7 +198,7 @@ registerElementStrategy("text", {
       </>
     );
   },
-  
+
   needsAnimationStyle: (element: ElementNode) => {
     return !element.props.split;
   },
@@ -206,7 +206,7 @@ registerElementStrategy("text", {
 
 registerElementStrategy("captions", {
   component: Captions,
-  
+
   renderContent: (element: ElementNode, _context: RenderContext) => {
     return (
       <>
@@ -221,31 +221,37 @@ registerElementStrategy("captions", {
 
 registerElementStrategy("video", {
   component: Video,
-  
-  transformProps: (element: ElementNode, context: RenderContext): Record<string, any> => {
+
+  transformProps: (
+    element: ElementNode,
+    context: RenderContext,
+  ): Record<string, any> => {
     const props = applyFitScalePropsTransform(element, context);
     props.id = element.id;
     return props;
   },
-  
+
   wrapElement: applyFitScaleWrapper,
 });
 
 registerElementStrategy("image", {
   component: Image,
-  
+
   transformProps: applyFitScalePropsTransform,
-  
+
   wrapElement: applyFitScaleWrapper,
 });
 
 registerElementStrategy("timegroup", {
   component: Timegroup,
-  
-  transformProps: (element: ElementNode, context: RenderContext): Record<string, any> => {
+
+  transformProps: (
+    element: ElementNode,
+    context: RenderContext,
+  ): Record<string, any> => {
     return ensureIdAttribute({ ...context.baseProps }, element);
   },
-  
+
   interactionPolicy: NON_INTERACTIVE_POLICY,
 });
 

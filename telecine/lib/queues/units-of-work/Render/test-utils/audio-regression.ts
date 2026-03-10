@@ -517,7 +517,9 @@ export async function analyzeZeroCrossingTiming(
   const label = options?.label ?? "Zero-Crossing Analysis";
 
   console.log(`\n=== ${label} ===`);
-  console.log(`Analyzing ${startTime.toFixed(1)}s to ${(startTime + duration).toFixed(1)}s`);
+  console.log(
+    `Analyzing ${startTime.toFixed(1)}s to ${(startTime + duration).toFixed(1)}s`,
+  );
 
   const samples = await extractAudioSamplesAtTime(
     videoPath,
@@ -556,10 +558,8 @@ export async function analyzeZeroCrossingTiming(
   const mean =
     intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length;
   const stdDev = Math.sqrt(
-    intervals.reduce(
-      (sum, interval) => sum + Math.pow(interval - mean, 2),
-      0,
-    ) / intervals.length,
+    intervals.reduce((sum, interval) => sum + Math.pow(interval - mean, 2), 0) /
+      intervals.length,
   );
 
   // Find anomalous intervals

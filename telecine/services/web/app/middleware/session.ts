@@ -1,8 +1,5 @@
 import { getSession, parseRequestSession } from "@/util/session";
-import {
-  sessionCookieContext,
-  maybeIdentityContext,
-} from "./context";
+import { sessionCookieContext, maybeIdentityContext } from "./context";
 import type { Route } from "../+types/root";
 
 /**

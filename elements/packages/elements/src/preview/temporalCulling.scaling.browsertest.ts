@@ -72,8 +72,7 @@ function createScalingTimeline(sceneCount: number): EFTimegroup {
     const bgCanvas = document.createElement("canvas");
     bgCanvas.width = W;
     bgCanvas.height = H;
-    bgCanvas.style.cssText =
-      "width:100%;height:100%;position:absolute;top:0;left:0;";
+    bgCanvas.style.cssText = "width:100%;height:100%;position:absolute;top:0;left:0;";
     const ctx = bgCanvas.getContext("2d")!;
     ctx.fillStyle = `hsl(${scene * 45},60%,40%)`;
     ctx.fillRect(0, 0, W, H);
@@ -91,9 +90,7 @@ function createScalingTimeline(sceneCount: number): EFTimegroup {
     seg.style.cssText = "opacity:0;animation:fadeIn 0.4s ease-out forwards;";
     tmpl.content.appendChild(seg);
     titleText.appendChild(tmpl);
-    titleText.appendChild(
-      document.createTextNode(`Scene ${scene + 1} Title Text`),
-    );
+    titleText.appendChild(document.createTextNode(`Scene ${scene + 1} Title Text`));
     sc.appendChild(titleText);
 
     // Subtitle text with char split
@@ -108,9 +105,7 @@ function createScalingTimeline(sceneCount: number): EFTimegroup {
     seg2.style.cssText = "opacity:0;animation:slideIn 0.3s ease-out forwards;";
     tmpl2.content.appendChild(seg2);
     subText.appendChild(tmpl2);
-    subText.appendChild(
-      document.createTextNode(`Subtitle for scene ${scene + 1}`),
-    );
+    subText.appendChild(document.createTextNode(`Subtitle for scene ${scene + 1}`));
     sc.appendChild(subText);
 
     // Image overlay
@@ -120,8 +115,7 @@ function createScalingTimeline(sceneCount: number): EFTimegroup {
       `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect fill='hsl(${scene * 45},60%25,50%25)' width='80' height='80' rx='8'/%3E%3C/svg%3E`,
     );
     img.setAttribute("duration", "5s");
-    img.style.cssText =
-      "position:absolute;top:12px;right:12px;width:48px;height:48px;";
+    img.style.cssText = "position:absolute;top:12px;right:12px;width:48px;height:48px;";
     sc.appendChild(img);
 
     // Labels

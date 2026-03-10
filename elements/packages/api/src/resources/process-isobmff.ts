@@ -19,15 +19,11 @@ export const getIsobmffProcessProgress = async (client: Client, id: string) => {
 };
 
 export const getIsobmffProcessInfo = async (client: Client, id: string) => {
-  const response = await client.authenticatedFetch(
-    `/api/v1/process_isobmff/${id}`,
-  );
+  const response = await client.authenticatedFetch(`/api/v1/process_isobmff/${id}`);
 
   if (response.ok) {
     return (await response.json()) as IsobmffProcessInfoResult;
   }
 
-  throw new Error(
-    `Failed to get isobmff process info ${response.status} ${response.statusText}`,
-  );
+  throw new Error(`Failed to get isobmff process info ${response.status} ${response.statusText}`);
 };

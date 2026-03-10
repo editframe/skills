@@ -163,9 +163,9 @@ describe("signHasuraJwtForSession", () => {
   });
 
   test("throws when uid is empty string", () => {
-    expect(() =>
-      signHasuraJwtForSession({ uid: "", cid: null }),
-    ).toThrow("Cannot sign JWT: uid must be a non-empty string");
+    expect(() => signHasuraJwtForSession({ uid: "", cid: null })).toThrow(
+      "Cannot sign JWT: uid must be a non-empty string",
+    );
   });
 
   test("throws when uid is not a string", () => {
@@ -223,7 +223,9 @@ describe("verifyJwtForSession", () => {
       const fakeToken = jwt.sign(
         { type: "email_passwords", uid: "user-123" },
         "wrong-secret",
-        { algorithm: "HS256" },
+        {
+          algorithm: "HS256",
+        },
       );
 
       await expect(verifyJwtForSession(fakeToken)).rejects.toThrow();
@@ -432,9 +434,7 @@ describe("verifyJwtForSession", () => {
         { algorithm: "HS256" },
       );
 
-      await expect(verifyJwtForSession(token)).rejects.toThrow(
-        "Invalid token",
-      );
+      await expect(verifyJwtForSession(token)).rejects.toThrow("Invalid token");
       expect(mockDb.where).not.toHaveBeenCalled();
     });
   });

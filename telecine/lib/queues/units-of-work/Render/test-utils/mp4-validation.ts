@@ -30,7 +30,9 @@ export const validateMP4Structure = async (
   try {
     const output = execSync(
       `ffprobe -v quiet -print_format json -show_streams "${videoPath}"`,
-      { encoding: "utf8" },
+      {
+        encoding: "utf8",
+      },
     );
     const data = JSON.parse(output);
 

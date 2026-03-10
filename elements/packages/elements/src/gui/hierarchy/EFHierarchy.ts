@@ -217,10 +217,7 @@ export class EFHierarchy extends TWMixin(LitElement) {
       };
     },
 
-    updateDropTarget: (
-      targetId: string | null,
-      position: "before" | "after" | "inside" | null,
-    ) => {
+    updateDropTarget: (targetId: string | null, position: "before" | "after" | "inside" | null) => {
       if (targetId === this.hierarchyState.draggedElementId) {
         return;
       }
@@ -240,11 +237,7 @@ export class EFHierarchy extends TWMixin(LitElement) {
       };
     },
 
-    reorder: (
-      sourceId: string,
-      targetId: string,
-      position: "before" | "after" | "inside",
-    ) => {
+    reorder: (sourceId: string, targetId: string, position: "before" | "after" | "inside") => {
       this.dispatchEvent(
         new CustomEvent("hierarchy-reorder", {
           detail: { sourceId, targetId, position },
@@ -347,8 +340,7 @@ export class EFHierarchy extends TWMixin(LitElement) {
     if (selectionCtx) {
       const selectedIds = Array.from(selectionCtx.selectedIds);
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const selectedId: string | null =
-        selectedIds.length === 0 ? null : selectedIds[0]!;
+      const selectedId: string | null = selectedIds.length === 0 ? null : selectedIds[0]!;
 
       if (this.hierarchyState.selectedElementId !== selectedId) {
         this.hierarchyState = {
@@ -385,10 +377,7 @@ export class EFHierarchy extends TWMixin(LitElement) {
     super.updated(changedProperties);
 
     // Re-initialize when target changes
-    if (
-      changedProperties.has("targetElement") ||
-      changedProperties.has("target")
-    ) {
+    if (changedProperties.has("targetElement") || changedProperties.has("target")) {
       this.initializeExpandedState();
       this.removeSelectionListener();
       this.selectionChangeHandler = undefined;
@@ -436,24 +425,14 @@ export class EFHierarchy extends TWMixin(LitElement) {
       this.selectionChangeHandler = () => {
         this.requestUpdate(); // Trigger re-render to update hierarchy items
       };
-      (selectionCtx as any).addEventListener(
-        "selectionchange",
-        this.selectionChangeHandler,
-      );
+      (selectionCtx as any).addEventListener("selectionchange", this.selectionChangeHandler);
     }
   }
 
   private removeSelectionListener(): void {
     const selectionCtx = this.getCanvasSelectionContext();
-    if (
-      selectionCtx &&
-      "removeEventListener" in selectionCtx &&
-      this.selectionChangeHandler
-    ) {
-      (selectionCtx as any).removeEventListener(
-        "selectionchange",
-        this.selectionChangeHandler,
-      );
+    if (selectionCtx && "removeEventListener" in selectionCtx && this.selectionChangeHandler) {
+      (selectionCtx as any).removeEventListener("selectionchange", this.selectionChangeHandler);
       this.selectionChangeHandler = undefined;
     }
   }
@@ -466,12 +445,7 @@ export class EFHierarchy extends TWMixin(LitElement) {
         ${this.showHeader ? html`<div class="header" part="header">${this.header}</div>` : nothing}
         ${
           roots.length > 0
-            ? renderHierarchyChildren(
-                roots,
-                this.hideSelectors,
-                this.showSelectors,
-                true,
-              )
+            ? renderHierarchyChildren(roots, this.hideSelectors, this.showSelectors, true)
             : html`<div class="empty">No elements</div>`
         }
       </div>

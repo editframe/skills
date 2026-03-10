@@ -6,7 +6,10 @@ export function BeforeAfterSection() {
       {/* Giant arrow pointing right - transformation, progress, the change */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] opacity-[0.04] dark:opacity-[0.03] pointer-events-none">
         <svg viewBox="0 0 200 100" className="w-full h-full">
-          <polygon points="0,25 140,25 140,0 200,50 140,100 140,75 0,75" fill="var(--poster-green)" />
+          <polygon
+            points="0,25 140,25 140,0 200,50 140,100 140,75 0,75"
+            fill="var(--poster-green)"
+          />
         </svg>
       </div>
 
@@ -21,7 +24,7 @@ export function BeforeAfterSection() {
             After
           </h2>
         </div>
-        
+
         <BeforeAfterComparison />
       </div>
     </section>

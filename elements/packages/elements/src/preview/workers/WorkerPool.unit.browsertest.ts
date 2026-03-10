@@ -45,9 +45,7 @@ describe("WorkerPool Unit Tests", () => {
 
       // Should attempt to create hardwareConcurrency workers
       expect(pool.workerCount).toBeGreaterThanOrEqual(0);
-      expect(pool.workerCount).toBeLessThanOrEqual(
-        navigator.hardwareConcurrency || 4,
-      );
+      expect(pool.workerCount).toBeLessThanOrEqual(navigator.hardwareConcurrency || 4);
 
       pool.terminate();
       URL.revokeObjectURL(workerUrl);
@@ -145,9 +143,7 @@ describe("WorkerPool Unit Tests", () => {
 
       const task = vi.fn(() => Promise.resolve("result"));
 
-      await expect(pool.execute(task)).rejects.toThrow(
-        "WorkerPool has been terminated",
-      );
+      await expect(pool.execute(task)).rejects.toThrow("WorkerPool has been terminated");
       expect(task).not.toHaveBeenCalled();
 
       URL.revokeObjectURL(workerUrl);
@@ -223,9 +219,7 @@ describe("WorkerPool Unit Tests", () => {
 
       const task = vi.fn(() => Promise.resolve("result"));
 
-      await expect(pool.execute(task)).rejects.toThrow(
-        "WorkerPool has been terminated",
-      );
+      await expect(pool.execute(task)).rejects.toThrow("WorkerPool has been terminated");
       expect(task).not.toHaveBeenCalled();
 
       URL.revokeObjectURL(workerUrl);
