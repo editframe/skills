@@ -28,7 +28,7 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm install --ignore-scripts
 
 COPY lib/ lib/
 COPY services/gpu-render-test/ services/gpu-render-test/

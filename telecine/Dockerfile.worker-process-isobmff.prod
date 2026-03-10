@@ -14,7 +14,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1
-RUN npm install
+RUN npm install --ignore-scripts
 
 COPY lib/ lib/
 COPY services/worker-process-isobmff/ services/worker-process-isobmff/

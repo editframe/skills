@@ -6,7 +6,7 @@ ENV NODE_COMPILE_CACHE=/app/.compile-cache
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm install --ignore-scripts
 
 COPY lib/ lib/
 COPY services/worker-process-html-finalizer/ services/worker-process-html-finalizer/

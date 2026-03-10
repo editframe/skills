@@ -67,7 +67,7 @@ ENV GGML_MODEL_PATH=/app/whisper.cpp/models/ggml-distil-large-v3.bin
 # Now npm will be available for the install command
 COPY package.json package-lock.json ./
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1
-RUN npm install
+RUN npm install --ignore-scripts
 
 COPY lib/ lib/
 COPY services/transcribe/ services/transcribe/
