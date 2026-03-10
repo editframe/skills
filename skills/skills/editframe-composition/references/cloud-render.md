@@ -86,8 +86,6 @@ my-composition/
     assets/
 ```
 
-The composition can import components from elsewhere in your monorepo via `tsconfig` path aliases — `vite-tsconfig-paths` is applied automatically by `bundleRender()`.
-
 ### Raw HTML string (self-contained compositions only)
 
 ```ts
