@@ -22,10 +22,11 @@ import {
   RootState,
   EventManager,
   Events,
-  RootStore,
 } from "@react-three/fiber";
-import type { DomEvent } from "@react-three/fiber/dist/declarations/src/core/events";
 import type { RenderFramePayload } from "./worker-protocol";
+
+type R3FStore = Parameters<typeof createEvents>[0];
+type DomEvent = PointerEvent | MouseEvent | WheelEvent;
 
 /* ━━ Event handling (from @react-three/offscreen) ━━━━━━━━━━━━━━━━━━━━━ */
 
@@ -43,7 +44,7 @@ const EVENTS = {
 } as const;
 
 function createPointerEvents(emitter: Emitter<Record<any, unknown>>) {
-  return (store: RootStore): EventManager<HTMLElement> => {
+  return (store: R3FStore): EventManager<HTMLElement> => {
     const { handlePointer } = createEvents(store);
 
     return {
