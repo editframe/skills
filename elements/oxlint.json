@@ -21,6 +21,14 @@
         "caughtErrorsIgnorePattern": "^_"
       }
     ]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["**/*.browsertest.ts", "**/*.browsertest.tsx"],
+      "rules": {
+        "no-empty-pattern": "off"
+      }
+    }
+  ]
 }
 
