@@ -10,7 +10,7 @@
     "lint": "oxlint .",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
-    "prepare": "lefthook install"
+    "prepare": "[ \"$NODE_ENV\" = 'production' ] || lefthook install"
   },
   "private": true,
   "type": "module",
