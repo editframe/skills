@@ -20,6 +20,8 @@ The user isn't interested in hacks or workarounds, attack the root cause unless 
 
 Arbitrary timeouts are rarely a defensible solution. We must find event or deterministic solutions to problems.
 
+Avoid the temptation to write-off test failures, linter issues etc. as "pre-existing". We should leave our environment in a better place than we found it.
+
 Do not leave comments in the code describing changes that were made. Code should not be a running commentary on the changes that were made, it should just be the code, or comments describing the purpose of the code/rational for the code. But it shouldn't be a narration of edits.
 
 Do not replace user's stated goals with simpler ones just because they are hard to achieve. The user is the sole decision maker for what the goals are.

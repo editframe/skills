@@ -95,7 +95,10 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
       }
     },
 
-    configResolved(resolvedConfig: { define?: Record<string, string>; server?: { port?: number } }) {
+    configResolved(resolvedConfig: {
+      define?: Record<string, string>;
+      server?: { port?: number };
+    }) {
       const port = resolvedConfig.server?.port ?? 5173;
       resolvedConfig.define ??= {};
       resolvedConfig.define["__EF_DEFAULT_API_HOST__"] = JSON.stringify(`http://localhost:${port}`);
