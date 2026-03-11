@@ -271,9 +271,12 @@ function generateSkillFile(sourcePath: string, outputPath: string) {
   if (attributes.license) {
     llmFrontmatter.license = attributes.license;
   }
-  if (attributes.metadata) {
-    llmFrontmatter.metadata = attributes.metadata;
-  }
+  // Stamp the elements release version into metadata, overriding any manual value
+  llmFrontmatter.metadata = {
+    ...(attributes.metadata ?? {}),
+    author: attributes.metadata?.author ?? "editframe",
+    version: elementsVersion,
+  };
 
   let body = parsed.body;
 
@@ -377,9 +380,20 @@ const monorepoRoot = join(process.cwd());
 const sourceDir = join(monorepoRoot, "skills", "skills");
 const outputDir = join(monorepoRoot, "skills", "skills-generated");
 
+// Resolve the elements release version for stamping into skill frontmatter.
+// Prefer the SKILLS_VERSION env var (set by push-skills from elements/package.json)
+// so the generated output is deterministic even when called standalone.
+const elementsPackageJson = join(monorepoRoot, "elements", "package.json");
+const elementsVersion: string =
+  process.env.SKILLS_VERSION ||
+  (existsSync(elementsPackageJson)
+    ? JSON.parse(readFileSync(elementsPackageJson, "utf8")).version
+    : "unknown");
+
 console.log("Generating LLM-optimized skills...");
 console.log(`Source: ${sourceDir}`);
 console.log(`Output: ${outputDir}`);
+console.log(`Version: ${elementsVersion}`);
 
 generateSkillsRecursive(sourceDir, outputDir);
 

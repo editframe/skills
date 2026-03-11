@@ -8,6 +8,7 @@ PROJECT_ROOT="$SCRIPT_DIR/.."
 cd "$PROJECT_ROOT"
 
 BRANCH="main"
+TAG=""
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -16,12 +17,24 @@ while [[ $# -gt 0 ]]; do
       BRANCH="$2"
       shift 2
       ;;
+    --tag)
+      TAG="$2"
+      shift 2
+      ;;
     *)
       BRANCH="$1"
       shift
       ;;
   esac
 done
+
+# Resolve the version to stamp into generated skill frontmatter.
+# Prefer an explicit --tag arg (passed by elements/scripts/version),
+# otherwise read from elements/package.json.
+if [ -z "$TAG" ]; then
+  TAG=$(node -p "require('$PROJECT_ROOT/elements/package.json').version")
+fi
+export SKILLS_VERSION="$TAG"
 
 # The telecine sync commits and deploys HEAD:telecine to production.
 # Running from any branch other than main risks deploying an incomplete
@@ -48,7 +61,7 @@ echo "📦 Preparing build for push..."
 cd "$BUILD_DIR"
 git init
 git add .
-git commit -m "Generated LLM-optimized skills from source"
+git commit -m "Generated LLM-optimized skills v${TAG}"
 
 # Add the skills remote if it doesn't exist
 if ! git remote get-url skills &> /dev/null; then
@@ -65,5 +78,3 @@ cd "$PROJECT_ROOT"
 rm -rf "$BUILD_DIR"
 
 echo "✅ Successfully pushed generated skills to skills remote ($BRANCH branch)"
-
-"$SCRIPT_DIR/push-telecine" --branch "$BRANCH"

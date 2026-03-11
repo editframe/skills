@@ -43,6 +43,14 @@ if git -C "$GIT_ROOT" remote | grep -q "^elements$"; then
     git push telecine "${TAG_NAME}" --force
   fi
 
+  # Push skills and tag the skills remote at the same version
+  if git -C "$GIT_ROOT" remote | grep -q "^skills$"; then
+    scripts/push-skills --tag "$@"
+    git fetch skills main
+    git tag -f "${TAG_NAME}" skills/main -m "$@"
+    git push skills "${TAG_NAME}" --force
+  fi
+
   # Also tag the monorepo root at current HEAD
   git tag -f "${TAG_NAME}" HEAD -m "$@"
 else
