@@ -7,7 +7,9 @@ import { defineConfig, type Plugin } from "tsdown";
 
 import { createTsdownConfig } from "../tsdown.config.base.ts";
 
-const pkg = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf-8")) as { version: string };
+const pkg = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf-8")) as {
+  version: string;
+};
 
 // Plugin to handle CSS ?inline imports with Tailwind processing
 const inlineCssPlugin = (): Plugin => ({

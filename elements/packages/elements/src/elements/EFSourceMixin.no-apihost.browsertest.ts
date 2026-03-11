@@ -6,32 +6,34 @@ import "../gui/EFWorkbench.js";
 import type { EFAudio } from "./EFAudio.js";
 import type { EFImage } from "./EFImage.js";
 
+declare const __EF_DEFAULT_API_HOST__: string;
+
 /**
  * Verifies that elements without an ef-configuration ancestor default
- * apiHost to window.location.origin, so all API requests go to the same
- * origin and are handled by the vite plugin middleware (in dev) or
- * telecine (in prod) — with no special casing per element type.
+ * apiHost to __EF_DEFAULT_API_HOST__ (editframe.com in production, localhost
+ * in dev), so API requests always go to Editframe rather than the host app's
+ * origin.
  */
 describe("EFSourceMixin apiHost default", () => {
-  test("apiHost defaults to window.location.origin when no ef-configuration is present", ({
+  test("apiHost defaults to __EF_DEFAULT_API_HOST__ when no ef-configuration is present", ({
     expect,
   }) => {
     const audio = document.createElement("ef-audio") as EFAudio;
     document.body.appendChild(audio);
-    expect(audio.apiHost).toBe(window.location.origin);
+    expect(audio.apiHost).toBe(__EF_DEFAULT_API_HOST__);
     audio.remove();
   });
 
-  test("apiHost defaults to window.location.origin when inside ef-workbench with no ef-configuration", ({
+  test("apiHost defaults to __EF_DEFAULT_API_HOST__ when inside ef-workbench with no ef-configuration", ({
     expect,
   }) => {
     // ef-workbench.apiHost returns "" (empty string) when no ef-configuration is present.
-    // EFSourceMixin must use || (not ??) so that the empty string falls through to window.location.origin.
+    // EFSourceMixin must use || (not ??) so that the empty string falls through to __EF_DEFAULT_API_HOST__.
     const workbench = document.createElement("ef-workbench");
     const audio = document.createElement("ef-audio") as EFAudio;
     workbench.appendChild(audio);
     document.body.appendChild(workbench);
-    expect(audio.apiHost).toBe(window.location.origin);
+    expect(audio.apiHost).toBe(__EF_DEFAULT_API_HOST__);
     workbench.remove();
   });
 
