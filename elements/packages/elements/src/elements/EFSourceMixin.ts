@@ -1,6 +1,8 @@
 import type { LitElement } from "lit";
 import { property } from "lit/decorators/property.js";
 
+declare const __EF_DEFAULT_API_HOST__: string;
+
 export declare class EFSourceMixinInterface {
   apiHost?: string;
   productionSrc(): string;
