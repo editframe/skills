@@ -147,8 +147,8 @@ export default function App({
       <body>
         <FlashMessages flashMessages={flashMessages} />
         <Outlet />
-        <Scripts />
         <ScrollRestoration />
+        <Scripts />
         <script
           dangerouslySetInnerHTML={{
             __html: `window.ENV = ${JSON.stringify(env)}`,
