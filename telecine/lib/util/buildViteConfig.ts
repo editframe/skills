@@ -95,6 +95,7 @@ export const buildViteConfig = () => {
           "@react-three/drei",
           "three",
           "mitt",
+          "@editframe/elements",
         ],
       },
       esbuild: {
@@ -146,6 +147,18 @@ export const buildViteConfig = () => {
         rollupOptions: {
           treeshake: "recommended",
           input: isSsrBuild ? "/app/services/web/server/app.ts" : undefined,
+          output: !isSsrBuild
+            ? {
+                manualChunks(id) {
+                  if (
+                    id.includes("@editframe/elements") ||
+                    id.includes("@editframe/react")
+                  ) {
+                    return "editframe-elements";
+                  }
+                },
+              }
+            : undefined,
         },
       },
     };
