@@ -1,6 +1,6 @@
 {
   "name": "@editframe/cli",
-  "version": "0.45.3",
+  "version": "0.45.4",
   "description": "Command line interface for EditFrame",
   "bin": {
     "editframe": "./dist/index.js"
