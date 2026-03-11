@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Bump the minor version and run prepare-release.
+# Usage: scripts/minor-release
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+CURRENT=$(node -e "process.stdout.write(require('${SCRIPT_DIR}/../packages/elements/package.json').version)")
+IFS='.' read -r MAJOR MINOR _PATCH <<< "$CURRENT"
+NEXT="${MAJOR}.$((MINOR + 1)).0"
+
+echo "Preparing minor release: ${CURRENT} → ${NEXT}"
+"${SCRIPT_DIR}"/prepare-release "$NEXT"
