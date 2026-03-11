@@ -36,6 +36,22 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
   return {
     name: "vite-plugin-editframe",
 
+    config(_config: unknown, { command }: { command: string }) {
+      if (command === "serve") {
+        return {
+          define: {
+            __EF_DEFAULT_API_HOST__: JSON.stringify("http://localhost:5173"),
+          },
+        };
+      }
+    },
+
+    configResolved(resolvedConfig: { define?: Record<string, string>; server?: { port?: number } }) {
+      const port = resolvedConfig.server?.port ?? 5173;
+      resolvedConfig.define ??= {};
+      resolvedConfig.define["__EF_DEFAULT_API_HOST__"] = JSON.stringify(`http://localhost:${port}`);
+    },
+
     configureServer(server) {
       server.middlewares.use(
         createJitTranscodeMiddleware(

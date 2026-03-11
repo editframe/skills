@@ -50,6 +50,9 @@ export default defineConfig(
     ],
     plugins: [inlineCssPlugin()],
     external: [/@editframe\/assets/],
+    define: {
+      __EF_DEFAULT_API_HOST__: JSON.stringify("https://editframe.com"),
+    },
     publint: false, // Disabled because CSS is built after tsdown
     additionalExports: {
       "./styles.css": "./dist/style.css",
