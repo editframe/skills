@@ -1,6 +1,6 @@
 {
   "name": "@editframe/vite-plugin",
-  "version": "0.45.5",
+  "version": "0.45.6",
   "description": "Editframe vite plugin",
   "exports": {
     ".": {
