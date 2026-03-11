@@ -1,5 +1,7 @@
 import "./elements/EFTimegroup.js";
+import "./version.js";
 
+export { version } from "./version.js";
 export { EFTimegroup } from "./elements/EFTimegroup.js";
 export {
   registerCloneFactory,
