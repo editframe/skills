@@ -7,18 +7,19 @@ const server = setupServer();
 
 describe("sendTelemetry", () => {
   let capturedAuthHeader: string | null | undefined;
+  let requestMade: boolean;
 
   beforeAll(() => {
-    process.env.EF_TELEMETRY_ENABLED = "true";
     server.listen();
   });
   afterAll(() => {
-    delete process.env.EF_TELEMETRY_ENABLED;
     server.close();
   });
   afterEach(() => {
     server.resetHandlers();
     capturedAuthHeader = undefined;
+    requestMade = false;
+    delete process.env.EF_NO_TELEMETRY;
   });
 
   it("sends Authorization header when token is provided", async () => {
@@ -49,5 +50,23 @@ describe("sendTelemetry", () => {
     });
 
     expect(capturedAuthHeader).toBeNull();
+  });
+
+  it("does not send telemetry when EF_NO_TELEMETRY is set to any non-empty value", async () => {
+    server.use(
+      http.post("https://editframe.com/api/v1/telemetry", () => {
+        requestMade = true;
+        return HttpResponse.json({}, { status: 200 });
+      }),
+    );
+
+    for (const value of ["1", "true", "yes", "anything"]) {
+      process.env.EF_NO_TELEMETRY = value;
+      requestMade = false;
+      await sendTelemetry("https://editframe.com", "ef_test_token", {
+        render_path: "cli",
+      });
+      expect(requestMade, `expected no request when EF_NO_TELEMETRY="${value}"`).toBe(false);
+    }
   });
 });

@@ -206,9 +206,10 @@ export default function TermsPage() {
             <p>
               Use of the Services is subject to our{" "}
               <a href="https://editframe.com/privacy">Privacy Policy</a>. The
-              SDK includes always-on telemetry (render counts, durations, IP
-              addresses, domains, feature usage). Telemetry cannot be disabled.
-              No video content is collected.
+              SDK collects telemetry by default (render counts, durations, IP
+              addresses, domains, feature usage). Telemetry can be disabled by
+              setting the <code>EF_NO_TELEMETRY</code> environment variable to
+              any non-empty value. No video content is collected.
             </p>
 
             <hr />
