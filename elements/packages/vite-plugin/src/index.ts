@@ -41,6 +41,7 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
         return {
           define: {
             __EF_DEFAULT_API_HOST__: JSON.stringify("http://localhost:5173"),
+            __EF_TELEMETRY_ENABLED__: JSON.stringify(!process.env.EF_NO_TELEMETRY),
           },
         };
       }
