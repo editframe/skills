@@ -1,4 +1,4 @@
-import { Client, createURLToken } from "@editframe/api";
+import { Client, createURLToken, signingRequestSchema } from "@editframe/api";
 import {
   cacheImage,
   findOrCreateCaptions,
@@ -121,29 +121,11 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
 
             req.on("end", async () => {
               try {
-                const payload = JSON.parse(body);
-                log("Token signing request payload:", payload);
-
-                const { url, params } = payload;
-                if (!url) {
-                  res.writeHead(400, { "Content-Type": "application/json" });
-                  res.end(JSON.stringify({ error: "URL is required" }));
-                  return;
-                }
+                const signingRequest = signingRequestSchema.parse(JSON.parse(body));
+                log("Token signing request payload:", signingRequest);
 
                 const client = getEditframeClient();
-
-                let fullUrl = url;
-                if (params) {
-                  const urlObj = new URL(url);
-                  Object.entries(params).forEach(([key, value]) => {
-                    urlObj.searchParams.set(key, String(value));
-                  });
-                  fullUrl = urlObj.toString();
-                }
-
-                log("Creating token for full URL:", fullUrl);
-                const token = await createURLToken(client, fullUrl);
+                const token = await createURLToken(client, signingRequest);
 
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(JSON.stringify({ token }));
