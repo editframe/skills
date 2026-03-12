@@ -1,9 +1,9 @@
-import { createRequire } from 'node:module';
+import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 
 // Use absolute path to avoid issues with bundling changing __dirname context
-const addonPath = '/app/lib/transcode/build/Release/playback.node';
+const addonPath = "/app/lib/transcode/build/Release/playback.node";
 // Use createRequire for compatibility with ESM
 const nativeModule = require(addonPath);
 

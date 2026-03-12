@@ -1,0 +1,16 @@
+{
+  "testName": "audio-spectrum-browser-full-video-foreignObject",
+  "renderMode": "browser-full-video",
+  "canvasMode": "foreignObject",
+  "totalRenderTimeMs": 2180.948660000002,
+  "videoDurationMs": 1000,
+  "fps": 30,
+  "numFrames": 30,
+  "avgFrameTimeMs": 72.66041069999991,
+  "timing": {
+    "total": 2180.948660000002,
+    "renderFragment": 2179.8123209999976,
+    "writeFile": 1.050466000000597
+  },
+  "timestamp": "2026-02-05T09:40:41.456Z"
+}

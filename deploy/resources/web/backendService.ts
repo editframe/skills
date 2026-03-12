@@ -1,6 +1,7 @@
 import * as gcp from "@pulumi/gcp";
 
 import { endpointGroup } from "./endpointGroup";
+import { securityPolicy } from "./securityPolicy";
 
 export const backendService = new gcp.compute.BackendService(
   "telecine-web-backend",
@@ -22,7 +23,7 @@ export const backendService = new gcp.compute.BackendService(
       maxTtl: 86400,
       signedUrlCacheMaxAgeSec: 0,
     },
-    compressionMode: "DISABLED",
+    compressionMode: "AUTOMATIC",
     connectionDrainingTimeoutSec: 0,
     enableCdn: true,
     loadBalancingScheme: "EXTERNAL_MANAGED",
@@ -34,6 +35,7 @@ export const backendService = new gcp.compute.BackendService(
     portName: "http",
     project: "editframe",
     protocol: "HTTPS",
+    securityPolicy: securityPolicy.selfLink,
     sessionAffinity: "NONE",
     timeoutSec: 30,
   },

@@ -9,25 +9,21 @@ vi.mock("@/graphql.client", () => ({
     useQuery: () => ({
       data: { rows: [] },
       loading: false,
-      error: null
-    })
-  }))
+      error: null,
+    }),
+  })),
 }));
 
 // Mock the graphql function
 vi.mock("@/graphql", () => ({
-  graphql: vi.fn(() => ({ definitions: [{ name: { value: "AdminOrgs" } }] }))
+  graphql: vi.fn(() => ({ definitions: [{ name: { value: "AdminOrgs" } }] })),
 }));
 
 import { Orgs } from "./orgs";
 
 describe("Admin Orgs Analytics", () => {
   const renderWithRouter = (component: React.ReactElement) => {
-    return render(
-      <BrowserRouter>
-        {component}
-      </BrowserRouter>
-    );
+    return render(<BrowserRouter>{component}</BrowserRouter>);
   };
 
   test("displays date picker with default date", () => {
@@ -43,7 +39,9 @@ describe("Admin Orgs Analytics", () => {
 
   test("buildVariables calculates correct date range", () => {
     const searchParams = new URLSearchParams("end_date=2023-12-25");
-    const variables = Orgs.index.buildVariables?.(searchParams) as { start_date: string; end_date: string } | undefined;
+    const variables = Orgs.index.buildVariables?.(searchParams) as
+      | { start_date: string; end_date: string }
+      | undefined;
 
     expect(variables).toBeDefined();
     expect(variables?.end_date).toContain("2023-12-25");
@@ -52,7 +50,9 @@ describe("Admin Orgs Analytics", () => {
 
   test("buildVariables uses today as default when no date provided", () => {
     const searchParams = new URLSearchParams();
-    const variables = Orgs.index.buildVariables?.(searchParams) as { start_date: string; end_date: string } | undefined;
+    const variables = Orgs.index.buildVariables?.(searchParams) as
+      | { start_date: string; end_date: string }
+      | undefined;
 
     expect(variables).toBeDefined();
     expect(variables?.start_date).toBeDefined();
@@ -70,8 +70,8 @@ describe("Admin Orgs Analytics", () => {
   test("analytics columns are included in table", () => {
     const columns = Orgs.index.columns;
 
-    const videoColumn = columns.find(col => col.name === "Videos (30d)");
-    const minutesColumn = columns.find(col => col.name === "Minutes (30d)");
+    const videoColumn = columns.find((col) => col.name === "Videos (30d)");
+    const minutesColumn = columns.find((col) => col.name === "Minutes (30d)");
 
     expect(videoColumn).toBeDefined();
     expect(minutesColumn).toBeDefined();
@@ -80,8 +80,8 @@ describe("Admin Orgs Analytics", () => {
   test("analytics fields are included in detail view", () => {
     const fields = Orgs.detail.fields;
 
-    const videoField = fields.find(field => field.name === "Videos (30d)");
-    const minutesField = fields.find(field => field.name === "Minutes (30d)");
+    const videoField = fields.find((field) => field.name === "Videos (30d)");
+    const minutesField = fields.find((field) => field.name === "Minutes (30d)");
 
     expect(videoField).toBeDefined();
     expect(minutesField).toBeDefined();
@@ -91,11 +91,7 @@ describe("Admin Orgs Analytics", () => {
 // Test the search input race condition
 describe("AdminOrgs Search Input Behavior", () => {
   const renderWithRouter = (component: React.ReactElement) => {
-    return render(
-      <BrowserRouter>
-        {component}
-      </BrowserRouter>
-    );
+    return render(<BrowserRouter>{component}</BrowserRouter>);
   };
 
   test("search input should preserve all characters during rapid typing", async () => {
@@ -105,7 +101,9 @@ describe("AdminOrgs Search Input Behavior", () => {
 
     renderWithRouter(<Filter />);
 
-    const searchInput = screen.getByPlaceholderText("Search by name or website...") as HTMLInputElement;
+    const searchInput = screen.getByPlaceholderText(
+      "Search by name, website, or primary user...",
+    ) as HTMLInputElement;
 
     // Test rapid typing - this should expose the race condition
     await user.type(searchInput, "Audio");
@@ -122,7 +120,9 @@ describe("AdminOrgs Search Input Behavior", () => {
 
     renderWithRouter(<Filter />);
 
-    const searchInput = screen.getByPlaceholderText("Search by name or website...") as HTMLInputElement;
+    const searchInput = screen.getByPlaceholderText(
+      "Search by name, website, or primary user...",
+    ) as HTMLInputElement;
 
     // Clear any existing value first
     await user.clear(searchInput);
@@ -140,8 +140,12 @@ describe("AdminOrgs Search Input Behavior", () => {
 
     renderWithRouter(<Filter />);
 
-    const searchInput = screen.getByPlaceholderText("Search by name or website...") as HTMLInputElement;
-    const dateInput = screen.getByDisplayValue(/\d{4}-\d{2}-\d{2}/) as HTMLInputElement;
+    const searchInput = screen.getByPlaceholderText(
+      "Search by name, website, or primary user...",
+    ) as HTMLInputElement;
+    const dateInput = screen.getByDisplayValue(
+      /\d{4}-\d{2}-\d{2}/,
+    ) as HTMLInputElement;
 
     // Clear any existing value first
     await user.clear(searchInput);
@@ -153,4 +157,4 @@ describe("AdminOrgs Search Input Behavior", () => {
 
     expect(searchInput.value).toBe("Test");
   });
-}); 
+});

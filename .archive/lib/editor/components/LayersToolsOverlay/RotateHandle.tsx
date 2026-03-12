@@ -21,7 +21,7 @@ export const RotateHandle: FC<{ layer: Layer; handle: "rz" }> = ({ layer }) => {
           const degrees = radians * (180 / Math.PI) + 90;
 
           layer.setRotateZ(
-            event.shiftKey ? pinToNearest(degrees, 45) : degrees
+            event.shiftKey ? pinToNearest(degrees, 45) : degrees,
           );
         },
       }).eventHandlers}

@@ -47,6 +47,12 @@ export class Workflow<WorkflowData> {
     Workflow.byName.set(this.name, this as Workflow<unknown>);
   }
 
+  toJSON() {
+    return {
+      name: this.name,
+    };
+  }
+
   enqueueJob<Payload>(job: EnqueableJobWithQueue<Payload>) {
     return enqueueJob(this.storage, {
       queue: job.queue.name,
@@ -79,7 +85,13 @@ export class Workflow<WorkflowData> {
   async setWorkflowData(workflowId: string, data: WorkflowData) {
     await this.storage
       .multi()
-      .del(`workflows:${workflowId}:queued`, `workflows:${workflowId}:claimed`, `workflows:${workflowId}:failed`, `workflows:${workflowId}:completed`, `workflows:${workflowId}:status`)
+      .del(
+        `workflows:${workflowId}:queued`,
+        `workflows:${workflowId}:claimed`,
+        `workflows:${workflowId}:failed`,
+        `workflows:${workflowId}:completed`,
+        `workflows:${workflowId}:status`,
+      )
       .set(`workflows:${workflowId}:data`, SuperJSON.stringify(data))
       .exec();
   }

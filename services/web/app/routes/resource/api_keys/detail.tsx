@@ -14,21 +14,17 @@ import { SuccessMessage } from "~/components/SuccessMessage";
 import z from "zod";
 import { formFor } from "~/formFor";
 import { webhookTopics } from "~/constants/webhookTopics";
-import {
-  ArrowLeftIcon,
-  ClipboardIcon,
-  EyeSlashIcon,
-} from "@heroicons/react/20/solid";
+import { ArrowLeft, Clipboard, EyeSlash } from "@phosphor-icons/react";
 import { TimeAgoInWords } from "~/ui/timeAgoInWords";
 import { requireMutateAs, requireQueryAs } from "@/graphql.server/userClient";
-import { ClockIcon, KeyIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { Clock, Key, Trash } from "@phosphor-icons/react";
 import { Button } from "~/components/Button";
 import { useFetcher } from "react-router";
 import { Link } from "~/components/Link";
 import { logger } from "@/logging";
 
 import type { Route } from "./+types/detail";
-import { requireSession } from "@/util/requireSession.server";
+import { identityContext, sessionCookieContext } from "~/middleware/context";
 
 const schema = z.object({
   name: z.string(),
@@ -44,11 +40,16 @@ const schema = z.object({
 
 export const editApiKey = formFor(schema);
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { session, sessionCookie } = await requireSession(request);
+export const loader = async ({
+  request,
+  params,
+  context,
+}: Route.LoaderArgs) => {
+  const session = context.get(identityContext);
+  const sessionCookie = context.get(sessionCookieContext);
 
   const [key] = await requireQueryAs(
-    session,
+    { uid: session.uid, cid: session.cid ?? null },
     "org-admin",
     graphql(`
         query GetApiKey($id: uuid!) {
@@ -111,7 +112,7 @@ export const ErrorBoundary = () => {
       <>
         <ErrorMessage message="You don't have permission to view this API key." />
         <Link to="/resource/api_keys">
-          <Button mode="secondary" icon={ArrowLeftIcon}>
+          <Button mode="secondary" icon={ArrowLeft}>
             Go back
           </Button>
         </Link>
@@ -154,7 +155,7 @@ function SecretField({ value, label, description }: SecretFieldProps) {
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-900">
         {label}
-        <EyeSlashIcon
+        <EyeSlash
           className="ml-1 inline-block h-4 w-4 text-gray-500"
           aria-hidden="true"
         />
@@ -179,7 +180,7 @@ function SecretField({ value, label, description }: SecretFieldProps) {
             onClick={handleCopy}
             className="relative -ml-px inline-flex items-center gap-x-1.5 rounded-r-md px-3 py-3 text-sm font-semibold text-editframe-900"
           >
-            <ClipboardIcon className="h-5 w-5 text-editframe-900" />
+            <Clipboard className="h-5 w-5 text-editframe-900" weight="fill" />
             <span>{copied ? "Copied" : "Copy"}</span>
           </button>
         </div>
@@ -201,7 +202,7 @@ const RegenerateTokenAction = ({ id, name }: ApiKeyActionProps) => {
   return (
     <Button
       mode="action"
-      icon={KeyIcon}
+      icon={Key}
       disabled={isLoading}
       loading={isLoading}
       action={{
@@ -231,7 +232,7 @@ const RegenerateWebhookAction = ({ id, name }: ApiKeyActionProps) => {
   return (
     <Button
       mode="action"
-      icon={KeyIcon}
+      icon={Key}
       disabled={isLoading}
       loading={isLoading}
       action={{
@@ -261,7 +262,7 @@ const ExtendExpirationAction = ({ id }: ApiKeyActionProps) => {
   return (
     <Button
       mode="action"
-      icon={ClockIcon}
+      icon={Clock}
       disabled={isLoading}
       loading={isLoading}
       confirmation={{
@@ -305,7 +306,7 @@ const DeleteAction = ({ id, name }: ApiKeyActionProps) => {
   return (
     <Button
       mode="destructive"
-      icon={TrashIcon}
+      icon={Trash}
       disabled={isLoading}
       loading={isLoading}
       action={{
@@ -444,8 +445,13 @@ export default function ApiKeyDetail() {
   );
 }
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { session, sessionCookie } = await requireSession(request);
+export const action = async ({
+  request,
+  params,
+  context,
+}: Route.ActionArgs) => {
+  const session = context.get(identityContext);
+  const sessionCookie = context.get(sessionCookieContext);
   const values = await editApiKey.parseFormData(request);
 
   if (!values.success) {
@@ -456,7 +462,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 
   try {
     await requireMutateAs(
-      session,
+      { uid: session.uid, cid: session.cid ?? null },
       "org-editor",
       graphql(`
           mutation UpdateApiKey($id: uuid!, $changes: identity_api_keys_set_input!) {

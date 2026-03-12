@@ -4,7 +4,9 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 
 // Mock the dependencies
 vi.mock("@/util/filePaths", () => ({
-  cacheTranscodedSegmentFilePath: vi.fn(() => "cache/transcoded/abc123def456/low/xyz789ab-0.mp4")
+  cacheTranscodedSegmentFilePath: vi.fn(
+    () => "cache/transcoded/abc123def456/low/xyz789ab-0.mp4",
+  ),
 }));
 
 vi.mock("@/util/storageProvider.server", () => ({
@@ -13,11 +15,11 @@ vi.mock("@/util/storageProvider.server", () => ({
     createReadStream: vi.fn(),
     getLength: vi.fn(),
     writeFile: vi.fn(),
-  }
+  },
 }));
 
 vi.mock("@/transcode/src/jit/JitTranscoder", () => ({
-  transcodeVideoSegment: vi.fn()
+  transcodeVideoSegment: vi.fn(),
 }));
 
 // SKIPPED: Commenting out imports since test is skipped
@@ -43,27 +45,27 @@ describe.skip("Transcoding Cache", () => {
         // Simulate streaming by ending the response
         res.end();
         return mockStream;
-      })
+      }),
     };
-    vi.mocked(storageProvider.createReadStream).mockResolvedValue(mockStream as any);
+    vi.mocked(storageProvider.createReadStream).mockResolvedValue(
+      mockStream as any,
+    );
 
-    const response = await request(app)
-      .get("/api/v1/transcode/low")
-      .query({
-        url: "https://example.com/video.mp4",
-        start: 0
-      });
+    const response = await request(app).get("/api/v1/transcode/low").query({
+      url: "https://example.com/video.mp4",
+      start: 0,
+    });
 
     expect(response.status).toBe(200);
-    expect(response.headers['x-cache']).toBe('HIT');
-    expect(response.headers['content-type']).toBe('video/mp4');
-    expect(response.headers['content-length']).toBe('1024');
+    expect(response.headers["x-cache"]).toBe("HIT");
+    expect(response.headers["content-type"]).toBe("video/mp4");
+    expect(response.headers["content-length"]).toBe("1024");
 
     // Verify cache was checked
     expect(cacheTranscodedSegmentFilePath).toHaveBeenCalledWith({
       url: "https://example.com/video.mp4",
       preset: "low",
-      startTimeMs: 0
+      startTimeMs: 0,
     });
     expect(storageProvider.pathExists).toHaveBeenCalled();
     expect(storageProvider.createReadStream).toHaveBeenCalled();
@@ -82,21 +84,19 @@ describe.skip("Transcoding Cache", () => {
       success: true,
       outputData: mockOutputData,
       actualStartTimeMs: 0,
-      actualDurationMs: 2000
+      actualDurationMs: 2000,
     });
 
-    const response = await request(app)
-      .get("/api/v1/transcode/medium")
-      .query({
-        url: "https://example.com/video.mp4",
-        start: 2000
-      });
+    const response = await request(app).get("/api/v1/transcode/medium").query({
+      url: "https://example.com/video.mp4",
+      start: 2000,
+    });
 
     expect(response.status).toBe(200);
-    expect(response.headers['x-cache']).toBe('MISS');
-    expect(response.headers['content-type']).toBe('video/mp4');
-    expect(response.headers['x-actual-start-time']).toBe('0');
-    expect(response.headers['x-actual-duration']).toBe('2000');
+    expect(response.headers["x-cache"]).toBe("MISS");
+    expect(response.headers["content-type"]).toBe("video/mp4");
+    expect(response.headers["x-actual-start-time"]).toBe("0");
+    expect(response.headers["x-actual-duration"]).toBe("2000");
 
     // Verify transcoding was called
     expect(transcodeVideoSegment).toHaveBeenCalledWith({
@@ -106,10 +106,10 @@ describe.skip("Transcoding Cache", () => {
       targetWidth: 854,
       targetHeight: 480,
       videoBitrate: 1000000,
-      audioCodec: 'aac',
+      audioCodec: "aac",
       audioBitrate: 128000,
       audioChannels: 2,
-      audioSampleRate: 48000
+      audioSampleRate: 48000,
     });
 
     // Verify result was cached
@@ -117,15 +117,17 @@ describe.skip("Transcoding Cache", () => {
       "cache/transcoded/abc123def456/low/xyz789ab-0.mp4",
       expect.any(Buffer),
       {
-        contentType: 'video/mp4'
-      }
+        contentType: "video/mp4",
+      },
     );
   });
 
   test("cache read error - falls back to transcoding", async () => {
     // Mock cache exists but read fails
     vi.mocked(storageProvider.pathExists).mockResolvedValue(true);
-    vi.mocked(storageProvider.createReadStream).mockRejectedValue(new Error("Read failed"));
+    vi.mocked(storageProvider.createReadStream).mockRejectedValue(
+      new Error("Read failed"),
+    );
 
     // Mock successful transcoding
     const mockOutputData = new Uint8Array([1, 2, 3, 4]);
@@ -133,18 +135,16 @@ describe.skip("Transcoding Cache", () => {
       success: true,
       outputData: mockOutputData,
       actualStartTimeMs: 0,
-      actualDurationMs: 2000
+      actualDurationMs: 2000,
     });
 
-    const response = await request(app)
-      .get("/api/v1/transcode/high")
-      .query({
-        url: "https://example.com/video.mp4",
-        start: 4000
-      });
+    const response = await request(app).get("/api/v1/transcode/high").query({
+      url: "https://example.com/video.mp4",
+      start: 4000,
+    });
 
     expect(response.status).toBe(200);
-    expect(response.headers['x-cache']).toBe('MISS');
+    expect(response.headers["x-cache"]).toBe("MISS");
 
     // Should have attempted cache read then fallen back to transcoding
     expect(storageProvider.createReadStream).toHaveBeenCalled();
@@ -156,7 +156,9 @@ describe.skip("Transcoding Cache", () => {
     vi.mocked(storageProvider.pathExists).mockResolvedValue(false);
 
     // Mock cache write failure
-    vi.mocked(storageProvider.writeFile).mockRejectedValue(new Error("Write failed"));
+    vi.mocked(storageProvider.writeFile).mockRejectedValue(
+      new Error("Write failed"),
+    );
 
     // Mock successful transcoding
     const mockOutputData = new Uint8Array([1, 2, 3, 4]);
@@ -164,18 +166,16 @@ describe.skip("Transcoding Cache", () => {
       success: true,
       outputData: mockOutputData,
       actualStartTimeMs: 0,
-      actualDurationMs: 2000
+      actualDurationMs: 2000,
     });
 
-    const response = await request(app)
-      .get("/api/v1/transcode/low")
-      .query({
-        url: "https://example.com/video.mp4",
-        start: 0
-      });
+    const response = await request(app).get("/api/v1/transcode/low").query({
+      url: "https://example.com/video.mp4",
+      start: 0,
+    });
 
     expect(response.status).toBe(200);
-    expect(response.headers['x-cache']).toBe('MISS');
+    expect(response.headers["x-cache"]).toBe("MISS");
 
     // Should have attempted to cache despite the error
     expect(storageProvider.writeFile).toHaveBeenCalled();
@@ -191,16 +191,14 @@ describe.skip("Transcoding Cache", () => {
       error: "Test error",
       outputData: new Uint8Array(),
       actualStartTimeMs: 0,
-      actualDurationMs: 0
+      actualDurationMs: 0,
     });
 
     try {
-      await request(app)
-        .get("/api/v1/transcode/medium")
-        .query({
-          url: "https://different.com/video.mp4",
-          start: 6000
-        });
+      await request(app).get("/api/v1/transcode/medium").query({
+        url: "https://different.com/video.mp4",
+        start: 6000,
+      });
     } catch {
       // Ignore the transcoding error, we just want to test cache key generation
     }
@@ -208,12 +206,12 @@ describe.skip("Transcoding Cache", () => {
     expect(cacheTranscodedSegmentFilePath).toHaveBeenCalledWith({
       url: "https://different.com/video.mp4",
       preset: "medium",
-      startTimeMs: 6000
+      startTimeMs: 6000,
     });
   });
 
   test("cache key generation with normalized URLs", async () => {
-    // Mock cache doesn't exist  
+    // Mock cache doesn't exist
     vi.mocked(storageProvider.pathExists).mockResolvedValue(false);
 
     // Mock transcoding failure to avoid full execution
@@ -222,16 +220,14 @@ describe.skip("Transcoding Cache", () => {
       error: "Test error",
       outputData: new Uint8Array(),
       actualStartTimeMs: 0,
-      actualDurationMs: 0
+      actualDurationMs: 0,
     });
 
     try {
-      await request(app)
-        .get("/api/v1/transcode/low")
-        .query({
-          url: "https://EXAMPLE.COM/video.mp4?utm_source=test",
-          start: 0
-        });
+      await request(app).get("/api/v1/transcode/low").query({
+        url: "https://EXAMPLE.COM/video.mp4?utm_source=test",
+        start: 0,
+      });
     } catch {
       // Ignore the transcoding error
     }
@@ -239,7 +235,7 @@ describe.skip("Transcoding Cache", () => {
     expect(cacheTranscodedSegmentFilePath).toHaveBeenCalledWith({
       url: "https://EXAMPLE.COM/video.mp4?utm_source=test",
       preset: "low",
-      startTimeMs: 0
+      startTimeMs: 0,
     });
   });
-}); 
+});

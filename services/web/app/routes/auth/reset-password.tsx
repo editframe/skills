@@ -1,13 +1,14 @@
-import { data, redirect } from "react-router";
+import { data } from "react-router";
 import z from "zod";
 import { formFor } from "~/formFor";
 import { resetPasswordUserWithPassword } from "~/resetPasswordWithEmail.server";
 import type { MetaFunction } from "react-router";
 import { commitSession } from "@/util/session";
 import { logger } from "@/logging";
+import { noAuthMiddleware } from "~/middleware/auth";
+import { sessionCookieContext } from "~/middleware/context";
 
 import type { Route } from "./+types/reset-password";
-import { requireSession } from "@/util/requireSession.server";
 
 const schema = z.object({
   email_address: z.string().email().toLowerCase(),
@@ -15,46 +16,54 @@ const schema = z.object({
 
 const resetPassword = formFor(schema);
 
-export const action = async ({ request }: Route.ActionArgs) => {
-  const { sessionCookie } = await requireSession(request);
-  const payload = await request.json();
-  try {
-    await resetPasswordUserWithPassword(payload.email_address);
-    sessionCookie.flash("success", "Password updated successfully");
+export const middleware: Route.MiddlewareFunction[] = [noAuthMiddleware];
 
-    return redirect("/settings", {
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const formResult = await resetPassword.parseFormData(request);
+  if (!formResult.success) {
+    return data(formResult.errors, { status: 400 });
+  }
+
+  const sessionCookie = context.get(sessionCookieContext);
+
+  try {
+    await resetPasswordUserWithPassword(formResult.data.email_address);
+  } catch (error) {
+    logger.error(error, "Error resetting password (suppressed to user)");
+  }
+
+  sessionCookie.flash(
+    "success",
+    "If an account with that email exists, we've sent you an email with instructions to reset your password.",
+  );
+
+  return data(
+    { success: true },
+    {
       headers: {
         "Set-Cookie": await commitSession(sessionCookie),
       },
-    });
-  } catch (error) {
-    logger.error(error, "Error resetting password");
-    sessionCookie.flash(
-      "error",
-      "There was an error updating your password. Please try again.",
-    );
-
-    return data(
-      { success: false },
-      {
-        status: 400,
-        headers: {
-          "Set-Cookie": await commitSession(sessionCookie),
-        },
-      },
-    );
-  }
+    },
+  );
 };
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  await requireSession(request);
-  return null;
+export const loader = async ({ context }: Route.LoaderArgs) => {
+  const sessionCookie = context.get(sessionCookieContext);
+  const successMessage = sessionCookie.get("success");
+  return data(
+    { successMessage: successMessage || null },
+    {
+      headers: {
+        "Set-Cookie": await commitSession(sessionCookie),
+      },
+    },
+  );
 };
 
 export const meta: MetaFunction = () => {
   return [{ title: "Reset Password | Editframe" }];
 };
-export default function Welcome() {
+export default function ResetPassword() {
   return (
     <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
@@ -89,11 +98,11 @@ export default function Welcome() {
       </div>
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        <resetPassword.Form className="mt-8 space-y-6" action="#" method="POST">
+        <resetPassword.FormErrors />
+        <resetPassword.Form className="mt-8 space-y-6" method="POST">
           <div>
             <p>
               <resetPassword.FieldError field="email_address" />
-              <resetPassword.FormErrors />
             </p>
             <resetPassword.Field label="Email address" />
             <div className="mt-2">

@@ -30,7 +30,9 @@ export const Fragments: ContentBlock<{
 };
 export const TranscriptionProgress = ({
   transcriptionId,
-}: { transcriptionId: string }) => {
+}: {
+  transcriptionId: string;
+}) => {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {

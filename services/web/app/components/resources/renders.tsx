@@ -2,7 +2,7 @@ import { progressiveQuery } from "@/graphql.client";
 import { graphql } from "@/graphql";
 import type { ResourceView } from ".";
 import { Button } from "~/components/Button";
-import { VideoCameraIcon } from "@heroicons/react/24/outline";
+import { VideoCamera } from "@phosphor-icons/react";
 import { Link } from "react-router";
 import { CreatedAt } from "./blocks";
 import {
@@ -67,9 +67,9 @@ const DetailQuery = progressiveQuery(
 
 const TableHeader = () => {
   return (
-    <div className="flex justify-start py-2">
+    <div className="flex items-center pb-2">
       <Link to="/resource/renders/new">
-        <Button mode="creative" icon={VideoCameraIcon}>
+        <Button mode="creative" icon={VideoCamera}>
           Create Render
         </Button>
       </Link>

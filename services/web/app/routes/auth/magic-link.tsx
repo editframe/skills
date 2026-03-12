@@ -7,12 +7,11 @@ import {
 } from "react-router";
 import z from "zod";
 
-import { requireNoSession } from "@/util/requireSession.server";
-
 import { Button } from "~/components/Button";
 import { SuccessMessage } from "~/components/SuccessMessage";
 import { formFor } from "~/formFor";
 import { loginUserWithMagicLink } from "~/loginUserWithMagicLink";
+import { noAuthMiddleware } from "~/middleware/auth";
 
 import type { Route } from "./+types/magic-link";
 
@@ -43,13 +42,14 @@ export const action = async ({ request }: Route.ActionArgs) => {
   });
 };
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  await requireNoSession(request);
+export const middleware: Route.MiddlewareFunction[] = [noAuthMiddleware];
+
+export const loader = async () => {
   return null;
 };
 
 export const meta: MetaFunction = () => {
-  return [{ title: "Login with magic link | Editframe" }];
+  return [{ title: "Login With Magic Link | Editframe" }];
 };
 export default function Welcome() {
   const [searchParams] = useSearchParams();

@@ -2,4 +2,15 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-$SCRIPT_DIR/docker-compose run -it --rm worker-render npx vitest "$@"
+# Detect if we have a TTY
+if [ -t 0 ]; then
+    TTY_FLAGS="-it"
+else
+    TTY_FLAGS=""
+fi
+
+# Run render integration tests in the runner container using the render-specific
+# vitest config, which includes Render/tests/** and omits the standard excludes.
+$SCRIPT_DIR/docker-compose run $TTY_FLAGS --rm runner npx vitest \
+  --config vitest.config.render.ts \
+  "$@"

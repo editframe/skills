@@ -1,40 +1,33 @@
-import {
-  AcademicCapIcon,
-  AtSymbolIcon,
-  Bars4Icon,
-  CodeBracketIcon,
-} from "@heroicons/react/24/outline";
+import { GraduationCap, At, List, Code } from "@phosphor-icons/react";
 const items = [
   {
     title: "Check out our docs",
     description: "A list of different layers we support in our platform",
-    icon: AcademicCapIcon,
+    icon: GraduationCap,
     href: "/docs",
   },
   {
     title: "Create an API key",
     description: "Another way to create and render a project",
-    icon: Bars4Icon,
+    icon: List,
     href: "/developers/new",
   },
   {
     title: "Use our CLI",
     description: "Another way to interact with our platform",
-    icon: CodeBracketIcon,
+    icon: Code,
     href: "https://www.npmjs.com/package/@editframe/cli",
   },
   {
     title: "Contact Us",
     description: "Get in touch with our engineering team ",
-    icon: AtSymbolIcon,
+    icon: At,
     href: "mailto:team@editframe.com",
   },
 ];
 function QuickActions() {
   return (
-    <ul
-      className="mt-6 grid grid-cols-1 gap-6 border-b border-t border-gray-200 py-6 sm:grid-cols-2"
-    >
+    <ul className="mt-6 grid grid-cols-1 gap-6 border-b border-t border-gray-200 py-6 sm:grid-cols-2">
       {items.map((item, itemIdx) => (
         <li key={itemIdx} className="flow-root">
           <div className="relative -m-2 flex items-center space-x-4 rounded-xl p-2 focus-within:ring-2 focus-within:ring-editframe-500 hover:bg-gray-50">

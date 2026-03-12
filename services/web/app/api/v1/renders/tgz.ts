@@ -4,10 +4,10 @@ import { storageProvider } from "@/util/storageProvider.server";
 import { renderFilePath } from "@/util/filePaths";
 
 import type { Route } from "./+types/tgz";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
-export const loader = async ({ params: { id }, request }: Route.LoaderArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+export const loader = async ({ params: { id }, context }: Route.LoaderArgs) => {
+  const session = context.get(apiIdentityContext);
   const renderRecord = await requireQueryAs(
     session,
     "org-reader",

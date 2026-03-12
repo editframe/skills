@@ -1,0 +1,39 @@
+{
+  "testName": "elements-smoke-ef-timegroup-browser-frame-by-frame-foreignObject",
+  "renderMode": "browser-frame-by-frame",
+  "canvasMode": "foreignObject",
+  "totalRenderTimeMs": 3493.0960589999995,
+  "videoDurationMs": 100,
+  "fps": 30,
+  "numFrames": 3,
+  "avgFrameTimeMs": 1162.3696253333328,
+  "timing": {
+    "total": 3493.0960589999995,
+    "renderFragment": 3487.1088759999984,
+    "perFrameTiming": {
+      "count": 8,
+      "avgSeekMs": 0,
+      "avgRenderMs": 0,
+      "avgCaptureMs": 44.2250000089407,
+      "avgSerializeMs": 0.5375000089406967,
+      "avgBlobMs": 8.362499982118607,
+      "avgIpcTransferMs": 0.9273610059608473,
+      "minFrameMs": 50.78028099999938,
+      "maxFrameMs": 64.16678500000125,
+      "totalFramesMs": 438.71597600000314
+    },
+    "ipcOverhead": {
+      "calls": 8,
+      "totalMs": 7.418888047686778,
+      "avgMs": 0.9273610059608473,
+      "totalBytesTransferred": 17136
+    },
+    "browserSideTiming": {
+      "captureTotal": 353.8000000715256,
+      "renderTotal": 0,
+      "serializeTotal": 4.300000071525574
+    },
+    "writeFile": 0.877758000002359
+  },
+  "timestamp": "2026-02-05T08:22:26.173Z"
+}

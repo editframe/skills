@@ -40,8 +40,10 @@ interface ImageAnalysisResult {
  * Acquire any asset locally - download if URL, return path if local file
  * This is the centralized function for handling URL vs local file acquisition
  */
-export async function acquireAsset(source: string): Promise<{ path: string, [Symbol.asyncDispose]: () => Promise<void> }> {
-  if (source.startsWith('http://') || source.startsWith('https://')) {
+export async function acquireAsset(
+  source: string,
+): Promise<{ path: string; [Symbol.asyncDispose]: () => Promise<void> }> {
+  if (source.startsWith("http://") || source.startsWith("https://")) {
     logger.trace({ url: source }, "Downloading asset from URL");
 
     const response = await fetch(source);
@@ -66,21 +68,20 @@ export async function acquireAsset(source: string): Promise<{ path: string, [Sym
       path: tempPath,
       [Symbol.asyncDispose]: async () => {
         await rm(tempPath);
-      }
-    }
+      },
+    };
   }
 
   return {
     path: source,
-    [Symbol.asyncDispose]: async () => { }
-  }
+    [Symbol.asyncDispose]: async () => {},
+  };
 }
 
 /**
  * Analyze image to extract metadata
  */
 async function analyzeImage(localPath: string): Promise<ImageAnalysisResult> {
-
   logger.trace({ localPath }, "Analyzing image");
   const probeResult = await Probe.probePath(localPath);
 
@@ -91,7 +92,15 @@ async function analyzeImage(localPath: string): Promise<ImageAnalysisResult> {
   }
 
   const codec = videoProbe.codec_name;
-  if (!(codec === "svg" || codec === "mjpeg" || codec === "webp" || codec === "png" || codec === "gif")) {
+  if (
+    !(
+      codec === "svg" ||
+      codec === "mjpeg" ||
+      codec === "webp" ||
+      codec === "png" ||
+      codec === "gif"
+    )
+  ) {
     throw new Error(`Invalid codec for image: ${codec}`);
   }
 
@@ -143,8 +152,31 @@ async function storeImageRecord(
   await db
     .insertInto("video2.image_files")
     .values(imageData)
-    .onConflict((conflict) =>
-      conflict.column("id").doUpdateSet(imageData)
+    .onConflict((conflict) => conflict.column("id").doUpdateSet(imageData))
+    .execute();
+
+  const fileMetadata = {
+    byte_size: metadata.byte_size,
+    md5: metadata.md5 || null,
+    mime_type: analysis.mimeType,
+    width: analysis.width,
+    height: analysis.height,
+  };
+
+  await db
+    .insertInto("video2.files")
+    .values({
+      id: metadata.id,
+      org_id: metadata.org_id,
+      creator_id: metadata.creator_id,
+      api_key_id: metadata.api_key_id,
+      filename: metadata.filename,
+      type: "image",
+      status: "ready",
+      ...fileMetadata,
+    })
+    .onConflict((oc) =>
+      oc.column("id").doUpdateSet({ status: "ready", ...fileMetadata }),
     )
     .execute();
 
@@ -162,7 +194,7 @@ async function storeImageRecord(
  */
 async function persistImage(
   localPath: string,
-  metadata: ImageMetadata
+  metadata: ImageMetadata,
 ): Promise<void> {
   const imagePath = imageFilePath({
     org_id: metadata.org_id,
@@ -176,10 +208,10 @@ async function persistImage(
     // Convert Node.js ReadStream to Web ReadableStream
     const webStream = new ReadableStream({
       start(controller) {
-        readStream.on('data', (chunk) => controller.enqueue(chunk));
-        readStream.on('end', () => controller.close());
-        readStream.on('error', (err) => controller.error(err));
-      }
+        readStream.on("data", (chunk) => controller.enqueue(chunk));
+        readStream.on("end", () => controller.close());
+        readStream.on("error", (err) => controller.error(err));
+      },
     });
     await writeReadableStreamToWritable(webStream, imageStream);
   }
@@ -192,7 +224,7 @@ async function persistImage(
  */
 export async function processImageFile(
   source: string,
-  metadata: ImageMetadata
+  metadata: ImageMetadata,
 ): Promise<Selectable<Video2ImageFiles>> {
   return executeSpan("processImageFile", async (span) => {
     span.setAttributes({

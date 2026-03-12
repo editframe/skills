@@ -1,5 +1,6 @@
 services:
   worker-render-fragment:
+    profiles: ["render"]
     image: telecine-runner
     pull_policy: never
     depends_on:
@@ -16,6 +17,7 @@ services:
     environment:
       - SHELL=/bin/sh
       - OTEL_SERVICE_NAME=worker-render-fragment
+      - WORKER_MODE=websocket
     volumes_from:
       - runner
     stop_grace_period: 1s
@@ -24,8 +26,16 @@ services:
     # prettier-ignore
     command: ["tsx", "--watch", "/app/services/worker-render-fragment/server.ts"]
     restart: unless-stopped
+    networks:
+      - default
+      - editframe-shared
     deploy:
       resources:
         limits:
-          cpus: ${WORKER_RENDER_FRAGMENT_CPUS:-2}
+          cpus: ${WORKER_RENDER_FRAGMENT_CPUS:-4}
           memory: ${WORKER_RENDER_FRAGMENT_MEMORY:-4G}
+
+networks:
+  editframe-shared:
+    name: editframe-shared
+    external: true

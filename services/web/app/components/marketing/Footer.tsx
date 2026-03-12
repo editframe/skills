@@ -1,20 +1,25 @@
-import { Link } from 'react-router';
-import type { SVGProps } from 'react';
+import { Link } from "react-router";
+import type { SVGProps } from "react";
+import { themeClasses } from "~/utils/theme-classes";
+import clsx from "clsx";
 
 export function Footer() {
   const navigation = {
     product: [
       { name: "Documentation", href: "/docs" },
       { name: "Guides", href: "/guides" },
-      { name: "Tools", href: "/tools" }
+      { name: "Tools", href: "/tools" },
+      { name: "Pricing", href: "/pricing" },
+      { name: "llms.txt", href: "/llms.txt", reloadDocument: true },
     ],
     technologies: [
       { name: "React", href: "/react" },
       { name: "AnimeJS", href: "/with/animejs" },
+      { name: "SVG SMIL", href: "/with/svg" },
     ],
     legal: [
-      { name: "Terms of Service", href: "#" },
-      { name: "Privacy Policy", href: "#" },
+      { name: "Terms of Service", href: "/terms" },
+      { name: "Privacy Policy", href: "/privacy" },
     ],
     social: [
       {
@@ -46,12 +51,12 @@ export function Footer() {
         ),
       },
       {
-        name: "Twitter",
-        href: "https://twitter.com/editframe",
+        name: "X",
+        href: "https://x.com/editframe",
         target: "_blank",
         icon: (props: SVGProps<SVGSVGElement>) => (
           <svg fill="currentColor" viewBox="0 0 24 24" {...props}>
-            <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
+            <path d="M13.6823 10.6218L20.2391 3H18.6854L12.9921 9.61788L8.44486 3H3.2002L10.0765 13.0074L3.2002 21H4.75404L10.7663 14.0113L15.5685 21H20.8131L13.6819 10.6218H13.6823ZM11.5541 13.0956L10.8574 12.0991L5.31391 4.16971H7.70053L12.1742 10.5689L12.8709 11.5655L18.6861 19.8835H16.2995L11.5541 13.096V13.0956Z" />
           </svg>
         ),
       },
@@ -64,26 +69,44 @@ export function Footer() {
             <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
           </svg>
         ),
-      }
+      },
     ],
   };
   return (
-    <footer className="border-t mt-32 border-solid border-gray-200 dark:border-gray-700 pb-16 pt-20 text-base font-medium leading-5 text-gray-800 dark:text-gray-200">
-      <div className="lg:px-[5.5rem] max-w-6xl mx-auto w-full">
-        <div className="mx-auto mb-12 grid grid-cols-1 gap-8 leading-5 md:grid-cols-3 lg:grid-cols-4">
+    <footer
+      className={clsx(
+        "border-t mt-20 sm:mt-24 lg:mt-32 border-solid pb-12 sm:pb-16 pt-12 sm:pt-16 lg:pt-20 text-base font-medium leading-5",
+        themeClasses.pageBorder,
+        themeClasses.pageTextSecondary,
+      )}
+    >
+      <div className="px-4 sm:px-6 lg:px-[5.5rem] max-w-6xl mx-auto w-full">
+        <div className="mx-auto mb-8 sm:mb-12 grid grid-cols-1 gap-6 sm:gap-8 leading-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           <div>
-            <h5 className="mb-8 mt-2 text-center text-lg font-bold text-gray-900 dark:text-gray-100 md:text-left">
+            <h5
+              className={clsx(
+                "mb-6 sm:mb-8 mt-2 text-center text-base sm:text-lg font-bold md:text-left",
+                themeClasses.pageText,
+              )}
+            >
               Follow Us
             </h5>
-            <ul className="mt-10 grid justify-items-center gap-4 md:justify-items-start">
+            <ul className="mt-6 sm:mt-10 grid justify-items-center gap-3 sm:gap-4 md:justify-items-start">
               {navigation.social.map((item) => (
                 <li key={item.name}>
                   <Link
                     to={item.href}
                     target={item.target}
-                    className="flex max-w-full cursor-pointer items-center gap-2 bg-transparent font-semibold text-gray-800 dark:text-gray-200 hover:text-gray-600 dark:hover:text-gray-400"
+                    className={clsx(
+                      "flex max-w-full cursor-pointer items-center gap-2 bg-transparent font-semibold transition-colors",
+                      themeClasses.pageText,
+                      "hover:text-slate-600 dark:hover:text-slate-300",
+                    )}
                   >
-                    <item.icon className="h-6 w-6" aria-hidden="true" />
+                    <item.icon
+                      className="h-5 w-5 sm:h-6 sm:w-6"
+                      aria-hidden="true"
+                    />
                     {item.name}
                   </Link>
                 </li>
@@ -91,15 +114,25 @@ export function Footer() {
             </ul>
           </div>
           <div>
-            <h5 className="mb-8 mt-2 text-center text-lg font-bold text-gray-900 dark:text-gray-100 md:text-left">
+            <h5
+              className={clsx(
+                "mb-6 sm:mb-8 mt-2 text-center text-base sm:text-lg font-bold md:text-left",
+                themeClasses.pageText,
+              )}
+            >
               Product
             </h5>
-            <div className="grid justify-items-center gap-4 md:justify-items-start">
+            <div className="grid justify-items-center gap-3 sm:gap-4 md:justify-items-start">
               {navigation.product.map((item, index) => (
                 <Link
                   key={index}
                   to={item.href}
-                  className="cursor-pointer bg-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                  reloadDocument={item.reloadDocument}
+                  className={clsx(
+                    "cursor-pointer bg-transparent transition-colors",
+                    themeClasses.pageTextSecondary,
+                    "hover:text-slate-900 dark:hover:text-white",
+                  )}
                 >
                   {item.name}
                 </Link>
@@ -107,15 +140,24 @@ export function Footer() {
             </div>
           </div>
           <div>
-            <h5 className="mb-8 mt-2 text-center text-lg font-bold text-gray-900 dark:text-gray-100 md:text-left">
+            <h5
+              className={clsx(
+                "mb-6 sm:mb-8 mt-2 text-center text-base sm:text-lg font-bold md:text-left",
+                themeClasses.pageText,
+              )}
+            >
               Build
             </h5>
-            <div className="grid justify-items-center gap-4 md:justify-items-start">
+            <div className="grid justify-items-center gap-3 sm:gap-4 md:justify-items-start">
               {navigation.technologies.map((item, index) => (
                 <Link
                   key={index}
                   to={item.href}
-                  className="cursor-pointer bg-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                  className={clsx(
+                    "cursor-pointer bg-transparent transition-colors",
+                    themeClasses.pageTextSecondary,
+                    "hover:text-slate-900 dark:hover:text-white",
+                  )}
                 >
                   {item.name}
                 </Link>
@@ -123,15 +165,24 @@ export function Footer() {
             </div>
           </div>
           <div className="hidden lg:block">
-            <h5 className="mb-8 mt-2 text-center text-lg font-bold text-gray-900 dark:text-gray-100 md:text-left">
+            <h5
+              className={clsx(
+                "mb-6 sm:mb-8 mt-2 text-center text-base sm:text-lg font-bold md:text-left",
+                themeClasses.pageText,
+              )}
+            >
               Legal
             </h5>
-            <div className="grid justify-items-center gap-4 md:justify-items-start">
+            <div className="grid justify-items-center gap-3 sm:gap-4 md:justify-items-start">
               {navigation.legal.map((item, index) => (
                 <Link
                   key={index}
                   to={item.href}
-                  className="cursor-pointer bg-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                  className={clsx(
+                    "cursor-pointer bg-transparent transition-colors",
+                    themeClasses.pageTextSecondary,
+                    "hover:text-slate-900 dark:hover:text-white",
+                  )}
                 >
                   {item.name}
                 </Link>
@@ -140,19 +191,31 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-col items-center justify-between gap-4 md:flex-row md:gap-0">
-          <div className="leading-5 text-gray-600 dark:text-gray-400">
+        <div className="flex flex-col items-center justify-between gap-4 sm:gap-6 md:flex-row md:gap-0 pt-6 sm:pt-8 border-t border-slate-200 dark:border-slate-800">
+          <div
+            className={clsx(
+              "leading-5 text-sm sm:text-base",
+              themeClasses.pageTextSecondary,
+            )}
+          >
             © {new Date().getFullYear()} Editframe
           </div>
-          <div className="flex flex-col items-center justify-center rounded-xl py-2 pl-3 pr-2 leading-5 text-gray-600 dark:text-gray-400">
-            <div className="text-center lg:text-left">
-              Making video creation easier for software developers.
-            </div>
+          <div
+            className={clsx(
+              "flex flex-col items-center justify-center rounded-xl py-2 pl-3 pr-2 leading-5 text-sm sm:text-base text-center",
+              themeClasses.pageTextSecondary,
+            )}
+          >
+            <div>Making video creation easier for software developers.</div>
           </div>
           <div className="leading-5">
             <a
               href="mailto:team@editframe.com"
-              className="cursor-pointer bg-transparent font-semibold text-gray-800 dark:text-gray-200 hover:text-gray-600 dark:hover:text-gray-400"
+              className={clsx(
+                "cursor-pointer bg-transparent font-semibold transition-colors",
+                themeClasses.pageText,
+                "hover:text-slate-600 dark:hover:text-slate-300",
+              )}
             >
               Have a question?
             </a>

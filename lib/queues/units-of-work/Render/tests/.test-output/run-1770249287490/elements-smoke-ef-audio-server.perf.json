@@ -1,0 +1,19 @@
+{
+  "testName": "elements-smoke-ef-audio-server",
+  "renderMode": "server",
+  "totalRenderTimeMs": 6583.247798999997,
+  "videoDurationMs": 100,
+  "fps": 30,
+  "numFrames": 3,
+  "avgFrameTimeMs": 128.89555400000003,
+  "timing": {
+    "total": 6583.247798999997,
+    "electronRpcCreate": 4313.960407000006,
+    "bundleHtml": 1718.400772999994,
+    "getRenderInfo": 160.8317210000023,
+    "createAssetsBundle": 2.3577950000035344,
+    "renderFragment": 386.68666200000007,
+    "writeFile": 0.9775259999951231
+  },
+  "timestamp": "2026-02-04T23:55:35.421Z"
+}

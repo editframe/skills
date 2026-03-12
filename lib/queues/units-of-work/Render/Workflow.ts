@@ -19,10 +19,15 @@ export const RenderWorkflow = new Workflow<Selectable<Video2Renders>>({
         completed_at: null,
         failure_detail: sql`source.failure_detail::jsonb`,
       })
-      .from(values(messages.map((message) => ({
-        id: message.workflowId,
-        failure_detail: message.details?.error,
-      })), "source"))
+      .from(
+        values(
+          messages.map((message) => ({
+            id: message.workflowId,
+            failure_detail: message.details?.error,
+          })),
+          "source",
+        ),
+      )
       .where("video2.renders.id", "=", () => sql`source.id::uuid`)
       .executeTakeFirstOrThrow();
   },

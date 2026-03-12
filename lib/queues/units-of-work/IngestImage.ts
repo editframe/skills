@@ -1,18 +1,14 @@
-import { envInt, envString } from "@/util/env";
+import { envInt } from "@/util/env";
 import { valkey } from "@/valkey/valkey";
 import { Queue } from "../Queue";
 import { Worker } from "../Worker";
-import { ConnectionURLMap } from "../WorkerConnection";
 import { logger } from "@/logging";
+import { db } from "@/sql-client.server";
 
 // Required to ensure the workflow is registered
 import "@/queues/units-of-work/ProcessHtml/Workflow";
 import { processImageFile } from "@/process-file/processAsset";
 
-const QUEUE_URL = envString(
-  "INGEST_IMAGE_WEBSOCKET_HOST",
-  "ws://localhost:3000",
-);
 const MAX_WORKER_COUNT = envInt("INGEST_IMAGE_MAX_WORKER_COUNT", 1);
 const WORKER_CONCURRENCY = envInt("INGEST_IMAGE_WORKER_CONCURRENCY", 1);
 
@@ -31,7 +27,6 @@ export const IngestImageQueue = new Queue<IngestImagePayload>({
   maxWorkerCount: MAX_WORKER_COUNT,
   workerConcurrency: WORKER_CONCURRENCY,
 });
-ConnectionURLMap.set(IngestImageQueue, QUEUE_URL);
 
 export const IngestImageWorker = new Worker({
   storage: valkey,
@@ -45,12 +40,14 @@ export const IngestImageWorker = new Worker({
 
     const parsedUrl = new URL(job.payload.url);
 
-    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-      throw new Error(`Invalid URL protocol: Only HTTP/HTTPS URLs are allowed, got: ${parsedUrl.protocol}`);
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      throw new Error(
+        `Invalid URL protocol: Only HTTP/HTTPS URLs are allowed, got: ${parsedUrl.protocol}`,
+      );
     }
 
     // Validate content-length header first (for metadata)
-    const response = await fetch(job.payload.url, { method: 'HEAD' });
+    const response = await fetch(job.payload.url, { method: "HEAD" });
     if (!response.ok) {
       throw new Error(`Failed to access image from ${job.payload.url}`);
     }
@@ -63,18 +60,21 @@ export const IngestImageWorker = new Worker({
     const byteSize = Number.parseInt(contentLength, 10);
 
     // processImageFile will use acquireAsset to handle the download
-    await processImageFile(
-      job.payload.url,
-      {
-        id: job.payload.imageId,
-        org_id: job.orgId,
-        creator_id: job.payload.creatorId,
-        api_key_id: job.payload.apiKeyId || null,
-        filename: job.payload.url,
-        byte_size: byteSize,
-        next_byte: byteSize,
-        expires_at: new Date(Date.now() + ONE_HOUR),
-      }
-    );
+    await processImageFile(job.payload.url, {
+      id: job.payload.imageId,
+      org_id: job.orgId,
+      creator_id: job.payload.creatorId,
+      api_key_id: job.payload.apiKeyId || null,
+      filename: job.payload.url,
+      byte_size: byteSize,
+      next_byte: byteSize,
+      expires_at: new Date(Date.now() + ONE_HOUR),
+    });
+
+    await db
+      .updateTable("video2.files")
+      .set({ status: "ready" })
+      .where("id", "=", job.payload.imageId)
+      .execute();
   },
 });

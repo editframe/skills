@@ -1,0 +1,18 @@
+{
+  "testName": "elements-smoke-ef-timegroup-server",
+  "renderMode": "server",
+  "totalRenderTimeMs": 3890.0025430000005,
+  "videoDurationMs": 100,
+  "fps": 30,
+  "numFrames": 3,
+  "avgFrameTimeMs": 178.3544743333332,
+  "timing": {
+    "total": 3890.0025430000005,
+    "bundleHtml": 3098.9532400000007,
+    "getRenderInfo": 252.76266000000032,
+    "createAssetsBundle": 2.013574000000517,
+    "renderFragment": 535.0634229999996,
+    "writeFile": 1.1761860000005981
+  },
+  "timestamp": "2026-02-05T08:32:24.202Z"
+}

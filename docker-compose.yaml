@@ -1,22 +1,6 @@
 services:
-  traefik:
-    image: traefik:latest
-    ports:
-      - "7777:7777"
-      - "3000:3000"
-      - "24678:24678"
-      - "3001:3001"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    command:
-      - --api.insecure=true
-      - --providers.docker
-      - --entrypoints.web.address=:3000
-      - --entrypoints.traefik.address=:7777
-      - --entrypoints.port24678.address=:24678
-      - --entrypoints.port3001.address=:3001
-      - --log.level=INFO
-      - --accesslog
+  # Traefik is now managed at the monorepo root level
+  # See /docker-compose.yaml for the shared Traefik configuration
 
   # autoheal:
   #   environment:
@@ -28,40 +12,9 @@ services:
   #     - /etc/localtime:/etc/localtime:ro
   #     - /var/run/docker.sock:/var/run/docker.sock
 
-  devcontainer:
-    build:
-      context: .
-      args:
-        NODE_VERSION: 22
-      dockerfile_inline: |
-        FROM node:22
-        RUN apt-get update && apt-get install -y \
-            zsh \
-            && rm -rf /var/lib/apt/lists/*
-
-        # Install tsx globally for running TypeScript files
-        RUN npm install -g tsx
-
-        SHELL ["/bin/zsh", "-c"]
-    volumes:
-      - .:/app
-      - node_modules:/app/node_modules
-      - ${HOME}/.config/gcloud:/root/.config/gcloud
-      - ../elements:/app/lib/packages
-    env_file:
-      - ${PWD}/.env
-    working_dir: /app
-    stop_grace_period: 1s
-    command: ["sleep", "infinity"]
-    labels:
-      - traefik.enable=false
-
   runner:
-    build:
-      context: ./
-      dockerfile: Dockerfile.runner
-      tags:
-        - telecine-runner
+    image: telecine-runner
+    pull_policy: never
     env_file:
       - ${PWD}/.env
     restart: no
@@ -69,17 +22,29 @@ services:
       - PYTORCH_ENABLE_MPS_FALLBACK=1
     working_dir: /app
     volumes:
-      - .:/app
+      - ${TELECINE_ROOT_HOST:-${PWD}}:/app
       - node_modules:/app/node_modules
       - ${HOME}/.config/gcloud:/root/.config/gcloud
-      - ../elements:/app/lib/packages
+      - ${ELEMENTS_PATH:-../elements}:/app/lib/packages
+      - ${PWD}/../skills:/app/skills
     devices:
       - /dev/mps0:/dev/mps0
     privileged: true
     stop_grace_period: 1s
     command: ["sleep", "infinity"]
+    # Expose port 4323 for test server (vitest browser tests)
+    expose:
+      - "4323"
+    networks:
+      - default
+      - traefik-shared
     labels:
-      - traefik.enable=false
+      traefik.enable: true
+      # Test server uses its own Traefik entrypoint (port 4323) to avoid conflict with other services
+      traefik.http.routers.telecine-test-${WORKTREE_ID:-main}.rule: "Host(`${WORKTREE_DOMAIN}`)"
+      traefik.http.routers.telecine-test-${WORKTREE_ID:-main}.entrypoints: telecine-test
+      traefik.http.routers.telecine-test-${WORKTREE_ID:-main}.service: telecine-test-${WORKTREE_ID:-main}
+      traefik.http.services.telecine-test-${WORKTREE_ID:-main}.loadbalancer.server.port: 4323
 
   # playwright-runner:
   #   build:
@@ -111,3 +76,10 @@ services:
 volumes:
   node_modules:
   node_modules_amd64:
+
+networks:
+  traefik-shared:
+    name: editframe-shared
+    external: true
+  default:
+    name: ${WORKTREE_DOCKER_NETWORK_NAME:-telecine_default}

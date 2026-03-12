@@ -1,7 +1,6 @@
 import { useFetcher } from "react-router";
 
 import { Queue } from "@/queues/Queue";
-import { requireAdminSession } from "@/util/requireAdminSession";
 import { colorHash } from "@/util/colorHash";
 import { Button } from "~/components/Button";
 import { PaginatedTable } from "~/components/Table";
@@ -9,7 +8,6 @@ import { PaginatedTable } from "~/components/Table";
 import type { Route } from "./+types/failedJobs";
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  await requireAdminSession(request);
   const { name } = params;
   const queue = Queue.fromName(name);
   if (!queue) {
@@ -44,7 +42,10 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
 const ReleaseButton = ({
   id,
   queueName,
-}: { id: string; queueName: string }) => {
+}: {
+  id: string;
+  queueName: string;
+}) => {
   const fetcher = useFetcher<{ success: boolean }>({
     key: `release-job-${id}`,
   });
@@ -76,7 +77,13 @@ const ReleaseButton = ({
   );
 };
 
-const ReleaseAllButton = ({ queueName }: { queueName: string }) => {
+const ReleaseAllButton = ({
+  queueName,
+  count,
+}: {
+  queueName: string;
+  count: number;
+}) => {
   const fetcher = useFetcher<{ success: boolean }>({
     key: `release-all-jobs-${queueName}`,
   });
@@ -86,9 +93,9 @@ const ReleaseAllButton = ({ queueName }: { queueName: string }) => {
     <Button
       mode="action"
       confirmation={{
-        title: "Release All Jobs",
-        description: "Are you sure you want to release all jobs?",
-        confirmText: "Release",
+        title: "Release All Claimed Jobs",
+        description: `Are you sure you want to release ${count} claimed job${count !== 1 ? "s" : ""}? They will be returned to the queue.`,
+        confirmText: "Release All",
         cancelText: "Cancel",
       }}
       onConfirm={() => {
@@ -103,7 +110,7 @@ const ReleaseAllButton = ({ queueName }: { queueName: string }) => {
       disabled={isLoading}
       loading={isLoading}
     >
-      Release All
+      Release All ({count})
     </Button>
   );
 };
@@ -114,7 +121,7 @@ export default function QueueComponent({
 }: Route.ComponentProps) {
   return (
     <>
-      <ReleaseAllButton queueName={queueName} />
+      <ReleaseAllButton queueName={queueName} count={stats.claimed} />
       <PaginatedTable
         rows={jobs}
         rowKey="id"

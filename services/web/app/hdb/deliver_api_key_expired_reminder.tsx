@@ -61,7 +61,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
         from: NO_REPLY_ADDRESS,
         to: user?.email_address as string,
         subject: `[Editframe] Your API key "${name}" is about to expire`,
-        html: render(
+        html: await render(
           <ApiExpiredReminder
             keyName={name as string}
             orgName={org?.display_name as string}

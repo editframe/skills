@@ -1,5 +1,6 @@
 services:
   worker-test-fast-initializer:
+    profiles: ["render"]
     image: telecine-runner
     pull_policy: never
     env_file:
@@ -17,6 +18,9 @@ services:
     init: true
     command:
       ["tsx", "--watch", "/app/services/worker-test-fast/server-initializer.ts"]
+    networks:
+      - default
+      - editframe-shared
     deploy:
       resources:
         limits:
@@ -24,6 +28,7 @@ services:
           memory: ${WORKER_TEST_FAST_INITIALIZER_MEMORY:-512M}
 
   worker-test-fast-main:
+    profiles: ["render"]
     image: telecine-runner
     pull_policy: never
     env_file:
@@ -40,6 +45,9 @@ services:
     stop_grace_period: 1s
     init: true
     command: ["tsx", "--watch", "/app/services/worker-test-fast/server-main.ts"]
+    networks:
+      - default
+      - editframe-shared
     deploy:
       resources:
         limits:
@@ -47,6 +55,7 @@ services:
           memory: ${WORKER_TEST_FAST_MAIN_MEMORY:-512M}
 
   worker-test-fast-finalizer:
+    profiles: ["render"]
     image: telecine-runner
     pull_policy: never
     env_file:
@@ -64,8 +73,16 @@ services:
     init: true
     command:
       ["tsx", "--watch", "/app/services/worker-test-fast/server-finalizer.ts"]
+    networks:
+      - default
+      - editframe-shared
     deploy:
       resources:
         limits:
           cpus: ${WORKER_TEST_FAST_FINALIZER_CPUS:-0.5}
           memory: ${WORKER_TEST_FAST_FINALIZER_MEMORY:-512M}
+
+networks:
+  editframe-shared:
+    name: editframe-shared
+    external: true

@@ -7,7 +7,7 @@ interface LayerOnStageProps<ElementType extends HTMLElement> {
 }
 
 export const useLayerOnStageProps = <ElementType extends HTMLElement>(
-  layer: Layer
+  layer: Layer,
 ): LayerOnStageProps<ElementType> => {
   const ref = useRef<ElementType>(null);
 

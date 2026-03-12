@@ -42,22 +42,34 @@ describe("TypeScript vs Go Service Parity Validation", () => {
 
   test("Both services return manifests with same structure", async () => {
     const tsManifest = await fetchJSON(
-      `${TS_SERVICE_URL}/api/v1/transcode/manifest.json?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+      `${TS_SERVICE_URL}/api/v1/transcode/manifest.json?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
     );
     const goManifest = await fetchJSON(
-      `${GO_SERVICE_URL}/api/v1/transcode/manifest.json?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+      `${GO_SERVICE_URL}/api/v1/transcode/manifest.json?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
     );
 
     expect(tsManifest.version).toBe(goManifest.version);
-    expect(tsManifest.videoRenditions?.length).toBe(goManifest.videoRenditions?.length);
-    expect(tsManifest.audioRenditions?.length).toBe(goManifest.audioRenditions?.length);
+    expect(tsManifest.videoRenditions?.length).toBe(
+      goManifest.videoRenditions?.length,
+    );
+    expect(tsManifest.audioRenditions?.length).toBe(
+      goManifest.audioRenditions?.length,
+    );
 
-    expect(Math.abs(tsManifest.duration - goManifest.duration)).toBeLessThan(0.1);
+    expect(Math.abs(tsManifest.duration - goManifest.duration)).toBeLessThan(
+      0.1,
+    );
 
     console.log("✅ Manifests have compatible structure");
-    console.log(`   Duration: TS=${tsManifest.duration}s, Go=${goManifest.duration}s`);
-    console.log(`   Video renditions: ${tsManifest.videoRenditions?.length || 0}`);
-    console.log(`   Audio renditions: ${tsManifest.audioRenditions?.length || 0}`);
+    console.log(
+      `   Duration: TS=${tsManifest.duration}s, Go=${goManifest.duration}s`,
+    );
+    console.log(
+      `   Video renditions: ${tsManifest.videoRenditions?.length || 0}`,
+    );
+    console.log(
+      `   Audio renditions: ${tsManifest.audioRenditions?.length || 0}`,
+    );
   });
 
   test("Both services return compatible init segments", async () => {
@@ -153,7 +165,9 @@ describe("TypeScript vs Go Service Parity Validation", () => {
       expect(tsSeg.length).toBeGreaterThan(0);
       expect(goSeg.length).toBeGreaterThan(0);
 
-      console.log(`✅ Segment ${segNum}: TS=${tsSeg.length} bytes, Go=${goSeg.length} bytes`);
+      console.log(
+        `✅ Segment ${segNum}: TS=${tsSeg.length} bytes, Go=${goSeg.length} bytes`,
+      );
     }
   });
 
@@ -170,17 +184,19 @@ describe("TypeScript vs Go Service Parity Validation", () => {
       expect(tsInit.length).toBeGreaterThan(0);
       expect(goInit.length).toBeGreaterThan(0);
 
-      console.log(`✅ ${rendition}: TS=${tsInit.length} bytes, Go=${goInit.length} bytes`);
+      console.log(
+        `✅ ${rendition}: TS=${tsInit.length} bytes, Go=${goInit.length} bytes`,
+      );
     }
   });
 
   test("Both services return DASH manifests", async () => {
     const tsDash = await fetch(
-      `${TS_SERVICE_URL}/api/v1/transcode/manifest.mpd?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+      `${TS_SERVICE_URL}/api/v1/transcode/manifest.mpd?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
     ).then((r) => r.text());
 
     const goDash = await fetch(
-      `${GO_SERVICE_URL}/api/v1/transcode/manifest.mpd?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+      `${GO_SERVICE_URL}/api/v1/transcode/manifest.mpd?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
     ).then((r) => r.text());
 
     expect(tsDash).toContain("<?xml");
@@ -194,11 +210,11 @@ describe("TypeScript vs Go Service Parity Validation", () => {
 
   test("Both services return HLS master playlists", async () => {
     const tsHls = await fetch(
-      `${TS_SERVICE_URL}/api/v1/transcode/manifest.m3u8?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+      `${TS_SERVICE_URL}/api/v1/transcode/manifest.m3u8?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
     ).then((r) => r.text());
 
     const goHls = await fetch(
-      `${GO_SERVICE_URL}/api/v1/transcode/manifest.m3u8?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+      `${GO_SERVICE_URL}/api/v1/transcode/manifest.m3u8?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
     ).then((r) => r.text());
 
     expect(tsHls).toContain("#EXTM3U");
@@ -231,38 +247,47 @@ describe("TypeScript vs Go Service Parity Validation", () => {
     await ensureOutputDir();
 
     const tsInit = await fetchBinary(
-      `${TS_SERVICE_URL}/api/v1/transcode/low/init.m4s?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+      `${TS_SERVICE_URL}/api/v1/transcode/low/init.m4s?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
     );
     const tsSeg1 = await fetchBinary(
-      `${TS_SERVICE_URL}/api/v1/transcode/low/1.m4s?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+      `${TS_SERVICE_URL}/api/v1/transcode/low/1.m4s?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
     );
     const tsSeg2 = await fetchBinary(
-      `${TS_SERVICE_URL}/api/v1/transcode/low/2.m4s?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+      `${TS_SERVICE_URL}/api/v1/transcode/low/2.m4s?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
     );
 
     const tsConcatenated = Buffer.concat([tsInit, tsSeg1, tsSeg2]);
-    await fs.writeFile(path.join(OUTPUT_DIR, "ts-concatenated.mp4"), tsConcatenated);
+    await fs.writeFile(
+      path.join(OUTPUT_DIR, "ts-concatenated.mp4"),
+      tsConcatenated,
+    );
 
     const goInit = await fetchBinary(
-      `${GO_SERVICE_URL}/api/v1/transcode/low/init.m4s?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+      `${GO_SERVICE_URL}/api/v1/transcode/low/init.m4s?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
     );
     const goSeg1 = await fetchBinary(
-      `${GO_SERVICE_URL}/api/v1/transcode/low/1.m4s?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+      `${GO_SERVICE_URL}/api/v1/transcode/low/1.m4s?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
     );
     const goSeg2 = await fetchBinary(
-      `${GO_SERVICE_URL}/api/v1/transcode/low/2.m4s?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+      `${GO_SERVICE_URL}/api/v1/transcode/low/2.m4s?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
     );
 
     const goConcatenated = Buffer.concat([goInit, goSeg1, goSeg2]);
-    await fs.writeFile(path.join(OUTPUT_DIR, "go-concatenated.mp4"), goConcatenated);
+    await fs.writeFile(
+      path.join(OUTPUT_DIR, "go-concatenated.mp4"),
+      goConcatenated,
+    );
 
     expect(tsConcatenated.length).toBeGreaterThan(0);
     expect(goConcatenated.length).toBeGreaterThan(0);
 
     console.log("✅ Segments concatenated successfully");
-    console.log(`   TS: init(${tsInit.length}) + seg1(${tsSeg1.length}) + seg2(${tsSeg2.length}) = ${tsConcatenated.length} bytes`);
-    console.log(`   Go: init(${goInit.length}) + seg1(${goSeg1.length}) + seg2(${goSeg2.length}) = ${goConcatenated.length} bytes`);
+    console.log(
+      `   TS: init(${tsInit.length}) + seg1(${tsSeg1.length}) + seg2(${tsSeg2.length}) = ${tsConcatenated.length} bytes`,
+    );
+    console.log(
+      `   Go: init(${goInit.length}) + seg1(${goSeg1.length}) + seg2(${goSeg2.length}) = ${goConcatenated.length} bytes`,
+    );
     console.log(`   Output files saved to ${OUTPUT_DIR}`);
   });
 });
-

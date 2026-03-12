@@ -39,7 +39,9 @@ async function analyzeBoxStructure(filePath: string, label: string) {
         if (obj.type === type) {
           found.push({ ...obj, _depth: depth });
         }
-        Object.values(obj).forEach((value) => found.push(...findBoxes(value, type, depth + 1)));
+        Object.values(obj).forEach((value) =>
+          found.push(...findBoxes(value, type, depth + 1)),
+        );
       }
 
       return found;
@@ -53,10 +55,18 @@ async function analyzeBoxStructure(filePath: string, label: string) {
     const tfdtBoxes = findBoxes(parsed, "tfdt");
 
     console.log(`\n📦 Root Boxes:`);
-    console.log(`   ftyp: ${ftypBoxes.length} (${ftypBoxes.length > 0 ? "✅" : "❌"})`);
-    console.log(`   moov: ${moovBoxes.length} (${moovBoxes.length > 0 ? "✅" : "❌"})`);
-    console.log(`   moof: ${moofBoxes.length} (${moofBoxes.length > 0 ? "✅" : "❌"})`);
-    console.log(`   mdat: ${mdatBoxes.length} (${mdatBoxes.length > 0 ? "✅" : "❌"})`);
+    console.log(
+      `   ftyp: ${ftypBoxes.length} (${ftypBoxes.length > 0 ? "✅" : "❌"})`,
+    );
+    console.log(
+      `   moov: ${moovBoxes.length} (${moovBoxes.length > 0 ? "✅" : "❌"})`,
+    );
+    console.log(
+      `   moof: ${moofBoxes.length} (${moofBoxes.length > 0 ? "✅" : "❌"})`,
+    );
+    console.log(
+      `   mdat: ${mdatBoxes.length} (${mdatBoxes.length > 0 ? "✅" : "❌"})`,
+    );
 
     if (mfhdBoxes.length > 0) {
       console.log(`\n🔢 Movie Fragment Header (mfhd):`);
@@ -68,7 +78,9 @@ async function analyzeBoxStructure(filePath: string, label: string) {
     if (tfdtBoxes.length > 0) {
       console.log(`\n⏰ Track Fragment Decode Time (tfdt):`);
       tfdtBoxes.forEach((tfdt: any, i: number) => {
-        console.log(`   Track ${i}: baseMediaDecodeTime = ${tfdt.baseMediaDecodeTime || "N/A"}`);
+        console.log(
+          `   Track ${i}: baseMediaDecodeTime = ${tfdt.baseMediaDecodeTime || "N/A"}`,
+        );
       });
     }
 
@@ -83,15 +95,21 @@ async function analyzeBoxStructure(filePath: string, label: string) {
 
     return parsed;
   } catch (error) {
-    console.log(`   ❌ Error: ${error instanceof Error ? error.message : String(error)}`);
+    console.log(
+      `   ❌ Error: ${error instanceof Error ? error.message : String(error)}`,
+    );
     return null;
   }
 }
 
 async function main() {
-  console.log("═══════════════════════════════════════════════════════════════");
+  console.log(
+    "═══════════════════════════════════════════════════════════════",
+  );
   console.log("  Detailed Box Structure Analysis");
-  console.log("═══════════════════════════════════════════════════════════════");
+  console.log(
+    "═══════════════════════════════════════════════════════════════",
+  );
 
   await fs.mkdir(OUTPUT_DIR, { recursive: true });
 
@@ -101,9 +119,21 @@ async function main() {
   ];
 
   const segments = [
-    { rendition: "high", segmentId: "init", description: "High Quality Init Segment" },
-    { rendition: "high", segmentId: "1", description: "High Quality Segment 1" },
-    { rendition: "high", segmentId: "2", description: "High Quality Segment 2" },
+    {
+      rendition: "high",
+      segmentId: "init",
+      description: "High Quality Init Segment",
+    },
+    {
+      rendition: "high",
+      segmentId: "1",
+      description: "High Quality Segment 1",
+    },
+    {
+      rendition: "high",
+      segmentId: "2",
+      description: "High Quality Segment 2",
+    },
   ];
 
   for (const segment of segments) {
@@ -122,11 +152,18 @@ async function main() {
         const data = await fetchBinary(segmentUrl);
 
         await fs.writeFile(filePath, data);
-        console.log(`   💾 Saved: ${filename} (${data.length.toLocaleString()} bytes)`);
+        console.log(
+          `   💾 Saved: ${filename} (${data.length.toLocaleString()} bytes)`,
+        );
 
-        await analyzeBoxStructure(filePath, `${test.label} - ${segment.description}`);
+        await analyzeBoxStructure(
+          filePath,
+          `${test.label} - ${segment.description}`,
+        );
       } catch (error) {
-        console.log(`   ❌ Failed: ${error instanceof Error ? error.message : String(error)}`);
+        console.log(
+          `   ❌ Failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
       }
     }
   }
@@ -151,4 +188,3 @@ main().catch((error) => {
   console.error("Fatal error:", error);
   process.exit(1);
 });
-

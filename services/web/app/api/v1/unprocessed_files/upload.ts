@@ -5,12 +5,12 @@ import { requireQueryAs } from "@/graphql.server/userClient";
 import { logger } from "@/logging";
 import { db } from "@/sql-client.server";
 import { receiveAssetChunk } from "@/util/receiveAssetChunk";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 import type { Route } from "./+types/upload";
 
-export const loader = async ({ request, params: { id } }: Route.LoaderArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+export const loader = async ({ request, params: { id }, context }: Route.LoaderArgs) => {
+  const session = context.get(apiIdentityContext);
   const file = await requireQueryAs(
     session,
     "org-editor",
@@ -31,8 +31,8 @@ export const loader = async ({ request, params: { id } }: Route.LoaderArgs) => {
   return Response.json({}, { status: 202 });
 };
 
-export const action = async ({ request, params: { id } }: Route.ActionArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+export const action = async ({ request, params: { id }, context }: Route.ActionArgs) => {
+  const session = context.get(apiIdentityContext);
   const file = await requireQueryAs(
     session,
     "org-editor",

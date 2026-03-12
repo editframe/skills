@@ -1,5 +1,5 @@
 import { db } from "@/sql-client.server";
-import { sql } from "kysely";
+import { type SqlBool, sql } from "kysely";
 
 export async function loginUserWithMagicLink(emailAddress: string) {
   const emailPassword = await db
@@ -47,18 +47,23 @@ export async function getUserEmailAndPasswordByMagicToken(token: string) {
       "identity.email_confirmations.user_id",
     )
     .where("identity.magic_link_tokens.token", "=", token)
+    .where("identity.magic_link_tokens.claimed_at", "is", null)
+    .where(
+      sql<SqlBool>`identity.magic_link_tokens.created_at >= now() - interval '1 hour'`,
+    )
     .selectAll("identity.email_passwords")
     .select("identity.email_confirmations.confirmed_at")
     .executeTakeFirst();
 
   if (!userPassword) {
-    throw new Error("Invalid magic token");
+    throw new Error("Invalid or expired magic link");
   }
 
   await db
     .updateTable("identity.magic_link_tokens")
     .set({ claimed_at: sql`now()` })
     .where("token", "=", token)
+    .where("claimed_at", "is", null)
     .execute();
 
   return userPassword;

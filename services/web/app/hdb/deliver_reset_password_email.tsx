@@ -24,7 +24,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
     from: NO_REPLY_ADDRESS,
     to: email.email_address as string,
     subject: "[Editframe] Reset your password",
-    html: render(
+    html: await render(
       <EmailResetPassword
         token={reset_token}
         host={process.env.WEB_HOST as string}

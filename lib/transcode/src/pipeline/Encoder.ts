@@ -4,7 +4,7 @@
  */
 
 export interface EncoderOptions {
-  mediaType: 'video' | 'audio';
+  mediaType: "video" | "audio";
   codecId: number; // Codec ID from CodecId constants
 
   // Video encoding parameters
@@ -36,7 +36,7 @@ export interface EncodedPacket {
   readonly size: number;
   readonly streamIndex: number;
   readonly isKeyFrame: boolean;
-  readonly mediaType: 'video' | 'audio';
+  readonly mediaType: "video" | "audio";
   readonly data: Uint8Array; // Encoded packet data
 }
 
@@ -58,7 +58,7 @@ export interface CodecParameters {
  * Automatically manages codec contexts and encoding resources
  */
 export interface Encoder {
-  readonly mediaType: 'video' | 'audio';
+  readonly mediaType: "video" | "audio";
   readonly codecId: number;
   readonly codecName: string;
   readonly isInitialized: boolean;
@@ -90,7 +90,10 @@ export interface Encoder {
    * @param frame Frame object from decoder/filter with framePtr and optional pts
    * @returns Promise that resolves to array of encoded packets
    */
-  encodeFrameInfo(frame: { framePtr: number; pts?: number }): Promise<EncodedPacket[]>;
+  encodeFrameInfo(frame: {
+    framePtr: number;
+    pts?: number;
+  }): Promise<EncodedPacket[]>;
 
   /**
    * Encode a frame using Frame object with framePtr reference and explicit source timebase
@@ -98,7 +101,10 @@ export interface Encoder {
    * @param sourceTimeBase Timebase of the source frame for timestamp conversion
    * @returns Promise that resolves to array of encoded packets
    */
-  encodeFrameInfo(frame: { framePtr: number; pts?: number }, sourceTimeBase: { num: number; den: number }): Promise<EncodedPacket[]>;
+  encodeFrameInfo(
+    frame: { framePtr: number; pts?: number },
+    sourceTimeBase: { num: number; den: number },
+  ): Promise<EncodedPacket[]>;
 
   /**
    * Flush remaining packets from the encoder
@@ -142,7 +148,7 @@ export const CodecId = {
   AC3: 86019,
   FLAC: 86028,
   PCM_S16LE: 65536,
-  PCM_F32LE: 65557
+  PCM_F32LE: 65557,
 } as const;
 
 // Common pixel formats (subset of AVPixelFormat)
@@ -155,7 +161,7 @@ export const PixelFormat = {
   RGBA: 26,
   BGRA: 27,
   NV12: 23,
-  NV21: 24
+  NV21: 24,
 } as const;
 
 // Common sample formats (subset of AVSampleFormat)
@@ -170,13 +176,13 @@ export const SampleFormat = {
   S16P: 6,
   S32P: 7,
   FLTP: 8,
-  DBLP: 9
+  DBLP: 9,
 } as const;
 
 /**
  * Factory function to create an Encoder instance
  * The returned Encoder can be used with 'using' declaration for automatic cleanup
- * 
+ *
  * @example
  * ```typescript
  * // H.264 video encoder
@@ -191,7 +197,7 @@ export const SampleFormat = {
  *   preset: 'medium',
  *   profile: 'high'
  * });
- * 
+ *
  * // AAC audio encoder
  * using audioEncoder = await createEncoder({
  *   mediaType: 'audio',
@@ -201,12 +207,12 @@ export const SampleFormat = {
  *   sampleFormat: SampleFormat.FLTP,
  *   audioBitrate: 128000 // 128 kbps
  * });
- * 
+ *
  * const encodedPackets = await videoEncoder.encode(inputFrame);
  * ```
  */
 export async function createEncoder(options: EncoderOptions): Promise<Encoder> {
-  const { createEncoderNative } = await import('../playback.js');
+  const { createEncoderNative } = await import("../playback.js");
 
   const nativeEncoder = createEncoderNative(options);
 
@@ -218,13 +224,27 @@ export async function createEncoder(options: EncoderOptions): Promise<Encoder> {
   }
 
   return {
-    get mediaType() { return nativeEncoder.mediaType; },
-    get codecId() { return nativeEncoder.codecId; },
-    get codecName() { return nativeEncoder.codecName; },
-    get isInitialized() { return nativeEncoder.isInitialized; },
-    get framesEncoded() { return nativeEncoder.framesEncoded; },
-    get bytesEncoded() { return nativeEncoder.bytesEncoded; },
-    get timeBase() { return nativeEncoder.getTimeBase(); },
+    get mediaType() {
+      return nativeEncoder.mediaType;
+    },
+    get codecId() {
+      return nativeEncoder.codecId;
+    },
+    get codecName() {
+      return nativeEncoder.codecName;
+    },
+    get isInitialized() {
+      return nativeEncoder.isInitialized;
+    },
+    get framesEncoded() {
+      return nativeEncoder.framesEncoded;
+    },
+    get bytesEncoded() {
+      return nativeEncoder.bytesEncoded;
+    },
+    get timeBase() {
+      return nativeEncoder.getTimeBase();
+    },
 
     getExtradata(): Uint8Array {
       return nativeEncoder.getExtradata();
@@ -236,17 +256,23 @@ export async function createEncoder(options: EncoderOptions): Promise<Encoder> {
 
     async encode(frame: EncodedFrame): Promise<EncodedPacket[]> {
       return new Promise<EncodedPacket[]>((resolve, reject) => {
-        nativeEncoder.encodeAsync(frame, (error: Error | null, packets: EncodedPacket[]) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(packets);
-          }
-        });
+        nativeEncoder.encodeAsync(
+          frame,
+          (error: Error | null, packets: EncodedPacket[]) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve(packets);
+            }
+          },
+        );
       });
     },
 
-    async encodeFrameInfo(frame: { framePtr: number; pts?: number }, sourceTimeBase?: { num: number; den: number }): Promise<EncodedPacket[]> {
+    async encodeFrameInfo(
+      frame: { framePtr: number; pts?: number },
+      sourceTimeBase?: { num: number; den: number },
+    ): Promise<EncodedPacket[]> {
       if (sourceTimeBase) {
         return nativeEncoder.encodeFrameInfo(frame, sourceTimeBase);
       } else {
@@ -260,7 +286,7 @@ export async function createEncoder(options: EncoderOptions): Promise<Encoder> {
 
     [Symbol.dispose](): void {
       nativeEncoder.dispose();
-    }
+    },
   };
 }
 
@@ -282,12 +308,12 @@ export async function validateEncoder(options: EncoderOptions): Promise<{
       valid: true,
       mediaType: encoder.mediaType,
       codecName: encoder.codecName,
-      codecId: encoder.codecId
+      codecId: encoder.codecId,
     };
   } catch (error) {
     return {
       valid: false,
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
     };
   }
 }
@@ -298,13 +324,13 @@ export async function validateEncoder(options: EncoderOptions): Promise<{
  */
 export function getSupportedVideoCodecs() {
   return {
-    'H.264': CodecId.H264,
-    'H.265/HEVC': CodecId.H265,
-    'VP8': CodecId.VP8,
-    'VP9': CodecId.VP9,
-    'AV1': CodecId.AV1,
-    'MPEG-4': CodecId.MPEG4,
-    'MPEG-2': CodecId.MPEG2
+    "H.264": CodecId.H264,
+    "H.265/HEVC": CodecId.H265,
+    VP8: CodecId.VP8,
+    VP9: CodecId.VP9,
+    AV1: CodecId.AV1,
+    "MPEG-4": CodecId.MPEG4,
+    "MPEG-2": CodecId.MPEG2,
   } as const;
 }
 
@@ -314,13 +340,13 @@ export function getSupportedVideoCodecs() {
  */
 export function getSupportedAudioCodecs() {
   return {
-    'AAC': CodecId.AAC,
-    'MP3': CodecId.MP3,
-    'Opus': CodecId.OPUS,
-    'Vorbis': CodecId.VORBIS,
-    'AC-3': CodecId.AC3,
-    'FLAC': CodecId.FLAC,
-    'PCM 16-bit': CodecId.PCM_S16LE,
-    'PCM 32-bit float': CodecId.PCM_F32LE
+    AAC: CodecId.AAC,
+    MP3: CodecId.MP3,
+    Opus: CodecId.OPUS,
+    Vorbis: CodecId.VORBIS,
+    "AC-3": CodecId.AC3,
+    FLAC: CodecId.FLAC,
+    "PCM 16-bit": CodecId.PCM_S16LE,
+    "PCM 32-bit float": CodecId.PCM_F32LE,
   } as const;
-} 
+}

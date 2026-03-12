@@ -4,15 +4,15 @@ import { z } from "zod";
 import { db } from "@/sql-client.server";
 
 import type { Route } from "./+types/url-token";
-import { requireAPIToken } from "@/util/requireAPIToken";
+import { apiIdentityContext } from "~/middleware/context";
 
 const schema = z.object({
   url: z.string(),
   params: z.record(z.string()).optional(),
 });
 
-export const action = async ({ request }: Route.ActionArgs) => {
-  const session = await requireAPIToken(request);
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const session = context.get(apiIdentityContext);
   const apiKey = await db
     .selectFrom("identity.api_keys")
     .where("id", "=", session.cid)
@@ -20,7 +20,10 @@ export const action = async ({ request }: Route.ActionArgs) => {
     .executeTakeFirst();
 
   if (!apiKey) {
-    throw Response.json({ message: "Invalid or expired API token" }, { status: 401 });
+    throw Response.json(
+      { message: "Invalid or expired API token" },
+      { status: 401 },
+    );
   }
 
   const { url, params } = schema.parse(await request.json());
@@ -35,11 +38,10 @@ export const action = async ({ request }: Route.ActionArgs) => {
     uid: session.uid,
   };
 
-  const signedToken = jwt.sign(
-    jwtPayload,
-    apiKey.hash,
-    { algorithm: "HS256", expiresIn: "1hr" },
-  );
+  const signedToken = jwt.sign(jwtPayload, apiKey.hash, {
+    algorithm: "HS256",
+    expiresIn: "1hr",
+  });
 
   return {
     token: signedToken,

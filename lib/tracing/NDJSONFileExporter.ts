@@ -16,7 +16,7 @@ export class NDJSONFileExporter implements SpanExporter {
 
   async export(
     spans: ReadableSpan[],
-    resultCallback: (result: any) => void
+    resultCallback: (result: any) => void,
   ): Promise<void> {
     try {
       await mkdir(dirname(this.filePath), { recursive: true });
@@ -80,4 +80,3 @@ export class NDJSONFileExporter implements SpanExporter {
     await this.flush();
   }
 }
-

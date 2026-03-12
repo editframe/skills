@@ -4,7 +4,7 @@ import type { ResourceView } from ".";
 import { Button } from "../Button";
 import { useFetcher } from "react-router";
 import { Link } from "../Link";
-import { UserPlusIcon } from "@heroicons/react/24/outline";
+import { UserPlus } from "@phosphor-icons/react";
 import {
   Listbox,
   ListboxButton,
@@ -96,7 +96,7 @@ const Actions: ContentBlock<{
   }
 
   return (
-    <div className="flex gap-2">
+    <div className="flex flex-wrap gap-2">
       <Button
         mode="destructive"
         disabled={isLoading}
@@ -121,7 +121,7 @@ const Actions: ContentBlock<{
         {isSuccess ? "Removed!" : "Remove"}
       </Button>
       {isError && (
-        <span className="text-red-600 text-xs self-center">
+        <span className="text-red-600 dark:text-red-400 text-xs self-center">
           Action failed. Please try again.
         </span>
       )}
@@ -169,19 +169,43 @@ const Filter = () => {
   ];
 
   return (
-    <div className="flex items-center gap-4 p-2 text-xs">
-      <div className="flex items-center gap-2">
-        <span className="font-medium text-gray-600">Search:</span>
+    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 text-xs">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+        <span
+          className={clsx(
+            "text-xs font-medium whitespace-nowrap transition-colors",
+            "text-slate-700 dark:text-slate-300",
+          )}
+        >
+          Search:
+        </span>
         <input
           type="text"
           value={search}
           placeholder="Search by email..."
-          className="border-gray-300 px-2 py-1 border rounded text-xs"
+          className={clsx(
+            "w-full sm:w-auto px-2.5 py-1.5 border rounded-lg text-xs leading-snug transition-all duration-150 relative",
+            "bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm",
+            "text-slate-900 dark:text-slate-100",
+            "border-slate-300/75 dark:border-slate-700/75",
+            "shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08)] dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.3)]",
+            "placeholder:text-slate-400 dark:placeholder:text-slate-500",
+            "before:absolute before:inset-0 before:bg-gradient-to-br before:from-amber-50/18 before:via-transparent before:to-transparent",
+            "dark:before:from-blue-950/15 before:via-transparent dark:before:to-transparent",
+            "before:pointer-events-none before:rounded-lg",
+            "focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20",
+            "focus:border-blue-500/85 dark:focus:border-blue-400/85",
+            "focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_4px_12px_0_rgb(59_130_246_/_0.22)] dark:focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.4),0_4px_12px_0_rgb(59_130_246_/_0.35)]",
+            "focus:before:from-blue-50/30 focus:before:via-transparent focus:before:to-transparent",
+            "dark:focus:before:from-blue-950/22 dark:focus:before:via-transparent dark:focus:before:to-transparent",
+          )}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
-      <div className="flex items-center gap-2">
-        <span className="font-medium text-gray-600">Role:</span>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+        <span className="font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+          Role:
+        </span>
         <Listbox
           value={role}
           onChange={(newRole) => {
@@ -195,32 +219,49 @@ const Filter = () => {
             );
           }}
         >
-          <ListboxButton className="border-gray-300 bg-white hover:bg-gray-50 px-2 py-1 border rounded text-xs">
+          <ListboxButton
+            className={clsx(
+              "w-full sm:w-auto px-2 py-1 border rounded text-xs transition-colors",
+              "bg-white dark:bg-slate-800",
+              "text-slate-900 dark:text-white",
+              "border-slate-300 dark:border-slate-600",
+              "hover:bg-slate-50 dark:hover:bg-slate-700",
+            )}
+          >
             {availableRoles.find((r) => r.id === role)?.label ?? "All roles"}
           </ListboxButton>
           <ListboxOptions
             anchor="bottom start"
-            className="z-10 absolute border-gray-300 bg-white shadow-lg mt-1 py-1 border rounded w-48 max-h-60 text-xs overflow-auto"
+            className={clsx(
+              "z-10 absolute shadow-lg mt-1 py-1 border rounded w-48 max-h-60 text-xs overflow-auto",
+              "bg-white dark:bg-slate-800",
+              "border-slate-300 dark:border-slate-700",
+              "ring-slate-200 dark:ring-slate-700",
+            )}
           >
             {availableRoles.map((roleOption) => (
               <ListboxOption key={roleOption.id} value={roleOption.id}>
                 {({ selected, active }) => (
                   <div
                     className={clsx(
-                      "flex items-center px-2 py-1 cursor-pointer",
-                      active && "bg-blue-50",
+                      "flex items-center px-2 py-1 cursor-pointer transition-colors",
+                      active && "bg-slate-100 dark:bg-slate-700",
                       selected && "font-medium",
                     )}
                   >
                     <span
                       className={clsx(
                         "mr-2",
-                        selected ? "text-blue-500" : "text-gray-400",
+                        selected
+                          ? "text-blue-600 dark:text-blue-400"
+                          : "text-slate-400 dark:text-slate-500",
                       )}
                     >
                       {selected ? "✓" : "○"}
                     </span>
-                    {roleOption.label}
+                    <span className="text-slate-900 dark:text-white">
+                      {roleOption.label}
+                    </span>
                   </div>
                 )}
               </ListboxOption>
@@ -238,11 +279,11 @@ export const Members: ResourceView<typeof IndexQuery, typeof detailQuery> = {
     buildWhereClause,
     TableHeader: ({ orgId }) => {
       return (
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center pb-2">
           <Filter />
-          <div className="flex justify-start py-2">
+          <div className="flex items-center">
             <Link to={`/organizations/${orgId}/invite-member`}>
-              <Button mode="creative" icon={UserPlusIcon}>
+              <Button mode="creative" icon={UserPlus}>
                 Invite member
               </Button>
             </Link>

@@ -1,48 +1,74 @@
 import { initializeInstrumentation } from "@/tracing/instrumentation";
 initializeInstrumentation({ serviceName: "web" });
 
+// Patch CustomElementRegistry.define to handle duplicate registrations gracefully
+// This is needed because SSR can cause modules to be loaded multiple times,
+// leading to duplicate custom element registrations
+// The actual patching happens in patchCustomElementsDefine() which is called
+// before and after importing the server build
+
 import { createReadStream } from "node:fs";
 import path from "node:path";
 
 import express from "express";
-import cors from "cors";
 import mime from "mime-types";
 import morgan from "morgan";
-import "react-router";
+import { trace } from "@opentelemetry/api";
+import { RouterContextProvider } from "react-router";
 
 import {
   UPLOAD_TO_BUCKET,
   storageProvider,
 } from "@/util/storageProvider.server";
 import { createRequestHandler } from "@react-router/express";
-
-declare module "react-router" {
-  interface AppLoadContext { }
-}
-
-const ALLOWED_ORIGINS = [
-  "https://editframe.dev",
-  "https://www.editframe.dev",
-  "https://editframe.com",
-  "https://www.editframe.com",
-  "http://localhost:3000",
-  "http://localhost:3001",
-];
+import { isOriginAllowed } from "./cors";
 
 export const app = express();
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true,
-}));
+app.use((req, res, next) => {
+  const origin = req.headers.origin ?? null;
+  const path = req.path;
 
-app.use(morgan("tiny"));
+  if (!isOriginAllowed(origin, path)) {
+    res.status(403).end();
+    return;
+  }
+
+  if (origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  }
+
+  if (req.method === "OPTIONS") {
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "GET,HEAD,PUT,PATCH,POST,DELETE",
+    );
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      req.headers["access-control-request-headers"] ?? "",
+    );
+    res.status(204).end();
+    return;
+  }
+
+  next();
+});
+
+morgan.token("host", (req) => req.get("host") || "");
+app.use(
+  morgan(":method :url :status :res[content-length] - :response-time ms :host"),
+);
+
+app.use((req, res, next) => {
+  const host = req.get("host") || "";
+  const activeSpan = trace.getActiveSpan();
+  if (activeSpan) {
+    activeSpan.setAttribute("http.host", host);
+    activeSpan.setAttribute("http.domain", host.split(":")[0]);
+  }
+  next();
+});
 
 const rootDir = path.join(
   path.dirname(new URL(import.meta.url).pathname),
@@ -51,6 +77,37 @@ const rootDir = path.join(
 
 app.get("/healthz", (_req, res) => {
   res.status(200).end("ok");
+});
+
+app.use((req, res, next) => {
+  const host = req.get("host") || "";
+  // GCP load balancer terminates TLS and forwards plain HTTP, so req.protocol
+  // is always "http". Use X-Forwarded-Proto from the load balancer instead.
+  const protocol = req.get("x-forwarded-proto") || req.protocol || "https";
+  const path = req.originalUrl || req.url || "";
+
+  // Skip redirect for API routes (routes handled by other services never reach this middleware)
+  if (path.startsWith("/api")) {
+    return next();
+  }
+
+  let shouldRedirect = false;
+  let redirectHost = "";
+
+  if (host === "editframe.dev" || host === "www.editframe.dev") {
+    shouldRedirect = true;
+    redirectHost = "editframe.com";
+  } else if (host === "www.editframe.com") {
+    shouldRedirect = true;
+    redirectHost = "editframe.com";
+  }
+
+  if (shouldRedirect) {
+    const redirectUrl = `${protocol}://${redirectHost}${path}`;
+    return res.redirect(301, redirectUrl);
+  }
+
+  next();
 });
 
 if (UPLOAD_TO_BUCKET) {
@@ -83,12 +140,77 @@ if (UPLOAD_TO_BUCKET) {
   });
 }
 
+let serverBuild: Promise<any> | undefined;
+const patchCustomElementsDefine = () => {
+  if (typeof globalThis !== "undefined" && globalThis.customElements) {
+    const originalDefine = globalThis.customElements.define.bind(
+      globalThis.customElements,
+    );
+    // Check if element is already registered before defining to prevent duplicate registration errors
+    // This is necessary because SSR can cause modules to be loaded multiple times
+    globalThis.customElements.define = function (
+      name: string,
+      constructor: CustomElementConstructor,
+      options?: ElementDefinitionOptions,
+    ) {
+      // Check if already registered - if so, skip registration
+      try {
+        const existing = globalThis.customElements.get(name);
+        if (existing) {
+          // Already registered - safe to skip (even if constructor is different,
+          // this is SSR and modules can be loaded multiple times)
+          return;
+        }
+      } catch {
+        // get() can throw if element doesn't exist - that's fine, proceed with define
+      }
+      // Try to define, but catch duplicate registration errors
+      try {
+        return originalDefine(name, constructor, options);
+      } catch (error: unknown) {
+        // Ignore duplicate registration errors in SSR
+        // Use type guard instead of instanceof to avoid Symbol.hasInstance recursion
+        if (
+          error &&
+          typeof error === "object" &&
+          "message" in error &&
+          typeof error.message === "string" &&
+          error.message.includes("has already been used")
+        ) {
+          return;
+        }
+        throw error;
+      }
+    };
+  }
+};
+
+// Patch immediately when this module loads, before any other imports
+// This ensures the patch is in place before the SSR shim creates its registry
+patchCustomElementsDefine();
+
 app.use(
   createRequestHandler({
     // @ts-expect-error - virtual module provided by React Router at build time
-    build: () => import("virtual:react-router/server-build"),
+    build: () => {
+      // Always patch before returning the build to ensure it's patched on every request
+      // This is critical because the SSR shim might create new registries per request
+      patchCustomElementsDefine();
+      if (!serverBuild) {
+        // Patch customElements before and after importing the server build
+        patchCustomElementsDefine();
+        serverBuild = import("virtual:react-router/server-build").then(
+          (mod) => {
+            // Patch again after import in case customElements was created/recreated during import
+            patchCustomElementsDefine();
+            return mod;
+          },
+        );
+      }
+      return serverBuild;
+    },
     getLoadContext() {
-      return {};
+      return new RouterContextProvider();
     },
   }),
 );

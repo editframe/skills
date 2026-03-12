@@ -19,7 +19,7 @@ const componentDemo = async () => {
     await VideoLayer.createFromURL("/video/feelgoodinc.mp4", {
       widthMode: SizeMode.Fixed,
       heightMode: SizeMode.Fixed,
-    })
+    }),
   );
 
   return composition;

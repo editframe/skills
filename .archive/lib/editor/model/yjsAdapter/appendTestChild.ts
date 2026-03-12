@@ -11,7 +11,7 @@ export const appendTestChild = standaloneAction(
         ? parent
         : findParent<TestParent>(
             parent,
-            (parent) => parent instanceof TestParent
+            (parent) => parent instanceof TestParent,
           );
     if (!root) {
       throw new Error("Could not find root");
@@ -19,7 +19,7 @@ export const appendTestChild = standaloneAction(
     const oldParent = child.parent;
     if (oldParent) {
       const oldChildRef = oldParent.childRefs.find(
-        (ref) => ref.id === child.id
+        (ref) => ref.id === child.id,
       );
       if (oldChildRef) {
         detach(oldChildRef);
@@ -28,5 +28,5 @@ export const appendTestChild = standaloneAction(
     root.childStore[child.id] ||= child;
     parent.childRefs.push(testChildRef(child));
     return child;
-  }
+  },
 );

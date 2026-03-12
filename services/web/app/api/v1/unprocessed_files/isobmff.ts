@@ -4,13 +4,13 @@ import type { ProcessIsobmffFileResult } from "@editframe/api";
 import { db } from "@/sql-client.server";
 
 import type { Route } from "./+types/isobmff";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 export const action = async ({
-  request,
   params: { id },
+  context,
 }: Route.ActionArgs): Promise<ProcessIsobmffFileResult> => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
 
   const file = await requireQueryAs(
     session,

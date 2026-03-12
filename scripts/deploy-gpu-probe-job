@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+# Build, push, and run a one-off Cloud Run Job to probe GPU capabilities:
+#   1. nvidia-smi   — driver + GPU visibility
+#   2. Electron EGL — offscreen capturePage() via EGL (no Xvfb)
+#   3. h264_nvenc   — ffmpeg hardware encoding
+#
+# Usage:
+#   telecine/scripts/deploy-gpu-probe-job [--skip-build] [--logs-only]
+#
+# Options:
+#   --skip-build   Skip docker build+push, re-run existing image.
+#   --logs-only    Skip build+create, just stream logs from the last execution.
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+set -euo pipefail
+
+SKIP_BUILD=0
+LOGS_ONLY=0
+for arg in "$@"; do
+  case $arg in
+    --skip-build) SKIP_BUILD=1 ;;
+    --logs-only)  LOGS_ONLY=1; SKIP_BUILD=1 ;;
+  esac
+done
+
+REPO=us-central1-docker.pkg.dev/editframe/telecine-artifacts
+JOB_NAME=telecine-gpu-probe
+REGION=us-central1
+PROJECT=editframe
+IMAGE_NAME=gpu-probe
+GIT_SHA=$(git -C "${SCRIPT_DIR}" rev-parse HEAD 2>/dev/null || echo "latest")
+IMAGE="${REPO}/${IMAGE_NAME}:${GIT_SHA}"
+
+if [ "$LOGS_ONLY" -eq 0 ]; then
+  if [ "$SKIP_BUILD" -eq 0 ]; then
+    echo "==> Downloading custom Electron build..."
+    "${SCRIPT_DIR}/download-electron-build" v40.1.0-dmabuf
+
+    echo "==> Building image..."
+    "${SCRIPT_DIR}/build-docker-prod" "${IMAGE_NAME}"
+
+    echo "==> Pushing image..."
+    docker push "${IMAGE}"
+  fi
+
+  echo "==> Creating/updating Cloud Run Job ${JOB_NAME}..."
+  gcloud alpha run jobs create "${JOB_NAME}" \
+    --project="${PROJECT}" \
+    --region="${REGION}" \
+    --image="${IMAGE}" \
+    --service-account=telecine-queues@editframe.iam.gserviceaccount.com \
+    --max-retries=0 \
+    --task-timeout=300s \
+    --cpu=8 \
+    --memory=32Gi \
+    --gpu=1 \
+    --gpu-type=nvidia-l4 \
+    --no-gpu-zonal-redundancy \
+    --vpc-egress=private-ranges-only \
+    --network=default \
+    --subnet=default \
+    --set-env-vars="NODE_ENV=production,PINO_LOG_LEVEL=debug,NVIDIA_DRIVER_CAPABILITIES=all" \
+  2>/dev/null || \
+  gcloud alpha run jobs update "${JOB_NAME}" \
+    --project="${PROJECT}" \
+    --region="${REGION}" \
+    --image="${IMAGE}" \
+    --service-account=telecine-queues@editframe.iam.gserviceaccount.com \
+    --max-retries=0 \
+    --task-timeout=300s \
+    --cpu=8 \
+    --memory=32Gi \
+    --gpu=1 \
+    --gpu-type=nvidia-l4 \
+    --no-gpu-zonal-redundancy \
+    --vpc-egress=private-ranges-only \
+    --network=default \
+    --subnet=default \
+    --set-env-vars="NODE_ENV=production,PINO_LOG_LEVEL=debug,NVIDIA_DRIVER_CAPABILITIES=all"
+
+  echo "==> Executing job..."
+  gcloud alpha run jobs execute "${JOB_NAME}" \
+    --project="${PROJECT}" \
+    --region="${REGION}" \
+    --wait
+fi
+
+echo "==> Streaming logs..."
+EXECUTION=$(gcloud run jobs executions list \
+  --job="${JOB_NAME}" \
+  --project="${PROJECT}" \
+  --region="${REGION}" \
+  --limit=1 \
+  --format="value(name)")
+
+echo "Execution: ${EXECUTION}"
+gcloud logging read \
+  "resource.type=cloud_run_job AND resource.labels.job_name=${JOB_NAME} AND resource.labels.execution_name=${EXECUTION}" \
+  --project="${PROJECT}" \
+  --order=asc \
+  --format="value(textPayload)" \
+  --limit=500

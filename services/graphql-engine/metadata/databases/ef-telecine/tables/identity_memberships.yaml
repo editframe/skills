@@ -71,13 +71,13 @@ update_permissions:
         org:
           _or:
             - primary_user_id:
-                _eq: X-Hasura-User-Id
+                _eq: X-Hasura-user-id
             - memberships:
                 _and:
                   - role:
                       _eq: org-admin
                   - user_id:
-                      _eq: X-Hasura-User-Id
+                      _eq: X-Hasura-user-id
       check: null
     comment: ""
 delete_permissions:

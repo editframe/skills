@@ -35,8 +35,8 @@ function getDefaultPage(): Page {
       serviceHide: [],
       attrFilters: "[]",
       spanFilters: "[]",
-      spanFiltersActive: false
-    }
+      spanFiltersActive: false,
+    },
   };
 }
 
@@ -68,15 +68,20 @@ function getCurrentFilters(searchParams: URLSearchParams): PageFilters {
     traceHide: searchParams.get("traceHide")?.split(",").filter(Boolean) || [],
     spanShow: searchParams.get("spanShow")?.split(",").filter(Boolean) || [],
     spanHide: searchParams.get("spanHide")?.split(",").filter(Boolean) || [],
-    serviceShow: searchParams.get("serviceShow")?.split(",").filter(Boolean) || [],
-    serviceHide: searchParams.get("serviceHide")?.split(",").filter(Boolean) || [],
+    serviceShow:
+      searchParams.get("serviceShow")?.split(",").filter(Boolean) || [],
+    serviceHide:
+      searchParams.get("serviceHide")?.split(",").filter(Boolean) || [],
     attrFilters: searchParams.get("attrFilters") || "[]",
     spanFilters: searchParams.get("spanFilters") || "[]",
-    spanFiltersActive: searchParams.get("spanFiltersActive") === "true"
+    spanFiltersActive: searchParams.get("spanFiltersActive") === "true",
   };
 }
 
-function applyFiltersToUrl(params: URLSearchParams, filters: PageFilters): void {
+function applyFiltersToUrl(
+  params: URLSearchParams,
+  filters: PageFilters,
+): void {
   if (filters.traceShow.length > 0) {
     params.set("traceShow", filters.traceShow.join(","));
   } else {
@@ -132,77 +137,94 @@ function applyFiltersToUrl(params: URLSearchParams, filters: PageFilters): void 
   }
 }
 
-export function usePages(searchParams: URLSearchParams, setSearchParams: (params: URLSearchParams) => void) {
-  const pages = useMemo(() => parsePagesFromUrl(searchParams), [searchParams.get("pages")]);
+export function usePages(
+  searchParams: URLSearchParams,
+  setSearchParams: (params: URLSearchParams) => void,
+) {
+  const pages = useMemo(
+    () => parsePagesFromUrl(searchParams),
+    [searchParams.get("pages")],
+  );
   const currentPageId = searchParams.get("pageId") || pages[0]?.id;
-  const currentPage = pages.find(p => p.id === currentPageId) || pages[0];
+  const currentPage = pages.find((p) => p.id === currentPageId) || pages[0];
 
-  const updatePages = useCallback((newPages: Page[], newCurrentPageId?: string) => {
-    setSearchParams(prev => {
-      const params = new URLSearchParams(prev);
-      params.set("pages", encodePages(newPages));
+  const updatePages = useCallback(
+    (newPages: Page[], newCurrentPageId?: string) => {
+      setSearchParams((prev) => {
+        const params = new URLSearchParams(prev);
+        params.set("pages", encodePages(newPages));
 
-      const pageId = newCurrentPageId || currentPageId;
-      const page = newPages.find(p => p.id === pageId) || newPages[0];
+        const pageId = newCurrentPageId || currentPageId;
+        const page = newPages.find((p) => p.id === pageId) || newPages[0];
 
-      if (page) {
-        params.set("pageId", page.id);
-        applyFiltersToUrl(params, page.filters);
-      }
+        if (page) {
+          params.set("pageId", page.id);
+          applyFiltersToUrl(params, page.filters);
+        }
 
-      return params;
-    });
-  }, [currentPageId, setSearchParams]);
+        return params;
+      });
+    },
+    [currentPageId, setSearchParams],
+  );
 
   const updateCurrentPageFilters = useCallback(() => {
     const currentFilters = getCurrentFilters(searchParams);
-    const updatedPages = pages.map(p =>
-      p.id === currentPageId
-        ? { ...p, filters: currentFilters }
-        : p
+    const updatedPages = pages.map((p) =>
+      p.id === currentPageId ? { ...p, filters: currentFilters } : p,
     );
 
-    setSearchParams(prev => {
+    setSearchParams((prev) => {
       const params = new URLSearchParams(prev);
       params.set("pages", encodePages(updatedPages));
       return params;
     });
   }, [pages, currentPageId, searchParams, setSearchParams]);
 
-  const selectPage = useCallback((page: Page) => {
-    setSearchParams(prev => {
-      const params = new URLSearchParams(prev);
-      params.set("pageId", page.id);
-      applyFiltersToUrl(params, page.filters);
-      return params;
-    });
-  }, [setSearchParams]);
+  const selectPage = useCallback(
+    (page: Page) => {
+      setSearchParams((prev) => {
+        const params = new URLSearchParams(prev);
+        params.set("pageId", page.id);
+        applyFiltersToUrl(params, page.filters);
+        return params;
+      });
+    },
+    [setSearchParams],
+  );
 
   const createPage = useCallback(() => {
     const currentFilters = getCurrentFilters(searchParams);
     const newPage: Page = {
       id: generateId(),
       name: `Page ${pages.length + 1}`,
-      filters: currentFilters
+      filters: currentFilters,
     };
 
     updatePages([...pages, newPage], newPage.id);
   }, [pages, searchParams, updatePages]);
 
-  const renamePage = useCallback((pageId: string, newName: string) => {
-    const updatedPages = pages.map(p =>
-      p.id === pageId ? { ...p, name: newName } : p
-    );
-    updatePages(updatedPages);
-  }, [pages, updatePages]);
+  const renamePage = useCallback(
+    (pageId: string, newName: string) => {
+      const updatedPages = pages.map((p) =>
+        p.id === pageId ? { ...p, name: newName } : p,
+      );
+      updatePages(updatedPages);
+    },
+    [pages, updatePages],
+  );
 
-  const deletePage = useCallback((pageId: string) => {
-    if (pages.length <= 1) return;
+  const deletePage = useCallback(
+    (pageId: string) => {
+      if (pages.length <= 1) return;
 
-    const filtered = pages.filter(p => p.id !== pageId);
-    const newCurrentPageId = currentPageId === pageId ? filtered[0].id : currentPageId;
-    updatePages(filtered, newCurrentPageId);
-  }, [pages, currentPageId, updatePages]);
+      const filtered = pages.filter((p) => p.id !== pageId);
+      const newCurrentPageId =
+        currentPageId === pageId ? filtered[0].id : currentPageId;
+      updatePages(filtered, newCurrentPageId);
+    },
+    [pages, currentPageId, updatePages],
+  );
 
   return {
     pages,
@@ -211,6 +233,6 @@ export function usePages(searchParams: URLSearchParams, setSearchParams: (params
     createPage,
     renamePage,
     deletePage,
-    updateCurrentPageFilters
+    updateCurrentPageFilters,
   };
 }

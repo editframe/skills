@@ -1,0 +1,595 @@
+/* Swissted-inspired color palette */
+:root {
+  --poster-red: #E53935;
+  --poster-blue: #1565C0;
+  --poster-gold: #FFB300;
+  --poster-green: #2E7D32;
+  --poster-pink: #EC407A;
+  --ink-black: #1a1a1a;
+  --paper-cream: #FAF8F5;
+  --warm-gray: #6B6B6B;
+  --card-bg: #ffffff;
+  --card-dark-bg: #1a1a1a;
+}
+
+.dark {
+  --poster-red: #EF5350;
+  --poster-blue: #42A5F5;
+  --poster-gold: #FFCA28;
+  --poster-green: #4CAF50;
+  --poster-pink: #F06292;
+  --paper-cream: #0a0a0a;
+  --ink-black: #FAFAFA;
+  --warm-gray: #9CA3AF;
+  --card-bg: #111111;
+  --card-dark-bg: #0a0a0a;
+}
+
+body {
+  font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Geometric pattern - radiating lines (Television poster) */
+.pattern-radiate {
+  background-image: repeating-conic-gradient(
+    from 0deg,
+    var(--poster-red) 0deg 5deg,
+    transparent 5deg 10deg
+  );
+}
+
+/* Geometric pattern - concentric circles (Public Enemy poster) */
+.pattern-concentric {
+  background: 
+    radial-gradient(circle, transparent 20%, var(--poster-gold) 20%, var(--poster-gold) 25%, transparent 25%),
+    radial-gradient(circle, transparent 40%, var(--poster-gold) 40%, var(--poster-gold) 45%, transparent 45%),
+    radial-gradient(circle, transparent 60%, var(--poster-gold) 60%, var(--poster-gold) 65%, transparent 65%),
+    radial-gradient(circle, transparent 80%, var(--poster-gold) 80%, var(--poster-gold) 85%, transparent 85%);
+}
+
+/* Paper texture */
+.texture-paper {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+}
+
+/* Bold shadows for poster effect */
+.shadow-poster {
+  box-shadow: 8px 8px 0 rgba(0,0,0,0.1);
+}
+
+.shadow-poster-hard {
+  box-shadow: 6px 6px 0 #1a1a1a;
+}
+
+.dark .shadow-poster-hard {
+  box-shadow: 6px 6px 0 rgba(255,255,255,0.3);
+}
+
+/* Accent backgrounds - solid, bold */
+.bg-poster-red { background-color: var(--poster-red); }
+.bg-poster-blue { background-color: var(--poster-blue); }
+.bg-poster-gold { background-color: var(--poster-gold); }
+.bg-poster-green { background-color: var(--poster-green); }
+
+/* Border that looks like printed rule lines */
+.border-rule {
+  border-color: rgba(0,0,0,0.15);
+}
+
+.dark .border-rule {
+  border-color: rgba(255,255,255,0.15);
+}
+
+/* Focus-visible styles for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--poster-blue);
+  outline-offset: 2px;
+}
+
+/* ━━ Hero Trailer Keyframes ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Scene crossfade */
+@keyframes hero-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes hero-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* Scene 1: Glass material — chars shatter-assemble with spring settle
+   Tight spring: cubic-bezier(0.68, -0.1, 0.265, 1.1) */
+@keyframes hero-char-assemble {
+  0% {
+    transform: scale(0) rotate(calc(var(--ef-seed, 0) * 30deg - 15deg));
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.05) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+/* Gold underline with spring overshoot */
+@keyframes hero-draw-spring {
+  0% { transform: scaleX(0); }
+  75% { transform: scaleX(1.03); }
+  100% { transform: scaleX(1); }
+}
+
+/* Scene 1: Continuous slow upward drift — prevents any static frames */
+@keyframes hero-title-drift {
+  0% { transform: translateY(8px); }
+  100% { transform: translateY(-4px); }
+}
+
+/* Scene 1: Subtle scale pulse on the hero word "WEB PAGE" after assembly */
+@keyframes hero-title-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+
+/* Scene 2: Metal material — layers reveal with clip-path wipe */
+@keyframes hero-clip-reveal {
+  from {
+    clip-path: inset(100% 0 0 0);
+    opacity: 0;
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+@keyframes hero-float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+  100% { transform: translateY(0px); }
+}
+
+/* Scene 3: Paper material — chars dissolve out/in */
+@keyframes hero-char-scatter {
+  from {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.8) translateY(-20px);
+    opacity: 0;
+  }
+}
+
+@keyframes hero-char-gather {
+  from {
+    transform: scale(0.8) translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Template scene: single lifecycle animation per card (enter → hold → exit)
+   cardFadeMs=250, cardHoldMs=1000, total=1500ms
+   fade-in: 0→16.7%, hold: 16.7→83.3%, fade-out: 83.3→100% */
+@keyframes hero-card-lifecycle {
+  0% {
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+  }
+  16.7% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  83.3% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-15px) scale(0.95);
+    opacity: 0;
+  }
+}
+
+/* Template scene: cascade cards fly upward */
+@keyframes hero-cascade-card {
+  0% {
+    transform: translateY(40px) scale(0.8);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  50% {
+    transform: translateY(-20px) scale(0.95);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(-120px) scale(0.85);
+    opacity: 0;
+  }
+}
+
+/* Template scene: counter step — snap in, hold, snap out */
+@keyframes hero-counter-step {
+  0% {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  20% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  80% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+}
+
+/* Template scene: final counter — pops in and holds */
+@keyframes hero-counter-final {
+  0% {
+    transform: translateY(8px) scale(0.9);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(-2px) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Typewriter cursor blink */
+@keyframes hero-cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Scene 4: Plastic material — clip-path reveal from edges */
+@keyframes hero-reveal-left {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes hero-reveal-bottom {
+  from { clip-path: inset(100% 0 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes hero-reveal-right {
+  from { clip-path: inset(0 0 0 100%); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+/* Scene 5: Rubber bounce for badge/checkmark
+   Loose spring: cubic-bezier(0.68, -0.55, 0.265, 1.55) */
+@keyframes hero-rubber-bounce {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Scene 2: Title restyles from white to gold + scales up when CSS block types */
+@keyframes hero-author-title-restyle {
+  0% {
+    color: white;
+    font-size: 1.5rem;
+  }
+  100% {
+    color: var(--poster-gold);
+    font-size: 2.25rem;
+  }
+}
+
+/* Progress bar with spring overshoot */
+@keyframes hero-progress-spring {
+  0% { width: 0%; }
+  85% { width: calc(var(--bar-target, 100%) + 2%); }
+  100% { width: var(--bar-target, 100%); }
+}
+
+/* Scale down to thumbnail */
+@keyframes hero-shrink-away {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.15) translateX(280px) translateY(120px);
+    opacity: 0.8;
+  }
+}
+
+/* Slide up with deceleration (generic entrance) */
+@keyframes hero-slide-up-decel {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Checkmark draw */
+@keyframes hero-check-draw {
+  from { stroke-dashoffset: 24; }
+  to { stroke-dashoffset: 0; }
+}
+
+/* Scene 8: completion flash on each render target row */
+@keyframes hero-render-row-flash {
+  0% { opacity: 0; }
+  40% { opacity: 0.25; }
+  100% { opacity: 0; }
+}
+
+/* Scene 8: pulse scale on checkmark */
+@keyframes hero-check-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Scene 8: slide up + fade for closing tagline */
+@keyframes hero-render-tagline-in {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+/* Scene 8: bar shimmer for active progress bars */
+@keyframes hero-bar-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+/* Scene 8: all-done glow pulse on the whole render panel */
+@keyframes hero-render-done-glow {
+  0% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+  50% { box-shadow: 0 0 40px 4px rgba(255,255,255,0.06); }
+  100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+}
+
+/* Playhead sweep across timeline (fixed px for 960px composition) */
+@keyframes hero-playhead-sweep {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(70vw - 56px)); }
+}
+@keyframes hero-playhead-sweep-fixed {
+  from { transform: translateX(0); }
+  to { transform: translateX(800px); }
+}
+
+/* Scene 4: Snap-in assembly — components drop/bounce into place like legos */
+@keyframes hero-snap-in {
+  0% {
+    transform: translateY(-30px) scale(0.92);
+    opacity: 0;
+  }
+  55% {
+    transform: translateY(3px) scale(1.015);
+    opacity: 1;
+  }
+  75% {
+    transform: translateY(-1px) scale(0.995);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Component label that flashes on snap then dims */
+@keyframes hero-label-flash {
+  0% {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  15% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0.25;
+    transform: translateX(0);
+  }
+}
+
+/* Playhead snap-appear with vertical scale */
+@keyframes hero-playhead-snap {
+  0% {
+    opacity: 0;
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  60% {
+    opacity: 1;
+    transform: scaleY(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+/* Preview scanline sweep */
+@keyframes hero-scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(200%); }
+}
+
+/* Caption word activation — dims-to-bright (permanent, karaoke-style) */
+@keyframes hero-word-on {
+  from { opacity: 0.4; }
+  to { opacity: 1; }
+}
+
+/* Caption word speak — brief gold flash while word is being spoken */
+@keyframes hero-word-speak {
+  0%, 100% { color: white; }
+  20%, 80% { color: var(--poster-gold); }
+}
+
+/* Scene 7: Stream — pipeline pulse animation */
+@keyframes hero-stream-pulse {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes hero-stream-source-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,179,0,0.4); }
+  50% { transform: scale(1.03); box-shadow: 0 0 20px 4px rgba(255,179,0,0.15); }
+}
+
+@keyframes hero-stream-arrive {
+  0% { opacity: 0; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ━━ Scene 5: Editor NLE→Form morph ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Phase 1 NLE collapses: scale down + fade out */
+@keyframes hero-editor-nle-collapse {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.92) translateY(-20px);
+    opacity: 0;
+  }
+}
+
+/* Phase 2 form enters: scale up from small + fade in */
+@keyframes hero-editor-form-enter {
+  from {
+    transform: scale(0.9) translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Filmstrip horizontal scrub — slides the strip left to simulate playback */
+@keyframes hero-editor-filmstrip-scrub {
+  from { transform: translateX(0); }
+  to { transform: translateX(-120px); }
+}
+
+/* Scrub indicator drifts right as filmstrip scrolls beneath it */
+@keyframes hero-editor-scrub-indicator {
+  from { transform: translateX(0); }
+  to { transform: translateX(60px); }
+}
+
+/* Trim region bounces in with spring overshoot */
+@keyframes hero-editor-trim-settle {
+  0% {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  60% {
+    transform: scaleX(1.03);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+/* Playhead ticks forward slightly */
+@keyframes hero-editor-playhead-tick {
+  from { transform: translateX(0); }
+  to { transform: translateX(30px); }
+}
+
+/* Trim handles animate a drag — right handle moves inward */
+@keyframes hero-editor-trim-drag {
+  0% {
+    left: 18%;
+    right: 25%;
+  }
+  40% {
+    left: 18%;
+    right: 18%;
+  }
+  60% {
+    left: 22%;
+    right: 18%;
+  }
+  100% {
+    left: 22%;
+    right: 22%;
+  }
+}
+
+/* Out-point time display updates to reflect trim drag */
+@keyframes hero-editor-time-update {
+  0% { opacity: 1; }
+  40% { opacity: 0.5; }
+  60% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+/* Scanlines drift upward for preview visual interest */
+@keyframes hero-editor-scanlines {
+  from { transform: translateY(0); }
+  to { transform: translateY(-8px); }
+}
+
+/* Corner brackets pulse to accent "building blocks" */
+@keyframes hero-editor-bracket-pulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0.15;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -36,7 +36,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
     from: NO_REPLY_ADDRESS,
     to: orgOwner?.email_address as string,
     subject: `[Editframe] A new API key has been created for your organization: ${org?.display_name}`,
-    html: render(
+    html: await render(
       <NewApiEmail
         emailAddress={email.email_address}
         orgName={org?.display_name as string}

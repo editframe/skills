@@ -4,7 +4,10 @@ import { mkdir, readFile, rm } from "node:fs/promises";
 import type { OutputConfiguration } from "@editframe/api";
 
 import { DisposableEncoder } from "./DisposableEncoder";
-import type { FramegenEngine, VideoRenderOptions } from "./engines/FramegenEngine";
+import type {
+  FramegenEngine,
+  VideoRenderOptions,
+} from "./engines/FramegenEngine";
 import { WithSpan, executeSpan } from "@/tracing";
 
 interface StillEncoderOptions {
@@ -22,7 +25,13 @@ export class StillEncoder {
   private abortSignal: AbortSignal;
   private renderOptions: VideoRenderOptions;
 
-  constructor({ renderId, outputConfig, engine, renderOptions, abortSignal }: StillEncoderOptions) {
+  constructor({
+    renderId,
+    outputConfig,
+    engine,
+    renderOptions,
+    abortSignal,
+  }: StillEncoderOptions) {
     this.renderId = renderId;
     this.outputConfig = outputConfig;
     this.engine = engine;
@@ -77,27 +86,37 @@ export class StillEncoder {
   get encoderArgs() {
     if (this.outputConfig.jpegConfig) {
       return [
-        "-vcodec", "mjpeg",
-        "-q:v", String(this.outputConfig.jpegConfig.quality ?? 80),
-      ]
+        "-vcodec",
+        "mjpeg",
+        "-q:v",
+        String(this.outputConfig.jpegConfig.quality ?? 80),
+      ];
     }
     if (this.outputConfig.pngConfig) {
       return [
-        "-vcodec", "png",
-        "-compression_level", String(this.outputConfig.pngConfig.compression ?? 0),
-        "-pix_fmt", this.outputConfig.pngConfig.transparency ? "rgba" : "rgb24",
-      ]
+        "-vcodec",
+        "png",
+        "-compression_level",
+        String(this.outputConfig.pngConfig.compression ?? 0),
+        "-pix_fmt",
+        this.outputConfig.pngConfig.transparency ? "rgba" : "rgb24",
+      ];
     }
     if (this.outputConfig.webpConfig) {
-
       return [
-        "-vcodec", "libwebp",
-        "-q:v", String(this.outputConfig.webpConfig.quality ?? 80),
-        "-compression_level", String(this.outputConfig.webpConfig.compression ?? 0),
-        "-pix_fmt", this.outputConfig.webpConfig.transparency ? "yuva420p" : "yuv420p",
-      ]
+        "-vcodec",
+        "libwebp",
+        "-q:v",
+        String(this.outputConfig.webpConfig.quality ?? 80),
+        "-compression_level",
+        String(this.outputConfig.webpConfig.compression ?? 0),
+        "-pix_fmt",
+        this.outputConfig.webpConfig.transparency ? "yuva420p" : "yuv420p",
+      ];
     }
-    throw new Error(`Unsupported still container: ${this.outputConfig.container}`);
+    throw new Error(
+      `Unsupported still container: ${this.outputConfig.container}`,
+    );
   }
 
   get width() {
@@ -111,17 +130,18 @@ export class StillEncoder {
   get bitmapImageInputArgs() {
     // biome-ignore format: strict command line format
     return [
-      "-f", "rawvideo",
-      "-pixel_format", "bgra",
-      "-video_size", `${this.width}x${this.height}`,
+      "-f",
+      "rawvideo",
+      "-pixel_format",
+      "bgra",
+      "-video_size",
+      `${this.width}x${this.height}`,
     ];
   }
 
   get encodedImageInputArgs() {
     // biome-ignore format: strict command line format
-    return [
-      "-f", "image2pipe",
-    ]
+    return ["-f", "image2pipe"];
   }
 
   private buildEncoder(outputPath: string) {
@@ -131,9 +151,10 @@ export class StillEncoder {
 
     const encoder = new DisposableEncoder([
       ...imageInputArgs,
-      "-i", "-",
+      "-i",
+      "-",
       ...this.encoderArgs,
-      outputPath
+      outputPath,
     ]);
 
     return encoder;

@@ -14,9 +14,9 @@ interface HasuraEvent<T> {
   };
   event: {
     data: {
-      new: T,
-      old?: T,
-    },
+      new: T;
+      old?: T;
+    };
     op: "INSERT" | "UPDATE" | "DELETE";
   };
 }

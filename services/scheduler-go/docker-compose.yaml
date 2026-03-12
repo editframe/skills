@@ -1,59 +1,51 @@
 services:
   scheduler-go:
-    build:
-      context: .
-      dockerfile: services/scheduler-go/Dockerfile.dev
+    profiles: ["render"]
+    image: scheduler-go
+    pull_policy: never
     restart: unless-stopped
-    env_file:
-      - ${PWD}/.env
     environment:
-      - OTEL_SERVICE_NAME=scheduler-go
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tracing:4318
-      - PORT=3000
       - VALKEY_HOST=valkey
       - VALKEY_PORT=6379
-      - PINO_LOG_LEVEL=debug
-      - GOMEMLIMIT=${WORKER_SCHEDULER_GOMEMLIMIT:-115MiB}
+      - PORT=3000
+      # Worker URLs — in local dev, workers are on the same Docker network.
+      # The scheduler dials these over WebSocket to control scaling.
+      - WORKER_URL_PROCESS_HTML_INITIALIZER=http://worker-process-html-initializer:3000
+      - WORKER_URL_PROCESS_HTML_FINALIZER=http://worker-process-html-finalizer:3000
+      - WORKER_URL_RENDER_INITIALIZER=http://worker-render-initializer:3000
+      - WORKER_URL_RENDER_FRAGMENT=http://worker-render-fragment:3000
+      - WORKER_URL_RENDER_FINALIZER=http://worker-render-finalizer:3000
+      - WORKER_URL_PROCESS_ISOBMFF=http://worker-process-isobmff:3000
+      - WORKER_URL_INGEST_IMAGE=http://worker-ingest-image:3000
+      # Queue limits — production defaults, overridable via telecine/.env for local dev
+      - PROCESS_HTML_INITIALIZER_MAX_WORKER_COUNT=${PROCESS_HTML_INITIALIZER_MAX_WORKER_COUNT:-20}
+      - PROCESS_HTML_INITIALIZER_WORKER_CONCURRENCY=${PROCESS_HTML_INITIALIZER_WORKER_CONCURRENCY:-1}
+      - PROCESS_HTML_INITIALIZER_MIN_WORKER_COUNT=${PROCESS_HTML_INITIALIZER_MIN_WORKER_COUNT:-1}
+      - PROCESS_HTML_FINALIZER_MAX_WORKER_COUNT=${PROCESS_HTML_FINALIZER_MAX_WORKER_COUNT:-10}
+      - PROCESS_HTML_FINALIZER_WORKER_CONCURRENCY=${PROCESS_HTML_FINALIZER_WORKER_CONCURRENCY:-20}
+      - RENDER_INITIALIZER_MAX_WORKER_COUNT=${RENDER_INITIALIZER_MAX_WORKER_COUNT:-10}
+      - RENDER_INITIALIZER_WORKER_CONCURRENCY=${RENDER_INITIALIZER_WORKER_CONCURRENCY:-2}
+      - RENDER_INITIALIZER_MIN_WORKER_COUNT=${RENDER_INITIALIZER_MIN_WORKER_COUNT:-1}
+      - RENDER_FRAGMENT_MAX_WORKER_COUNT=${RENDER_FRAGMENT_MAX_WORKER_COUNT:-200}
+      - RENDER_FRAGMENT_WORKER_CONCURRENCY=${RENDER_FRAGMENT_WORKER_CONCURRENCY:-1}
+      - RENDER_FINALIZER_MAX_WORKER_COUNT=${RENDER_FINALIZER_MAX_WORKER_COUNT:-10}
+      - RENDER_FINALIZER_WORKER_CONCURRENCY=${RENDER_FINALIZER_WORKER_CONCURRENCY:-20}
+      - PROCESS_ISOBMFF_MAX_WORKER_COUNT=${PROCESS_ISOBMFF_MAX_WORKER_COUNT:-20}
+      - PROCESS_ISOBMFF_WORKER_CONCURRENCY=${PROCESS_ISOBMFF_WORKER_CONCURRENCY:-5}
+      - INGEST_IMAGE_MAX_WORKER_COUNT=${INGEST_IMAGE_MAX_WORKER_COUNT:-10}
+      - INGEST_IMAGE_WORKER_CONCURRENCY=${INGEST_IMAGE_WORKER_CONCURRENCY:-20}
     networks:
-      - telecine_default
-    labels:
-      - traefik.enable=false
+      - default
+      - traefik-shared
     deploy:
       resources:
         limits:
-          cpus: ${WORKER_SCHEDULER_CPUS:-0.2}
-          memory: ${WORKER_SCHEDULER_MEMORY:-128M}
-
-  scheduler-go-test:
-    build:
-      context: .
-      dockerfile: services/scheduler-go/Dockerfile.test
-    working_dir: /app
-    volumes:
-      - ./services/scheduler-go:/app
-    env_file:
-      - ${PWD}/.env
-    environment:
-      - OTEL_SERVICE_NAME=scheduler-go-tests
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tracing:4318
-      - POSTGRES_HOST=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgrespassword
-      - POSTGRES_DB=scheduler-go-tests
-      - VALKEY_HOST=valkey
-      - VALKEY_PORT=6379
-      - MEMORY_TEST_SCALE=100,500,1000
-      - MEMORY_TEST_TOLERANCE=10
-    networks:
-      - telecine_default
-    depends_on:
-      - postgres
-      - valkey
-    labels:
-      - traefik.enable=false
-    profiles:
-      - test
+          cpus: ${SCHEDULER_GO_CPUS:-0.5}
+          memory: ${SCHEDULER_GO_MEMORY:-128M}
 
 networks:
-  telecine_default:
+  default:
+    name: ${WORKTREE_DOCKER_NETWORK_NAME:-telecine_default}
+  traefik-shared:
+    name: editframe-shared
     external: true

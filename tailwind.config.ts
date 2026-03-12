@@ -7,6 +7,8 @@ export default {
     "./services/web/app/**/*.{js,jsx,ts,tsx,md,mdx}",
     "./lib/elements/**/*.{js,jsx,ts,tsx,html}",
     "./lib/packages/packages/elements/**/*.{js,jsx,ts,tsx,html}",
+    "./skills/skills/*/references/*.md",
+    "./skills/skills/*/SKILL.md",
   ],
   darkMode: "selector",
   theme: {
@@ -240,9 +242,9 @@ export default {
         "fade-in": "fade-in 0.5s linear forwards",
         "marquee-x": "marquee-x var(--marquee-duration) linear infinite",
         "marquee-y": "marquee-y var(--marquee-duration) linear infinite",
-        "float": "float 6s ease-in-out infinite",
+        float: "float 6s ease-in-out infinite",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
-        "shimmer": "shimmer 3s linear infinite",
+        shimmer: "shimmer 3s linear infinite",
         "gradient-shift": "gradient-shift 3s ease infinite",
         "spin-slow": "spin 8s linear infinite",
         "bounce-slow": "bounce 3s infinite",
@@ -251,9 +253,9 @@ export default {
         "scale-up": "scale-up 0.3s ease-out",
         "slide-in": "slide-in 0.5s ease-out",
         "glow-pulse": "glow-pulse 4s ease-in-out infinite",
-        "morph": "morph 8s ease-in-out infinite",
+        morph: "morph 8s ease-in-out infinite",
         "float-slow": "float 20s ease-in-out infinite",
-        "sparkle": "sparkle 1.5s ease-in-out infinite",
+        sparkle: "sparkle 1.5s ease-in-out infinite",
         "slide-up": "slide-up 0.5s ease-out",
         "bounce-in": "bounce-in 0.5s ease-out",
         "slide-in-left": "slide-in-left 0.5s ease-out",
@@ -277,7 +279,7 @@ export default {
             transform: "translateY(-50%)",
           },
         },
-        "float": {
+        float: {
           "0%, 100%": {
             transform: "translateY(0px)",
           },
@@ -295,7 +297,7 @@ export default {
             transform: "scale(1.05)",
           },
         },
-        "shimmer": {
+        shimmer: {
           "0%": {
             transform: "translateX(-100%)",
           },
@@ -356,10 +358,11 @@ export default {
             "box-shadow": "0 0 20px rgba(59, 130, 246, 0.5)",
           },
           "50%": {
-            "box-shadow": "0 0 40px rgba(59, 130, 246, 0.8), 0 0 60px rgba(59, 130, 246, 0.4)",
+            "box-shadow":
+              "0 0 40px rgba(59, 130, 246, 0.8), 0 0 60px rgba(59, 130, 246, 0.4)",
           },
         },
-        "morph": {
+        morph: {
           "0%, 100%": {
             "border-radius": "60% 40% 30% 70% / 60% 30% 70% 40%",
           },
@@ -367,7 +370,7 @@ export default {
             "border-radius": "30% 60% 70% 40% / 50% 60% 30% 60%",
           },
         },
-        "sparkle": {
+        sparkle: {
           "0%, 100%": {
             opacity: "0",
             transform: "scale(0)",
@@ -789,7 +792,6 @@ export default {
     require("@tailwindcss/forms"),
     require("@tailwindcss/aspect-ratio"),
     require("@tailwindcss/typography"),
-    require("tailwindcss-3d"),
     require("tailwindcss-animate"),
     function ({ addBase }: any) {
       addBase({
@@ -813,8 +815,10 @@ export default {
           "--border": "214.3 31.8% 91.4%",
           "--input": "214.3 31.8% 91.4%",
           "--ring": "221.2 83.2% 53.3%",
-          "--shadow-1": "0 1px 2px 0 rgb(0 0 0 / 0.06), 0 1px 1px 0 rgb(0 0 0 / 0.07)",
-          "--shadow-2": "0 6px 16px -2px rgb(0 0 0 / 0.10), 0 3px 6px -2px rgb(0 0 0 / 0.08)",
+          "--shadow-1":
+            "0 1px 2px 0 rgb(0 0 0 / 0.06), 0 1px 1px 0 rgb(0 0 0 / 0.07)",
+          "--shadow-2":
+            "0 6px 16px -2px rgb(0 0 0 / 0.10), 0 3px 6px -2px rgb(0 0 0 / 0.08)",
           "--radius": "6px",
         },
         ".dark": {
@@ -837,10 +841,12 @@ export default {
           "--border": "217.2 32.6% 17.5%",
           "--input": "217.2 32.6% 17.5%",
           "--ring": "224.3 76.3% 48%",
-          "--shadow-1": "0 1px 2px 0 rgb(0 0 0 / 0.35), 0 1px 1px 0 rgb(0 0 0 / 0.25)",
-          "--shadow-2": "0 8px 20px -4px rgb(0 0 0 / 0.45), 0 4px 8px -4px rgb(0 0 0 / 0.35)",
-        }
-      })
-    }
+          "--shadow-1":
+            "0 1px 2px 0 rgb(0 0 0 / 0.35), 0 1px 1px 0 rgb(0 0 0 / 0.25)",
+          "--shadow-2":
+            "0 8px 20px -4px rgb(0 0 0 / 0.45), 0 4px 8px -4px rgb(0 0 0 / 0.35)",
+        },
+      });
+    },
   ],
 } satisfies Config;

@@ -6,7 +6,7 @@ import { commitSession } from "@/util/session";
 import { data } from "react-router";
 
 import type { Route } from "./+types/extend";
-import { requireSession } from "@/util/requireSession.server";
+import { identityContext, sessionCookieContext } from "~/middleware/context";
 
 const schema = z.object({
   expired_at: z
@@ -22,10 +22,11 @@ const schema = z.object({
     .optional(),
 });
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { session, sessionCookie } = await requireSession(request);
+export const action = async ({ request, params, context }: Route.ActionArgs) => {
+  const session = context.get(identityContext);
+  const sessionCookie = context.get(sessionCookieContext);
   const apiKey = await requireQueryAs(
-    session,
+    { uid: session.uid, cid: session.cid ?? null },
     "org-admin",
     graphql(`query APIKey($id: uuid!) {
         result: identity_api_keys_by_pk(id: $id) {

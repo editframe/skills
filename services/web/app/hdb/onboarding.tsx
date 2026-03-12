@@ -24,7 +24,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
     from: NO_REPLY_ADDRESS,
     to: userEmail.email_address as string,
     subject: "[Editframe] Welcome to Editframe",
-    html: render(<WelcomeEmail />),
+    html: await render(<WelcomeEmail />),
   });
 
   return {};

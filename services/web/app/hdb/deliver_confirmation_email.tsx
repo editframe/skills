@@ -42,7 +42,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
     from: NO_REPLY_ADDRESS,
     to: confirmationData.email_address as string,
     subject: "[Editframe] Confirm your email address",
-    html: render(
+    html: await render(
       <EmailConfirmation
         token={confirmationData.confirmation_token}
         host={process.env.WEB_HOST}

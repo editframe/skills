@@ -1,19 +1,20 @@
 import { formFor } from "~/formFor";
 import z from "zod";
 import { Listbox, Transition } from "@headlessui/react";
-import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
+import { Check, CaretUpDown } from "@phosphor-icons/react";
 import classNames from "classnames";
 import { Fragment, useState } from "react";
 import { data, Link, type MetaFunction } from "react-router";
 import { redirect } from "react-router";
 import { graphql } from "@/graphql";
 import * as serverGQL from "@/graphql.server";
-import { requireSession } from "@/util/requireSession.server";
+import { authMiddleware } from "~/middleware/auth";
+import { identityContext } from "~/middleware/context";
 
 import type { Route } from "./+types/next";
 
 export const meta: MetaFunction = () => {
-  return [{ title: "Welcome | Editframe" }];
+  return [{ title: "Onboarding | Editframe" }];
 };
 
 const schema = z.object({
@@ -22,8 +23,10 @@ const schema = z.object({
 });
 const onboarding = formFor(schema);
 
-export const action = async ({ request }: Route.ActionArgs) => {
-  const { session } = await requireSession(request);
+export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
+
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const session = context.get(identityContext);
 
   const formResult = await onboarding.parseFormData(request);
   if (!formResult.success) {
@@ -63,8 +66,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   return redirect("/welcome");
 };
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  await requireSession(request);
+export const loader = async () => {
   return null;
 };
 
@@ -177,9 +179,10 @@ export default function Page() {
                       {selectedChannel?.name}
                     </span>
                     <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-                      <ChevronUpDownIcon
+                      <CaretUpDown
                         className="h-5 w-5 text-gray-400"
                         aria-hidden="true"
+                        weight="fill"
                       />
                     </span>
                   </Listbox.Button>
@@ -225,9 +228,10 @@ export default function Page() {
                                     "absolute inset-y-0 right-0 flex items-center pr-4",
                                   )}
                                 >
-                                  <CheckIcon
+                                  <Check
                                     className="h-5 w-5"
                                     aria-hidden="true"
+                                    weight="fill"
                                   />
                                 </span>
                               )}

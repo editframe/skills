@@ -37,7 +37,6 @@ interface ContextConfig {
   assetsBundle?: AssetsMetadataBundle;
 }
 
-
 const createBrowserConfig = (): BrowserConfig => ({
   headless: false,
   executablePath:
@@ -69,9 +68,11 @@ const createBrowserConfig = (): BrowserConfig => ({
   ],
 });
 
-export const createBrowser = (config: BrowserConfig = createBrowserConfig()) => {
+export const createBrowser = (
+  config: BrowserConfig = createBrowserConfig(),
+) => {
   return chromium.launch(config);
-}
+};
 
 export class PlaywrightEngine {
   static async create() {
@@ -79,7 +80,7 @@ export class PlaywrightEngine {
     return new PlaywrightEngine(await createBrowser(config));
   }
 
-  constructor(private readonly browser: Browser) { }
+  constructor(private readonly browser: Browser) {}
 
   close = async () => {
     await this.browser.close();
@@ -104,18 +105,30 @@ export class PlaywrightEngine {
     return engineContext;
   }
 
-  private setupApiRouting(context: BrowserContext, orgId: string, assetsBundle?: AssetsMetadataBundle) {
+  private setupApiRouting(
+    context: BrowserContext,
+    orgId: string,
+    assetsBundle?: AssetsMetadataBundle,
+  ) {
     context.route(`${WEB_HOST}/api/**`, async (route, request) => {
       const requestUrl = request.url();
 
       // Check if this is a fragment index request that can be served from bundle
-      const fragmentIndexMatch = requestUrl.match(/\/api\/v1\/isobmff_files\/([^/]+)\/index$/);
+      // Supports both new /api/v1/files/:id/index and legacy /api/v1/isobmff_files/:id/index
+      const fragmentIndexMatch = requestUrl.match(
+        /\/api\/v1\/(?:files|isobmff_files)\/([^/]+)\/index$/,
+      );
       if (fragmentIndexMatch && assetsBundle) {
-        const assetId = fragmentIndexMatch[1] ?? null;
-        const fragmentIndex = assetId ? assetsBundle.fragmentIndexes[assetId] : null;
+        const fileId = fragmentIndexMatch[1] ?? null;
+        const fragmentIndex = fileId
+          ? assetsBundle.fragmentIndexes[fileId]
+          : null;
 
         if (fragmentIndex) {
-          logger.debug({ assetId, requestUrl }, "Serving fragment index from bundle");
+          logger.debug(
+            { fileId, requestUrl },
+            "Serving fragment index from bundle",
+          );
 
           return route.fulfill({
             status: 200,
@@ -134,10 +147,7 @@ export class PlaywrightEngine {
         orgId,
       );
 
-      logger.debug(
-        { requestUrl, filePath },
-        "Intercepting API request",
-      );
+      logger.debug({ requestUrl, filePath }, "Intercepting API request");
 
       if (!filePath) {
         return route.fulfill({
@@ -199,7 +209,7 @@ export class PlaywrightEngineContext implements FramegenEngine {
     private context: BrowserContext,
     private page: Page,
     private client: CDPSession,
-  ) { }
+  ) {}
 
   private isInitialized = false;
 
@@ -222,7 +232,10 @@ export class PlaywrightEngineContext implements FramegenEngine {
       return Promise.resolve();
     }
 
-    console.log("🔍 PlaywrightEngine.initialize: Before browser send", renderOptions);
+    console.log(
+      "🔍 PlaywrightEngine.initialize: Before browser send",
+      renderOptions,
+    );
 
     return raceTimeout(
       3000,
@@ -286,8 +299,11 @@ export class PlaywrightEngineContext implements FramegenEngine {
   isBitmapEngine = false;
 
   [Symbol.asyncDispose] = async () => {
-    await this.context.close().catch(error => {
-      console.error("🔍 PlaywrightEngineContext.dispose: Error closing context", error);
+    await this.context.close().catch((error) => {
+      console.error(
+        "🔍 PlaywrightEngineContext.dispose: Error closing context",
+        error,
+      );
     });
   };
 
@@ -339,14 +355,20 @@ export class PlaywrightEngineContext implements FramegenEngine {
           switch (element.tagName) {
             case "EF-AUDIO":
             case "EF-VIDEO": {
-              if (element.src) {
-                assets.efMedia.add(element.src);
+              const fileId = element.fileId || element.assetId;
+              if (fileId) {
+                assets.efMedia.add("file-id=" + fileId);
+              } else if (element.src) {
+                assets.efMedia.add("src=" + element.src);
               }
               break;
             }
             case "EF-IMAGE": {
-              if (element.src) {
-                assets.efImage.add(element.src);
+              const imgFileId = element.fileId || element.assetId;
+              if (imgFileId) {
+                assets.efImage.add("file-id=" + imgFileId);
+              } else if (element.src) {
+                assets.efImage.add("src=" + element.src);
               }
               break;
             }

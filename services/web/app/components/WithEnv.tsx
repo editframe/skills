@@ -13,7 +13,8 @@ interface WithEnvProps {
  */
 export function WithEnv({ children }: WithEnvProps) {
   // Get environment from client-side window.ENV or server-side global
-  const env: EnvType = (typeof window !== 'undefined' && window.ENV) ||
+  const env: EnvType =
+    (typeof window !== "undefined" && window.ENV) ||
     (globalThis as any).__ENV_CONTEXT__;
 
   if (!env) {

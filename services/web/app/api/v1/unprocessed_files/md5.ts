@@ -2,13 +2,13 @@ import { db } from "@/sql-client.server";
 import type { LookupUnprocessedFileByMd5Result } from "@editframe/api";
 
 import type { Route } from "./+types/md5";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 export const loader = async ({
-  request,
   params: { md5 },
+  context,
 }: Route.LoaderArgs): Promise<LookupUnprocessedFileByMd5Result> => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
   return db
     .selectFrom("video2.unprocessed_files")
     .where("md5", "=", md5)

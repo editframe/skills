@@ -1,33 +1,69 @@
 // @vitest-environment node
 
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import type { FramegenEngine, VideoRenderOptions } from "./engines/FramegenEngine";
+import type {
+  FramegenEngine,
+  VideoRenderOptions,
+} from "./engines/FramegenEngine";
 import { SegmentEncoder } from "./SegmentEncoder.server";
 import * as logging from "@/logging";
 
 // Mock dependencies
 vi.mock("@/logging");
 vi.mock("@/tracing", () => ({
-  WithSpan: () => (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) => descriptor,
-  WithRootSpan: () => (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) => descriptor,
-  WithSyncSpan: () => (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) => descriptor,
+  WithSpan:
+    () =>
+    (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) =>
+      descriptor,
+  WithRootSpan:
+    () =>
+    (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) =>
+      descriptor,
+  WithSyncSpan:
+    () =>
+    (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) =>
+      descriptor,
   executeSpan: vi.fn(async (_name: string, fn: (span: any) => Promise<any>) => {
-    return fn({ setAttribute: vi.fn(), setAttributes: vi.fn(), setStatus: vi.fn(), recordException: vi.fn(), end: vi.fn() });
+    return fn({
+      setAttribute: vi.fn(),
+      setAttributes: vi.fn(),
+      setStatus: vi.fn(),
+      recordException: vi.fn(),
+      end: vi.fn(),
+    });
   }),
-  executeRootSpan: vi.fn(async (_name: string, fn: (span: any) => Promise<any>) => {
-    return fn({ setAttribute: vi.fn(), setAttributes: vi.fn(), setStatus: vi.fn(), recordException: vi.fn(), end: vi.fn() });
-  }),
+  executeRootSpan: vi.fn(
+    async (_name: string, fn: (span: any) => Promise<any>) => {
+      return fn({
+        setAttribute: vi.fn(),
+        setAttributes: vi.fn(),
+        setStatus: vi.fn(),
+        recordException: vi.fn(),
+        end: vi.fn(),
+      });
+    },
+  ),
   executeSpanSync: vi.fn((_name: string, fn: (span: any) => any) => {
-    return fn({ setAttribute: vi.fn(), setAttributes: vi.fn(), setStatus: vi.fn(), recordException: vi.fn(), end: vi.fn() });
+    return fn({
+      setAttribute: vi.fn(),
+      setAttributes: vi.fn(),
+      setStatus: vi.fn(),
+      recordException: vi.fn(),
+      end: vi.fn(),
+    });
   }),
   setSpanAttributes: vi.fn(),
   setDottedObjectAttributes: vi.fn(),
 }));
 
 vi.mock("@/util/raceTimeout", () => ({
-  raceTimeout: vi.fn().mockImplementation(async (timeoutMs: number, message: string, promise: Promise<any>) => {
-    return promise;
-  }),
+  raceTimeout: vi
+    .fn()
+    .mockImplementation(
+      async (timeoutMs: number, message: string, promise: Promise<any>) => {
+        return promise;
+      },
+    ),
 }));
 
 // Minimal test engine for integration testing
@@ -43,7 +79,10 @@ class TestFramegenEngine implements FramegenEngine {
     // Minimal initialization
   }
 
-  async beginFrame(_frameNumber: number, _isLast: boolean): Promise<ArrayBuffer> {
+  async beginFrame(
+    _frameNumber: number,
+    _isLast: boolean,
+  ): Promise<ArrayBuffer> {
     // Return minimal audio samples
     return Buffer.alloc(1024 * 8); // 1024 samples, 32-bit float stereo
   }
@@ -131,8 +170,8 @@ describe("SegmentEncoder RPC Keepalive Integration", () => {
       mockCtx.sendKeepalive();
     };
 
-    encoder.on('frameRendered', frameRenderedHandler);
-    encoder.on('encodingStarted', encodingStartedHandler);
+    encoder.on("frameRendered", frameRenderedHandler);
+    encoder.on("encodingStarted", encodingStartedHandler);
 
     try {
       await encoder.generateStandaloneSegment();
@@ -144,10 +183,9 @@ describe("SegmentEncoder RPC Keepalive Integration", () => {
       const frameRenderedCalls = mockCtx.sendKeepalive.mock.calls.length - 1; // Subtract 1 for encodingStarted
       expect(frameRenderedCalls).toBeGreaterThan(0);
       expect(frameRenderedCalls).toBe(encoder.totalFrameCount);
-
     } finally {
-      encoder.off('frameRendered', frameRenderedHandler);
-      encoder.off('encodingStarted', encodingStartedHandler);
+      encoder.off("frameRendered", frameRenderedHandler);
+      encoder.off("encodingStarted", encodingStartedHandler);
     }
   }, 10000);
 
@@ -172,8 +210,8 @@ describe("SegmentEncoder RPC Keepalive Integration", () => {
     };
 
     // Add and immediately remove handler
-    encoder.on('frameRendered', frameRenderedHandler);
-    encoder.off('frameRendered', frameRenderedHandler);
+    encoder.on("frameRendered", frameRenderedHandler);
+    encoder.off("frameRendered", frameRenderedHandler);
 
     await encoder.generateStandaloneSegment();
 
@@ -205,8 +243,8 @@ describe("SegmentEncoder RPC Keepalive Integration", () => {
       }),
     };
 
-    encoder.on('frameRendered', () => mockCtx.sendKeepalive());
-    encoder.on('encodingStarted', () => mockCtx.sendKeepalive());
+    encoder.on("frameRendered", () => mockCtx.sendKeepalive());
+    encoder.on("encodingStarted", () => mockCtx.sendKeepalive());
 
     try {
       await encoder.generateStandaloneSegment();
@@ -214,7 +252,6 @@ describe("SegmentEncoder RPC Keepalive Integration", () => {
       // Should have multiple keepalive signals (1 for start + 1 per frame)
       expect(keepaliveSignals.length).toBeGreaterThan(5);
       expect(keepaliveSignals.length).toBe(encoder.totalFrameCount + 1); // +1 for encodingStarted
-
     } finally {
       encoder.removeAllListeners();
     }

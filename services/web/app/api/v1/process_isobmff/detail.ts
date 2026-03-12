@@ -3,13 +3,13 @@ import { requireQueryAs } from "@/graphql.server/userClient";
 import type { IsobmffProcessInfoResult } from "@editframe/api";
 
 import type { Route } from "./+types/detail";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 export const loader = async ({
-  request,
   params: { id },
+  context,
 }: Route.LoaderArgs): Promise<IsobmffProcessInfoResult> => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
   return requireQueryAs(
     session,
     "org-reader",

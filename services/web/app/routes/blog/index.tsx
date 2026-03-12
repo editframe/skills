@@ -1,65 +1,149 @@
-import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
-import type { MetaFunction } from "react-router";
-
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { Link, useLoaderData } from "react-router";
 import { getAllBlogsContent } from "~/utils/doc.server";
-import { Card } from "~/components/marketing/Card";
+import { formatDate } from "~/ui/formatDate";
 
 export const loader = async (_: LoaderFunctionArgs) => {
   const posts = await getAllBlogsContent();
-  if (!posts) {
-    throw new Error("No posts found");
-  }
-  return { posts: posts };
+  return { posts };
 };
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Editframe Blog" },
+    { title: "Blog | Editframe" },
     {
       name: "description",
       content:
-        "Thoughts about building excellent user experiences with Editframe.",
+        "Thoughts on programmatic video, developer tooling, and building with Editframe.",
     },
+    { property: "og:type", content: "website" },
+    { property: "og:title", content: "Blog | Editframe" },
   ];
 };
+
 export default function BlogIndex() {
-  const data = useLoaderData<typeof loader>();
-  const posts = data.posts;
+  const { posts } = useLoaderData<typeof loader>();
+
+  const featured = posts.filter((p) => p.featured);
+  const rest = posts.filter((p) => !p.featured);
 
   return (
-    <main
-      className="mt-8 flex max-w-full flex-1 flex-col px-6 sm:container"
-      tabIndex={-1}
+    <div className="py-16 sm:py-24">
+      <div className="mb-16">
+        <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-5xl">
+          Blog
+        </h1>
+        <p className="mt-4 text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl">
+          Thoughts on programmatic video, developer tooling, and building with
+          Editframe.
+        </p>
+      </div>
+
+      {featured.length > 0 && (
+        <section className="mb-16">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-6">
+            Featured
+          </h2>
+          <div className="grid gap-8 sm:grid-cols-2">
+            {featured.map((post) => (
+              <PostCard key={post.slug} post={post} featured />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {rest.length > 0 && (
+        <section>
+          {featured.length > 0 && (
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-6">
+              All Posts
+            </h2>
+          )}
+          <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            {rest.map((post) => (
+              <PostCard key={post.slug} post={post} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {posts.length === 0 && (
+        <p className="text-zinc-500 dark:text-zinc-400">
+          No posts yet — check back soon.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function PostCard({
+  post,
+  featured = false,
+}: {
+  post: {
+    slug: string;
+    title: string;
+    description: string;
+    date: string;
+    author: string;
+    tags: string[];
+    coverImage?: string;
+  };
+  featured?: boolean;
+}) {
+  return (
+    <article
+      className={
+        featured
+          ? "group relative flex flex-col overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors"
+          : "group flex gap-6 py-8"
+      }
     >
-      <h1 className="text-4xl md:pl-6  font-bold text-gray-800 dark:text-gray-200">
-        Blog
-      </h1>
-      <p className="text-md mt-4 md:pl-6 text-gray-800 dark:text-gray-200">
-        Welcome to the Editframe Blog section.
-      </p>
-      <div className="border-zinc-100 mt-12 pb-16 md:border-l md:ml-6 md:pl-6">
-        <div className="flex max-w-3xl flex-col space-y-16">
-          {posts.map((blog) => (
-            <article className="md:grid md:grid-cols-4 md:items-baseline" key={blog.slug}>
-              <Card
-                className="cursor-pointer md:col-span-3"
-                href={blog.slug}
-              >
-                <Card.Title>{blog.title}</Card.Title>
-                <Card.Eyebrow as="time" className="mt-2 md:hidden" decorate>
-                  {blog.publishedDate}
-                </Card.Eyebrow>
-                <Card.Description>{blog.description}</Card.Description>
-                <Card.Cta>Read full post</Card.Cta>
-              </Card>
-              <Card.Eyebrow as="time" className="hidden md:block">
-                {blog.publishedDate}
-              </Card.Eyebrow>
-            </article>
+      {featured && post.coverImage && (
+        <div className="aspect-video overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+          <img
+            src={post.coverImage}
+            alt=""
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            loading="lazy"
+          />
+        </div>
+      )}
+      {!featured && post.coverImage && (
+        <div className="hidden sm:block w-32 h-20 shrink-0 overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800">
+          <img
+            src={post.coverImage}
+            alt=""
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        </div>
+      )}
+      <div className={featured ? "p-6 flex flex-col flex-1" : "flex-1 min-w-0"}>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {post.tags.map((tag) => (
+            <Link
+              key={tag}
+              to={`/blog/tag/${tag}`}
+              className="text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {tag}
+            </Link>
           ))}
         </div>
+        <Link to={`/blog/${post.slug}`} className="flex-1">
+          <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors line-clamp-2">
+            {post.title}
+          </h3>
+          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2">
+            {post.description}
+          </p>
+        </Link>
+        <div className="mt-4 flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-500">
+          <time dateTime={post.date}>{formatDate(post.date)}</time>
+        </div>
       </div>
-    </main>
+    </article>
   );
 }

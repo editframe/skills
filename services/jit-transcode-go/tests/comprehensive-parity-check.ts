@@ -8,11 +8,31 @@ const GO = "http://jit-transcode-go:3002";
 const OUT = "/app/temp/parity-comprehensive";
 
 const TEST_VIDEOS = [
-  { name: "bars-n-tone", url: "http://web:3000/bars-n-tone.mp4", description: "10s test pattern (moov at tail)" },
-  { name: "head-moov-720p", url: "file:///app/test-assets/transcode/head-moov-720p.mp4", description: "720p with moov at head" },
-  { name: "tail-moov-720p", url: "file:///app/test-assets/transcode/tail-moov-720p.mp4", description: "720p with moov at tail" },
-  { name: "head-moov-480p", url: "file:///app/test-assets/transcode/head-moov-480p.mp4", description: "480p with moov at head" },
-  { name: "tail-moov-480p", url: "file:///app/test-assets/transcode/tail-moov-480p.mp4", description: "480p with moov at tail" },
+  {
+    name: "bars-n-tone",
+    url: "http://web:3000/bars-n-tone.mp4",
+    description: "10s test pattern (moov at tail)",
+  },
+  {
+    name: "head-moov-720p",
+    url: "file:///app/test-assets/transcode/head-moov-720p.mp4",
+    description: "720p with moov at head",
+  },
+  {
+    name: "tail-moov-720p",
+    url: "file:///app/test-assets/transcode/tail-moov-720p.mp4",
+    description: "720p with moov at tail",
+  },
+  {
+    name: "head-moov-480p",
+    url: "file:///app/test-assets/transcode/head-moov-480p.mp4",
+    description: "480p with moov at head",
+  },
+  {
+    name: "tail-moov-480p",
+    url: "file:///app/test-assets/transcode/tail-moov-480p.mp4",
+    description: "480p with moov at tail",
+  },
 ];
 
 const RENDITIONS = ["low", "medium", "high"];
@@ -28,10 +48,13 @@ async function fetch$(url: string): Promise<Buffer> {
 
 async function ffprobe(file: string): Promise<any> {
   try {
-    const out = execSync(`ffprobe -v quiet -print_format json -show_format -show_streams -show_packets "${file}"`, {
-      encoding: "utf8",
-      maxBuffer: 50 * 1024 * 1024,
-    });
+    const out = execSync(
+      `ffprobe -v quiet -print_format json -show_format -show_streams -show_packets "${file}"`,
+      {
+        encoding: "utf8",
+        maxBuffer: 50 * 1024 * 1024,
+      },
+    );
     return JSON.parse(out);
   } catch {
     return null;
@@ -95,10 +118,15 @@ function extractBaseMediaDecodeTime(dump: any[]): number | null {
   if (!traf?.children) return null;
 
   const tfdt = findBox(traf.children, "tfdt");
-  return tfdt?.["base media decode time"] || tfdt?.base_media_decode_time || null;
+  return (
+    tfdt?.["base media decode time"] || tfdt?.base_media_decode_time || null
+  );
 }
 
-async function test(name: string, fn: () => Promise<TestResult>): Promise<boolean> {
+async function test(
+  name: string,
+  fn: () => Promise<TestResult>,
+): Promise<boolean> {
   try {
     const result = await fn();
     console.log(`${result.pass ? "✅" : "❌"} ${name}: ${result.message}`);
@@ -127,8 +155,12 @@ async function main() {
       total++;
       if (
         await test(`[${testPrefix}] Init segment structure`, async () => {
-          const ts = await fetch$(`${TS}/api/v1/transcode/${rendition}/init.m4s?url=${encodeURIComponent(video.url)}`);
-          const go = await fetch$(`${GO}/api/v1/transcode/${rendition}/init.m4s?url=${encodeURIComponent(video.url)}`);
+          const ts = await fetch$(
+            `${TS}/api/v1/transcode/${rendition}/init.m4s?url=${encodeURIComponent(video.url)}`,
+          );
+          const go = await fetch$(
+            `${GO}/api/v1/transcode/${rendition}/init.m4s?url=${encodeURIComponent(video.url)}`,
+          );
 
           await fs.writeFile(`${OUT}/${testPrefix}-ts-init.m4s`, ts);
           await fs.writeFile(`${OUT}/${testPrefix}-go-init.m4s`, go);
@@ -136,14 +168,28 @@ async function main() {
           const tsDump = await mp4dump(`${OUT}/${testPrefix}-ts-init.m4s`);
           const goDump = await mp4dump(`${OUT}/${testPrefix}-go-init.m4s`);
 
-          const tsValid = hasBox(tsDump, "ftyp") && hasBox(tsDump, "moov") && !hasBox(tsDump, "mdat") && !hasBox(tsDump, "moof");
-          const goValid = hasBox(goDump, "ftyp") && hasBox(goDump, "moov") && !hasBox(goDump, "mdat") && !hasBox(goDump, "moof");
+          const tsValid =
+            hasBox(tsDump, "ftyp") &&
+            hasBox(tsDump, "moov") &&
+            !hasBox(tsDump, "mdat") &&
+            !hasBox(tsDump, "moof");
+          const goValid =
+            hasBox(goDump, "ftyp") &&
+            hasBox(goDump, "moov") &&
+            !hasBox(goDump, "mdat") &&
+            !hasBox(goDump, "moof");
 
           if (tsValid && goValid) {
-            return { pass: true, message: `ftyp+moov only (TS:${ts.length}b, Go:${go.length}b)` };
+            return {
+              pass: true,
+              message: `ftyp+moov only (TS:${ts.length}b, Go:${go.length}b)`,
+            };
           }
 
-          return { pass: false, message: `TS valid:${tsValid}, Go valid:${goValid}` };
+          return {
+            pass: false,
+            message: `TS valid:${tsValid}, Go valid:${goValid}`,
+          };
         })
       )
         passed++;
@@ -155,7 +201,10 @@ async function main() {
           const goProbe = await ffprobe(`${OUT}/${testPrefix}-go-init.m4s`);
 
           if (!tsProbe || !goProbe) {
-            return { pass: false, message: `Missing probe (TS:${!!tsProbe}, Go:${!!goProbe})` };
+            return {
+              pass: false,
+              message: `Missing probe (TS:${!!tsProbe}, Go:${!!goProbe})`,
+            };
           }
 
           const tsCodec = tsProbe.streams?.[0]?.codec_name;
@@ -167,7 +216,10 @@ async function main() {
             return { pass: true, message: `${tsCodec} ${tsRes}` };
           }
 
-          return { pass: false, message: `TS:${tsCodec} ${tsRes}, Go:${goCodec} ${goRes}` };
+          return {
+            pass: false,
+            message: `TS:${tsCodec} ${tsRes}, Go:${goCodec} ${goRes}`,
+          };
         })
       )
         passed++;
@@ -177,22 +229,32 @@ async function main() {
         if (
           await test(`[${testPrefix}] Segment ${segId} structure`, async () => {
             const ts = await fetch$(
-              `${TS}/api/v1/transcode/${rendition}/${segId}.m4s?url=${encodeURIComponent(video.url)}`
+              `${TS}/api/v1/transcode/${rendition}/${segId}.m4s?url=${encodeURIComponent(video.url)}`,
             );
             const go = await fetch$(
-              `${GO}/api/v1/transcode/${rendition}/${segId}.m4s?url=${encodeURIComponent(video.url)}`
+              `${GO}/api/v1/transcode/${rendition}/${segId}.m4s?url=${encodeURIComponent(video.url)}`,
             );
 
             await fs.writeFile(`${OUT}/${testPrefix}-ts-seg${segId}.m4s`, ts);
             await fs.writeFile(`${OUT}/${testPrefix}-go-seg${segId}.m4s`, go);
 
-            const tsDump = await mp4dump(`${OUT}/${testPrefix}-ts-seg${segId}.m4s`);
-            const goDump = await mp4dump(`${OUT}/${testPrefix}-go-seg${segId}.m4s`);
+            const tsDump = await mp4dump(
+              `${OUT}/${testPrefix}-ts-seg${segId}.m4s`,
+            );
+            const goDump = await mp4dump(
+              `${OUT}/${testPrefix}-go-seg${segId}.m4s`,
+            );
 
             const tsValid =
-              hasBox(tsDump, "moof") && hasBox(tsDump, "mdat") && !hasBox(tsDump, "ftyp") && !hasBox(tsDump, "moov");
+              hasBox(tsDump, "moof") &&
+              hasBox(tsDump, "mdat") &&
+              !hasBox(tsDump, "ftyp") &&
+              !hasBox(tsDump, "moov");
             const goValid =
-              hasBox(goDump, "moof") && hasBox(goDump, "mdat") && !hasBox(goDump, "ftyp") && !hasBox(goDump, "moov");
+              hasBox(goDump, "moof") &&
+              hasBox(goDump, "mdat") &&
+              !hasBox(goDump, "ftyp") &&
+              !hasBox(goDump, "moov");
 
             if (tsValid && goValid) {
               return { pass: true, message: `moof+mdat only` };
@@ -206,11 +268,18 @@ async function main() {
         total++;
         if (
           await test(`[${testPrefix}] Segment ${segId} playable`, async () => {
-            const tsProbe = await ffprobe(`${OUT}/${testPrefix}-ts-seg${segId}.m4s`);
-            const goProbe = await ffprobe(`${OUT}/${testPrefix}-go-seg${segId}.m4s`);
+            const tsProbe = await ffprobe(
+              `${OUT}/${testPrefix}-ts-seg${segId}.m4s`,
+            );
+            const goProbe = await ffprobe(
+              `${OUT}/${testPrefix}-go-seg${segId}.m4s`,
+            );
 
             if (!tsProbe || !goProbe) {
-              return { pass: false, message: `Not parseable (TS:${!!tsProbe}, Go:${!!goProbe})` };
+              return {
+                pass: false,
+                message: `Not parseable (TS:${!!tsProbe}, Go:${!!goProbe})`,
+              };
             }
 
             const tsCodec = tsProbe.streams?.[0]?.codec_name;
@@ -228,23 +297,36 @@ async function main() {
         total++;
         if (
           await test(`[${testPrefix}] Segment ${segId} sample count`, async () => {
-            const tsDump = await mp4dump(`${OUT}/${testPrefix}-ts-seg${segId}.m4s`);
-            const goDump = await mp4dump(`${OUT}/${testPrefix}-go-seg${segId}.m4s`);
+            const tsDump = await mp4dump(
+              `${OUT}/${testPrefix}-ts-seg${segId}.m4s`,
+            );
+            const goDump = await mp4dump(
+              `${OUT}/${testPrefix}-go-seg${segId}.m4s`,
+            );
 
             const tsSamples = extractTrunSampleCount(tsDump);
             const goSamples = extractTrunSampleCount(goDump);
 
             if (tsSamples === null || goSamples === null) {
-              return { pass: false, message: `Missing sample count (TS:${tsSamples}, Go:${goSamples})` };
+              return {
+                pass: false,
+                message: `Missing sample count (TS:${tsSamples}, Go:${goSamples})`,
+              };
             }
 
             const withinTolerance = Math.abs(tsSamples - goSamples) <= 5;
 
             if (withinTolerance) {
-              return { pass: true, message: `TS:${tsSamples}, Go:${goSamples} (±${Math.abs(tsSamples - goSamples)})` };
+              return {
+                pass: true,
+                message: `TS:${tsSamples}, Go:${goSamples} (±${Math.abs(tsSamples - goSamples)})`,
+              };
             }
 
-            return { pass: false, message: `TS:${tsSamples}, Go:${goSamples} (diff:${Math.abs(tsSamples - goSamples)})` };
+            return {
+              pass: false,
+              message: `TS:${tsSamples}, Go:${goSamples} (diff:${Math.abs(tsSamples - goSamples)})`,
+            };
           })
         )
           passed++;
@@ -252,8 +334,12 @@ async function main() {
         total++;
         if (
           await test(`[${testPrefix}] Segment ${segId} sequence number`, async () => {
-            const tsDump = await mp4dump(`${OUT}/${testPrefix}-ts-seg${segId}.m4s`);
-            const goDump = await mp4dump(`${OUT}/${testPrefix}-go-seg${segId}.m4s`);
+            const tsDump = await mp4dump(
+              `${OUT}/${testPrefix}-ts-seg${segId}.m4s`,
+            );
+            const goDump = await mp4dump(
+              `${OUT}/${testPrefix}-go-seg${segId}.m4s`,
+            );
 
             const tsSeq = extractSequenceNumber(tsDump);
             const goSeq = extractSequenceNumber(goDump);
@@ -264,7 +350,10 @@ async function main() {
               return { pass: true, message: `Both seq=${expectedSeq}` };
             }
 
-            return { pass: false, message: `TS:${tsSeq}, Go:${goSeq}, expected:${expectedSeq}` };
+            return {
+              pass: false,
+              message: `TS:${tsSeq}, Go:${goSeq}, expected:${expectedSeq}`,
+            };
           })
         )
           passed++;
@@ -272,24 +361,37 @@ async function main() {
         total++;
         if (
           await test(`[${testPrefix}] Segment ${segId} base decode time`, async () => {
-            const tsDump = await mp4dump(`${OUT}/${testPrefix}-ts-seg${segId}.m4s`);
-            const goDump = await mp4dump(`${OUT}/${testPrefix}-go-seg${segId}.m4s`);
+            const tsDump = await mp4dump(
+              `${OUT}/${testPrefix}-ts-seg${segId}.m4s`,
+            );
+            const goDump = await mp4dump(
+              `${OUT}/${testPrefix}-go-seg${segId}.m4s`,
+            );
 
             const tsBDT = extractBaseMediaDecodeTime(tsDump);
             const goBDT = extractBaseMediaDecodeTime(goDump);
 
             if (tsBDT === null || goBDT === null) {
-              return { pass: false, message: `Missing BDT (TS:${tsBDT}, Go:${goBDT})` };
+              return {
+                pass: false,
+                message: `Missing BDT (TS:${tsBDT}, Go:${goBDT})`,
+              };
             }
 
             const tolerance = 2000;
             const withinTolerance = Math.abs(tsBDT - goBDT) <= tolerance;
 
             if (withinTolerance) {
-              return { pass: true, message: `TS:${tsBDT}, Go:${goBDT} (±${Math.abs(tsBDT - goBDT)})` };
+              return {
+                pass: true,
+                message: `TS:${tsBDT}, Go:${goBDT} (±${Math.abs(tsBDT - goBDT)})`,
+              };
             }
 
-            return { pass: false, message: `TS:${tsBDT}, Go:${goBDT} (diff:${Math.abs(tsBDT - goBDT)})` };
+            return {
+              pass: false,
+              message: `TS:${tsBDT}, Go:${goBDT} (diff:${Math.abs(tsBDT - goBDT)})`,
+            };
           })
         )
           passed++;
@@ -308,7 +410,10 @@ async function main() {
 
           if (probe?.streams?.[0]?.codec_name === "h264") {
             const duration = Number.parseFloat(probe.format?.duration || "0");
-            return { pass: true, message: `Valid h264, ${duration.toFixed(1)}s` };
+            return {
+              pass: true,
+              message: `Valid h264, ${duration.toFixed(1)}s`,
+            };
           }
 
           return { pass: false, message: `Invalid or missing video stream` };
@@ -321,11 +426,13 @@ async function main() {
         await test(`[${testPrefix}] Standalone .mp4 output`, async () => {
           try {
             const mp4 = await fetch$(
-              `${GO}/api/v1/transcode/${rendition}/1.mp4?url=${encodeURIComponent(video.url)}&fragmented=false`
+              `${GO}/api/v1/transcode/${rendition}/1.mp4?url=${encodeURIComponent(video.url)}&fragmented=false`,
             );
             await fs.writeFile(`${OUT}/${testPrefix}-go-standalone.mp4`, mp4);
 
-            const probe = await ffprobe(`${OUT}/${testPrefix}-go-standalone.mp4`);
+            const probe = await ffprobe(
+              `${OUT}/${testPrefix}-go-standalone.mp4`,
+            );
 
             if (probe?.streams?.[0]?.codec_name === "h264") {
               const size = (mp4.length / 1024 / 1024).toFixed(2);
@@ -358,4 +465,3 @@ async function main() {
 }
 
 main();
-

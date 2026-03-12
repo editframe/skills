@@ -1,5 +1,5 @@
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
 
 type MP4Box = {
   type: string;
@@ -27,12 +27,12 @@ const TAIL_SLOP = 1024;
  */
 function isLocalFile(url: string): boolean {
   // Check for file:// protocol
-  if (url.startsWith('file://')) {
+  if (url.startsWith("file://")) {
     return true;
   }
 
   // Check for HTTP/HTTPS protocols (these are definitely remote)
-  if (url.startsWith('http://') || url.startsWith('https://')) {
+  if (url.startsWith("http://") || url.startsWith("https://")) {
     return false;
   }
 
@@ -45,9 +45,9 @@ function isLocalFile(url: string): boolean {
  * Convert file:// URL or local path to file system path
  */
 function urlToPath(url: string): string {
-  if (url.startsWith('file://')) {
+  if (url.startsWith("file://")) {
     const urlObj = new URL(url);
-    if (urlObj.protocol !== 'file:') {
+    if (urlObj.protocol !== "file:") {
       throw new Error(`Expected file:// protocol, got: ${urlObj.protocol}`);
     }
     return urlObj.pathname;
@@ -58,13 +58,22 @@ function urlToPath(url: string): string {
 /**
  * Generic box parser that works on any Uint8Array buffer
  */
-function* parseBoxesFromBuffer(buffer: Uint8Array, baseOffset = 0): Generator<MP4Box> {
+function* parseBoxesFromBuffer(
+  buffer: Uint8Array,
+  baseOffset = 0,
+): Generator<MP4Box> {
   let processedOffset = 0;
 
   while (processedOffset + 8 <= buffer.length) {
-    const view = new DataView(buffer.buffer, buffer.byteOffset + processedOffset, 8);
+    const view = new DataView(
+      buffer.buffer,
+      buffer.byteOffset + processedOffset,
+      8,
+    );
     const size = view.getUint32(0);
-    const type = new TextDecoder().decode(buffer.slice(processedOffset + 4, processedOffset + 8));
+    const type = new TextDecoder().decode(
+      buffer.slice(processedOffset + 4, processedOffset + 8),
+    );
 
     if (size < 8) {
       // Invalid box size, skip one byte and try again
@@ -105,7 +114,11 @@ function findMoovInBuffer(buffer: Uint8Array): Uint8Array | null {
       buffer[i + 7] === moovSignature[3]
     ) {
       // Get the box size
-      const size = new DataView(buffer.buffer, buffer.byteOffset + i, 4).getUint32(0);
+      const size = new DataView(
+        buffer.buffer,
+        buffer.byteOffset + i,
+        4,
+      ).getUint32(0);
 
       // Validate box size
       if (size >= 8 && i + size <= buffer.length) {
@@ -117,44 +130,58 @@ function findMoovInBuffer(buffer: Uint8Array): Uint8Array | null {
   return null;
 }
 
-async function* streamBoxesFromFetch(url: string, start: number, end: number, baseOffset = 0): AsyncGenerator<MP4Box> {
+async function* streamBoxesFromFetch(
+  url: string,
+  start: number,
+  end: number,
+  baseOffset = 0,
+): AsyncGenerator<MP4Box> {
   const abortController = new AbortController();
   const rangeHeader = `bytes=${start}-${end - 1}`;
 
-  console.log(`[streamBoxesFromFetch] Requesting range: ${rangeHeader} from ${url}`);
+  console.log(
+    `[streamBoxesFromFetch] Requesting range: ${rangeHeader} from ${url}`,
+  );
 
   const res = await fetch(url, {
     headers: { Range: rangeHeader },
-    signal: abortController.signal
+    signal: abortController.signal,
   });
 
-  console.log(`[streamBoxesFromFetch] Response status: ${res.status} ${res.statusText}`);
+  console.log(
+    `[streamBoxesFromFetch] Response status: ${res.status} ${res.statusText}`,
+  );
 
-  if (!res.ok) throw new Error(`Failed to fetch range ${start}-${end}: ${res.status}`);
+  if (!res.ok)
+    throw new Error(`Failed to fetch range ${start}-${end}: ${res.status}`);
 
   // Check if server actually honored the range request
-  const contentRange = res.headers.get('content-range');
-  const contentLength = res.headers.get('content-length');
-  console.log(`[streamBoxesFromFetch] Response - Content-Range: ${contentRange || 'none'}, Content-Length: ${contentLength || 'none'}`);
+  const contentRange = res.headers.get("content-range");
+  const contentLength = res.headers.get("content-length");
+  console.log(
+    `[streamBoxesFromFetch] Response - Content-Range: ${contentRange || "none"}, Content-Length: ${contentLength || "none"}`,
+  );
 
   // CRITICAL: Fail immediately if server doesn't support range requests
   if (res.status === 200) {
     // Server returned 200 OK instead of 206 Partial Content - it's ignoring our range request
     throw new Error(
       `Server does not support range requests. ` +
-      `Expected 206 Partial Content, got ${res.status} ${res.statusText}. ` +
-      `This would download the entire file (${contentLength || 'unknown size'} bytes) instead of the requested range.`
+        `Expected 206 Partial Content, got ${res.status} ${res.statusText}. ` +
+        `This would download the entire file (${contentLength || "unknown size"} bytes) instead of the requested range.`,
     );
   }
 
   if (res.status !== 206) {
-    throw new Error(`Unexpected response status for range request: ${res.status} ${res.statusText}`);
+    throw new Error(
+      `Unexpected response status for range request: ${res.status} ${res.statusText}`,
+    );
   }
 
   if (!contentRange) {
     throw new Error(
       `Server returned 206 but missing Content-Range header. ` +
-      `Cannot verify that range request was properly handled.`
+        `Cannot verify that range request was properly handled.`,
     );
   }
 
@@ -170,7 +197,9 @@ async function* streamBoxesFromFetch(url: string, start: number, end: number, ba
       const { done, value } = await reader.read();
 
       if (done) {
-        console.log(`[streamBoxesFromFetch] Stream complete. Total bytes received: ${totalBytesReceived}, requested range: ${start}-${end - 1}`);
+        console.log(
+          `[streamBoxesFromFetch] Stream complete. Total bytes received: ${totalBytesReceived}, requested range: ${start}-${end - 1}`,
+        );
         break;
       }
 
@@ -184,9 +213,15 @@ async function* streamBoxesFromFetch(url: string, start: number, end: number, ba
 
       // Try to extract boxes from the buffer
       while (processedOffset + 8 <= buffer.length && !shouldStopEarly) {
-        const view = new DataView(buffer.buffer, buffer.byteOffset + processedOffset, 8);
+        const view = new DataView(
+          buffer.buffer,
+          buffer.byteOffset + processedOffset,
+          8,
+        );
         const size = view.getUint32(0);
-        const type = new TextDecoder().decode(buffer.slice(processedOffset + 4, processedOffset + 8));
+        const type = new TextDecoder().decode(
+          buffer.slice(processedOffset + 4, processedOffset + 8),
+        );
 
         if (size < 8) {
           // Invalid box size, skip one byte and try again
@@ -195,7 +230,7 @@ async function* streamBoxesFromFetch(url: string, start: number, end: number, ba
         }
 
         // Special handling for large boxes like mdat - we only need the position, not content
-        if (type === 'mdat' || size > 1024 * 1024) {
+        if (type === "mdat" || size > 1024 * 1024) {
           // For large boxes, just yield the header info and let the caller decide what to do
           yield {
             type,
@@ -209,8 +244,10 @@ async function* streamBoxesFromFetch(url: string, start: number, end: number, ba
           processedOffset += 8;
 
           // If this is mdat, we typically want to stop processing to avoid downloading huge amounts of data
-          if (type === 'mdat') {
-            console.log(`[streamBoxesFromFetch] Found large mdat box (${size} bytes), aborting HTTP request to avoid downloading video data`);
+          if (type === "mdat") {
+            console.log(
+              `[streamBoxesFromFetch] Found large mdat box (${size} bytes), aborting HTTP request to avoid downloading video data`,
+            );
             shouldStopEarly = true; // Signal to stop the stream reading loop
             abortController.abort(); // THIS LINE: Actually abort the HTTP request
           }
@@ -242,12 +279,16 @@ async function* streamBoxesFromFetch(url: string, start: number, end: number, ba
     }
 
     if (shouldStopEarly) {
-      console.log(`[streamBoxesFromFetch] Early termination activated. Total bytes received: ${totalBytesReceived}, requested range: ${start}-${end - 1}`);
+      console.log(
+        `[streamBoxesFromFetch] Early termination activated. Total bytes received: ${totalBytesReceived}, requested range: ${start}-${end - 1}`,
+      );
     }
   } catch (error) {
     // Handle abort signal - this is expected when we abort the request early
-    if (error instanceof Error && error.name === 'AbortError') {
-      console.log(`[streamBoxesFromFetch] Request aborted after processing ${totalBytesReceived} bytes (expected - found mdat)`);
+    if (error instanceof Error && error.name === "AbortError") {
+      console.log(
+        `[streamBoxesFromFetch] Request aborted after processing ${totalBytesReceived} bytes (expected - found mdat)`,
+      );
     } else {
       throw error; // Re-throw other errors
     }
@@ -260,9 +301,9 @@ async function* streamBoxesFromFile(
   filePath: string,
   start: number,
   end: number,
-  baseOffset = 0
+  baseOffset = 0,
 ): AsyncGenerator<MP4Box> {
-  const fileHandle = await fs.open(filePath, 'r');
+  const fileHandle = await fs.open(filePath, "r");
 
   try {
     const readSize = end - start;
@@ -280,7 +321,10 @@ async function* streamBoxesFromFile(
   }
 }
 
-async function scanForMoovInTail(url: string, fileSize: number): Promise<Uint8Array | null> {
+async function scanForMoovInTail(
+  url: string,
+  fileSize: number,
+): Promise<Uint8Array | null> {
   const start = Math.max(0, fileSize - TAIL_BYTES - TAIL_SLOP);
   const end = fileSize;
 
@@ -293,11 +337,14 @@ async function scanForMoovInTail(url: string, fileSize: number): Promise<Uint8Ar
   return findMoovInBuffer(buffer);
 }
 
-async function scanForMoovInTailFile(filePath: string, fileSize: number): Promise<Uint8Array | null> {
+async function scanForMoovInTailFile(
+  filePath: string,
+  fileSize: number,
+): Promise<Uint8Array | null> {
   const start = Math.max(0, fileSize - TAIL_BYTES - TAIL_SLOP);
   const end = fileSize;
 
-  const fileHandle = await fs.open(filePath, 'r');
+  const fileHandle = await fs.open(filePath, "r");
   try {
     const readSize = end - start;
     const buffer = Buffer.allocUnsafe(readSize);
@@ -316,14 +363,18 @@ export async function fetchMoovAndFtyp(url: string): Promise<MoovCacheEntry> {
   console.log(`[fetchMoovAndFtyp] Testing range request support for: ${url}`);
   const headRes = await fetch(url, {
     method: "HEAD",
-    headers: { Range: "bytes=0-" }  // Test if server supports range requests
+    headers: { Range: "bytes=0-" }, // Test if server supports range requests
   });
 
   if (!headRes.ok) {
-    throw new Error(`Failed to test range request support for ${url}: ${headRes.status} ${headRes.statusText}`);
+    throw new Error(
+      `Failed to test range request support for ${url}: ${headRes.status} ${headRes.statusText}`,
+    );
   }
 
-  console.log(`[fetchMoovAndFtyp] HEAD response: ${headRes.status} ${headRes.statusText}`);
+  console.log(
+    `[fetchMoovAndFtyp] HEAD response: ${headRes.status} ${headRes.statusText}`,
+  );
 
   const acceptRanges = headRes.headers.get("accept-ranges");
   const explicitlySupportsRange = acceptRanges === "bytes";
@@ -334,9 +385,9 @@ export async function fetchMoovAndFtyp(url: string): Promise<MoovCacheEntry> {
   if (!(explicitlySupportsRange || implicitlySupportsRange)) {
     throw new Error(
       `Server does not support HTTP range requests. ` +
-      `HEAD request with Range header returned ${headRes.status} instead of 206. ` +
-      `Accept-Ranges: ${acceptRanges || "[NOT PRESENT]"}` +
-      `Cannot efficiently extract metadata without downloading entire file.`
+        `HEAD request with Range header returned ${headRes.status} instead of 206. ` +
+        `Accept-Ranges: ${acceptRanges || "[NOT PRESENT]"}` +
+        `Cannot efficiently extract metadata without downloading entire file.`,
     );
   }
 
@@ -346,7 +397,9 @@ export async function fetchMoovAndFtyp(url: string): Promise<MoovCacheEntry> {
   const contentRange = headRes.headers.get("content-range");
   const size = contentLength ? Number.parseInt(contentLength, 10) : 0;
 
-  console.log(`[fetchMoovAndFtyp] Content-Range: ${contentRange || 'none'}, Content-Length: ${contentLength || 'none'}`);
+  console.log(
+    `[fetchMoovAndFtyp] Content-Range: ${contentRange || "none"}, Content-Length: ${contentLength || "none"}`,
+  );
 
   // Extract total file size from Content-Range if available (format: "bytes 0-1048575/62956262")
   let totalFileSize = size;
@@ -354,7 +407,9 @@ export async function fetchMoovAndFtyp(url: string): Promise<MoovCacheEntry> {
     const match = contentRange.match(/bytes \d+-\d+\/(\d+)/);
     if (match) {
       totalFileSize = Number.parseInt(match[1], 10);
-      console.log(`[fetchMoovAndFtyp] Total file size from Content-Range: ${totalFileSize} bytes`);
+      console.log(
+        `[fetchMoovAndFtyp] Total file size from Content-Range: ${totalFileSize} bytes`,
+      );
     }
   }
 
@@ -366,7 +421,9 @@ export async function fetchMoovAndFtyp(url: string): Promise<MoovCacheEntry> {
 
   // First try to get boxes from the head of the file
   const headFetch = async () => {
-    console.log(`[fetchMoovAndFtyp] Attempting to fetch first ${HEAD_BYTES} bytes from ${url}`);
+    console.log(
+      `[fetchMoovAndFtyp] Attempting to fetch first ${HEAD_BYTES} bytes from ${url}`,
+    );
     try {
       const foundBoxes: string[] = [];
       let totalBytesProcessed = 0;
@@ -375,63 +432,112 @@ export async function fetchMoovAndFtyp(url: string): Promise<MoovCacheEntry> {
         foundBoxes.push(`${box.type}@${box.start}-${box.end}`);
         totalBytesProcessed = Math.max(totalBytesProcessed, box.end);
 
-        if (box.type === 'ftyp' && !ftyp) {
+        if (box.type === "ftyp" && !ftyp) {
           ftyp = box.data;
-          console.log(`[fetchMoovAndFtyp] Found ftyp box: ${box.start}-${box.end}`);
+          console.log(
+            `[fetchMoovAndFtyp] Found ftyp box: ${box.start}-${box.end}`,
+          );
         }
-        if (box.type === 'moov' && !moov) {
+        if (box.type === "moov" && !moov) {
           moov = box.data;
           moovEndOffset = box.end;
-          console.log("[fetchMoovAndFtyp] Found moov box:", box.start + "-" + box.end, "(size:", box.data.length + ")");
+          console.log(
+            "[fetchMoovAndFtyp] Found moov box:",
+            box.start + "-" + box.end,
+            "(size:",
+            box.data.length + ")",
+          );
         }
-        if (box.type === 'mdat' && mdatOffset === null) {
+        if (box.type === "mdat" && mdatOffset === null) {
           mdatOffset = box.start;
           console.log("[fetchMoovAndFtyp] Found mdat box at:", box.start);
         }
         // Collect intervening boxes (free, uuid, skip, etc.) between moov and mdat
-        if (moovEndOffset !== null && box.start >= moovEndOffset && (mdatOffset === null || box.start < mdatOffset)) {
-          console.log("[fetchMoovAndFtyp] Found intervening box:", box.type, "at:", box.start + "-" + box.end, "(size:", box.data.length + ")");
+        if (
+          moovEndOffset !== null &&
+          box.start >= moovEndOffset &&
+          (mdatOffset === null || box.start < mdatOffset)
+        ) {
+          console.log(
+            "[fetchMoovAndFtyp] Found intervening box:",
+            box.type,
+            "at:",
+            box.start + "-" + box.end,
+            "(size:",
+            box.data.length + ")",
+          );
           interveningBoxData.push(box.data);
         }
 
         // OPTIMIZATION: Stop processing once we have all required boxes and intervening data
         if (ftyp && moov && mdatOffset !== null) {
-          console.log("[fetchMoovAndFtyp] Found all required boxes, stopping early to avoid unnecessary downloads");
+          console.log(
+            "[fetchMoovAndFtyp] Found all required boxes, stopping early to avoid unnecessary downloads",
+          );
           break;
         }
       }
 
       // After processing all boxes, extract intervening boxes if we have both moov and mdat
-      console.log("[fetchMoovAndFtyp] Processing complete. Boxes found:", foundBoxes.join(", "));
-      console.log("[fetchMoovAndFtyp] Total bytes processed:", totalBytesProcessed, "/ 1MB target");
-      console.log("[fetchMoovAndFtyp] ftyp:", !!ftyp, "moov:", !!moov, "mdatOffset:", mdatOffset);
+      console.log(
+        "[fetchMoovAndFtyp] Processing complete. Boxes found:",
+        foundBoxes.join(", "),
+      );
+      console.log(
+        "[fetchMoovAndFtyp] Total bytes processed:",
+        totalBytesProcessed,
+        "/ 1MB target",
+      );
+      console.log(
+        "[fetchMoovAndFtyp] ftyp:",
+        !!ftyp,
+        "moov:",
+        !!moov,
+        "mdatOffset:",
+        mdatOffset,
+      );
 
       if (ftyp && moov && mdatOffset !== null && moovEndOffset !== null) {
-        console.log("[fetchMoovAndFtyp] Found both ftyp, moov, and mdat - processing intervening boxes");
+        console.log(
+          "[fetchMoovAndFtyp] Found both ftyp, moov, and mdat - processing intervening boxes",
+        );
         const interveningLength = mdatOffset - moovEndOffset;
-        console.log(`[fetchMoovAndFtyp] Intervening length: ${interveningLength} (moovEnd: ${moovEndOffset}, mdatStart: ${mdatOffset})`);
+        console.log(
+          `[fetchMoovAndFtyp] Intervening length: ${interveningLength} (moovEnd: ${moovEndOffset}, mdatStart: ${mdatOffset})`,
+        );
 
         if (interveningBoxData.length > 0) {
           // Concatenate all intervening box data
-          const totalLength = interveningBoxData.reduce((sum, data) => sum + data.length, 0);
+          const totalLength = interveningBoxData.reduce(
+            (sum, data) => sum + data.length,
+            0,
+          );
           interveningBoxes = new Uint8Array(totalLength);
           let offset = 0;
           for (const data of interveningBoxData) {
             interveningBoxes.set(data, offset);
             offset += data.length;
           }
-          console.log(`[fetchMoovAndFtyp] Successfully assembled ${interveningBoxes.length} intervening bytes from ${interveningBoxData.length} boxes`);
+          console.log(
+            `[fetchMoovAndFtyp] Successfully assembled ${interveningBoxes.length} intervening bytes from ${interveningBoxData.length} boxes`,
+          );
         } else if (interveningLength > 0) {
-          console.log(`[fetchMoovAndFtyp] No intervening boxes found in stream, but ${interveningLength} bytes expected between moov and mdat`);
+          console.log(
+            `[fetchMoovAndFtyp] No intervening boxes found in stream, but ${interveningLength} bytes expected between moov and mdat`,
+          );
           // This might happen if the stream ended early or boxes weren't properly parsed
           interveningBoxes = new Uint8Array(0);
         } else {
-          console.log("[fetchMoovAndFtyp] No intervening boxes (moov and mdat are adjacent)");
+          console.log(
+            "[fetchMoovAndFtyp] No intervening boxes (moov and mdat are adjacent)",
+          );
           interveningBoxes = new Uint8Array(0);
         }
         return true;
       }
-      console.log("[fetchMoovAndFtyp] Missing required boxes - cannot extract intervening data");
+      console.log(
+        "[fetchMoovAndFtyp] Missing required boxes - cannot extract intervening data",
+      );
       return ftyp !== null && moov !== null; // Return true if we at least have ftyp and moov
     } catch (e) {
       console.error("[fetchMoovAndFtyp] Error fetching head:", e);
@@ -442,7 +548,10 @@ export async function fetchMoovAndFtyp(url: string): Promise<MoovCacheEntry> {
   // Only try tail scanning if we have a file size and haven't found moov yet
   const tailFetch = async () => {
     if (!totalFileSize) {
-      console.warn("No total file size available, skipping tail scan for:", url);
+      console.warn(
+        "No total file size available, skipping tail scan for:",
+        url,
+      );
       return false;
     }
 
@@ -474,24 +583,41 @@ export async function fetchMoovAndFtyp(url: string): Promise<MoovCacheEntry> {
   // Try head first
   const headSuccess = await headFetch();
 
-  console.log(`[fetchMoovAndFtyp] HEAD FETCH RESULT: headSuccess=${headSuccess}, ftyp=${!!ftyp}, moov=${!!moov}, totalFileSize=${totalFileSize}`);
+  console.log(
+    `[fetchMoovAndFtyp] HEAD FETCH RESULT: headSuccess=${headSuccess}, ftyp=${!!ftyp}, moov=${!!moov}, totalFileSize=${totalFileSize}`,
+  );
 
   // If we have both ftyp and moov from head, we're done
   if (headSuccess && ftyp && moov) {
-    console.log("[fetchMoovAndFtyp] SUCCESS: Found required boxes in head fetch, returning early");
-    return { url, totalSize: totalFileSize, ftyp, moov, mdatOffset, interveningBoxes };
+    console.log(
+      "[fetchMoovAndFtyp] SUCCESS: Found required boxes in head fetch, returning early",
+    );
+    return {
+      url,
+      totalSize: totalFileSize,
+      ftyp,
+      moov,
+      mdatOffset,
+      interveningBoxes,
+    };
   }
 
   // If we have a file size but missing moov, try tail
   if (totalFileSize && !moov) {
-    console.log("[fetchMoovAndFtyp] Trying tail fetch because we have file size but no moov");
+    console.log(
+      "[fetchMoovAndFtyp] Trying tail fetch because we have file size but no moov",
+    );
     await tailFetch();
   }
 
   // If we still don't have moov and no total file size, try larger head chunks
   if (!moov && !totalFileSize) {
-    console.log("[fetchMoovAndFtyp] WARNING: Falling back to larger head chunks - this will download more data!");
-    console.log("No moov found in first 1MB and no total file size, trying larger head chunk");
+    console.log(
+      "[fetchMoovAndFtyp] WARNING: Falling back to larger head chunks - this will download more data!",
+    );
+    console.log(
+      "No moov found in first 1MB and no total file size, trying larger head chunk",
+    );
 
     const largeHeadFetch = async (chunkSize: number) => {
       try {
@@ -499,40 +625,52 @@ export async function fetchMoovAndFtyp(url: string): Promise<MoovCacheEntry> {
         for await (const box of streamBoxesFromFetch(url, 0, chunkSize, 0)) {
           foundBoxes.push(`${box.type}@${box.start}-${box.end}`);
 
-          if (box.type === 'moov' && !moov) {
+          if (box.type === "moov" && !moov) {
             moov = box.data;
             moovEndOffset = box.end;
             console.log(`Found moov box at ${box.start}-${box.end}`);
           }
-          if (box.type === 'mdat' && mdatOffset === null) {
+          if (box.type === "mdat" && mdatOffset === null) {
             mdatOffset = box.start;
             console.log(`Found mdat box at ${box.start}`);
           }
         }
 
-        console.log(`Boxes found in ${chunkSize} byte chunk: ${foundBoxes.join(', ')}`);
+        console.log(
+          `Boxes found in ${chunkSize} byte chunk: ${foundBoxes.join(", ")}`,
+        );
 
         // Extract intervening boxes if we have both moov and mdat
         if (moov && mdatOffset !== null && moovEndOffset !== null) {
           const interveningLength = mdatOffset - moovEndOffset;
           if (interveningLength > 0) {
-            console.log(`Extracting ${interveningLength} intervening bytes between moov and mdat`);
+            console.log(
+              `Extracting ${interveningLength} intervening bytes between moov and mdat`,
+            );
             try {
               const interveningRes = await fetch(url, {
                 headers: { Range: `bytes=${moovEndOffset}-${mdatOffset - 1}` },
               });
               if (interveningRes.ok) {
-                interveningBoxes = new Uint8Array(await interveningRes.arrayBuffer());
-                console.log(`Successfully extracted ${interveningBoxes.length} intervening bytes`);
+                interveningBoxes = new Uint8Array(
+                  await interveningRes.arrayBuffer(),
+                );
+                console.log(
+                  `Successfully extracted ${interveningBoxes.length} intervening bytes`,
+                );
               }
             } catch (e) {
               console.warn("Error fetching intervening boxes:", e);
             }
           } else {
-            console.log("No intervening boxes needed (moov and mdat are adjacent)");
+            console.log(
+              "No intervening boxes needed (moov and mdat are adjacent)",
+            );
           }
         } else {
-          console.log(`Cannot extract intervening boxes: moov=${!!moov}, mdatOffset=${mdatOffset}, moovEndOffset=${moovEndOffset}`);
+          console.log(
+            `Cannot extract intervening boxes: moov=${!!moov}, mdatOffset=${mdatOffset}, moovEndOffset=${moovEndOffset}`,
+          );
         }
 
         return moov !== null;
@@ -548,15 +686,26 @@ export async function fetchMoovAndFtyp(url: string): Promise<MoovCacheEntry> {
     for (const chunkSize of chunkSizes) {
       if (moov) break;
 
-      console.log(`Trying ${chunkSize / (1024 * 1024)}MB head chunk for moov box`);
+      console.log(
+        `Trying ${chunkSize / (1024 * 1024)}MB head chunk for moov box`,
+      );
       await largeHeadFetch(chunkSize);
     }
   }
 
-  return { url, totalSize: totalFileSize, ftyp, moov, mdatOffset, interveningBoxes };
+  return {
+    url,
+    totalSize: totalFileSize,
+    ftyp,
+    moov,
+    mdatOffset,
+    interveningBoxes,
+  };
 }
 
-export async function fetchLocalMoovAndFtyp(url: string): Promise<MoovCacheEntry> {
+export async function fetchLocalMoovAndFtyp(
+  url: string,
+): Promise<MoovCacheEntry> {
   const filePath = urlToPath(url);
 
   const stats = await fs.stat(filePath);
@@ -567,7 +716,11 @@ export async function fetchLocalMoovAndFtyp(url: string): Promise<MoovCacheEntry
   const fileSize = stats.size;
 
   const headFetch = async () => {
-    const result: { ftyp: Uint8Array | null; moov: Uint8Array | null; mdatOffset: number | null } = {
+    const result: {
+      ftyp: Uint8Array | null;
+      moov: Uint8Array | null;
+      mdatOffset: number | null;
+    } = {
       ftyp: null,
       moov: null,
       mdatOffset: null,
@@ -618,7 +771,9 @@ export async function fetchLocalMoovAndFtyp(url: string): Promise<MoovCacheEntry
 /**
  * Unified function to fetch MOOV and FTYP boxes from either HTTP or local files
  */
-export async function fetchMoovAndFtypUnified(url: string): Promise<MoovCacheEntry> {
+export async function fetchMoovAndFtypUnified(
+  url: string,
+): Promise<MoovCacheEntry> {
   if (isLocalFile(url)) {
     return fetchLocalMoovAndFtyp(url);
   }
@@ -645,7 +800,11 @@ export function createDummyMdat(size = 8): Uint8Array {
   return buffer;
 }
 
-export function buildFakeMp4(ftyp: Uint8Array, moov: Uint8Array, mdatSize = 8): Uint8Array {
+export function buildFakeMp4(
+  ftyp: Uint8Array,
+  moov: Uint8Array,
+  mdatSize = 8,
+): Uint8Array {
   if (!ftyp || !moov) throw new Error("Both ftyp and moov boxes are required");
 
   const mdat = createDummyMdat(mdatSize);
@@ -673,12 +832,13 @@ export function buildFakeMp4WithPreservedStructure(
   ftyp: Uint8Array,
   moov: Uint8Array,
   interveningBoxes: Uint8Array,
-  mdatSize = 8
+  mdatSize = 8,
 ): Uint8Array {
   if (!ftyp || !moov) throw new Error("Both ftyp and moov boxes are required");
 
   const mdat = createDummyMdat(mdatSize);
-  const totalSize = ftyp.length + moov.length + interveningBoxes.length + mdat.length;
+  const totalSize =
+    ftyp.length + moov.length + interveningBoxes.length + mdat.length;
 
   const buffer = new Uint8Array(totalSize);
   let offset = 0;
@@ -707,7 +867,8 @@ export function buildMp4FromSegment(
   segmentData: Uint8Array,
 ): Uint8Array {
   if (!ftyp || !moov) throw new Error("Both ftyp and moov boxes are required");
-  if (!segmentData || segmentData.length === 0) throw new Error("Segment data is required");
+  if (!segmentData || segmentData.length === 0)
+    throw new Error("Segment data is required");
 
   // Create mdat header for the segment data
   const mdatHeaderSize = 8;

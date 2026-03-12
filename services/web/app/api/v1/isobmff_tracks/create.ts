@@ -9,12 +9,13 @@ import { db } from "@/sql-client.server";
 import { isobmffTrackFilePath } from "@/util/filePaths";
 
 import type { Route } from "./+types/create";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 export const action = async ({
-  request
+  request,
+  context,
 }: Route.ActionArgs): Promise<CreateISOBMFFTrackResult> => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
   const payload = CreateISOBMFFTrackPayload.parse(await request.json());
   const found = await queryAs(
     session,

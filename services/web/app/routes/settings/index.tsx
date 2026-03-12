@@ -1,5 +1,5 @@
 import { graphql } from "@/graphql";
-import { EnvelopeIcon, LockClosedIcon } from "@heroicons/react/20/solid";
+import { Envelope, Lock } from "@phosphor-icons/react";
 
 import type { MetaFunction } from "react-router";
 import { data } from "react-router";
@@ -16,7 +16,7 @@ import type { FC } from "react";
 import { Button } from "~/components/Button";
 
 import type { Route } from "./+types/index";
-import { requireSession } from "@/util/requireSession.server";
+import { identityContext } from "~/middleware/context";
 const schema = z.object({
   first_name: z.string().optional(),
   last_name: z.string().optional(),
@@ -24,15 +24,15 @@ const schema = z.object({
 
 const editAccount = formFor(schema);
 
-export async function action({ request }: Route.ActionArgs) {
-  const { session } = await requireSession(request);
+export async function action({ request, context }: Route.ActionArgs) {
+  const session = context.get(identityContext);
   const values = await editAccount.parseFormData(request);
   if (!values.success) {
     return data(values.errors, { status: 400 });
   }
 
   await requireMutateAs(
-    session,
+    { uid: session.uid, cid: session.cid ?? null },
     "user",
     graphql(`
         mutation UpdateUser(
@@ -77,8 +77,8 @@ const UserDetailsQuery = progressiveQuery(
 `),
 );
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  const { session } = await requireSession(request);
+export const loader = async ({ context }: Route.LoaderArgs) => {
+  const session = context.get(identityContext);
   const liveQuery = await serverQuery(session, UserDetailsQuery, {
     id: session.uid,
   });
@@ -192,9 +192,10 @@ export default function Page({
           to="/settings/update-password"
           className="inline-flex items-center bg-editframe-600 hover:bg-editframe-400 shadow-sm px-3 py-2 rounded-md font-semibold text-sm text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-editframe-600"
         >
-          <LockClosedIcon
+          <Lock
             className="mr-1.5 -ml-0.5 w-5 h-5"
             aria-hidden="true"
+            weight="fill"
           />
           Change Password
         </Link>
@@ -238,7 +239,7 @@ const EmailRow: FC<{
             <Button
               type="submit"
               disabled={isResending}
-              icon={EnvelopeIcon}
+              icon={Envelope}
               className="disabled:opacity-50 font-medium text-editframe-600 text-xs hover:text-editframe-500"
               mode={"action"}
             >

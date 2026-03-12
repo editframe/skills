@@ -1,0 +1,4 @@
+table:
+  name: file_types
+  schema: video2
+is_enum: true

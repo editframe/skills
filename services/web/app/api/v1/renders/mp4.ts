@@ -4,14 +4,14 @@ import { storageProvider } from "@/util/storageProvider.server";
 import { renderFinalFilePath } from "@/util/filePaths";
 
 import type { Route } from "./+types/mp4";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 import { data } from "react-router";
 
-export const loader = async ({ params: { id }, request }: Route.LoaderArgs) => {
+export const loader = async ({ params: { id }, request, context }: Route.LoaderArgs) => {
   if (!id) {
     return data({ error: "No id provided" }, { status: 400 });
   }
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
   const renderRecord = await requireQueryAs(
     session,
     "org-reader",
@@ -37,7 +37,7 @@ export const loader = async ({ params: { id }, request }: Route.LoaderArgs) => {
       disposition: "inline",
       downloadAs: `${renderRecord.id}.mp4`,
       mimeType: "video/mp4",
-      ...(rangeHeader && { range: rangeHeader })
+      ...(rangeHeader && { range: rangeHeader }),
     },
   );
 };

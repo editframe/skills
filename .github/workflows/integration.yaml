@@ -47,7 +47,7 @@ jobs:
         if: steps.check-image.outputs.image-exists != 'true'
         run: |
           TAG="${{ steps.set-cache-key.outputs.cache-key }}"
-          
+
           docker pull ${{ env.RUNNER_IMAGE }}:latest || true
           docker build \
             --cache-from ${{ env.RUNNER_IMAGE }}:latest \
@@ -57,7 +57,7 @@ jobs:
             --tag ${{ env.LOCAL_TAG }} \
             --file Dockerfile.runner \
             .
-          
+
           docker push ${{ env.RUNNER_IMAGE }}:$TAG || echo "Failed to push ${{ env.RUNNER_IMAGE }}:$TAG"
           docker push ${{ env.RUNNER_IMAGE }}:latest || echo "Failed to push ${{ env.RUNNER_IMAGE }}:latest"
 

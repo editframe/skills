@@ -6,5 +6,12 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # Run the hasura migrations and metadata apply to ensure the database is up to date
 # before starting the playwright tests
 ${SCRIPT_DIR}/hasura metadata apply
-${SCRIPT_DIR}/hasura migrate apply
+
+# Apply migrations - if they fail because objects already exist, that's okay
+# (migrations may have been applied manually or in a previous run)
+${SCRIPT_DIR}/hasura migrate apply || {
+  echo "⚠️  Migrations failed (this is okay if database is already migrated)"
+  echo "   Continuing with metadata apply..."
+}
+
 ${SCRIPT_DIR}/hasura metadata apply

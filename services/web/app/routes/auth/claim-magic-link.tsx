@@ -1,28 +1,33 @@
-import { requireNoSession } from "@/util/requireNoSession";
-import { createEmailPasswordSessionCookie } from "@/util/session";
+import {
+  createEmailPasswordSessionCookie,
+  createLoginHeaders,
+} from "@/util/session";
 import { redirect } from "react-router";
 import type { MetaFunction } from "react-router";
 import { ErrorMessage } from "~/components/ErrorMessage";
 import { getUserEmailAndPasswordByMagicToken } from "~/loginUserWithMagicLink";
-export const loader = requireNoSession(async (args) => {
-  if (!args.params.token) {
+import { noAuthMiddleware } from "~/middleware/auth";
+
+import type { Route } from "./+types/claim-magic-link";
+
+export const middleware: Route.MiddlewareFunction[] = [noAuthMiddleware];
+
+export const loader = async ({ params }: Route.LoaderArgs) => {
+  if (!params.token) {
     return null;
   }
   try {
-    const sessionInfo = await getUserEmailAndPasswordByMagicToken(
-      args.params.token,
-    );
+    const sessionInfo = await getUserEmailAndPasswordByMagicToken(params.token);
+    const sessionCookie = await createEmailPasswordSessionCookie(sessionInfo);
     return redirect("/welcome", {
-      headers: {
-        "Set-Cookie": await createEmailPasswordSessionCookie(sessionInfo),
-      },
+      headers: await createLoginHeaders(sessionCookie),
     });
   } catch (e) {
     return { error: e };
   }
-});
+};
 export const meta: MetaFunction = () => {
-  return [{ title: "Login with magic link | Editframe" }];
+  return [{ title: "Claim Magic Link | Editframe" }];
 };
 export default function Welcome() {
   return (

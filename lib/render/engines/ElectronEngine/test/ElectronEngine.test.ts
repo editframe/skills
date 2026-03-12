@@ -144,11 +144,9 @@ describe("ElectronEngine", () => {
     });
 
     await engine.webContents
-      .executeJavaScript(
-        /* JS */ `
+      .executeJavaScript(/* JS */ `
         throw new Error('Uncaught error after initialization');
-    `,
-      )
+    `)
       .catch(() => {
         /* no-op, we want to simulate uncaught errors */
       });
@@ -182,12 +180,10 @@ describe("ElectronEngine", () => {
     });
 
     await engine.webContents
-      .executeJavaScript(
-        /* JS */ `
+      .executeJavaScript(/* JS */ `
         // We have to void the promise so electron's executeJavaScript doesn't catch it
         void Promise.reject(new Error('Uncaught rejection after initialization'));
-    `,
-      )
+    `)
       .catch(() => {
         /* no-op, we want to simulate uncaught errors */
       });
@@ -226,11 +222,9 @@ describe("ElectronEngine", () => {
       errors.push(error);
     });
 
-    await engine.webContents.executeJavaScript(
-      /* JS */ `
+    await engine.webContents.executeJavaScript(/* JS */ `
       FRAMEGEN_BRIDGE.error(new Error('Explicit error'));
-    `,
-    );
+    `);
 
     assert.deepEqual(errors, [new Error("Explicit error")], "Errors");
   });
@@ -254,11 +248,9 @@ describe("ElectronEngine", () => {
 
     const framePromise = engine.beginFrame(0, true);
 
-    engine.webContents.executeJavaScript(
-      /* JS */ `
+    engine.webContents.executeJavaScript(/* JS */ `
       FRAMEGEN_BRIDGE.frameReady(0, new Uint8Array([0, 0, 0, 0]));
-    `,
-    );
+    `);
 
     const frame = await framePromise;
 

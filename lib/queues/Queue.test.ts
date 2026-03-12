@@ -345,7 +345,7 @@ describe("Queue", async () => {
         });
       });
 
-      test("workflow should register as failed", async () => { });
+      test("workflow should register as failed", async () => {});
 
       test("second job should not be claimable", async () => {
         const claimedJob = await claimJob(queues.TestQueue.storage, {
@@ -392,8 +392,27 @@ describe("Queue", async () => {
         });
       });
 
-      test("workflow should register as failed", async () => { });
+      test("workflow should register as failed", async () => {});
     });
+  });
+
+  test("Queue.toJSON excludes storage internals", () => {
+    const json = JSON.parse(JSON.stringify(queues.TestQueue));
+    expect(json).toEqual({
+      name: queues.TestQueue.name,
+      maxWorkerCount: queues.TestQueue.maxWorkerCount,
+      workerConcurrency: queues.TestQueue.workerConcurrency,
+    });
+    expect(json.storage).toBeUndefined();
+  });
+
+  test("Workflow.toJSON excludes storage internals", () => {
+    const json = JSON.parse(JSON.stringify(queues.TestWorkflow));
+    expect(json).toEqual({
+      name: queues.TestWorkflow.name,
+    });
+    expect(json.storage).toBeUndefined();
+    expect(json.finalizerQueue).toBeUndefined();
   });
 
   describe("job idempotency", () => {

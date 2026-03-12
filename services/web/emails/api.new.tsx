@@ -41,8 +41,8 @@ export default function NewApiEmail({
               <strong>API creator email:</strong> {emailAddress}
             </Text>
             <Text style={text}>
-             If you have any questions, please contact us
-              at <a href="mailto:team@editframe.com">team@editframe.com</a>
+              If you have any questions, please contact us at{" "}
+              <a href="mailto:team@editframe.com">team@editframe.com</a>
             </Text>
           </Section>
           <Text style={text}>Thanks,</Text>

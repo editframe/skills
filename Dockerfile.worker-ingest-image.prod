@@ -1,10 +1,8 @@
-FROM node:22
+FROM node:22 AS builder
 
 ENV NODE_ENV=production
-# IMPLEMENTATION GUIDELINES: Enable Node.js native compile cache for faster cold starts
 ENV NODE_COMPILE_CACHE=/app/.compile-cache
 
-# Install ffmpeg for image/video analysis
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
@@ -12,24 +10,37 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm install --ignore-scripts
 
 COPY lib/ lib/
 COPY services/worker-ingest-image/ services/worker-ingest-image/
 COPY tsconfig.json ./
-COPY ./loader.js /app/loader.js
 
 WORKDIR /app/services/worker-ingest-image
 RUN npx vite build
 
 WORKDIR /app
 
-# Install only production dependencies
 RUN rm -rf node_modules && npm install --only=production
 
-# IMPLEMENTATION GUIDELINES: Pre-warm the compile cache using reusable utility
 COPY scripts/docker-compile-cache-prewarm /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-compile-cache-prewarm && \
     docker-compile-cache-prewarm "node /app/services/worker-ingest-image/dist/server.js" 3000 /health
+
+FROM node:22-slim
+
+ENV NODE_ENV=production
+ENV NODE_COMPILE_CACHE=/app/.compile-cache
+
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=builder /app/package.json /app/package.json
+COPY --from=builder /app/node_modules/ /app/node_modules/
+COPY --from=builder /app/services/worker-ingest-image/dist/ /app/services/worker-ingest-image/dist/
+COPY --from=builder /app/.compile-cache/ /app/.compile-cache/
 
 CMD ["node", "/app/services/worker-ingest-image/dist/server.js"]

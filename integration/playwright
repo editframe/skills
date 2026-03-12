@@ -11,6 +11,7 @@ if [ ! -f $SCRIPT_DIR/../.env ]; then
 fi
 
 source $SCRIPT_DIR/.env
+. "$SCRIPT_DIR/../scripts/worktree-config"
 
 shard=""
 if [ -n "$1" ]; then
@@ -25,9 +26,11 @@ ${SCRIPT_DIR}/../scripts/start-for-playwright
 docker run \
   --workdir /app \
   --volume $SCRIPT_DIR/../:/app \
-  --volume telecine_node_modules:/app/node_modules \
-  --network telecine_default \
+  --volume ${WORKTREE_DOCKER_PROJECT_NAME}_node_modules:/app/node_modules \
+  --network ${WORKTREE_DOCKER_NETWORK_NAME} \
   --env CI=true \
+  --env MAILHOG_URL=$MAILHOG_URL \
+  --env PLAYWRIGHT_WEB_HOST=$PLAYWRIGHT_WEB_HOST \
   mcr.microsoft.com/playwright:v1.53.0-jammy \
   npx playwright test \
     ${shard} \

@@ -3,15 +3,13 @@ import { requireQueryAs } from "@/graphql.server/userClient";
 import { createReadableStreamFromReadable } from "@react-router/node";
 import { storageProvider } from "@/util/storageProvider.server";
 import { isobmffIndexFilePath } from "@/util/filePaths";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { throwIfExpired } from "@/http/throwIfExpired";
+import { apiIdentityContext } from "~/middleware/context";
 
 import type { Route } from "./+types/indexFile";
 
-export const loader = async ({
-  request,
-  params: { id },
-}: Route.LoaderArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+export const loader = async ({ params: { id }, context }: Route.LoaderArgs) => {
+  const session = context.get(apiIdentityContext);
   const isobmffFile = await requireQueryAs(
     session,
     "org-reader",
@@ -22,11 +20,14 @@ export const loader = async ({
             md5
             fragment_index_complete
             filename
+            expires_at
           }
         }
       `),
     { id },
   );
+
+  throwIfExpired(isobmffFile.expires_at);
 
   const filePath = isobmffIndexFilePath({
     org_id: session.oid,

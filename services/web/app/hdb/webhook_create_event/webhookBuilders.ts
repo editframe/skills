@@ -3,6 +3,7 @@ import type { Selectable } from "kysely";
 import { OutputConfiguration } from "@editframe/api";
 
 import type {
+  Video2Files,
   Video2Renders,
   Video2ImageFiles,
   Video2IsobmffFiles,
@@ -23,6 +24,7 @@ export const hookedTables = z.object({
   schema: z.literal("video2"),
   name: z.enum([
     "renders",
+    "files",
     "image_files",
     "isobmff_files",
     "isobmff_tracks",
@@ -36,56 +38,72 @@ type Operations = z.infer<typeof opSchema>;
 
 export type HookedTable = z.infer<typeof hookedTables>;
 
-interface RenderWebhookPayload
-  extends Pick<
-    Selectable<Video2Renders>,
-    | "id"
-    | "status"
-    | "created_at"
-    | "completed_at"
-    | "failed_at"
-    | "width"
-    | "height"
-    | "fps"
-    | "byte_size"
-    | "duration_ms"
-    | "md5"
-    | "metadata"
-  > {
-  download_url: string | null
+interface RenderWebhookPayload extends Pick<
+  Selectable<Video2Renders>,
+  | "id"
+  | "status"
+  | "created_at"
+  | "completed_at"
+  | "failed_at"
+  | "width"
+  | "height"
+  | "fps"
+  | "byte_size"
+  | "duration_ms"
+  | "md5"
+  | "metadata"
+> {
+  download_url: string | null;
 }
 
-interface ImageFileWebhookPayload
-  extends Pick<
-    Selectable<Video2ImageFiles>,
-    "id" | "width" | "height" | "mime_type" | "byte_size" | "filename"
-  > { }
+interface ImageFileWebhookPayload extends Pick<
+  Selectable<Video2ImageFiles>,
+  "id" | "width" | "height" | "mime_type" | "byte_size" | "filename"
+> {}
 
-interface IsobmffFileWebhookPayload
-  extends Pick<
-    Selectable<Video2IsobmffFiles>,
-    "id" | "filename" | "fragment_index_complete" | "md5"
-  > { }
+interface IsobmffFileWebhookPayload extends Pick<
+  Selectable<Video2IsobmffFiles>,
+  "id" | "filename" | "fragment_index_complete" | "md5"
+> {}
 
-interface IsobmffTrackWebhookPayload
-  extends Pick<
-    Selectable<Video2IsobmffTracks>,
-    | "file_id"
-    | "track_id"
-    | "complete"
-    | "byte_size"
-    | "next_byte"
-    | "codec_name"
-    | "duration_ms"
-    | "type"
-    | "probe_info"
-  > { }
+interface IsobmffTrackWebhookPayload extends Pick<
+  Selectable<Video2IsobmffTracks>,
+  | "file_id"
+  | "track_id"
+  | "complete"
+  | "byte_size"
+  | "next_byte"
+  | "codec_name"
+  | "duration_ms"
+  | "type"
+  | "probe_info"
+> {}
 
-interface UnprocessedFileWebhookPayload
-  extends Pick<
-    Selectable<Video2UnprocessedFiles>,
-    "id" | "byte_size" | "next_byte" | "md5" | "filename" | "completed_at"
-  > { }
+interface UnprocessedFileWebhookPayload extends Pick<
+  Selectable<Video2UnprocessedFiles>,
+  "id" | "byte_size" | "next_byte" | "md5" | "filename" | "completed_at"
+> {}
+
+interface FileWebhookPayload extends Pick<
+  Selectable<Video2Files>,
+  | "id"
+  | "type"
+  | "status"
+  | "filename"
+  | "byte_size"
+  | "md5"
+  | "mime_type"
+  | "width"
+  | "height"
+> {}
+
+const fileStatusTopics: Record<string, string> = {
+  created: "file.created",
+  uploading: "file.uploading",
+  processing: "file.processing",
+  ready: "file.ready",
+  failed: "file.failed",
+};
 
 export interface WebhookPayload<PayloadData, EventData = undefined> {
   topic: string;
@@ -93,8 +111,9 @@ export interface WebhookPayload<PayloadData, EventData = undefined> {
   event?: EventData;
 }
 
-
-const buildRenderPayload = (render: Selectable<Video2Renders>): WebhookPayload<RenderWebhookPayload> => {
+const buildRenderPayload = (
+  render: Selectable<Video2Renders>,
+): WebhookPayload<RenderWebhookPayload> => {
   if (!(render.status in renderStatusTopics)) {
     throw new Error(`Unsupported render status: ${render.status}`);
   }
@@ -119,7 +138,9 @@ const buildRenderPayload = (render: Selectable<Video2Renders>): WebhookPayload<R
       duration_ms: render.duration_ms,
       md5: render.md5,
       metadata: render.metadata,
-      download_url: render.completed_at ? downloadRenderURL(render.id, outputConfiguration) : null,
+      download_url: render.completed_at
+        ? downloadRenderURL(render.id, outputConfiguration)
+        : null,
     },
   };
 };
@@ -131,6 +152,42 @@ export const webhookBuilders: Partial<
 > = {
   "video2.renders.insert": buildRenderPayload,
   "video2.renders.update": buildRenderPayload,
+  "video2.files.insert": (
+    file: Selectable<Video2Files>,
+  ): WebhookPayload<FileWebhookPayload> => {
+    return {
+      topic: fileStatusTopics[file.status] || "file.created",
+      data: {
+        id: file.id,
+        type: file.type,
+        status: file.status,
+        filename: file.filename,
+        byte_size: file.byte_size,
+        md5: file.md5,
+        mime_type: file.mime_type,
+        width: file.width,
+        height: file.height,
+      },
+    };
+  },
+  "video2.files.update": (
+    file: Selectable<Video2Files>,
+  ): WebhookPayload<FileWebhookPayload> => {
+    return {
+      topic: fileStatusTopics[file.status] || "file.updated",
+      data: {
+        id: file.id,
+        type: file.type,
+        status: file.status,
+        filename: file.filename,
+        byte_size: file.byte_size,
+        md5: file.md5,
+        mime_type: file.mime_type,
+        width: file.width,
+        height: file.height,
+      },
+    };
+  },
   "video2.image_files.insert": (
     imageFile: Selectable<Video2ImageFiles>,
   ): WebhookPayload<ImageFileWebhookPayload> => {

@@ -37,5 +37,5 @@ export const CaptionTimeline: FC<{ layer: CaptionLayer }> = observer(
         })}
       </div>
     );
-  }
+  },
 );

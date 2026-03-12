@@ -11,15 +11,12 @@ import invariant from "tiny-invariant";
 import type { LoaderFunctionArgs } from "react-router";
 import cx from "classnames";
 import { Video } from "~/components/marketing/Video";
-import { CustomCode, CustomLink } from "~/components/docs/Markdown";
+import { CustomCode, CustomLink } from "~/components/shared/Markdown";
 import { CodeBlock } from "~/components/CodeBlock";
-import { Playground } from "~/components/docs/Playground";
-import { Prose } from "~/components/docs/Prose";
-import { Preview } from "~/components/docs/Preview";
-import { PreviewVideo } from "~/components/docs/PreviewVideo";
 import { Audio } from "~/components/marketing/Audio";
-import { Libraries } from "~/components/docs/Libraries";
+import { Prose } from "~/components/marketing/Prose";
 import { formatDate } from "~/ui/formatDate";
+import { typographyClasses } from "~/utils/typography";
 
 export const loader = async (request: LoaderFunctionArgs) => {
   const { params } = request;
@@ -46,8 +43,12 @@ export const loader = async (request: LoaderFunctionArgs) => {
     );
   }
   const post = await parseMdx(file.content);
-  post.frontmatter.published_date = post.frontmatter.published_date ? formatDate(post.frontmatter.published_date) : "";
-  post.frontmatter.last_updated = post.frontmatter.last_updated ? formatDate(post.frontmatter.last_updated) : ""
+  post.frontmatter.published_date = post.frontmatter.published_date
+    ? formatDate(post.frontmatter.published_date)
+    : "";
+  post.frontmatter.last_updated = post.frontmatter.last_updated
+    ? formatDate(post.frontmatter.last_updated)
+    : "";
 
   if (!post) {
     throw data(
@@ -89,7 +90,10 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
   const description = post.frontmatter.meta.find(
     (m) => m.name === "description",
   )?.content;
-  return [{ title: `${title} | Guides`, description }];
+  return [
+    { title: `${title} | Editframe` },
+    { name: "description", content: description },
+  ];
 };
 
 export default function GuidePage() {
@@ -106,21 +110,43 @@ export default function GuidePage() {
         <div className=" mx-auto">
           <div className="xl:flex xl:w-full xl:justify-between xl:gap-8">
             <div className="min-w-0 xl:flex-grow">
-              <h1 className="py-4 text-4xl font-bold dark:text-white">
+              <h1
+                className={
+                  typographyClasses.h1NoSpacing + " py-4 dark:text-white"
+                }
+              >
                 {title}
               </h1>
-              <h5 className="text-md my-4 font-semibold dark:text-white">
+              <h5
+                className={
+                  typographyClasses.small +
+                  " my-4 font-semibold dark:text-white"
+                }
+              >
                 Published on {post.frontmatter.published_date}
               </h5>
               {post.frontmatter.last_updated && (
-                <h5 className="text-md my-4 font-semibold dark:text-white">
+                <h5
+                  className={
+                    typographyClasses.small +
+                    " my-4 font-semibold dark:text-white"
+                  }
+                >
                   Last updated on {post.frontmatter.last_updated}
                 </h5>
               )}
-              <h3 className="my-4 text-sm dark:text-white">{readTime.text}</h3>
-              <div className="markdown w-full max-w-3xl pb-[10vh]">
+              <h3 className={typographyClasses.small + " my-4 dark:text-white"}>
+                {readTime.text}
+              </h3>
+              <div
+                className="markdown w-full pb-[10vh]"
+                style={{ maxWidth: "65ch" }}
+              >
                 <div className="min-w-0 xl:flex-grow">
-                  <div className="markdown w-full max-w-3xl pb-[33vh]">
+                  <div
+                    className="markdown w-full pb-[33vh]"
+                    style={{ maxWidth: "65ch" }}
+                  >
                     <Prose>
                       <Component
                         components={{
@@ -128,13 +154,9 @@ export default function GuidePage() {
                           h1: ({ children, ...props }) => (
                             <h1 {...props}>{children}</h1>
                           ),
-                          Libraries,
-                          Playground: (props) => <Playground {...props} />,
                           pre: ({ children, ...props }) => (
                             <CodeBlock {...props}>{children}</CodeBlock>
                           ),
-                          Preview: (props) => <Preview {...props} />,
-                          PreviewVideo: (props) => <PreviewVideo {...props} />,
                           Audio: Audio,
                           Video: Video,
                           code: CustomCode,

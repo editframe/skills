@@ -1,0 +1,16 @@
+{
+  "testName": "elements-smoke-ef-timegroup-browser-full-video-foreignObject",
+  "renderMode": "browser-full-video",
+  "canvasMode": "foreignObject",
+  "totalRenderTimeMs": 2256.202175999999,
+  "videoDurationMs": 100,
+  "fps": 30,
+  "numFrames": 3,
+  "avgFrameTimeMs": 748.6876236666667,
+  "timing": {
+    "total": 2256.202175999999,
+    "renderFragment": 2246.062871,
+    "writeFile": 1.403822999998738
+  },
+  "timestamp": "2026-02-05T10:38:23.623Z"
+}

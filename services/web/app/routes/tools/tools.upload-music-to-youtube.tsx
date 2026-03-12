@@ -1,11 +1,11 @@
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 
-import { parseRequestSession } from "@/util/session";
+import { maybeIdentityContext } from "~/middleware/context";
 import "~/styles/marketing.css";
 import { Layout } from "~/layouts/tools";
 
 export const loader = async (args: LoaderFunctionArgs) => {
-  const session = await parseRequestSession(args.request);
+  const session = args.context.get(maybeIdentityContext);
 
   return {
     isLogged: !!session,
@@ -15,8 +15,7 @@ export const loader = async (args: LoaderFunctionArgs) => {
 export const meta: MetaFunction = () => {
   return [
     {
-      title:
-        "Upload Audio to TikTok, Instagram, YouTube, Facebook, or Shorts | Editframe",
+      title: "Upload Audio to Social Media | Editframe",
       description: "Add music to YouTube by making a video.",
     },
   ];

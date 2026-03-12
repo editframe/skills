@@ -28,9 +28,13 @@ const generateSineWavePNG = async (
   videoPath: string,
   templateHash: string,
   width: number = 5000,
-  height: number = 400
+  height: number = 400,
 ): Promise<string> => {
-  const testRenderDir = path.join(process.cwd(), "temp", `test-render-${templateHash}`);
+  const testRenderDir = path.join(
+    process.cwd(),
+    "temp",
+    `test-render-${templateHash}`,
+  );
   const audioVisualsDir = path.join(testRenderDir, "audio-visuals");
   await mkdir(audioVisualsDir, { recursive: true });
 
@@ -38,11 +42,14 @@ const generateSineWavePNG = async (
 
   // Generate complete waveform visualization (filmstrip-style like Audacity)
   // Using showwavespic to create a single image of the entire audio file
-  execSync(`ffmpeg -y -i "${videoPath}" \
+  execSync(
+    `ffmpeg -y -i "${videoPath}" \
     -filter_complex "showwavespic=s=${width}x${height}" \
-    -vframes 1 "${outputPath}"`, {
-    stdio: 'pipe'
-  });
+    -vframes 1 "${outputPath}"`,
+    {
+      stdio: "pipe",
+    },
+  );
 
   if (!existsSync(outputPath)) {
     throw new Error(`Failed to generate sine wave PNG at ${outputPath}`);
@@ -56,21 +63,27 @@ const generateSineWavePNG = async (
  */
 export const getOrCreateSineWaveBaseline = async (
   videoPath: string,
-  templateHash: string
+  templateHash: string,
 ): Promise<string> => {
-  const testRenderDir = path.join(process.cwd(), "temp", `test-render-${templateHash}`);
+  const testRenderDir = path.join(
+    process.cwd(),
+    "temp",
+    `test-render-${templateHash}`,
+  );
   const baselineDir = path.join(testRenderDir, "audio-baselines");
   const baselinePath = path.join(baselineDir, "baseline-sinewave.png");
 
   if (!existsSync(baselinePath)) {
-    console.log(`Creating sine wave baseline with template hash ${templateHash}`);
+    console.log(
+      `Creating sine wave baseline with template hash ${templateHash}`,
+    );
     await mkdir(baselineDir, { recursive: true });
 
     // Generate baseline using same logic
     const tempPath = await generateSineWavePNG(videoPath, templateHash);
 
     // Copy to baseline location
-    execSync(`cp "${tempPath}" "${baselinePath}"`, { stdio: 'pipe' });
+    execSync(`cp "${tempPath}" "${baselinePath}"`, { stdio: "pipe" });
   }
 
   return baselinePath;
@@ -83,19 +96,29 @@ export const extractAudioSamplesAtTime = async (
   videoPath: string,
   timeSeconds: number,
   durationSeconds: number,
-  templateHash: string
+  templateHash: string,
 ): Promise<Float32Array> => {
-  const testRenderDir = path.join(process.cwd(), "temp", `test-render-${templateHash}`);
+  const testRenderDir = path.join(
+    process.cwd(),
+    "temp",
+    `test-render-${templateHash}`,
+  );
   const tempDir = path.join(testRenderDir, "temp-audio");
   await mkdir(tempDir, { recursive: true });
 
-  const outputPath = path.join(tempDir, `samples-${timeSeconds.toFixed(3)}.raw`);
+  const outputPath = path.join(
+    tempDir,
+    `samples-${timeSeconds.toFixed(3)}.raw`,
+  );
 
   // Extract raw 32-bit float PCM samples
-  execSync(`ffmpeg -y -ss ${timeSeconds} -t ${durationSeconds} -i "${videoPath}" \
-    -f f32le -acodec pcm_f32le -ar 48000 -ac 1 "${outputPath}"`, {
-    stdio: 'pipe'
-  });
+  execSync(
+    `ffmpeg -y -ss ${timeSeconds} -t ${durationSeconds} -i "${videoPath}" \
+    -f f32le -acodec pcm_f32le -ar 48000 -ac 1 "${outputPath}"`,
+    {
+      stdio: "pipe",
+    },
+  );
 
   if (!existsSync(outputPath)) {
     throw new Error(`Failed to extract audio samples at ${timeSeconds}s`);
@@ -113,7 +136,12 @@ export const extractAudioSamplesAtTime = async (
  */
 export const analyzeEnergyWindow = (samples: Float32Array): EnergyAnalysis => {
   if (!samples || samples.length === 0) {
-    return { rmsEnergy: 0, peakAmplitude: 0, sampleCount: 0, energyVariance: 0 };
+    return {
+      rmsEnergy: 0,
+      peakAmplitude: 0,
+      sampleCount: 0,
+      energyVariance: 0,
+    };
   }
 
   // Calculate RMS energy
@@ -129,20 +157,29 @@ export const analyzeEnergyWindow = (samples: Float32Array): EnergyAnalysis => {
 
   for (let i = 0; i < samples.length - windowSize; i += windowSize) {
     const subWindow = samples.slice(i, i + windowSize);
-    const subWindowSumSquares = subWindow.reduce((sum, sample) => sum + sample * sample, 0);
+    const subWindowSumSquares = subWindow.reduce(
+      (sum, sample) => sum + sample * sample,
+      0,
+    );
     const subWindowRMS = Math.sqrt(subWindowSumSquares / subWindow.length);
     subWindowEnergies.push(subWindowRMS);
   }
 
   // Calculate variance in energy across sub-windows
-  const meanEnergy = subWindowEnergies.reduce((sum, energy) => sum + energy, 0) / subWindowEnergies.length;
-  const energyVariance = subWindowEnergies.reduce((sum, energy) => sum + Math.pow(energy - meanEnergy, 2), 0) / subWindowEnergies.length;
+  const meanEnergy =
+    subWindowEnergies.reduce((sum, energy) => sum + energy, 0) /
+    subWindowEnergies.length;
+  const energyVariance =
+    subWindowEnergies.reduce(
+      (sum, energy) => sum + Math.pow(energy - meanEnergy, 2),
+      0,
+    ) / subWindowEnergies.length;
 
   return {
     rmsEnergy,
     peakAmplitude,
     sampleCount: samples.length,
-    energyVariance
+    energyVariance,
   };
 };
 
@@ -153,10 +190,15 @@ export const analyzeEnergyWindow = (samples: Float32Array): EnergyAnalysis => {
 export const analyzeSampleContinuity = (
   samples: Float32Array,
   sampleRate: number,
-  expectedCenterTime: number
-): { hasDiscontinuity: boolean; sampleJumpMagnitude?: number; sampleJumpLocation?: number; reason?: string } => {
+  expectedCenterTime: number,
+): {
+  hasDiscontinuity: boolean;
+  sampleJumpMagnitude?: number;
+  sampleJumpLocation?: number;
+  reason?: string;
+} => {
   if (!samples || samples.length === 0) {
-    return { hasDiscontinuity: false, reason: 'no-samples' };
+    return { hasDiscontinuity: false, reason: "no-samples" };
   }
 
   // Calculate sample-to-sample differences (derivative)
@@ -185,11 +227,16 @@ export const analyzeSampleContinuity = (
 
   // Calculate the typical second derivative (background noise level)
   const sortedSecondDiffs = [...secondDiffs].sort((a, b) => a - b);
-  const medianSecondDiff = sortedSecondDiffs[Math.floor(sortedSecondDiffs.length / 2)];
-  const p90SecondDiff = sortedSecondDiffs[Math.floor(sortedSecondDiffs.length * 0.9)];
+  const medianSecondDiff =
+    sortedSecondDiffs[Math.floor(sortedSecondDiffs.length / 2)];
+  const p90SecondDiff =
+    sortedSecondDiffs[Math.floor(sortedSecondDiffs.length * 0.9)];
 
   // A discontinuity would show up as a second derivative much larger than typical
-  const discontinuityThreshold = Math.max(medianSecondDiff * 10, p90SecondDiff * 3);
+  const discontinuityThreshold = Math.max(
+    medianSecondDiff * 10,
+    p90SecondDiff * 3,
+  );
 
   if (maxSecondDiff > discontinuityThreshold && maxSecondDiff > 0.001) {
     // Calculate the time location of the discontinuity
@@ -201,7 +248,7 @@ export const analyzeSampleContinuity = (
       hasDiscontinuity: true,
       sampleJumpMagnitude: maxSecondDiff,
       sampleJumpLocation: jumpTime,
-      reason: `sample-jump-${maxSecondDiff.toFixed(4)}-at-${jumpTime.toFixed(3)}s`
+      reason: `sample-jump-${maxSecondDiff.toFixed(4)}-at-${jumpTime.toFixed(3)}s`,
     };
   }
 
@@ -219,63 +266,90 @@ export const detectEnergyGap = (
     energyDropThreshold: number; // Percentage drop that indicates missing samples
     energySpikeThreshold: number; // Percentage spike that indicates overlap
     minimumEnergyLevel: number; // Minimum energy to consider valid audio
-  }
-): { hasDiscontinuity: boolean; energyGap?: number; sampleCountDiscrepancy?: number; reason?: string } => {
-
+  },
+): {
+  hasDiscontinuity: boolean;
+  energyGap?: number;
+  sampleCountDiscrepancy?: number;
+  reason?: string;
+} => {
   // Skip analysis if both segments have very low energy (silence)
-  if (preAnalysis.rmsEnergy < tolerances.minimumEnergyLevel &&
-    postAnalysis.rmsEnergy < tolerances.minimumEnergyLevel) {
+  if (
+    preAnalysis.rmsEnergy < tolerances.minimumEnergyLevel &&
+    postAnalysis.rmsEnergy < tolerances.minimumEnergyLevel
+  ) {
     return {
       hasDiscontinuity: false,
-      reason: `both-segments-silent (pre: ${preAnalysis.rmsEnergy.toFixed(4)}, post: ${postAnalysis.rmsEnergy.toFixed(4)})`
+      reason: `both-segments-silent (pre: ${preAnalysis.rmsEnergy.toFixed(4)}, post: ${postAnalysis.rmsEnergy.toFixed(4)})`,
     };
   }
 
   // Calculate energy change between segments
   const maxEnergy = Math.max(preAnalysis.rmsEnergy, postAnalysis.rmsEnergy);
   const energyChange = postAnalysis.rmsEnergy - preAnalysis.rmsEnergy;
-  const energyChangePercent = maxEnergy > 0 ? (Math.abs(energyChange) / maxEnergy) * 100 : 0;
+  const energyChangePercent =
+    maxEnergy > 0 ? (Math.abs(energyChange) / maxEnergy) * 100 : 0;
 
   // Check for sudden energy drops (missing samples)
-  const hasEnergyDrop = energyChange < 0 && energyChangePercent > tolerances.energyDropThreshold;
+  const hasEnergyDrop =
+    energyChange < 0 && energyChangePercent > tolerances.energyDropThreshold;
 
   // Check for sudden energy spikes (overlapping samples)
-  const hasEnergySpike = energyChange > 0 && energyChangePercent > tolerances.energySpikeThreshold;
+  const hasEnergySpike =
+    energyChange > 0 && energyChangePercent > tolerances.energySpikeThreshold;
 
   // Sample count discrepancy detection
   // For audio boundaries, we expect sample counts to be consistent with timing
   const expectedSampleRatio = 1.0; // Segments should have similar sample density
-  const actualSampleRatio = preAnalysis.sampleCount > 0 ? postAnalysis.sampleCount / preAnalysis.sampleCount : 1.0;
-  const sampleRatioDiscrepancy = Math.abs(actualSampleRatio - expectedSampleRatio);
+  const actualSampleRatio =
+    preAnalysis.sampleCount > 0
+      ? postAnalysis.sampleCount / preAnalysis.sampleCount
+      : 1.0;
+  const sampleRatioDiscrepancy = Math.abs(
+    actualSampleRatio - expectedSampleRatio,
+  );
 
   // Check for high energy variance (indicating choppy audio from boundary issues)
-  const highVariance = preAnalysis.energyVariance > preAnalysis.rmsEnergy * 0.5 ||
+  const highVariance =
+    preAnalysis.energyVariance > preAnalysis.rmsEnergy * 0.5 ||
     postAnalysis.energyVariance > postAnalysis.rmsEnergy * 0.5;
 
-  if (hasEnergyDrop || hasEnergySpike || sampleRatioDiscrepancy > 0.1 || highVariance) {
+  if (
+    hasEnergyDrop ||
+    hasEnergySpike ||
+    sampleRatioDiscrepancy > 0.1 ||
+    highVariance
+  ) {
     const reasons = [];
-    if (hasEnergyDrop) reasons.push(`energy-drop-${energyChangePercent.toFixed(1)}%`);
-    if (hasEnergySpike) reasons.push(`energy-spike-${energyChangePercent.toFixed(1)}%`);
-    if (sampleRatioDiscrepancy > 0.1) reasons.push(`sample-count-mismatch-${(sampleRatioDiscrepancy * 100).toFixed(1)}%`);
-    if (highVariance) reasons.push('high-energy-variance');
+    if (hasEnergyDrop)
+      reasons.push(`energy-drop-${energyChangePercent.toFixed(1)}%`);
+    if (hasEnergySpike)
+      reasons.push(`energy-spike-${energyChangePercent.toFixed(1)}%`);
+    if (sampleRatioDiscrepancy > 0.1)
+      reasons.push(
+        `sample-count-mismatch-${(sampleRatioDiscrepancy * 100).toFixed(1)}%`,
+      );
+    if (highVariance) reasons.push("high-energy-variance");
 
     return {
       hasDiscontinuity: true,
       energyGap: energyChangePercent,
       sampleCountDiscrepancy: sampleRatioDiscrepancy,
-      reason: reasons.join(', ')
+      reason: reasons.join(", "),
     };
   }
 
   return {
-    hasDiscontinuity: false
+    hasDiscontinuity: false,
   };
 };
 
 /**
  * Calculate segment boundary times from render info
  */
-const calculateSegmentBoundaries = (renderInfo: { durationMs: number }): number[] => {
+const calculateSegmentBoundaries = (renderInfo: {
+  durationMs: number;
+}): number[] => {
   const durationSeconds = renderInfo.durationMs / 1000;
   const segmentDuration = durationSeconds / 4; // Assuming 4 data segments
 
@@ -293,13 +367,16 @@ const calculateSegmentBoundaries = (renderInfo: { durationMs: number }): number[
  */
 export const performSineWaveVisualRegressionTest = async (
   videoPath: string,
-  templateHash: string
+  templateHash: string,
 ): Promise<void> => {
   const testSineWavePNG = await generateSineWavePNG(videoPath, templateHash);
-  const baselineSineWavePNG = await getOrCreateSineWaveBaseline(videoPath, templateHash);
+  const baselineSineWavePNG = await getOrCreateSineWaveBaseline(
+    videoPath,
+    templateHash,
+  );
 
   // Reuse existing visual comparison logic
-  const { compareFramesWithOdiff } = await import('./visual-regression');
+  const { compareFramesWithOdiff } = await import("./visual-regression");
 
   const comparison = await compareFramesWithOdiff(
     baselineSineWavePNG,
@@ -308,14 +385,14 @@ export const performSineWaveVisualRegressionTest = async (
     0, // Single frame index
     {
       threshold: 0.05, // Tight threshold for sine wave consistency
-      antialiasing: true
-    }
+      antialiasing: true,
+    },
   );
 
   if (!comparison.match) {
     const diffInfo = comparison.diffPercentage
       ? `${comparison.diffPercentage}% different`
-      : comparison.reason || 'unknown-difference';
+      : comparison.reason || "unknown-difference";
     throw new Error(`Sine wave visual regression detected: ${diffInfo}`);
   }
 };
@@ -327,7 +404,7 @@ export const performBoundaryDiscontinuityTest = async (
   videoPath: string,
   renderInfo: { durationMs: number },
   expectedFrequency: number,
-  templateHash: string
+  templateHash: string,
 ): Promise<void> => {
   const segmentBoundaries = calculateSegmentBoundaries(renderInfo);
   const windowDuration = 0.2; // 200ms window for analysis (increased for better frequency detection)
@@ -343,7 +420,7 @@ export const performBoundaryDiscontinuityTest = async (
         boundaryIndex: i,
         timeSeconds: 0,
         hasDiscontinuity: true,
-        reason: 'undefined-boundary-time'
+        reason: "undefined-boundary-time",
       });
       continue;
     }
@@ -354,14 +431,14 @@ export const performBoundaryDiscontinuityTest = async (
         videoPath,
         boundary - windowDuration,
         windowDuration,
-        templateHash
+        templateHash,
       );
 
       const postsamples = await extractAudioSamplesAtTime(
         videoPath,
         boundary,
         windowDuration,
-        templateHash
+        templateHash,
       );
 
       // Analyze energy characteristics around boundary
@@ -369,15 +446,11 @@ export const performBoundaryDiscontinuityTest = async (
       const postAnalysis = analyzeEnergyWindow(postsamples);
 
       // Detect energy gaps or discontinuities indicating sample boundary issues
-      const discontinuityResult = detectEnergyGap(
-        preAnalysis,
-        postAnalysis,
-        {
-          energyDropThreshold: 30, // 30% energy drop indicates missing samples
-          energySpikeThreshold: 50, // 50% energy spike indicates overlapping samples  
-          minimumEnergyLevel: 0.001 // Minimum energy to consider valid audio signal
-        }
-      );
+      const discontinuityResult = detectEnergyGap(preAnalysis, postAnalysis, {
+        energyDropThreshold: 30, // 30% energy drop indicates missing samples
+        energySpikeThreshold: 50, // 50% energy spike indicates overlapping samples
+        minimumEnergyLevel: 0.001, // Minimum energy to consider valid audio signal
+      });
 
       if (discontinuityResult.hasDiscontinuity) {
         discontinuities.push({
@@ -386,31 +459,143 @@ export const performBoundaryDiscontinuityTest = async (
           hasDiscontinuity: true,
           energyGap: discontinuityResult.energyGap,
           sampleCountDiscrepancy: discontinuityResult.sampleCountDiscrepancy,
-          reason: discontinuityResult.reason
+          reason: discontinuityResult.reason,
         });
       }
-
     } catch (error) {
       // If we can't analyze a boundary, consider it a discontinuity
       discontinuities.push({
         boundaryIndex: i,
         timeSeconds: boundary,
         hasDiscontinuity: true,
-        reason: `analysis-failed: ${error instanceof Error ? error.message : 'unknown-error'}`
+        reason: `analysis-failed: ${error instanceof Error ? error.message : "unknown-error"}`,
       });
     }
   }
 
   if (discontinuities.length > 0) {
-    const details = discontinuities.map(d => {
-      const info = d.phaseJumpRadians
-        ? `phase jump ${(d.phaseJumpRadians * 180 / Math.PI).toFixed(1)}°`
-        : d.amplitudeJumpPercent
-          ? `amplitude jump ${d.amplitudeJumpPercent.toFixed(1)}%`
-          : d.reason || 'unknown';
-      return `boundary ${d.boundaryIndex} at ${d.timeSeconds.toFixed(3)}s (${info})`;
-    }).join(', ');
+    const details = discontinuities
+      .map((d) => {
+        const info = d.phaseJumpRadians
+          ? `phase jump ${((d.phaseJumpRadians * 180) / Math.PI).toFixed(1)}°`
+          : d.amplitudeJumpPercent
+            ? `amplitude jump ${d.amplitudeJumpPercent.toFixed(1)}%`
+            : d.reason || "unknown";
+        return `boundary ${d.boundaryIndex} at ${d.timeSeconds.toFixed(3)}s (${info})`;
+      })
+      .join(", ");
 
-    throw new Error(`Audio discontinuities detected at segment boundaries: ${details}`);
+    throw new Error(
+      `Audio discontinuities detected at segment boundaries: ${details}`,
+    );
   }
-}; 
+};
+
+/**
+ * Analyze zero-crossing timing for audio discontinuity detection
+ * Detects timing anomalies in periodic audio signals (e.g., sine waves)
+ * by measuring intervals between zero-crossings
+ */
+export async function analyzeZeroCrossingTiming(
+  videoPath: string,
+  templateHash: string,
+  startTime: number,
+  duration: number,
+  options?: {
+    expectedInterval?: number;
+    deviationThreshold?: number;
+    label?: string;
+  },
+): Promise<{
+  hasDiscontinuity: boolean;
+  mean: number;
+  stdDev: number;
+  anomalies: Array<{ interval: number; deviation: number; timeSec: number }>;
+}> {
+  const expectedInterval = options?.expectedInterval ?? 109;
+  const deviationThreshold = options?.deviationThreshold ?? 20;
+  const label = options?.label ?? "Zero-Crossing Analysis";
+
+  console.log(`\n=== ${label} ===`);
+  console.log(
+    `Analyzing ${startTime.toFixed(1)}s to ${(startTime + duration).toFixed(1)}s`,
+  );
+
+  const samples = await extractAudioSamplesAtTime(
+    videoPath,
+    startTime,
+    duration,
+    templateHash,
+  );
+
+  // Find zero-crossings
+  const zeroCrossings: number[] = [];
+  for (let i = 1; i < samples.length; i++) {
+    const current = samples[i];
+    const previous = samples[i - 1];
+    if (current !== undefined && previous !== undefined) {
+      if (current >= 0 !== previous >= 0) {
+        zeroCrossings.push(i);
+      }
+    }
+  }
+
+  // Calculate intervals between zero-crossings
+  const intervals: number[] = [];
+  for (let i = 1; i < zeroCrossings.length; i++) {
+    const current = zeroCrossings[i];
+    const previous = zeroCrossings[i - 1];
+    if (current !== undefined && previous !== undefined) {
+      intervals.push(current - previous);
+    }
+  }
+
+  if (intervals.length === 0) {
+    console.log(`❌ No zero-crossing intervals found`);
+    return { hasDiscontinuity: true, mean: 0, stdDev: 0, anomalies: [] };
+  }
+
+  const mean =
+    intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length;
+  const stdDev = Math.sqrt(
+    intervals.reduce((sum, interval) => sum + Math.pow(interval - mean, 2), 0) /
+      intervals.length,
+  );
+
+  // Find anomalous intervals
+  const anomalies = intervals
+    .map((interval, i) => ({
+      interval,
+      deviation: Math.abs(interval - expectedInterval),
+      timeSec: startTime + (zeroCrossings[i] || 0) / 48000,
+    }))
+    .filter((anomaly) => anomaly.deviation > deviationThreshold);
+
+  console.log(`Zero-crossings found: ${zeroCrossings.length}`);
+  console.log(
+    `Mean interval: ${mean.toFixed(2)} samples (expected: ${expectedInterval})`,
+  );
+  console.log(`Standard deviation: ${stdDev.toFixed(2)} samples`);
+  console.log(`Anomalous intervals: ${anomalies.length}`);
+
+  if (anomalies.length > 0) {
+    console.log(`🚨 Timing anomalies detected:`);
+    anomalies.slice(0, 5).forEach((anomaly) => {
+      console.log(
+        `   At ${anomaly.timeSec.toFixed(3)}s: ${anomaly.interval} samples (deviation: ${anomaly.deviation.toFixed(1)})`,
+      );
+    });
+    if (anomalies.length > 5) {
+      console.log(`   ... and ${anomalies.length - 5} more`);
+    }
+  } else {
+    console.log(`✅ No timing anomalies detected`);
+  }
+
+  return {
+    hasDiscontinuity: anomalies.length > 0,
+    mean,
+    stdDev,
+    anomalies,
+  };
+}

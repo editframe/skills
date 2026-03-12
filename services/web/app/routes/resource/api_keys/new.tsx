@@ -18,17 +18,17 @@ import { formFor } from "~/formFor";
 import { requireQueryAs } from "@/graphql.server/userClient";
 import { Link } from "~/components/Link";
 import { ErrorMessage } from "~/components/ErrorMessage";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ArrowLeft } from "@phosphor-icons/react";
 
 import type { Route } from "./+types/new";
-import { requireSession } from "@/util/requireSession.server";
+import { identityContext, sessionCookieContext } from "~/middleware/context";
 import { requireOrgId } from "@/util/requireOrgId";
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  const { session } = await requireSession(request);
+export const loader = async ({ request, context }: Route.LoaderArgs) => {
+  const session = context.get(identityContext);
 
   const [org] = await requireQueryAs(
-    session,
+    { uid: session.uid, cid: session.cid ?? null },
     "org-editor",
     graphql(`
       query GetOrg ($orgId: uuid!) {
@@ -54,7 +54,7 @@ export const ErrorBoundary = () => {
       <>
         <ErrorMessage message="You don't have permission to create an API key for this organization." />
         <Link to="/resource/api_keys">
-          <Button mode="secondary" icon={ArrowLeftIcon}>
+          <Button mode="secondary" icon={ArrowLeft}>
             Go back
           </Button>
         </Link>
@@ -91,11 +91,12 @@ const CreateProjectSchema = z.object({
 const createKey = formFor(CreateProjectSchema);
 
 export const meta: MetaFunction = () => {
-  return [{ title: "New API key | Editframe" }];
+  return [{ title: "New API Key | Editframe" }];
 };
 
-export const action = async ({ request }: Route.ActionArgs) => {
-  const { session, sessionCookie } = await requireSession(request);
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const session = context.get(identityContext);
+  const sessionCookie = context.get(sessionCookieContext);
   const values = await createKey.parseFormData(request);
 
   if (!values.success) {
@@ -108,7 +109,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   const generatedSecret = `ef_webhook_${v4().replaceAll("-", "")}`;
 
   const [org] = await requireQueryAs(
-    session,
+    { uid: session.uid, cid: session.cid ?? null },
     "org-editor",
     graphql(`
     query GetOrg ($orgId: uuid!) {

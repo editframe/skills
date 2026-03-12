@@ -6,25 +6,6 @@ RUN apt-get update && apt-get install -y unzip && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Add new build stage for whisper.cpp before the electron-installer stage
-FROM ubuntu:24.04 AS whisper-builder
-
-WORKDIR /app
-
-RUN apt-get update && \
-  apt-get install -y build-essential git \
-  && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
-
-ARG WHISPER_BRANCH=v1.7.1
-RUN git clone --depth 1 --branch ${WHISPER_BRANCH} https://github.com/ggerganov/whisper.cpp.git && \
-  cd whisper.cpp && \
-  make -j
-
-RUN apt-get update && \
-  apt-get install -y python3 python3-pip && \
-  pip3 install --no-cache-dir huggingface_hub --break-system-packages && \
-  python3 -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='distil-whisper/distil-small.en', filename='ggml-distil-small.en.bin', local_dir='/app/whisper.cpp/models')"
-
 # Build stage for FFmpeg
 FROM ubuntu:24.04 AS ffmpeg-builder
 
@@ -112,20 +93,6 @@ ENV PATH="/usr/local/bin:$PATH"
 
 RUN npm install -g hasura-cli@2.36.1
 
-RUN pip3 install \
-  torch \
-  torchvision \
-  torchaudio \
-  --index-url https://download.pytorch.org/whl/cpu \
-  --break-system-packages
-
-RUN pip3 install \
-  git+https://github.com/m-bain/whisperx.git \
-  --break-system-packages
-
-COPY ./scripts/load-whisperx-models.py /usr/local/bin/load-whisperx-models.py
-RUN python3 /usr/local/bin/load-whisperx-models.py
-
 WORKDIR /app
 
 # RUN npx playwright@1.53.0 install chromium
@@ -161,10 +128,3 @@ RUN echo 'alias editframe="tsx /app/lib/packages/packages/cli/src/index.ts"' >> 
   echo 'alias editframe="tsx /app/lib/packages/packages/cli/src/index.ts"' >> /root/.bashrc
 
 
-# In the final stage, add these environment variables after the existing RUN commands
-ENV WHISPER_PATH=/whisper.cpp/main
-ENV GGML_MODEL_PATH=/whisper.cpp/models/ggml-distil-small.en.bin
-ENV BEAM_SIZE=1
-
-# Add this copy command with the other COPY commands
-COPY --from=whisper-builder /app/whisper.cpp /whisper.cpp

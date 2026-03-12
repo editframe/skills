@@ -13,8 +13,8 @@ export const workerResources = {
     memory: "1Gi",
   },
   htmlInitializer: {
-    cpu: "1000m",
-    memory: "1Gi",
+    cpu: "2000m",
+    memory: "2Gi",
   },
   processISOBMFF: {
     cpu: "2000m",
@@ -28,12 +28,16 @@ export const workerResources = {
     cpu: "2000m",
     memory: "4Gi",
   },
+  renderFragmentGpu: {
+    cpu: "8000m",
+    memory: "32Gi",
+  },
   renderFinalizer: {
     cpu: "1000m",
     memory: "2Gi",
   },
-  scheduler: {
-    cpu: "500m",
+  maintenance: {
+    cpu: "1000m",
     memory: "512Mi",
   },
 } as const satisfies Record<string, WorkerResources>;
@@ -89,4 +93,3 @@ export function toGoMemLimit(resources: WorkerResources): string {
 
   throw new Error(`Invalid memory format: ${resources.memory}`);
 }
-

@@ -7,25 +7,30 @@ import {
   resetPasswordWithToken,
 } from "~/resetPasswordWithEmail.server";
 import type { MetaFunction } from "react-router";
-import { InformationCircleIcon } from "@heroicons/react/20/solid";
+import { Info } from "@phosphor-icons/react";
 import { commitSession } from "@/util/session";
 import { ErrorMessage } from "~/components/ErrorMessage";
 import { Button } from "~/components/Button";
 import { logger } from "@/logging";
+import { noAuthMiddleware } from "~/middleware/auth";
+import { sessionCookieContext } from "~/middleware/context";
 
 import type { Route } from "./+types/update-password";
-import { requireNoSession } from "@/util/requireSession.server";
 
 const schema = z.object({
-  password: z.string(),
-  password_confirmation: z.string(),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  password_confirmation: z
+    .string()
+    .min(8, "Password must be at least 8 characters"),
   reset_token: z.string(),
 });
 
 const updatePassword = formFor(schema);
 
-export const action = async ({ request }: Route.ActionArgs) => {
-  const { sessionCookie } = await requireNoSession(request);
+export const middleware: Route.MiddlewareFunction[] = [noAuthMiddleware];
+
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const sessionCookie = context.get(sessionCookieContext);
   const formResult = await updatePassword.parseFormData(request);
 
   if (!formResult.success) {
@@ -67,11 +72,8 @@ export const action = async ({ request }: Route.ActionArgs) => {
 };
 
 export const loader = async ({
-  request,
   params: { token: reset_token },
 }: Route.LoaderArgs) => {
-  await requireNoSession(request);
-
   if (!reset_token) throw new Error("No reset token");
   const email_address = await getUserByResetToken(reset_token);
 
@@ -165,10 +167,7 @@ export default function Welcome() {
           <div className="rounded-md bg-blue-50 p-4">
             <div className="flex">
               <div className="flex-shrink-0">
-                <InformationCircleIcon
-                  className="h-5 w-5 text-blue-400"
-                  aria-hidden="true"
-                />
+                <Info className="h-5 w-5 text-blue-400" aria-hidden="true" />
               </div>
               <div className="ml-3 flex-1 md:flex md:justify-between">
                 <p className="text-sm text-blue-700">

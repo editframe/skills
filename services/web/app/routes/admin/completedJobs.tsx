@@ -1,5 +1,4 @@
 import { Queue } from "@/queues/Queue";
-import { requireAdminSession } from "@/util/requireAdminSession";
 
 import type { Route } from "./+types/completedJobs";
 import { PaginatedTable } from "~/components/Table";
@@ -7,7 +6,6 @@ import { Button } from "~/components/Button";
 import { useFetcher } from "react-router";
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  await requireAdminSession(request);
   const { name } = params;
   const queue = Queue.fromName(name);
   if (!queue) {
@@ -67,7 +65,6 @@ const ReplayButton = ({ id, queueName }: { id: string; queueName: string }) => {
   );
 };
 
-
 const DeleteButton = ({ id, queueName }: { id: string; queueName: string }) => {
   const fetcher = useFetcher<{ success: boolean }>({
     key: `delete-job-${id}`,
@@ -88,7 +85,7 @@ const DeleteButton = ({ id, queueName }: { id: string; queueName: string }) => {
           {},
           {
             method: "POST",
-            action: `/admin/queues/${queueName}/failed/jobs/${id}/delete`,
+            action: `/admin/queues/${queueName}/completed/jobs/${id}/delete`,
           },
         );
       }}
@@ -109,7 +106,13 @@ const Actions = ({ id, queueName }: { id: string; queueName: string }) => {
   );
 };
 
-const DeleteAllButton = ({ queueName }: { queueName: string }) => {
+const DeleteAllButton = ({
+  queueName,
+  count,
+}: {
+  queueName: string;
+  count: number;
+}) => {
   const fetcher = useFetcher<{ success: boolean }>({
     key: `delete-all-jobs-${queueName}`,
   });
@@ -119,9 +122,9 @@ const DeleteAllButton = ({ queueName }: { queueName: string }) => {
     <Button
       mode="destructive"
       confirmation={{
-        title: "Delete All Jobs",
-        description: "Are you sure you want to delete all jobs?",
-        confirmText: "Delete",
+        title: "Delete All Completed Jobs",
+        description: `Are you sure you want to delete ${count} completed job${count !== 1 ? "s" : ""}? This action cannot be undone.`,
+        confirmText: "Delete All",
         cancelText: "Cancel",
       }}
       onConfirm={() => {
@@ -136,7 +139,7 @@ const DeleteAllButton = ({ queueName }: { queueName: string }) => {
       disabled={isLoading}
       loading={isLoading}
     >
-      Delete All
+      Delete All ({count})
     </Button>
   );
 };
@@ -147,7 +150,7 @@ export default function QueueComponent({
 }: Route.ComponentProps) {
   return (
     <>
-      <DeleteAllButton queueName={queueName} />
+      <DeleteAllButton queueName={queueName} count={stats.completed} />
       <PaginatedTable
         rows={jobs}
         rowKey="id"
@@ -165,7 +168,10 @@ export default function QueueComponent({
             name: "workflowId",
             content: ({ workflowId }) => <div>{workflowId}</div>,
           },
-          { name: "workflow", content: ({ workflow }) => <div>{workflow}</div> },
+          {
+            name: "workflow",
+            content: ({ workflow }) => <div>{workflow}</div>,
+          },
         ]}
       />
     </>

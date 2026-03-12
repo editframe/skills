@@ -4,13 +4,13 @@ import type { GetISOBMFFFileTranscriptionResult } from "@editframe/api";
 import { logger } from "@/logging";
 
 import type { Route } from "./+types/transcription";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 export const loader = async ({
-  request,
   params: { id },
+  context,
 }: Route.LoaderArgs): Promise<GetISOBMFFFileTranscriptionResult> => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
   const isobmffFile = await queryAs(
     session,
     "org-reader",

@@ -25,7 +25,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
     from: NO_REPLY_ADDRESS,
     to: magicLinkData.email_address,
     subject: "[Editframe] Login with magic link",
-    html: render(
+    html: await render(
       <MagicLink
         token={magicLinkData.token}
         host={process.env.WEB_HOST || "http://localhost:3000"}

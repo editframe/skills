@@ -5,7 +5,7 @@ import { db } from "@/sql-client.server";
 import { z } from "zod";
 
 import type { Route } from "./+types/transcribe";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 const schema = z.object({
   trackId: z.coerce.number(),
@@ -14,8 +14,9 @@ const schema = z.object({
 export const action = async ({
   params: { id },
   request,
+  context,
 }: Route.ActionArgs): Promise<TranscribeISOBMFFFileResult> => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
   const payload = schema.parse(await request.json());
   // Verify the file exists and belongs to the org
   const file = await requireQueryAs(
@@ -43,8 +44,8 @@ export const action = async ({
   const track =
     typeof payload.trackId === "number"
       ? audioTracks.find(
-        (audioTrack) => audioTrack.track_id === payload.trackId,
-      )
+          (audioTrack) => audioTrack.track_id === payload.trackId,
+        )
       : audioTracks[0];
 
   if (!track) {

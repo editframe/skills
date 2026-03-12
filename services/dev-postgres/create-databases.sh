@@ -15,7 +15,7 @@ create_database_if_not_exists() {
 # Create telecine-test database
 create_database_if_not_exists telecine-test
 
-# Create telecine-dev database
-create_database_if_not_exists telecine-dev
+# Create telecine-main database
+create_database_if_not_exists telecine-main
 
 echo "Database creation process completed."

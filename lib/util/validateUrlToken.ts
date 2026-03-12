@@ -17,20 +17,20 @@ export interface UrlTokenValidationResult {
  * Uses unified prefix + parameter matching approach:
  * - Request URL must start with the signed URL prefix
  * - Request query parameters must exactly match signed parameters (exhaustive)
- * 
+ *
  * @param session - The URL session info from the token
  * @param requestUrl - The current request URL to validate against
  * @returns Validation result with success status and error details if invalid
  */
 export function validateUrlToken(
   session: URLSessionInfo | AnonymousURLSessionInfo,
-  requestUrl: string
+  requestUrl: string,
 ): UrlTokenValidationResult {
   try {
     const signedUrlObj = new URL(session.url);
 
     // Handle relative URLs by constructing full URL using signed URL's origin
-    const requestUrlObj = requestUrl.startsWith('http')
+    const requestUrlObj = requestUrl.startsWith("http")
       ? new URL(requestUrl)
       : new URL(requestUrl, signedUrlObj.origin);
 
@@ -39,14 +39,16 @@ export function validateUrlToken(
     const normalizedSignedUrl = `${signedUrlObj.host}${signedUrlObj.pathname}`;
 
     if (!normalizedRequestUrl.startsWith(normalizedSignedUrl)) {
-      console.log("URL prefix mismatch. Request: ${normalizedRequestUrl}, Signed: ${normalizedSignedUrl}");
+      console.log(
+        "URL prefix mismatch. Request: ${normalizedRequestUrl}, Signed: ${normalizedSignedUrl}",
+      );
       return {
         isValid: false,
         errorDetails: {
           requestUrl,
           signedUrl: session.url,
-          message: `URL prefix mismatch. Request: ${normalizedRequestUrl}, Signed: ${normalizedSignedUrl}`
-        }
+          message: `URL prefix mismatch. Request: ${normalizedRequestUrl}, Signed: ${normalizedSignedUrl}`,
+        },
       };
     }
 
@@ -62,47 +64,54 @@ export function validateUrlToken(
     const requestParamKeys = Object.keys(requestParams).sort();
     const signedParamKeys = Object.keys(signedParams).sort();
 
-    if (requestParamKeys.length !== signedParamKeys.length ||
-      !requestParamKeys.every(key => signedParamKeys.includes(key))) {
-      console.log("Parameter keys mismatch. Request params: [${requestParamKeys.join(', ')}], Signed params: [${signedParamKeys.join(', ')}]");
+    if (
+      requestParamKeys.length !== signedParamKeys.length ||
+      !requestParamKeys.every((key) => signedParamKeys.includes(key))
+    ) {
+      console.log(
+        "Parameter keys mismatch. Request params: [${requestParamKeys.join(', ')}], Signed params: [${signedParamKeys.join(', ')}]",
+      );
       return {
         isValid: false,
         errorDetails: {
           requestUrl,
           signedUrl: session.url,
-          message: `Parameter keys mismatch. Request params: [${requestParamKeys.join(', ')}], Signed params: [${signedParamKeys.join(', ')}]`
-        }
+          message: `Parameter keys mismatch. Request params: [${requestParamKeys.join(", ")}], Signed params: [${signedParamKeys.join(", ")}]`,
+        },
       };
     }
 
     // Check parameter values match exactly
     for (const key of requestParamKeys) {
       if (requestParams[key] !== signedParams[key]) {
-        console.log("Parameter value mismatch for \"${key}\". Request: \"${requestParams[key]}\", Signed: \"${signedParams[key]}\"");
+        console.log(
+          'Parameter value mismatch for "${key}". Request: "${requestParams[key]}", Signed: "${signedParams[key]}"',
+        );
         return {
           isValid: false,
           errorDetails: {
             requestUrl,
             signedUrl: session.url,
-            message: `Parameter value mismatch for "${key}". Request: "${requestParams[key]}", Signed: "${signedParams[key]}"`
-          }
+            message: `Parameter value mismatch for "${key}". Request: "${requestParams[key]}", Signed: "${signedParams[key]}"`,
+          },
         };
       }
     }
 
     return {
-      isValid: true
+      isValid: true,
     };
-
   } catch (error) {
-    console.log(`URL parsing error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.log(
+      `URL parsing error: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
     return {
       isValid: false,
       errorDetails: {
         requestUrl,
         signedUrl: session.url,
-        message: `URL parsing error: ${error instanceof Error ? error.message : 'Unknown error'}`
-      }
+        message: `URL parsing error: ${error instanceof Error ? error.message : "Unknown error"}`,
+      },
     };
   }
 }

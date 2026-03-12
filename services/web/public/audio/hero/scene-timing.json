@@ -1,0 +1,66 @@
+[
+  {
+    "name": "Title",
+    "key": "01-title",
+    "durationMs": 4166,
+    "voiceDuration": 2480,
+    "voiceStartInScene": 500,
+    "audioOffsetMs": 0
+  },
+  {
+    "name": "Author",
+    "key": "02-author",
+    "durationMs": 9532,
+    "voiceDuration": 7840,
+    "voiceStartInScene": 500,
+    "audioOffsetMs": 3180
+  },
+  {
+    "name": "Layers",
+    "key": "03-layers",
+    "durationMs": 12032,
+    "voiceDuration": 10320,
+    "voiceStartInScene": 500,
+    "audioOffsetMs": 11720
+  },
+  {
+    "name": "Timeline",
+    "key": "04-timeline",
+    "durationMs": 10899,
+    "voiceDuration": 9200,
+    "voiceStartInScene": 500,
+    "audioOffsetMs": 22740
+  },
+  {
+    "name": "Editor",
+    "key": "05-editor",
+    "durationMs": 9466,
+    "voiceDuration": 7760,
+    "voiceStartInScene": 500,
+    "audioOffsetMs": 32640
+  },
+  {
+    "name": "Template",
+    "key": "06-template",
+    "durationMs": 7133,
+    "voiceDuration": 5440,
+    "voiceStartInScene": 500,
+    "audioOffsetMs": 41100
+  },
+  {
+    "name": "Stream",
+    "key": "07-stream",
+    "durationMs": 8732,
+    "voiceDuration": 7040,
+    "voiceStartInScene": 500,
+    "audioOffsetMs": 47240
+  },
+  {
+    "name": "Render",
+    "key": "08-render",
+    "durationMs": 9632,
+    "voiceDuration": 7920,
+    "voiceStartInScene": 500,
+    "audioOffsetMs": 54980
+  }
+]

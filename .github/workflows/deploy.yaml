@@ -8,10 +8,132 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 
+env:
+  RUNNER_IMAGE: us-central1-docker.pkg.dev/editframe/telecine-artifacts/runner-image
+  LOCAL_TAG: telecine-runner:latest
+
 jobs:
+  build-runner:
+    permissions:
+      contents: "read"
+      id-token: "write"
+    runs-on: ubuntu-latest
+    outputs:
+      runner-image-tag: ${{ steps.set-cache-key.outputs.cache-key }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/gcloud-auth
+      - name: Set cache key
+        id: set-cache-key
+        run: echo "cache-key=${{ runner.os }}-runner-image-${{ hashFiles('Dockerfile.runner', '.github/workflows/integration.yaml') }}" >> $GITHUB_OUTPUT
+      - name: Check if image exists
+        id: check-image
+        run: |
+          gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+          if docker manifest inspect ${{ env.RUNNER_IMAGE }}:${{ steps.set-cache-key.outputs.cache-key }} > /dev/null 2>&1; then
+            echo "image-exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "image-exists=false" >> $GITHUB_OUTPUT
+          fi
+      - run: scripts/download-electron-build
+        if: steps.check-image.outputs.image-exists != 'true'
+      - name: Configure Docker for GCR
+        if: steps.check-image.outputs.image-exists != 'true'
+        run: |
+          echo '{"experimental":true}' | sudo tee /etc/docker/daemon.json
+          sudo service docker restart
+      - name: Build and push runner image
+        if: steps.check-image.outputs.image-exists != 'true'
+        run: |
+          TAG="${{ steps.set-cache-key.outputs.cache-key }}"
+
+          docker pull ${{ env.RUNNER_IMAGE }}:latest || true
+          docker build \
+            --cache-from ${{ env.RUNNER_IMAGE }}:latest \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            --tag ${{ env.RUNNER_IMAGE }}:$TAG \
+            --tag ${{ env.RUNNER_IMAGE }}:latest \
+            --tag ${{ env.LOCAL_TAG }} \
+            --file Dockerfile.runner \
+            .
+
+          docker push ${{ env.RUNNER_IMAGE }}:$TAG || echo "Failed to push ${{ env.RUNNER_IMAGE }}:$TAG"
+          docker push ${{ env.RUNNER_IMAGE }}:latest || echo "Failed to push ${{ env.RUNNER_IMAGE }}:latest"
+
+  integration:
+    permissions:
+      contents: "read"
+      id-token: "write"
+      actions: "write"
+    needs: build-runner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/gcloud-auth
+      - uses: ./.github/actions/pull-and-retag
+        with:
+          cache-key: ${{ needs.build-runner.outputs.runner-image-tag }}
+          image-name: ${{ env.RUNNER_IMAGE }}
+          local-tag: ${{ env.LOCAL_TAG }}
+      - uses: ./.github/actions/general-integration
+      - name: Cancel workflow on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/cancel -X POST || true
+
+  playwright:
+    permissions:
+      contents: "read"
+      id-token: "write"
+      actions: "write"
+    needs: build-runner
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shard: ["1/1"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/gcloud-auth
+      - uses: ./.github/actions/pull-and-retag
+        with:
+          cache-key: ${{ needs.build-runner.outputs.runner-image-tag }}
+          image-name: ${{ env.RUNNER_IMAGE }}
+          local-tag: ${{ env.LOCAL_TAG }}
+      - uses: ./.github/actions/playwright-integration
+        with:
+          shard: ${{ matrix.shard }}
+      - name: Cancel workflow on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/cancel -X POST || true
+
+  typecheck:
+    permissions:
+      contents: "read"
+      id-token: "write"
+      actions: "write"
+    needs: build-runner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/gcloud-auth
+      - uses: ./.github/actions/pull-and-retag
+        with:
+          cache-key: ${{ needs.build-runner.outputs.runner-image-tag }}
+          image-name: ${{ env.RUNNER_IMAGE }}
+          local-tag: ${{ env.LOCAL_TAG }}
+      - uses: ./.github/actions/typecheck
+      - name: Cancel workflow on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/cancel -X POST || true
+
   docker:
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         image: [
             web,
@@ -21,9 +143,12 @@ jobs:
             worker-process-isobmff,
             worker-render-initializer,
             worker-render-fragment,
+            worker-render-fragment-gpu,
             worker-render-finalizer,
             scheduler-go,
+            maintenance,
             jit-transcoding,
+            migration-job,
             # transcribe
           ]
     permissions:
@@ -65,6 +190,9 @@ jobs:
       id-token: "write"
     needs:
       - docker
+      - integration
+      - playwright
+      - typecheck
     runs-on: ubuntu-latest
     defaults:
       run:

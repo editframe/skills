@@ -3,7 +3,7 @@ import { type RefObject, useEffect } from "react";
 // Improved version of https://usehooks.com/useOnClickOutside/
 const useClickOutside = (
   ref: RefObject<HTMLElement>,
-  handler: EventListener
+  handler: EventListener,
 ): void => {
   useEffect(() => {
     let startedInside = false;

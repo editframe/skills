@@ -11,7 +11,7 @@ export class InstanceLayer extends ExtendedModel(
   {
     componentRef: tProp(types.maybe(types.ref(componentRef))),
   },
-  yjsAdapterSnapshotProcessor
+  yjsAdapterSnapshotProcessor,
 ) {
   static createFromLayer(layer: Layer): InstanceLayer {
     if (!layer.isComponent) {

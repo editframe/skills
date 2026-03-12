@@ -349,7 +349,10 @@ class GCSStorage implements PersistentStorage {
   async createWriteStream(key: string, opts?: StorageStreamOptions) {
     const tmpPath = `${key}.tmp`;
     const file = bucket.file(tmpPath);
-    const writeStream = file.createWriteStream({ resumable: true, metadata: { contentType: opts?.contentType } });
+    const writeStream = file.createWriteStream({
+      resumable: true,
+      metadata: { contentType: opts?.contentType },
+    });
     setSpanAttributes({ key, tmpPath });
     logger.trace({ tmpPath }, "Created write stream for key");
 
@@ -514,4 +517,4 @@ export const createResumableUpload = async (
   );
 
   return sessionUri;
-}; 
+};

@@ -12,7 +12,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   process.env = {
     ...originalEnv,
-    WEB_HOST: "https://example.com"
+    WEB_HOST: "https://example.com",
+    VITE_WEB_HOST: "https://example.com",
   };
 });
 
@@ -21,7 +22,6 @@ afterEach(() => {
 });
 
 describe("ef-sign-url", () => {
-
   describe("URL pattern validation", () => {
     test("allows URLs starting with WEB_HOST/api/v1/transcode", async () => {
       const transcodeUrls = [
@@ -79,7 +79,7 @@ describe("ef-sign-url", () => {
           params: {
             url: "https://example.com/video.mp4",
             customParam: "allowed",
-            anotherParam: "also-allowed"
+            anotherParam: "also-allowed",
           },
         }),
       });
@@ -102,8 +102,6 @@ describe("ef-sign-url", () => {
       expect(result.token).toBe("mock-token");
     });
   });
-
-
 
   describe("response format", () => {
     test("returns only the token", async () => {

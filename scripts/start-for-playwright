@@ -3,8 +3,11 @@ set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-docker compose \
-  --project-name telecine \
+# Source worktree configuration to get project name
+. "$SCRIPT_DIR/worktree-config"
+
+COMPOSE_PROFILES=dev docker compose \
+  --project-name "$WORKTREE_DOCKER_PROJECT_NAME" \
   -f $SCRIPT_DIR/../docker-compose.yaml \
   -f $SCRIPT_DIR/../services/dev-postgres/docker-compose.yaml \
   -f $SCRIPT_DIR/../services/dev-valkey/docker-compose.yaml \
@@ -12,5 +15,3 @@ docker compose \
   -f $SCRIPT_DIR/../services/graphql-engine/docker-compose.yaml \
   -f $SCRIPT_DIR/../services/web/docker-compose.yaml \
   up --wait --remove-orphans
-
-${SCRIPT_DIR}/migrate-db

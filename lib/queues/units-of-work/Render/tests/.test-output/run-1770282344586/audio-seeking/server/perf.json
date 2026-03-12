@@ -1,0 +1,18 @@
+{
+  "testName": "audio-seeking-server",
+  "renderMode": "server",
+  "totalRenderTimeMs": 8032.264010999999,
+  "videoDurationMs": 3000,
+  "fps": 30,
+  "numFrames": 90,
+  "avgFrameTimeMs": 67.14691342222226,
+  "timing": {
+    "total": 8032.264010999999,
+    "bundleHtml": 1797.8007519999992,
+    "getRenderInfo": 188.77504300000146,
+    "createAssetsBundle": 1.5532539999985602,
+    "renderFragment": 6043.222208000003,
+    "writeFile": 0.9009189999997034
+  },
+  "timestamp": "2026-02-05T09:06:19.140Z"
+}

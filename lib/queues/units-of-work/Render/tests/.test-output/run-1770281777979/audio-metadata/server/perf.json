@@ -1,0 +1,18 @@
+{
+  "testName": "audio-metadata-server",
+  "renderMode": "server",
+  "totalRenderTimeMs": 5652.890523999999,
+  "videoDurationMs": 1000,
+  "fps": 30,
+  "numFrames": 30,
+  "avgFrameTimeMs": 89.31883030000002,
+  "timing": {
+    "total": 5652.890523999999,
+    "bundleHtml": 2585.337867000002,
+    "getRenderInfo": 381.563893999999,
+    "createAssetsBundle": 3.833554999997432,
+    "renderFragment": 2679.5649090000006,
+    "writeFile": 2.573675000003277
+  },
+  "timestamp": "2026-02-05T08:56:41.464Z"
+}

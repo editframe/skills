@@ -1,16 +1,11 @@
 import { Queue } from "@/queues/Queue";
 import { Worker } from "@/queues/Worker";
-import { ConnectionURLMap } from "@/queues/WorkerConnection";
 import { processHTML as processHTMLFn } from "@/render/processHTML";
 import type { Video2ProcessHtml } from "@/sql-client.server/kysely-codegen";
 import { valkey } from "@/valkey/valkey";
 import { type Selectable, sql } from "kysely";
-import { envInt, envString } from "@/util/env";
+import { envInt } from "@/util/env";
 
-const QUEUE_URL = envString(
-  "PROCESS_HTML_INITIALIZER_WEBSOCKET_HOST",
-  "ws://localhost:3000",
-);
 const MAX_WORKER_COUNT = envInt("PROCESS_HTML_INITIALIZER_MAX_WORKER_COUNT", 1);
 const WORKER_CONCURRENCY = envInt(
   "PROCESS_HTML_INITIALIZER_WORKER_CONCURRENCY",
@@ -22,6 +17,7 @@ type ProcessHTMLPayload = Selectable<Video2ProcessHtml>;
 export const ProcessHTMLInitializerQueue = new Queue<ProcessHTMLPayload>({
   name: "process-html-initializer",
   maxWorkerCount: MAX_WORKER_COUNT,
+  minWorkerCount: 1,
   workerConcurrency: WORKER_CONCURRENCY,
   storage: valkey,
   processStarts: async (messages, db) => {
@@ -38,7 +34,6 @@ export const ProcessHTMLInitializerQueue = new Queue<ProcessHTMLPayload>({
       .execute();
   },
 });
-ConnectionURLMap.set(ProcessHTMLInitializerQueue, QUEUE_URL);
 
 export const ProcessHTMLInitializerWorker = new Worker<ProcessHTMLPayload>({
   queue: ProcessHTMLInitializerQueue,

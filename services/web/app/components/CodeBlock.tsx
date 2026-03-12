@@ -1,21 +1,20 @@
-import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
-import { nightOwl } from "react-syntax-highlighter/dist/cjs/styles/prism";
-import phpLanguage from "react-syntax-highlighter/dist/cjs/languages/prism/php";
-import { Children } from "react";
+import { Highlight, themes } from "prism-react-renderer";
+import { Children, useEffect, useState } from "react";
 import type { FC, PropsWithChildren, ReactElement } from "react";
-
-// Handle both ESM and CommonJS module formats
-const phpLang = "default" in phpLanguage ? phpLanguage.default : phpLanguage;
-
-// Register PHP language support
-SyntaxHighlighter.registerLanguage("php", phpLang);
 
 interface CodeBlockProps extends PropsWithChildren {
   className?: string;
 }
 
+const languageAliases: Record<string, string> = {
+  html: "markup",
+  xml: "markup",
+  js: "javascript",
+  ts: "typescript",
+};
+
 const removeCommonIndentation = (code: string) => {
-  const lines = code.split('\n');
+  const lines = code.split("\n");
   let mindent: null | number = null;
 
   for (const line of lines) {
@@ -38,26 +37,83 @@ const removeCommonIndentation = (code: string) => {
         const leadingWhitespace = line.match(/^(\s*)/)?.[1]?.length ?? 0;
         return leadingWhitespace >= m ? line.slice(m) : line;
       })
-      .join('\n');
+      .join("\n");
   }
 
   return code;
 };
 
 export const CodeBlock: FC<CodeBlockProps> = ({ children, className = "" }) => {
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    const updateTheme = () => {
+      const isDark = document.documentElement.classList.contains("dark");
+      setIsDarkMode(isDark);
+    };
+
+    updateTheme();
+
+    window.addEventListener("theme", updateTheme);
+
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => {
+      window.removeEventListener("theme", updateTheme);
+      observer.disconnect();
+    };
+  }, []);
+
   const childrenArray = Children.toArray(children);
-  const codeElement = childrenArray[0] as ReactElement;
-  const code = removeCommonIndentation(codeElement.props.children.trim());
-  const language =
-    codeElement.props.className?.replace("language-", "") || "text";
+  const firstChild = childrenArray[0];
+
+  let code: string;
+  let language: string;
+
+  if (typeof firstChild === "string") {
+    code = removeCommonIndentation(firstChild.trim());
+    language = className?.replace("language-", "") || "tsx";
+  } else {
+    const codeElement = firstChild as ReactElement<{
+      children: string;
+      className?: string;
+    }>;
+    code = removeCommonIndentation(codeElement.props.children.trim());
+    language = codeElement.props.className?.replace("language-", "") || "text";
+  }
+
+  const resolvedLanguage = languageAliases[language] || language;
 
   return (
-    <SyntaxHighlighter
-      language={language}
-      style={nightOwl}
-      className={`overflow-scroll ${className}`}
+    <Highlight
+      theme={isDarkMode ? themes.nightOwl : themes.github}
+      code={code}
+      language={resolvedLanguage}
     >
-      {code}
-    </SyntaxHighlighter>
+      {({ style, tokens, getLineProps, getTokenProps }) => (
+        <pre
+          className="overflow-x-auto rounded-md"
+          style={{
+            ...style,
+            fontSize: "0.8125rem",
+            lineHeight: "1.625",
+            padding: "1rem",
+            margin: 0,
+          }}
+        >
+          {tokens.map((line, i) => (
+            <div key={i} {...getLineProps({ line })}>
+              {line.map((token, key) => (
+                <span key={key} {...getTokenProps({ token })} />
+              ))}
+            </div>
+          ))}
+        </pre>
+      )}
+    </Highlight>
   );
 };

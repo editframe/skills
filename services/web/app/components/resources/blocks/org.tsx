@@ -86,9 +86,7 @@ export const OrgVideoCount: ContentBlock<{
     } | null;
   } | null;
 }> = ({ record: { analytics } }) => (
-  <span className="font-medium">
-    {analytics?.aggregate?.video_count ?? 0}
-  </span>
+  <span className="font-medium">{analytics?.aggregate?.video_count ?? 0}</span>
 );
 
 export const OrgVideoMinutes: ContentBlock<{
@@ -103,9 +101,5 @@ export const OrgVideoMinutes: ContentBlock<{
   const totalMs = analytics?.aggregate?.total_duration_ms?.duration_ms ?? 0;
   const minutes = totalMs / (1000 * 60);
 
-  return (
-    <span className="font-light text-gray-600">
-      {minutes.toFixed(1)}
-    </span>
-  );
+  return <span className="font-light text-gray-600">{minutes.toFixed(1)}</span>;
 };

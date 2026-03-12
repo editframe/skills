@@ -6,34 +6,34 @@ import {
   validateMp3Rendition,
   validateMp3TimeAlignment,
   convertMp3ToMp4AndCache,
-  resolveEffectiveTranscodingUrl
+  resolveEffectiveTranscodingUrl,
 } from "./mp3-helpers";
 
 // Simple high-level mocks
 vi.mock("@/transcode/src/jit/audio-transcoder", () => ({
-  convertMp3ToMp4: vi.fn()
+  convertMp3ToMp4: vi.fn(),
 }));
 
 vi.mock("@/util/storageProvider.server", () => ({
   storageProvider: {
     pathExists: vi.fn(),
     writeFile: vi.fn(),
-    createReadStream: vi.fn()
-  }
+    createReadStream: vi.fn(),
+  },
 }));
 
 vi.mock("@/transcode/src/jit/transcoding-service", () => ({
   getFileDurationWithCaching: vi.fn(),
   getFileDuration: vi.fn(),
-  transcodeSegment: vi.fn()
+  transcodeSegment: vi.fn(),
 }));
 
 // Mock crypto for deterministic tests
 vi.mock("node:crypto", () => ({
   createHash: vi.fn().mockReturnValue({
     update: vi.fn().mockReturnThis(),
-    digest: vi.fn(() => "mockedhash123")
-  })
+    digest: vi.fn(() => "mockedhash123"),
+  }),
 }));
 
 describe("MP3 Support for JIT Transcoding", () => {
@@ -79,19 +79,28 @@ describe("MP3 Support for JIT Transcoding", () => {
       expect(validateMp3TimeAlignment(0)).toEqual({ isValid: true });
       expect(validateMp3TimeAlignment(15000)).toEqual({ isValid: true });
       expect(validateMp3TimeAlignment(30000)).toEqual({ isValid: true });
-      expect(validateMp3TimeAlignment(1000)).toEqual({ isValid: false, nearestValidTime: 0 });
-      expect(validateMp3TimeAlignment(16000)).toEqual({ isValid: false, nearestValidTime: 15000 });
+      expect(validateMp3TimeAlignment(1000)).toEqual({
+        isValid: false,
+        nearestValidTime: 0,
+      });
+      expect(validateMp3TimeAlignment(16000)).toEqual({
+        isValid: false,
+        nearestValidTime: 15000,
+      });
     });
   });
 
   describe("MP3 Conversion with Simple Mocking", () => {
     test("should convert and cache MP3 successfully", async () => {
       const mp3Url = "https://example.com/audio.mp3";
-      const { convertMp3ToMp4 } = await import("@/transcode/src/jit/audio-transcoder");
+      const { convertMp3ToMp4 } =
+        await import("@/transcode/src/jit/audio-transcoder");
       const { storageProvider } = await import("@/util/storageProvider.server");
 
       // Mock conversion and storage
-      vi.mocked(convertMp3ToMp4).mockResolvedValue(Buffer.from("fake mp4 data"));
+      vi.mocked(convertMp3ToMp4).mockResolvedValue(
+        Buffer.from("fake mp4 data"),
+      );
       vi.mocked(storageProvider.pathExists).mockResolvedValue(false); // Cache miss
       vi.mocked(storageProvider.writeFile).mockResolvedValue(undefined);
 
@@ -102,13 +111,14 @@ describe("MP3 Support for JIT Transcoding", () => {
       expect(storageProvider.writeFile).toHaveBeenCalledWith(
         "mp3-conversions/mockedhash123.mp4",
         expect.any(Buffer),
-        { contentType: 'video/mp4' }
+        { contentType: "video/mp4" },
       );
     });
 
     test("should use cached version when available", async () => {
       const mp3Url = "https://example.com/audio.mp3";
-      const { convertMp3ToMp4 } = await import("@/transcode/src/jit/audio-transcoder");
+      const { convertMp3ToMp4 } =
+        await import("@/transcode/src/jit/audio-transcoder");
       const { storageProvider } = await import("@/util/storageProvider.server");
 
       // Mock cache hit
@@ -125,7 +135,9 @@ describe("MP3 Support for JIT Transcoding", () => {
     test("should return original URL for non-MP3 files", async () => {
       const { resolveEffectiveTranscodingUrl } = await import("./mp3-helpers");
 
-      const result = await resolveEffectiveTranscodingUrl("https://example.com/video.mp4");
+      const result = await resolveEffectiveTranscodingUrl(
+        "https://example.com/video.mp4",
+      );
 
       expect(result).toBe("https://example.com/video.mp4");
     });
@@ -137,8 +149,11 @@ describe("MP3 Support for JIT Transcoding", () => {
       // Mock: conversion doesn't exist
       vi.mocked(storageProvider.pathExists).mockResolvedValue(false);
 
-      await expect(resolveEffectiveTranscodingUrl("https://example.com/audio.mp3"))
-        .rejects.toThrow("MP3 conversion not found. Call manifest endpoint first");
+      await expect(
+        resolveEffectiveTranscodingUrl("https://example.com/audio.mp3"),
+      ).rejects.toThrow(
+        "MP3 conversion not found. Call manifest endpoint first",
+      );
     });
   });
 
@@ -149,11 +164,16 @@ describe("MP3 Support for JIT Transcoding", () => {
 
       // Test individual components work correctly
       expect(isMP3Url(mp3Url)).toBe(true);
-      expect(generateMp3ConversionCacheKey(mp3Url)).toBe("mp3-conversions/mockedhash123.mp4");
+      expect(generateMp3ConversionCacheKey(mp3Url)).toBe(
+        "mp3-conversions/mockedhash123.mp4",
+      );
       expect(validateMp3Rendition("audio")).toBe(true);
       expect(validateMp3Rendition("high")).toBe(false);
       expect(validateMp3TimeAlignment(0)).toEqual({ isValid: true });
-      expect(validateMp3TimeAlignment(7500)).toEqual({ isValid: false, nearestValidTime: 15000 });
+      expect(validateMp3TimeAlignment(7500)).toEqual({
+        isValid: false,
+        nearestValidTime: 15000,
+      });
     });
 
     test("should calculate correct segment count", () => {
@@ -163,7 +183,8 @@ describe("MP3 Support for JIT Transcoding", () => {
     });
 
     test("should handle error cases gracefully", async () => {
-      const { convertMp3ToMp4 } = await import("@/transcode/src/jit/audio-transcoder");
+      const { convertMp3ToMp4 } =
+        await import("@/transcode/src/jit/audio-transcoder");
       const { storageProvider } = await import("@/util/storageProvider.server");
 
       // Mock cache miss and conversion failure
@@ -171,8 +192,9 @@ describe("MP3 Support for JIT Transcoding", () => {
       vi.mocked(convertMp3ToMp4).mockRejectedValue(new Error("FFmpeg failed"));
 
       // Test that the error is properly propagated (original error gets re-thrown)
-      await expect(convertMp3ToMp4AndCache("https://example.com/corrupted.mp3"))
-        .rejects.toThrow("FFmpeg failed");
+      await expect(
+        convertMp3ToMp4AndCache("https://example.com/corrupted.mp3"),
+      ).rejects.toThrow("FFmpeg failed");
     });
   });
 
@@ -199,7 +221,8 @@ describe("MP3 Support for JIT Transcoding", () => {
 
   describe("Segment Transcoding with Local Files", () => {
     test("should handle segment transcoding with local MP4 files", async () => {
-      const { transcodeSegment } = await import("@/transcode/src/jit/transcoding-service");
+      const { transcodeSegment } =
+        await import("@/transcode/src/jit/transcoding-service");
 
       // Mock the transcoding function to succeed with a local file path
       vi.mocked(transcodeSegment).mockResolvedValue("/tmp/output/segment.m4s");
@@ -211,7 +234,7 @@ describe("MP3 Support for JIT Transcoding", () => {
         rendition: "audio",
         segmentId: "1",
         segmentDurationMs: 15000,
-        outputDir: "/tmp/output"
+        outputDir: "/tmp/output",
       });
 
       expect(result).toBe("/tmp/output/segment.m4s");
@@ -220,7 +243,7 @@ describe("MP3 Support for JIT Transcoding", () => {
         rendition: "audio",
         segmentId: "1",
         segmentDurationMs: 15000,
-        outputDir: "/tmp/output"
+        outputDir: "/tmp/output",
       });
     });
   });

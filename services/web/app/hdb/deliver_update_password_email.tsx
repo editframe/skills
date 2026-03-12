@@ -24,7 +24,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
     from: NO_REPLY_ADDRESS,
     to: email.email_address as string,
     subject: "[Editframe] Your password has been updated",
-    html: render(<EmailUpdatePassword />),
+    html: await render(<EmailUpdatePassword />),
   });
 
   return {};

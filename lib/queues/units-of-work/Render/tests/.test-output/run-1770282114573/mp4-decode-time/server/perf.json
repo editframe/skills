@@ -1,0 +1,18 @@
+{
+  "testName": "mp4-decode-time-server",
+  "renderMode": "server",
+  "totalRenderTimeMs": 6630.742289999998,
+  "videoDurationMs": 2000,
+  "fps": 30,
+  "numFrames": 60,
+  "avgFrameTimeMs": 75.8174323,
+  "timing": {
+    "total": 6630.742289999998,
+    "bundleHtml": 1891.6560570000001,
+    "getRenderInfo": 187.19007899999997,
+    "createAssetsBundle": 2.0158400000000256,
+    "renderFragment": 4549.045937999999,
+    "writeFile": 0.8187109999998938
+  },
+  "timestamp": "2026-02-05T09:02:14.663Z"
+}

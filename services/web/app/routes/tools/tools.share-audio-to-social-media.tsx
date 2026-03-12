@@ -1,11 +1,11 @@
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 
-import { parseRequestSession } from "@/util/session";
+import { maybeIdentityContext } from "~/middleware/context";
 import "~/styles/marketing.css";
 import { Layout } from "~/layouts/tools";
 
 export const loader = async (args: LoaderFunctionArgs) => {
-  const session = await parseRequestSession(args.request);
+  const session = args.context.get(maybeIdentityContext);
 
   return {
     isLogged: !!session,
@@ -62,7 +62,7 @@ const IndexPage = () => {
       }}
       content={`
                 <p class="mb-4">
-Automate the process of converting audio content into shareable videos for social media platforms using Editframe's API. Ideal for developers building tools for musicians, podcasters, or audio content creators. Editframe provides the ability to generate visuals, add waveforms, and customize video output for platforms like TikTok, Facebook, YouTube, Instagram, Twitter, or Snapchat.
+Automate the process of converting audio content into shareable videos for social media platforms using Editframe's API. Ideal for developers building tools for musicians, podcasters, or audio content creators. Editframe provides the ability to generate visuals, add waveforms, and customize video output for platforms like TikTok, Facebook, YouTube, Instagram, X, or Snapchat.
 </p>
 <p class="mb-4">
 This capability enables innovative audio-to-video content strategies. Developers could build a platform that automatically turns short audio clips into engaging social media posts, or create tools for musicians to easily share snippets of new songs across multiple platforms.

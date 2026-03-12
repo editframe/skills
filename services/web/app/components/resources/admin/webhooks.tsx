@@ -51,6 +51,19 @@ const IndexQuery = progressiveQuery(
       }
     }
   `),
+  graphql(`
+    query WebhooksCount(
+      $limit: Int!,
+      $offset: Int!,
+      $where_clause: api_webhook_events_bool_exp
+    ) {
+      page_info: api_webhook_events_aggregate(where: $where_clause) {
+        aggregate {
+          count
+        }
+      }
+    }
+  `),
 );
 
 const DetailQuery = progressiveQuery(
@@ -134,6 +147,11 @@ const Filter = () => {
     "render.failed",
     "render.pending",
     "render.rendering",
+    "file.created",
+    "file.ready",
+    "file.failed",
+    "file.uploading",
+    "file.processing",
     "image_file.created",
     "isobmff_file.created",
     "isobmff_track.created",
@@ -151,9 +169,20 @@ const Filter = () => {
       <thead>
         <tr>
           <td colSpan={5}>
-            <div className="flex items-center gap-4 p-2 text-xs">
+            <div
+              className={clsx(
+                "flex flex-col sm:flex-row items-start sm:items-center gap-3 pb-3 text-xs transition-colors",
+              )}
+            >
               <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-600">Status:</span>
+                <span
+                  className={clsx(
+                    "font-medium transition-colors",
+                    "text-slate-600 dark:text-slate-400",
+                  )}
+                >
+                  Status:
+                </span>
                 <Listbox
                   value={status}
                   onChange={(newStatus) => {
@@ -163,13 +192,38 @@ const Filter = () => {
                     });
                   }}
                 >
-                  <ListboxButton className="rounded border border-gray-300 bg-white px-2 py-1 text-xs hover:bg-gray-50">
+                  <ListboxButton
+                    className={clsx(
+                      "rounded-md border px-3 py-1.5 text-xs transition-all duration-150 relative backdrop-blur-sm",
+                      "bg-white/95 dark:bg-slate-800/95",
+                      "text-slate-900 dark:text-white",
+                      "border-slate-300/75 dark:border-slate-700/75",
+                      "shadow-[0_1px_2px_0_rgb(0_0_0_/_0.06)] dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.3)]",
+                      "before:absolute before:inset-0 before:bg-gradient-to-br before:from-amber-50/18 before:via-transparent before:to-transparent",
+                      "dark:before:from-blue-950/15 dark:before:via-transparent dark:before:to-transparent",
+                      "before:pointer-events-none before:rounded-md",
+                      "hover:bg-white dark:hover:bg-slate-800/90",
+                      "hover:border-slate-300/85 dark:hover:border-slate-700/85",
+                      "hover:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08)] dark:hover:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.35)]",
+                      "focus:outline-none focus:ring-1 focus:ring-blue-500/50 dark:focus:ring-blue-400/50",
+                      "focus:border-blue-500/85 dark:focus:border-blue-400/85",
+                      "focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_2px_4px_0_rgb(59_130_246_/_0.15)]",
+                      "dark:focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.35),0_2px_4px_0_rgb(59_130_246_/_0.2)]",
+                      "focus:before:from-blue-50/30 dark:focus:before:from-blue-950/22",
+                    )}
+                  >
                     {availableStatuses.find((s) => s.id === status)?.label ??
                       "All"}
                   </ListboxButton>
                   <ListboxOptions
                     anchor="bottom start"
-                    className="absolute z-10 mt-1 max-h-60 w-48 overflow-auto rounded border border-gray-300 bg-white py-1 text-xs shadow-lg"
+                    className={clsx(
+                      "absolute z-10 mt-1 max-h-60 w-48 overflow-auto rounded-md border py-1 text-xs transition-all backdrop-blur-sm",
+                      "bg-white/90 dark:bg-slate-800/90",
+                      "border-slate-300/60 dark:border-slate-700/60",
+                      "shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_4px_12px_0_rgb(0_0_0_/_0.12)]",
+                      "dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.4),0_4px_12px_0_rgb(0_0_0_/_0.5)]",
+                    )}
                   >
                     {availableStatuses.map((statusOption) => (
                       <ListboxOption
@@ -179,15 +233,18 @@ const Filter = () => {
                         {({ selected, active }) => (
                           <div
                             className={clsx(
-                              "flex items-center px-2 py-1 cursor-pointer",
-                              active && "bg-blue-50",
+                              "flex items-center px-2 py-1 cursor-pointer transition-colors",
+                              active && "bg-blue-50 dark:bg-blue-900/30",
                               selected && "font-medium",
+                              "text-slate-900 dark:text-white",
                             )}
                           >
                             <span
                               className={clsx(
-                                "mr-2",
-                                selected ? "text-blue-500" : "text-gray-400",
+                                "mr-2 transition-colors",
+                                selected
+                                  ? "text-blue-500 dark:text-blue-400"
+                                  : "text-slate-400 dark:text-slate-500",
                               )}
                             >
                               {selected ? "✓" : "○"}
@@ -201,7 +258,14 @@ const Filter = () => {
                 </Listbox>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-600">Topics:</span>
+                <span
+                  className={clsx(
+                    "font-medium transition-colors",
+                    "text-slate-600 dark:text-slate-400",
+                  )}
+                >
+                  Topics:
+                </span>
                 <Listbox
                   multiple
                   value={topics}
@@ -212,7 +276,26 @@ const Filter = () => {
                     });
                   }}
                 >
-                  <ListboxButton className="rounded border border-gray-300 bg-white px-2 py-1 text-xs hover:bg-gray-50">
+                  <ListboxButton
+                    className={clsx(
+                      "rounded-md border px-3 py-1.5 text-xs transition-all duration-150 relative backdrop-blur-sm",
+                      "bg-white/95 dark:bg-slate-800/95",
+                      "text-slate-900 dark:text-white",
+                      "border-slate-300/75 dark:border-slate-700/75",
+                      "shadow-[0_1px_2px_0_rgb(0_0_0_/_0.06)] dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.3)]",
+                      "before:absolute before:inset-0 before:bg-gradient-to-br before:from-amber-50/18 before:via-transparent before:to-transparent",
+                      "dark:before:from-blue-950/15 dark:before:via-transparent dark:before:to-transparent",
+                      "before:pointer-events-none before:rounded-md",
+                      "hover:bg-white dark:hover:bg-slate-800/90",
+                      "hover:border-slate-300/85 dark:hover:border-slate-700/85",
+                      "hover:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08)] dark:hover:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.35)]",
+                      "focus:outline-none focus:ring-1 focus:ring-blue-500/50 dark:focus:ring-blue-400/50",
+                      "focus:border-blue-500/85 dark:focus:border-blue-400/85",
+                      "focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_2px_4px_0_rgb(59_130_246_/_0.15)]",
+                      "dark:focus:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.35),0_2px_4px_0_rgb(59_130_246_/_0.2)]",
+                      "focus:before:from-blue-50/30 dark:focus:before:from-blue-950/22",
+                    )}
+                  >
                     {topics.length === 0 ||
                     topics.length === availableTopics.length
                       ? "All topics"
@@ -220,22 +303,31 @@ const Filter = () => {
                   </ListboxButton>
                   <ListboxOptions
                     anchor="bottom start"
-                    className="absolute z-10 mt-1 max-h-60 w-48 overflow-auto rounded border border-gray-300 bg-white py-1 text-xs shadow-lg"
+                    className={clsx(
+                      "absolute z-10 mt-1 max-h-60 w-48 overflow-auto rounded-md border py-1 text-xs transition-all backdrop-blur-sm",
+                      "bg-white/90 dark:bg-slate-800/90",
+                      "border-slate-300/60 dark:border-slate-700/60",
+                      "shadow-[0_1px_2px_0_rgb(0_0_0_/_0.08),0_4px_12px_0_rgb(0_0_0_/_0.12)]",
+                      "dark:shadow-[0_1px_2px_0_rgb(0_0_0_/_0.4),0_4px_12px_0_rgb(0_0_0_/_0.5)]",
+                    )}
                   >
                     {availableTopics.map((topic) => (
                       <ListboxOption key={topic} value={topic}>
                         {({ selected, active }) => (
                           <div
                             className={clsx(
-                              "flex items-center px-2 py-1 cursor-pointer",
-                              active && "bg-blue-50",
+                              "flex items-center px-2 py-1 cursor-pointer transition-colors",
+                              active && "bg-blue-50 dark:bg-blue-900/30",
                               selected && "font-medium",
+                              "text-slate-900 dark:text-white",
                             )}
                           >
                             <span
                               className={clsx(
-                                "mr-2",
-                                selected ? "text-blue-500" : "text-gray-400",
+                                "mr-2 transition-colors",
+                                selected
+                                  ? "text-blue-500 dark:text-blue-400"
+                                  : "text-slate-400 dark:text-slate-500",
                               )}
                             >
                               {selected ? "✓" : "○"}

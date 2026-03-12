@@ -5,7 +5,8 @@
     -ms-text-size-adjust: 100%;
     -webkit-text-size-adjust: 100%;
     grid-area: main;
-    @apply min-w-0 flex-auto break-words text-base leading-normal text-gray-700 dark:text-gray-300;
+    @apply min-w-0 flex-auto break-words text-base leading-relaxed;
+    color: var(--warm-gray);
   
     & > :first-child {
       @apply mt-0;
@@ -19,11 +20,16 @@
     /* general text styles */
   
     & p {
-      @apply mb-4 mt-0;
+      @apply mb-4 mt-0 text-sm sm:text-base;
     }
   
     & strong {
-      @apply font-semibold;
+      @apply font-bold;
+      color: var(--ink-black);
+    }
+    
+    .dark & strong {
+      color: white;
     }
   
     & .icon {
@@ -43,7 +49,7 @@
   
     & ol,
     & ul {
-      @apply my-0 mb-4 pl-8;
+      @apply my-0 mb-4 pl-5 sm:pl-8;
     }
   
     & ol ol,
@@ -112,9 +118,14 @@
     /*****************************************************************************/
     /* links */
     & a {
-      @apply text-editframe-700  decoration-1 dark:text-white;
+      color: var(--accent-blue);
+      @apply font-semibold no-underline transition-colors;
     }
-  
+    
+    & a:hover {
+      color: var(--accent-red);
+    }
+
     & a:not([href]) {
       color: inherit;
       text-decoration: none;
@@ -123,29 +134,39 @@
     /*****************************************************************************/
     /* headings */
     & :is(h1, h2, h3, h4, h5, h6) {
-      @apply mb-4 mt-8;
+      @apply mb-4 mt-8 tracking-tight;
+      color: var(--ink-black);
     }
-  
-    &:not(docs-card) > :is(h1, h2, h3, h4, h5, h6) {
-      @apply text-black dark:text-gray-100;
+    
+    .dark & :is(h1, h2, h3, h4, h5, h6) {
+      color: white;
     }
-  
+
     & h1 {
-      @apply my-8 text-2xl font-black xs:text-3xl sm:text-4xl md:text-5xl;
+      @apply my-8 text-3xl font-bold xs:text-4xl sm:text-4xl md:text-5xl leading-[1.1];
     }
-  
+
     & h2 {
-      @apply text-xl font-bold md:text-2xl;
+      @apply text-2xl font-bold md:text-2xl mt-12 pb-3 leading-tight;
+      border-bottom: 2px solid rgba(0,0,0,0.1);
     }
-  
+    
+    .dark & h2 {
+      border-bottom-color: rgba(255,255,255,0.1);
+    }
+
     & h3 {
-      @apply text-lg font-bold md:text-xl;
+      @apply text-xl font-bold md:text-xl leading-tight;
     }
-  
-    & h4,
+
+    & h4 {
+      @apply text-lg font-semibold md:text-lg leading-tight;
+      color: var(--accent-blue);
+    }
+    
     & h5,
     & h6 {
-      @apply text-lg font-bold md:text-xl;
+      @apply text-base font-semibold leading-tight;
     }
   
     & h1 code,
@@ -163,7 +184,7 @@
   
       /* only apply these styles for links starting with a hash -- if a header does not start with a hash, it was generated from HTML, not markdown headers */
       & a[href^="#"] {
-        @apply absolute -left-6 -right-0 top-0 z-10 flex h-full items-center leading-none;
+        @apply absolute -left-4 md:-left-6 -right-0 top-0 z-10 flex h-full items-center leading-none;
       }
   
       &:hover a[href^="#"],
@@ -220,11 +241,13 @@
     & kbd,
     & pre {
       word-wrap: normal;
-      @apply overflow-auto rounded-lg p-3 text-sm leading-none md:p-4;
+      @apply overflow-auto rounded-lg p-3 text-sm leading-relaxed md:p-4;
     }
   
     & pre {
-      @apply my-4 border border-gray-100 leading-relaxed dark:border-gray-800;
+      @apply my-4 leading-relaxed;
+      @apply -mx-4 sm:mx-0;
+      @apply overflow-x-auto;
     }
   
     & code,
@@ -247,7 +270,9 @@
     }
   
     & :not(pre) > code {
-      @apply rounded bg-gray-400/30 px-1.5 pb-0.5 pt-px text-sm text-gray-50 dark:bg-gray-800/50;
+      @apply px-1.5 pb-0.5 pt-px text-sm font-semibold;
+      background: rgba(30, 58, 138, 0.1);
+      color: var(--accent-blue);
     }
   
     /* Undo the .md-prose code and .md-prose kbd color above for links. */
@@ -283,13 +308,15 @@
     }
   
     & [data-code-block-copy] {
-      @apply absolute right-4 top-[1.125rem] h-5 w-5 cursor-pointer bg-gray-500 opacity-0 hover:bg-black dark:bg-gray-400 dark:hover:bg-gray-100;
+      @apply absolute right-2 sm:right-4 top-2 sm:top-[1.125rem] h-5 w-5 cursor-pointer touch-manipulation bg-gray-500 opacity-0 hover:bg-black dark:bg-gray-400 dark:hover:bg-gray-100;
       mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='9' width='13' height='13' rx='2' ry='2' vector-effect='non-scaling-stroke'%3E%3C/rect%3E%3Cpath d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1' vector-effect='non-scaling-stroke'%3E%3C/path%3E%3C/svg%3E");
       mask-size: cover;
     }
   
     & [data-code-block]:hover [data-code-block-copy],
-    & [data-code-block-copy]:focus {
+    & [data-code-block]:active [data-code-block-copy],
+    & [data-code-block-copy]:focus,
+    & [data-code-block-copy]:active {
       @apply opacity-100;
     }
   
@@ -375,24 +402,41 @@
   
     /*****************************************************************************/
     /* tables */
-  
+
     & table {
       text-indent: 0;
       border-spacing: 0;
-      @apply my-10 block w-full max-w-full border-collapse overflow-auto border-[color:inherit] text-left;
+      @apply my-6 sm:my-10 block w-full max-w-full border-collapse overflow-x-auto text-left;
+      @apply -mx-4 sm:mx-0;
     }
-  
+
     & table th {
-      @apply sticky top-0 w-full bg-transparent text-sm font-semibold text-gray-700 dark:text-gray-300;
-      @apply border-0 border-b border-gray-200 p-0 pb-1 pr-4 dark:border-gray-800;
+      @apply sticky top-0 text-xs font-bold uppercase tracking-wider;
+      @apply px-2 sm:px-4 py-3 pr-2 sm:pr-4;
+      @apply min-w-[120px];
+      color: var(--ink-black);
+      background: var(--paper-white);
+      border-bottom: 2px solid var(--ink-black);
     }
-  
+    
+    .dark & table th {
+      color: white;
+      background: #0a0a0a;
+      border-bottom-color: white;
+    }
+
     & table tbody {
       @apply align-baseline;
     }
-  
+
     & table td {
-      @apply w-full whitespace-nowrap border-0 border-b border-gray-100 p-0 py-2 pr-4 text-sm text-black dark:border-gray-800 dark:text-white;
+      @apply whitespace-nowrap px-2 sm:px-4 py-3 pr-2 sm:pr-4 text-sm;
+      color: var(--warm-gray);
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .dark & table td {
+      border-bottom-color: rgba(255,255,255,0.1);
     }
   
     /*****************************************************************************/
@@ -402,7 +446,7 @@
     & docs-success,
     & docs-warning,
     & docs-error {
-      @apply relative mb-3 mt-0 block rounded-lg border-l-2 border-r-2 border-current px-4 py-2;
+      @apply relative mb-3 mt-0 block rounded-lg border-l-2 border-r-2 border-current px-3 sm:px-4 py-2 text-sm sm:text-base;
     }
   
     & docs-info::before,
@@ -486,9 +530,11 @@
   
     /*****************************************************************************/
     /* blockquotes */
-  
+
     & blockquote {
-      @apply mx-0 mb-4 mt-0 border-l-4 border-gray-200 p-0 pl-4 text-gray-600 dark:border-gray-800 dark:text-gray-400;
+      @apply mx-0 mb-4 mt-0 p-0 pl-4 text-sm sm:text-base font-medium;
+      border-left: 2px solid var(--accent-blue);
+      color: var(--warm-gray);
     }
   
     & blockquote > :first-child {
@@ -501,9 +547,15 @@
   
     /*****************************************************************************/
     /* hr */
-  
+
     & hr {
-      @apply mx-0 my-6 h-[1px] overflow-visible border-0 bg-gray-200 p-0 dark:bg-gray-800;
+      @apply mx-0 my-10 overflow-visible border-0 p-0;
+      height: 2px;
+      background: rgba(0,0,0,0.1);
+    }
+    
+    .dark & hr {
+      background: rgba(255,255,255,0.1);
     }
   }
   

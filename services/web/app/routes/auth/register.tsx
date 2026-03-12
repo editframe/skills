@@ -2,7 +2,10 @@ import { data, redirect } from "react-router";
 import { useNavigation } from "react-router";
 import z from "zod";
 import { formFor } from "../../formFor";
-import { createEmailPasswordSessionCookie } from "@/util/session";
+import {
+  createEmailPasswordSessionCookie,
+  createLoginHeaders,
+} from "@/util/session";
 import { registerUserWithPassword } from "~/registerUserWithPassword.server";
 import { useSearchParams } from "react-router";
 import { Link } from "react-router";
@@ -10,9 +13,10 @@ import type { MetaFunction } from "react-router";
 import { SuccessMessage } from "~/components/SuccessMessage";
 import { Button } from "~/components/Button";
 import { logger } from "@/logging";
+import { useTheme } from "~/hooks/useTheme";
 
 import type { Route } from "./+types/register";
-import { requireNoSession } from "@/util/requireSession.server";
+import { noAuthMiddleware } from "~/middleware/auth";
 
 const schema = z
   .object({
@@ -39,8 +43,9 @@ const schema = z
 
 const register = formFor(schema);
 
+export const middleware: Route.MiddlewareFunction[] = [noAuthMiddleware];
+
 export const action = async ({ request }: Route.ActionArgs) => {
-  await requireNoSession(request);
   const formResult = await register.parseFormData(request);
   if (!formResult.success) {
     return data(formResult.errors, { status: 400 });
@@ -60,18 +65,12 @@ export const action = async ({ request }: Route.ActionArgs) => {
       },
       "REGISTRATION",
     );
+    const sessionCookie = await createEmailPasswordSessionCookie(emailPassword);
+    const loginHeaders = await createLoginHeaders(sessionCookie);
     if (registration.invite_id && registration.redirect_to) {
-      return redirect(registration.redirect_to, {
-        headers: {
-          "Set-Cookie": await createEmailPasswordSessionCookie(emailPassword),
-        },
-      });
+      return redirect(registration.redirect_to, { headers: loginHeaders });
     }
-    return redirect("/auth/onboarding", {
-      headers: {
-        "Set-Cookie": await createEmailPasswordSessionCookie(emailPassword),
-      },
-    });
+    return redirect("/auth/onboarding", { headers: loginHeaders });
   } catch (error: any) {
     logger.error(error, "Failed to create user");
     if (error?.constraint === "email_passwords_email_address_key") {
@@ -88,8 +87,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 };
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  await requireNoSession(request);
+export const loader = async () => {
   return null;
 };
 
@@ -97,6 +95,7 @@ export const meta: MetaFunction = () => {
   return [{ title: "Register | Editframe" }];
 };
 export default function Register() {
+  useTheme();
   const navigation = useNavigation();
   const submitting = navigation.state === "submitting";
   const [searchParams] = useSearchParams();

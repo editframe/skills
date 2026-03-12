@@ -10,9 +10,9 @@ interface LogsPanelProps {
   onLogExpand: (index: number) => void;
   panelHeight: number;
   searchText: string;
-  searchMode: 'highlight' | 'filter';
+  searchMode: "highlight" | "filter";
   onSearchTextChange: (text: string) => void;
-  onSearchModeChange: (mode: 'highlight' | 'filter') => void;
+  onSearchModeChange: (mode: "highlight" | "filter") => void;
   searchInputRef: React.RefObject<HTMLInputElement>;
 }
 
@@ -27,12 +27,12 @@ export const LogsPanel = memo(function LogsPanel({
   searchMode,
   onSearchTextChange,
   onSearchModeChange,
-  searchInputRef
+  searchInputRef,
 }: LogsPanelProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
   const filteredLogs = useMemo(() => {
-    if (!searchText || searchMode !== 'filter') {
+    if (!searchText || searchMode !== "filter") {
       return logs.map((log, i) => ({ log, index: i }));
     }
 
@@ -43,7 +43,7 @@ export const LogsPanel = memo(function LogsPanel({
   }, [logs, searchText, searchMode]);
 
   const matchingIndices = useMemo(() => {
-    if (!searchText || searchMode !== 'highlight') {
+    if (!searchText || searchMode !== "highlight") {
       return new Set<number>();
     }
     const lowerSearch = searchText.toLowerCase();
@@ -72,7 +72,11 @@ export const LogsPanel = memo(function LogsPanel({
     <div className="logs-panel" style={{ height: `${panelHeight}px` }}>
       <div className="logs-panel-header">
         <span className="logs-panel-title">
-          Logs ({searchText && searchMode === 'filter' ? `${matchCount}/${logs.length}` : logs.length})
+          Logs (
+          {searchText && searchMode === "filter"
+            ? `${matchCount}/${logs.length}`
+            : logs.length}
+          )
         </span>
         <div className="logs-search-controls">
           <input
@@ -85,16 +89,16 @@ export const LogsPanel = memo(function LogsPanel({
           />
           <div className="logs-search-mode-toggle">
             <button
-              className={`logs-search-mode-btn ${searchMode === 'highlight' ? 'active' : ''}`}
-              onClick={() => onSearchModeChange('highlight')}
+              className={`logs-search-mode-btn ${searchMode === "highlight" ? "active" : ""}`}
+              onClick={() => onSearchModeChange("highlight")}
               title="Highlight matching logs"
             >
               Highlight
               <kbd className="kbd-shortcut">⌘H</kbd>
             </button>
             <button
-              className={`logs-search-mode-btn ${searchMode === 'filter' ? 'active' : ''}`}
-              onClick={() => onSearchModeChange('filter')}
+              className={`logs-search-mode-btn ${searchMode === "filter" ? "active" : ""}`}
+              onClick={() => onSearchModeChange("filter")}
               title="Filter to matching logs"
             >
               Filter
@@ -107,8 +111,8 @@ export const LogsPanel = memo(function LogsPanel({
         <div
           style={{
             height: `${virtualizer.getTotalSize()}px`,
-            width: '100%',
-            position: 'relative',
+            width: "100%",
+            position: "relative",
           }}
         >
           {virtualizer.getVirtualItems().map((virtualItem) => {
@@ -119,10 +123,10 @@ export const LogsPanel = memo(function LogsPanel({
                 data-index={virtualItem.index}
                 ref={virtualizer.measureElement}
                 style={{
-                  position: 'absolute',
+                  position: "absolute",
                   top: 0,
                   left: 0,
-                  width: '100%',
+                  width: "100%",
                   transform: `translateY(${virtualItem.start}px)`,
                 }}
               >
@@ -177,71 +181,88 @@ interface LogItemProps {
   isHighlighted: boolean;
 }
 
-const LogItem = memo(function LogItem({
-  log,
-  index,
-  isHovered,
-  isExpanded,
-  onHover,
-  onExpand,
-  isHighlighted
-}: LogItemProps) {
-  const timestamp = useMemo(() => new Date(Number(log.timeUnixNano / 1_000_000n)), [log.timeUnixNano]);
-  const severityClass = log.severityText.toLowerCase();
+const LogItem = memo(
+  function LogItem({
+    log,
+    index,
+    isHovered,
+    isExpanded,
+    onHover,
+    onExpand,
+    isHighlighted,
+  }: LogItemProps) {
+    const timestamp = useMemo(
+      () => new Date(Number(log.timeUnixNano / 1_000_000n)),
+      [log.timeUnixNano],
+    );
+    const severityClass = log.severityText.toLowerCase();
 
-  const icon = useMemo(() => {
-    switch (severityClass) {
-      case 'trace': return '○';
-      case 'debug': return '◐';
-      case 'info': return '●';
-      case 'warn': return '▲';
-      case 'error': return '✕';
-      case 'fatal': return '⬤';
-      default: return '●';
-    }
-  }, [severityClass]);
+    const icon = useMemo(() => {
+      switch (severityClass) {
+        case "trace":
+          return "○";
+        case "debug":
+          return "◐";
+        case "info":
+          return "●";
+        case "warn":
+          return "▲";
+        case "error":
+          return "✕";
+        case "fatal":
+          return "⬤";
+        default:
+          return "●";
+      }
+    }, [severityClass]);
 
-  const relevantAttrs = useMemo(
-    () => log.attributes.filter(
-      attr => !attr.key.startsWith('service.') &&
-        !attr.key.startsWith('logging.googleapis.com/')
-    ),
-    [log.attributes]
-  );
+    const relevantAttrs = useMemo(
+      () =>
+        log.attributes.filter(
+          (attr) =>
+            !attr.key.startsWith("service.") &&
+            !attr.key.startsWith("logging.googleapis.com/"),
+        ),
+      [log.attributes],
+    );
 
-  return (
-    <div
-      className={`logs-panel-item log-${severityClass} ${isHovered ? 'hovered' : ''} ${isExpanded ? 'expanded' : ''} ${isHighlighted ? 'search-highlighted' : ''}`}
-      onMouseEnter={() => onHover(index)}
-      onMouseLeave={() => onHover(null)}
-      onClick={() => onExpand(index)}
-    >
-      <span className={`log-icon log-${severityClass}`}>{icon}</span>
-      <span className="log-timestamp">
-        {timestamp.toLocaleTimeString()}.{String(timestamp.getMilliseconds()).padStart(3, '0')}
-      </span>
-      <span className="log-content">
-        {relevantAttrs.length > 0 && (
-          <span className="log-attrs">
-            {relevantAttrs.map((attr, j) => (
-              <span key={j} className="log-attr">
-                <span className="log-attr-key">{attr.key}</span>
-                <span className="log-attr-sep">=</span>
-                <span className="log-attr-val">{getAttrValue(attr.value)}</span>
-              </span>
-            ))}
-            <span className="log-message-sep">→</span>
-          </span>
-        )}
-        <span className="log-body">{log.body}</span>
-      </span>
-    </div>
-  );
-}, (prev, next) =>
-  prev.log === next.log &&
-  prev.isHovered === next.isHovered &&
-  prev.isExpanded === next.isExpanded &&
-  prev.isHighlighted === next.isHighlighted
+    return (
+      <div
+        className={`logs-panel-item log-${severityClass} ${isHovered ? "hovered" : ""} ${isExpanded ? "expanded" : ""} ${isHighlighted ? "search-highlighted" : ""}`}
+        onMouseEnter={() => onHover(index)}
+        onMouseLeave={() => onHover(null)}
+        onClick={() => onExpand(index)}
+      >
+        <span className={`log-icon log-${severityClass}`}>{icon}</span>
+        <span className="log-timestamp">
+          {timestamp.toLocaleTimeString()}.
+          {String(timestamp.getMilliseconds()).padStart(3, "0")}
+        </span>
+        <span className="log-content">
+          {relevantAttrs.length > 0 && (
+            <span className="log-attrs">
+              {relevantAttrs.map((attr, j) => (
+                <span key={j} className="log-attr">
+                  <span className="log-attr-key">{attr.key}</span>
+                  <span className="log-attr-sep">=</span>
+                  <span className="log-attr-val">
+                    {getAttrValue(attr.value)}
+                  </span>
+                </span>
+              ))}
+              <span className="log-message-sep">→</span>
+            </span>
+          )}
+          <span className="log-body">{log.body}</span>
+        </span>
+      </div>
+    );
+  },
+  (prev, next) =>
+    prev.log === next.log &&
+    prev.isHovered === next.isHovered &&
+    prev.isExpanded === next.isExpanded &&
+    prev.isHighlighted === next.isHighlighted,
 );
 
 function getAttrValue(value: any): string {
@@ -249,8 +270,8 @@ function getAttrValue(value: any): string {
   if (value?.intValue !== undefined) return String(value.intValue);
   if (value?.doubleValue !== undefined) return String(value.doubleValue);
   if (value?.boolValue !== undefined) return String(value.boolValue);
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number') return String(value);
-  if (typeof value === 'boolean') return String(value);
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  if (typeof value === "boolean") return String(value);
   return JSON.stringify(value);
 }

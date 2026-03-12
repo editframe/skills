@@ -1,4 +1,4 @@
-import { InformationCircleIcon } from "@heroicons/react/20/solid";
+import { Info } from "@phosphor-icons/react";
 import { sql } from "kysely";
 import {
   Link,
@@ -15,10 +15,9 @@ import { graphql } from "@/graphql";
 import * as serverGQL from "@/graphql.server/userClient";
 import { logger } from "@/logging";
 import { db } from "@/sql-client.server";
-import { maybeSession } from "@/util/requireSession.server";
-
 import { ErrorMessage } from "~/components/ErrorMessage";
 import { formFor } from "~/formFor";
+import { maybeIdentityContext } from "~/middleware/context";
 
 import type { Route } from "./+types/acceptInvitation";
 
@@ -58,8 +57,8 @@ export const ErrorBoundary = () => {
   );
 };
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { session } = await maybeSession(request);
+export const loader = async ({ context, params }: Route.LoaderArgs) => {
+  const session = context.get(maybeIdentityContext);
   const isAuthenticated = !!session;
 
   const result = await serverGQL.anonymousQuery(
@@ -106,10 +105,14 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   return { invite, isAuthenticated, token: params.token };
 };
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
+export const action = async ({
+  request,
+  context,
+  params,
+}: Route.ActionArgs) => {
   const formResult = await inviteMember.parseFormData(request);
 
-  const { session } = await maybeSession(request);
+  const session = context.get(maybeIdentityContext);
   const isAuthenticated = !!session;
 
   if (!formResult.success) {
@@ -194,7 +197,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     await db
       .updateTable("identity.invites")
       .set({
-        accepted_at: new Date(),
+        denied_at: sql`now()`,
       })
       .where("id", "=", invite.id)
       .execute();
@@ -271,9 +274,10 @@ export default function Welcome() {
             <div className="my-4 rounded-md bg-blue-50 p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <InformationCircleIcon
+                  <Info
                     className="h-5 w-5 text-blue-400"
                     aria-hidden="true"
+                    weight="fill"
                   />
                 </div>
                 <div className="ml-3 flex-1 md:flex md:justify-between">
@@ -303,9 +307,10 @@ export default function Welcome() {
             <div className="my-4 rounded-md bg-blue-50 p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <InformationCircleIcon
+                  <Info
                     className="h-5 w-5 text-blue-400"
                     aria-hidden="true"
+                    weight="fill"
                   />
                 </div>
                 <div className="ml-3 flex-1 md:flex md:justify-between">

@@ -6,7 +6,7 @@
     "POSTGRES_HOST": "localhost",
     "POSTGRES_USER": "postgres",
     "POSTGRES_PORT": "6432",
-    "POSTGRES_DB": "telecine-dev",
+    "POSTGRES_DB": "telecine-main",
     "DEBUG": "ef:*",
     // This allows playwright-in-vscode to follow email links
     "PLAYWRIGHT_WEB_HOST": "http://localhost:3000"

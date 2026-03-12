@@ -32,12 +32,12 @@ const componentDemo = async () => {
         wordColor: "black",
         activeWordBackgroundColor: "orange",
         wordBackgroundColor: "white",
-      }
+      },
     ),
     await VideoLayer.createFromURL("/video/tsla.mp4", {
       widthMode: SizeMode.Fill,
       heightMode: SizeMode.Fill,
-    })
+    }),
   );
 
   return composition;

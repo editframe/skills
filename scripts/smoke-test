@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Run production smoke tests against the live API.
+# Requires EF_TOKEN to be set (or uses env default).
+#
+# Usage: ./scripts/smoke-test [--timeout 180]
+#        EF_HOST=https://editframe.com ./scripts/smoke-test
+
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+exec node --import=tsx/esm "$SCRIPT_DIR/smoke-test.ts" "$@"

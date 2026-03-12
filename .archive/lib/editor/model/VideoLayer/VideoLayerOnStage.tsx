@@ -54,5 +54,5 @@ export const VideoLayerOnStage = observer(
     }, []);
 
     return <video {...props} src={layer.srcUrl} />;
-  }
+  },
 );

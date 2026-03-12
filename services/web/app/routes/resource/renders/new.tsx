@@ -8,7 +8,7 @@ import { ClientOnly } from "remix-utils/client-only";
 import { z } from "zod";
 
 import { db } from "@/sql-client.server";
-import { requireSession } from "@/util/requireSession.server";
+import { identityContext } from "~/middleware/context";
 import { Filmstrip, FitScale, FocusOverlay, Preview } from "@editframe/react";
 import { Button } from "~/components/Button";
 import { CodeEditor } from "~/components/CodeEditor";
@@ -47,8 +47,8 @@ const outputConfigMap: Record<string, RenderOutputConfiguration> = {
     container: "webp",
   },
 };
-export const action = async ({ request }: Route.ActionArgs) => {
-  const { session } = await requireSession(request);
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const session = context.get(identityContext);
   const orgId = session.oid;
   if (!orgId) {
     throw new Error("No org provided");

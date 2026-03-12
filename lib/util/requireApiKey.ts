@@ -1,5 +1,5 @@
 import type { LoaderFunction, LoaderFunctionArgs } from "react-router";
-import { trace, SpanStatusCode } from '@opentelemetry/api';
+import { trace, SpanStatusCode } from "@opentelemetry/api";
 import {
   type APISessionInfo,
   parseRequestSession,
@@ -35,7 +35,10 @@ export type LoaderWithAnonymousURLSession = (
 ) => ReturnType<LoaderFunction>;
 
 export function requireApiToken<
-  LoaderType extends LoaderWithAPISession | LoaderWithURLSession | LoaderWithAnonymousURLSession,
+  LoaderType extends
+    | LoaderWithAPISession
+    | LoaderWithURLSession
+    | LoaderWithAnonymousURLSession,
 >(loader: LoaderType) {
   return async (args: LoaderFunctionArgs) => {
     const activeSpan = trace.getActiveSpan();
@@ -45,18 +48,28 @@ export function requireApiToken<
         activeSpan?.setAttributes({
           "auth.authenticated": false,
           "auth.type": "api",
-          "auth.error": "missing_token"
+          "auth.error": "missing_token",
         });
-        return data({ message: "Invalid or expired API token" }, { status: 401 });
+        return data(
+          { message: "Invalid or expired API token" },
+          { status: 401 },
+        );
       }
 
-      if (session.type !== "api" && session.type !== "url" && session.type !== "anonymous_url") {
+      if (
+        session.type !== "api" &&
+        session.type !== "url" &&
+        session.type !== "anonymous_url"
+      ) {
         activeSpan?.setAttributes({
           "auth.authenticated": false,
           "auth.type": session.type,
-          "auth.error": "invalid_token_type"
+          "auth.error": "invalid_token_type",
         });
-        return data({ message: "Invalid or expired API token" }, { status: 401 });
+        return data(
+          { message: "Invalid or expired API token" },
+          { status: 401 },
+        );
       }
 
       switch (session?.type) {
@@ -106,7 +119,7 @@ export function requireApiToken<
           activeSpan?.setAttributes({
             "auth.authenticated": true,
             "auth.type": "url",
-            "auth.request_url": args.request.url
+            "auth.request_url": args.request.url,
           });
           return (loader as LoaderWithURLSession)({
             ...args,
@@ -133,7 +146,7 @@ export function requireApiToken<
           activeSpan?.setAttributes({
             "auth.authenticated": true,
             "auth.type": "anonymous_url",
-            "auth.request_url": args.request.url
+            "auth.request_url": args.request.url,
           });
           return (loader as LoaderWithAnonymousURLSession)({
             ...args,
@@ -144,7 +157,7 @@ export function requireApiToken<
     } catch (error) {
       activeSpan?.setStatus({
         code: SpanStatusCode.ERROR,
-        message: error instanceof Error ? error.message : "API token error"
+        message: error instanceof Error ? error.message : "API token error",
       });
       throw error;
     }
@@ -155,15 +168,15 @@ export const requireCookieOrTokenSession = (
   loader: (
     args: LoaderFunctionArgs & {
       session: TokenLikeSessionInfo;
-    }
-  ) => ReturnType<LoaderFunction>
+    },
+  ) => ReturnType<LoaderFunction>,
 ) => {
   return async (args: LoaderFunctionArgs) => {
     const activeSpan = trace.getActiveSpan();
     try {
       const hasCookie = args.request.headers.has("cookie");
       activeSpan?.setAttributes({
-        "auth.method": hasCookie ? "cookie" : "token"
+        "auth.method": hasCookie ? "cookie" : "token",
       });
 
       if (hasCookie) {
@@ -171,28 +184,30 @@ export const requireCookieOrTokenSession = (
         if (!session) {
           activeSpan?.setAttributes({
             "auth.authenticated": false,
-            "auth.error": "invalid_cookie"
+            "auth.error": "invalid_cookie",
           });
           throw new Response(null, {
             status: 401,
-            statusText: "Unauthorized. Requires a cookie session or API token as Bearer token in Authorizaiton Header",
+            statusText:
+              "Unauthorized. Requires a cookie session or API token as Bearer token in Authorizaiton Header",
           });
         }
         if (session.oid === undefined) {
           activeSpan?.setAttributes({
             "auth.authenticated": false,
-            "auth.error": "missing_org_id"
+            "auth.error": "missing_org_id",
           });
           throw new Response(null, {
             status: 401,
-            statusText: "Unauthorized. Requires a cookie session with an org id specified.",
+            statusText:
+              "Unauthorized. Requires a cookie session with an org id specified.",
           });
         }
 
         activeSpan?.setAttributes({
           "auth.authenticated": true,
           "enduser.id": session.uid,
-          "organization.id": session.oid
+          "organization.id": session.oid,
         });
 
         return loader({
@@ -208,10 +223,10 @@ export const requireCookieOrTokenSession = (
     } catch (error) {
       activeSpan?.setStatus({
         code: SpanStatusCode.ERROR,
-        message: error instanceof Error ? error.message : "Cookie/Token session error"
+        message:
+          error instanceof Error ? error.message : "Cookie/Token session error",
       });
       throw error;
     }
   };
 };
-

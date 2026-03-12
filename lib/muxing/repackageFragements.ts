@@ -1,7 +1,7 @@
-import * as fs from 'node:fs';
+import * as fs from "node:fs";
 
 import type { ISOFile } from "codem-isoboxer";
-import ISOBoxer from 'codem-isoboxer';
+import ISOBoxer from "codem-isoboxer";
 
 export const repackageInitSegment = (isoFile: ISOFile, durationMs: number) => {
   // First, we filter out all boxes that are not ftyp or moov, init segmentns
@@ -11,10 +11,9 @@ export const repackageInitSegment = (isoFile: ISOFile, durationMs: number) => {
     return box.type === "ftyp" || box.type === "moov";
   });
 
-
   const mvhd = isoFile.fetch("mvhd");
   const mvhdTimeScale = mvhd?.timescale || 1000;
-  const movieDuration = Math.ceil(durationMs / 1000 * mvhdTimeScale);
+  const movieDuration = Math.ceil((durationMs / 1000) * mvhdTimeScale);
 
   if (mvhd) {
     mvhd.duration = movieDuration;
@@ -47,21 +46,22 @@ export const repackageInitSegment = (isoFile: ISOFile, durationMs: number) => {
     for (const box of moovBoxes) {
       if (box.type === "trak" && box.boxes) {
         // Filter out any edts boxes from this track
-        box.boxes = box.boxes.filter((trackBox: any) => trackBox.type !== "edts");
+        box.boxes = box.boxes.filter(
+          (trackBox: any) => trackBox.type !== "edts",
+        );
       }
     }
   }
 
   return isoFile.write();
-}
+};
 
 export function repackageMediaSegment(
   isoFile: ISOFile,
   sequenceNumber: number,
   baseMediaDecodeTimeMs: number,
-  baseMediaDecodeTimeCallback?: (timescale: number) => number
+  baseMediaDecodeTimeCallback?: (timescale: number) => number,
 ): ArrayBuffer {
-
   const mfhd = isoFile.fetch("mfhd");
   if (mfhd) {
     mfhd.sequence_number = sequenceNumber + 1;
@@ -86,10 +86,12 @@ export function repackageMediaSegment(
 
     // Missing tfdt indicates structural corruption - fail fast instead of ignoring
     if (!tfdt) {
-      throw new Error(`Missing tfdt for track ${i} - this indicates structural corruption from aggressive trimming. All tracks must have content.`);
+      throw new Error(
+        `Missing tfdt for track ${i} - this indicates structural corruption from aggressive trimming. All tracks must have content.`,
+      );
     }
 
-    let baseTime = Math.round(baseMediaDecodeTimeMs / 1000 * timescale);
+    let baseTime = Math.round((baseMediaDecodeTimeMs / 1000) * timescale);
     if (baseMediaDecodeTimeCallback) {
       baseTime = baseMediaDecodeTimeCallback(timescale);
     }
@@ -104,15 +106,13 @@ export function repackageMediaSegment(
   return isoFile.write();
 }
 
-export function repackageFragmentIntoFiles(
-  filePath: string,
-): Uint8Array[] {
+export function repackageFragmentIntoFiles(filePath: string): Uint8Array[] {
   const files: Uint8Array[] = [];
 
   // Parse the original file to get moof count
   const originalBuffer = fs.readFileSync(filePath);
   const originalIsoFile = ISOBoxer.parseBuffer(originalBuffer.buffer);
-  const moofBoxes = originalIsoFile.fetchAll('moof');
+  const moofBoxes = originalIsoFile.fetchAll("moof");
 
   // Create one file for each moof
   for (let i = 0; i < moofBoxes.length; i++) {
@@ -120,10 +120,10 @@ export function repackageFragmentIntoFiles(
     const isoFile = ISOBoxer.parseBuffer(originalBuffer.buffer);
 
     // Grab the specific boxes we need from this fresh parse
-    const ftypBox = isoFile.fetch('ftyp');
-    const moovBox = isoFile.fetch('moov');
-    const allMoofBoxes = isoFile.fetchAll('moof');
-    const allMdatBoxes = isoFile.fetchAll('mdat');
+    const ftypBox = isoFile.fetch("ftyp");
+    const moovBox = isoFile.fetch("moov");
+    const allMoofBoxes = isoFile.fetchAll("moof");
+    const allMdatBoxes = isoFile.fetchAll("mdat");
 
     const targetMoofBox = allMoofBoxes[i];
     const targetMdatBox = allMdatBoxes[i]; // Adjust indexing as needed

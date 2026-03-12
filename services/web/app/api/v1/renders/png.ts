@@ -3,12 +3,12 @@ import { requireQueryAs } from "@/graphql.server/userClient";
 import { storageProvider } from "@/util/storageProvider.server";
 import { renderStillFilePath } from "@/util/filePaths";
 
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 import type { Route } from "./+types/png";
 
-export const loader = async ({ params: { id }, request }: Route.LoaderArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+export const loader = async ({ params: { id }, context }: Route.LoaderArgs) => {
+  const session = context.get(apiIdentityContext);
   const renderRecord = await requireQueryAs(
     session,
     "org-reader",

@@ -2,6 +2,9 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+# Source worktree configuration to get network name and domain
+. "$SCRIPT_DIR/worktree-config"
+
 # Detect if we have a TTY
 if [ -t 0 ]; then
     TTY_FLAGS="-it"
@@ -64,15 +67,33 @@ if [ -n "$DOCKER_FLAGS" ]; then
     PROJECT_ROOT="$SCRIPT_DIR/.."
     ENV_FILE="$PROJECT_ROOT/.env"
     
+    # Resolve elements path relative to worktree root
+    # Find worktree root (works for both main worktree and git worktrees)
+    WORKTREE_ROOT=$(cd "$PROJECT_ROOT" && git rev-parse --show-toplevel 2>/dev/null || echo "$PROJECT_ROOT")
+    WORKTREE_PARENT=$(dirname "$WORKTREE_ROOT")
+    
+    # Try to find elements directory - check both ../elements and parallel worktree pattern
+    ELEMENTS_PATH=""
+    if [ -d "$WORKTREE_PARENT/elements" ]; then
+        # Main worktree pattern: ../elements
+        ELEMENTS_PATH="$WORKTREE_PARENT/elements"
+    elif [ -n "$WORKTREE_ID" ] && [ "$WORKTREE_ID" != "main" ] && [ -d "$WORKTREE_PARENT/elements-${WORKTREE_ID}" ]; then
+        # Parallel worktree pattern: ../elements-<branch>
+        ELEMENTS_PATH="$WORKTREE_PARENT/elements-${WORKTREE_ID}"
+    else
+        # Fallback to relative path
+        ELEMENTS_PATH="$PROJECT_ROOT/../elements"
+    fi
+    
     VOLUMES=(
         -v "$PROJECT_ROOT:/app"
         -v "telecine_node_modules:/app/node_modules"
         -v "$HOME/.config/gcloud:/root/.config/gcloud"
-        -v "$PROJECT_ROOT/../elements:/app/lib/packages"
+        -v "$ELEMENTS_PATH:/app/lib/packages"
     )
     
     DOCKER_RUN_FLAGS="$TTY_FLAGS --rm"
-    DOCKER_RUN_FLAGS="$DOCKER_RUN_FLAGS --network telecine_default"
+    DOCKER_RUN_FLAGS="$DOCKER_RUN_FLAGS --network $WORKTREE_DOCKER_NETWORK_NAME"
     DOCKER_RUN_FLAGS="$DOCKER_RUN_FLAGS ${VOLUMES[@]}"
     DOCKER_RUN_FLAGS="$DOCKER_RUN_FLAGS --device /dev/mps0:/dev/mps0"
     DOCKER_RUN_FLAGS="$DOCKER_RUN_FLAGS --privileged"
@@ -90,10 +111,41 @@ if [ -n "$DOCKER_FLAGS" ]; then
         docker run $DOCKER_RUN_FLAGS $DOCKER_FLAGS telecine-runner "${CMD_ARGS[@]}"
     fi
 else
-    if [ ${#CMD_ARGS[@]} -eq 0 ]; then
-        echo "Starting $SHELL in container..."
-        $SCRIPT_DIR/docker-compose run $TTY_FLAGS --rm runner "$SHELL"
+    # Check if runner service is already running
+    RUNNER_CONTAINER=$(${SCRIPT_DIR}/docker-compose ps -q runner 2>/dev/null)
+    if [ -n "$RUNNER_CONTAINER" ] && docker inspect "$RUNNER_CONTAINER" --format='{{.State.Status}}' 2>/dev/null | grep -q "running"; then
+        # Service is running, exec into the specific container
+        # Pass through environment variables needed for browsertest
+        # Filter out Docker Debug promotional messages from stderr
+        if [ -t 0 ]; then
+            # TTY mode: filter stderr but preserve TTY
+            docker exec --env MONOREPO_ROOT="$MONOREPO_ROOT" --env WS_ENDPOINT="$WS_ENDPOINT" --env WORKTREE_DOMAIN="$WORKTREE_DOMAIN" --env VITEST_BROWSER_MODE="$VITEST_BROWSER_MODE" $TTY_FLAGS "$RUNNER_CONTAINER" "${CMD_ARGS[@]}" 2> >(grep -v "What's next:" | grep -v "Try Docker Debug" | grep -v "Learn more at" >&2)
+        else
+            # Non-TTY mode: filter both stdout and stderr
+            docker exec --env MONOREPO_ROOT="$MONOREPO_ROOT" --env WS_ENDPOINT="$WS_ENDPOINT" --env WORKTREE_DOMAIN="$WORKTREE_DOMAIN" --env VITEST_BROWSER_MODE="$VITEST_BROWSER_MODE" $TTY_FLAGS "$RUNNER_CONTAINER" "${CMD_ARGS[@]}" 2>&1 | grep -v "What's next:" | grep -v "Try Docker Debug" | grep -v "Learn more at"
+        fi
     else
-        $SCRIPT_DIR/docker-compose run $TTY_FLAGS --rm runner "${CMD_ARGS[@]}"
+        # Service not running, start new ephemeral container
+        # Pass through environment variables needed for browsertest
+        ENV_FLAGS=""
+        if [ -n "$MONOREPO_ROOT" ]; then
+            ENV_FLAGS="$ENV_FLAGS -e MONOREPO_ROOT=$MONOREPO_ROOT"
+        fi
+        if [ -n "$WS_ENDPOINT" ]; then
+            ENV_FLAGS="$ENV_FLAGS -e WS_ENDPOINT=$WS_ENDPOINT"
+        fi
+        if [ -n "$WORKTREE_DOMAIN" ]; then
+            ENV_FLAGS="$ENV_FLAGS -e WORKTREE_DOMAIN=$WORKTREE_DOMAIN"
+        fi
+        if [ -n "$VITEST_BROWSER_MODE" ]; then
+            ENV_FLAGS="$ENV_FLAGS -e VITEST_BROWSER_MODE=$VITEST_BROWSER_MODE"
+        fi
+        
+        if [ ${#CMD_ARGS[@]} -eq 0 ]; then
+            echo "Starting $SHELL in container..."
+            $SCRIPT_DIR/docker-compose run $TTY_FLAGS $ENV_FLAGS --rm runner "$SHELL"
+        else
+            $SCRIPT_DIR/docker-compose run $TTY_FLAGS $ENV_FLAGS --rm runner "${CMD_ARGS[@]}"
+        fi
     fi
 fi

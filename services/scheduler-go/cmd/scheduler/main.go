@@ -2,173 +2,115 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
-	_ "github.com/lib/pq"
+	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
+	"github.com/rs/zerolog"
 
-	"github.com/editframe/telecine/scheduler/internal/config"
-	"github.com/editframe/telecine/scheduler/internal/connection"
-	"github.com/editframe/telecine/scheduler/internal/lifecycle"
-	"github.com/editframe/telecine/scheduler/internal/queue"
-	"github.com/editframe/telecine/scheduler/internal/redis"
-	"github.com/editframe/telecine/scheduler/internal/scheduler"
-	"github.com/editframe/telecine/scheduler/pkg/logging"
-	"github.com/editframe/telecine/scheduler/pkg/tracing"
+	"github.com/editframe/telecine/scheduler-go/internal/claim"
+	"github.com/editframe/telecine/scheduler-go/internal/health"
+	"github.com/editframe/telecine/scheduler-go/internal/pool"
+	"github.com/editframe/telecine/scheduler-go/internal/queue"
+	"github.com/editframe/telecine/scheduler-go/internal/reconciler"
+	"github.com/editframe/telecine/scheduler-go/internal/stall"
 )
 
 func main() {
+	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
+	logger.Info().Msg("scheduler starting")
+
+	valkeyHost := envOr("VALKEY_HOST", "valkey")
+	valkeyPort := envOr("VALKEY_PORT", "6379")
+	port := envOr("PORT", "3000")
+	instanceID := uuid.New().String()
+
+	logger.Info().
+		Str("instanceID", instanceID).
+		Str("valkey", fmt.Sprintf("%s:%s", valkeyHost, valkeyPort)).
+		Msg("config")
+
+	client := redis.NewClient(&redis.Options{
+		Addr: fmt.Sprintf("%s:%s", valkeyHost, valkeyPort),
+	})
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	logging.Init("scheduler-go")
-	logger := logging.Logger()
+	// Verify Valkey connectivity
+	if err := client.Ping(ctx).Err(); err != nil {
+		logger.Fatal().Err(err).Msg("failed to connect to Valkey")
+	}
+	logger.Info().Msg("connected to Valkey")
 
-	if err := tracing.Init(ctx, "scheduler-go"); err != nil {
-		logger.Fatal().Err(err).Msg("failed to initialize tracing")
+	queues := queue.LoadQueues(&logger)
+	if len(queues) == 0 {
+		logger.Fatal().Msg("no queues configured — set WORKER_URL_<QUEUE> env vars")
 	}
 
-	cfg, err := config.Load()
-	if err != nil {
-		logger.Fatal().Err(err).Msg("failed to load config")
-	}
-
-	queues, err := queue.LoadQueues()
-	if err != nil {
-		logger.Fatal().Err(err).Msg("failed to load queues")
-	}
-
-	logger.Info().Int("queue_count", len(queues)).Msg("loaded queues")
+	// Create connection pools
+	pools := make(map[string]*pool.Pool, len(queues))
 	for _, q := range queues {
-		logger.Info().
-			Str("queue_name", q.Name).
-			Str("websocket_host", q.WebSocketHost).
-			Int("max_worker_count", q.MaxWorkerCount).
-			Int("worker_concurrency", q.WorkerConcurrency).
-			Msg("queue configuration")
+		pools[q.Name] = pool.New(q.Name, q.URL, logger)
 	}
 
-	// Start HTTP server immediately for health checks
-	server := scheduler.NewServer(cfg.Port, logger)
+	// Create claim manager
+	queueNames := make([]string, len(queues))
+	for i, q := range queues {
+		queueNames[i] = q.Name
+	}
+	claimMgr := claim.NewManager(instanceID, client, queueNames, logger)
+	claimMgr.Start(ctx)
+
+	// Create and start reconciler
+	rec := reconciler.New(client, claimMgr, queues, pools, logger)
+	go rec.Run(ctx)
+
+	// Start stall detector
+	stallDetector := stall.NewDetector(client, queues, logger)
+	go stallDetector.Run(ctx)
+
+	// HTTP server for health checks
+	handler := health.NewHandler(queues, pools)
+	srv := &http.Server{
+		Addr:    ":" + port,
+		Handler: handler,
+	}
+
 	go func() {
-		if err := server.Start(ctx); err != nil {
-			logger.Error().Err(err).Msg("server error")
+		logger.Info().Str("port", port).Msg("HTTP server listening")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Fatal().Err(err).Msg("HTTP server error")
 		}
 	}()
 
-	logger.Info().
-		Int("port", cfg.Port).
-		Msg("health check server started, connecting to dependencies...")
-
-	logger.Info().
-		Str("valkeyHost", cfg.ValkeyHost).
-		Int("valkeyPort", cfg.ValkeyPort).
-		Msg("attempting to connect to redis")
-
-	redisClient, err := redis.NewClient(cfg.ValkeyHost, cfg.ValkeyPort)
-	if err != nil {
-		logger.Fatal().
-			Err(err).
-			Str("valkeyHost", cfg.ValkeyHost).
-			Int("valkeyPort", cfg.ValkeyPort).
-			Msg("failed to connect to redis")
-	}
-
-	logger.Info().Msg("successfully connected to redis")
-
-	// Initialize PostgreSQL database connection
-	dbConnString := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable",
-		cfg.PostgresHost, cfg.PostgresUser, cfg.PostgresPassword, cfg.PostgresDB)
-
-	db, err := sql.Open("postgres", dbConnString)
-	if err != nil {
-		logger.Fatal().Err(err).Msg("failed to connect to database")
-	}
-	defer db.Close()
-
-	// Test database connection
-	if err := db.Ping(); err != nil {
-		logger.Fatal().Err(err).Msg("failed to ping database")
-	}
-
-	logger.Info().Msg("successfully connected to database")
-
-	coordinator, err := scheduler.NewCoordinator(redisClient, logger)
-	if err != nil {
-		logger.Fatal().Err(err).Msg("failed to create coordinator")
-	}
-
-	connection.SetTimeouts(cfg.SchedulerPingIntervalMS, cfg.SchedulerDisconnectTimeoutMS)
-	logger.Info().
-		Int("pingIntervalMS", cfg.SchedulerPingIntervalMS).
-		Int("disconnectTimeoutMS", cfg.SchedulerDisconnectTimeoutMS).
-		Msg("configured connection timeouts")
-
-	stateMachine := connection.NewStateMachine(coordinator.ID(), redisClient, logger)
-
-	reconciler := scheduler.NewReconciler(
-		coordinator,
-		stateMachine,
-		redisClient,
-		queues,
-		logger,
-		cfg.SchedulerTickMS,
-		cfg.SchedulerScaleDownSmoothing,
-	)
-	logger.Info().
-		Int("tickMS", cfg.SchedulerTickMS).
-		Float64("scaleDownSmoothing", cfg.SchedulerScaleDownSmoothing).
-		Msg("created reconciler")
-
-	// Set reconciler on server so it can expose scaling info
-	server.SetReconciler(reconciler)
-
-	stalledCleanup := scheduler.NewStalledJobCleanup(redisClient, queues, logger)
-	logger.Info().Msg("created stalled cleanup")
-
-	// Initialize lifecycle consumer with database connection
-	consumer := lifecycle.NewConsumer(redisClient, coordinator.ID(), db, logger)
-
-	go coordinator.Start(ctx)
-	logger.Info().Msg("started coordinator")
-	go reconciler.Start(ctx)
-	logger.Info().Msg("started reconciler")
-	go stalledCleanup.Start(ctx)
-	logger.Info().Msg("started stalled cleanup")
-	go consumer.Start(ctx)
-	logger.Info().Msg("started consumer")
-
-	logger.Info().
-		Str("schedulerID", coordinator.ID()).
-		Int("port", cfg.Port).
-		Int("queues", len(queues)).
-		Msg("scheduler started")
-
+	// Wait for shutdown signal
 	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	signal.Notify(sigCh, syscall.SIGTERM, syscall.SIGINT)
+	sig := <-sigCh
+	logger.Info().Str("signal", sig.String()).Msg("shutting down")
 
-	<-sigCh
-	logger.Info().Msg("received shutdown signal")
-
+	// Graceful shutdown
 	cancel()
 
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*1000000000)
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer shutdownCancel()
 
-	if err := coordinator.Stop(shutdownCtx); err != nil {
-		logger.Error().Err(err).Msg("error stopping coordinator")
-	}
-
-	reconciler.Stop()
-	stalledCleanup.Stop()
-	consumer.Stop()
-
-	if err := server.Shutdown(shutdownCtx); err != nil {
-		logger.Error().Err(err).Msg("error shutting down server")
-	}
+	claimMgr.Stop(shutdownCtx)
+	rec.CloseAll()
+	srv.Shutdown(shutdownCtx)
 
 	logger.Info().Msg("scheduler stopped")
+}
+
+func envOr(key, defaultVal string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return defaultVal
 }

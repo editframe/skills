@@ -10,7 +10,10 @@ describe("VideoSource", () => {
 
   // Load real MP4 file for testing
   const getTestMp4Data = () => {
-    const testFile = path.join(process.cwd(), "lib/transcode/test-assets/transcode/test-source-10s.mp4");
+    const testFile = path.join(
+      process.cwd(),
+      "lib/transcode/test-assets/transcode/test-source-10s.mp4",
+    );
     return fs.readFileSync(testFile);
   };
 
@@ -26,8 +29,8 @@ describe("VideoSource", () => {
           headers: {
             "content-length": mp4Data.length.toString(),
             "accept-ranges": "bytes",
-            "content-type": "video/mp4"
-          }
+            "content-type": "video/mp4",
+          },
         });
       }),
 
@@ -38,7 +41,9 @@ describe("VideoSource", () => {
           const match = range.match(/bytes=(\d+)-(\d*)/);
           if (match?.[1]) {
             const start = Number.parseInt(match[1], 10);
-            const end = match[2] ? Number.parseInt(match[2], 10) : mp4Data.length - 1;
+            const end = match[2]
+              ? Number.parseInt(match[2], 10)
+              : mp4Data.length - 1;
             const chunk = mp4Data.slice(start, end + 1);
 
             return new HttpResponse(chunk, {
@@ -46,8 +51,8 @@ describe("VideoSource", () => {
               headers: {
                 "content-range": `bytes ${start}-${end}/${mp4Data.length}`,
                 "content-length": chunk.length.toString(),
-                "content-type": "video/mp4"
-              }
+                "content-type": "video/mp4",
+              },
             });
           }
         }
@@ -55,14 +60,14 @@ describe("VideoSource", () => {
         return new HttpResponse(mp4Data, {
           headers: {
             "content-length": mp4Data.length.toString(),
-            "content-type": "video/mp4"
-          }
+            "content-type": "video/mp4",
+          },
         });
-      })
+      }),
     );
 
     const result = await validateVideoSource({
-      url: TEST_URL
+      url: TEST_URL,
     });
 
     expect(result.valid).toBe(true);
@@ -82,9 +87,9 @@ describe("VideoSource", () => {
         return new HttpResponse(null, {
           headers: {
             "accept-ranges": "bytes",
-            "content-type": "video/mp4"
+            "content-type": "video/mp4",
             // Deliberately omit content-length
-          }
+          },
         });
       }),
 
@@ -95,7 +100,9 @@ describe("VideoSource", () => {
           const match = range.match(/bytes=(\d+)-(\d*)/);
           if (match?.[1]) {
             const start = Number.parseInt(match[1], 10);
-            const end = match[2] ? Number.parseInt(match[2], 10) : Math.min(start + 1024 * 1024, mp4Data.length - 1);
+            const end = match[2]
+              ? Number.parseInt(match[2], 10)
+              : Math.min(start + 1024 * 1024, mp4Data.length - 1);
             const chunk = mp4Data.slice(start, end + 1);
 
             return new HttpResponse(chunk, {
@@ -103,23 +110,23 @@ describe("VideoSource", () => {
               headers: {
                 "content-range": `bytes ${start}-${end}/*`, // Use * since we don't know total size
                 "content-length": chunk.length.toString(),
-                "content-type": "video/mp4"
-              }
+                "content-type": "video/mp4",
+              },
             });
           }
         }
 
         return new HttpResponse(mp4Data, {
           headers: {
-            "content-type": "video/mp4"
+            "content-type": "video/mp4",
             // No content-length header
-          }
+          },
         });
-      })
+      }),
     );
 
     using source = await createVideoSource({
-      url: TEST_URL
+      url: TEST_URL,
     });
 
     expect(source.url).toBe(TEST_URL);
@@ -129,7 +136,7 @@ describe("VideoSource", () => {
     expect(source.canReadPackets).toBe(false); // Should be false for synthetic MP4
 
     // Should have at least one video stream
-    const videoStreams = source.streams.filter(s => s.codecType === 'video');
+    const videoStreams = source.streams.filter((s) => s.codecType === "video");
     expect(videoStreams.length).toBeGreaterThan(0);
 
     // Video stream should have expected properties
@@ -145,11 +152,11 @@ describe("VideoSource", () => {
     server.use(
       http.head(TEST_URL, () => {
         return HttpResponse.text("Network Error", { status: 500 });
-      })
+      }),
     );
 
     const result = await validateVideoSource({
-      url: TEST_URL
+      url: TEST_URL,
     });
 
     expect(result.valid).toBe(false);
@@ -168,8 +175,8 @@ describe("VideoSource", () => {
           headers: {
             "content-length": fakeData.length.toString(),
             "accept-ranges": "bytes",
-            "content-type": "video/mp4"
-          }
+            "content-type": "video/mp4",
+          },
         });
       }),
 
@@ -179,7 +186,9 @@ describe("VideoSource", () => {
           const match = range.match(/bytes=(\d+)-(\d*)/);
           if (match?.[1]) {
             const start = Number.parseInt(match[1], 10);
-            const end = match[2] ? Number.parseInt(match[2], 10) : fakeData.length - 1;
+            const end = match[2]
+              ? Number.parseInt(match[2], 10)
+              : fakeData.length - 1;
             const chunk = fakeData.slice(start, end + 1);
 
             return new HttpResponse(chunk, {
@@ -187,8 +196,8 @@ describe("VideoSource", () => {
               headers: {
                 "content-range": `bytes ${start}-${end}/${fakeData.length}`,
                 "content-length": chunk.length.toString(),
-                "content-type": "video/mp4"
-              }
+                "content-type": "video/mp4",
+              },
             });
           }
         }
@@ -196,14 +205,16 @@ describe("VideoSource", () => {
         return new HttpResponse(fakeData, {
           headers: {
             "content-length": fakeData.length.toString(),
-            "content-type": "video/mp4"
-          }
+            "content-type": "video/mp4",
+          },
         });
-      })
+      }),
     );
 
     // This should throw an error, not return a graceful failure
-    await expect(createVideoSource({ url: TEST_URL })).rejects.toThrow("Failed to fetch video metadata");
+    await expect(createVideoSource({ url: TEST_URL })).rejects.toThrow(
+      "Failed to fetch video metadata",
+    );
   });
 
   test("handles invalid URL gracefully", async () => {
@@ -212,11 +223,11 @@ describe("VideoSource", () => {
     server.use(
       http.head(invalidUrl, () => {
         return HttpResponse.text("Not Found", { status: 404 });
-      })
+      }),
     );
 
     const result = await validateVideoSource({
-      url: invalidUrl
+      url: invalidUrl,
     });
 
     expect(result.valid).toBe(false);
@@ -224,4 +235,4 @@ describe("VideoSource", () => {
     expect(result.streams).toBeUndefined();
     expect(result.durationMs).toBeUndefined();
   });
-}); 
+});

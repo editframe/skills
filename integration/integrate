@@ -14,6 +14,8 @@ source $SCRIPT_DIR/.env
 
 ${SCRIPT_DIR}/../scripts/download-electron-build
 ${SCRIPT_DIR}/../scripts/docker-compose run --rm --env CI=true runner npm install
+${SCRIPT_DIR}/../scripts/docker-compose run --rm --env CI=true runner npm run lint
+${SCRIPT_DIR}/../scripts/docker-compose run --rm --env CI=true runner npm run format:check
 ${SCRIPT_DIR}/../scripts/start-for-playwright
 
 shard=""

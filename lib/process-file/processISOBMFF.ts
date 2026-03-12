@@ -10,6 +10,21 @@ import { executeSpan } from "@/tracing";
 import { storageProvider } from "@/util/storageProvider.server";
 import { isobmffIndexFilePath, isobmffTrackFilePath } from "@/util/filePaths";
 
+const formatNameToMimeType: Record<string, string> = {
+  "mov,mp4,m4a,3gp,3g2,mj2": "video/mp4",
+  mp4: "video/mp4",
+  mov: "video/quicktime",
+  webm: "video/webm",
+  matroska: "video/x-matroska",
+  "matroska,webm": "video/webm",
+  avi: "video/x-msvideo",
+  ogg: "video/ogg",
+};
+
+function deriveMimeType(formatName: string): string | null {
+  return formatNameToMimeType[formatName] ?? null;
+}
+
 export interface UnprocessedFileInfo {
   id: string;
   md5: string;
@@ -48,7 +63,9 @@ export async function processISOBMFF(
       fileInfo: JSON.stringify(unprocessedFile),
     });
 
-    logger.info(`Starting ISOBMIFF processing for file: ${unprocessedFilePath}`);
+    logger.info(
+      `Starting ISOBMIFF processing for file: ${unprocessedFilePath}`,
+    );
     progressTracker.startHeartbeat();
 
     try {
@@ -63,18 +80,22 @@ export async function processISOBMFF(
         const formatStartTime = parseFloat(probe.format.start_time);
         if (!isNaN(formatStartTime) && formatStartTime > 0) {
           startTimeOffsetMs = Math.round(formatStartTime * 1000);
-          logger.trace(`Found format start_time offset: ${startTimeOffsetMs}ms`);
+          logger.trace(
+            `Found format start_time offset: ${startTimeOffsetMs}ms`,
+          );
         }
       }
 
       // Check stream-level start_time for video track
       if (!startTimeOffsetMs) {
-        const videoStream = probe.streams.find(s => s.codec_type === 'video');
+        const videoStream = probe.streams.find((s) => s.codec_type === "video");
         if (videoStream?.start_time) {
           const streamStartTime = parseFloat(String(videoStream.start_time));
           if (!isNaN(streamStartTime) && streamStartTime > 0) {
             startTimeOffsetMs = Math.round(streamStartTime * 1000);
-            logger.trace(`Found stream start_time offset: ${startTimeOffsetMs}ms`);
+            logger.trace(
+              `Found stream start_time offset: ${startTimeOffsetMs}ms`,
+            );
           }
         }
       }
@@ -97,19 +118,24 @@ export async function processISOBMFF(
       progressTracker.writeProgress(0.2); // 20% - initial setup complete
 
       // Process each track separately and generate individual fragment indexes
-      const trackPromises: Promise<{ trackId: number; fragmentIndex: any }>[] = [];
+      const trackPromises: Promise<{ trackId: number; fragmentIndex: any }>[] =
+        [];
       const trackWriteStreams: Record<number, Writable> = {};
       const trackSizes: Record<number, number> = {};
       const progressPerTrack = 0.75 / probe.streams.length; // 75% progress for all tracks
       let currentProgress = 0.2; // Track progress locally
 
       console.log("Processing tracks", probe.streams);
-      for (let streamIndex = 0; streamIndex < probe.streams.length; streamIndex++) {
+      for (
+        let streamIndex = 0;
+        streamIndex < probe.streams.length;
+        streamIndex++
+      ) {
         const stream = probe.streams[streamIndex]!;
         const trackId = streamIndex + 1; // Convert 0-based index to 1-based track ID
 
         // Skip non-media streams
-        if (stream.codec_type !== 'video' && stream.codec_type !== 'audio') {
+        if (stream.codec_type !== "video" && stream.codec_type !== "audio") {
           continue;
         }
 
@@ -136,7 +162,7 @@ export async function processISOBMFF(
             const indexStream = new PassThrough();
 
             // Track bytes written
-            trackStream.on('data', (chunk: Buffer) => {
+            trackStream.on("data", (chunk: Buffer) => {
               trackSizes[trackId] = (trackSizes[trackId] || 0) + chunk.length;
             });
 
@@ -147,7 +173,11 @@ export async function processISOBMFF(
             // Generate fragment index for this track
             // Map the single-track file's stream index 0 to the original multi-track ID
             const trackIdMapping = { 0: trackId };
-            const fragmentIndexPromise = generateFragmentIndex(indexStream, undefined, trackIdMapping);
+            const fragmentIndexPromise = generateFragmentIndex(
+              indexStream,
+              undefined,
+              trackIdMapping,
+            );
 
             // Pipe to storage
             await pipeline(storageStream, trackWriteStreams[trackId]!);
@@ -156,10 +186,15 @@ export async function processISOBMFF(
             const fragmentIndex = await fragmentIndexPromise;
 
             // Update progress
-            currentProgress = Math.min(currentProgress + progressPerTrack, 0.95);
+            currentProgress = Math.min(
+              currentProgress + progressPerTrack,
+              0.95,
+            );
             progressTracker.writeProgress(currentProgress);
 
-            logger.trace(`Track ${trackId} extraction complete, size: ${trackSizes[trackId]} bytes`);
+            logger.trace(
+              `Track ${trackId} extraction complete, size: ${trackSizes[trackId]} bytes`,
+            );
 
             return { trackId, fragmentIndex };
           } catch (error) {
@@ -173,7 +208,6 @@ export async function processISOBMFF(
 
       // Wait for all tracks to complete and collect their fragment indexes
       const trackResults = await Promise.all(trackPromises);
-      console.log("Track results", trackResults);
 
       // Combine all track fragment indexes into a single index
       const fragmentIndex: Record<number, any> = {};
@@ -185,7 +219,7 @@ export async function processISOBMFF(
       // Add timing offset to video tracks in the fragment index
       if (startTimeOffsetMs !== undefined) {
         for (const [_trackId, trackIndex] of Object.entries(fragmentIndex)) {
-          if (trackIndex.type === 'video') {
+          if (trackIndex.type === "video") {
             trackIndex.startTimeOffsetMs = startTimeOffsetMs;
           }
         }
@@ -193,13 +227,20 @@ export async function processISOBMFF(
 
       // If no offset from format/stream, check first video segment for CTS > DTS
       if (startTimeOffsetMs === undefined) {
-        const videoTrack = Object.values(fragmentIndex).find(t => t.type === 'video');
+        const videoTrack = Object.values(fragmentIndex).find(
+          (t) => t.type === "video",
+        );
         if (videoTrack && videoTrack.segments.length > 0) {
           const firstSegment = videoTrack.segments[0]!;
           if (firstSegment.cts > firstSegment.dts) {
-            const ctsOffsetMs = Math.round((firstSegment.cts - firstSegment.dts) / videoTrack.timescale * 1000);
+            const ctsOffsetMs = Math.round(
+              ((firstSegment.cts - firstSegment.dts) / videoTrack.timescale) *
+                1000,
+            );
             (videoTrack as any).startTimeOffsetMs = ctsOffsetMs;
-            logger.trace(`Detected CTS offset from first segment: ${ctsOffsetMs}ms`);
+            logger.trace(
+              `Detected CTS offset from first segment: ${ctsOffsetMs}ms`,
+            );
           }
         }
       }
@@ -214,33 +255,40 @@ export async function processISOBMFF(
       );
 
       // Insert track records into database
-      const trackInserts = Object.entries(fragmentIndex).map(([trackIdStr, trackIndex]) => {
-        const trackId = parseInt(trackIdStr);
-        const stream = probe.streams[trackId - 1]; // Convert back to 0-based
+      const trackInserts = Object.entries(fragmentIndex).map(
+        ([trackIdStr, trackIndex]) => {
+          const trackId = parseInt(trackIdStr);
+          const stream = probe.streams[trackId - 1]; // Convert back to 0-based
 
-        return {
-          file_id: isobmffFile.id,
-          track_id: trackId,
-          type: trackIndex.type,
-          codec_name: trackIndex.codec,
-          byte_size: trackSizes[trackId] || 0,
-          duration_ms: Math.round((trackIndex.duration / trackIndex.timescale) * 1000),
-          complete: true,
-          creator_id: unprocessedFile.creator_id,
-          org_id: unprocessedFile.org_id,
-          api_key_id: unprocessedFile.api_key_id,
-          probe_info: JSON.stringify({
-            ...trackIndex,
-            // Include additional probe info if it's a video stream
-            ...(stream && 'profile' in stream && { profile: stream.profile }),
-            ...(stream && 'level' in stream && { level: stream.level }),
-            ...(stream && 'bit_rate' in stream && { bit_rate: stream.bit_rate }),
-          }),
-        };
-      });
+          return {
+            file_id: isobmffFile.id,
+            track_id: trackId,
+            type: trackIndex.type,
+            codec_name: trackIndex.codec,
+            byte_size: trackSizes[trackId] || 0,
+            duration_ms: Math.round(
+              (trackIndex.duration / trackIndex.timescale) * 1000,
+            ),
+            complete: true,
+            creator_id: unprocessedFile.creator_id,
+            org_id: unprocessedFile.org_id,
+            api_key_id: unprocessedFile.api_key_id,
+            probe_info: JSON.stringify({
+              ...trackIndex,
+              // Include additional probe info if it's a video stream
+              ...(stream && "profile" in stream && { profile: stream.profile }),
+              ...(stream && "level" in stream && { level: stream.level }),
+              ...(stream &&
+                "bit_rate" in stream && { bit_rate: stream.bit_rate }),
+            }),
+          };
+        },
+      );
 
       if (trackInserts.length === 0) {
-        throw new Error(`No valid video or audio tracks found in file: ${unprocessedFilePath}`);
+        throw new Error(
+          `No valid video or audio tracks found in file: ${unprocessedFilePath}`,
+        );
       }
 
       await db
@@ -255,14 +303,53 @@ export async function processISOBMFF(
         .where("id", "=", isobmffFile.id)
         .execute();
 
+      const videoStream = probe.streams.find((s) => s.codec_type === "video");
+      const mimeType = deriveMimeType(probe.format.format_name);
+
+      const fileMetadata = {
+        byte_size: unprocessedFile.byte_size,
+        md5: unprocessedFile.md5,
+        mime_type: mimeType,
+        width: videoStream && "width" in videoStream ? videoStream.width : null,
+        height:
+          videoStream && "height" in videoStream ? videoStream.height : null,
+      };
+
+      await db
+        .insertInto("video2.files")
+        .values({
+          id: isobmffFile.id,
+          org_id: unprocessedFile.org_id,
+          creator_id: unprocessedFile.creator_id,
+          api_key_id: unprocessedFile.api_key_id,
+          filename: unprocessedFile.filename,
+          type: "video",
+          status: "ready",
+          completed_at: new Date(),
+          ...fileMetadata,
+        })
+        .onConflict((oc) =>
+          oc.column("id").doUpdateSet({
+            status: "ready",
+            completed_at: new Date(),
+            ...fileMetadata,
+          }),
+        )
+        .execute();
+
       progressTracker.writeProgress(1); // 100% complete
       progressTracker.stopHeartbeat();
 
-      logger.info(`ISOBMFF processing complete for file: ${unprocessedFilePath}`);
+      logger.info(
+        `ISOBMFF processing complete for file: ${unprocessedFilePath}`,
+      );
       return isobmffFile;
     } catch (error) {
-      logger.error(error, `Error processing ISOBMFF file: ${unprocessedFilePath}`);
-      progressTracker.writeFailure('');
+      logger.error(
+        error,
+        `Error processing ISOBMFF file: ${unprocessedFilePath}`,
+      );
+      progressTracker.writeFailure("");
       progressTracker.stopHeartbeat();
       throw error;
     }

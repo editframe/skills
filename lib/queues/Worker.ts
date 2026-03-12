@@ -1,23 +1,16 @@
-import type { Server } from "node:http";
 import { inspect } from "node:util";
 
 import type ValKey from "iovalkey";
-import superJSON from "superjson";
-import { type WebSocket, WebSocketServer } from "ws";
 
 import { type logger, makeLogger } from "@/logging";
-import {
-  type AbortableLoop,
-  RequestSleep,
-  abortableLoopWithBackoff,
-} from "./AbortableLoop";
+import { RequestSleep, abortableLoopWithBackoff } from "./AbortableLoop";
 import type { MaterializedJob, SerializedJob } from "./Job";
 import { claimJob, completeJob, extendClaim, failJob, retryJob } from "./Job";
 import type { Queue } from "./Queue";
 import { Workflow } from "./Workflow";
 import { publishJobLifecycle } from "./lifecycle/Producer";
 import { errorToErrorInfo } from "./ErrorInfo";
-import { executeSpan, WithSpan } from "@/tracing";
+import { executeSpan } from "@/tracing";
 import { randomUUID } from "node:crypto";
 import { valkey } from "@/valkey/valkey";
 
@@ -26,6 +19,7 @@ interface WorkerArgs<Payload> {
   storage: ValKey;
   execute: (job: MaterializedJob<Payload>) => Promise<void>;
   close?: () => Promise<void>;
+  warmUp?: () => Promise<void>;
 }
 
 export class Worker<Payload = unknown> {
@@ -40,6 +34,7 @@ export class Worker<Payload = unknown> {
   concurrency: number;
   execute: (job: MaterializedJob<Payload>) => Promise<void>;
   close: () => Promise<void>;
+  warmUp: () => Promise<void>;
   logger: typeof logger;
 
   constructor(args: WorkerArgs<Payload>) {
@@ -53,30 +48,41 @@ export class Worker<Payload = unknown> {
     this.concurrency = args.queue.workerConcurrency ?? 1;
     this.execute = args.execute;
     this.close = args.close ?? (() => Promise.resolve());
+    this.warmUp = args.warmUp ?? (() => Promise.resolve());
 
     Worker.byName.set(this.name, this as Worker<unknown>);
   }
 
   async executeJob(job: MaterializedJob<Payload>) {
     await executeSpan("Worker.executeJob", async (span) => {
-      console.log("Executing job", job);
-      span.setAttributes({
+      const jobMeta = {
         queue: job.queue.name,
         orgId: job.orgId,
         workflowId: job.workflowId,
         workflowName: job.workflow.name,
         jobId: job.jobId,
-      });
+      };
+      this.logger.info(jobMeta, "Executing job");
+      span.setAttributes(jobMeta);
+      const startMs = Date.now();
       await this.execute(job);
+      this.logger.info(
+        { ...jobMeta, executeDurationMs: Date.now() - startMs },
+        "Job execute() completed, calling completeJob",
+      );
+      await completeJob(
+        this.storage,
+        this.queue.name,
+        job.orgId,
+        job.workflow.name,
+        job.workflowId,
+        job.jobId,
+      );
+      this.logger.info(
+        { ...jobMeta, totalDurationMs: Date.now() - startMs },
+        "Job fully completed",
+      );
     });
-    await completeJob(
-      this.storage,
-      this.queue.name,
-      job.orgId,
-      job.workflow.name,
-      job.workflowId,
-      job.jobId,
-    );
   }
 
   async publishJobStarted(job: MaterializedJob<Payload>) {
@@ -215,21 +221,79 @@ export class Worker<Payload = unknown> {
 
   workLoop() {
     const loopId = randomUUID();
+    let idlePollCount = 0;
+    let idleStartMs: number | null = null;
+    const IDLE_LOG_INTERVAL_MS = 60_000;
+    let lastIdleLogMs: number | null = null;
+
     return abortableLoopWithBackoff({
       spanName: "worker.workLoop",
       backoffMs: 1000,
-      fn: async () => {
+      fn: async (signal) => {
         await this.writePresence(loopId);
         this.logger.debug("Claiming job");
         const job = await claimJob<Payload>(this.storage, {
           queue: this.queue.name,
         });
         if (!job) {
-          this.logger.debug("No job to claim");
-          // Sleep when there are no jobs to claim, otherwise this creates a very busy loop.
+          if (idleStartMs === null) {
+            idleStartMs = Date.now();
+          }
+          idlePollCount++;
+          const now = Date.now();
+          const idleDurationMs = now - idleStartMs;
+          if (
+            idleDurationMs >= IDLE_LOG_INTERVAL_MS &&
+            (lastIdleLogMs === null ||
+              now - lastIdleLogMs >= IDLE_LOG_INTERVAL_MS)
+          ) {
+            lastIdleLogMs = now;
+            this.logger.info(
+              {
+                queue: this.queue.name,
+                idleDurationMs,
+                pollCount: idlePollCount,
+                event: "workerIdle",
+              },
+              "Worker idle",
+            );
+          }
           return RequestSleep;
         }
-        using _claimExtender = this.extendClaimTimeout(job);
+        // Reset idle tracking when a job is claimed.
+        if (idleStartMs !== null) {
+          this.logger.info(
+            {
+              queue: this.queue.name,
+              idleDurationMs: Date.now() - idleStartMs,
+              pollCount: idlePollCount,
+              event: "workerIdleEnded",
+            },
+            "Worker idle ended, job claimed",
+          );
+          idleStartMs = null;
+          idlePollCount = 0;
+        }
+
+        // Log queue depth at claim time for competition analysis.
+        this.queue
+          .getStats()
+          .then((stats) => {
+            this.logger.info(
+              {
+                queue: this.queue.name,
+                jobId: job.jobId,
+                workflowId: job.workflowId,
+                queueDepthQueued: stats.queued,
+                queueDepthClaimed: stats.claimed,
+                event: "jobClaimed",
+              },
+              "Job claimed",
+            );
+          })
+          .catch(() => {});
+
+        using _claimExtender = this.extendClaimTimeout(job, signal);
         this.logger.debug(job, "Claimed job");
         const workflow = Workflow.fromName(job.workflow);
         if (!workflow) {
@@ -250,7 +314,16 @@ export class Worker<Payload = unknown> {
           await this.publishAttemptCompleted(materializedJob);
           await this.publishJobCompleted(materializedJob);
         } catch (error) {
-          this.logger.error({ error: inspect(error) }, "Error executing job");
+          const jobMeta = {
+            jobId: job.jobId,
+            workflowId: job.workflowId,
+            attempts: job.attempts,
+            willRetry: job.attempts < 3,
+          };
+          this.logger.error(
+            { ...jobMeta, error: inspect(error) },
+            "Error executing job",
+          );
           await this.publishAttemptFailed(materializedJob);
           if (job.attempts < 3) {
             await retryJob(this.storage, job);
@@ -263,10 +336,10 @@ export class Worker<Payload = unknown> {
               job.workflow,
               job.jobId,
             );
-            await this.publishJobFailed(
-              materializedJob,
-              { error: errorToErrorInfo(error), payload: job.payload }
-            );
+            await this.publishJobFailed(materializedJob, {
+              error: errorToErrorInfo(error),
+              payload: job.payload,
+            });
             await this.publishWorkflowFailed(
               job.workflowId,
               job.workflow,
@@ -274,8 +347,8 @@ export class Worker<Payload = unknown> {
               {
                 error: errorToErrorInfo(error),
                 payload: job.payload,
-                workflow: await workflow.getRawWorkflowData(job.workflowId)
-              }
+                workflow: await workflow.getRawWorkflowData(job.workflowId),
+              },
             );
           }
         }
@@ -283,9 +356,17 @@ export class Worker<Payload = unknown> {
     });
   }
 
-  extendClaimTimeout(claim: SerializedJob<Payload>) {
+  extendClaimTimeout(claim: SerializedJob<Payload>, signal?: AbortSignal) {
     const timeoutMs = 5_000;
     const timeout = setInterval(() => {
+      if (signal?.aborted) {
+        clearInterval(timeout);
+        this.logger.info(
+          { jobId: claim.jobId, workflowId: claim.workflowId },
+          "Claim extender stopped: abort signal",
+        );
+        return;
+      }
       extendClaim(
         this.storage,
         this.queue.name,
@@ -295,128 +376,16 @@ export class Worker<Payload = unknown> {
         claim.jobId,
       ).catch((error) => {
         this.logger.error({ error: inspect(error) }, "Error extending claim");
-        console.error(error);
       });
     }, timeoutMs);
     return {
-      [Symbol.dispose]: () => clearInterval(timeout),
-    };
-  }
-}
-
-interface WorkerWebSocketServerArgs<Payload> {
-  server: Server;
-  worker: Worker<Payload>;
-}
-
-export interface WorkerWebSocket extends WebSocket {
-  isAlive?: boolean;
-}
-
-export const TRY_AGAIN_LATER = 1013;
-export const ABNORMAL_TERMINATION = 1006;
-
-export class WorkerWebSocketServer<Payload> {
-  server: Server;
-  wss: WebSocketServer;
-  logger: typeof logger;
-  worker: Worker<Payload>;
-  messageId = 0;
-  connection?: WorkerWebSocket;
-  heartbeatInterval: NodeJS.Timeout | null = null;
-  workLoops: AbortableLoop[] = [];
-
-  constructor(args: WorkerWebSocketServerArgs<Payload>) {
-    this.logger = makeLogger().child({
-      component: "WorkerWebSocketServer",
-    });
-    this.server = args.server;
-    this.worker = args.worker as Worker<Payload>;
-    this.wss = new WebSocketServer({ server: this.server });
-  }
-
-  initializeWebsocketServer() {
-    this.logger.debug("Initializing websocket server");
-    this.wss.on("connection", (ws: WorkerWebSocket) => {
-      this.logger.info("Worker connected!!");
-      this.bindToConnection(ws);
-    });
-
-    this.heartbeatInterval = setInterval(() => {
-      this.wss.clients.forEach((ws: WorkerWebSocket) => {
-        if (ws.isAlive === false) {
-          return ws.terminate();
-        }
-        ws.isAlive = false;
-        ws.ping();
-      });
-    }, 30000);
-
-    this.wss.on("close", () => {
-      if (this.heartbeatInterval) {
-        clearInterval(this.heartbeatInterval);
-      }
-    });
-  }
-
-  bindToConnection(ws: WorkerWebSocket) {
-    if (this.connection) {
-      this.logger.error("Worker already has an active connection");
-      ws.close(TRY_AGAIN_LATER, "Worker already has an active connection");
-      return;
-    }
-    this.connection = ws;
-
-    ws.on("message", async (message) => {
-      try {
-        const rawMessage = superJSON.parse(message.toString()) as any;
-
-        switch (rawMessage.type) {
-          case "shutdown": {
-            this.abort();
-            break;
-          }
-        }
-      } catch (error) {
-        this.logger.error(
-          { error, message: message.toString() },
-          "Failed to parse WebSocket message",
+      [Symbol.dispose]: () => {
+        clearInterval(timeout);
+        this.logger.debug(
+          { jobId: claim.jobId, workflowId: claim.workflowId },
+          "Claim extender disposed",
         );
-      }
-    });
-
-    ws.on("close", () => {
-      this.unbindConnection();
-    });
-
-    ws.isAlive = true;
-    ws.on("pong", () => {
-      ws.isAlive = true;
-    });
-
-    for (let i = 0; i < this.worker.concurrency; i++) {
-      this.workLoops.push(this.worker.workLoop());
-    }
-  }
-
-  unbindConnection() {
-    this.logger.debug("Unbinding connection");
-    this.connection = undefined;
-    this.workLoops.forEach((workLoop) => {
-      workLoop.abort();
-    });
-    this.workLoops = [];
-  }
-
-  @WithSpan()
-  async abort() {
-    this.logger.debug("Aborting worker");
-    await Promise.all(this.workLoops.map((workLoop) => workLoop.abort()));
-    this.logger.debug("Workloops aborted");
-    await this.worker.close();
-    if (this.connection) {
-      this.logger.debug("Closing WebSocket connection");
-      this.connection.close();
-    }
+      },
+    };
   }
 }

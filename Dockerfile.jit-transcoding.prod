@@ -48,7 +48,7 @@ RUN ldconfig
 COPY package.json package-lock.json ./
 
 # Install Node.js dependencies (including cmake-js and node-addon-api)
-RUN npm install
+RUN npm install --ignore-scripts
 
 # Ensure node-addon-api is available for C++ build
 RUN npm list node-addon-api || npm install node-addon-api
@@ -58,7 +58,7 @@ COPY lib/transcode/ lib/transcode/
 
 # Force install node-addon-api completely fresh
 RUN rm -rf node_modules package-lock.json
-RUN npm install
+RUN npm install --ignore-scripts
 RUN npm install node-addon-api@^8.3.1
 
 # Debug: Check what was actually installed

@@ -1,5 +1,7 @@
 import { join } from "node:path";
-import { stat } from "node:fs/promises";
+import { stat, readFile } from "node:fs/promises";
+import { createServer } from "node:http";
+import { AddressInfo } from "node:net";
 
 import { describe, expect, test } from "vitest";
 import { v4 } from "uuid";
@@ -169,5 +171,49 @@ describe("processImageFile", () => {
       height: 66,
       width: 88,
     });
+  });
+});
+
+describe("processImageFile via URL", () => {
+  test("processes WebP image fetched from HTTP URL", async () => {
+    const webpPath = join(__dirname, "test-files/test.webp");
+    const webpBytes = await readFile(webpPath);
+
+    const server = createServer((_req, res) => {
+      res.writeHead(200, { "Content-Type": "image/webp" });
+      res.end(webpBytes);
+    });
+
+    await new Promise<void>((resolve) =>
+      server.listen(0, "127.0.0.1", resolve),
+    );
+    const { port } = server.address() as AddressInfo;
+    const url = `http://127.0.0.1:${port}/test.webp`;
+
+    try {
+      const id = v4();
+      const md5 = v4();
+      await processImageFile(url, {
+        id,
+        md5,
+        org_id: org.id,
+        creator_id: org.primary_user_id,
+        api_key_id: apiKey.id,
+        filename: url,
+        byte_size: webpBytes.length,
+        next_byte: webpBytes.length,
+      });
+
+      await expect(getImageFileById(id)).resolves.toMatchObject({
+        complete: true,
+        mime_type: "image/webp",
+        height: 66,
+        width: 88,
+      });
+    } finally {
+      await new Promise<void>((resolve, reject) =>
+        server.close((err) => (err ? reject(err) : resolve())),
+      );
+    }
   });
 });

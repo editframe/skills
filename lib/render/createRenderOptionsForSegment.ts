@@ -80,10 +80,10 @@ export function createVideoRenderOptionsForSegment(
   const segmentOptions = isInitSegment
     ? createInitSegmentOptions()
     : createMediaSegmentOptions(
-      options.segmentIndex,
-      options.durationMs,
-      options.segmentDurationMs,
-    );
+        options.segmentIndex,
+        options.durationMs,
+        options.segmentDurationMs,
+      );
 
   const shouldPadStart = !segmentOptions.isFirstSegment;
   const shouldPadEnd = !segmentOptions.isLastSegment;
@@ -127,7 +127,7 @@ export function createVideoRenderOptionsForSegment(
         codec: "avc1.640029",
         bitrate: 10000000,
       },
-      noAudio: true,
+      noAudio: false,
       audio: {
         sampleRate: 48000,
         codec: "mp4a.40.2",

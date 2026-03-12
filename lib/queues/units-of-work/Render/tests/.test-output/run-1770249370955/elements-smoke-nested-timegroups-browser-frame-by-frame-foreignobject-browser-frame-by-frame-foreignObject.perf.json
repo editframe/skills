@@ -1,0 +1,16 @@
+{
+  "testName": "elements-smoke-nested-timegroups-browser-frame-by-frame-foreignObject",
+  "renderMode": "browser-frame-by-frame",
+  "canvasMode": "foreignObject",
+  "totalRenderTimeMs": 2442.262830000007,
+  "videoDurationMs": 100,
+  "fps": 30,
+  "numFrames": 3,
+  "avgFrameTimeMs": 813.7238103333317,
+  "timing": {
+    "total": 2442.262830000007,
+    "renderFragment": 2441.171430999995,
+    "writeFile": 1.024650000006659
+  },
+  "timestamp": "2026-02-04T23:57:21.632Z"
+}

@@ -7,7 +7,12 @@ import {
   useMemo,
   useState,
 } from "react";
-import { matchPath, useLocation, useNavigation, useResolvedPath } from "react-router";
+import {
+  matchPath,
+  useLocation,
+  useNavigation,
+  useResolvedPath,
+} from "react-router";
 
 export const canUseDOM = !!(
   typeof window !== "undefined" &&

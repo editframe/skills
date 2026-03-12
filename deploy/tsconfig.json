@@ -15,8 +15,7 @@
   },
   "files": [
     "index.ts",
-    "util/getGitSha.ts",
-    "./resources/queues/BASE_QUEUE_CONFIGS.ts"
+    "util/getGitSha.ts"
   ],
   "include": ["resources/**/*.ts", "util/getGitSha.ts"]
 }

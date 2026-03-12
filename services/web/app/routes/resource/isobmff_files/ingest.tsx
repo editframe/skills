@@ -1,12 +1,12 @@
 import { graphql } from "@/graphql";
 import { requireQueryAs } from "@/graphql.server/userClient";
 import { db } from "@/sql-client.server";
-import { requireSession } from "@/util/requireSession.server";
 import { data, redirect } from "react-router";
 import { z } from "zod";
 import { formFor } from "~/formFor";
 
 import { requireOrgId } from "@/util/requireOrgId";
+import { identityContext } from "~/middleware/context";
 import type { Route } from "./+types/ingest";
 
 const processIsobmffForm = formFor(
@@ -15,8 +15,8 @@ const processIsobmffForm = formFor(
   }),
 );
 
-export const action = async ({ request }: Route.ActionArgs) => {
-  const { session } = await requireSession(request);
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const session = context.get(identityContext);
   const orgId = requireOrgId(request);
 
   const formResult = await processIsobmffForm.parseFormData(request);
@@ -25,7 +25,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 
   await requireQueryAs(
-    session,
+    { uid: session.uid, cid: session.cid ?? null },
     "org-editor",
     graphql(`
       query GetOrg ($id: uuid!) {

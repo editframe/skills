@@ -3,10 +3,10 @@ import { requireQueryAs } from "@/graphql.server/userClient";
 import { progressEventStream } from "@/progress-tracking/progressEventStream";
 
 import type { Route } from "./+types/progress";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
-export const loader = async ({ request, params: { id } }: Route.LoaderArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+export const loader = async ({ params: { id }, context }: Route.LoaderArgs) => {
+  const session = context.get(apiIdentityContext);
   const transcription = await requireQueryAs(
     session,
     "org-reader",

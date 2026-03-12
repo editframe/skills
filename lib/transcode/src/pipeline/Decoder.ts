@@ -5,7 +5,7 @@
 
 export interface DecoderOptions {
   codecId: number;
-  mediaType?: 'video' | 'audio';
+  mediaType?: "video" | "audio";
 
   // Video parameters (optional)
   width?: number;
@@ -23,11 +23,11 @@ export interface DecoderOptions {
 }
 
 export interface Frame {
-  readonly framePtr: number;  // Frame pointer for accessing actual frame data
+  readonly framePtr: number; // Frame pointer for accessing actual frame data
   readonly pts: number;
   readonly dts: number;
   readonly format: number;
-  readonly mediaType: 'video' | 'audio' | 'unknown';
+  readonly mediaType: "video" | "audio" | "unknown";
 
   // Video frame properties
   readonly width?: number;
@@ -60,7 +60,7 @@ export interface Packet {
 export interface Decoder {
   readonly codecId: number;
   readonly codecName: string;
-  readonly mediaType: 'video' | 'audio' | 'unknown';
+  readonly mediaType: "video" | "audio" | "unknown";
   readonly isInitialized: boolean;
 
   /**
@@ -92,27 +92,27 @@ export interface Decoder {
 /**
  * Factory function to create a Decoder instance
  * The returned Decoder can be used with 'using' declaration for automatic cleanup
- * 
+ *
  * @example
  * ```typescript
- * using decoder = await createDecoder({ 
+ * using decoder = await createDecoder({
  *   codecId: 27, // H.264
  *   mediaType: 'video',
  *   width: 1280,
  *   height: 720
  * });
- * 
+ *
  * const frames = await decoder.decode(packet);
  * console.log(`Decoded ${frames.length} frames`);
  * ```
  */
 export async function createDecoder(options: DecoderOptions): Promise<Decoder> {
-  const { createDecoderNative } = await import('../playback.js');
+  const { createDecoderNative } = await import("../playback.js");
 
   // Convert ArrayBufferLike to Uint8Array if provided
-  const extradata = options.extradata ?
-    new Uint8Array(options.extradata) :
-    undefined;
+  const extradata = options.extradata
+    ? new Uint8Array(options.extradata)
+    : undefined;
 
   const nativeDecoder = createDecoderNative({
     codecId: options.codecId,
@@ -122,31 +122,44 @@ export async function createDecoder(options: DecoderOptions): Promise<Decoder> {
     channels: options.channels,
     sampleRate: options.sampleRate,
     timeBase: options.timeBase,
-    extradata
+    extradata,
   });
 
   // Initialize the native decoder
   const success = await nativeDecoder.initialize();
   if (!success) {
     nativeDecoder.dispose();
-    throw new Error(`Failed to initialize Decoder for codec ID ${options.codecId}`);
+    throw new Error(
+      `Failed to initialize Decoder for codec ID ${options.codecId}`,
+    );
   }
 
   return {
-    get codecId() { return nativeDecoder.codecId; },
-    get codecName() { return nativeDecoder.codecName; },
-    get mediaType() { return nativeDecoder.mediaType; },
-    get isInitialized() { return nativeDecoder.isInitialized; },
+    get codecId() {
+      return nativeDecoder.codecId;
+    },
+    get codecName() {
+      return nativeDecoder.codecName;
+    },
+    get mediaType() {
+      return nativeDecoder.mediaType;
+    },
+    get isInitialized() {
+      return nativeDecoder.isInitialized;
+    },
 
     async decode(packet: Packet): Promise<Frame[]> {
       return new Promise<Frame[]>((resolve, reject) => {
-        nativeDecoder.decodeAsync(packet, (error: Error | null, frames: Frame[]) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(frames);
-          }
-        });
+        nativeDecoder.decodeAsync(
+          packet,
+          (error: Error | null, frames: Frame[]) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve(frames);
+            }
+          },
+        );
       });
     },
 
@@ -160,7 +173,7 @@ export async function createDecoder(options: DecoderOptions): Promise<Decoder> {
 
     [Symbol.dispose](): void {
       nativeDecoder.dispose();
-    }
+    },
   };
 }
 
@@ -203,12 +216,12 @@ export async function validateDecoder(options: DecoderOptions): Promise<{
     return {
       valid: true,
       codecName: decoder.codecName,
-      mediaType: decoder.mediaType
+      mediaType: decoder.mediaType,
     };
   } catch (error) {
     return {
       valid: false,
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
     };
   }
-} 
+}

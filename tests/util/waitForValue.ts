@@ -1,6 +1,9 @@
 import { sleep } from "@/util/sleep";
 
-export async function waitFor<T>(selector: () => Promise<T>, timeoutMs = 1_000) {
+export async function waitFor<T>(
+  selector: () => Promise<T>,
+  timeoutMs = 1_000,
+) {
   const time = performance.now();
   let lastError: unknown = null;
   while (performance.now() - time < timeoutMs) {
@@ -14,7 +17,10 @@ export async function waitFor<T>(selector: () => Promise<T>, timeoutMs = 1_000) 
   throw lastError;
 }
 
-export async function waitUntil(condition: () => Promise<boolean> | boolean, timeoutMs = 1_000) {
+export async function waitUntil(
+  condition: () => Promise<boolean> | boolean,
+  timeoutMs = 1_000,
+) {
   let startTime = performance.now();
   while (!(await condition())) {
     if (performance.now() - startTime > timeoutMs) {

@@ -39,7 +39,7 @@ event_triggers:
         columns: '*'
     retry_conf:
       interval_sec: 30
-      num_retries: 0
+      num_retries: 1
       timeout_sec: 60
     webhook: '{{HASURA_ACTION_ORIGIN}}/hdb/deliver_confirmation_email'
     headers:

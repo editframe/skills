@@ -3,9 +3,22 @@ services:
     image: valkey/valkey:8.0-alpine
     env_file:
       - ${PWD}/.env
+    # Port mapping: only exposed in main worktree (via WORKTREE_VALKEY_PORT env var)
     ports:
-      - 6379:6379
+      - "${WORKTREE_VALKEY_PORT:-}:6379"
+    expose:
+      - "6379"
     volumes:
-      - ./services/dev-valkey/valkey.conf:/usr/local/etc/valkey/valkey.conf
+      - ${TELECINE_ROOT_HOST:-${PWD}}/services/dev-valkey/valkey.conf:/usr/local/etc/valkey/valkey.conf
     command: ["valkey-server", "/usr/local/etc/valkey/valkey.conf"]
+    networks:
+      - default
+      - traefik-shared
+    labels:
+      - traefik.enable=false
+
+networks:
+  traefik-shared:
+    name: editframe-shared
+    external: true
 

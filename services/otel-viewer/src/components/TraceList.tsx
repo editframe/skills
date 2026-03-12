@@ -35,12 +35,12 @@ export function TraceList({
   }
 
   return (
-    <div className="trace-list" ref={parentRef} style={{ overflow: 'auto' }}>
+    <div className="trace-list" ref={parentRef} style={{ overflow: "auto" }}>
       <div
         style={{
           height: `${virtualizer.getTotalSize()}px`,
-          width: '100%',
-          position: 'relative',
+          width: "100%",
+          position: "relative",
         }}
       >
         {virtualizer.getVirtualItems().map((virtualItem) => {
@@ -50,16 +50,18 @@ export function TraceList({
           const rootName = rootSpan?.name || "Unknown";
           const serviceName = rootSpan?.serviceName || "unknown";
           const hasErrors = trace.allSpans.some((s) => s.isError);
-          const timestamp = new Date(Number(trace.minTime / 1_000_000n)).toLocaleTimeString();
+          const timestamp = new Date(
+            Number(trace.minTime / 1_000_000n),
+          ).toLocaleTimeString();
 
           return (
             <div
               key={virtualItem.key}
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 0,
                 left: 0,
-                width: '100%',
+                width: "100%",
                 height: `${virtualItem.size}px`,
                 transform: `translateY(${virtualItem.start}px)`,
               }}
@@ -69,7 +71,8 @@ export function TraceList({
               <span className="trace-name">{rootName}</span>
               {hasErrors && <span className="error-badge">ERR</span>}
               <span className="trace-meta">
-                {serviceName} • {timestamp} • {trace.allSpans.length}sp • {formatDuration(Number(trace.duration))}
+                {serviceName} • {timestamp} • {trace.allSpans.length}sp •{" "}
+                {formatDuration(Number(trace.duration))}
               </span>
             </div>
           );

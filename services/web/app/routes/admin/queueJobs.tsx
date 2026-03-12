@@ -1,12 +1,10 @@
 import { Queue } from "@/queues/Queue";
 import { JobStage } from "@/queues/Job";
-import { requireAdminSession } from "@/util/requireAdminSession";
 
 import type { Route } from "./+types/queueJobs";
 import { PaginatedTable } from "~/components/Table";
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  await requireAdminSession(request);
   const { name, stage } = params;
   const queue = Queue.fromName(name);
   if (!queue) {

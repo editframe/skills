@@ -17,12 +17,10 @@ export class DisposableMuxer {
     // biome-ignore format: strict command line format
     this.process = spawn(
       "ffmpeg",
-      [
-        ...FFMPEG_ARGS,
-        ...FFMPEG_ANALYZE_ARGS,
-        ...this.muxerArgs,
-      ],
-      { stdio: ["inherit", "pipe", "pipe"] }
+      [...FFMPEG_ARGS, ...FFMPEG_ANALYZE_ARGS, ...this.muxerArgs],
+      {
+        stdio: ["inherit", "pipe", "pipe"],
+      },
     );
 
     const buffer = new BufferList();
@@ -40,7 +38,9 @@ export class DisposableMuxer {
       if (code === 0 || code === null) {
         this.resolvers.resolve(buffer.slice().buffer as ArrayBuffer);
       } else {
-        this.resolvers.reject(new Error(`Muxer exited with code ${code}. Stderr: ${stderrOutput}`));
+        this.resolvers.reject(
+          new Error(`Muxer exited with code ${code}. Stderr: ${stderrOutput}`),
+        );
       }
     });
   }
@@ -57,7 +57,7 @@ export class DisposableMuxer {
           resolve();
         });
         this.process.kill(9);
-      })
+      }),
     );
   };
 }

@@ -1,0 +1,19 @@
+{
+  "testName": "elements-smoke-ef-image-server",
+  "renderMode": "server",
+  "totalRenderTimeMs": 7054.317437,
+  "videoDurationMs": 100,
+  "fps": 30,
+  "numFrames": 3,
+  "avgFrameTimeMs": 121.8310419999998,
+  "timing": {
+    "total": 7054.317437,
+    "electronRpcCreate": 4768.751085,
+    "bundleHtml": 1757.639679,
+    "getRenderInfo": 157.45970099999977,
+    "createAssetsBundle": 3.6495319999994535,
+    "renderFragment": 365.4931259999994,
+    "writeFile": 1.2857369999983348
+  },
+  "timestamp": "2026-02-04T23:52:57.311Z"
+}

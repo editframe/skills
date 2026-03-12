@@ -3,7 +3,7 @@ import fs from "node:fs";
 import type { Plugin } from "vite";
 
 export const copyLuaScripts = (luaDir: string, distLuaDir: string): Plugin => ({
-  name: 'copy-lua-scripts',
+  name: "copy-lua-scripts",
   writeBundle() {
     if (!fs.existsSync(distLuaDir)) {
       fs.mkdirSync(distLuaDir, { recursive: true });
@@ -11,13 +11,9 @@ export const copyLuaScripts = (luaDir: string, distLuaDir: string): Plugin => ({
 
     const files = fs.readdirSync(luaDir);
     for (const file of files) {
-      if (file.endsWith('.lua')) {
-        fs.copyFileSync(
-          path.join(luaDir, file),
-          path.join(distLuaDir, file)
-        );
+      if (file.endsWith(".lua")) {
+        fs.copyFileSync(path.join(luaDir, file), path.join(distLuaDir, file));
       }
     }
-  }
+  },
 });
-

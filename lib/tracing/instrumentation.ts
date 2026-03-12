@@ -24,33 +24,33 @@ export const initializeInstrumentation = ({
   diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
 
   const exportToGoogleCloud = process.env.GCLOUD_TRACE_EXPORT === "true";
-  const otelEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://tracing:4318";
+  const otelEndpoint =
+    process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://tracing:4318";
 
   const traceExporter = exportToGoogleCloud
     ? new TraceExporter()
     : new OTLPTraceExporter({
-      url: `${otelEndpoint}/v1/traces`,
-    });
+        url: `${otelEndpoint}/v1/traces`,
+      });
 
   const logExporter = exportToGoogleCloud
     ? undefined
     : new OTLPLogExporter({
-      url: `${otelEndpoint}/v1/logs`,
-    });
+        url: `${otelEndpoint}/v1/logs`,
+      });
 
   const sdk = new NodeSDK({
     resource: new Resource({
       [SEMRESATTRS_SERVICE_NAME]: serviceName,
+      "host.name": process.env.HOSTNAME ?? "unknown",
+      "cloud.run.revision": process.env.K_REVISION ?? "unknown",
     }),
 
     metricReader: new PeriodicExportingMetricReader({
       exporter: new ConsoleMetricExporter(),
     }),
 
-    instrumentations: [
-      pgInstrumentation,
-      pinoInstrumentation,
-    ],
+    instrumentations: [pgInstrumentation, pinoInstrumentation],
 
     traceExporter,
     logExporter,

@@ -1,10 +1,23 @@
-import { initializeInstrumentation } from "@/tracing/instrumentation";
-initializeInstrumentation({ serviceName: "worker-render-fragment" });
+import { createServer } from "node:http";
+import { healthCheck } from "@/http/healthCheck";
 
-import { createWorkerServer } from "@/queues/createWorkerServer";
-import { RenderFragmentWorker } from "@/queues/units-of-work/Render/RenderFragment";
+const PORT = process.env.PORT ? Number.parseInt(process.env.PORT) : 3000;
 
-// Workflow MUST be registered
-import "@/queues/units-of-work/Render/Workflow";
+const server = createServer((req, res) => {
+  if (!healthCheck(req, res)) {
+    res.writeHead(404).end();
+  }
+});
 
-createWorkerServer(RenderFragmentWorker);
+console.log(`worker-render-fragment binding to port ${PORT}`);
+server.listen(PORT, () => {
+  console.log(
+    `worker-render-fragment listening on port ${PORT} (health checks ready)`,
+  );
+  import("./boot")
+    .then(({ init }) => init(server))
+    .catch((err) => {
+      console.error("Worker boot failed:", err);
+      process.exit(1);
+    });
+});

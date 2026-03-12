@@ -1,0 +1,16 @@
+{
+  "testName": "audio-metadata-browser-full-video-native",
+  "renderMode": "browser-full-video",
+  "canvasMode": "native",
+  "totalRenderTimeMs": 2477.2343059999985,
+  "videoDurationMs": 1000,
+  "fps": 30,
+  "numFrames": 30,
+  "avgFrameTimeMs": 82.53021843333312,
+  "timing": {
+    "total": 2477.2343059999985,
+    "renderFragment": 2475.9065529999934,
+    "writeFile": 1.2142530000055558
+  },
+  "timestamp": "2026-02-05T09:02:35.836Z"
+}

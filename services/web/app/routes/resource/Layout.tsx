@@ -2,17 +2,56 @@ import { Outlet, redirect } from "react-router";
 import { UserNavigation } from "~/components/Navigation";
 import { requireQueryAs } from "@/graphql.server/userClient";
 import { graphql } from "@/graphql";
-import { commitSession, getSession, type SessionInfo } from "@/util/session";
+import { commitSession, type SessionInfo } from "@/util/session";
 import { SpanStatusCode } from "@opentelemetry/api";
 import { trace } from "@opentelemetry/api";
 import { Header } from "~/components/Header";
+import clsx from "clsx";
+import { useState } from "react";
+import { logger } from "@/logging";
+import { db } from "@/sql-client.server";
 
 import type { Route } from "./+types/Layout";
-import { requireSession } from "@/util/requireSession.server";
+import { authMiddleware } from "~/middleware/auth";
+import { identityContext, sessionCookieContext } from "~/middleware/context";
+
+export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
 
 const getUserOrgs = (session: SessionInfo) => {
+  const activeSpan = trace.getActiveSpan();
+
+  if (!session.uid || typeof session.uid !== "string") {
+    logger.error("getUserOrgs called with invalid session", {
+      sessionType: session.type,
+      uid: session.uid,
+      uidType: typeof session.uid,
+      sessionKeys: Object.keys(session),
+    });
+    activeSpan?.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: `Invalid session: uid is ${session.uid} (${typeof session.uid})`,
+    });
+    throw new Error(
+      `Cannot query organizations: session has invalid uid (${session.uid})`,
+    );
+  }
+
+  const sessionInfo = { uid: session.uid, cid: session.cid ?? null };
+
+  logger.info("getUserOrgs called", {
+    sessionType: session.type,
+    uid: sessionInfo.uid,
+    cid: sessionInfo.cid,
+  });
+
+  activeSpan?.setAttributes({
+    "session.type": session.type,
+    "session.uid": sessionInfo.uid,
+    "session.cid": sessionInfo.cid ?? "null",
+  });
+
   return requireQueryAs(
-    session,
+    sessionInfo,
     "org-reader",
     graphql(`
         query OrgPicker {
@@ -35,14 +74,36 @@ const getUserOrgs = (session: SessionInfo) => {
 const maybeRedirectToOrg = async (
   orgs: { id: string; display_name: string }[],
   request: Request,
+  sessionCookie: Awaited<
+    ReturnType<typeof import("@/util/session").getSession>
+  >,
 ) => {
   const activeSpan = trace.getActiveSpan();
 
   if (orgs.length === 0) {
+    const url = new URL(request.url);
+    const searchParams = url.searchParams;
+    const urlOrgId = searchParams.get("org");
+    const sessionOrgId = sessionCookie.get("oid");
+
+    logger.error("No organizations found in account", {
+      url: request.url,
+      urlOrgId,
+      sessionOrgId,
+      sessionData: sessionCookie.data,
+      requestHeaders: Object.fromEntries(request.headers.entries()),
+    });
+
     activeSpan?.setStatus({
       code: SpanStatusCode.ERROR,
       message: "No organizations found in account",
     });
+    activeSpan?.setAttributes({
+      "error.url": request.url,
+      "error.urlOrgId": urlOrgId ?? "null",
+      "error.sessionOrgId": sessionOrgId ?? "null",
+    });
+
     throw new Error(
       "No organizations found in account. Please contact support.",
     );
@@ -51,14 +112,13 @@ const maybeRedirectToOrg = async (
   const url = new URL(request.url);
   const searchParams = url.searchParams;
   const urlOrgId = searchParams.get("org");
-  const readableSession = await getSession(request.headers.get("cookie"));
-  const sessionOrgId = readableSession.get("oid");
+  const sessionOrgId = sessionCookie.get("oid");
 
   // If URL has org but session doesn't, set session
   if (urlOrgId && !sessionOrgId) {
     const org = orgs.find((o) => o.id === urlOrgId);
     if (org) {
-      readableSession.set("oid", urlOrgId);
+      sessionCookie.set("oid", urlOrgId);
       activeSpan?.setAttributes({
         "organization.redirected": true,
         "organization.id": urlOrgId,
@@ -66,7 +126,7 @@ const maybeRedirectToOrg = async (
       });
       throw redirect(url.toString(), {
         headers: {
-          "Set-Cookie": await commitSession(readableSession),
+          "Set-Cookie": await commitSession(sessionCookie),
         },
       });
     }
@@ -83,12 +143,12 @@ const maybeRedirectToOrg = async (
       "organization.name": selectedOrg.display_name,
     });
 
-    readableSession.set("oid", selectedOrgId);
+    sessionCookie.set("oid", selectedOrgId);
     url.searchParams.set("org", selectedOrgId);
 
     throw redirect(url.toString(), {
       headers: {
-        "Set-Cookie": await commitSession(readableSession),
+        "Set-Cookie": await commitSession(sessionCookie),
       },
     });
   }
@@ -104,10 +164,38 @@ const maybeRedirectToOrg = async (
 
   activeSpan?.addEvent("no org redirect needed");
 };
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  const { session } = await requireSession(request);
+export const loader = async ({ request, context }: Route.LoaderArgs) => {
+  const activeSpan = trace.getActiveSpan();
+  const session = context.get(identityContext);
+  const sessionCookie = context.get(sessionCookieContext);
+
+  logger.info("ResourceLayout loader", {
+    sessionType: session.type,
+    uid: session.uid,
+    cid: session.cid,
+    url: request.url,
+  });
+
+  activeSpan?.setAttributes({
+    "loader.session.type": session.type,
+    "loader.session.uid": session.uid,
+    "loader.url": request.url,
+  });
+
   const orgs = await getUserOrgs(session);
-  await maybeRedirectToOrg(orgs, request);
+
+  logger.info("getUserOrgs result", {
+    orgCount: orgs.length,
+    orgIds: orgs.map((o) => o.id),
+    uid: session.uid,
+  });
+
+  activeSpan?.setAttributes({
+    "orgs.count": orgs.length,
+    "orgs.ids": orgs.map((o) => o.id).join(","),
+  });
+
+  await maybeRedirectToOrg(orgs, request, sessionCookie);
   return {
     orgs,
     email: session.type === "email_passwords" ? session.email : undefined,
@@ -115,18 +203,32 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 };
 
 export default function ResourceLayout({ loaderData }: Route.ComponentProps) {
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+
   return (
-    <div className="grid h-screen w-full grid-rows-[auto_1fr] grid-cols-[auto_1fr]">
+    <div
+      className={clsx(
+        "grid h-screen w-full grid-rows-[auto_0_1fr] lg:grid-rows-[auto_1fr] grid-cols-1 lg:grid-cols-[auto_1fr] transition-colors",
+        "bg-white dark:bg-slate-900",
+      )}
+    >
       <Header
-        className="col-span-2"
+        className="col-span-1 lg:col-span-2"
         orgs={loaderData.orgs}
         email={loaderData.email}
+        onMobileNavToggle={() => setIsMobileNavOpen(!isMobileNavOpen)}
       />
-      <div className="h-full overflow-y-auto">
-        <UserNavigation />
+      {/* Navigation - always rendered, handles its own mobile visibility */}
+      <div className="lg:h-full lg:overflow-y-auto">
+        <UserNavigation
+          isMobileOpen={isMobileNavOpen}
+          setIsMobileOpen={setIsMobileNavOpen}
+        />
       </div>
-      <div className="pl-2 pb-4 h-full overflow-y-auto">
-        <Outlet />
+      <div className="flex flex-col h-full min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto px-2 sm:px-4 lg:pl-2 pb-4">
+          <Outlet />
+        </div>
       </div>
     </div>
   );

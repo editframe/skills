@@ -2,15 +2,32 @@ services:
   graphql-engine:
     image: hasura/graphql-engine:v2.36.0
     volumes:
-      - ${PWD}/services/graphql-engine/metadata:/hasura-metadata
-      - ${PWD}/services/graphql-engine/migrations:/hasura-migrations
-    ports:
-      - "8080:8080"
+      - ${TELECINE_ROOT_HOST:-${PWD}}/services/graphql-engine/metadata:/hasura-metadata
+      - ${TELECINE_ROOT_HOST:-${PWD}}/services/graphql-engine/migrations:/hasura-migrations
+    # ports:
+      # - "8080:8080"
     env_file:
       - ${PWD}/.env
+    environment:
+      # Override database URLs to use shared PostgreSQL with worktree-specific database
+      HASURA_GRAPHQL_DATABASE_URL: "postgres://postgres:postgrespassword@editframe-postgres:5432/${WORKTREE_DATABASE:-telecine-main}"
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: "postgres://postgres:postgrespassword@editframe-postgres:5432/${WORKTREE_DATABASE:-telecine-main}"
+      # Use Docker service name for webhooks - web service is accessible directly via Docker DNS
+      # This avoids Traefik routing issues when Hasura calls webhooks
+      HASURA_ACTION_ORIGIN: "http://web:3000"
     depends_on:
       data-connector-agent:
         condition: service_healthy
+    networks:
+      - default
+      - traefik-shared
+    labels:
+      traefik.enable: true
+      traefik.http.routers.graphql-engine-${WORKTREE_ID:-main}.rule: "(Host(`${WORKTREE_DOMAIN:-localhost}`) || Host(`host.docker.internal`)) && PathPrefix(`/v1/graphql`)"
+      traefik.http.routers.graphql-engine-${WORKTREE_ID:-main}.entrypoints: web
+      traefik.http.routers.graphql-engine-${WORKTREE_ID:-main}.service: graphql-engine-${WORKTREE_ID:-main}
+      traefik.http.routers.graphql-engine-${WORKTREE_ID:-main}.priority: 1000
+      traefik.http.services.graphql-engine-${WORKTREE_ID:-main}.loadbalancer.server.port: 8080
   # test-graphql-engine:
   #   image: hasura/graphql-engine:v2.36.0.cli-migrations-v3
   #   volumes:
@@ -25,8 +42,8 @@ services:
   #       condition: service_healthy
   data-connector-agent:
     image: hasura/graphql-data-connector:v2.36.0
-    ports:
-      - 8081:8081
+    # ports:
+      # - 8081:8081
     environment:
       QUARKUS_LOG_LEVEL: ERROR # FATAL, ERROR, WARN, INFO, DEBUG, TRACE
       ## https://quarkus.io/guides/opentelemetry#configuration-reference
@@ -38,3 +55,8 @@ services:
       timeout: 10s
       retries: 5
       start_period: 5s
+
+networks:
+  traefik-shared:
+    name: editframe-shared
+    external: true

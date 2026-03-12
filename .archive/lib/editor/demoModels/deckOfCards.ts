@@ -103,7 +103,7 @@ const deckOfCards = async () => {
       `${location.origin}/cards/card-king-clubs.json`,
       {
         title: "King of Clubs Captions",
-      }
+      },
     ),
     CaptionLayer.createFromURL(`${location.origin}/cards/card-joker.json`, {
       title: "Joker Captions",
@@ -112,7 +112,7 @@ const deckOfCards = async () => {
       `${location.origin}/cards/card-queen-spades.json`,
       {
         title: "Queen of Spades Captions",
-      }
+      },
     ),
   ]);
 
@@ -182,7 +182,7 @@ const deckOfCards = async () => {
         timeMode: TimeMode.Fill,
         text: card.title,
       }),
-      card.imageLayer
+      card.imageLayer,
     );
   }
 

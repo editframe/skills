@@ -6,7 +6,7 @@ const useWaveSurfer = (
   containerRef: RefObject<HTMLDivElement>,
   // We extract the url from the options because resetting it causes the WaveSurfer
   // instance to reload, which causes a little flicker in the UI.
-  { url, ...options }: UseWaveSurferOptions
+  { url, ...options }: UseWaveSurferOptions,
 ): WaveSurfer | null => {
   const [waveSurfer, setWaveSurfer] = useState<WaveSurfer | null>(null);
 

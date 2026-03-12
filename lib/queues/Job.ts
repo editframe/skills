@@ -136,7 +136,7 @@ export const claimJob = async <Payload>(
 ) => {
   return await executeSpan("Job.claimJob", async (span) => {
     const claim = await storage.claimJob(queue, Date.now().toString());
-    span.setAttribute("job", claim)
+    span.setAttribute("job", claim);
     if (!claim) {
       return null;
     }
@@ -178,7 +178,17 @@ export const retryJob = async (
       workflowId: job.workflowId,
       workflowName: job.workflow,
       jobId: job.jobId,
+      attempts: job.attempts,
     });
+    logger.info(
+      {
+        queue: job.queue,
+        jobId: job.jobId,
+        workflowId: job.workflowId,
+        attempts: job.attempts,
+      },
+      "Retrying job from claimed stage",
+    );
     job.attempts++;
     await storage
       .multi()
@@ -191,7 +201,7 @@ export const retryJob = async (
         job.workflowId,
         job.workflow,
         job.jobId,
-        "failed",
+        "claimed",
       )
       .enqueueJob(
         job.queue,
@@ -281,7 +291,16 @@ export const stallJob = async (
   storage: ValKey,
   job: SerializedJob<unknown>,
 ) => {
-  logger.info("Stalling job", job.queue, job.orgId, job.workflowId, job.workflow, job.jobId);
+  logger.info(
+    {
+      queue: job.queue,
+      orgId: job.orgId,
+      workflowId: job.workflowId,
+      workflowName: job.workflow,
+      jobId: job.jobId,
+    },
+    "Stalling job",
+  );
   return await executeSpan("Job.stallJob", async (span) => {
     span.setAttributes({
       queue: job.queue,
@@ -305,7 +324,7 @@ export const getStalledJobs = async <Payload>(
   batchSize = 20,
 ) => {
   // Calculate cutoff time (10 seconds ago)
-  const cutoffTime = Date.now() - (10 * 1000);
+  const cutoffTime = Date.now() - 10 * 1000;
 
   const jobs = await storage.getStalledJobs(
     `queues:${queue}:claimed`,
@@ -323,7 +342,10 @@ export const completeJob = async (
   workflowId: string,
   jobId: string,
 ) => {
-  logger.info("Completing job", queue, orgId, workflowName, workflowId, jobId);
+  logger.info(
+    { queue, orgId, workflowName, workflowId, jobId },
+    "Completing job",
+  );
   return await executeSpan("Job.completeJob", async (span) => {
     span.setAttributes({
       queue,

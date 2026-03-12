@@ -1,20 +1,19 @@
-import { type ActionFunctionArgs, redirect } from "react-router";
-import { destroySession, getSession } from "@/util/session";
+import { redirect } from "react-router";
+import { destroySession, createLogoutHeaders } from "@/util/session";
+import { sessionCookieContext } from "~/middleware/context";
 
-export async function action({ request }: ActionFunctionArgs) {
-  const session = await getSession(request.headers.get("Cookie") ?? "");
+import type { Route } from "./+types/logout";
+
+export async function action({ context }: Route.ActionArgs) {
+  const session = context.get(sessionCookieContext);
   return redirect("/auth/login", {
-    headers: {
-      "Set-Cookie": await destroySession(session),
-    },
+    headers: await createLogoutHeaders(await destroySession(session)),
   });
 }
-export async function loader({ request }: ActionFunctionArgs) {
-  const session = await getSession(request.headers.get("Cookie") ?? "");
+export async function loader({ context }: Route.LoaderArgs) {
+  const session = context.get(sessionCookieContext);
   return redirect("/auth/login", {
-    headers: {
-      "Set-Cookie": await destroySession(session),
-    },
+    headers: await createLogoutHeaders(await destroySession(session)),
   });
 }
 export default function Logout() {

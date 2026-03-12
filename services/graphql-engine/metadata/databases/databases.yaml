@@ -83,7 +83,8 @@
         join identity.email_passwords ep on u.id=ep.user_id
         left join identity.email_passwords invitee_ep on invitee_ep.email_address=i.email_address
         left join identity.users invitee on invitee.id=invitee_ep.user_id
-        where i.invite_token={{invite_token}};
+        where i.invite_token={{invite_token}}
+        and i.created_at >= now() - interval '30 days';
       returns: invite_for_view
       root_field_name: invites_for_display
   tables: "!include ef-telecine/tables/tables.yaml"

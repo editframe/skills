@@ -1,5 +1,5 @@
 import { initializeInstrumentation } from "@/tracing/instrumentation";
-initializeInstrumentation({ serviceName: "worker-process-html-finalizer" });
+initializeInstrumentation({ serviceName: "worker-render-finalizer" });
 
 import { createWorkerServer } from "@/queues/createWorkerServer";
 import { RenderFinalizerWorker } from "@/queues/units-of-work/Render/Finalizer";

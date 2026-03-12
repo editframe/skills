@@ -5,13 +5,13 @@ import { storageProvider } from "@/util/storageProvider.server";
 import { readIntoBuffer } from "@/util/readIntoBuffer";
 
 import type { Route } from "./+types/fragment";
-import { requireCookieOrTokenSession } from "@/util/requireSession.server";
+import { apiIdentityContext } from "~/middleware/context";
 
 export const loader = async ({
-  request,
   params: { id, number },
+  context,
 }: Route.LoaderArgs) => {
-  const session = await requireCookieOrTokenSession(request);
+  const session = context.get(apiIdentityContext);
   const transcription = await requireQueryAs(
     session,
     "org-reader",

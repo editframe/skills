@@ -1,0 +1,18 @@
+{
+  "testName": "elements-smoke-ef-audio-server",
+  "renderMode": "server",
+  "totalRenderTimeMs": 2637.5775639999993,
+  "videoDurationMs": 100,
+  "fps": 30,
+  "numFrames": 3,
+  "avgFrameTimeMs": 234.3547823333332,
+  "timing": {
+    "total": 2637.5775639999993,
+    "bundleHtml": 1735.947454000001,
+    "getRenderInfo": 191.26118599999973,
+    "createAssetsBundle": 2.862145999999484,
+    "renderFragment": 703.0643469999995,
+    "writeFile": 4.406930000001012
+  },
+  "timestamp": "2026-02-05T10:46:50.819Z"
+}

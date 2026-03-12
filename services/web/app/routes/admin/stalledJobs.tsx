@@ -1,7 +1,6 @@
 import { useFetcher } from "react-router";
 
 import { Queue } from "@/queues/Queue";
-import { requireAdminSession } from "@/util/requireAdminSession";
 import { colorHash } from "@/util/colorHash";
 import { Button } from "~/components/Button";
 import { PaginatedTable } from "~/components/Table";
@@ -9,7 +8,6 @@ import { PaginatedTable } from "~/components/Table";
 import type { Route } from "./+types/stalledJobs";
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  await requireAdminSession(request);
   const { name } = params;
   const queue = Queue.fromName(name);
   if (!queue) {
@@ -44,7 +42,10 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
 const ReleaseButton = ({
   id,
   queueName,
-}: { id: string; queueName: string }) => {
+}: {
+  id: string;
+  queueName: string;
+}) => {
   const fetcher = useFetcher<{ success: boolean }>({
     key: `release-job-${id}`,
   });
@@ -76,7 +77,13 @@ const ReleaseButton = ({
   );
 };
 
-const ReleaseAllButton = ({ queueName }: { queueName: string }) => {
+const ReleaseAllButton = ({
+  queueName,
+  count,
+}: {
+  queueName: string;
+  count: number;
+}) => {
   const fetcher = useFetcher<{ success: boolean }>({
     key: `release-all-stalled-jobs-${queueName}`,
   });
@@ -87,8 +94,8 @@ const ReleaseAllButton = ({ queueName }: { queueName: string }) => {
       mode="action"
       confirmation={{
         title: "Release All Stalled Jobs",
-        description: "Are you sure you want to release all jobs?",
-        confirmText: "Release",
+        description: `Are you sure you want to release ${count} stalled job${count !== 1 ? "s" : ""}? They will be returned to the queue.`,
+        confirmText: "Release All",
         cancelText: "Cancel",
       }}
       onConfirm={() => {
@@ -103,12 +110,18 @@ const ReleaseAllButton = ({ queueName }: { queueName: string }) => {
       disabled={isLoading}
       loading={isLoading}
     >
-      Release All Stalled
+      Release All Stalled ({count})
     </Button>
   );
 };
 
-const DeleteAllButton = ({ queueName }: { queueName: string }) => {
+const DeleteAllButton = ({
+  queueName,
+  count,
+}: {
+  queueName: string;
+  count: number;
+}) => {
   const fetcher = useFetcher<{ success: boolean }>({
     key: `delete-all-stalled-jobs-${queueName}`,
   });
@@ -119,8 +132,8 @@ const DeleteAllButton = ({ queueName }: { queueName: string }) => {
       mode="destructive"
       confirmation={{
         title: "Delete All Stalled Jobs",
-        description: "Are you sure you want to delete all stalled jobs?",
-        confirmText: "Delete",
+        description: `Are you sure you want to delete ${count} stalled job${count !== 1 ? "s" : ""}? This action cannot be undone.`,
+        confirmText: "Delete All",
         cancelText: "Cancel",
       }}
       onConfirm={() => {
@@ -135,7 +148,7 @@ const DeleteAllButton = ({ queueName }: { queueName: string }) => {
       disabled={isLoading}
       loading={isLoading}
     >
-      Delete All
+      Delete All Stalled ({count})
     </Button>
   );
 };
@@ -146,12 +159,12 @@ export default function QueueComponent({
 }: Route.ComponentProps) {
   return (
     <>
-      <ReleaseAllButton queueName={queueName} />
-      <DeleteAllButton queueName={queueName} />
+      <ReleaseAllButton queueName={queueName} count={stats.stalled} />
+      <DeleteAllButton queueName={queueName} count={stats.stalled} />
       <PaginatedTable
         rows={jobs}
         rowKey="id"
-        count={stats.claimed}
+        count={stats.stalled}
         emptyResultMessage="No jobs found"
         columns={[
           {

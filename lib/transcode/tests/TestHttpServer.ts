@@ -3,12 +3,12 @@
  * Serves files from test-assets with proper range support
  */
 
-import type { Server } from 'node:http';
-import path from 'node:path';
-import fs from 'node:fs';
+import type { Server } from "node:http";
+import path from "node:path";
+import fs from "node:fs";
 
-import express from 'express';
-import { beforeAll, afterAll } from 'vitest';
+import express from "express";
+import { beforeAll, afterAll } from "vitest";
 
 // Usage:
 // import { useTestHttpServer } from './TestHttpServer';
@@ -36,7 +36,7 @@ export const useTestHttpServer = () => {
   });
 
   return server;
-}
+};
 
 export class TestHttpServer {
   private server: Server | null = null;
@@ -44,18 +44,18 @@ export class TestHttpServer {
 
   async start(): Promise<number> {
     if (this.server) {
-      throw new Error('Server is already running');
+      throw new Error("Server is already running");
     }
 
     const app = express();
 
-    app.get('/test-files/:filename', (req: any, res: any) => {
+    app.get("/test-files/:filename", (req: any, res: any) => {
       const filename = req.params.filename;
 
       // Try multiple locations for test files
       const possiblePaths = [
-        path.join(process.cwd(), 'test-assets', 'transcode', filename),
-        path.join(process.cwd(), 'public', filename)
+        path.join(process.cwd(), "test-assets", "transcode", filename),
+        path.join(process.cwd(), "public", filename),
       ];
 
       let filePath: string | null = null;
@@ -66,9 +66,8 @@ export class TestHttpServer {
         }
       }
 
-
       if (!filePath) {
-        return res.status(404).send('File not found');
+        return res.status(404).send("File not found");
       }
 
       const stat = fs.statSync(filePath);
@@ -79,22 +78,22 @@ export class TestHttpServer {
         const parts = range.replace(/bytes=/, "").split("-");
         const start = Number.parseInt(parts[0], 10);
         const end = parts[1] ? Number.parseInt(parts[1], 10) : fileSize - 1;
-        const chunksize = (end - start) + 1;
+        const chunksize = end - start + 1;
 
         res.status(206).header({
-          'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-          'Accept-Ranges': 'bytes',
-          'Content-Length': chunksize,
-          'Content-Type': 'video/mp4',
+          "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+          "Accept-Ranges": "bytes",
+          "Content-Length": chunksize,
+          "Content-Type": "video/mp4",
         });
 
         const stream = fs.createReadStream(filePath, { start, end });
         stream.pipe(res);
       } else {
         res.header({
-          'Content-Length': fileSize,
-          'Content-Type': 'video/mp4',
-          'Accept-Ranges': 'bytes',
+          "Content-Length": fileSize,
+          "Content-Type": "video/mp4",
+          "Accept-Ranges": "bytes",
         });
         fs.createReadStream(filePath).pipe(res);
       }
@@ -132,7 +131,7 @@ export class TestHttpServer {
 
   getBaseUrl(): string {
     if (!this.server) {
-      throw new Error('Server is not running');
+      throw new Error("Server is not running");
     }
     return `http://localhost:${this.port}`;
   }
@@ -147,4 +146,4 @@ export class TestHttpServer {
 }
 
 // Export a shared instance for convenience
-export const testHttpServer = new TestHttpServer(); 
+export const testHttpServer = new TestHttpServer();

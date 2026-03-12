@@ -1,49 +1,41 @@
+import { createServer } from "node:http";
 import { logger } from "@/logging";
-import { createEagerBootServer } from "@/http/createEagerBootServer";
-import { WorkerWebSocketServer, type Worker } from "./Worker";
+import { healthCheck } from "@/http/healthCheck";
+import { createDirectWorkerServer } from "./createDirectWorkerServer";
+import { createWebSocketWorkerServer } from "./createWebSocketWorkerServer";
+import type { Worker } from "./Worker";
 
+/**
+ * Creates the appropriate worker server based on WORKER_MODE env var.
+ *
+ * - "websocket": WebSocket server that waits for scheduler connections
+ *   to start/stop work loops. Used in production with the Go scheduler.
+ * - "direct" (default): Starts work loops immediately on boot.
+ *   Used in local development where there's no scheduler.
+ */
 export const createWorkerServer = <Payload>(
   worker: Worker<Payload>,
   PORT = process.env.PORT ? Number.parseInt(process.env.PORT) : 3000,
 ) => {
-  let workerWebSocketServer: WorkerWebSocketServer<Payload> | null = null;
+  const mode = process.env.WORKER_MODE || "direct";
 
-  // IMPLEMENTATION GUIDELINES: Use eager boot server as foundation
-  // This provides immediate health check response and defers WebSocket initialization
-  const eagerServer = createEagerBootServer({
-    port: PORT,
-    serviceName: "worker",
-    createRequestHandler: async () => {
-      // Initialize WebSocket server after HTTP server is ready
-      logger.info("Initializing worker WebSocket server...");
-      workerWebSocketServer = new WorkerWebSocketServer<Payload>({
-        server: eagerServer.server,
-        worker,
-      });
-      workerWebSocketServer.initializeWebsocketServer();
-      logger.info("Worker WebSocket server initialized");
+  if (mode === "websocket") {
+    logger.info({ queue: worker.name, mode }, "Starting WebSocket worker server");
 
-      // Return a simple 404 handler for non-WebSocket requests
-      // (WebSocket server handles its own upgrade events)
-      return (_req, res) => {
-        res.statusCode = 404;
-        res.end();
-      };
-    },
-    onClose: async () => {
-      // Clean up WebSocket server during shutdown
-      if (workerWebSocketServer) {
-        logger.info("Cleaning up worker WebSocket server...");
-        await workerWebSocketServer.abort();
+    const server = createServer((req, res) => {
+      if (!healthCheck(req, res)) {
+        res.writeHead(404).end();
       }
-    }
-  });
+    });
 
-  return {
-    worker,
-    server: eagerServer.server,
-    waitForServer: eagerServer.waitForServer,
-    waitForInitialization: eagerServer.waitForInitialization,
-    close: eagerServer.close,
-  };
+    console.log(`worker:${worker.name} binding to port ${PORT}`);
+    server.listen(PORT, () => {
+      console.log(`worker:${worker.name} listening on port ${PORT} (health checks ready)`);
+    });
+
+    return createWebSocketWorkerServer(worker, server);
+  }
+
+  logger.info({ queue: worker.name, mode }, "Starting direct worker server");
+  return createDirectWorkerServer(worker, PORT);
 };

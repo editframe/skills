@@ -2,7 +2,7 @@ import { progressiveQuery } from "@/graphql.client";
 import { graphql } from "@/graphql";
 import type { ResourceView } from ".";
 import { Button } from "~/components/Button";
-import { KeyIcon } from "@heroicons/react/24/outline";
+import { Key } from "@phosphor-icons/react";
 import { Link } from "react-router";
 import { CreatedAt, RelatedOrg, RelatedUser } from "../blocks";
 import { ExpiresIn, Name, WebhookURL } from "../blocks/api-keys";
@@ -29,6 +29,15 @@ const IndexQuery = progressiveQuery(
         org {
           id
           display_name
+        }
+      }
+    }
+  `),
+  graphql(`
+    query APIKeysCount($limit: Int!, $offset: Int!) {
+      page_info: identity_api_keys_aggregate {
+        aggregate {
+          count
         }
       }
     }
@@ -61,7 +70,7 @@ const TableHeader = () => {
   return (
     <div className="flex justify-start py-2">
       <Link to="/resource/api_keys/new">
-        <Button mode="creative" icon={KeyIcon}>
+        <Button mode="creative" icon={Key}>
           Create API key
         </Button>
       </Link>
@@ -84,6 +93,13 @@ export const ApiKeys: ResourceView<typeof IndexQuery, typeof detailQuery> = {
   },
   detail: {
     query: detailQuery,
-    fields: [],
+    fields: [
+      { name: "Name", content: Name },
+      { name: "Organization", content: RelatedOrg },
+      { name: "User", content: RelatedUser },
+      { name: "Webhook URL", content: WebhookURL },
+      { name: "Created At", content: CreatedAt },
+      { name: "Expires In", content: ExpiresIn },
+    ],
   },
 };

@@ -4,9 +4,10 @@ import z from "zod";
 import { redirect } from "react-router";
 import { graphql } from "@/graphql";
 import * as serverGQL from "@/graphql.server";
-import { requireSession } from "@/util/requireSession.server";
 import { Button } from "~/components/Button";
 import { logger } from "@/logging";
+import { authMiddleware } from "~/middleware/auth";
+import { identityContext } from "~/middleware/context";
 
 import type { Route } from "./+types/index";
 
@@ -18,8 +19,10 @@ const schema = z.object({
 });
 const onboarding = formFor(schema);
 
-export const action = async ({ request }: Route.ActionArgs) => {
-  const { session } = await requireSession(request);
+export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
+
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const session = context.get(identityContext);
   const formResult = await onboarding.parseFormData(request);
   if (!formResult.success) {
     return data(formResult.errors, { status: 400 });
@@ -84,8 +87,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
   return redirect("/auth/onboarding/next");
 };
-export const loader = async function loader({ request }: Route.LoaderArgs) {
-  await requireSession(request);
+export const loader = async function loader() {
   return null;
 };
 

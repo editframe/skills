@@ -1,0 +1,16 @@
+{
+  "testName": "audio-discontinuity-browser-full-video-foreignObject",
+  "renderMode": "browser-full-video",
+  "canvasMode": "foreignObject",
+  "totalRenderTimeMs": 2418.7088349999976,
+  "videoDurationMs": 2000,
+  "fps": 30,
+  "numFrames": 60,
+  "avgFrameTimeMs": 40.27352976666661,
+  "timing": {
+    "total": 2418.7088349999976,
+    "renderFragment": 2416.411785999997,
+    "writeFile": 1.8889629999976023
+  },
+  "timestamp": "2026-02-05T09:08:36.255Z"
+}

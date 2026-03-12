@@ -1,14 +1,10 @@
-services:
-  postgres:
-    image: postgres:16.1-alpine
-    volumes:
-      - ${PWD}/services/dev-postgres/create-databases.sh:/docker-entrypoint-initdb.d/create-databases.sh
-      - /var/lib/postgresql/data
-    env_file:
-      - ${PWD}/.env
-    ports:
-      - 6432:5432
-    # These configurtion options are for development only, and should not be used in production.
-    # They trade off durability for performance, and WILL LOSE/CORRUPT DATA in the event of a crash.
-    # prettier-ignore
-    command: [ "postgres", "-c", "fsync=off", "-c", "full_page_writes=off", "-c", "synchronous_commit=off", "-c", "temp_tablespaces='/dev/shm'" ]
+# PostgreSQL is now managed at the monorepo root level
+# See /docker-compose.yaml for the shared PostgreSQL configuration
+# 
+# Services connect to the shared postgres via the editframe-shared network
+# using hostname: editframe-postgres
+# 
+# Worktrees connect to databases named: telecine-main, telecine-<branch-name>
+# Database is auto-created by scripts/create-worktree-database if it doesn't exist
+
+services: {}

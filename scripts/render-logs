@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Show worker logs for a render (initializer, fragment, finalizer).
+# Usage: render-logs [ -f ] <render-id>
+#   -f  follow (tail) logs; without -f, prints existing logs and exits.
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+FOLLOW=""
+RENDER_ID=""
+for arg in "$@"; do
+  if [ "$arg" = "-f" ]; then
+    FOLLOW="-f"
+  else
+    RENDER_ID="$arg"
+  fi
+done
+if [ -z "$RENDER_ID" ]; then
+  echo "Usage: $0 [ -f ] <render-id>" >&2
+  echo "  -f  follow logs (default: one-off dump)" >&2
+  exit 1
+fi
+$SCRIPT_DIR/docker-compose logs $FOLLOW worker-render-initializer worker-render-fragment worker-render-finalizer 2>&1 | grep "$RENDER_ID"

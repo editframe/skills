@@ -9,5 +9,5 @@ export const bucketName = `${stackName}-data`;
 export const GCP_LOCATION = "us-central1";
 export const GCP_REGION = "us-central1";
 
-export const DEPLOYED_DOMAIN = "editframe.dev";
+export const DEPLOYED_DOMAIN = "editframe.com";
 export const publicBucketName = "editframe-assets";

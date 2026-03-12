@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# Copies native module build artifacts from main worktree to current worktree
+# Builds in main if they don't exist
+
+set -e
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_ROOT=$(cd "$SCRIPT_DIR/../../.." && pwd)
+
+# Find main worktree
+MAIN_WORKTREE=$(git worktree list | grep -E '\[main\]|\[master\]' | awk '{print $1}' | head -1)
+if [ -z "$MAIN_WORKTREE" ]; then
+  # Fallback: use current worktree if it's main/master branch
+  BRANCH=$(git branch --show-current 2>/dev/null || git symbolic-ref --short HEAD 2>/dev/null)
+  if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
+    MAIN_WORKTREE=$(git rev-parse --show-toplevel)
+  fi
+fi
+
+# Paths
+if [ -n "$MAIN_WORKTREE" ]; then
+  if [ -d "$MAIN_WORKTREE/telecine" ]; then
+    MAIN_TELECINE_ROOT="$MAIN_WORKTREE/telecine"
+  else
+    MAIN_TELECINE_ROOT="$MAIN_WORKTREE"
+  fi
+  MAIN_BUILD="$MAIN_TELECINE_ROOT/lib/transcode/build/Release/playback.node"
+else
+  MAIN_BUILD=""
+fi
+CURRENT_BUILD="$PROJECT_ROOT/telecine/lib/transcode/build/Release/playback.node"
+
+# Check if we're in the main worktree
+BRANCH=$(git branch --show-current 2>/dev/null || git symbolic-ref --short HEAD 2>/dev/null)
+if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
+  # We're in main - just build if needed
+  if [ -f "$CURRENT_BUILD" ]; then
+    echo "Native module build already exists in main worktree"
+    exit 0
+  fi
+  echo "Building native module in main worktree..."
+  cd "$PROJECT_ROOT/telecine"
+  npm run build
+  exit 0
+fi
+
+# We're in a worktree - copy from main
+# If build already exists in current worktree, skip
+if [ -f "$CURRENT_BUILD" ]; then
+  echo "Native module build already exists in worktree"
+  exit 0
+fi
+
+# Ensure build directory exists
+mkdir -p "$(dirname "$CURRENT_BUILD")"
+
+# If main has the build, copy it
+if [ -n "$MAIN_BUILD" ] && [ -f "$MAIN_BUILD" ]; then
+  cp "$MAIN_BUILD" "$CURRENT_BUILD"
+  echo "Copied native module build from main worktree"
+  exit 0
+fi
+
+# Main doesn't have build - build it in main, then copy
+if [ -z "$MAIN_TELECINE_ROOT" ]; then
+  echo "Error: Could not find main worktree" >&2
+  exit 1
+fi
+echo "Building native module in main worktree..."
+cd "$MAIN_TELECINE_ROOT"
+npm run build
+
+# Ensure target directory exists in worktree before copying
+mkdir -p "$(dirname "$CURRENT_BUILD")"
+
+# Verify source exists before copying
+if [ ! -f "$MAIN_BUILD" ]; then
+  echo "Error: Build not found at $MAIN_BUILD after building" >&2
+  exit 1
+fi
+
+# Copy from main to worktree
+cp "$MAIN_BUILD" "$CURRENT_BUILD"
+echo "Built native module in main worktree and copied to worktree"
+

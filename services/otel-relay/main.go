@@ -58,6 +58,16 @@ func (b *EventBuffer) Add(data []byte) {
 	}
 }
 
+func (b *EventBuffer) Clear() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.pos = 0
+	b.full = false
+	for i := range b.events {
+		b.events[i] = nil
+	}
+}
+
 func (b *EventBuffer) GetAll() [][]byte {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
@@ -75,12 +85,12 @@ func (b *EventBuffer) GetAll() [][]byte {
 }
 
 type SSEBroadcaster struct {
-	mu         sync.RWMutex
-	clients    map[chan []byte]bool
-	buffer     *EventBuffer
-	addClient  chan chan []byte
-	rmClient   chan chan []byte
-	broadcast  chan []byte
+	mu        sync.RWMutex
+	clients   map[chan []byte]bool
+	buffer    *EventBuffer
+	addClient chan chan []byte
+	rmClient  chan chan []byte
+	broadcast chan []byte
 }
 
 func NewSSEBroadcaster(bufferSize int) *SSEBroadcaster {
@@ -175,6 +185,7 @@ func (b *SSEBroadcaster) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 type traceService struct {
 	ptraceotlp.UnimplementedGRPCServer
 	broadcaster *SSEBroadcaster
+	store       *SpanStore
 }
 
 func (s *traceService) Export(ctx context.Context, req ptraceotlp.ExportRequest) (ptraceotlp.ExportResponse, error) {
@@ -190,6 +201,7 @@ func (s *traceService) Export(ctx context.Context, req ptraceotlp.ExportRequest)
 	}
 
 	s.broadcaster.BroadcastEvent("trace", tracesData)
+	s.store.Index(req.Traces())
 	return ptraceotlp.NewExportResponse(), nil
 }
 
@@ -243,9 +255,10 @@ func main() {
 	log.Printf("  Buffer size: %d events", bufferSize)
 
 	broadcaster := NewSSEBroadcaster(bufferSize)
+	store := NewSpanStore(bufferSize)
 
 	grpcServer := grpc.NewServer()
-	ptraceotlp.RegisterGRPCServer(grpcServer, &traceService{broadcaster: broadcaster})
+	ptraceotlp.RegisterGRPCServer(grpcServer, &traceService{broadcaster: broadcaster, store: store})
 	plogotlp.RegisterGRPCServer(grpcServer, &logService{broadcaster: broadcaster})
 
 	go func() {
@@ -275,7 +288,7 @@ func main() {
 		}
 
 		req := ptraceotlp.NewExportRequest()
-		
+
 		contentType := r.Header.Get("Content-Type")
 		if contentType == "application/json" {
 			if err := req.UnmarshalJSON(body); err != nil {
@@ -307,7 +320,8 @@ func main() {
 
 		log.Printf("Received and broadcasting trace data")
 		broadcaster.BroadcastEvent("trace", tracesData)
-		
+		store.Index(req.Traces())
+
 		resp := ptraceotlp.NewExportResponse()
 		if contentType == "application/json" {
 			respBytes, _ := resp.MarshalJSON()
@@ -335,7 +349,7 @@ func main() {
 		}
 
 		req := plogotlp.NewExportRequest()
-		
+
 		contentType := r.Header.Get("Content-Type")
 		if contentType == "application/json" {
 			if err := req.UnmarshalJSON(body); err != nil {
@@ -364,7 +378,7 @@ func main() {
 
 		log.Printf("Received and broadcasting log data")
 		broadcaster.BroadcastEvent("log", logsData)
-		
+
 		resp := plogotlp.NewExportResponse()
 		if contentType == "application/json" {
 			respBytes, _ := resp.MarshalJSON()
@@ -393,6 +407,7 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})
+	registerAPI(sseMux, store, broadcaster.buffer)
 
 	go func() {
 		addr := fmt.Sprintf(":%d", ssePort)

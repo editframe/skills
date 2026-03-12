@@ -2,11 +2,14 @@
 
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import { Buffer } from "node:buffer";
-import type { FramegenEngine, VideoRenderOptions } from "./engines/FramegenEngine";
+import type {
+  FramegenEngine,
+  VideoRenderOptions,
+} from "./engines/FramegenEngine";
 import { SegmentEncoder } from "./SegmentEncoder.server";
 import * as logging from "@/logging";
 
-// IMPLEMENTATION GUIDELINES: 
+// IMPLEMENTATION GUIDELINES:
 // - Use real implementations when they don't require external services
 // - Use small, fast test videos from test-assets for realistic testing
 // - Mock only expensive operations, HTTP calls, and external dependencies
@@ -15,17 +18,46 @@ import * as logging from "@/logging";
 // Mock only expensive external dependencies
 vi.mock("@/logging");
 vi.mock("@/tracing", () => ({
-  WithSpan: () => (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) => descriptor,
-  WithRootSpan: () => (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) => descriptor,
-  WithSyncSpan: () => (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) => descriptor,
+  WithSpan:
+    () =>
+    (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) =>
+      descriptor,
+  WithRootSpan:
+    () =>
+    (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) =>
+      descriptor,
+  WithSyncSpan:
+    () =>
+    (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) =>
+      descriptor,
   executeSpan: vi.fn(async (_name: string, fn: (span: any) => Promise<any>) => {
-    return fn({ setAttribute: vi.fn(), setAttributes: vi.fn(), setStatus: vi.fn(), recordException: vi.fn(), end: vi.fn() });
+    return fn({
+      setAttribute: vi.fn(),
+      setAttributes: vi.fn(),
+      setStatus: vi.fn(),
+      recordException: vi.fn(),
+      end: vi.fn(),
+    });
   }),
-  executeRootSpan: vi.fn(async (_name: string, fn: (span: any) => Promise<any>) => {
-    return fn({ setAttribute: vi.fn(), setAttributes: vi.fn(), setStatus: vi.fn(), recordException: vi.fn(), end: vi.fn() });
-  }),
+  executeRootSpan: vi.fn(
+    async (_name: string, fn: (span: any) => Promise<any>) => {
+      return fn({
+        setAttribute: vi.fn(),
+        setAttributes: vi.fn(),
+        setStatus: vi.fn(),
+        recordException: vi.fn(),
+        end: vi.fn(),
+      });
+    },
+  ),
   executeSpanSync: vi.fn((_name: string, fn: (span: any) => any) => {
-    return fn({ setAttribute: vi.fn(), setAttributes: vi.fn(), setStatus: vi.fn(), recordException: vi.fn(), end: vi.fn() });
+    return fn({
+      setAttribute: vi.fn(),
+      setAttributes: vi.fn(),
+      setStatus: vi.fn(),
+      recordException: vi.fn(),
+      end: vi.fn(),
+    });
   }),
   setSpanAttributes: vi.fn(),
   setDottedObjectAttributes: vi.fn(),
@@ -33,11 +65,14 @@ vi.mock("@/tracing", () => ({
 
 // Mock raceTimeout which uses executeSpan
 vi.mock("@/util/raceTimeout", () => ({
-  raceTimeout: vi.fn().mockImplementation(async (timeoutMs: number, message: string, promise: Promise<any>) => {
-    return promise; // Just return the promise without timeout logic for tests
-  }),
+  raceTimeout: vi
+    .fn()
+    .mockImplementation(
+      async (timeoutMs: number, message: string, promise: Promise<any>) => {
+        return promise; // Just return the promise without timeout logic for tests
+      },
+    ),
 }));
-
 
 // Simple test implementation of FramegenEngine that uses real data
 class TestFramegenEngine implements FramegenEngine {
@@ -54,7 +89,7 @@ class TestFramegenEngine implements FramegenEngine {
     this.testPattern = Buffer.alloc(width * height * 4); // RGBA
     for (let i = 0; i < this.testPattern.length; i += 4) {
       this.testPattern[i] = 128; // R
-      this.testPattern[i + 1] = 64; // G  
+      this.testPattern[i + 1] = 64; // G
       this.testPattern[i + 2] = 192; // B
       this.testPattern[i + 3] = 255; // A
     }
@@ -71,23 +106,31 @@ class TestFramegenEngine implements FramegenEngine {
     }
   }
 
-  async beginFrame(frameNumber: number, isLast: boolean): Promise<Buffer | ArrayBuffer> {
+  async beginFrame(
+    frameNumber: number,
+    isLast: boolean,
+  ): Promise<Buffer | ArrayBuffer> {
     // Return simple audio samples - 1024 samples at 48kHz
     const audioSamples = Buffer.alloc(1024 * 8); // 32-bit float stereo (8 bytes per sample pair)
     // Fill with a simple sine wave pattern
     for (let i = 0; i < audioSamples.length; i += 8) {
-      const sample = Math.sin((frameNumber * 1024 + i / 8) * 2 * Math.PI * 440 / 48000) * 0.1;
+      const sample =
+        Math.sin(((frameNumber * 1024 + i / 8) * 2 * Math.PI * 440) / 48000) *
+        0.1;
       audioSamples.writeFloatLE(sample, i); // Left channel
       audioSamples.writeFloatLE(sample, i + 4); // Right channel
     }
     return audioSamples;
   }
 
-  async captureFrame(frameNumber: number, fps: number): Promise<Buffer | ArrayBuffer> {
+  async captureFrame(
+    frameNumber: number,
+    fps: number,
+  ): Promise<Buffer | ArrayBuffer> {
     // Return a simple test pattern that changes based on frame number
     const frame = Buffer.from(this.testPattern);
     // Modify pattern slightly for each frame to ensure it's different
-    const offset = (frameNumber % 255);
+    const offset = frameNumber % 255;
     for (let i = 0; i < frame.length; i += 4) {
       frame[i] = (frame[i] ?? 0 + offset) % 255; // Vary red channel
     }
@@ -95,7 +138,9 @@ class TestFramegenEngine implements FramegenEngine {
   }
 }
 
-const createTestRenderOptions = (overrides: Partial<VideoRenderOptions> = {}): VideoRenderOptions => ({
+const createTestRenderOptions = (
+  overrides: Partial<VideoRenderOptions> = {},
+): VideoRenderOptions => ({
   mode: "canvas",
   strategy: "v1",
   showFrameBox: false,
@@ -134,7 +179,7 @@ const createSegmentEncoder = (
     engine?: FramegenEngine;
     renderId?: string;
     abortSignal?: AbortSignal;
-  } = {}
+  } = {},
 ) => {
   const mockEngine = options.engine ?? new TestFramegenEngine();
   const renderOptions = createTestRenderOptions(options.renderOptions);
@@ -176,9 +221,15 @@ describe("SegmentEncoder", () => {
         renderOptions: {
           encoderOptions: {
             ...createTestRenderOptions().encoderOptions,
-            video: { width: 1280, height: 720, framerate: 30, codec: "avc1", bitrate: 5000000 },
-          }
-        }
+            video: {
+              width: 1280,
+              height: 720,
+              framerate: 30,
+              codec: "avc1",
+              bitrate: 5000000,
+            },
+          },
+        },
       });
 
       expect(encoder.width).toBe(1280);
@@ -194,9 +245,15 @@ describe("SegmentEncoder", () => {
             keyframeIntervalMs: 2000,
             toMs: 2000,
             fromMs: 0,
-            video: { width: 854, height: 480, framerate: 25, codec: "avc1", bitrate: 1000000 },
-          }
-        }
+            video: {
+              width: 854,
+              height: 480,
+              framerate: 25,
+              codec: "avc1",
+              bitrate: 1000000,
+            },
+          },
+        },
       });
 
       expect(encoder.groupSize).toBe(50); // (2000/1000) * 25
@@ -211,8 +268,8 @@ describe("SegmentEncoder", () => {
             ...createTestRenderOptions().encoderOptions,
             toMs: 10,
             fromMs: 0,
-          }
-        }
+          },
+        },
       });
 
       expect(encoder.totalFrameCount).toBe(1);
@@ -221,7 +278,7 @@ describe("SegmentEncoder", () => {
     test("sets up abort signal and error handling", () => {
       const abortController = new AbortController();
       const mockEngine = new TestFramegenEngine();
-      const onErrorSpy = vi.spyOn(mockEngine, 'onError');
+      const onErrorSpy = vi.spyOn(mockEngine, "onError");
 
       createSegmentEncoder({
         engine: mockEngine,
@@ -237,9 +294,12 @@ describe("SegmentEncoder", () => {
       const encoder = createSegmentEncoder();
 
       expect(encoder.bitmapImageInputArgs).toEqual([
-        "-f", "rawvideo",
-        "-pixel_format", "bgra",
-        "-video_size", "854x480",
+        "-f",
+        "rawvideo",
+        "-pixel_format",
+        "bgra",
+        "-video_size",
+        "854x480",
       ]);
     });
 
@@ -257,9 +317,14 @@ describe("SegmentEncoder", () => {
         renderOptions: {
           encoderOptions: {
             ...createTestRenderOptions().encoderOptions,
-            audio: { sampleRate: 44100, codec: "aac", numberOfChannels: 2, bitrate: 256000 },
-          }
-        }
+            audio: {
+              sampleRate: 44100,
+              codec: "aac",
+              numberOfChannels: 2,
+              bitrate: 256000,
+            },
+          },
+        },
       });
 
       expect(encoder.audioBitrate).toBe("256000");
@@ -288,8 +353,8 @@ describe("SegmentEncoder", () => {
           encoderOptions: {
             ...createTestRenderOptions().encoderOptions,
             sequenceNumber: 42,
-          }
-        }
+          },
+        },
       });
 
       const paths = await encoder.muxerFiles();
@@ -316,13 +381,17 @@ describe("SegmentEncoder", () => {
           encoderOptions: {
             ...createTestRenderOptions().encoderOptions,
             isInitSegment: true,
-          }
-        }
+          },
+        },
       });
 
       // Spy on the actual methods
-      const generateInitSegmentSpy = vi.spyOn(encoder, 'generateInitSegment').mockResolvedValue(Buffer.from("init"));
-      const generateMediaSegmentSpy = vi.spyOn(encoder, 'generateMediaSegment').mockResolvedValue(Buffer.from("media"));
+      const generateInitSegmentSpy = vi
+        .spyOn(encoder, "generateInitSegment")
+        .mockResolvedValue(Buffer.from("init"));
+      const generateMediaSegmentSpy = vi
+        .spyOn(encoder, "generateMediaSegment")
+        .mockResolvedValue(Buffer.from("media"));
 
       await encoder.generateFragmentBuffer();
 
@@ -336,12 +405,16 @@ describe("SegmentEncoder", () => {
           encoderOptions: {
             ...createTestRenderOptions().encoderOptions,
             isInitSegment: false,
-          }
-        }
+          },
+        },
       });
 
-      const generateInitSegmentSpy = vi.spyOn(encoder, 'generateInitSegment').mockResolvedValue(Buffer.from("init"));
-      const generateMediaSegmentSpy = vi.spyOn(encoder, 'generateMediaSegment').mockResolvedValue(Buffer.from("media"));
+      const generateInitSegmentSpy = vi
+        .spyOn(encoder, "generateInitSegment")
+        .mockResolvedValue(Buffer.from("init"));
+      const generateMediaSegmentSpy = vi
+        .spyOn(encoder, "generateMediaSegment")
+        .mockResolvedValue(Buffer.from("media"));
 
       await encoder.generateFragmentBuffer();
 
@@ -368,12 +441,14 @@ describe("SegmentEncoder", () => {
       // Create engine that aborts mid-operation
       const engine = new TestFramegenEngine();
       const originalCaptureFrame = engine.captureFrame.bind(engine);
-      engine.captureFrame = vi.fn().mockImplementation(async (frameNumber: number, fps: number) => {
-        if (frameNumber > 1) {
-          abortController.abort();
-        }
-        return originalCaptureFrame(frameNumber, fps);
-      });
+      engine.captureFrame = vi
+        .fn()
+        .mockImplementation(async (frameNumber: number, fps: number) => {
+          if (frameNumber > 1) {
+            abortController.abort();
+          }
+          return originalCaptureFrame(frameNumber, fps);
+        });
 
       const encoder = createSegmentEncoder({
         engine,
@@ -388,20 +463,28 @@ describe("SegmentEncoder", () => {
   describe("Error Handling", () => {
     test("handles engine initialization errors gracefully", async () => {
       const engine = new TestFramegenEngine();
-      engine.initialize = vi.fn().mockRejectedValue(new Error("Engine init failed"));
+      engine.initialize = vi
+        .fn()
+        .mockRejectedValue(new Error("Engine init failed"));
 
       const encoder = createSegmentEncoder({ engine });
 
-      await expect(encoder.generateStandaloneSegment()).rejects.toThrow("Engine init failed");
+      await expect(encoder.generateStandaloneSegment()).rejects.toThrow(
+        "Engine init failed",
+      );
     });
 
     test("handles frame capture errors gracefully", async () => {
       const engine = new TestFramegenEngine();
-      engine.captureFrame = vi.fn().mockRejectedValue(new Error("Frame capture failed"));
+      engine.captureFrame = vi
+        .fn()
+        .mockRejectedValue(new Error("Frame capture failed"));
 
       const encoder = createSegmentEncoder({ engine });
 
-      await expect(encoder.generateStandaloneSegment()).rejects.toThrow("Frame capture failed");
+      await expect(encoder.generateStandaloneSegment()).rejects.toThrow(
+        "Frame capture failed",
+      );
     });
 
     test("handles invalid render options", async () => {
@@ -409,10 +492,12 @@ describe("SegmentEncoder", () => {
 
       const encoder = createSegmentEncoder({
         engine,
-        renderOptions: { durationMs: -1 }
+        renderOptions: { durationMs: -1 },
       });
 
-      await expect(encoder.generateStandaloneSegment()).rejects.toThrow("Invalid duration");
+      await expect(encoder.generateStandaloneSegment()).rejects.toThrow(
+        "Invalid duration",
+      );
     });
   });
 
@@ -429,8 +514,8 @@ describe("SegmentEncoder", () => {
             ...createTestRenderOptions().encoderOptions,
             isInitSegment: true,
             toMs: durationMs,
-          }
-        }
+          },
+        },
       });
 
       const result = await encoder.generateInitSegment();
@@ -438,7 +523,7 @@ describe("SegmentEncoder", () => {
       expect(result).toBeInstanceOf(Buffer);
 
       // Parse the result to check for proper metadata boxes
-      const ISOBoxer = (await import('codem-isoboxer')).default;
+      const ISOBoxer = (await import("codem-isoboxer")).default;
       const isoFile = ISOBoxer.parseBuffer(result);
 
       // Should have moov box
@@ -457,7 +542,9 @@ describe("SegmentEncoder", () => {
       // Movie header should have full duration
       const mvhd = isoFile.fetch("mvhd");
       expect(mvhd).toBeDefined();
-      const expectedDuration = Math.ceil(durationMs / 1000 * (mvhd?.timescale || 1000));
+      const expectedDuration = Math.ceil(
+        (durationMs / 1000) * (mvhd?.timescale || 1000),
+      );
       expect(mvhd.duration).toBe(expectedDuration);
 
       // Should have trex (Track Extends) boxes for each track
@@ -493,8 +580,8 @@ describe("SegmentEncoder", () => {
             isInitSegment: false,
             toMs: 500,
             fromMs: 0,
-          }
-        }
+          },
+        },
       });
 
       const result = await encoder.generateMediaSegment();
@@ -502,7 +589,7 @@ describe("SegmentEncoder", () => {
       expect(result).toBeInstanceOf(Buffer);
 
       // Parse the result
-      const ISOBoxer = (await import('codem-isoboxer')).default;
+      const ISOBoxer = (await import("codem-isoboxer")).default;
       const isoFile = ISOBoxer.parseBuffer(result);
 
       // Media segments should NOT have moov, mvex, or mehd
@@ -529,9 +616,15 @@ describe("SegmentEncoder", () => {
             ...createTestRenderOptions().encoderOptions,
             toMs: 500,
             fromMs: 0,
-            video: { width: 854, height: 480, framerate: 25, codec: "avc1", bitrate: 500000 },
-          }
-        }
+            video: {
+              width: 854,
+              height: 480,
+              framerate: 25,
+              codec: "avc1",
+              bitrate: 500000,
+            },
+          },
+        },
       });
 
       // This uses real DisposableEncoder/DisposableMuxer with real ffmpeg
@@ -556,8 +649,8 @@ describe("SegmentEncoder", () => {
             ...createTestRenderOptions().encoderOptions,
             isInitSegment: true,
             toMs: 500,
-          }
-        }
+          },
+        },
       });
 
       const result = await encoder.generateInitSegment();
@@ -566,10 +659,10 @@ describe("SegmentEncoder", () => {
       expect(result.length).toBeGreaterThan(50);
 
       // Should contain ftyp and moov boxes but not moof/mdat
-      const content = result.toString('hex');
-      expect(content).toContain('66747970'); // 'ftyp' in hex
-      expect(content).toContain('6d6f6f76'); // 'moov' in hex
-      expect(content).not.toContain('6d6f6f66'); // should not contain 'moof'
+      const content = result.toString("hex");
+      expect(content).toContain("66747970"); // 'ftyp' in hex
+      expect(content).toContain("6d6f6f76"); // 'moov' in hex
+      expect(content).not.toContain("6d6f6f66"); // should not contain 'moof'
     }, 10000);
 
     test("generates media segment with correct sequence numbering", async () => {
@@ -585,8 +678,8 @@ describe("SegmentEncoder", () => {
             isInitSegment: false,
             toMs: 500,
             fromMs: 0,
-          }
-        }
+          },
+        },
       });
 
       const result = await encoder.generateMediaSegment();
@@ -594,11 +687,11 @@ describe("SegmentEncoder", () => {
       expect(result).toBeInstanceOf(Buffer);
       expect(result.length).toBeGreaterThan(50);
 
-      // Should contain moof but not ftyp/moov  
-      const content = result.toString('hex');
-      expect(content).toContain('6d6f6f66'); // 'moof' in hex
-      expect(content).not.toContain('66747970'); // should not contain 'ftyp'
-      expect(content).not.toContain('6d6f6f76'); // should not contain 'moov'
+      // Should contain moof but not ftyp/moov
+      const content = result.toString("hex");
+      expect(content).toContain("6d6f6f66"); // 'moof' in hex
+      expect(content).not.toContain("66747970"); // should not contain 'ftyp'
+      expect(content).not.toContain("6d6f6f76"); // should not contain 'moov'
     }, 10000);
   });
 
@@ -612,13 +705,20 @@ describe("SegmentEncoder", () => {
           encoderOptions: {
             ...createTestRenderOptions().encoderOptions,
             toMs: 200,
-            video: { width: 480, height: 270, framerate: 15, codec: "avc1", bitrate: 250000 },
-          }
-        }
+            video: {
+              width: 480,
+              height: 270,
+              framerate: 15,
+              codec: "avc1",
+              bitrate: 250000,
+            },
+          },
+        },
       });
 
-      const frameEvents: Array<{ frameNumber: number; totalFrames: number }> = [];
-      encoder.on('frameRendered', (data) => {
+      const frameEvents: Array<{ frameNumber: number; totalFrames: number }> =
+        [];
+      encoder.on("frameRendered", (data) => {
         frameEvents.push(data);
       });
 
@@ -644,19 +744,25 @@ describe("SegmentEncoder", () => {
           encoderOptions: {
             ...createTestRenderOptions().encoderOptions,
             toMs: 200,
-            video: { width: 480, height: 270, framerate: 15, codec: "avc1", bitrate: 250000 },
-          }
-        }
+            video: {
+              width: 480,
+              height: 270,
+              framerate: 15,
+              codec: "avc1",
+              bitrate: 250000,
+            },
+          },
+        },
       });
 
       const events: string[] = [];
-      encoder.on('encodingStarted', () => {
-        events.push('encodingStarted');
+      encoder.on("encodingStarted", () => {
+        events.push("encodingStarted");
       });
 
       await encoder.generateStandaloneSegment();
 
-      expect(events).toContain('encodingStarted');
+      expect(events).toContain("encodingStarted");
       expect(events.length).toBe(1); // Should only emit once
     }, 6000);
 
@@ -669,22 +775,72 @@ describe("SegmentEncoder", () => {
           encoderOptions: {
             ...createTestRenderOptions().encoderOptions,
             toMs: 200,
-            video: { width: 480, height: 270, framerate: 15, codec: "avc1", bitrate: 250000 },
-          }
-        }
+            video: {
+              width: 480,
+              height: 270,
+              framerate: 15,
+              codec: "avc1",
+              bitrate: 250000,
+            },
+          },
+        },
       });
 
       const frameEvents: any[] = [];
       const listener = (data: any) => frameEvents.push(data);
 
-      encoder.on('frameRendered', listener);
-      encoder.off('frameRendered', listener);
+      encoder.on("frameRendered", listener);
+      encoder.off("frameRendered", listener);
 
       await encoder.generateStandaloneSegment();
 
       // Should not receive any events after removing listener
       expect(frameEvents.length).toBe(0);
     }, 6000);
+  });
+
+  describe("Stdout Isolation", () => {
+    test("generateMediaSegment does not write to console.log (stdout contamination fix)", async () => {
+      const consoleLogSpy = vi
+        .spyOn(console, "log")
+        .mockImplementation(() => {});
+      const engine = new TestFramegenEngine(480, 270);
+
+      const encoder = createSegmentEncoder({
+        engine,
+        renderOptions: {
+          durationMs: 200,
+          encoderOptions: {
+            ...createTestRenderOptions().encoderOptions,
+            sequenceNumber: 1,
+            isInitSegment: false,
+            toMs: 200,
+            fromMs: 0,
+            video: {
+              width: 480,
+              height: 270,
+              framerate: 15,
+              codec: "avc1",
+              bitrate: 250000,
+            },
+          },
+        },
+      });
+
+      await encoder.generateMediaSegment();
+
+      expect(consoleLogSpy).not.toHaveBeenCalled();
+      consoleLogSpy.mockRestore();
+    }, 10000);
+
+    test("constructor does not write to console.error when no abort/error occurs", () => {
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      createSegmentEncoder();
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+      consoleErrorSpy.mockRestore();
+    });
   });
 
   describe("Performance and Resource Management", () => {
@@ -698,9 +854,15 @@ describe("SegmentEncoder", () => {
           encoderOptions: {
             ...createTestRenderOptions().encoderOptions,
             toMs: 200,
-            video: { width: 480, height: 270, framerate: 15, codec: "avc1", bitrate: 250000 },
-          }
-        }
+            video: {
+              width: 480,
+              height: 270,
+              framerate: 15,
+              codec: "avc1",
+              bitrate: 250000,
+            },
+          },
+        },
       });
 
       const startTime = performance.now();
@@ -721,9 +883,15 @@ describe("SegmentEncoder", () => {
           encoderOptions: {
             ...createTestRenderOptions().encoderOptions,
             toMs: 200,
-            video: { width: 480, height: 270, framerate: 15, codec: "avc1", bitrate: 250000 },
-          }
-        }
+            video: {
+              width: 480,
+              height: 270,
+              framerate: 15,
+              codec: "avc1",
+              bitrate: 250000,
+            },
+          },
+        },
       });
 
       await encoder.generateStandaloneSegment();
@@ -734,13 +902,16 @@ describe("SegmentEncoder", () => {
           timings: expect.any(Object),
           percentageBreakdown: expect.any(Object),
         }),
-        "Timing report"
+        "Timing report",
       );
     }, 6000);
   });
 
   describe("generateConcatDirective", () => {
-    function createTestSegmentEncoderForConcat(alignedDurationUs: number, segmentDurationMs: number = 500): SegmentEncoder {
+    function createTestSegmentEncoderForConcat(
+      alignedDurationUs: number,
+      segmentDurationMs: number = 500,
+    ): SegmentEncoder {
       return createSegmentEncoder({
         renderOptions: {
           durationMs: segmentDurationMs,
@@ -764,7 +935,11 @@ describe("SegmentEncoder", () => {
       // 500ms segment (normal case)
       const encoder = createTestSegmentEncoderForConcat(500_000); // 500ms in microseconds
 
-      const result = encoder.generateConcatDirective("/test/audio.aac", false, false);
+      const result = encoder.generateConcatDirective(
+        "/test/audio.aac",
+        false,
+        false,
+      );
 
       expect(result.inpointUs).toBeLessThan(result.outpointUs);
       expect(result.durationUs).toBeGreaterThan(0);
@@ -775,7 +950,11 @@ describe("SegmentEncoder", () => {
       // 11ms segment (previously problematic case, now fixed with clamping)
       const encoder = createTestSegmentEncoderForConcat(11_000); // 11ms in microseconds
 
-      const result = encoder.generateConcatDirective("/test/audio.aac", false, false);
+      const result = encoder.generateConcatDirective(
+        "/test/audio.aac",
+        false,
+        false,
+      );
 
       // With fix: inpoint is clamped to outpoint, preventing invalid ranges
       expect(result.inpointUs).toBe(result.outpointUs); // Clamped to equal values
@@ -793,7 +972,11 @@ describe("SegmentEncoder", () => {
       // Exactly 21.33ms (one audio frame) - boundary case where clamping just kicks in
       const encoder = createTestSegmentEncoderForConcat(21_333);
 
-      const result = encoder.generateConcatDirective("/test/audio.aac", false, false);
+      const result = encoder.generateConcatDirective(
+        "/test/audio.aac",
+        false,
+        false,
+      );
 
       // With clamping: inpoint gets clamped from ~21333.33us down to 21333us
       expect(result.inpointUs).toBe(21_333); // Clamped to outpoint value
@@ -824,19 +1007,35 @@ describe("SegmentEncoder", () => {
       // Test with start/end padding using much longer duration to avoid edge cases
       const encoder = createTestSegmentEncoderForConcat(500_000); // 500ms - definitely long enough
 
-      const resultWithPadding = encoder.generateConcatDirective("/test/audio.aac", true, true);
-      const resultWithoutPadding = encoder.generateConcatDirective("/test/audio.aac", false, false);
+      const resultWithPadding = encoder.generateConcatDirective(
+        "/test/audio.aac",
+        true,
+        true,
+      );
+      const resultWithoutPadding = encoder.generateConcatDirective(
+        "/test/audio.aac",
+        false,
+        false,
+      );
 
       // With sufficient duration, padding behaves as expected
       expect(resultWithoutPadding.inpointUs).toBeCloseTo(21333.33, 1); // ~21.33ms baseline
-      expect(resultWithPadding.inpointUs).toBeGreaterThan(resultWithoutPadding.inpointUs); // Start padding adds to inpoint
-      expect(resultWithPadding.outpointUs).toBeLessThan(resultWithoutPadding.outpointUs); // End padding reduces outpoint
+      expect(resultWithPadding.inpointUs).toBeGreaterThan(
+        resultWithoutPadding.inpointUs,
+      ); // Start padding adds to inpoint
+      expect(resultWithPadding.outpointUs).toBeLessThan(
+        resultWithoutPadding.outpointUs,
+      ); // End padding reduces outpoint
     });
 
     test("includes expected format in directive string", () => {
       const encoder = createTestSegmentEncoderForConcat(100_000);
 
-      const result = encoder.generateConcatDirective("/path/to/test.aac", false, false);
+      const result = encoder.generateConcatDirective(
+        "/path/to/test.aac",
+        false,
+        false,
+      );
 
       expect(result.directive).toContain("file '/path/to/test.aac'");
       expect(result.directive).toContain("inpoint");
@@ -844,5 +1043,152 @@ describe("SegmentEncoder", () => {
       expect(result.directive).toContain("duration");
       expect(result.directive).toContain("us"); // microsecond units
     });
+  });
+
+  describe("Frame Pipeline Overlap", () => {
+    test("captureFrame(N) completes before beginFrame(N+1) starts", async () => {
+      // Safety invariant: beginFrame(N+1) must not start until captureFrame(N) has completed,
+      // to avoid DOM state mutation that would break the frame verification strip.
+      const captureEndedForFrame: boolean[] = [];
+      const beginFrameStartedWithPriorCaptureDone: boolean[] = [];
+
+      const engine = new TestFramegenEngine(480, 270);
+
+      const originalCaptureFrame = engine.captureFrame.bind(engine);
+      engine.captureFrame = vi
+        .fn()
+        .mockImplementation(async (frameNumber: number, fps: number) => {
+          const result = await originalCaptureFrame(frameNumber, fps);
+          captureEndedForFrame[frameNumber] = true;
+          return result;
+        });
+
+      const originalBeginFrame = engine.beginFrame.bind(engine);
+      engine.beginFrame = vi
+        .fn()
+        .mockImplementation(async (frameNumber: number, isLast: boolean) => {
+          if (frameNumber > 0) {
+            beginFrameStartedWithPriorCaptureDone[frameNumber] =
+              captureEndedForFrame[frameNumber - 1] === true;
+          }
+          return originalBeginFrame(frameNumber, isLast);
+        });
+
+      const encoder = createSegmentEncoder({
+        engine,
+        renderOptions: {
+          durationMs: 200,
+          encoderOptions: {
+            ...createTestRenderOptions().encoderOptions,
+            toMs: 200,
+            video: {
+              width: 480,
+              height: 270,
+              framerate: 15,
+              codec: "avc1",
+              bitrate: 250000,
+            },
+          },
+        },
+      });
+
+      await encoder.generateStandaloneSegment();
+
+      expect(encoder.totalFrameCount).toBeGreaterThanOrEqual(3);
+
+      // For every frame N+1, captureFrame(N) must have completed before beginFrame(N+1) starts
+      for (let n = 1; n < encoder.totalFrameCount; n++) {
+        expect(beginFrameStartedWithPriorCaptureDone[n]).toBe(true);
+      }
+    }, 10000);
+
+    test("write(N) is in flight while beginFrame(N+1) executes", async () => {
+      // Performance invariant: write(N) and beginFrame(N+1) run concurrently.
+      // In serial mode: captureFrame(N) → write(N) fully drains → beginFrame(N+1)
+      // In pipelined mode: captureFrame(N) → Promise.all([write(N), beginFrame(N+1)])
+      //
+      // We verify pipelined behavior by making beginFrame(1) slow (setImmediate delay)
+      // and checking that write(0) has NOT yet completed (callback not fired) when
+      // beginFrame(1) starts. We simulate a slow write by making the write callback
+      // deferred via setImmediate too — and check ordering.
+      //
+      // In serial mode: write(0) fires callback BEFORE beginFrame(1) starts.
+      //   → write0Complete=true when beginFrame(1) starts.
+      // In pipelined mode: write(0) and beginFrame(1) run in parallel.
+      //   → write0Complete=false when beginFrame(1) starts (if write is also deferred).
+
+      let write0Complete = false;
+      let write0CompleteWhenBeginFrame1Started = true; // assume serial (guilty) until proven
+
+      const engine = new TestFramegenEngine(480, 270);
+
+      // Defer write(0)'s callback via setImmediate to simulate async drain
+      const originalBuildVideoEncoder =
+        SegmentEncoder.prototype.buildVideoEncoder;
+      SegmentEncoder.prototype.buildVideoEncoder = function (paths: any) {
+        const encoder = originalBuildVideoEncoder.call(this, paths);
+        const originalWrite = encoder.process.stdin.write.bind(
+          encoder.process.stdin,
+        );
+        let writeCount = 0;
+        (encoder.process.stdin as any).write = function (
+          chunk: any,
+          encoding: any,
+          callback: any,
+        ) {
+          const idx = writeCount++;
+          if (idx === 0 && typeof callback === "function") {
+            const cb = callback;
+            return (originalWrite as any)(chunk, encoding, (err: any) => {
+              // Defer the callback to ensure async gap for pipelining to be observable
+              setImmediate(() => {
+                write0Complete = true;
+                cb(err);
+              });
+            });
+          }
+          return (originalWrite as any)(chunk, encoding, callback);
+        };
+        return encoder;
+      };
+
+      const originalBeginFrame = engine.beginFrame.bind(engine);
+      engine.beginFrame = vi
+        .fn()
+        .mockImplementation(async (frameNumber: number, isLast: boolean) => {
+          if (frameNumber === 1) {
+            write0CompleteWhenBeginFrame1Started = write0Complete;
+          }
+          return originalBeginFrame(frameNumber, isLast);
+        });
+
+      const encoder = createSegmentEncoder({
+        engine,
+        renderOptions: {
+          durationMs: 200,
+          encoderOptions: {
+            ...createTestRenderOptions().encoderOptions,
+            toMs: 200,
+            video: {
+              width: 480,
+              height: 270,
+              framerate: 15,
+              codec: "avc1",
+              bitrate: 250000,
+            },
+          },
+        },
+      });
+
+      try {
+        await encoder.generateStandaloneSegment();
+      } finally {
+        SegmentEncoder.prototype.buildVideoEncoder = originalBuildVideoEncoder;
+      }
+
+      // In pipelined execution: beginFrame(1) starts before the deferred write(0) callback fires,
+      // so write0Complete is false when beginFrame(1) starts.
+      expect(write0CompleteWhenBeginFrame1Started).toBe(false);
+    }, 10000);
   });
 });

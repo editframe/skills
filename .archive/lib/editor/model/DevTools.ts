@@ -25,7 +25,7 @@ export class DevTools extends Model({
   stageMode: tProp(types.enum(StageMode), StageMode.CANVAS).withSetter(),
   canvasMode: tProp(
     types.enum(CanvasMode),
-    CanvasMode.SHARED_CANVAS
+    CanvasMode.SHARED_CANVAS,
   ).withSetter(),
 }) {
   protected onAttachedToRootStore(): () => void {
@@ -37,7 +37,7 @@ export class DevTools extends Model({
         console.error(
           "Failed to parse DevTools from localStorage. (using defaults)",
           maybeDevTools,
-          error
+          error,
         );
       }
     }
@@ -47,7 +47,7 @@ export class DevTools extends Model({
         localStorage.setItem("ef/DevTools", JSON.stringify(getSnapshot(this)));
       },
       // Impose a throttle to prevent excessive writes to localStorage
-      { delay: 1000 }
+      { delay: 1000 },
     );
   }
 }

@@ -1,10 +1,11 @@
-import { requireAdminSession } from "@/util/requireAdminSession";
 import { Queue } from "@/queues/Queue";
+import { adminIdentityContext } from "~/middleware/context";
+import { auditAdminAction } from "@/util/auditAdminAction";
 
 import type { Route } from "./+types/deleteAllCompletedJobs";
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
-  await requireAdminSession(request);
+export const action = async ({ request, context, params }: Route.ActionArgs) => {
+  const session = context.get(adminIdentityContext);
   const { name } = params;
   const queue = Queue.fromName(name);
   if (!queue) {
@@ -12,6 +13,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   }
 
   await queue.deleteAllCompletedJobs();
+  auditAdminAction(session, "delete-all-completed-jobs", { queue: name });
 
   return { success: true };
 };

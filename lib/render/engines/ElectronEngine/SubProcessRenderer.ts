@@ -27,9 +27,7 @@ export class SubProcessRenderer {
   constructor(
     private renderProcess: ChildProcessByStdio<null, Readable, Readable>,
   ) {
-    this.renderProcess.stdout.on("data", (data) => {
-      console.log("[stdout]", data.toString());
-    });
+    this.renderProcess.stdout.on("data", () => {});
     this.renderProcess.stderr.on("data", (data) => {
       if (
         !data.includes(" Failed to connect to the bus") &&

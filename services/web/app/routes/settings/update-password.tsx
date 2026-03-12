@@ -6,14 +6,16 @@ import { updatePassword } from "~/updatePassword.server";
 import { Link } from "~/components/Link";
 import { logger } from "@/logging";
 import type { Route } from "./+types/update-password";
-import { requireSession } from "@/util/requireSession.server";
+import { identityContext, sessionCookieContext } from "~/middleware/context";
 import { commitSession } from "@/util/session";
 
 const schema = z
   .object({
     current_password: z.string(),
-    new_password: z.string(),
-    confirm_password: z.string(),
+    new_password: z.string().min(8, "Password must be at least 8 characters"),
+    confirm_password: z
+      .string()
+      .min(8, "Password must be at least 8 characters"),
   })
   .refine((data) => data.new_password === data.confirm_password, {
     message: "New password and confirm password must match",
@@ -26,8 +28,9 @@ const schema = z
 
 const editAccount = formFor(schema);
 
-export async function action({ request }: Route.ActionArgs) {
-  const { session, sessionCookie } = await requireSession(request);
+export async function action({ request, context }: Route.ActionArgs) {
+  const session = context.get(identityContext);
+  const sessionCookie = context.get(sessionCookieContext);
   const values = await editAccount.parseFormData(request);
   if (!values.success) {
     return data(values.errors, { status: 400 });
@@ -64,13 +67,12 @@ export async function action({ request }: Route.ActionArgs) {
   }
 }
 
-export const loader = async (args: Route.LoaderArgs) => {
-  await requireSession(args.request);
+export const loader = async () => {
   return {};
 };
 
 export const meta: MetaFunction = () => {
-  return [{ title: "Settings | Editframe" }];
+  return [{ title: "Update Password | Editframe" }];
 };
 export default function Page() {
   return (

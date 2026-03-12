@@ -14,15 +14,12 @@ import {
   applicationSecret,
   hasuraJwtSecretToken,
 } from "../secrets";
-import { DEPLOYED_DOMAIN, GCP_LOCATION } from "../constants";
-// import { dockerImage } from "./dockerImage";
-import * as infra from "../_infra";
+import { DEPLOYED_DOMAIN } from "../constants";
 import { bucket } from "../storage";
 import { publicBucketName } from "../constants";
-import { getGitSha } from "../../util/getGitSha";
+import { getImageRef } from "../../util/getImageRef";
 import { valkeyInternalIp } from "../valkey";
-import { externalQueueEnvVars } from "../queues/workers";
-const repo = infra.artifactRepository;
+import { queueEnvVars } from "../queues/workers";
 
 export const cloudrun = new gcp.cloudrunv2.Service(
   "telecine-web",
@@ -49,8 +46,7 @@ export const cloudrun = new gcp.cloudrunv2.Service(
       maxInstanceRequestConcurrency: 160,
       containers: [
         {
-          // image: dockerImage.repoDigest,
-          image: pulumi.interpolate`${GCP_LOCATION}-docker.pkg.dev/${repo.project}/${repo.name}/web:${getGitSha()}`,
+          image: getImageRef("web"),
 
           envs: [
             envFromSecretVersion("POSTGRES_PASSWORD", pgPassword),
@@ -77,6 +73,7 @@ export const cloudrun = new gcp.cloudrunv2.Service(
               `https://${DEPLOYED_DOMAIN}/v1/graphql`,
             ),
             envFromValue("NODE_ENV", "production"),
+            envFromValue("EF_TELEMETRY_ENABLED", "true"),
             envFromValue("ENABLE_ALL_FEATURES", "false"),
             envFromValue("UPLOAD_TO_BUCKET", "true"),
             envFromValue("GCLOUD_TRACE_EXPORT", "true"),
@@ -89,7 +86,7 @@ export const cloudrun = new gcp.cloudrunv2.Service(
             envFromValue("EMAIL_SENDER", "no-reply@editframe.com"),
             envFromValue("SMTP_PORT", "465"),
             envFromValue("SMTP_USER", "smtp@editframe.com"),
-            ...externalQueueEnvVars(),
+            ...queueEnvVars(),
             envFromUnmanagedSecret("SMTP_PASSWORD", "SMTP_PASSWORD"),
             envFromUnmanagedSecret("SLACK_WEBHOOK_URL", "SLACK_WEBHOOK_URL"),
             envFromUnmanagedSecret(

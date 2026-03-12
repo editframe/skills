@@ -32,8 +32,8 @@ editframe [command] [options]
 ## Global Options
 
 - `-t, --token <token>`: API Token (can also be set via EF_TOKEN environment variable)
-- `--ef-host <host>`: Editframe Host (default: https://editframe.dev, can be set via EF_HOST environment variable)
-- `--ef-render-host <host>`: Editframe Render Host (default: https://editframe.dev, can be set via EF_RENDER_HOST environment variable)
+- `--ef-host <host>`: Editframe Host (default: https://editframe.com, can be set via EF_HOST environment variable)
+- `--ef-render-host <host>`: Editframe Render Host (default: https://editframe.com, can be set via EF_RENDER_HOST environment variable)
 - `-V, --version`: Output the version number
 - `-h, --help`: Display help for command
 
@@ -162,8 +162,8 @@ npx @editframe/cli webhook --topic render.created --webhookURL https://webhook.s
 The CLI supports the following environment variables:
 
 - `EF_TOKEN`: Your Editframe API token
-- `EF_HOST`: The Editframe host (defaults to https://editframe.dev)
-- `EF_RENDER_HOST`: The Editframe render host (defaults to https://editframe.dev)
+- `EF_HOST`: The Editframe host (defaults to https://editframe.com)
+- `EF_RENDER_HOST`: The Editframe render host (defaults to https://editframe.com)
 
 You can set these in a `.env` file in your project directory or export them in your shell.
 

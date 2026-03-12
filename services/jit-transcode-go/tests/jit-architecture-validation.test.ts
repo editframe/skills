@@ -35,15 +35,25 @@ describe("JIT Architecture Pattern Validation", () => {
     expect(manifest.durationMs).toBeGreaterThan(0);
 
     console.log("✅ Metadata fetched successfully");
-    console.log(`   Duration: ${manifest.duration}s (${manifest.durationMs}ms)`);
+    console.log(
+      `   Duration: ${manifest.duration}s (${manifest.durationMs}ms)`,
+    );
     console.log(`   Time: ${elapsed}ms`);
-    console.log(`   Video renditions: ${manifest.videoRenditions?.length || 0}`);
-    console.log(`   Audio renditions: ${manifest.audioRenditions?.length || 0}`);
+    console.log(
+      `   Video renditions: ${manifest.videoRenditions?.length || 0}`,
+    );
+    console.log(
+      `   Audio renditions: ${manifest.audioRenditions?.length || 0}`,
+    );
 
     if (manifest.videoRenditions?.length > 0) {
       const firstRendition = manifest.videoRenditions[0];
-      console.log(`   First rendition: ${firstRendition.id} (${firstRendition.width}x${firstRendition.height})`);
-      console.log(`   Segment count: ${firstRendition.segmentDurationsMs?.length || 0}`);
+      console.log(
+        `   First rendition: ${firstRendition.id} (${firstRendition.width}x${firstRendition.height})`,
+      );
+      console.log(
+        `   Segment count: ${firstRendition.segmentDurationsMs?.length || 0}`,
+      );
     }
   });
 
@@ -63,10 +73,14 @@ describe("JIT Architecture Pattern Validation", () => {
     expect(cache2).toBe("HIT");
 
     if (response1.headers["x-transcode-time-ms"]) {
-      console.log(`   Transcode time: ${response1.headers["x-transcode-time-ms"]}ms`);
+      console.log(
+        `   Transcode time: ${response1.headers["x-transcode-time-ms"]}ms`,
+      );
     }
     if (response1.headers["x-total-server-time-ms"]) {
-      console.log(`   Total server time: ${response1.headers["x-total-server-time-ms"]}ms`);
+      console.log(
+        `   Total server time: ${response1.headers["x-total-server-time-ms"]}ms`,
+      );
     }
 
     console.log("✅ Cache headers present and correct");
@@ -77,7 +91,9 @@ describe("JIT Architecture Pattern Validation", () => {
 
     const manifest = await fetch(manifestUrl).then((r) => r.json());
 
-    const scrubRendition = manifest.videoRenditions?.find((r: any) => r.id === "scrub");
+    const scrubRendition = manifest.videoRenditions?.find(
+      (r: any) => r.id === "scrub",
+    );
 
     expect(scrubRendition).toBeDefined();
     expect(scrubRendition.segmentDuration).toBe(30);
@@ -85,7 +101,9 @@ describe("JIT Architecture Pattern Validation", () => {
     expect(scrubRendition.frameRate).toBe(15);
 
     console.log("✅ Scrub track configured correctly");
-    console.log(`   Resolution: ${scrubRendition.width}x${scrubRendition.height}`);
+    console.log(
+      `   Resolution: ${scrubRendition.width}x${scrubRendition.height}`,
+    );
     console.log(`   Frame rate: ${scrubRendition.frameRate}fps`);
     console.log(`   Segment duration: ${scrubRendition.segmentDuration}s`);
   });
@@ -108,7 +126,7 @@ describe("JIT Architecture Pattern Validation", () => {
 
   test("Go service returns proper CORS headers", async () => {
     const response = await fetch(
-      `${GO_SERVICE_URL}/api/v1/transcode/manifest.json?url=${encodeURIComponent(TEST_VIDEO_URL)}`
+      `${GO_SERVICE_URL}/api/v1/transcode/manifest.json?url=${encodeURIComponent(TEST_VIDEO_URL)}`,
     );
 
     const corsOrigin = response.headers.get("Access-Control-Allow-Origin");
@@ -128,7 +146,9 @@ describe("JIT Architecture Pattern Validation", () => {
     const manifestUrl = `${GO_SERVICE_URL}/api/v1/transcode/manifest.json?url=${encodeURIComponent(TEST_VIDEO_URL)}`;
     const manifest = await fetch(manifestUrl).then((r) => r.json());
 
-    const highRendition = manifest.videoRenditions?.find((r: any) => r.id === "high");
+    const highRendition = manifest.videoRenditions?.find(
+      (r: any) => r.id === "high",
+    );
 
     expect(highRendition).toBeDefined();
     expect(highRendition.segmentDurationsMs).toBeDefined();
@@ -136,17 +156,20 @@ describe("JIT Architecture Pattern Validation", () => {
 
     const totalDurationFromSegments = highRendition.segmentDurationsMs.reduce(
       (sum: number, d: number) => sum + d,
-      0
+      0,
     );
 
     const manifestDurationMs = manifest.durationMs;
 
-    expect(Math.abs(totalDurationFromSegments - manifestDurationMs)).toBeLessThan(100);
+    expect(
+      Math.abs(totalDurationFromSegments - manifestDurationMs),
+    ).toBeLessThan(100);
 
     console.log("✅ Segment durations match manifest");
     console.log(`   Manifest duration: ${manifestDurationMs}ms`);
     console.log(`   Sum of segments: ${totalDurationFromSegments}ms`);
-    console.log(`   Difference: ${Math.abs(totalDurationFromSegments - manifestDurationMs)}ms`);
+    console.log(
+      `   Difference: ${Math.abs(totalDurationFromSegments - manifestDurationMs)}ms`,
+    );
   });
 });
-

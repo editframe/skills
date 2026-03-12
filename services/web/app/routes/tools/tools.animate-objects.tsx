@@ -1,10 +1,10 @@
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
-import { parseRequestSession } from "@/util/session";
+import { maybeIdentityContext } from "~/middleware/context";
 import "~/styles/marketing.css";
 import { Layout } from "~/layouts/tools";
 
 export const loader = async (args: LoaderFunctionArgs) => {
-  const session = await parseRequestSession(args.request);
+  const session = args.context.get(maybeIdentityContext);
 
   return {
     isLogged: !!session,
@@ -14,7 +14,7 @@ export const loader = async (args: LoaderFunctionArgs) => {
 export const meta: MetaFunction = () => {
   return [
     {
-      title: "Animate Objects in Video  | Editframe",
+      title: "Animate Objects in Video | Editframe",
       description:
         "Animate any object in your video and give it life. Apply movement to text or images or stickers.",
     },

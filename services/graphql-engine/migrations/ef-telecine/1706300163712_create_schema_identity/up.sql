@@ -1,1 +1,1 @@
-create schema "identity";
+create schema if not exists "identity";

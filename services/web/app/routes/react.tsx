@@ -1,12 +1,11 @@
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 
-import { parseRequestSession } from "@/util/session";
+import { maybeIdentityContext } from "~/middleware/context";
 import "~/styles/marketing.css";
-import { useEffect, useState } from "react";
 import { Layout } from "~/layouts";
 
 export const loader = async (args: LoaderFunctionArgs) => {
-  const session = await parseRequestSession(args.request);
+  const session = args.context.get(maybeIdentityContext);
 
   return {
     isLogged: !!session,
@@ -15,9 +14,10 @@ export const loader = async (args: LoaderFunctionArgs) => {
 
 export const meta: MetaFunction = () => {
   return [
+    { title: "Programmatically Make Videos | Editframe" },
     {
-      title: "Editframe | Programmatically Make Videos",
-      description: "Launch video features in days, not months",
+      name: "description",
+      content: "Launch video features in days, not months",
     },
   ];
 };
@@ -43,28 +43,6 @@ const features = [
 ];
 
 const IndexPage = () => {
-  const [isDarkMode, setIsDarkMode] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    if (
-      localStorage.theme === "dark" ||
-      (!("theme" in localStorage) &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches)
-    ) {
-      document.documentElement.classList.add("dark");
-      localStorage.theme = "dark";
-      setIsDarkMode(true);
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.theme = "light";
-      setIsDarkMode(false);
-    }
-
-    return () => {};
-  }, []);
-  if (isDarkMode === null) {
-    return null;
-  }
   return (
     <Layout
       features={features}

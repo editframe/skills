@@ -1,25 +1,32 @@
-import { rm, mkdir, readFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import * as path from 'node:path';
+import { rm, mkdir, readFile } from "node:fs/promises";
+import { join } from "node:path";
+import * as path from "node:path";
 
-import { describe, test, expect, beforeAll } from 'vitest';
-import { http, HttpResponse } from 'msw';
-import { useMSW } from 'TEST/util/useMSW';
+import { describe, test, expect, beforeAll } from "vitest";
+import { http, HttpResponse } from "msw";
+import { useMSW } from "TEST/util/useMSW";
 
-import { useTestHttpServer } from '@/transcode/tests/TestHttpServer';
-import { transcodeSegment } from "./transcoding-service"
-import { execPromise } from '@/util/execPromise';
-import { SEGMENT_DURATION, SegmentDurationType } from './transcoder-types';
+import { useTestHttpServer } from "@/transcode/tests/TestHttpServer";
+import { transcodeSegment } from "./transcoding-service";
+import { execPromise } from "@/util/execPromise";
+import { SEGMENT_DURATION, SegmentDurationType } from "./transcoder-types";
 
 const probeInfo = async (path: string) => {
-  const { stdout } = await execPromise(`ffprobe -v quiet -print_format json -show_streams -show_packets -show_frames ${path}`);
+  const { stdout } = await execPromise(
+    `ffprobe -v quiet -print_format json -show_streams -show_packets -show_frames ${path}`,
+  );
   const parsed = JSON.parse(stdout);
-  const packets = parsed.packets_and_frames?.filter((p: any) => p.type === "packet") as any[] || [];
-  const frames = parsed.packets_and_frames?.filter((p: any) => p.type === "frame") as any[] || [];
+  const packets =
+    (parsed.packets_and_frames?.filter(
+      (p: any) => p.type === "packet",
+    ) as any[]) || [];
+  const frames =
+    (parsed.packets_and_frames?.filter(
+      (p: any) => p.type === "frame",
+    ) as any[]) || [];
   const streams = parsed.streams as any[];
   return { packets, frames, streams };
-}
-
+};
 
 interface Mp4DumpBox {
   name: string;
@@ -27,7 +34,7 @@ interface Mp4DumpBox {
 }
 
 interface Mp4DumpBoxes {
-  trun: Mp4DumpBox & { "sample count": number }
+  trun: Mp4DumpBox & { "sample count": number };
 }
 
 class Mp4Dump {
@@ -37,10 +44,12 @@ class Mp4Dump {
     return new Mp4Dump(parsed as Mp4DumpBox[]);
   }
 
-  constructor(private readonly boxes: Mp4DumpBox[]) { }
+  constructor(private readonly boxes: Mp4DumpBox[]) {}
 
-
-  fetchAll<T extends keyof Mp4DumpBoxes>(name: T, boxes?: Mp4DumpBox[]): Mp4DumpBoxes[T][];
+  fetchAll<T extends keyof Mp4DumpBoxes>(
+    name: T,
+    boxes?: Mp4DumpBox[],
+  ): Mp4DumpBoxes[T][];
   fetchAll(name: string, boxes?: Mp4DumpBox[]): Mp4DumpBox[];
   fetchAll(name: string, boxes: Mp4DumpBox[] = this.boxes) {
     const found: Mp4DumpBox[] = [];
@@ -72,14 +81,17 @@ class Mp4Dump {
   }
 
   get totalSampleCount() {
-    return this.fetchAll("trun").reduce((acc, trun) => acc + trun["sample count"], 0);
+    return this.fetchAll("trun").reduce(
+      (acc, trun) => acc + trun["sample count"],
+      0,
+    );
   }
 }
 
 describe("transcoding-service", () => {
-  const testServer = useTestHttpServer()
+  const testServer = useTestHttpServer();
   const server = useMSW();
-  const outputDir = "output/transcode-service-test"
+  const outputDir = "output/transcode-service-test";
 
   beforeAll(async () => {
     await rm(outputDir, { recursive: true, force: true });
@@ -107,7 +119,12 @@ describe("transcoding-service", () => {
     const realFileUrl = testServer.getFileUrl("tail-moov-480p.mp4");
 
     // Load real file data to serve through MSW
-    const filePath = path.join(process.cwd(), 'test-assets', 'transcode', 'tail-moov-480p.mp4');
+    const filePath = path.join(
+      process.cwd(),
+      "test-assets",
+      "transcode",
+      "tail-moov-480p.mp4",
+    );
     const fileData = await readFile(filePath);
 
     // Mock both HEAD and GET requests to simulate the problematic remote URL behavior
@@ -118,51 +135,55 @@ describe("transcoding-service", () => {
           status: 200,
           headers: {
             // NOTE: Deliberately omitting 'Content-Length' header to trigger head-only scan
-            'Accept-Ranges': 'bytes',
-            'Content-Type': 'video/mp4'
-          }
+            "Accept-Ranges": "bytes",
+            "Content-Type": "video/mp4",
+          },
         });
       }),
       // Handle GET requests with proper range support
       http.get(realFileUrl, ({ request }) => {
-        const range = request.headers.get('range');
+        const range = request.headers.get("range");
         if (range) {
           const match = range.match(/bytes=(\d+)-(\d*)/);
           if (match?.[1]) {
             const start = Number.parseInt(match[1], 10);
-            const end = match[2] ? Number.parseInt(match[2], 10) : fileData.length - 1;
+            const end = match[2]
+              ? Number.parseInt(match[2], 10)
+              : fileData.length - 1;
             const chunk = fileData.slice(start, end + 1);
 
             return new HttpResponse(chunk, {
               status: 206,
               headers: {
-                'Content-Range': `bytes ${start}-${end}/${fileData.length}`,
-                'Content-Length': chunk.length.toString(),
-                'Content-Type': 'video/mp4'
-              }
+                "Content-Range": `bytes ${start}-${end}/${fileData.length}`,
+                "Content-Length": chunk.length.toString(),
+                "Content-Type": "video/mp4",
+              },
             });
           }
         }
 
         return new HttpResponse(fileData, {
           headers: {
-            'Content-Length': fileData.length.toString(),
-            'Content-Type': 'video/mp4'
-          }
+            "Content-Length": fileData.length.toString(),
+            "Content-Type": "video/mp4",
+          },
         });
-      })
+      }),
     );
 
     // EXPECTED FAILURE: tail-moov files without content-length headers cannot have metadata extracted
     // This documents the current limitation where head-only scanning fails for tail-moov files
 
-    await expect(transcodeSegment({
-      inputUrl: realFileUrl,  // Use real test file, but with mocked HEAD response
-      rendition: "low",
-      segmentDurationMs: 1000 as SegmentDurationType,
-      outputDir,
-      segmentId: "init",
-    })).rejects.toThrow('Failed to fetch video metadata');
+    await expect(
+      transcodeSegment({
+        inputUrl: realFileUrl, // Use real test file, but with mocked HEAD response
+        rendition: "low",
+        segmentDurationMs: 1000 as SegmentDurationType,
+        outputDir,
+        segmentId: "init",
+      }),
+    ).rejects.toThrow("Failed to fetch video metadata");
 
     // Verify this is specifically due to the tail-moov + no content-length combination
     // The metadata scanner should fail because:
@@ -186,7 +207,12 @@ describe("transcoding-service", () => {
     const realFileUrl = testServer.getFileUrl("tail-moov-480p.mp4");
 
     // Load real file data to serve through MSW
-    const filePath = path.join(process.cwd(), 'test-assets', 'transcode', 'tail-moov-480p.mp4');
+    const filePath = path.join(
+      process.cwd(),
+      "test-assets",
+      "transcode",
+      "tail-moov-480p.mp4",
+    );
     const fileData = await readFile(filePath);
 
     // Mock HEAD request to remove content-length header
@@ -195,51 +221,55 @@ describe("transcoding-service", () => {
         return new HttpResponse(null, {
           status: 200,
           headers: {
-            'Accept-Ranges': 'bytes',
-            'Content-Type': 'video/mp4'
-          }
+            "Accept-Ranges": "bytes",
+            "Content-Type": "video/mp4",
+          },
         });
       }),
       // Handle GET requests with proper range support
       http.get(realFileUrl, ({ request }) => {
-        const range = request.headers.get('range');
+        const range = request.headers.get("range");
         if (range) {
           const match = range.match(/bytes=(\d+)-(\d*)/);
           if (match?.[1]) {
             const start = Number.parseInt(match[1], 10);
-            const end = match[2] ? Number.parseInt(match[2], 10) : fileData.length - 1;
+            const end = match[2]
+              ? Number.parseInt(match[2], 10)
+              : fileData.length - 1;
             const chunk = fileData.slice(start, end + 1);
 
             return new HttpResponse(chunk, {
               status: 206,
               headers: {
-                'Content-Range': `bytes ${start}-${end}/${fileData.length}`,
-                'Content-Length': chunk.length.toString(),
-                'Content-Type': 'video/mp4'
-              }
+                "Content-Range": `bytes ${start}-${end}/${fileData.length}`,
+                "Content-Length": chunk.length.toString(),
+                "Content-Type": "video/mp4",
+              },
             });
           }
         }
 
         return new HttpResponse(fileData, {
           headers: {
-            'Content-Length': fileData.length.toString(),
-            'Content-Type': 'video/mp4'
-          }
+            "Content-Length": fileData.length.toString(),
+            "Content-Type": "video/mp4",
+          },
         });
-      })
+      }),
     );
 
     // EXPECTED FAILURE: Even with caching simulation, tail-moov + no content-length still fails
     // This documents that the issue occurs at metadata extraction, before any caching
 
-    await expect(transcodeSegment({
-      inputUrl: realFileUrl,
-      rendition: "low",
-      segmentDurationMs: SEGMENT_DURATION,
-      outputDir,
-      segmentId: "init",
-    })).rejects.toThrow('Failed to fetch video metadata');
+    await expect(
+      transcodeSegment({
+        inputUrl: realFileUrl,
+        rendition: "low",
+        segmentDurationMs: SEGMENT_DURATION,
+        outputDir,
+        segmentId: "init",
+      }),
+    ).rejects.toThrow("Failed to fetch video metadata");
 
     // The failure occurs before any metadata can be cached because:
     // 1. fetchMoovAndFtyp fails to extract moov box from tail-moov file
@@ -273,7 +303,7 @@ describe("transcoding-service", () => {
     expect(mediaSegmentPath).toMatch(/low-seg1\.m4s$/);
 
     // File should be valid and non-empty
-    const fs = await import('node:fs');
+    const fs = await import("node:fs");
     const stats = fs.statSync(mediaSegmentPath);
     expect(stats.size).toBeGreaterThan(1000); // Should be substantial size
   }, 10000);
@@ -294,7 +324,12 @@ describe("transcoding-service", () => {
     const realFileUrl = testServer.getFileUrl("tail-moov-480p.mp4");
 
     // Load real file data to serve through MSW
-    const filePath = path.join(process.cwd(), 'test-assets', 'transcode', 'tail-moov-480p.mp4');
+    const filePath = path.join(
+      process.cwd(),
+      "test-assets",
+      "transcode",
+      "tail-moov-480p.mp4",
+    );
     const fileData = await readFile(filePath);
 
     // Mock HEAD request to remove content-length header (same as .m4s test)
@@ -303,55 +338,59 @@ describe("transcoding-service", () => {
         return new HttpResponse(null, {
           status: 200,
           headers: {
-            'Accept-Ranges': 'bytes',
-            'Content-Type': 'video/mp4'
+            "Accept-Ranges": "bytes",
+            "Content-Type": "video/mp4",
             // NOTE: Deliberately omitting 'Content-Length' header
-          }
+          },
         });
       }),
       // Handle GET requests with proper range support
       http.get(realFileUrl, ({ request }) => {
-        const range = request.headers.get('range');
+        const range = request.headers.get("range");
         if (range) {
           const match = range.match(/bytes=(\d+)-(\d*)/);
           if (match?.[1]) {
             const start = Number.parseInt(match[1], 10);
-            const end = match[2] ? Number.parseInt(match[2], 10) : fileData.length - 1;
+            const end = match[2]
+              ? Number.parseInt(match[2], 10)
+              : fileData.length - 1;
             const chunk = fileData.slice(start, end + 1);
 
             return new HttpResponse(chunk, {
               status: 206,
               headers: {
-                'Content-Range': `bytes ${start}-${end}/${fileData.length}`,
-                'Content-Length': chunk.length.toString(),
-                'Content-Type': 'video/mp4'
-              }
+                "Content-Range": `bytes ${start}-${end}/${fileData.length}`,
+                "Content-Length": chunk.length.toString(),
+                "Content-Type": "video/mp4",
+              },
             });
           }
         }
 
         return new HttpResponse(fileData, {
           headers: {
-            'Content-Length': fileData.length.toString(),
-            'Content-Type': 'video/mp4'
-          }
+            "Content-Length": fileData.length.toString(),
+            "Content-Type": "video/mp4",
+          },
         });
-      })
+      }),
     );
 
     // EXPECTED FAILURE: Same tail-moov + no content-length issue affects standalone MP4 path
-    await expect(transcodeSegment({
-      inputUrl: realFileUrl,
-      rendition: "low",
-      segmentDurationMs: 1000 as SegmentDurationType,
-      outputDir,
-      segmentId: 1, // Same as production logs: segmentId: '00001' -> normalized to 1
-      isFragmented: false,
-    })).rejects.toThrow('Failed to fetch video metadata');
+    await expect(
+      transcodeSegment({
+        inputUrl: realFileUrl,
+        rendition: "low",
+        segmentDurationMs: 1000 as SegmentDurationType,
+        outputDir,
+        segmentId: 1, // Same as production logs: segmentId: '00001' -> normalized to 1
+        isFragmented: false,
+      }),
+    ).rejects.toThrow("Failed to fetch video metadata");
   }, 30000);
 
   test("transcodes a standalone audio init segment", async () => {
-    const outputDir = "output/standalone-audio-init-segment"
+    const outputDir = "output/standalone-audio-init-segment";
     await rm(outputDir, { recursive: true, force: true });
     const inputUrl = testServer.getFileUrl("head-moov-480p.mp4");
 
@@ -377,8 +416,8 @@ describe("transcoding-service", () => {
     expect(frames.length).toBe(0);
     expect(streams.length).toBe(1);
     expect(streams[0]).toMatchObject({
-      codec_type: 'audio',
-      codec_name: 'aac',
+      codec_type: "audio",
+      codec_name: "aac",
     });
   });
 
@@ -403,9 +442,9 @@ describe("transcoding-service", () => {
     expect(streams.length).toBe(1);
     expect(streams[0]).toMatchObject({
       index: 0,
-      codec_name: 'aac',
-      codec_type: 'audio',
-    })
+      codec_name: "aac",
+      codec_type: "audio",
+    });
 
     const dump = await Mp4Dump.dump(initSegmentPath);
     expect(dump.fetchAll("esds").length).toBe(1);
@@ -432,13 +471,13 @@ describe("transcoding-service", () => {
 
     expect(streams[0]).toMatchObject({
       index: 0,
-      codec_name: 'aac',
-      codec_type: 'audio',
-      sample_rate: '48000',
+      codec_name: "aac",
+      codec_type: "audio",
+      sample_rate: "48000",
       channels: 2,
-      channel_layout: 'stereo',
+      channel_layout: "stereo",
       bits_per_sample: 0,
-      time_base: '1/48000',
+      time_base: "1/48000",
     });
 
     // Check that timing values are reasonable (individual segments now start from 0 with FFmpeg approach)
@@ -450,15 +489,15 @@ describe("transcoding-service", () => {
     expect(frames.length).toBeGreaterThan(0); // Audio does have frames
 
     expect(packets[0]).toMatchObject({
-      type: 'packet',
-      codec_type: 'audio',
+      type: "packet",
+      codec_type: "audio",
       stream_index: 0,
-      flags: 'K__'
+      flags: "K__",
     });
 
     expect(frames[0]).toMatchObject({
-      type: 'frame',
-      media_type: 'audio',
+      type: "frame",
+      media_type: "audio",
       stream_index: 0,
       key_frame: 1,
     });
@@ -469,27 +508,31 @@ describe("transcoding-service", () => {
     await rm(outputDir, { recursive: true, force: true });
     const inputUrl = testServer.getFileUrl("head-moov-480p.mp4");
 
-    const segmentPaths = []
-    const segmentIds = [1, 2, 3, 4, 5]
+    const segmentPaths = [];
+    const segmentIds = [1, 2, 3, 4, 5];
 
     const segmentDurationMs = 1000 as SegmentDurationType;
 
-    segmentPaths.push(await transcodeSegment({
-      inputUrl,
-      rendition: "audio",
-      segmentDurationMs,
-      outputDir,
-      segmentId: "init",
-    }))
-
-    for (const segmentId of segmentIds) {
-      segmentPaths.push(await transcodeSegment({
+    segmentPaths.push(
+      await transcodeSegment({
         inputUrl,
         rendition: "audio",
         segmentDurationMs,
         outputDir,
-        segmentId,
-      }))
+        segmentId: "init",
+      }),
+    );
+
+    for (const segmentId of segmentIds) {
+      segmentPaths.push(
+        await transcodeSegment({
+          inputUrl,
+          rendition: "audio",
+          segmentDurationMs,
+          outputDir,
+          segmentId,
+        }),
+      );
     }
     const outputPath = join(outputDir, "audio.mp4");
     await execPromise(`cat ${segmentPaths.join(" ")} > ${outputPath}`);
@@ -508,7 +551,9 @@ describe("transcoding-service", () => {
       expect(sampleCount).toBeGreaterThan(0);
 
       // Extract and verify Base Media Decode Time (BMDT) progression
-      const { stdout: mp4dumpOutput } = await execPromise(`mp4dump "${segmentPath}"`);
+      const { stdout: mp4dumpOutput } = await execPromise(
+        `mp4dump "${segmentPath}"`,
+      );
       const bmdtMatch = mp4dumpOutput.match(/base media decode time = (\d+)/);
       if (bmdtMatch?.[1]) {
         baseTimes.push(Number.parseInt(bmdtMatch[1], 10));
@@ -536,11 +581,11 @@ describe("transcoding-service", () => {
       cumulativeSamples += segmentSampleCount;
     }
 
-    // CRITICAL ASSERTION: Verify precise sample counts to catch padding logic regressions  
+    // CRITICAL ASSERTION: Verify precise sample counts to catch padding logic regressions
     // Updated expectations after boundary fix - first segment compensates with +1 sample
     expect(sampleCounts[0]).toBe(48); // First segment (boundary compensation)
     expect(sampleCounts[1]).toBe(47); // Second segment
-    expect(sampleCounts[2]).toBe(47); // Third segment  
+    expect(sampleCounts[2]).toBe(47); // Third segment
     expect(sampleCounts[3]).toBe(47); // Fourth segment
     expect(sampleCounts[4]).toBe(46); // Last segment
 
@@ -556,40 +601,43 @@ describe("transcoding-service", () => {
     expect(streams.length).toBe(1);
     expect(streams[0]).toMatchObject({
       index: 0,
-      codec_name: 'aac',
-      codec_type: 'audio',
-      sample_rate: '48000',
+      codec_name: "aac",
+      codec_type: "audio",
+      sample_rate: "48000",
       channels: 2,
     });
     expect(packets[0]).toMatchObject({
-      type: 'packet',
-      codec_type: 'audio',
+      type: "packet",
+      codec_type: "audio",
       stream_index: 0,
-      flags: 'K__'
+      flags: "K__",
     });
     expect(frames[0]).toMatchObject({
-      type: 'frame',
-      media_type: 'audio',
+      type: "frame",
+      media_type: "audio",
       stream_index: 0,
       key_frame: 1,
     });
 
     // CRITICAL TEST: Verify frame-accurate timing to prevent discontinuities
-    const frameDurationMs = 1024 / 48000 * 1000; // AAC frame duration in ms
+    const frameDurationMs = (1024 / 48000) * 1000; // AAC frame duration in ms
 
     // Calculate exact expected duration based on actual sample counts
-    const totalActualFrames = sampleCounts.reduce((sum, count) => sum + count, 0);
+    const totalActualFrames = sampleCounts.reduce(
+      (sum, count) => sum + count,
+      0,
+    );
     const exactExpectedDurationMs = totalActualFrames * frameDurationMs;
 
     // Use ffprobe to get precise duration information
     const { stdout: durationProbe } = await execPromise(
-      `ffprobe -v quiet -select_streams a:0 -show_entries format=duration -of csv=p=0 "${outputPath}"`
+      `ffprobe -v quiet -select_streams a:0 -show_entries format=duration -of csv=p=0 "${outputPath}"`,
     );
     const actualDurationS = Number.parseFloat(durationProbe.trim());
     const actualDurationMs = actualDurationS * 1000;
 
     // CRITICAL ASSERTION: Duration must be exactly as calculated (deterministic)
-    // Use 3 decimal places precision (1 microsecond accuracy) to account for JavaScript 
+    // Use 3 decimal places precision (1 microsecond accuracy) to account for JavaScript
     // floating-point limitations while maintaining deterministic validation for audio
     expect(actualDurationMs).toBeCloseTo(exactExpectedDurationMs, 3);
   });
@@ -612,8 +660,8 @@ describe("transcoding-service", () => {
     console.log("[TEST] Returned path:", initSegmentPath);
 
     // Check if file actually exists
-    const fs = await import('node:fs');
-    const path = await import('node:path');
+    const fs = await import("node:fs");
+    const path = await import("node:path");
 
     // Check absolute path
     const absolutePath = path.resolve(initSegmentPath);
@@ -643,51 +691,51 @@ describe("transcoding-service", () => {
     expect(initSegmentPath).toMatch(/low-seginit-standalone\.mp4$/);
     const { packets, frames, streams } = await probeInfo(initSegmentPath);
     expect(packets[0]).toMatchObject({
-      type: 'packet',
-      codec_type: 'video',
+      type: "packet",
+      codec_type: "video",
       stream_index: 0,
       pts: 0,
       dts: 0,
-      flags: 'K__'
-    })
+      flags: "K__",
+    });
 
     expect(frames[0]).toMatchObject({
-      type: 'frame',
-      media_type: 'video',
+      type: "frame",
+      media_type: "video",
       stream_index: 0,
       key_frame: 1,
       pts: 0,
       best_effort_timestamp: 0,
       width: 854,
       height: 480,
-      pix_fmt: 'yuv420p',
-      pict_type: 'I',
-    })
+      pix_fmt: "yuv420p",
+      pict_type: "I",
+    });
 
     expect(streams[0]).toMatchObject({
       index: 0,
-      codec_name: 'h264',
-      profile: 'High',
-      codec_type: 'video',
-      codec_tag_string: 'avc1',
+      codec_name: "h264",
+      profile: "High",
+      codec_type: "video",
+      codec_tag_string: "avc1",
       coded_width: 864,
       coded_height: 480,
-      pix_fmt: 'yuv420p',
-      chroma_location: 'left',
-      field_order: 'progressive',
+      pix_fmt: "yuv420p",
+      chroma_location: "left",
+      field_order: "progressive",
       refs: 4,
-      is_avc: 'true',
-      nal_length_size: '4',
-      r_frame_rate: '90000/1',
-      avg_frame_rate: '25/1',
-      time_base: '1/90000',
+      is_avc: "true",
+      nal_length_size: "4",
+      r_frame_rate: "90000/1",
+      avg_frame_rate: "25/1",
+      time_base: "1/90000",
       start_pts: 0,
-      start_time: '0.000000',
+      start_time: "0.000000",
       duration_ts: 3600,
-      duration: '0.040000',
-      bits_per_raw_sample: '8',
-      nb_read_frames: '1',
-      nb_read_packets: '1',
+      duration: "0.040000",
+      bits_per_raw_sample: "8",
+      nb_read_frames: "1",
+      nb_read_packets: "1",
       extradata_size: 45,
     });
     // Verify init segment structure
@@ -715,17 +763,17 @@ describe("transcoding-service", () => {
     expect(streams.length).toBe(1);
     expect(streams[0]).toMatchObject({
       index: 0,
-      codec_name: 'h264',
-      codec_type: 'video',
+      codec_name: "h264",
+      codec_type: "video",
       width: 854,
       height: 480,
-    })
+    });
 
     const dump = await Mp4Dump.dump(initSegmentPath);
     expect(dump.fetchAll("avcC").length).toBe(1);
     expect(dump.moof.length).toBe(0);
     expect(dump.mdat.length).toBe(0);
-  })
+  });
 
   test("transcodes a standalone video media segment", async () => {
     const outputDir = "output/standalone-video-media-segment";
@@ -746,46 +794,46 @@ describe("transcoding-service", () => {
 
     expect(streams[0]).toMatchObject({
       index: 0,
-      codec_name: 'h264',
-      profile: 'High',
-      codec_type: 'video',
+      codec_name: "h264",
+      profile: "High",
+      codec_type: "video",
       width: 854,
       height: 480,
       coded_width: 864,
       coded_height: 480,
-      pix_fmt: 'yuv420p',
-      is_avc: 'true',
-      r_frame_rate: '25/1',
-      avg_frame_rate: '25/1',
-      time_base: '1/90000',
+      pix_fmt: "yuv420p",
+      is_avc: "true",
+      r_frame_rate: "25/1",
+      avg_frame_rate: "25/1",
+      time_base: "1/90000",
       start_pts: 295200,
-      start_time: '3.280000',
+      start_time: "3.280000",
       duration: "0.800000",
       duration_ts: 72000,
       nb_read_frames: "20",
       nb_read_packets: "20",
-    })
+    });
     expect(streams.length).toBe(1);
 
     expect(packets.length).toBe(20);
     expect(frames.length).toBe(20);
 
     expect(packets[0]).toMatchObject({
-      type: 'packet',
-      codec_type: 'video',
+      type: "packet",
+      codec_type: "video",
       stream_index: 0,
       pts: 295200,
       dts: 288000,
-      flags: 'K__'
-    })
+      flags: "K__",
+    });
 
     expect(frames[0]).toMatchObject({
-      type: 'frame',
-      media_type: 'video',
+      type: "frame",
+      media_type: "video",
       stream_index: 0,
       key_frame: 1,
       pts: 295200,
-    })
+    });
   });
 
   test("transcodes video segments that can be concatenated", async () => {
@@ -793,28 +841,32 @@ describe("transcoding-service", () => {
     await rm(outputDir, { recursive: true, force: true });
     const inputUrl = testServer.getFileUrl("head-moov-480p.mp4");
 
-    const segmentPaths = []
-    const segmentIds = [1, 2, 3, 4, 5]
+    const segmentPaths = [];
+    const segmentIds = [1, 2, 3, 4, 5];
 
     const segmentDurationMs = 200;
-    const fps = 25
-    const samplesPerSegment = Math.floor(segmentDurationMs * fps / 1000);
-    segmentPaths.push(await transcodeSegment({
-      inputUrl,
-      rendition: "low",
-      segmentDurationMs: 200 as SegmentDurationType,
-      outputDir,
-      segmentId: "init",
-    }))
-
-    for (const segmentId of segmentIds) {
-      segmentPaths.push(await transcodeSegment({
+    const fps = 25;
+    const samplesPerSegment = Math.floor((segmentDurationMs * fps) / 1000);
+    segmentPaths.push(
+      await transcodeSegment({
         inputUrl,
         rendition: "low",
         segmentDurationMs: 200 as SegmentDurationType,
         outputDir,
-        segmentId,
-      }))
+        segmentId: "init",
+      }),
+    );
+
+    for (const segmentId of segmentIds) {
+      segmentPaths.push(
+        await transcodeSegment({
+          inputUrl,
+          rendition: "low",
+          segmentDurationMs: 200 as SegmentDurationType,
+          outputDir,
+          segmentId,
+        }),
+      );
     }
     const outputPath = join(outputDir, "video.mp4");
     await execPromise(`cat ${segmentPaths.join(" ")} > ${outputPath}`);
@@ -832,16 +884,20 @@ describe("transcoding-service", () => {
     }
 
     // The total frame count must be exactly correct
-    expect(actualTotalFrames).equals(expectedTotalFrames,
+    expect(actualTotalFrames).equals(
+      expectedTotalFrames,
       `Total frame count is ${actualTotalFrames}, expected ${expectedTotalFrames}. ` +
-      `Frame distribution: ${frameCountsPerSegment.join('+')}`);
+        `Frame distribution: ${frameCountsPerSegment.join("+")}`,
+    );
 
     // Each segment should have the expected frame count (with video frame alignment, this should be exact)
     for (let i = 0; i < segmentIds.length; i++) {
       const segmentId = segmentIds[i];
       const frameCount = frameCountsPerSegment[i];
-      expect(frameCount).equals(samplesPerSegment,
-        `Segment ${segmentId} has ${frameCount} frames, expected ${samplesPerSegment}`);
+      expect(frameCount).equals(
+        samplesPerSegment,
+        `Segment ${segmentId} has ${frameCount} frames, expected ${samplesPerSegment}`,
+      );
     }
 
     const fullDump = await Mp4Dump.dump(outputPath);
@@ -855,28 +911,28 @@ describe("transcoding-service", () => {
     expect(streams.length).toBe(1);
     expect(streams[0]).toMatchObject({
       index: 0,
-      codec_name: 'h264',
-      profile: 'High',
-      codec_type: 'video',
+      codec_name: "h264",
+      profile: "High",
+      codec_type: "video",
       width: 854,
       height: 480,
-    })
+    });
     expect(packets[0]).toMatchObject({
-      type: 'packet',
-      codec_type: 'video',
+      type: "packet",
+      codec_type: "video",
       stream_index: 0,
       pts: 7200,
       dts: 0,
-      flags: 'K__'
-    })
+      flags: "K__",
+    });
     expect(frames[0]).toMatchObject({
-      type: 'frame',
-      media_type: 'video',
+      type: "frame",
+      media_type: "video",
       stream_index: 0,
       key_frame: 1,
       pts: 7200,
-    })
-  })
+    });
+  });
 
   test("verifies AAC concat directive calculations for seamless audio", async () => {
     const outputDir = "output/concat-directive-verification";
@@ -899,7 +955,8 @@ describe("transcoding-service", () => {
 
     // CRITICAL TEST: Verify concat directive timing calculations
     // This prevents regressions in the frame-accurate boundary logic
-    const { generateCommandAndDirectivesForSegment } = await import('./calculations');
+    const { generateCommandAndDirectivesForSegment } =
+      await import("./calculations");
 
     for (let i = 0; i < segmentIds.length; i++) {
       const segmentIndex = i;
@@ -912,33 +969,37 @@ describe("transcoding-service", () => {
         segmentIndex,
         startTimeUs,
         endTimeUs,
-        isLast
+        isLast,
       );
 
       // Parse directives to verify calculations
-      const directiveLines = directives.split('\n');
-      const inpointLine = directiveLines.find(line => line.startsWith('inpoint'));
-      const outpointLine = directiveLines.find(line => line.startsWith('outpoint'));
+      const directiveLines = directives.split("\n");
+      const inpointLine = directiveLines.find((line) =>
+        line.startsWith("inpoint"),
+      );
+      const outpointLine = directiveLines.find((line) =>
+        line.startsWith("outpoint"),
+      );
 
       expect(inpointLine).toBeDefined();
       expect(outpointLine).toBeDefined();
 
       if (!inpointLine || !outpointLine) {
-        throw new Error('Missing inpoint or outpoint in directives');
+        throw new Error("Missing inpoint or outpoint in directives");
       }
 
-      const inpointParts = inpointLine.split(' ');
-      const outpointParts = outpointLine.split(' ');
+      const inpointParts = inpointLine.split(" ");
+      const outpointParts = outpointLine.split(" ");
 
       if (!inpointParts[1] || !outpointParts[1]) {
-        throw new Error('Invalid directive format');
+        throw new Error("Invalid directive format");
       }
 
-      const inpointUs = Number.parseFloat(inpointParts[1].replace('us', ''));
-      const outpointUs = Number.parseFloat(outpointParts[1].replace('us', ''));
+      const inpointUs = Number.parseFloat(inpointParts[1].replace("us", ""));
+      const outpointUs = Number.parseFloat(outpointParts[1].replace("us", ""));
 
       // Verify inpoint/outpoint calculations match our expected frame boundaries
-      const frameDurationUs = 1024 / 48000 * 1000000; // AAC frame duration in microseconds
+      const frameDurationUs = (1024 / 48000) * 1000000; // AAC frame duration in microseconds
 
       if (segmentIndex === 0) {
         // First segment: inpoint should account for FFmpeg priming only
@@ -949,7 +1010,7 @@ describe("transcoding-service", () => {
       }
 
       // CRITICAL ASSERTION: Calculate outpoint using exact same logic as implementation
-      const { getClosestAlignedTime } = await import('./calculations');
+      const { getClosestAlignedTime } = await import("./calculations");
       const alignedStartTime = getClosestAlignedTime(startTimeUs);
       const alignedEndTime = getClosestAlignedTime(endTimeUs);
       const realDurationUs = alignedEndTime - alignedStartTime;
@@ -992,23 +1053,31 @@ describe("transcoding-service", () => {
       // NON-NEGOTIABLE: Each segment must have exactly one moof
       const moofCount = dump.moof.length;
       if (moofCount !== 1) {
-        console.error(`CRITICAL FAILURE: Segment ${segmentId} has ${moofCount} moof boxes, expected exactly 1. Multiple moofs cause incorrect sequence numbers and base media decode times, breaking DASH playback compatibility.`);
+        console.error(
+          `CRITICAL FAILURE: Segment ${segmentId} has ${moofCount} moof boxes, expected exactly 1. Multiple moofs cause incorrect sequence numbers and base media decode times, breaking DASH playback compatibility.`,
+        );
       }
       expect(moofCount).toBe(1);
 
       // Additional verification: Check sequence number consistency
-      const { stdout: mp4dumpOutput } = await execPromise(`mp4dump "${segmentPath}"`);
+      const { stdout: mp4dumpOutput } = await execPromise(
+        `mp4dump "${segmentPath}"`,
+      );
       const sequenceMatches = mp4dumpOutput.match(/sequence number = (\d+)/g);
 
       if (sequenceMatches && sequenceMatches.length > 0) {
         // All sequence numbers in a segment should be the same (the segment index)
-        const uniqueSequences = new Set(sequenceMatches.map(match => {
-          const parts = match.split(' = ');
-          return parts[1] || '';
-        }));
+        const uniqueSequences = new Set(
+          sequenceMatches.map((match) => {
+            const parts = match.split(" = ");
+            return parts[1] || "";
+          }),
+        );
 
         if (uniqueSequences.size !== 1) {
-          console.error(`CRITICAL FAILURE: Segment ${segmentId} has inconsistent sequence numbers: ${[...uniqueSequences].join(', ')}. All fragments in a segment should have the same sequence number.`);
+          console.error(
+            `CRITICAL FAILURE: Segment ${segmentId} has inconsistent sequence numbers: ${[...uniqueSequences].join(", ")}. All fragments in a segment should have the same sequence number.`,
+          );
         }
         expect(uniqueSequences.size).toBe(1);
 
@@ -1017,41 +1086,57 @@ describe("transcoding-service", () => {
         if (firstSequence) {
           const sequenceNumber = Number.parseInt(firstSequence, 10);
           if (sequenceNumber !== segmentId) {
-            console.error(`CRITICAL FAILURE: Segment ${segmentId} has sequence number ${sequenceNumber}, expected ${segmentId}`);
+            console.error(
+              `CRITICAL FAILURE: Segment ${segmentId} has sequence number ${sequenceNumber}, expected ${segmentId}`,
+            );
           }
           expect(sequenceNumber).toBe(segmentId);
         }
       }
 
       // Verify base media decode time progression within each segment
-      const bmdtMatches = mp4dumpOutput.match(/base media decode time = (\d+)/g);
+      const bmdtMatches = mp4dumpOutput.match(
+        /base media decode time = (\d+)/g,
+      );
       if (bmdtMatches && bmdtMatches.length > 1) {
-        console.error(`CRITICAL FAILURE: Segment ${segmentId} has ${bmdtMatches.length} base media decode time entries, expected exactly 1. Multiple BMDTs indicate multiple fragments in one segment.`);
+        console.error(
+          `CRITICAL FAILURE: Segment ${segmentId} has ${bmdtMatches.length} base media decode time entries, expected exactly 1. Multiple BMDTs indicate multiple fragments in one segment.`,
+        );
         expect(bmdtMatches.length).toBe(1);
       }
     }
 
-    console.log(`✅ CRITICAL TEST PASSED: All ${segmentIds.length} video segments have exactly one moof each`);
+    console.log(
+      `✅ CRITICAL TEST PASSED: All ${segmentIds.length} video segments have exactly one moof each`,
+    );
   });
 
-  test('debug segment 4 frame count issue - replicates API behavior', async () => {
+  test("debug segment 4 frame count issue - replicates API behavior", async () => {
     // This test replicates the exact scenario from the API:
     // head-moov-720p.mp4, segment 4, high rendition, 2-second segments
     const testVideoUrl = testServer.getFileUrl("head-moov-720p.mp4");
-    const outputDir = join(import.meta.dirname, '..', '..', '..', '..', 'output', 'debug-segment-4');
+    const outputDir = join(
+      import.meta.dirname,
+      "..",
+      "..",
+      "..",
+      "..",
+      "output",
+      "debug-segment-4",
+    );
     await mkdir(outputDir, { recursive: true });
 
-    console.log('\n🎬 TESTING SEGMENT 4 of head-moov-720p.mp4');
-    console.log('Input:', testVideoUrl);
-    console.log('Output:', outputDir);
+    console.log("\n🎬 TESTING SEGMENT 4 of head-moov-720p.mp4");
+    console.log("Input:", testVideoUrl);
+    console.log("Output:", outputDir);
 
     // Transcode segment 4 (exactly like the API request)
     const segmentPath = await transcodeSegment({
       inputUrl: testVideoUrl,
-      segmentId: '4',
-      rendition: 'high',
+      segmentId: "4",
+      rendition: "high",
       segmentDurationMs: SEGMENT_DURATION,
-      outputDir: outputDir
+      outputDir: outputDir,
     });
 
     expect(segmentPath).toBeTruthy();
@@ -1059,33 +1144,43 @@ describe("transcoding-service", () => {
     // Analyze the resulting segment
     const dump = await Mp4Dump.dump(segmentPath);
 
-    console.log('\n📊 SEGMENT 4 ANALYSIS:');
-    console.log('- File:', segmentPath);
-    console.log('- Sample count:', dump.totalSampleCount);
-    console.log('- Expected for 2s at 25fps: 50 frames');
+    console.log("\n📊 SEGMENT 4 ANALYSIS:");
+    console.log("- File:", segmentPath);
+    console.log("- Sample count:", dump.totalSampleCount);
+    console.log("- Expected for 2s at 25fps: 50 frames");
 
     // At 25fps, 2 seconds should have exactly 50 frames
-    expect(dump.totalSampleCount).equals(50,
-      `Segment 4 should have exactly 50 frames for 2 seconds at 25fps, but got ${dump.totalSampleCount}`);
+    expect(dump.totalSampleCount).equals(
+      50,
+      `Segment 4 should have exactly 50 frames for 2 seconds at 25fps, but got ${dump.totalSampleCount}`,
+    );
   }, 30000);
 
-  test('debug segment 5 frame count issue - verifies fix for last segment', async () => {
+  test("debug segment 5 frame count issue - verifies fix for last segment", async () => {
     // Test the final segment (8s to 10s) to ensure our fix works for all segments
     const testVideoUrl = testServer.getFileUrl("head-moov-720p.mp4");
-    const outputDir = join(import.meta.dirname, '..', '..', '..', '..', 'output', 'debug-segment-5');
+    const outputDir = join(
+      import.meta.dirname,
+      "..",
+      "..",
+      "..",
+      "..",
+      "output",
+      "debug-segment-5",
+    );
     await mkdir(outputDir, { recursive: true });
 
-    console.log('\n🎬 TESTING SEGMENT 5 of head-moov-720p.mp4 (FINAL SEGMENT)');
-    console.log('Input:', testVideoUrl);
-    console.log('Output:', outputDir);
+    console.log("\n🎬 TESTING SEGMENT 5 of head-moov-720p.mp4 (FINAL SEGMENT)");
+    console.log("Input:", testVideoUrl);
+    console.log("Output:", outputDir);
 
     // Transcode segment 5 (8s to 10s - the final segment)
     const segmentPath = await transcodeSegment({
       inputUrl: testVideoUrl,
-      segmentId: '5',
-      rendition: 'high',
+      segmentId: "5",
+      rendition: "high",
       segmentDurationMs: SEGMENT_DURATION,
-      outputDir: outputDir
+      outputDir: outputDir,
     });
 
     expect(segmentPath).toBeTruthy();
@@ -1093,14 +1188,16 @@ describe("transcoding-service", () => {
     // Analyze the resulting segment
     const dump = await Mp4Dump.dump(segmentPath);
 
-    console.log('\n📊 SEGMENT 5 ANALYSIS:');
-    console.log('- File:', segmentPath);
-    console.log('- Sample count:', dump.totalSampleCount);
-    console.log('- Expected for 2s at 25fps: 50 frames');
+    console.log("\n📊 SEGMENT 5 ANALYSIS:");
+    console.log("- File:", segmentPath);
+    console.log("- Sample count:", dump.totalSampleCount);
+    console.log("- Expected for 2s at 25fps: 50 frames");
 
     // At 25fps, 2 seconds should have exactly 50 frames
-    expect(dump.totalSampleCount).equals(50,
-      `Segment 5 should have exactly 50 frames for 2 seconds at 25fps, but got ${dump.totalSampleCount}`);
+    expect(dump.totalSampleCount).equals(
+      50,
+      `Segment 5 should have exactly 50 frames for 2 seconds at 25fps, but got ${dump.totalSampleCount}`,
+    );
   }, 30000);
 
   // The fix is confirmed working - production H.264 NAL unit errors should be resolved

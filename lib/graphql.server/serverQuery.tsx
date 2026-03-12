@@ -15,11 +15,26 @@ export async function serverQuery<
   variables: Variables,
 ) {
   const token = signHasuraJwtForSession(sessionInfo);
-  const result = await serverGQL.queryAs(
-    sessionInfo,
-    descriptor.role,
-    descriptor.query,
-    variables,
-  );
+  const [rowsResult, countResult] = await Promise.all([
+    serverGQL.queryAs(
+      sessionInfo,
+      descriptor.role,
+      descriptor.query,
+      variables,
+    ),
+    descriptor.countQuery
+      ? serverGQL.queryAs(
+          sessionInfo,
+          descriptor.role,
+          descriptor.countQuery,
+          variables,
+        )
+      : Promise.resolve(null),
+  ]);
+
+  const result = countResult?.data
+    ? { ...rowsResult, data: { ...rowsResult.data, ...countResult.data } }
+    : rowsResult;
+
   return { result, token };
 }

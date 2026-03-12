@@ -1,6 +1,10 @@
 /** Welcome to the telecine feature flags system. It is... a file. */
 
-import { type LoaderFunction, type LoaderFunctionArgs, redirect } from "react-router";
+import {
+  type LoaderFunction,
+  type LoaderFunctionArgs,
+  redirect,
+} from "react-router";
 import { parseRequestSession } from "./session";
 
 export enum Features {
