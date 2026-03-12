@@ -11,81 +11,55 @@ The root repository has three remotes configured:
 - `elements`: Points to `git@github.com:editframe/elements.git`
 - `skills`: Points to `git@github.com:editframe/skills.git`
 
-These remotes are used for syncing changes to/from the separate repositories.
+The `telecine/` and `elements/` directories are git subtrees. Changes sync bidirectionally via `git subtree push/pull`.
 
 ## Push/Pull Workflows
 
 ### Pushing Changes to Remotes
 
-Always use the dedicated push scripts to push changes from the monorepo to sub-repo remotes. Never run `git push` directly to telecine, elements, or skills remotes.
-
-#### Using Push Scripts (Recommended)
+Always use the dedicated scripts. Never run `git push` directly to telecine or elements remotes.
 
 ```bash
-# Push telecine/ directory to telecine remote (defaults to main branch)
+# Push telecine/ to telecine remote (defaults to main branch)
 ./scripts/push-telecine
 
-# Push telecine/ directory to a specific branch
+# Push telecine/ to a specific branch
 ./scripts/push-telecine <branch-name>
-# or
-./scripts/push-telecine --branch <branch-name>
 
-# Push telecine/ directory and wait for deployment action to complete
+# Push telecine/ and wait for deployment action to complete
 ./scripts/push-telecine --wait
 
-# Push elements/ directory to elements remote (defaults to main branch)
+# Push elements/ to elements remote
 ./scripts/push-elements
-
-# Push elements/ directory to a specific branch
-./scripts/push-elements <branch-name>
-# or
-./scripts/push-elements --branch <branch-name>
-
-# Push elements/ directory and wait for release action to complete
 ./scripts/push-elements --wait
 
-# Push skills/ directory to skills remote (defaults to main branch)
+# Push skills/ to skills remote
 ./scripts/push-skills
-
-# Push skills/ directory to a specific branch
-./scripts/push-skills <branch-name>
 ```
 
-**How the push scripts work:**
-1. Fetches the remote branch to get current state
-2. Extracts the tree object for the subdirectory from HEAD (`git rev-parse HEAD:<prefix>`)
-3. Creates a new commit with that tree, parented on the remote's current HEAD (`git commit-tree`)
-4. Pushes the new commit with `--force-with-lease`
-5. Skips the push entirely if the remote tree already matches (no-op detection)
-6. Optionally waits for GitHub Actions to complete (with `--wait` flag, telecine/elements only)
-
-**Never push directly to sub-repo remotes with `git push`.** The monorepo root tree does not match the sub-repo tree structure. Direct pushes would push the entire monorepo, breaking the sub-repos.
+**How push scripts work:** `git subtree push --prefix=<dir> <remote> <branch>`. This splits the subtree commit history and pushes only the sub-directory tree with proper ancestry, enabling future bidirectional merges.
 
 ### Pulling Changes from Remotes
 
-To pull changes from the remotes into the monorepo:
+When changes are merged directly to a remote (e.g. via a PR on github.com/editframe/telecine), pull them back using:
 
 ```bash
-# Fetch from telecine remote
-git fetch telecine
-
-# Fetch from elements remote
-git fetch elements
-
-# Fetch from skills remote
-git fetch skills
-
-# Merge specific branch from remote
-git merge telecine/<branch-name>
-git merge elements/<branch-name>
-git merge skills/<branch-name>
+./scripts/pull-telecine
+./scripts/pull-elements
 ```
 
-### Syncing Between Monorepo and Remotes
+These run `git subtree pull --prefix=<dir> <remote> main --squash`. Because `push-telecine`/`push-elements` use `git subtree push`, the histories share ancestry and pull is conflict-free for non-overlapping changes.
 
-The monorepo acts as the primary working repository. Changes should be:
-1. Committed in the monorepo
-2. Pushed to the appropriate remote using the push scripts (`./scripts/push-telecine`, `./scripts/push-elements`, or `./scripts/push-skills`) when ready
-3. Pulled from remotes when syncing upstream changes
+### Syncing Workflow
 
-**Important**: The monorepo structure means that `telecine/`, `elements/`, and `skills/` directories are part of the root repository, but they should be synced with their respective remote repositories using the push scripts. The push scripts extract only the relevant subdirectory tree, ensuring clean separation between the monorepo and the individual project repositories.
+The monorepo is the primary working environment:
+1. Make changes in the monorepo
+2. Commit to monorepo `main`
+3. Push to the remote with `./scripts/push-telecine` or `./scripts/push-elements`
+4. If a PR was merged directly on the remote, pull back with `./scripts/pull-telecine` or `./scripts/pull-elements`
+
+**Never run `git push telecine ...` or `git push elements ...` directly.** The push scripts handle proper subtree extraction.
+
+### Skills sync
+
+`push-telecine` automatically runs `sync-telecine-skills` before pushing, which rsyncs the `skills/` tree into `telecine/skills/` and commits if changed.
