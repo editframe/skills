@@ -5,7 +5,7 @@ ENV NODE_COMPILE_CACHE=/app/.compile-cache
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY .npmrc package.json package-lock.json ./
 RUN npm install --ignore-scripts
 
 COPY lib/ lib/

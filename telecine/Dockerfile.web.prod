@@ -2,7 +2,7 @@ FROM node:22 AS installer
 
 WORKDIR /app
 
-COPY ./package.json ./package-lock.json  ./
+COPY ./.npmrc ./package.json ./package-lock.json  ./
 COPY ./postcss.config.cjs ./
 
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1

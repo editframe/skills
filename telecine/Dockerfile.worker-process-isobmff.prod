@@ -12,7 +12,7 @@ RUN apt-get -y update && \
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY .npmrc package.json package-lock.json ./
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1
 RUN npm install --ignore-scripts
 
