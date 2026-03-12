@@ -1,6 +1,6 @@
 {
   "name": "@editframe/react",
-  "version": "0.45.7",
+  "version": "0.45.8",
   "description": "",
   "repository": {
     "type": "git",
@@ -39,7 +39,7 @@
   "author": "",
   "license": "SEE LICENSE IN LICENSE-FULL.md",
   "dependencies": {
-    "@editframe/elements": "0.45.7",
+    "@editframe/elements": "0.45.8",
     "lit": "^3.3.1",
     "mitt": "^3.0.1"
   },
