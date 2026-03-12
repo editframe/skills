@@ -36,8 +36,8 @@ sequenceDiagram
     participant YourServer
     participant EditframeAPI
     
-    Browser->>YourServer: POST /sign-url {url}
-    YourServer->>EditframeAPI: POST /api/v1/url-token {url}
+    Browser->>YourServer: POST /sign-url {url, params?}
+    YourServer->>EditframeAPI: POST /api/v1/url-token {url, params?}
     Note over YourServer,EditframeAPI: Authenticated with API key
     EditframeAPI->>YourServer: {token: "jwt..."}
     YourServer->>Browser: {token: "jwt..."}
@@ -47,9 +47,9 @@ sequenceDiagram
 ```
 
 1. Browser needs to access a media URL
-2. Browser requests a token from your server
-3. Your server calls `createURLToken` with your API key
-4. Editframe returns a signed JWT
+2. Browser POSTs `{ url, params? }` to your signing endpoint
+3. Your server calls `createURLToken(client, payload)` — passing the full payload through
+4. Editframe returns a signed JWT scoped to that URL prefix + params
 5. Browser uses the JWT to access the media URL
 
 ## Implementation
@@ -61,18 +61,17 @@ Create an endpoint that proxies to `/api/v1/url-token`:
 ```typescript
 // server.js
 import express from "express";
-import { Client, createURLToken } from "@editframe/api";
+import { Client, createURLToken, signingRequestSchema } from "@editframe/api";
 
 const app = express();
 const client = new Client(process.env.EDITFRAME_API_KEY);
 
 app.post("/sign-url", express.json(), async (req, res) => {
   try {
-    const { url } = req.body;
-    
-    // Generate signed token
-    const token = await createURLToken(client, url);
-    
+    // Parse and validate the request body — signingRequestSchema is a Zod schema
+    // that types the payload as { url: string, params?: Record<string, string> }
+    const payload = signingRequestSchema.parse(req.body);
+    const token = await createURLToken(client, payload);
     res.json({ token });
   } catch (error) {
     console.error("Failed to sign URL:", error);
@@ -101,22 +100,22 @@ Set up an Elements project with `npm create @editframe` if you haven't already. 
 
 When `<ef-video>` loads, it:
 1. Detects the `src` requires authentication
-2. POSTs to `/sign-url` with `{url: "https://editframe.com/api/v1/transcode/..."}`
+2. POSTs to `/sign-url` with `{ url: "https://editframe.com/api/v1/transcode", params: { url: "<source-video-url>" } }`
 3. Receives `{token: "jwt..."}`
-4. Adds `Authorization: Bearer jwt...` to the media request
+4. Adds `Authorization: Bearer jwt...` to all segment requests for that source
 
 ## Token Lifecycle
 
-Tokens are valid for 1 hour by default. The browser caches tokens and reuses them for the same URL until they expire.
+Tokens are valid for 1 hour by default. The browser caches tokens and reuses them until they expire.
 
-For transcode endpoints, the browser signs the base URL once and reuses the token for all segments:
+For transcode endpoints, the client uses prefix-based signing so one token covers all segments for a given source video. The signing request carries a `params` field with the source URL rather than embedding it in the token URL directly:
 
 ```
-Base URL: https://editframe.com/api/v1/transcode
-Segments: /1080p/init.m4s, /1080p/1.m4s, /1080p/2.m4s, ...
+Request body: { url: "https://editframe.com/api/v1/transcode", params: { url: "https://cdn.example.com/source.mp4" } }
+Token covers: manifest, init segments, and all media segments for that source
 ```
 
-One token covers all segments for a given source video.
+This is why the signing endpoint receives `{ url, params? }` rather than just `{ url }` — the `params` carry query parameters that are part of the token scope but kept separate so the same base URL can be reused as a cache key across hundreds of segment requests.
 
 ## Alternative: Anonymous Tokens
 

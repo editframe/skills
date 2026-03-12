@@ -85,12 +85,13 @@ Your backend holds the API key. Your frontend needs to play media through Editfr
 
 ```typescript
 // server.js
-import { Client, createURLToken } from "@editframe/api";
+import { Client, createURLToken, signingRequestSchema } from "@editframe/api";
 
 const client = new Client(process.env.EDITFRAME_API_KEY);
 
 app.post("/sign-url", async (req, res) => {
-  const token = await createURLToken(client, req.body.url);
+  const payload = signingRequestSchema.parse(req.body);
+  const token = await createURLToken(client, payload);
   res.json({ token });
 });
 ```
