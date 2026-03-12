@@ -17,86 +17,6 @@ import { MainVideoInputCache } from "./EFMedia/videoTasks/MainVideoInputCache.ts
 import { ScrubInputCache } from "./EFMedia/videoTasks/ScrubInputCache.ts";
 import { EFMedia } from "./EFMedia.js";
 import { updateAnimations } from "./updateAnimations.js";
-import type { Span } from "./RangeSet.js";
-
-// ---------------------------------------------------------------------------
-// computeLookaheadSourceTimes — exported pure function for testing
-// ---------------------------------------------------------------------------
-
-export interface ComputeLookaheadSourceTimesOptions {
-  currentSourceTimeMs: number;
-  resolvedRanges: Span[] | null;
-  segmentDurationMs: number;
-  maxLookahead: number;
-}
-
-/**
- * Walk forward through resolved ranges to produce an ordered list of source
- * media times for segment prefetch lookahead.
- *
- * Without ranges (null): simple linear walk from currentSourceTimeMs.
- * With ranges: walks within each span and jumps to the next span start at
- * each span boundary.
- */
-export function computeLookaheadSourceTimes(
-  opts: ComputeLookaheadSourceTimesOptions,
-): number[] {
-  const { currentSourceTimeMs, resolvedRanges, segmentDurationMs, maxLookahead } = opts;
-
-  if (resolvedRanges === null) {
-    // Legacy linear walk
-    const times: number[] = [];
-    let probe = currentSourceTimeMs;
-    for (let i = 0; i < maxLookahead; i++) {
-      times.push(probe);
-      probe += segmentDurationMs;
-    }
-    return times;
-  }
-
-  // Range-aware walk: find the span containing currentSourceTimeMs, then
-  // walk forward, jumping to the next span start at each boundary.
-  const times: number[] = [];
-
-  // Find the span index that contains currentSourceTimeMs
-  let spanIndex = 0;
-  let probeSourceTimeMs = currentSourceTimeMs;
-
-  // Locate starting span
-  for (let i = 0; i < resolvedRanges.length; i++) {
-    const span = resolvedRanges[i]!;
-    if (probeSourceTimeMs >= span[0] && probeSourceTimeMs < span[1]) {
-      spanIndex = i;
-      break;
-    }
-    // If probe is before any span, start from first span
-    if (probeSourceTimeMs < span[0]) {
-      spanIndex = i;
-      probeSourceTimeMs = span[0];
-      break;
-    }
-    spanIndex = i + 1;
-  }
-
-  while (times.length < maxLookahead && spanIndex < resolvedRanges.length) {
-    const span = resolvedRanges[spanIndex]!;
-
-    times.push(probeSourceTimeMs);
-
-    const nextProbe = probeSourceTimeMs + segmentDurationMs;
-    if (nextProbe >= span[1]) {
-      // Crossed span boundary — advance to next span
-      spanIndex++;
-      if (spanIndex < resolvedRanges.length) {
-        probeSourceTimeMs = resolvedRanges[spanIndex]![0];
-      }
-    } else {
-      probeSourceTimeMs = nextProbe;
-    }
-  }
-
-  return times;
-}
 
 // Shared caches for video seeking
 const mainVideoInputCache = new MainVideoInputCache();
@@ -1334,20 +1254,12 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
     const playheadMs = this.rootTimegroup?.currentTimeMs ?? 0;
     const seen = new Set<number>();
 
-    const segmentDurationMs = track.segmentDurationMs ?? 2000;
-    const probeTimes = computeLookaheadSourceTimes({
-      currentSourceTimeMs,
-      resolvedRanges: this.resolvedRanges,
-      segmentDurationMs,
-      maxLookahead,
-    });
+    let probeTimeMs = currentSourceTimeMs;
 
-    for (const probeTimeMs of probeTimes) {
-      if (seen.size >= maxLookahead) break;
-
+    while (seen.size < maxLookahead) {
       const segmentId = mediaEngine.index.segmentAt(probeTimeMs, track);
       if (segmentId === undefined) break;
-      if (seen.has(segmentId)) continue;
+      if (seen.has(segmentId)) break;
 
       seen.add(segmentId);
 
@@ -1356,6 +1268,10 @@ export class EFVideo extends TWMixin(EFMedia) implements FrameRenderable {
         const deadlineMs = playheadMs + offsetFromCurrentMs;
         results.push({ segmentId, deadlineMs });
       }
+
+      const thisDuration =
+        track.segmentDurationsMs?.[segmentId - 1] ?? track.segmentDurationMs ?? 2000;
+      probeTimeMs += thisDuration;
     }
 
     return results;

@@ -104,12 +104,7 @@ export {
   type UnprocessedFileUploadDetails,
   uploadUnprocessedReadableStream,
 } from "./resources/unprocessed-file.js";
-export {
-  createURLToken,
-  signingRequestSchema,
-  type SigningRequest,
-  type URLTokenResult,
-} from "./resources/url-token.js";
+export { createURLToken, type URLTokenResult } from "./resources/url-token.js";
 export type {
   CompletionEvent,
   EventCallback,

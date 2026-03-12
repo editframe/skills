@@ -4,67 +4,6 @@ import { property, state } from "lit/decorators.js";
 import { PlaybackController } from "../gui/PlaybackController.js";
 import { durationConverter } from "./durationConverter.js";
 import type { EFTimegroup } from "./EFTimegroup.js";
-import {
-  type Span,
-  parseIncludeRanges,
-  parseExcludeRanges,
-  localToSourceTime,
-  totalDuration,
-} from "./RangeSet.js";
-
-// ---------------------------------------------------------------------------
-// Range attribute resolution — exported for testing
-// ---------------------------------------------------------------------------
-
-export interface RangeAttributeInputs {
-  includeRangesAttr: string | undefined;
-  excludeRangesAttr: string | undefined;
-  intrinsicDurationMs: number | undefined;
-  crossfadeMs?: number;
-}
-
-export interface RangeAttributeResult {
-  /** Resolved span list, or null when no range attributes are present */
-  spans: Span[] | null;
-  crossfadeMs: number;
-  warnings: string[];
-}
-
-const DEFAULT_CROSSFADE_MS = 50;
-
-/**
- * Pure function — resolves the precedence rules for include-ranges,
- * exclude-ranges, and crossfade attributes into a canonical span list.
- * Exported for unit testing.
- */
-export function resolveRangesFromAttributes(inputs: RangeAttributeInputs): RangeAttributeResult {
-  const { includeRangesAttr, excludeRangesAttr, intrinsicDurationMs } = inputs;
-  const crossfadeMs = inputs.crossfadeMs ?? DEFAULT_CROSSFADE_MS;
-  const warnings: string[] = [];
-
-  if (includeRangesAttr !== undefined) {
-    if (excludeRangesAttr !== undefined) {
-      warnings.push(
-        "Both include-ranges and exclude-ranges are set. include-ranges takes precedence; exclude-ranges is ignored.",
-      );
-    }
-    return { spans: parseIncludeRanges(includeRangesAttr), crossfadeMs, warnings };
-  }
-
-  if (excludeRangesAttr !== undefined) {
-    if (intrinsicDurationMs === undefined) {
-      // Cannot compute complement until source duration is known
-      return { spans: null, crossfadeMs, warnings };
-    }
-    return {
-      spans: parseExcludeRanges(excludeRangesAttr, intrinsicDurationMs),
-      crossfadeMs,
-      warnings,
-    };
-  }
-
-  return { spans: null, crossfadeMs, warnings };
-}
 // Lazy import to break circular dependency: EFTemporal -> EFTimegroup -> EFMedia -> EFTemporal
 // isTimegroupCalculatingDuration is only used at runtime in a getter, so we can import it lazily
 // Use a module-level variable that gets set when EFTimegroup module loads
@@ -517,20 +456,6 @@ export declare class TemporalMixinInterface {
    *            ownCurrentTimeMs === 0s
    */
   get currentSourceTimeMs(): number;
-
-  /**
-   * Resolved span list from include-ranges or exclude-ranges attributes.
-   * null when neither attribute is present (legacy path).
-   * @internal
-   */
-  get resolvedRanges(): Span[] | null;
-
-  /**
-   * Crossfade duration in milliseconds applied at range boundaries.
-   * Defaults to 50ms. Set crossfade="0" for hard cuts.
-   * @domAttribute "crossfade"
-   */
-  get crossfadeMs(): number;
 
   set duration(value: string);
   get duration(): string;
@@ -1078,40 +1003,6 @@ export const EFTemporal = <T extends Constructor<LitElement>>(superClass: T) => 
       this._sourceOutMs = value;
     }
 
-    @property({ type: String, attribute: "include-ranges" })
-    private _includeRangesAttr: string | undefined = undefined;
-
-    @property({ type: String, attribute: "exclude-ranges" })
-    private _excludeRangesAttr: string | undefined = undefined;
-
-    @property({ type: Number, attribute: "crossfade", converter: durationConverter })
-    private _crossfadeMs: number = DEFAULT_CROSSFADE_MS;
-
-    #resolvedRanges: Span[] | null = null;
-    #resolvedCrossfadeMs: number = DEFAULT_CROSSFADE_MS;
-
-    #recomputeRanges() {
-      const result = resolveRangesFromAttributes({
-        includeRangesAttr: this._includeRangesAttr,
-        excludeRangesAttr: this._excludeRangesAttr,
-        intrinsicDurationMs: this.intrinsicDurationMs,
-        crossfadeMs: this._crossfadeMs,
-      });
-      for (const warning of result.warnings) {
-        console.warn(`[ef-video] ${warning}`);
-      }
-      this.#resolvedRanges = result.spans;
-      this.#resolvedCrossfadeMs = result.crossfadeMs;
-    }
-
-    get resolvedRanges(): Span[] | null {
-      return this.#resolvedRanges;
-    }
-
-    get crossfadeMs(): number {
-      return this.#resolvedCrossfadeMs;
-    }
-
     override updated(changedProperties: Map<PropertyKey, unknown>): void {
       super.updated?.(changedProperties);
 
@@ -1122,10 +1013,6 @@ export const EFTemporal = <T extends Constructor<LitElement>>(superClass: T) => 
         changedProperties.has("_sourceInMs") || changedProperties.has("_sourceOutMs");
       const trimChanged =
         changedProperties.has("_trimStartMs") || changedProperties.has("_trimEndMs");
-      const rangesChanged =
-        changedProperties.has("_includeRangesAttr") ||
-        changedProperties.has("_excludeRangesAttr") ||
-        changedProperties.has("_crossfadeMs");
       const becameReady =
         changedProperties.has("contentReadyState") &&
         changedProperties.get("contentReadyState") !== "ready" &&
@@ -1133,13 +1020,7 @@ export const EFTemporal = <T extends Constructor<LitElement>>(superClass: T) => 
       const offsetChanged = changedProperties.has("_offsetMs");
       const durationChanged = changedProperties.has("_durationMs");
 
-      if (rangesChanged || (this._excludeRangesAttr !== undefined && becameReady)) {
-        // Recompute ranges when attrs change or when intrinsicDurationMs becomes
-        // available (needed for exclude-ranges complement calculation).
-        this.#recomputeRanges();
-      }
-
-      if (sourceChanged || trimChanged || rangesChanged || becameReady || offsetChanged || durationChanged) {
+      if (sourceChanged || trimChanged || becameReady || offsetChanged || durationChanged) {
         // Render clones are sequenced via seekForRender — don't trigger autonomous re-renders,
         // which would abort the in-progress seekForRender FrameController signal.
         const isRenderClone = this.rootTimegroup?.hasAttribute("data-no-playback-controller");
@@ -1192,10 +1073,6 @@ export const EFTemporal = <T extends Constructor<LitElement>>(superClass: T) => 
     }
 
     get durationMs() {
-      if (this.#resolvedRanges !== null) {
-        return totalDuration(this.#resolvedRanges);
-      }
-
       // Prevent infinite loops: don't call parent.durationMs if parent is currently calculating
       // Lazy import to break circular dependency: EFTemporal -> EFTimegroup -> EFMedia -> EFTemporal
       const isTimegroupCalculatingDuration = getIsTimegroupCalculatingDuration();
@@ -1219,9 +1096,6 @@ export const EFTemporal = <T extends Constructor<LitElement>>(superClass: T) => 
     }
 
     get sourceStartMs() {
-      if (this.#resolvedRanges !== null && this.#resolvedRanges.length > 0) {
-        return this.#resolvedRanges[0]![0];
-      }
       return this.trimStartMs ?? this.sourceInMs ?? 0;
     }
 
@@ -1336,9 +1210,6 @@ export const EFTemporal = <T extends Constructor<LitElement>>(superClass: T) => 
      * for mapping to internal media time codes for audio/video elements.
      */
     get currentSourceTimeMs() {
-      if (this.#resolvedRanges !== null) {
-        return localToSourceTime(this.ownCurrentTimeMs, this.#resolvedRanges) ?? 0;
-      }
       const leadingTrimMs = this.sourceInMs || this.trimStartMs || 0;
       return this.ownCurrentTimeMs + leadingTrimMs;
     }
