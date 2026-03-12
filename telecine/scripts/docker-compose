@@ -14,12 +14,18 @@ fi
 
 # Check if shared network exists
 if ! docker network inspect editframe-shared > /dev/null 2>&1; then
-  echo "📦 Shared infrastructure not detected. Starting shared services..."
-  echo "   (Traefik + PostgreSQL)"
-  cd "$MONOREPO_ROOT"
-  docker compose --project-name editframe up -d
-  cd "$SCRIPT_DIR/.."
-  echo "✅ Shared infrastructure started"
+  if [ -f "$MONOREPO_ROOT/docker-compose.yaml" ]; then
+    echo "📦 Shared infrastructure not detected. Starting shared services..."
+    echo "   (Traefik + PostgreSQL)"
+    cd "$MONOREPO_ROOT"
+    docker compose --project-name editframe up -d
+    cd "$SCRIPT_DIR/.."
+    echo "✅ Shared infrastructure started"
+  else
+    echo "📦 Creating editframe-shared network (standalone mode)..."
+    docker network create editframe-shared
+    echo "✅ Network created"
+  fi
 fi
 
 # Ensure worktree database exists in shared PostgreSQL
