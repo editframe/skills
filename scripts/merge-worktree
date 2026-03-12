@@ -1,145 +1,77 @@
 #!/usr/bin/env bash
-# Merge worktree branch back into main
+# Merge a worktree branch into main across all repos (monorepo, telecine, elements).
 #
-# This script merges changes from a worktree branch into main/master.
-# Use this when you're done with a feature and want to merge it back to main.
+# Usage: merge-worktree <branch-name>
 #
-# Direction: worktree branch → main
-#
-# Can be run from:
-#   1. Within the worktree directory (auto-detects branch)
-#   2. From main worktree with branch name argument
-#
-# Usage:
-#   # From within worktree:
-#   cd /path/to/worktree
-#   ./scripts/merge-worktree
-#
-#   # From main with branch name:
-#   ./scripts/merge-worktree <branch-name>
-#
-# Example:
-#   ./scripts/merge-worktree feature-auth
-#   # Merges feature-auth branch into main
-#
-# After successful merge, you can remove the worktree:
-#   cd /path/to/worktree && ./scripts/remove-worktree
+# Merges the branch into main in each repo where the branch exists and has changes.
+# After successful merge, use remove-worktree to clean up.
 
 set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 PROJECT_ROOT="$SCRIPT_DIR/.."
 
-# Check if we're in a git repository
-if ! git rev-parse --git-dir > /dev/null 2>&1; then
-  echo "Error: Not in a git repository" >&2
+if [ -z "$1" ]; then
+  echo "Usage: $0 <branch-name>" >&2
   exit 1
 fi
 
-# Detect current worktree and branch
-CURRENT_ROOT=$(git rev-parse --show-toplevel)
-CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || git symbolic-ref --short HEAD 2>/dev/null)
+BRANCH_NAME="$1"
+MAIN_WORKTREE=$(git rev-parse --show-toplevel)
+WORKTREE_PARENT=$(dirname "$MAIN_WORKTREE")
 
-# Check if branch name provided as argument (running from main)
-if [ -n "$1" ]; then
-  BRANCH_NAME="$1"
-  # Find worktree for this branch using porcelain output
-  WORKTREE_ROOT=""
-  while IFS= read -r line; do
-    if [[ "$line" =~ ^worktree[[:space:]]+(.+)$ ]]; then
-      WORKTREE_ROOT="${BASH_REMATCH[1]}"
-    elif [[ "$line" =~ ^branch[[:space:]]+refs/heads/(.+)$ ]]; then
-      if [ "${BASH_REMATCH[1]}" = "$BRANCH_NAME" ]; then
-        break
-      fi
-      WORKTREE_ROOT=""
-    fi
-  done < <(git worktree list --porcelain)
-  
-  if [ -z "$WORKTREE_ROOT" ]; then
-    echo "Error: Could not find worktree for branch '$BRANCH_NAME'" >&2
+TELECINE_MAIN="$WORKTREE_PARENT/telecine"
+ELEMENTS_MAIN="$WORKTREE_PARENT/elements"
+
+merge_branch_in_repo() {
+  local repo_dir="$1"
+  local repo_name="$2"
+  local branch="$3"
+
+  if [ ! -d "$repo_dir/.git" ] && [ ! -f "$repo_dir/.git" ]; then
+    return
+  fi
+
+  cd "$repo_dir"
+
+  if ! git show-ref --verify --quiet "refs/heads/${branch}"; then
+    return
+  fi
+
+  local main_branch="main"
+  if ! git show-ref --verify --quiet "refs/heads/main"; then
+    main_branch="master"
+  fi
+
+  git checkout "$main_branch" > /dev/null 2>&1
+
+  if git merge-base --is-ancestor "refs/heads/${branch}" "refs/heads/${main_branch}" 2>/dev/null; then
+    echo "  $repo_name: already merged"
+    return
+  fi
+
+  if ! git diff-index --quiet HEAD --; then
+    echo "  Error: $repo_name has uncommitted changes" >&2
     exit 1
   fi
-else
-  # Running from within worktree
-  WORKTREE_ROOT="$CURRENT_ROOT"
-  BRANCH_NAME="$CURRENT_BRANCH"
-  
-  if [ -z "$BRANCH_NAME" ]; then
-    echo "Error: Could not detect git branch name. Ensure you are on a valid branch or provide branch name as argument." >&2
-    exit 1
-  fi
-  
-  # Check if we're in main worktree
-  if [ "$BRANCH_NAME" = "main" ] || [ "$BRANCH_NAME" = "master" ]; then
-    echo "Error: Cannot merge main/master into itself. This script should be run from a worktree branch or with a branch name argument." >&2
-    exit 1
-  fi
-fi
 
-# Find main worktree
-MAIN_WORKTREE=$(git worktree list | grep -E '\[main\]|\[master\]' | awk '{print $1}' | head -1)
-if [ -z "$MAIN_WORKTREE" ]; then
-  # Fallback: check if current is main/master (shouldn't happen due to check above)
-  echo "Error: Could not find main worktree" >&2
-  exit 1
-fi
-
-# Determine main branch name
-cd "$MAIN_WORKTREE"
-MAIN_BRANCH=$(git branch --show-current 2>/dev/null || git symbolic-ref --short HEAD 2>/dev/null)
-if [ "$MAIN_BRANCH" != "main" ] && [ "$MAIN_BRANCH" != "master" ]; then
-  # Try to checkout main or master
-  if git show-ref --verify --quiet "refs/heads/main"; then
-    MAIN_BRANCH="main"
-  elif git show-ref --verify --quiet "refs/heads/master"; then
-    MAIN_BRANCH="master"
+  if git merge --no-edit "$branch"; then
+    echo "  $repo_name: merged"
   else
-    echo "Error: Could not determine main branch" >&2
+    echo "  Error: merge conflict in $repo_name" >&2
+    echo "  Resolve conflicts in $repo_dir, then run: git add . && git commit" >&2
     exit 1
   fi
-fi
+}
 
-echo "🔄 Merging branch '$BRANCH_NAME' into '$MAIN_BRANCH'"
-echo "   From worktree: $WORKTREE_ROOT"
-echo "   To worktree:   $MAIN_WORKTREE"
+echo "Merging '$BRANCH_NAME' into main..."
 echo ""
 
-# Switch to main worktree and checkout main branch
+merge_branch_in_repo "$MAIN_WORKTREE" "monorepo" "$BRANCH_NAME"
+merge_branch_in_repo "$TELECINE_MAIN" "telecine" "$BRANCH_NAME"
+merge_branch_in_repo "$ELEMENTS_MAIN" "elements" "$BRANCH_NAME"
+
 cd "$MAIN_WORKTREE"
-git checkout "$MAIN_BRANCH" > /dev/null 2>&1
 
-# Check if branch is already merged
-if git branch --merged | grep -q "^\s*${BRANCH_NAME}$" || git branch --merged | grep -q "^\s*\*.*${BRANCH_NAME}$"; then
-  echo "✅ Branch '$BRANCH_NAME' is already merged into '$MAIN_BRANCH'"
-  exit 0
-fi
-
-# Check for uncommitted changes in main
-if ! git diff-index --quiet HEAD --; then
-  echo "Error: Main worktree has uncommitted changes. Please commit or stash them first." >&2
-  exit 1
-fi
-
-# Perform merge
-echo "Merging..."
-if git merge --no-edit "$BRANCH_NAME"; then
-  echo ""
-  echo "✅ Successfully merged '$BRANCH_NAME' into '$MAIN_BRANCH'"
-  echo ""
-  echo "Next step: cd $WORKTREE_ROOT && ./scripts/remove-worktree"
-else
-  echo ""
-  echo "❌ Merge failed due to conflicts"
-  echo ""
-  echo "Resolve conflicts and complete the merge:"
-  echo "  1. cd $MAIN_WORKTREE"
-  echo "  2. Resolve conflicts in the files listed above"
-  echo "  3. git add <resolved-files>"
-  echo "  4. git commit"
-  echo ""
-  echo "Or abort the merge:"
-  echo "  cd $MAIN_WORKTREE && git merge --abort"
-  exit 1
-fi
-
+echo ""
+echo "Merged. Next: scripts/remove-worktree $BRANCH_NAME"
