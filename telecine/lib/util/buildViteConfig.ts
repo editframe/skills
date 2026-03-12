@@ -12,7 +12,7 @@ import { buildSearchIndexPlugin } from "./buildSearchIndexPlugin";
 
 const _require = createRequire(import.meta.url);
 const elementsVersion: string = _require(
-  "/app/lib/packages/packages/elements/package.json",
+  "@editframe/elements/package.json",
 ).version;
 
 export const buildViteConfig = () => {
