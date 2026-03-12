@@ -859,7 +859,15 @@ export class EFMedia extends EFTargetable(
     }
 
     // Check if trim/source properties changed that affect duration
-    const durationAffectingProps = ["_trimStartMs", "_trimEndMs", "_sourceInMs", "_sourceOutMs"];
+    const durationAffectingProps = [
+      "_trimStartMs",
+      "_trimEndMs",
+      "_sourceInMs",
+      "_sourceOutMs",
+      "_includeRangesAttr",
+      "_excludeRangesAttr",
+      "_crossfadeMs",
+    ];
 
     const hasDurationChange = durationAffectingProps.some((prop) => changedProperties.has(prop));
 
