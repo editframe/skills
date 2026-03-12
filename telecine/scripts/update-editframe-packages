@@ -9,6 +9,6 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
-$SCRIPT_DIR/npm install "@editframe/api@${1}" "@editframe/assets@${1}" "@editframe/elements@${1}" "@editframe/react@${1}"
+$SCRIPT_DIR/npm install "@editframe/api@${1}" "@editframe/assets@${1}" "@editframe/elements@${1}" "@editframe/react@${1}" --legacy-peer-deps
 
 git add package.json package-lock.json
