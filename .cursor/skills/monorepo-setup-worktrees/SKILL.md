@@ -42,13 +42,10 @@ scripts/update-template-db                               # refresh template from
     elements -> ../elements         # symlink to elements sibling repo
   telecine/                         # real git clone of github.com/editframe/telecine [main]
   elements/                         # real git clone of github.com/editframe/elements [main]
-
-  # Per worktree (created by create-worktree):
-  editframe-<branch>/              # monorepo worktree (scripts, .worktree-scope)
-    telecine -> ../telecine-<branch>/  # symlink
-    elements -> ../elements-<branch>/  # symlink
-  telecine-<branch>/               # telecine git worktree
-  elements-<branch>/               # elements git worktree
+  worktrees/                        # all feature worktrees live here
+    <branch>/                       # monorepo worktree (scripts, .worktree-scope)
+      telecine/                     # telecine git worktree [branch]
+      elements/                     # elements git worktree [branch]
 ```
 
 ### Shared infrastructure
