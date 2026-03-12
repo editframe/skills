@@ -4,12 +4,17 @@ import remarkFrontmatter from "remark-frontmatter";
 import remarkMdxFrontmatter from "remark-mdx-frontmatter";
 import { defineConfig } from "vite";
 import path from "node:path";
-
+import { createRequire } from "node:module";
 import tsconfigPaths from "vite-tsconfig-paths";
 // @ts-ignore
 import { viteAliases } from "./viteAliases";
 import { copyLuaScripts } from "./viteCopyLuaScripts.js";
 import { buildSearchIndexPlugin } from "./buildSearchIndexPlugin";
+
+const _require = createRequire(import.meta.url);
+const elementsVersion: string = _require(
+  "/app/lib/packages/packages/elements/package.json",
+).version;
 
 export const buildViteConfig = () => {
   return defineConfig(({ isSsrBuild }) => {
@@ -85,6 +90,7 @@ export const buildViteConfig = () => {
         __EF_TELEMETRY_ENABLED__: JSON.stringify(
           process.env.EF_TELEMETRY_ENABLED === "true",
         ),
+        __EF_VERSION__: JSON.stringify(elementsVersion),
       },
       resolve: {
         alias: viteAliases,
