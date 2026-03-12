@@ -103,10 +103,14 @@ if [ "$FORCE" = false ]; then
   cd "$MAIN_WORKTREE"
   git checkout "$MAIN_BRANCH" > /dev/null 2>&1
 
-  # Check if branch is merged
+  # Check if branch is merged using merge-base, which works correctly even when
+  # the branch is checked out in a linked worktree (git branch --merged skips those)
   IS_MERGED=false
-  if git branch --merged | grep -q "^\s*${BRANCH_NAME}$" || git branch --merged | grep -q "^\s*\*.*${BRANCH_NAME}$"; then
-    IS_MERGED=true
+  if git rev-parse --verify "refs/heads/${BRANCH_NAME}" > /dev/null 2>&1; then
+    BRANCH_COMMIT=$(git rev-parse "refs/heads/${BRANCH_NAME}")
+    if git merge-base --is-ancestor "$BRANCH_COMMIT" "refs/heads/${MAIN_BRANCH}" 2>/dev/null; then
+      IS_MERGED=true
+    fi
   fi
 
   # Check if branch is identical to main (no commits ahead)
