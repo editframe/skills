@@ -5,7 +5,7 @@ import react from "@vitejs/plugin-react";
 import * as tar from "tar";
 import { build } from "vite";
 import { viteSingleFile } from "vite-plugin-singlefile";
-import tsconfigPathsPlugin from "vite-tsconfig-paths";
+
 import { createReadableStreamFromReadable } from "../utils/createReadableStreamFromReadable.ts";
 
 interface BundlerOptions {
@@ -18,6 +18,9 @@ export const bundleRender = async (options: BundlerOptions) => {
 
   await build({
     root: options.root,
+    resolve: {
+      tsconfigPaths: true,
+    },
     define: {
       RENDER_DATA: JSON.stringify(options.renderData),
     },
@@ -28,7 +31,6 @@ export const bundleRender = async (options: BundlerOptions) => {
       },
     },
     plugins: [
-      tsconfigPathsPlugin(),
       react({
         include: "**/*.{jsx,js,tsx,ts}",
         jsxRuntime: "automatic",

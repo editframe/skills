@@ -167,7 +167,7 @@ export async function createBundledHTMLDirectory(
         path.join(
           process.cwd(),
           "node_modules",
-          "rolldown-vite",
+          "vite",
           "bin",
           "vite.js",
         ),

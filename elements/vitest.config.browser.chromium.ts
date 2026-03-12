@@ -1,9 +1,10 @@
-import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 import { playwright } from "@vitest/browser-playwright";
 
 export default defineConfig({
-  plugins: [tsconfigPaths()],
+  resolve: {
+    tsconfigPaths: true,
+  },
   publicDir: "test-assets",
   test: {
     include: ["**/*.browsertest.ts", "**/*.browsertest.tsx"],

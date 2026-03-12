@@ -1,9 +1,10 @@
 import { defineConfig } from "vitest/config";
-import tsconfigPaths from "vite-tsconfig-paths";
 import { availableParallelism } from "node:os";
 
 export default defineConfig({
-  plugins: [tsconfigPaths()],
+  resolve: {
+    tsconfigPaths: true,
+  },
   test: {
     globalSetup: ["./tests/e2e/global-setup.ts"],
     setupFiles: ["./services/load-config.ts", "./test-env.ts"],

@@ -86,15 +86,12 @@ electron.app.on("ready", async () => {
           process.stderr.write(
             `[BOOTLOADER] No pre-built bundle found, starting Vite for: ${execPath}\n`,
           );
-          const { createServer } = await import("rolldown-vite");
-          const { default: tsconfigPaths } =
-            await import("vite-tsconfig-paths");
+          const { createServer } = await import("vite");
           const { viteAliases } = await import("../util/viteAliases.js");
 
           server = await createServer({
             root: "/app",
-            plugins: [tsconfigPaths()],
-            resolve: { alias: viteAliases },
+            resolve: { alias: viteAliases, tsconfigPaths: true },
             optimizeDeps: {
               exclude: ["@editframe/elements"],
             },

@@ -35,7 +35,7 @@ const startDevServer = async (directory: string) => {
           ],
         },
       },
-      esbuild: {
+      oxc: {
         include: /\.(m?[jt]s|[jt]sx)$/,
         exclude: [],
       },
@@ -47,7 +47,7 @@ const startDevServer = async (directory: string) => {
       ],
       build: {
         target: "es2022",
-        rollupOptions: {
+        rolldownOptions: {
           treeshake: {
             moduleSideEffects: false,
           },

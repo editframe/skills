@@ -5,7 +5,6 @@ import remarkMdxFrontmatter from "remark-mdx-frontmatter";
 import { defineConfig } from "vite";
 import path from "node:path";
 import { createRequire } from "node:module";
-import tsconfigPaths from "vite-tsconfig-paths";
 // @ts-ignore
 import { viteAliases } from "./viteAliases";
 import { copyLuaScripts } from "./viteCopyLuaScripts.js";
@@ -94,6 +93,7 @@ export const buildViteConfig = () => {
       },
       resolve: {
         alias: viteAliases,
+        tsconfigPaths: true,
         // Ensure Vite can find dependencies when resolving from elements package source files
         dedupe: [
           "@react-three/fiber",
@@ -104,8 +104,7 @@ export const buildViteConfig = () => {
           "@editframe/elements",
         ],
       },
-      esbuild: {
-        target: "es2022",
+      oxc: {
         include: /\.(m?[jt]s|[jt]sx)$/,
         exclude: [],
       },
@@ -119,7 +118,6 @@ export const buildViteConfig = () => {
           jsxImportSource: "react",
         }),
         reactRouter(),
-        tsconfigPaths(),
         copyLuaScripts(
           path.resolve(process.cwd(), "lib/queues/lua"),
           path.resolve(process.cwd(), "services/web/build/server/assets/lua"),
@@ -150,18 +148,18 @@ export const buildViteConfig = () => {
       ],
       build: {
         target: "es2022",
-        rollupOptions: {
+        rolldownOptions: {
           treeshake: "recommended",
           input: isSsrBuild ? "/app/services/web/server/app.ts" : undefined,
           output: !isSsrBuild
             ? {
-                manualChunks(id) {
-                  if (
-                    id.includes("@editframe/elements") ||
-                    id.includes("@editframe/react")
-                  ) {
-                    return "editframe-elements";
-                  }
+                codeSplitting: {
+                  groups: [
+                    {
+                      test: /@editframe\/(elements|react)/,
+                      name: "editframe-elements",
+                    },
+                  ],
                 },
               }
             : undefined,

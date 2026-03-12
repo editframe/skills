@@ -1,25 +1,23 @@
 import path from "node:path";
 import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
-import rollupTsConfigPaths from "rollup-plugin-tsconfig-paths";
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const repoRoot = path.resolve(__dirname, "../..");
 
 export default defineConfig({
-  esbuild: {
-    target: "es2022",
-    platform: "node",
+  oxc: {
     include: /\.(m?[jt]s|[jt]sx)$/,
     exclude: [],
   },
-  plugins: [tsconfigPaths()],
+  resolve: {
+    tsconfigPaths: true,
+  },
   appType: "custom",
   root: repoRoot,
   build: {
     ssr: true,
     target: "es2022",
-    rollupOptions: {
+    rolldownOptions: {
       external: ["electron"],
       treeshake: "recommended",
       output: {
@@ -29,7 +27,6 @@ export default defineConfig({
         chunkFileNames: "[name].electron.js",
         assetFileNames: "assets/[name].[ext]",
       },
-      plugins: [rollupTsConfigPaths({})],
     },
     emptyOutDir: false,
     outDir: path.resolve(repoRoot, "lib/electron-exec"),
