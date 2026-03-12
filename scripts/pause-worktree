@@ -1,12 +1,9 @@
 #!/usr/bin/env bash
 # Stop all containers for a worktree without removing them.
-# Containers preserve state and resume in seconds.
 #
 # Usage: pause-worktree <branch-name>
 
 set -e
-
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 if [ -z "$1" ]; then
   echo "Usage: $0 <branch-name>" >&2
@@ -15,7 +12,7 @@ fi
 
 BRANCH_NAME="$1"
 MAIN_WORKTREE=$(git rev-parse --show-toplevel)
-WORKTREE_PARENT=$(dirname "$MAIN_WORKTREE")
+EDITFRAME_DIR=$(dirname "$MAIN_WORKTREE")
 
 sanitize_branch_name() {
   local name="$1"
@@ -29,13 +26,13 @@ sanitize_branch_name() {
 }
 
 SANITIZED_BRANCH=$(sanitize_branch_name "$BRANCH_NAME")
-MONOREPO_WORKTREE_DIR="$WORKTREE_PARENT/editframe-${SANITIZED_BRANCH}"
-TELECINE_WORKTREE_DIR="$WORKTREE_PARENT/telecine-${SANITIZED_BRANCH}"
-ELEMENTS_WORKTREE_DIR="$WORKTREE_PARENT/elements-${SANITIZED_BRANCH}"
+WORKTREE_DIR="$EDITFRAME_DIR/worktrees/$SANITIZED_BRANCH"
+TELECINE_WORKTREE_DIR="$WORKTREE_DIR/telecine"
+ELEMENTS_WORKTREE_DIR="$WORKTREE_DIR/elements"
 
 SCOPE="web"
-if [ -f "$MONOREPO_WORKTREE_DIR/.worktree-scope" ]; then
-  SCOPE=$(cat "$MONOREPO_WORKTREE_DIR/.worktree-scope")
+if [ -f "$WORKTREE_DIR/.worktree-scope" ]; then
+  SCOPE=$(cat "$WORKTREE_DIR/.worktree-scope")
 fi
 
 echo "Pausing worktree: $BRANCH_NAME (scope: $SCOPE)"

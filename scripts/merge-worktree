@@ -3,13 +3,9 @@
 #
 # Usage: merge-worktree <branch-name>
 #
-# Merges the branch into main in each repo where the branch exists and has changes.
 # After successful merge, use remove-worktree to clean up.
 
 set -e
-
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-PROJECT_ROOT="$SCRIPT_DIR/.."
 
 if [ -z "$1" ]; then
   echo "Usage: $0 <branch-name>" >&2
@@ -18,10 +14,10 @@ fi
 
 BRANCH_NAME="$1"
 MAIN_WORKTREE=$(git rev-parse --show-toplevel)
-WORKTREE_PARENT=$(dirname "$MAIN_WORKTREE")
+EDITFRAME_DIR=$(dirname "$MAIN_WORKTREE")
 
-TELECINE_MAIN="$WORKTREE_PARENT/telecine"
-ELEMENTS_MAIN="$WORKTREE_PARENT/elements"
+TELECINE_MAIN="$EDITFRAME_DIR/telecine"
+ELEMENTS_MAIN="$EDITFRAME_DIR/elements"
 
 merge_branch_in_repo() {
   local repo_dir="$1"

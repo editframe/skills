@@ -10,9 +10,6 @@
 
 set -e
 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-PROJECT_ROOT="$SCRIPT_DIR/.."
-
 if [ $# -ne 2 ]; then
   echo "Usage: $0 <branch-name> <elements|web|render>" >&2
   exit 1
@@ -27,7 +24,7 @@ case "$NEW_SCOPE" in
 esac
 
 MAIN_WORKTREE=$(git rev-parse --show-toplevel)
-WORKTREE_PARENT=$(dirname "$MAIN_WORKTREE")
+EDITFRAME_DIR=$(dirname "$MAIN_WORKTREE")
 
 sanitize_branch_name() {
   local name="$1"
@@ -41,11 +38,11 @@ sanitize_branch_name() {
 }
 
 SANITIZED_BRANCH=$(sanitize_branch_name "$BRANCH_NAME")
-MONOREPO_WORKTREE_DIR="$WORKTREE_PARENT/editframe-${SANITIZED_BRANCH}"
-TELECINE_WORKTREE_DIR="$WORKTREE_PARENT/telecine-${SANITIZED_BRANCH}"
-ELEMENTS_WORKTREE_DIR="$WORKTREE_PARENT/elements-${SANITIZED_BRANCH}"
+WORKTREE_DIR="$EDITFRAME_DIR/worktrees/$SANITIZED_BRANCH"
+TELECINE_WORKTREE_DIR="$WORKTREE_DIR/telecine"
+ELEMENTS_WORKTREE_DIR="$WORKTREE_DIR/elements"
 
-SCOPE_FILE="$MONOREPO_WORKTREE_DIR/.worktree-scope"
+SCOPE_FILE="$WORKTREE_DIR/.worktree-scope"
 CURRENT_SCOPE="elements"
 if [ -f "$SCOPE_FILE" ]; then
   CURRENT_SCOPE=$(cat "$SCOPE_FILE")

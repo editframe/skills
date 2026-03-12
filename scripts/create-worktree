@@ -5,17 +5,10 @@
 # Usage: create-worktree <branch-name> [scope]
 #   scope: elements | web | render  (default: web)
 #
-# Scopes:
-#   elements  - Elements runner + dev-projects only. No telecine services.
-#   web       - Elements + telecine core (web, hasura, valkey, maintenance).
-#   render    - Elements + telecine core + render pipeline (workers, scheduler).
-#
 # Directory layout created:
-#   ~/Editframe/editframe-<branch>/        monorepo worktree (scripts, .worktree-scope)
-#     telecine -> ../telecine-<branch>/    symlink to telecine worktree
-#     elements -> ../elements-<branch>/    symlink to elements worktree
-#   ~/Editframe/telecine-<branch>/         telecine sibling repo worktree
-#   ~/Editframe/elements-<branch>/         elements sibling repo worktree
+#   ~/Editframe/worktrees/<branch>/        monorepo worktree (scripts, .worktree-scope)
+#     telecine/                            telecine git worktree
+#     elements/                            elements git worktree
 
 set -e
 
@@ -59,19 +52,19 @@ sanitize_branch_name() {
 }
 
 SANITIZED_BRANCH=$(sanitize_branch_name "$BRANCH_NAME")
-WORKTREE_PARENT=$(dirname "$CURRENT_ROOT")
-MONOREPO_WORKTREE_DIR="$WORKTREE_PARENT/editframe-${SANITIZED_BRANCH}"
-TELECINE_WORKTREE_DIR="$WORKTREE_PARENT/telecine-${SANITIZED_BRANCH}"
-ELEMENTS_WORKTREE_DIR="$WORKTREE_PARENT/elements-${SANITIZED_BRANCH}"
+EDITFRAME_DIR=$(dirname "$CURRENT_ROOT")
+WORKTREES_DIR="$EDITFRAME_DIR/worktrees"
+WORKTREE_DIR="$WORKTREES_DIR/$SANITIZED_BRANCH"
+TELECINE_WORKTREE_DIR="$WORKTREE_DIR/telecine"
+ELEMENTS_WORKTREE_DIR="$WORKTREE_DIR/elements"
 
-if [ -d "$MONOREPO_WORKTREE_DIR" ]; then
-  echo "Error: Worktree directory already exists: $MONOREPO_WORKTREE_DIR" >&2
+TELECINE_MAIN="$EDITFRAME_DIR/telecine"
+ELEMENTS_MAIN="$EDITFRAME_DIR/elements"
+
+if [ -d "$WORKTREE_DIR" ]; then
+  echo "Error: Worktree directory already exists: $WORKTREE_DIR" >&2
   exit 1
 fi
-
-# Paths to sibling repo main worktrees
-TELECINE_MAIN="$WORKTREE_PARENT/telecine"
-ELEMENTS_MAIN="$WORKTREE_PARENT/elements"
 
 if [ ! -d "$TELECINE_MAIN/.git" ] && [ ! -f "$TELECINE_MAIN/.git" ]; then
   echo "Error: telecine sibling repo not found at $TELECINE_MAIN" >&2
@@ -82,7 +75,8 @@ if [ ! -d "$ELEMENTS_MAIN/.git" ] && [ ! -f "$ELEMENTS_MAIN/.git" ]; then
   exit 1
 fi
 
-# Determine base branch
+mkdir -p "$WORKTREES_DIR"
+
 BASE_BRANCH="${CURRENT_BRANCH:-main}"
 if [ "$BASE_BRANCH" = "HEAD" ]; then
   BASE_BRANCH="main"
@@ -90,27 +84,25 @@ fi
 
 echo ""
 echo "Creating worktree: $BRANCH_NAME (scope: $SCOPE)"
-echo "  Monorepo: $MONOREPO_WORKTREE_DIR"
-echo "  Telecine: $TELECINE_WORKTREE_DIR"
-echo "  Elements: $ELEMENTS_WORKTREE_DIR"
+echo "  Location: $WORKTREE_DIR"
 echo ""
 
 # 1. Create monorepo git worktree
 if git show-ref --verify --quiet "refs/heads/${BRANCH_NAME}"; then
-  git worktree add "$MONOREPO_WORKTREE_DIR" "$BRANCH_NAME" > /dev/null 2>&1
+  git worktree add "$WORKTREE_DIR" "$BRANCH_NAME" > /dev/null 2>&1
 else
-  git worktree add -b "$BRANCH_NAME" "$MONOREPO_WORKTREE_DIR" "$BASE_BRANCH" > /dev/null 2>&1
+  git worktree add -b "$BRANCH_NAME" "$WORKTREE_DIR" "$BASE_BRANCH" > /dev/null 2>&1
 fi
 
 # Write scope file
-echo "$SCOPE" > "$MONOREPO_WORKTREE_DIR/.worktree-scope"
+echo "$SCOPE" > "$WORKTREE_DIR/.worktree-scope"
 
 # Copy opencode.json if not already present
-if [ ! -f "$MONOREPO_WORKTREE_DIR/opencode.json" ] && [ -f "$CURRENT_ROOT/opencode.json" ]; then
-  cp "$CURRENT_ROOT/opencode.json" "$MONOREPO_WORKTREE_DIR/opencode.json"
+if [ ! -f "$WORKTREE_DIR/opencode.json" ] && [ -f "$CURRENT_ROOT/opencode.json" ]; then
+  cp "$CURRENT_ROOT/opencode.json" "$WORKTREE_DIR/opencode.json"
 fi
 
-# 2. Create telecine git worktree in sibling repo
+# 2. Create telecine git worktree inside the branch dir
 cd "$TELECINE_MAIN"
 if git show-ref --verify --quiet "refs/heads/${BRANCH_NAME}"; then
   git worktree add "$TELECINE_WORKTREE_DIR" "$BRANCH_NAME" > /dev/null 2>&1
@@ -118,7 +110,7 @@ else
   git worktree add -b "$BRANCH_NAME" "$TELECINE_WORKTREE_DIR" main > /dev/null 2>&1
 fi
 
-# 3. Create elements git worktree in sibling repo
+# 3. Create elements git worktree inside the branch dir
 cd "$ELEMENTS_MAIN"
 if git show-ref --verify --quiet "refs/heads/${BRANCH_NAME}"; then
   git worktree add "$ELEMENTS_WORKTREE_DIR" "$BRANCH_NAME" > /dev/null 2>&1
@@ -128,11 +120,7 @@ fi
 
 cd "$CURRENT_ROOT"
 
-# 4. Create symlinks in monorepo worktree pointing to sibling worktrees
-ln -s "$TELECINE_WORKTREE_DIR" "$MONOREPO_WORKTREE_DIR/telecine"
-ln -s "$ELEMENTS_WORKTREE_DIR" "$MONOREPO_WORKTREE_DIR/elements"
-
-# 5. Copy .env files
+# 4. Copy .env files
 if [ -f "$CURRENT_ROOT/elements/.env" ]; then
   cp "$CURRENT_ROOT/elements/.env" "$ELEMENTS_WORKTREE_DIR/.env" 2>/dev/null || true
 fi
@@ -141,7 +129,7 @@ if [ "$SCOPE" != "elements" ] && [ -f "$CURRENT_ROOT/telecine/.env" ]; then
   cp "$CURRENT_ROOT/telecine/.env" "$TELECINE_WORKTREE_DIR/.env" 2>/dev/null || true
 fi
 
-# 6. Copy native build artifacts (needed for telecine scopes)
+# 5. Copy native build artifacts (needed for telecine scopes)
 if [ "$SCOPE" != "elements" ] && [ -f "$TELECINE_WORKTREE_DIR/scripts/copy-native-build" ]; then
   cd "$TELECINE_WORKTREE_DIR"
   ./scripts/copy-native-build > /dev/null 2>&1 || true
@@ -156,7 +144,7 @@ if [ -d "$CURRENT_ROOT/elements/dev-projects" ]; then
   echo "DEV_PROJECTS_HOST=\"$CURRENT_ROOT/elements/dev-projects\"" >> "$ELEMENTS_ENV"
 fi
 
-# 7. Ensure shared infrastructure is running
+# 6. Ensure shared infrastructure is running
 if ! docker network inspect editframe-shared > /dev/null 2>&1; then
   echo "Starting shared infrastructure..."
   cd "$PROJECT_ROOT"
@@ -164,7 +152,7 @@ if ! docker network inspect editframe-shared > /dev/null 2>&1; then
   cd "$CURRENT_ROOT"
 fi
 
-# 8. Database setup (for web/render scopes)
+# 7. Database setup (for web/render scopes)
 if [ "$SCOPE" != "elements" ]; then
   WORKTREE_DATABASE="telecine-${SANITIZED_BRANCH}"
 
@@ -180,7 +168,7 @@ if [ "$SCOPE" != "elements" ]; then
   fi
 fi
 
-# 9. Start elements runner and install dependencies
+# 8. Start elements runner and install dependencies
 echo "Starting elements runner..."
 cd "$ELEMENTS_WORKTREE_DIR"
 ./scripts/docker-compose up -d runner > /dev/null 2>&1
@@ -192,7 +180,7 @@ echo "Starting elements dev server..."
 ./scripts/docker-compose up -d dev-projects > /dev/null 2>&1
 cd "$CURRENT_ROOT"
 
-# 10. Start telecine containers (for web/render scopes)
+# 9. Start telecine containers (for web/render scopes)
 if [ "$SCOPE" != "elements" ]; then
   case "$SCOPE" in
     web)    export COMPOSE_PROFILES="" ;;
@@ -252,7 +240,7 @@ fi
 
 echo ""
 echo "Worktree created: $BRANCH_NAME (scope: $SCOPE)"
-echo "  Location:  $MONOREPO_WORKTREE_DIR"
+echo "  Location:  $WORKTREE_DIR"
 if [ "$SCOPE" != "elements" ]; then
   echo "  Telecine:  http://${DOMAIN}:3000"
 fi
