@@ -34,9 +34,7 @@ describe("vitePluginEditframe define injection", () => {
 
   test("__EF_TELEMETRY_ENABLED__ is true in serve mode by default", () => {
     const result = (plugin as any).config({}, { command: "serve" });
-    expect(result.define["__EF_TELEMETRY_ENABLED__"]).toBe(
-      JSON.stringify(true),
-    );
+    expect(result.define["__EF_TELEMETRY_ENABLED__"]).toBe(JSON.stringify(true));
   });
 
   test("__EF_TELEMETRY_ENABLED__ is false in serve mode when EF_NO_TELEMETRY is set", () => {
