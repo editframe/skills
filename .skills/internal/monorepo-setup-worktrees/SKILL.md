@@ -37,16 +37,25 @@ scripts/update-template-db                               # refresh template from
 
 ```
 ~/Editframe/
-  monorepo/                        # orchestration layer (scripts, docker infra)
-    telecine -> ../telecine         # symlink to telecine sibling repo
-    elements -> ../elements         # symlink to elements sibling repo
-  telecine/                         # real git clone of github.com/editframe/telecine [main]
-  elements/                         # real git clone of github.com/editframe/elements [main]
-  worktrees/                        # all feature worktrees live here
-    <branch>/                       # monorepo worktree (scripts, .worktree-scope)
+  monorepo -> worktrees/main/monorepo   (symlink for convenience)
+  worktrees/
+    main/
+      .worktree-scope               # scope for main (e.g. "render")
+      monorepo/                     # primary monorepo checkout [main]
+        telecine -> ../telecine     # symlink
+        elements -> ../elements     # symlink
+      telecine/                     # primary telecine clone [main]
+      elements/                     # primary elements clone [main]
+    <branch>/
+      .worktree-scope               # scope for this branch
+      monorepo/                     # monorepo worktree [branch]
       telecine/                     # telecine git worktree [branch]
       elements/                     # elements git worktree [branch]
 ```
+
+Main is treated identically to any other worktree. `~/Editframe/monorepo` is a convenience symlink so existing habits (running `scripts/create-worktree` from there) still work.
+
+`EDITFRAME_DIR` in scripts is always `$(dirname $(dirname $(dirname $(git rev-parse --show-toplevel))))` — three levels up from the monorepo checkout path.
 
 ### Shared infrastructure
 - `editframe-postgres` — single shared PostgreSQL, each worktree gets its own database (`telecine-<branch>`)
