@@ -29,25 +29,9 @@ done
 
 "$SCRIPT_DIR/sync-telecine-skills"
 
-git fetch telecine "$BRANCH" 2>/dev/null || true
+git subtree push --prefix=telecine telecine "$BRANCH" 2>&1
 
-TREE=$(git rev-parse HEAD:telecine)
-
-if git rev-parse "telecine/$BRANCH" >/dev/null 2>&1; then
-  PARENT=$(git rev-parse "telecine/$BRANCH")
-  REMOTE_TREE=$(git rev-parse "telecine/${BRANCH}^{tree}" 2>/dev/null || echo "")
-  if [ "$TREE" = "$REMOTE_TREE" ]; then
-    echo "telecine/${BRANCH} already up to date"
-    exit 0
-  fi
-  COMMIT=$(git commit-tree "$TREE" -p "$PARENT" -m "$(git log -1 --format=%B HEAD)")
-else
-  COMMIT=$(git commit-tree "$TREE" -m "$(git log -1 --format=%B HEAD)")
-fi
-
-git push telecine "${COMMIT}:${BRANCH}" --force-with-lease 2>&1 | grep -v "^$"
-
-echo "pushed telecine -> ${BRANCH} (${COMMIT:0:10})"
+echo "pushed telecine -> ${BRANCH}"
 
 if [ "$WAIT_FOR_ACTION" = "true" ]; then
   "$SCRIPT_DIR/wait-for-telecine-action" "deploy.yaml"
