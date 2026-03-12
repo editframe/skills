@@ -119,7 +119,7 @@ async function bundleHTML(html: string, bundleDir: string): Promise<string> {
 
   const { stdout, stderr } = await execFileAsync(
     "node",
-    ["/app/node_modules/rolldown-vite/bin/vite.js", "build"],
+    ["/app/node_modules/vite/bin/vite.js", "build"],
     { cwd: bundleDir },
   );
 

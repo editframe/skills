@@ -1,25 +1,23 @@
 import path from "node:path";
 import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
-import rollupTsConfigPaths from "rollup-plugin-tsconfig-paths";
 import { copyLuaScripts } from "../../lib/util/viteCopyLuaScripts.js";
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 export default defineConfig({
-  esbuild: {
-    target: "es2022",
-    platform: "node",
+  oxc: {
     include: /\.(m?[jt]s|[jt]sx)$/,
     exclude: [],
   },
   plugins: [
-    tsconfigPaths(),
     copyLuaScripts(
       path.resolve(__dirname, "../../lib/queues/lua"),
       path.resolve(__dirname, "./dist/lua"),
     ),
   ],
+  resolve: {
+    tsconfigPaths: true,
+  },
   appType: "custom",
   root: __dirname,
   css: {
@@ -28,7 +26,7 @@ export default defineConfig({
   build: {
     ssr: true,
     target: "es2022",
-    rollupOptions: {
+    rolldownOptions: {
       treeshake: "recommended",
       output: {
         inlineDynamicImports: true,
@@ -37,7 +35,6 @@ export default defineConfig({
         chunkFileNames: "server.js",
         assetFileNames: "assets/[name].[ext]",
       },
-      plugins: [rollupTsConfigPaths({})],
     },
     emptyOutDir: true,
     outDir: "./dist",

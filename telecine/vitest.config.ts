@@ -1,9 +1,10 @@
 import { defineConfig } from "vitest/config";
-import tsconfigPaths from "vite-tsconfig-paths";
 import { availableParallelism } from "node:os";
 
 export default defineConfig({
-  plugins: [tsconfigPaths()],
+  resolve: {
+    tsconfigPaths: true,
+  },
   server: {
     watch: {
       ignored: ["**/temp/**/*"],

@@ -1,24 +1,22 @@
 import path from "node:path";
 import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
-import rollupTsConfigPaths from "rollup-plugin-tsconfig-paths";
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 export default defineConfig({
-  esbuild: {
-    target: "es2022",
-    platform: "node",
+  oxc: {
     include: /\.(m?[jt]s|[jt]sx)$/,
     exclude: [],
   },
-  plugins: [tsconfigPaths()],
+  resolve: {
+    tsconfigPaths: true,
+  },
   appType: "custom",
   root: __dirname,
   build: {
     ssr: true,
     target: "es2022",
-    rollupOptions: {
+    rolldownOptions: {
       treeshake: "recommended",
       output: {
         inlineDynamicImports: true,
@@ -27,7 +25,6 @@ export default defineConfig({
         chunkFileNames: "main.js",
         assetFileNames: "assets/[name].[ext]",
       },
-      plugins: [rollupTsConfigPaths({})],
     },
     emptyOutDir: true,
     outDir: "./dist",

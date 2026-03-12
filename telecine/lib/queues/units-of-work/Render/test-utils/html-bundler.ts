@@ -210,7 +210,7 @@ export const bundleTestTemplateWithScripts = async (
         path.join(
           process.cwd(),
           "node_modules",
-          "rolldown-vite",
+          "vite",
           "bin",
           "vite.js",
         ),

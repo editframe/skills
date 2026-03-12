@@ -2,7 +2,6 @@ import { existsSync, readFileSync } from "node:fs";
 import * as path from "node:path";
 import type { UserConfig } from "vite";
 import { defineConfig } from "vitest/config";
-import tsconfigPaths from "vite-tsconfig-paths";
 import { playwright } from "@vitest/browser-playwright";
 
 type ViteTestBrowserMode = "connect" | "launch";
@@ -341,7 +340,7 @@ export default defineConfig(async () => {
     },
   };
 
-  const plugins = [tsconfigPaths()];
+  const plugins = [];
 
   // Only add Traefik URL plugin in local development (not in CI)
   if (!isCI) {
@@ -350,6 +349,9 @@ export default defineConfig(async () => {
 
   return {
     plugins,
+    resolve: {
+      tsconfigPaths: true,
+    },
     server: {
       ...config.server,
       strictPort: true,

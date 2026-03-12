@@ -7,7 +7,6 @@ import "/app/lib/util/init-electron.js";
 import { logger } from "/app/lib/logging";
 
 import { createServer, createViteRuntime } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
 
 const execRenderPath = "/app/lib/render/engines/ElectronEngine/exec-render.ts";
 
@@ -18,7 +17,7 @@ electronApp.on("ready", async () => {
 
   const server = await createServer({
     root: "/app",
-    plugins: [tsconfigPaths()],
+    resolve: { tsconfigPaths: true },
   });
 
   const runtime = await createViteRuntime(server);
