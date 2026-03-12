@@ -21,18 +21,14 @@ export const test = testBase.extend<{
   worker: typeof worker;
 }>({
   worker: [
-    async ({ expect: _expect }, use) => {
-      // Only start the worker once
+    async ({}, use) => {
       if (!workerStarted) {
         await worker.start({
-          onUnhandledRequest: "bypass", // Allow unhandled requests to pass through
+          onUnhandledRequest: "bypass",
         });
-        // Set up default handlers for transcode API endpoints
         worker.use(...transcodeMSWHandlers);
         workerStarted = true;
       }
-
-      // Use the worker in the test
       await use(worker);
     },
     { scope: "test" },

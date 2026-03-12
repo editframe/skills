@@ -55,7 +55,7 @@ const test = baseTest.extend<{
     timegroup.setAttribute("mode", "contain");
     await use(timegroup);
   },
-  configuration: async ({ expect }, use) => {
+  configuration: async ({ expect, worker: _worker }, use) => {
     const configuration = document.createElement("ef-configuration");
     configuration.innerHTML = `<h1 style="font: 10px monospace">${expect.getState().currentTestName}</h1>`;
     // Use integrated proxy server (same host/port as test runner)
@@ -215,6 +215,7 @@ describe("Media Engine Selection", () => {
 
   test("creates media engine for remote URLs without a configuration element", async ({
     expect,
+    worker: _worker,
   }) => {
     const video = document.createElement("ef-video");
     video.src = remoteSrc;

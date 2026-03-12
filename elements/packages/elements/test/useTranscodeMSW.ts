@@ -49,8 +49,10 @@ export const transcodeMSWHandlers = [
   }),
 
   // Transcode manifest endpoint handler
-  // This mocks the manifest.json endpoint used by JitMediaEngine
-  http.get("/api/v1/transcode/manifest.json", async ({ request }) => {
+  // This mocks the manifest.json endpoint used by JitMediaEngine.
+  // Uses RegExp to match requests to any origin (including the default API host
+  // which resolves to http://localhost:<port> when no ef-configuration is present).
+  http.get(/\/api\/v1\/transcode\/manifest\.json/, async ({ request }) => {
     const url = new URL(request.url);
     const sourceUrl = url.searchParams.get("url");
 
@@ -101,7 +103,8 @@ export const transcodeMSWHandlers = [
   }),
 
   // Transcode init segment endpoint handler
-  http.get("/api/v1/transcode/:rendition/init.m4s", async () => {
+  // Uses RegExp to match requests to any origin.
+  http.get(/\/api\/v1\/transcode\/[^/]+\/init\.m4s/, async () => {
     // Return a minimal valid MP4 init segment
     // This is a very basic ftyp + moov box structure
     const initSegment = new Uint8Array([
@@ -154,7 +157,8 @@ export const transcodeMSWHandlers = [
   }),
 
   // Transcode media segment endpoint handler
-  http.get("/api/v1/transcode/:rendition/:segmentId.m4s", async () => {
+  // Uses RegExp to match requests to any origin.
+  http.get(/\/api\/v1\/transcode\/[^/]+\/\d+\.m4s/, async () => {
     // Return a minimal valid MP4 media segment
     // This is a very basic moof + mdat box structure
     const mediaSegment = new Uint8Array([
