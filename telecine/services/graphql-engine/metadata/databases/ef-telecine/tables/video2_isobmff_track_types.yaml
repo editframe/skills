@@ -1,4 +1,0 @@
-table:
-  name: isobmff_track_types
-  schema: video2
-is_enum: true

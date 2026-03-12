@@ -1,7 +1,0 @@
-encryptionsalt: v1:kd+859hiDhY=:v1:30R2L10aNJOz7Oax:HW09uI0vSHfK/nAckFTmWl8hEndCqQ==
-config:
-  cloudflare:apiToken:
-    secure: v1:quWrRZmrieXRNV5i:i4UFeSEha6ZgpF/EZ50AihfNNyvfFI2ZfC7Zy5tRYAmPL+0m/QyGkVpJwKaPc0CKdnVblYbrfmY=
-  gcp:project: editframe
-  telecine:telecineComZoneId: 1a20b34de9af7789f562d8bf3eca9d5b
-  telecine:telecineDevZoneId: 2444d4fb367ac7ed20ca72ed79d11246

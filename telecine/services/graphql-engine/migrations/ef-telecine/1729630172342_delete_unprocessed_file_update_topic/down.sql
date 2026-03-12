@@ -1,3 +1,0 @@
--- Could not auto-generate a down migration.
--- Please write an appropriate down migration for the SQL below:
--- delete from api.webhook_topics where name = 'unprocessed_file.updated';

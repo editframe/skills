@@ -1,5 +1,6 @@
 .DS_Store
-telecine/services/scheduler-go/scheduler
+telecine/
+elements/
 node_modules/*
 node_modules/.package-lock.json
 elements/docker-compose.yaml.processed.*

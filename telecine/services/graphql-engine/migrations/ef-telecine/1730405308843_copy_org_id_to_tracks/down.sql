@@ -1,6 +1,0 @@
--- Could not auto-generate a down migration.
--- Please write an appropriate down migration for the SQL below:
--- UPDATE video2.isobmff_tracks t
--- SET org_id = f.org_id
--- FROM video2.isobmff_files f
--- WHERE t.file_id = f.id;

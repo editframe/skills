@@ -1,6 +1,0 @@
-/* biome-ignore lint/suspicious/noUnknownAtRules: @tailwind is a valid Tailwind CSS directive */
-@tailwind base;
-/* biome-ignore lint/suspicious/noUnknownAtRules: @tailwind is a valid Tailwind CSS directive */
-@tailwind components;
-/* biome-ignore lint/suspicious/noUnknownAtRules: @tailwind is a valid Tailwind CSS directive */
-@tailwind utilities;

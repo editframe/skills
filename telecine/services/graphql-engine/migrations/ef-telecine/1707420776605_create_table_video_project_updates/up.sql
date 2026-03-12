@@ -1,1 +1,0 @@
-CREATE TABLE "video"."project_updates" ("id" bigserial NOT NULL, "project_id" uuid NOT NULL, "update" bytea NOT NULL, PRIMARY KEY ("id") , FOREIGN KEY ("project_id") REFERENCES "video"."projects"("id") ON UPDATE restrict ON DELETE cascade);COMMENT ON TABLE "video"."project_updates" IS E'Table to store yjs crdt updates for video projects';

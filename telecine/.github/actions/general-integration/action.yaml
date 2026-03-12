@@ -1,9 +1,0 @@
-name: 'Run General Integration'
-description: 'Run general integration script'
-runs:
-  using: "composite"
-  steps:
-    - name: Run general integration script
-      run: ./integration/integrate
-      shell: bash
-      working-directory: ${{ github.workspace }}

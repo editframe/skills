@@ -1,1 +1,0 @@
-CREATE TABLE "video2"."transcription_statuses" ("value" text NOT NULL, "comment" Text NOT NULL, PRIMARY KEY ("value") );COMMENT ON TABLE "video2"."transcription_statuses" IS E'States for a transcription job';

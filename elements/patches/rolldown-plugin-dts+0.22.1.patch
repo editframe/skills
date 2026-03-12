@@ -1,9 +1,0 @@
---- a/node_modules/rolldown-plugin-dts/dist/emit-compiler-CfQ29zff.mjs
-+++ b/node_modules/rolldown-plugin-dts/dist/emit-compiler-CfQ29zff.mjs
-@@ -76,6 +76,7 @@ const stripPrivateFields = (ctx) => {
- 	const visitor = (node) => {
- 		if (ts.isPropertySignature(node) && ts.isPrivateIdentifier(node.name)) return ctx.factory.updatePropertySignature(node, node.modifiers, ctx.factory.createStringLiteral(node.name.text), node.questionToken, node.type);
-+		if (ts.isGetAccessorDeclaration(node) || ts.isSetAccessorDeclaration(node)) return node;
- 		return ts.visitEachChild(node, visitor, ctx);
- 	};
- 	return (sourceFile) => ts.visitNode(sourceFile, visitor, ts.isSourceFile) ?? sourceFile;

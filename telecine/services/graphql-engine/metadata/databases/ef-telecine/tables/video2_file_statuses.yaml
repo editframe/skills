@@ -1,4 +1,0 @@
-table:
-  name: file_statuses
-  schema: video2
-is_enum: true

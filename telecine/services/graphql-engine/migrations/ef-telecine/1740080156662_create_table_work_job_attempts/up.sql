@@ -1,1 +1,0 @@
-CREATE TABLE "work"."job_attempts" ("job_id" uuid NOT NULL, "attempt" integer NOT NULL, "started_at" timestamptz NOT NULL, "completed_at" timestamptz, "failed_at" timestamptz, "public_error" text, "private_error" Text, PRIMARY KEY ("job_id","attempt") , FOREIGN KEY ("job_id") REFERENCES "work"."jobs"("id") ON UPDATE restrict ON DELETE cascade);

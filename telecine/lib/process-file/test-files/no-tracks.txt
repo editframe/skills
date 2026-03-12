@@ -1,2 +1,0 @@
-This is not a media file.
-It should not produce any tracks when processed by processISOBMFF. 

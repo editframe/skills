@@ -1,4 +1,0 @@
--- Could not auto-generate a down migration.
--- Please write an appropriate down migration for the SQL below:
--- insert into api.webhook_topics (value, comment)
--- values ('render.created', 'Created a render'), ('render.completed', 'Completed a render'), ('render.failed', 'Failed to render'), ('render.pending', 'Render waiting to be queued'), ('render.rendering', 'Rendering has started'), ('image_file.created', 'Created an image file'), ('isobmff_file.created', 'Created isobmff file'), ('isobmff_track.created', 'Created track for the isobmff file'), ('unprocessed_file.created', 'Created an unproccessed file'), ('unprocessed_file.updated', 'Updated an unprocessed file');

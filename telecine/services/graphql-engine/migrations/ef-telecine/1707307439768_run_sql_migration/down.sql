@@ -1,9 +1,0 @@
--- Could not auto-generate a down migration.
--- Please write an appropriate down migration for the SQL below:
--- CREATE OR REPLACE FUNCTION identity.generate_token(email_row identity.valid_email_confirmations)
---  RETURNS text
---  LANGUAGE sql
---  STABLE
--- AS $function$
---   SELECT MD5(email_row.id::TEXT)
--- $function$;

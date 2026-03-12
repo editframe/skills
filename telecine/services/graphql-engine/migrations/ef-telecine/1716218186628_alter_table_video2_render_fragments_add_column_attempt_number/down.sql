@@ -1,4 +1,0 @@
--- Could not auto-generate a down migration.
--- Please write an appropriate down migration for the SQL below:
--- alter table "video2"."render_fragments" add column "attempt_number" integer
---  not null default '1';

@@ -1,4 +1,0 @@
--- Could not auto-generate a down migration.
--- Please write an appropriate down migration for the SQL below:
--- alter table "identity"."email_confirmations" add column "confirmation_token" text
---  not null unique default gen_random_uuid();

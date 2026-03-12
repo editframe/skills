@@ -1,4 +1,0 @@
--- Could not auto-generate a down migration.
--- Please write an appropriate down migration for the SQL below:
--- alter table "video"."temporals" add column "next_byte" bigint
---  not null default '0';

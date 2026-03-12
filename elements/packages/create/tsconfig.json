@@ -1,9 +1,0 @@
-{
-  "include": ["src/**/*.ts"],
-  "exclude": ["src/templates"],
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "module": "nodenext",
-    "moduleResolution": "nodenext"
-  }
-}

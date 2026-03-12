@@ -1,4 +1,0 @@
-table:
-  name: isobmff_source_types
-  schema: video2
-is_enum: true

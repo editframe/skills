@@ -1,8 +1,0 @@
-{
-  "recommendations": [
-    "ms-playwright.playwright",
-    "oxc.oxc-vscode",
-    "bradlc.vscode-tailwindcss",
-    "unifiedjs.vscode-mdx"
-  ]
-}

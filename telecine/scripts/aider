@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-docker run \
-  --rm -it \
-  -v ./:/app \
-  -v ~/.gitconfig:/root/.gitconfig \
-  -w /app aider-local aider \
-  --openai-api-key=${OPENAI_API_KEY} \
-  --model=gpt-4-turbo

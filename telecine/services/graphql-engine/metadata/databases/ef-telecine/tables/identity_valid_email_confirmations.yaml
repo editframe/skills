@@ -1,3 +1,0 @@
-table:
-  name: valid_email_confirmations
-  schema: identity

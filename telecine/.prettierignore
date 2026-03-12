@@ -1,6 +1,0 @@
-# Add files here to ignore them from prettier formatting
-/dist
-/coverage
-/.nx/cache
-lib/queues/units-of-work/Render/test-assets/simpleTest.html
-services/web/app/routes/tools/tools.video-editor.tsx

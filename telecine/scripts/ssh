@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-  
-pssh -i -H box-1 -H box-2 -H box-3 -H box-4 $@

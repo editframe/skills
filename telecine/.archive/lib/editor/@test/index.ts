@@ -1,1 +1,0 @@
-export { pointerEvents } from "./pointerEvents";

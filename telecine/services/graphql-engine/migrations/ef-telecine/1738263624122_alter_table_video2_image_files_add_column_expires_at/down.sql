@@ -1,4 +1,0 @@
--- Could not auto-generate a down migration.
--- Please write an appropriate down migration for the SQL below:
--- alter table "video2"."image_files" add column "expires_at" timestamptz
---  null;

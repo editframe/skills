@@ -1,3 +1,0 @@
--- Could not auto-generate a down migration.
--- Please write an appropriate down migration for the SQL below:
--- update video2.process_isobmff set source_type='unprocessed_file';

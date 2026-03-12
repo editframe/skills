@@ -1,7 +1,0 @@
--- Could not auto-generate a down migration.
--- Please write an appropriate down migration for the SQL below:
--- CREATE VIEW identity.valid_magic_links_tokens AS
--- SELECT *
--- FROM identity.tokens
--- WHERE claimed_at IS NULL
--- AND user_id IS NOT NULL;
