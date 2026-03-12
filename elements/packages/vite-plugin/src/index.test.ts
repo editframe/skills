@@ -34,7 +34,9 @@ describe("vitePluginEditframe define injection", () => {
 
   test("__EF_TELEMETRY_ENABLED__ is true in serve mode by default", () => {
     const result = (plugin as any).config({}, { command: "serve" });
-    expect(result.define["__EF_TELEMETRY_ENABLED__"]).toBe(JSON.stringify(true));
+    expect(result.define["__EF_TELEMETRY_ENABLED__"]).toBe(
+      JSON.stringify(true),
+    );
   });
 
   test("__EF_TELEMETRY_ENABLED__ is false in serve mode when EF_NO_TELEMETRY is set", () => {
@@ -51,5 +53,31 @@ describe("vitePluginEditframe define injection", () => {
   test("__EF_TELEMETRY_ENABLED__ is not injected in build mode", () => {
     const result = (plugin as any).config({}, { command: "build" });
     expect(result?.define?.["__EF_TELEMETRY_ENABLED__"]).toBeUndefined();
+  });
+
+  test("config hook injects __EF_VERSION__ in serve mode", () => {
+    const result = (plugin as any).config({}, { command: "serve" });
+    expect(result.define["__EF_VERSION__"]).toBeDefined();
+    const version = JSON.parse(result.define["__EF_VERSION__"]);
+    expect(typeof version).toBe("string");
+    expect(version.length).toBeGreaterThan(0);
+  });
+
+  test("configResolved sets __EF_VERSION__ when not already defined", () => {
+    const mockConfig: any = { define: {}, server: { port: 5173 } };
+    (plugin as any).configResolved(mockConfig);
+    expect(mockConfig.define["__EF_VERSION__"]).toBeDefined();
+    const version = JSON.parse(mockConfig.define["__EF_VERSION__"]);
+    expect(typeof version).toBe("string");
+    expect(version.length).toBeGreaterThan(0);
+  });
+
+  test("configResolved does not overwrite __EF_VERSION__ if already set", () => {
+    const mockConfig: any = {
+      define: { __EF_VERSION__: JSON.stringify("custom") },
+      server: { port: 5173 },
+    };
+    (plugin as any).configResolved(mockConfig);
+    expect(mockConfig.define["__EF_VERSION__"]).toBe(JSON.stringify("custom"));
   });
 });

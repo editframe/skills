@@ -14,7 +14,7 @@ echo "export const VERSION = \"$@\";" > "${SCRIPT_DIR}/../packages/cli/src/versi
 
 (cd "${SCRIPT_DIR}/.." && npm -s version --no-git-tag-version --workspaces --include-workspace-root --allow-same-version "$@")
 set -ex
-"${SCRIPT_DIR}"/node scripts/deps.js update-dependencies
+(cd "${SCRIPT_DIR}/.." && node scripts/deps.js update-dependencies)
 "${SCRIPT_DIR}"/npm install --workspaces --include-workspace-root --legacy-peer-deps
 
 git add .

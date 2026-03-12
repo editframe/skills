@@ -2,13 +2,11 @@ pre-commit:
   parallel: true
   commands:
     elements-lint:
-      root: "elements/"
-      glob: "**/*.{js,ts,cjs,mjs,jsx,tsx}"
-      run: scripts/npx oxlint --config oxlint.json {staged_files}
+      glob: "elements/**/*.{js,ts,cjs,mjs,jsx,tsx}"
+      run: elements/scripts/npx oxlint --config oxlint.json {staged_files}
     elements-format:
-      root: "elements/"
-      glob: "**/*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"
-      run: scripts/npx oxfmt {staged_files}
+      glob: "elements/**/*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx}"
+      run: elements/scripts/npx oxfmt {staged_files}
       stage_fixed: true
     telecine-lint:
       root: "telecine/"
@@ -16,13 +14,13 @@ pre-commit:
       run: npx oxlint --config oxlint.json {staged_files}
     telecine-format:
       root: "telecine/"
-      glob: "**/*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"
+      glob: "**/*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx}"
       run: npx oxfmt {staged_files}
       stage_fixed: true
     root-lint:
       glob: "scripts/**/*.{js,ts,mjs,cjs}"
       run: npx oxlint --config oxlint.json {staged_files}
     root-format:
-      glob: "scripts/**/*.{js,ts,mjs,cjs,json,jsonc}"
+      glob: "scripts/**/*.{js,ts,mjs,cjs}"
       run: npx oxfmt {staged_files}
       stage_fixed: true
