@@ -12,7 +12,8 @@ fi
 
 BRANCH_NAME="$1"
 MAIN_WORKTREE=$(git rev-parse --show-toplevel)
-EDITFRAME_DIR=$(dirname "$MAIN_WORKTREE")
+EDITFRAME_DIR=$(dirname "$(dirname "$(dirname "$MAIN_WORKTREE")")")
+WORKTREES_DIR="$EDITFRAME_DIR/worktrees"
 
 sanitize_branch_name() {
   local name="$1"
@@ -26,7 +27,7 @@ sanitize_branch_name() {
 }
 
 SANITIZED_BRANCH=$(sanitize_branch_name "$BRANCH_NAME")
-WORKTREE_DIR="$EDITFRAME_DIR/worktrees/$SANITIZED_BRANCH"
+WORKTREE_DIR="$WORKTREES_DIR/$SANITIZED_BRANCH"
 TELECINE_WORKTREE_DIR="$WORKTREE_DIR/telecine"
 ELEMENTS_WORKTREE_DIR="$WORKTREE_DIR/elements"
 

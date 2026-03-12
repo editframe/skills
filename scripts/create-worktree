@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Create a new worktree for a branch with scope-based service startup.
-# Run from main worktree.
+# Run from main worktree (~/Editframe/worktrees/main/monorepo).
 #
 # Usage: create-worktree <branch-name> [scope]
 #   scope: elements | web | render  (default: web)
 #
 # Directory layout created:
-#   ~/Editframe/worktrees/<branch>/        monorepo worktree (scripts, .worktree-scope)
-#     telecine/                            telecine git worktree
-#     elements/                            elements git worktree
+#   ~/Editframe/worktrees/<branch>/monorepo/   monorepo worktree
+#   ~/Editframe/worktrees/<branch>/telecine/   telecine git worktree
+#   ~/Editframe/worktrees/<branch>/elements/   elements git worktree
 
 set -e
 
@@ -36,6 +36,12 @@ fi
 CURRENT_ROOT=$(git rev-parse --show-toplevel)
 CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || git symbolic-ref --short HEAD 2>/dev/null)
 
+# Layout: worktrees/<branch>/monorepo is 3 levels deep — go up 3 to reach EDITFRAME_DIR
+EDITFRAME_DIR=$(dirname "$(dirname "$(dirname "$CURRENT_ROOT")")")
+WORKTREES_DIR="$EDITFRAME_DIR/worktrees"
+TELECINE_MAIN="$WORKTREES_DIR/main/telecine"
+ELEMENTS_MAIN="$WORKTREES_DIR/main/elements"
+
 sanitize_branch_name() {
   local name="$1"
   name=$(echo "$name" | tr '[:upper:]' '[:lower:]')
@@ -52,14 +58,10 @@ sanitize_branch_name() {
 }
 
 SANITIZED_BRANCH=$(sanitize_branch_name "$BRANCH_NAME")
-EDITFRAME_DIR=$(dirname "$CURRENT_ROOT")
-WORKTREES_DIR="$EDITFRAME_DIR/worktrees"
 WORKTREE_DIR="$WORKTREES_DIR/$SANITIZED_BRANCH"
+MONOREPO_WORKTREE_DIR="$WORKTREE_DIR/monorepo"
 TELECINE_WORKTREE_DIR="$WORKTREE_DIR/telecine"
 ELEMENTS_WORKTREE_DIR="$WORKTREE_DIR/elements"
-
-TELECINE_MAIN="$EDITFRAME_DIR/telecine"
-ELEMENTS_MAIN="$EDITFRAME_DIR/elements"
 
 if [ -d "$WORKTREE_DIR" ]; then
   echo "Error: Worktree directory already exists: $WORKTREE_DIR" >&2
@@ -67,15 +69,15 @@ if [ -d "$WORKTREE_DIR" ]; then
 fi
 
 if [ ! -d "$TELECINE_MAIN/.git" ] && [ ! -f "$TELECINE_MAIN/.git" ]; then
-  echo "Error: telecine sibling repo not found at $TELECINE_MAIN" >&2
+  echo "Error: telecine main not found at $TELECINE_MAIN" >&2
   exit 1
 fi
 if [ ! -d "$ELEMENTS_MAIN/.git" ] && [ ! -f "$ELEMENTS_MAIN/.git" ]; then
-  echo "Error: elements sibling repo not found at $ELEMENTS_MAIN" >&2
+  echo "Error: elements main not found at $ELEMENTS_MAIN" >&2
   exit 1
 fi
 
-mkdir -p "$WORKTREES_DIR"
+mkdir -p "$WORKTREE_DIR"
 
 BASE_BRANCH="${CURRENT_BRANCH:-main}"
 if [ "$BASE_BRANCH" = "HEAD" ]; then
@@ -89,9 +91,44 @@ echo ""
 
 # 1. Create monorepo git worktree
 if git show-ref --verify --quiet "refs/heads/${BRANCH_NAME}"; then
-  git worktree add "$WORKTREE_DIR" "$BRANCH_NAME" > /dev/null 2>&1
+  git worktree add "$MONOREPO_WORKTREE_DIR" "$BRANCH_NAME" > /dev/null 2>&1
 else
-  git worktree add -b "$BRANCH_NAME" "$WORKTREE_DIR" "$BASE_BRANCH" > /dev/null 2>&1
+  git worktree add -b "$BRANCH_NAME" "$MONOREPO_WORKTREE_DIR" "$BASE_BRANCH" > /dev/null 2>&1
+fi
+
+# Write scope file at the worktree root (parent of monorepo/)
+echo "$SCOPE" > "$WORKTREE_DIR/.worktree-scope"
+
+# Copy opencode.json if not already present
+if [ ! -f "$MONOREPO_WORKTREE_DIR/opencode.json" ] && [ -f "$CURRENT_ROOT/opencode.json" ]; then
+  cp "$CURRENT_ROOT/opencode.json" "$MONOREPO_WORKTREE_DIR/opencode.json"
+fi
+
+# 2. Create telecine git worktree
+cd "$TELECINE_MAIN"
+if git show-ref --verify --quiet "refs/heads/${BRANCH_NAME}"; then
+  git worktree add "$TELECINE_WORKTREE_DIR" "$BRANCH_NAME" > /dev/null 2>&1
+else
+  git worktree add -b "$BRANCH_NAME" "$TELECINE_WORKTREE_DIR" main > /dev/null 2>&1
+fi
+
+# 3. Create elements git worktree
+cd "$ELEMENTS_MAIN"
+if git show-ref --verify --quiet "refs/heads/${BRANCH_NAME}"; then
+  git worktree add "$ELEMENTS_WORKTREE_DIR" "$BRANCH_NAME" > /dev/null 2>&1
+else
+  git worktree add -b "$BRANCH_NAME" "$ELEMENTS_WORKTREE_DIR" main > /dev/null 2>&1
+fi
+
+cd "$CURRENT_ROOT"
+
+# 4. Copy .env files
+if [ -f "$ELEMENTS_MAIN/.env" ]; then
+  cp "$ELEMENTS_MAIN/.env" "$ELEMENTS_WORKTREE_DIR/.env" 2>/dev/null || true
+fi
+
+if [ "$SCOPE" != "elements" ] && [ -f "$TELECINE_MAIN/.env" ]; then
+  cp "$TELECINE_MAIN/.env" "$TELECINE_WORKTREE_DIR/.env" 2>/dev/null || true
 fi
 
 # Write scope file
@@ -137,11 +174,11 @@ if [ "$SCOPE" != "elements" ] && [ -f "$TELECINE_WORKTREE_DIR/scripts/copy-nativ
 fi
 
 # Point dev-projects at the main worktree's copy via Docker volume override.
-if [ -d "$CURRENT_ROOT/elements/dev-projects" ]; then
+if [ -d "$ELEMENTS_MAIN/dev-projects" ]; then
   ELEMENTS_ENV="$ELEMENTS_WORKTREE_DIR/.env"
   grep -v "^DEV_PROJECTS_HOST=" "$ELEMENTS_ENV" > "$ELEMENTS_ENV.tmp" 2>/dev/null || true
   mv "$ELEMENTS_ENV.tmp" "$ELEMENTS_ENV"
-  echo "DEV_PROJECTS_HOST=\"$CURRENT_ROOT/elements/dev-projects\"" >> "$ELEMENTS_ENV"
+  echo "DEV_PROJECTS_HOST=\"$ELEMENTS_MAIN/dev-projects\"" >> "$ELEMENTS_ENV"
 fi
 
 # 6. Ensure shared infrastructure is running
@@ -232,11 +269,7 @@ if [ "$SCOPE" != "elements" ]; then
   fi
 fi
 
-if [ "$BRANCH_NAME" = "main" ] || [ "$BRANCH_NAME" = "master" ]; then
-  DOMAIN="main.localhost"
-else
-  DOMAIN="${SANITIZED_BRANCH}.localhost"
-fi
+DOMAIN="${SANITIZED_BRANCH}.localhost"
 
 echo ""
 echo "Worktree created: $BRANCH_NAME (scope: $SCOPE)"

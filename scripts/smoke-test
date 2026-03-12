@@ -34,10 +34,14 @@ if [ -z "$WORKTREE_ROOT" ]; then
   exit 1
 fi
 
+# WORKTREE_ROOT is the monorepo worktree (worktrees/<branch>/monorepo).
+# The worktree container dir (with telecine/, elements/, .worktree-scope) is one level up.
+WORKTREE_DIR=$(dirname "$WORKTREE_ROOT")
+
 # Check scope — needs at least web scope (telecine services must be running)
 SCOPE="elements"
-if [ -f "$WORKTREE_ROOT/.worktree-scope" ]; then
-  SCOPE=$(cat "$WORKTREE_ROOT/.worktree-scope")
+if [ -f "$WORKTREE_DIR/.worktree-scope" ]; then
+  SCOPE=$(cat "$WORKTREE_DIR/.worktree-scope")
 fi
 
 if [ "$SCOPE" = "elements" ]; then
@@ -53,16 +57,11 @@ sanitize_branch() {
   echo "$n"
 }
 
-if [ "$BRANCH_NAME" = "main" ] || [ "$BRANCH_NAME" = "master" ]; then
-  WORKTREE_DOMAIN="main.localhost"
-  DOCKER_PROJECT="telecine"
-else
-  SANITIZED=$(sanitize_branch "$BRANCH_NAME")
-  WORKTREE_DOMAIN="${SANITIZED}.localhost"
-  DOCKER_PROJECT="telecine-${SANITIZED}"
-fi
+SANITIZED=$(sanitize_branch "$BRANCH_NAME")
+WORKTREE_DOMAIN="${SANITIZED}.localhost"
+DOCKER_PROJECT="telecine-${SANITIZED}"
 
-TELECINE_DIR="$WORKTREE_ROOT/telecine"
+TELECINE_DIR="$WORKTREE_DIR/telecine"
 MAIN_ROOT="$SCRIPT_DIR/.."
 
 # Ensure scheduler-go image exists — it's a pre-built Go binary not handled by docker-compose build
@@ -75,10 +74,10 @@ if ! docker image inspect scheduler-go > /dev/null 2>&1; then
 fi
 
 # Get EF_TOKEN stored in elements/.env during worktree creation
-EF_TOKEN=$(grep "^EF_TOKEN=" "$WORKTREE_ROOT/elements/.env" 2>/dev/null | head -1 | sed 's/^EF_TOKEN=//; s/^"//; s/"$//')
+EF_TOKEN=$(grep "^EF_TOKEN=" "$WORKTREE_DIR/elements/.env" 2>/dev/null | head -1 | sed 's/^EF_TOKEN=//; s/^"//; s/"$//')
 
 if [ -z "$EF_TOKEN" ]; then
-  echo "error: EF_TOKEN not found in $WORKTREE_ROOT/elements/.env" >&2
+  echo "error: EF_TOKEN not found in $WORKTREE_DIR/elements/.env" >&2
   exit 1
 fi
 

@@ -14,10 +14,11 @@ fi
 
 BRANCH_NAME="$1"
 MAIN_WORKTREE=$(git rev-parse --show-toplevel)
-EDITFRAME_DIR=$(dirname "$MAIN_WORKTREE")
+EDITFRAME_DIR=$(dirname "$(dirname "$(dirname "$MAIN_WORKTREE")")")
+WORKTREES_DIR="$EDITFRAME_DIR/worktrees"
 
-TELECINE_MAIN="$EDITFRAME_DIR/telecine"
-ELEMENTS_MAIN="$EDITFRAME_DIR/elements"
+TELECINE_MAIN="$WORKTREES_DIR/main/telecine"
+ELEMENTS_MAIN="$WORKTREES_DIR/main/elements"
 
 merge_branch_in_repo() {
   local repo_dir="$1"

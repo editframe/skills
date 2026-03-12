@@ -24,7 +24,8 @@ case "$NEW_SCOPE" in
 esac
 
 MAIN_WORKTREE=$(git rev-parse --show-toplevel)
-EDITFRAME_DIR=$(dirname "$MAIN_WORKTREE")
+EDITFRAME_DIR=$(dirname "$(dirname "$(dirname "$MAIN_WORKTREE")")")
+WORKTREES_DIR="$EDITFRAME_DIR/worktrees"
 
 sanitize_branch_name() {
   local name="$1"
@@ -38,7 +39,7 @@ sanitize_branch_name() {
 }
 
 SANITIZED_BRANCH=$(sanitize_branch_name "$BRANCH_NAME")
-WORKTREE_DIR="$EDITFRAME_DIR/worktrees/$SANITIZED_BRANCH"
+WORKTREE_DIR="$WORKTREES_DIR/$SANITIZED_BRANCH"
 TELECINE_WORKTREE_DIR="$WORKTREE_DIR/telecine"
 ELEMENTS_WORKTREE_DIR="$WORKTREE_DIR/elements"
 
@@ -66,8 +67,8 @@ echo "Upgrading worktree '$BRANCH_NAME' from '$CURRENT_SCOPE' to '$NEW_SCOPE'...
 if [ "$CURRENT_SCOPE" = "elements" ]; then
   WORKTREE_DATABASE="telecine-${SANITIZED_BRANCH}"
 
-  if [ ! -f "$TELECINE_WORKTREE_DIR/.env" ] && [ -f "$MAIN_WORKTREE/telecine/.env" ]; then
-    cp "$MAIN_WORKTREE/telecine/.env" "$TELECINE_WORKTREE_DIR/.env"
+  if [ ! -f "$TELECINE_WORKTREE_DIR/.env" ] && [ -f "$WORKTREES_DIR/main/telecine/.env" ]; then
+    cp "$WORKTREES_DIR/main/telecine/.env" "$TELECINE_WORKTREE_DIR/.env"
   fi
 
   if [ -f "$TELECINE_WORKTREE_DIR/scripts/copy-native-build" ]; then

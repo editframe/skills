@@ -32,9 +32,10 @@ if ! git rev-parse --git-dir > /dev/null 2>&1; then
 fi
 
 MAIN_WORKTREE=$(git rev-parse --show-toplevel)
-EDITFRAME_DIR=$(dirname "$MAIN_WORKTREE")
-TELECINE_MAIN="$EDITFRAME_DIR/telecine"
-ELEMENTS_MAIN="$EDITFRAME_DIR/elements"
+EDITFRAME_DIR=$(dirname "$(dirname "$(dirname "$MAIN_WORKTREE")")")
+WORKTREES_DIR="$EDITFRAME_DIR/worktrees"
+TELECINE_MAIN="$WORKTREES_DIR/main/telecine"
+ELEMENTS_MAIN="$WORKTREES_DIR/main/elements"
 
 sanitize_branch_name() {
   local name="$1"
@@ -49,7 +50,8 @@ sanitize_branch_name() {
 
 BRANCH_NAME="$BRANCH_ARG"
 SANITIZED_BRANCH=$(sanitize_branch_name "$BRANCH_NAME")
-WORKTREE_DIR="$EDITFRAME_DIR/worktrees/$SANITIZED_BRANCH"
+WORKTREE_DIR="$WORKTREES_DIR/$SANITIZED_BRANCH"
+MONOREPO_WORKTREE_DIR="$WORKTREE_DIR/monorepo"
 TELECINE_WORKTREE_DIR="$WORKTREE_DIR/telecine"
 ELEMENTS_WORKTREE_DIR="$WORKTREE_DIR/elements"
 
@@ -136,8 +138,8 @@ if [ -d "$ELEMENTS_MAIN/.git" ] || [ -f "$ELEMENTS_MAIN/.git" ]; then
 fi
 
 cd "$MAIN_WORKTREE"
-if git worktree list | grep -qF "$WORKTREE_DIR"; then
-  git worktree remove "$WORKTREE_DIR" --force 2>&1 || true
+if git worktree list | grep -qF "$MONOREPO_WORKTREE_DIR"; then
+  git worktree remove "$MONOREPO_WORKTREE_DIR" --force 2>&1 || true
   echo "   monorepo worktree removed"
 fi
 
