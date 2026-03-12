@@ -33,6 +33,24 @@ scripts/update-template-db                               # refresh template from
 
 ## Architecture
 
+### Repo layout
+
+```
+~/Editframe/
+  monorepo/                        # orchestration layer (scripts, docker infra)
+    telecine -> ../telecine         # symlink to telecine sibling repo
+    elements -> ../elements         # symlink to elements sibling repo
+  telecine/                         # real git clone of github.com/editframe/telecine [main]
+  elements/                         # real git clone of github.com/editframe/elements [main]
+
+  # Per worktree (created by create-worktree):
+  editframe-<branch>/              # monorepo worktree (scripts, .worktree-scope)
+    telecine -> ../telecine-<branch>/  # symlink
+    elements -> ../elements-<branch>/  # symlink
+  telecine-<branch>/               # telecine git worktree
+  elements-<branch>/               # elements git worktree
+```
+
 ### Shared infrastructure
 - `editframe-postgres` — single shared PostgreSQL, each worktree gets its own database (`telecine-<branch>`)
 - `editframe-traefik` — shared reverse proxy, routes by `Host` header (`<branch>.localhost`)
@@ -47,7 +65,7 @@ Worktree services use `cksum`-based port offsets (200 slots, spacing of 100) so 
 ### Config scripts
 - `telecine/scripts/worktree-config` — exports `WORKTREE_ID`, `WORKTREE_DATABASE`, `WORKTREE_DOMAIN`, `WORKTREE_DOCKER_PROJECT_NAME`, port variables
 - `elements/scripts/worktree-config` — same pattern for elements
-- `.worktree-scope` file in worktree root tracks current scope
+- `.worktree-scope` file in monorepo worktree root tracks current scope
 
 ### Docker Compose profiles
 - No profile = core services (always start): runner, web, valkey, graphql-engine, data-connector-agent, maintenance
