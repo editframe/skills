@@ -585,6 +585,7 @@ describe("renderTimegroupToCanvas", () => {
         const canvas = await captureTimegroupAtTime(webpImageTimegroup, {
           timeMs: 0,
           scale: 1,
+          contentReadyMode: "blocking",
         });
 
         expect(hasCanvasContent(canvas)).toBe(true);
