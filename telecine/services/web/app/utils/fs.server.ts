@@ -5,14 +5,12 @@ import fm from "front-matter";
 import { logger } from "@/logging";
 import { formatDate } from "~/ui/formatDate";
 import { generateIndexPage } from "./doc-index-generator";
-
-type Attributes = {
-  date: number;
-  meta: {
-    title: string;
-    description: string;
-  };
-};
+import {
+  BlogFrontmatterSchema,
+  ChangelogFrontmatterSchema,
+  type BlogPost,
+  type ChangelogEntry,
+} from "./blog-schema";
 
 // Content directory is always at services/web/app/content relative to project root
 // In production container: process.cwd() is /app, so path is /app/services/web/app
@@ -353,32 +351,38 @@ export const getAllGuideFiles = async () => {
     );
   });
 };
-export const getAllChangelogsFiles = async () => {
+export const getAllChangelogsFiles = async (): Promise<ChangelogEntry[]> => {
   if (!existsSync(changelogsBasePath)) {
     return [];
   }
-  const files = readdirSync(changelogsBasePath);
-  const changelogs = files.map((file) => {
-    const data = readFileSync(join(changelogsBasePath, file), {
-      encoding: "utf-8",
-    });
-    const { attributes } = fm<any>(data);
-    const title = attributes.meta.find((attr: any) => attr.title).title;
-    const description = attributes.meta.find(
-      (attr: any) => attr.name === "description",
-    ).content;
-    return {
-      title,
-      description,
-      slug: `/changelogs/${file.replace(".mdx", "")}`,
-      publishedDate: attributes.published_date || "",
-    };
-  });
-  return changelogs.sort((a, b) => {
-    return (
-      new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime()
-    );
-  });
+  const files = await fs.readdir(changelogsBasePath);
+  const mdxFiles = files.filter((f) => f.endsWith(".mdx"));
+
+  const entries = await Promise.all(
+    mdxFiles.map(async (file) => {
+      const data = await fs.readFile(join(changelogsBasePath, file), "utf-8");
+      const { attributes } = fm<unknown>(data);
+      const parsed = ChangelogFrontmatterSchema.safeParse(attributes);
+      if (!parsed.success) {
+        throw new Error(
+          `Invalid changelog frontmatter in ${file}:\n${parsed.error.message}`,
+        );
+      }
+      const fm_ = parsed.data;
+      return {
+        slug: file.replace(".mdx", ""),
+        title: fm_.title,
+        description: fm_.description,
+        date: fm_.date,
+        version: fm_.version,
+        tags: fm_.tags,
+      } satisfies ChangelogEntry;
+    }),
+  );
+
+  return entries.sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+  );
 };
 
 export const getLocalContent = async (path: string) => {
@@ -446,83 +450,46 @@ export const getLocalContent = async (path: string) => {
   }
 };
 
-export function loadMdxSingle(filepath: string) {
-  const relativeFilePath = filepath.replace(/^\/blog\//, "").replace(/\/$/, "");
-  const fileContents = readFileSync(
-    join(blogBasePath, `${relativeFilePath}.mdx`),
-    {
-      encoding: "utf-8",
-    },
+export const getAllBlogFiles = async (): Promise<BlogPost[]> => {
+  const files = await fs.readdir(blogBasePath);
+  const mdxFiles = files.filter((f) => f.endsWith(".mdx"));
+
+  const posts = await Promise.all(
+    mdxFiles.map(async (file) => {
+      const data = await fs.readFile(join(blogBasePath, file), "utf-8");
+      const { attributes } = fm<unknown>(data);
+      const parsed = BlogFrontmatterSchema.safeParse(attributes);
+      if (!parsed.success) {
+        throw new Error(
+          `Invalid blog frontmatter in ${file}:\n${parsed.error.message}`,
+        );
+      }
+      const fm_ = parsed.data;
+      return {
+        slug: file.replace(".mdx", ""),
+        title: fm_.title,
+        description: fm_.description,
+        date: fm_.date,
+        author: fm_.author,
+        tags: fm_.tags,
+        featured: fm_.featured,
+        coverImage: fm_.coverImage,
+        ogImage: fm_.ogImage,
+      } satisfies BlogPost;
+    }),
   );
 
-  const { attributes } = fm(fileContents);
+  return posts.sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+  );
+};
 
-  return attributes;
-}
+export const getBlogFile = async (slug: string): Promise<string> => {
+  const filePath = join(blogBasePath, `${slug}.mdx`);
+  return fs.readFile(filePath, "utf-8");
+};
 
-export function loadMdx() {
-  const dirEntries = readdirSync(blogBasePath, { withFileTypes: true });
-  const dirs = dirEntries.filter((entry) => entry.isDirectory());
-  const files = dirEntries.filter((entry) => entry.isFile());
-
-  const subFiles = dirs.flatMap((dir) => {
-    const subDirEntries = readdirSync(join(blogBasePath, dir.name), {
-      withFileTypes: true,
-    })
-      .filter((e) => e.isFile())
-      .map((e) => ({ name: join(dir.name, e.name) }));
-
-    return subDirEntries;
-  });
-
-  const entries = [...files, ...subFiles].map((entry) => {
-    if (entry.name === "index.jsx") {
-      return;
-    }
-
-    const fileContents = readFileSync(join(blogBasePath, entry.name), {
-      encoding: "utf-8",
-    });
-
-    const { attributes }: { attributes: Attributes } = fm(fileContents);
-
-    if (!attributes) {
-      throw new Error("Attributes not found");
-    }
-    return {
-      date: attributes.date,
-      slug: `/blog/${entry.name.replace(".mdx", "")}`,
-      title: attributes.meta.title,
-      description: attributes.meta.description,
-    };
-  });
-
-  const filteredEntries = entries.filter((entry) => entry !== undefined);
-  return filteredEntries.sort((a, b) => b.date - a.date);
-}
-export const getAllBlogFiles = async () => {
-  const files = readdirSync(blogBasePath);
-  const blogs = files.map((file) => {
-    const data = readFileSync(join(blogBasePath, file), {
-      encoding: "utf-8",
-    });
-    const { attributes } = fm<any>(data);
-    const title = attributes.meta.find((attr: any) => attr.title).title;
-    const description = attributes.meta.find(
-      (attr: any) => attr.name === "description",
-    ).content;
-    return {
-      title,
-      description,
-      slug: `/blog/${file.replace(".mdx", "")}`,
-      featured: attributes.featured || false,
-      featuredImage: attributes.featured_image || "",
-      publishedDate: attributes.published_date || "",
-    };
-  });
-  return blogs.sort((a, b) => {
-    return (
-      new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime()
-    );
-  });
+export const getChangelogFile = async (slug: string): Promise<string> => {
+  const filePath = join(changelogsBasePath, `${slug}.mdx`);
+  return fs.readFile(filePath, "utf-8");
 };

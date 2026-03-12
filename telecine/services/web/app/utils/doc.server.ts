@@ -5,7 +5,11 @@ import {
   getAllBlogFiles,
   getAllChangelogsFiles,
   getAllDocsFiles,
+  getBlogFile,
+  getChangelogFile,
 } from "./fs.server";
+
+export { getBlogFile, getChangelogFile };
 
 export const getFile = async (path: string): Promise<string> => {
   return getLocalFile(path);
@@ -32,6 +36,7 @@ export const getAllDocsContent = async () => {
     throw error;
   }
 };
+
 export const getAllGuidesContent = async () => {
   try {
     return await getAllGuideFiles();
@@ -42,6 +47,7 @@ export const getAllGuidesContent = async () => {
     throw error;
   }
 };
+
 export const getAllChangelogsContent = async () => {
   try {
     return await getAllChangelogsFiles();
@@ -52,6 +58,7 @@ export const getAllChangelogsContent = async () => {
     throw error;
   }
 };
+
 export const getAllBlogsContent = async () => {
   try {
     return await getAllBlogFiles();

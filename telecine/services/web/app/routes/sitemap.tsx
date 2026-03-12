@@ -2,6 +2,7 @@
 
 import type { LoaderFunction } from "react-router";
 import { getSkillNames, getSkillReferencesMeta } from "~/utils/skills.server";
+import { getAllBlogsContent, getAllChangelogsContent } from "~/utils/doc.server";
 
 export const siteUrl = "https://editframe.com";
 
@@ -30,11 +31,34 @@ function generateUrlEntry(
 
 export const loader: LoaderFunction = async () => {
   const skills = getSkillNames();
+  const [blogs, changelogs] = await Promise.all([
+    getAllBlogsContent(),
+    getAllChangelogsContent(),
+  ]);
 
   const urlEntries: string[] = [];
 
   urlEntries.push(generateUrlEntry("/", undefined, "daily", "1.0"));
+  urlEntries.push(generateUrlEntry("/blog", undefined, "daily", "0.9"));
+  urlEntries.push(generateUrlEntry("/changelog", undefined, "weekly", "0.8"));
   urlEntries.push(generateUrlEntry("/skills", undefined, "weekly", "0.9"));
+
+  for (const post of blogs) {
+    urlEntries.push(
+      generateUrlEntry(`/blog/${post.slug}`, post.date, "monthly", "0.7"),
+    );
+  }
+
+  for (const entry of changelogs) {
+    urlEntries.push(
+      generateUrlEntry(
+        `/changelog/${entry.slug}`,
+        entry.date,
+        "monthly",
+        "0.6",
+      ),
+    );
+  }
 
   for (const skill of skills) {
     urlEntries.push(
