@@ -7,7 +7,7 @@ description: Deploy telecine services to GCP Cloud Run via Pulumi, publish eleme
 
 This monorepo has three deployment paths:
 
-- **telecine** -- GCP Cloud Run services deployed via Pulumi, triggered by push to `main`
+- **telecine** -- GCP Cloud Run services deployed via Pulumi; deploy is gated on CI (integration, playwright, typecheck) passing via a PR merged to `main`
 - **elements** -- npm packages published by pushing a git tag
 - **skills** -- public documentation published to the `skills` remote via `scripts/push-skills`
 
@@ -33,8 +33,8 @@ This monorepo has three deployment paths:
 
 | Action | Command |
 |---|---|
-| Push telecine to remote | `scripts/push-telecine && scripts/wait-for-telecine-action` |
-| Push telecine to branch | `scripts/push-telecine --branch feature` |
+| Deploy telecine | Push branch → open PR → CI must pass → merge to main → `scripts/wait-for-telecine-action` |
+| Push telecine branch | `scripts/push-telecine <branch>` |
 | Deploy specific services manually | `telecine/scripts/build-and-push web scheduler-go` |
 | Deploy all services manually | `telecine/scripts/build-and-push-all` |
 | Run Pulumi directly | `cd telecine/deploy && pulumi up` |

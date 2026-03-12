@@ -19,9 +19,20 @@ Run `scripts/deploy-info telecine` to see all current services, resource allocat
 
 Defined in `telecine/.github/workflows/deploy.yaml`. Triggered on push to `main`.
 
+**Test gate (required before deploy):** The `deploy` job depends on `integration`, `playwright`, and `typecheck` all passing. Pushing directly to `main` without those jobs green will not trigger a deploy. The standard flow is to push to a branch, open a PR, let CI pass, then merge.
+
+```bash
+# Standard deploy flow
+scripts/push-telecine <branch>      # push branch to telecine remote
+# open PR at github.com/editframe/telecine, enable auto-merge (squash)
+# CI runs integration + playwright + typecheck
+# on pass: PR auto-merges to main, deploy workflow triggers
+scripts/wait-for-telecine-action    # poll until deploy completes
+```
+
 **Step 1: Docker builds (parallel matrix).** All services build in parallel using a GitHub Actions strategy matrix. Each job authenticates to GCP via Workload Identity Federation, builds with `scripts/build-docker-prod <service>`, and pushes with `scripts/push-docker-prod <service>`. Images use registry-based build caching.
 
-**Step 2: Pulumi deploy (after all builds).** Logs into Pulumi state storage, selects the stack, and runs `pulumi up`. Pulumi picks up the new image tags (git SHA) and updates Cloud Run services.
+**Step 2: Pulumi deploy (after all builds and tests).** Logs into Pulumi state storage, selects the stack, and runs `pulumi up`. Pulumi picks up the new image tags (git SHA) and updates Cloud Run services.
 
 Run `scripts/deploy-info telecine` to see the current CI/CD build matrix.
 
