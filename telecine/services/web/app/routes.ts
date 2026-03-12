@@ -22,7 +22,21 @@ const routes = [
     id: "routes/docs-redirect-wildcard",
   }),
   route("/guides/*", "routes/guides-redirect.ts"),
-  route("/blog/*", "routes/blog-redirect.ts"),
+
+  // Blog — specific routes before the :slug wildcard
+  layout("routes/blog/layout.tsx", [
+    route("/blog", "routes/blog/index.tsx"),
+    route("/blog/tag/:tag", "routes/blog/tag.tsx"),
+    route("/blog/author/:authorSlug", "routes/blog/author.tsx"),
+    route("/blog/:slug", "routes/blog/post.tsx"),
+  ]),
+  route("/blog/feed.xml", "routes/blog/feed.xml.ts"),
+
+  // Changelog
+  layout("routes/changelog/layout.tsx", [
+    route("/changelog", "routes/changelog/index.tsx"),
+    route("/changelog/:slug", "routes/changelog/entry.tsx"),
+  ]),
   route("/react", "routes/react-redirect.ts"),
   route("/tools/*", "routes/tools-redirect.ts"),
   route(

@@ -4,16 +4,15 @@ import { MarketingLayout } from "~/components/layouts/MarketingLayout";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Blog | Editframe" },
+    { title: "Changelog | Editframe" },
     {
       name: "description",
-      content:
-        "Thoughts on programmatic video, developer tooling, and building with Editframe.",
+      content: "What's new in Editframe — product updates, API changes, and improvements.",
     },
   ];
 };
 
-export default function BlogLayout() {
+export default function ChangelogLayout() {
   return (
     <MarketingLayout>
       <Outlet />

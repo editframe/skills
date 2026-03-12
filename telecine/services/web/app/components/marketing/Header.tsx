@@ -1,13 +1,13 @@
-import { Link, NavLink, useLocation } from "react-router";
+import { Link, NavLink } from "react-router";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
 import { ThemeToggle } from "~/components/ThemeToggle";
 
 const navigation = [
-  // {
-  //   to: "/blog",
-  //   label: "Blog",
-  // },
+  {
+    to: "/blog",
+    label: "Blog",
+  },
   {
     to: "/skills",
     label: "Documentation",
@@ -35,9 +35,7 @@ export const Header = ({
   className?: string;
   hideMobileMenu?: boolean;
 }) => {
-  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const isDocsPage = location.pathname.startsWith("/skills");
 
   useEffect(() => {
     if (!isMenuOpen) return;
