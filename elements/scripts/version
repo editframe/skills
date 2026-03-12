@@ -16,7 +16,7 @@ echo "export const version = \"$@\";" > "${SCRIPT_DIR}/../packages/vite-plugin/s
 (cd "${SCRIPT_DIR}/.." && npm -s version --no-git-tag-version --workspaces --include-workspace-root --allow-same-version "$@")
 set -ex
 (cd "${SCRIPT_DIR}/.." && node scripts/deps.js update-dependencies)
-"${SCRIPT_DIR}"/npm install --workspaces --include-workspace-root --legacy-peer-deps
+"${SCRIPT_DIR}"/npm install --workspaces --include-workspace-root --legacy-peer-deps --ignore-scripts
 
 git add .
 git commit -m "Bump version to v$@" || true
