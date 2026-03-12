@@ -9,6 +9,7 @@ import {
 } from "@editframe/assets";
 import debug from "debug";
 import type { Plugin } from "vite";
+import { version } from "./version.js";
 
 import { createJitTranscodeMiddleware } from "./jitTranscodeMiddleware.js";
 import {
@@ -41,7 +42,10 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
         return {
           define: {
             __EF_DEFAULT_API_HOST__: JSON.stringify("http://localhost:5173"),
-            __EF_TELEMETRY_ENABLED__: JSON.stringify(!process.env.EF_NO_TELEMETRY),
+            __EF_TELEMETRY_ENABLED__: JSON.stringify(
+              !process.env.EF_NO_TELEMETRY,
+            ),
+            __EF_VERSION__: JSON.stringify(version),
           },
         };
       }
@@ -53,7 +57,10 @@ export const vitePluginEditframe = (options: VitePluginEditframeOptions) => {
     }) {
       const port = resolvedConfig.server?.port ?? 5173;
       resolvedConfig.define ??= {};
-      resolvedConfig.define["__EF_DEFAULT_API_HOST__"] = JSON.stringify(`http://localhost:${port}`);
+      resolvedConfig.define["__EF_DEFAULT_API_HOST__"] = JSON.stringify(
+        `http://localhost:${port}`,
+      );
+      resolvedConfig.define["__EF_VERSION__"] ??= JSON.stringify(version);
     },
 
     configureServer(server) {

@@ -10,7 +10,8 @@ else
   echo "Working tree is clean."
 fi
 
-echo "export const VERSION = \"$@\";" > "${SCRIPT_DIR}/../packages/cli/src/version.ts"; 
+echo "export const VERSION = \"$@\";" > "${SCRIPT_DIR}/../packages/cli/src/version.ts";
+echo "export const version = \"$@\";" > "${SCRIPT_DIR}/../packages/vite-plugin/src/version.ts";
 
 (cd "${SCRIPT_DIR}/.." && npm -s version --no-git-tag-version --workspaces --include-workspace-root --allow-same-version "$@")
 set -ex
