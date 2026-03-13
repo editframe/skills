@@ -1,0 +1,6 @@
+#!/bin/bash
+# Generate a release notes MDX draft using an LLM
+# Usage: scripts/draft-changelog <new-version>
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+npx tsx "$SCRIPT_DIR/draft-changelog.ts" "$@"
