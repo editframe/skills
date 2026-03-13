@@ -215,10 +215,6 @@ scripts/wait-for-telecine-action
 # Poll elements release until complete
 scripts/wait-for-elements-action
 
-# Push and wait in one command
-scripts/push-telecine --wait
-scripts/push-elements --wait
-
 # Get logs for a failed run (most recent)
 scripts/gh-logs editframe/telecine
 

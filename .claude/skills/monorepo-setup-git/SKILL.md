@@ -4,62 +4,88 @@ description: git, git tags, pushing and pulling to repository. Any version contr
 ---
 # Monorepo Git Configuration
 
-## Git Remotes Configuration
+## Repo Layout
 
-The root repository has three remotes configured:
-- `telecine`: Points to `git@github.com:editframe/telecine.git`
-- `elements`: Points to `git@github.com:editframe/elements.git`
-- `skills`: Points to `git@github.com:editframe/skills.git`
+`telecine` and `elements` are standalone sibling repos cloned alongside the monorepo:
 
-The `telecine/` and `elements/` directories are git subtrees. Changes sync bidirectionally via `git subtree push/pull`.
+```
+~/Editframe/worktrees/<branch>/
+  monorepo/     # primary monorepo checkout
+  telecine/     # telecine repo clone
+  elements/     # elements repo clone
+```
+
+The monorepo has one remote: `skills` → `git@github.com:editframe/skills.git`.
+
+`telecine` and `elements` each have `origin` pointing to their respective GitHub repos.
 
 ## Push/Pull Workflows
 
-### Pushing Changes to Remotes
+### Telecine
 
-Always use the dedicated scripts. Never run `git push` directly to telecine or elements remotes.
-
-```bash
-# Push telecine/ to telecine remote (defaults to main branch)
-./scripts/push-telecine
-
-# Push telecine/ to a specific branch
-./scripts/push-telecine <branch-name>
-
-# Push telecine/ and wait for deployment action to complete
-./scripts/push-telecine --wait
-
-# Push elements/ to elements remote
-./scripts/push-elements
-./scripts/push-elements --wait
-
-# Push skills/ to skills remote
-./scripts/push-skills
-```
-
-**How push scripts work:** `git subtree push --prefix=<dir> <remote> <branch>`. This splits the subtree commit history and pushes only the sub-directory tree with proper ancestry, enabling future bidirectional merges.
-
-### Pulling Changes from Remotes
-
-When changes are merged directly to a remote (e.g. via a PR on github.com/editframe/telecine), pull them back using:
+Work directly in the sibling telecine repo. Push to `origin` from there:
 
 ```bash
-./scripts/pull-telecine
-./scripts/pull-elements
+# From ~/Editframe/worktrees/<branch>/telecine/
+git push origin main           # push to telecine main
+git push origin <branch>       # push a branch
 ```
 
-These run `git subtree pull --prefix=<dir> <remote> main --squash`. Because `push-telecine`/`push-elements` use `git subtree push`, the histories share ancestry and pull is conflict-free for non-overlapping changes.
+Never push telecine from the monorepo root.
 
-### Syncing Workflow
+### Elements
 
-The monorepo is the primary working environment:
-1. Make changes in the monorepo
-2. Commit to monorepo `main`
-3. Push to the remote with `./scripts/push-telecine` or `./scripts/push-elements`
-4. If a PR was merged directly on the remote, pull back with `./scripts/pull-telecine` or `./scripts/pull-elements`
+Work directly in the sibling elements repo:
 
-**Never run `git push telecine ...` or `git push elements ...` directly.** The push scripts handle proper subtree extraction.
+```bash
+# From ~/Editframe/worktrees/<branch>/elements/
+git push origin main
+git push origin <branch>
+git push origin v<version>     # push a tag to trigger release CI
+```
 
-### Skills sync
+### Skills
 
-`push-telecine` automatically runs `sync-telecine-skills` before pushing, which rsyncs the `skills/` tree into `telecine/skills/` and commits if changed.
+Skills are pushed from the monorepo using the provided script:
+
+```bash
+# From monorepo/
+scripts/push-skills
+```
+
+This pushes to the `skills` remote (`git@github.com:editframe/skills.git`).
+
+The `skills-sync` tag tracks the last synced commit:
+
+```bash
+git tag -f -a skills-sync HEAD -m "skills synced $(date -I)"
+git push skills skills-sync
+```
+
+## CI Monitoring
+
+```bash
+# Poll telecine deploy until complete
+scripts/wait-for-telecine-action
+
+# Poll elements release until complete
+scripts/wait-for-elements-action
+
+# Get failed job logs
+scripts/gh-logs editframe/telecine
+scripts/gh-logs editframe/elements
+```
+
+## Telecine Deploy Gate
+
+A push to `telecine/main` triggers CI. The deploy job only runs after `build-runner`, all `docker (*)` matrix jobs, `integration`, `typecheck`, and `playwright` all pass. Pushing directly to `main` is allowed — CI gates the deploy.
+
+Standard flow for a branch:
+
+```bash
+# From telecine/
+git push origin <branch>
+# Open PR on github.com/editframe/telecine, let CI pass, merge
+# Then from monorepo/
+scripts/wait-for-telecine-action
+```
