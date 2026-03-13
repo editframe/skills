@@ -229,7 +229,8 @@ async function main() {
   }
 
   const output = JSON.parse(readFileSync(outputJsonPath, "utf-8"));
-  process.stderr.write(`Audio generated: ${output.durationMs}ms, ${output.captions.length} caption groups\n`);
+  const captionWordCount = output.captions?.word_segments?.length ?? 0;
+  process.stderr.write(`Audio generated: ${output.durationMs}ms, ${captionWordCount} caption words\n`);
 
   // Upload MP3
   const cdnUrl = uploadToGCS(output.mp3Path, output.mp3Filename);
