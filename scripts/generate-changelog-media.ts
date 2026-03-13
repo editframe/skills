@@ -195,6 +195,86 @@ function writeCaptionsFile(version: string, captions: unknown): string {
   return captionsPath;
 }
 
+// ─── Patch scene durationMs from VO segment timings ──────────────────────────
+//
+// The VO segments are sentence-level with start/end times in seconds. We map
+// them onto the MDX scenes (ChangelogIntroCard, CodeReveal/TextMoment..., ChangelogOutroCard)
+// in document order, distributing time so each scene covers its corresponding segment(s).
+//
+// Strategy:
+//  - Count how many durationMs={...} props exist in the composition block
+//  - The first (intro) and last (outro) get fixed allocations; middle scenes get
+//    time proportional to their VO segments
+//  - Scene duration = time from scene-start to scene-end + a small pad so CSS
+//    animations finish before the crossfade
+
+function patchSceneDurations(mdx: string, segments: Array<{ start: number; end: number; text: string }>, totalMs: number): string {
+  // Extract the composition block
+  const compMatch = mdx.match(/<ReleaseVideo[\s\S]*?<\/ReleaseVideo>/);
+  if (!compMatch) return mdx;
+
+  // Count durationMs occurrences in the composition block
+  const compBlock = compMatch[0];
+  const durationCount = (compBlock.match(/durationMs=\{/g) ?? []).length;
+  if (durationCount === 0 || segments.length === 0) return mdx;
+
+  // Build per-scene durations:
+  // - intro: 0 to first segment start (or first segment end if only 1 non-outro segment)
+  // - middle scenes: distribute proportionally across middle segments
+  // - outro: last 3s (fixed)
+  const OUTRO_MS = 3000;
+  const OVERLAP_MS = 600;
+  const PAD_MS = 400; // breathing room at scene end before crossfade
+
+  let durations: number[];
+
+  if (durationCount === 1) {
+    durations = [totalMs];
+  } else if (durationCount === 2) {
+    durations = [totalMs - OUTRO_MS, OUTRO_MS];
+  } else {
+    // intro gets time up to first segment start + some lead-in
+    const introEnd = segments[0] ? Math.round(segments[0].start * 1000) : 3000;
+    const introMs = Math.max(3000, introEnd + PAD_MS);
+
+    // outro is fixed
+    const outroMs = OUTRO_MS;
+
+    // middle scenes split remaining VO time
+    const middleCount = durationCount - 2;
+    const remainingSegments = segments; // all segments are "middle" content
+    const middleMs = totalMs - introMs - outroMs + (durationCount - 1) * OVERLAP_MS;
+
+    if (middleCount === 1) {
+      durations = [introMs, Math.max(3000, middleMs), outroMs];
+    } else {
+      // Distribute segments evenly across middle scenes
+      const segsPerScene = remainingSegments.length / middleCount;
+      const middleDurations: number[] = [];
+      for (let i = 0; i < middleCount; i++) {
+        const fromSeg = Math.floor(i * segsPerScene);
+        const toSeg = Math.min(remainingSegments.length - 1, Math.ceil((i + 1) * segsPerScene) - 1);
+        const segStart = remainingSegments[fromSeg]?.start ?? 0;
+        const segEnd = remainingSegments[toSeg]?.end ?? (totalMs / 1000);
+        const sceneMs = Math.max(3000, Math.round((segEnd - segStart) * 1000) + PAD_MS * 2);
+        middleDurations.push(sceneMs);
+      }
+      durations = [introMs, ...middleDurations, outroMs];
+    }
+  }
+
+  // Replace durationMs values in document order within the composition block
+  let idx = 0;
+  const patchedComp = compBlock.replace(/durationMs=\{(\d+)\}/g, () => {
+    const ms = durations[idx] ?? parseInt("3000");
+    idx++;
+    // Round to nearest 100ms for cleanliness
+    return `durationMs={${Math.round(ms / 100) * 100}}`;
+  });
+
+  return mdx.replace(compBlock, patchedComp);
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -240,10 +320,12 @@ async function main() {
   const captionsPath = writeCaptionsFile(version, output.captions);
   process.stderr.write(`Captions written: ${captionsPath}\n`);
 
-  // Patch MDX frontmatter with audioSrc
-  const patched = patchFrontmatter(mdxContent, { audioSrc: cdnUrl });
+  // Patch MDX: audioSrc in frontmatter + scene durationMs from VO timings
+  const segments: Array<{ start: number; end: number; text: string }> = output.captions?.segments ?? [];
+  const withDurations = patchSceneDurations(mdxContent, segments, output.durationMs);
+  const patched = patchFrontmatter(withDurations, { audioSrc: cdnUrl });
   writeFileSync(mdxPath, patched);
-  process.stderr.write(`MDX patched: audioSrc added\n`);
+  process.stderr.write(`MDX patched: audioSrc + scene durations\n`);
 
   process.stdout.write(
     JSON.stringify({ audioSrc: cdnUrl, durationMs: output.durationMs, captionsPath }, null, 2) + "\n",

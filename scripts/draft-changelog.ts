@@ -141,7 +141,13 @@ STRUCTURE
    - "Please note that…" or "We are excited to announce…"
    If you can't be specific, omit the item entirely.
 
-6. Omit internal housekeeping: version bump commits, snapshot updates, CI fixes, test-only changes, formatting commits, and anything that has no effect on a developer using the packages.
+6. Omit ALL of the following — they are not worth the reader's attention:
+   - Version bump commits, snapshot updates, CI fixes, formatting commits
+   - Test-only changes (changes that only affect test files or test infrastructure)
+   - Internal build system changes (monorepo tooling, bundler config, dependency graph internals)
+   - Changes to internal implementation details that have no observable effect on a developer using the public API
+   - Changes to classes, types, or functions not part of the public @editframe/* API surface
+   If the only changes in a release are internal, write a minimal note acknowledging the release with no section headers.
 
 FRONTMATTER SCHEMA:
 ---
@@ -328,11 +334,8 @@ async function main() {
   process.stderr.write("Calling Anthropic API...\n");
   const rawMdx = await draftChangelog(newVersion, allCommits);
 
-  // Inject the assigned codename (replacing placeholder if present, else appending to frontmatter)
-  const mdx = rawMdx.replace(
-    /codename:\s*"CODENAME_PLACEHOLDER"/,
-    `codename: "${codename}"`,
-  );
+  // Inject the assigned codename everywhere the placeholder appears (frontmatter + composition body)
+  const mdx = rawMdx.split("CODENAME_PLACEHOLDER").join(codename);
 
   const outputPath = writeOutput(newVersion, mdx);
   process.stdout.write(outputPath + "\n");
