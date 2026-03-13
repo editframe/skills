@@ -16,6 +16,7 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
+import { pickCodename } from "./changelog-codenames";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = join(__dirname, "..");
@@ -149,8 +150,99 @@ description: <one sentence summary of the most important change>
 date: "<today's date in YYYY-MM-DD format — must be quoted, e.g. \"2026-03-13\">"
 version: "<version number, e.g. 0.46.1>"
 tags: [<2-4 tags from: elements, react, api, cli, vite-plugin, bug-fix, performance, breaking, developer-experience, types>]
-# video and videoPoster are optional — omit them; they are added manually after a release video is produced
+codename: "<CODENAME_PLACEHOLDER>"
+# audioSrc is added by scripts/generate-changelog-media after voiceover is generated
 ---
+
+VIDEO COMPOSITION
+Every changelog MDX MUST include a ReleaseVideo composition immediately after the h1 heading.
+The composition uses a vocabulary of 4 components — always include all 4 in this order:
+ChangelogIntroCard → CodeReveal (if there's a code change) or TextMoment → TextMoment (1–2) → ChangelogOutroCard
+
+Components are passed via MDX's components prop — do NOT import them. Custom components available:
+Timegroup, ReleaseVideo, ChangelogIntroCard, CodeReveal, TextMoment, ChangelogOutroCard
+
+COMPONENT API:
+
+<ChangelogIntroCard
+  version="0.46.1"           // required — version string
+  codename="Iron Sparrow"    // required — release codename from frontmatter
+  illustration='<svg ...>'   // optional — inline SVG string (480×480, Editframe blue palette)
+  durationMs={4000}          // optional — scene duration ms, default 4000
+/>
+
+<CodeReveal
+  before={[                  // required — array of CodeLine objects
+    { text: "line of code", type?: "neutral" | "remove" | "add" },
+  ]}
+  after={[                   // required — array of CodeLine objects
+    { text: "line of code", type?: "neutral" | "remove" | "add" },
+  ]}
+  lang="ts"                  // optional — "ts" | "tsx" | "js" | "jsx" | "css" | "json" | "sh" | "bash"
+  filename="vite.config.ts"  // optional — shown in the window chrome
+  beforeLabel="Before"       // optional — default "Before"
+  afterLabel="After"         // optional — default "After"
+  durationMs={7000}          // optional — default 8000; allocate more time for longer diffs
+/>
+// Shows before→after with syntax highlighting. Only use when there's a real API/config change to show.
+
+<TextMoment
+  headline="Zero config."    // required — short punchy statement (2–5 words)
+  body="Optional supporting sentence with technical context."  // optional
+  accentColor="#1565c0"      // optional — hex color, default Editframe blue
+  motif="rings"              // optional — "grid" | "rings" | "particles", default "grid"
+  durationMs={3500}          // optional — default 3500
+/>
+// Use for key outcomes/benefits. motif="rings" for rollout/propagation themes,
+// motif="particles" for isolation/independence themes, motif="grid" for infrastructure.
+
+<ChangelogOutroCard
+  version="0.46.1"           // required — version string
+  tagline="Keep building."   // optional — closing line, default "Keep building."
+  durationMs={3000}          // optional — default 4000
+/>
+
+COMPOSITION TEMPLATE:
+\`\`\`mdx
+# <version>
+
+<ReleaseVideo aspect="16/9">
+  <Timegroup
+    mode="sequence"
+    overlapMs={600}
+    style={{ width: 1920, height: 1080, position: "relative" }}
+  >
+
+    <ChangelogIntroCard
+      version="<version>"
+      codename="<CODENAME_PLACEHOLDER>"
+      durationMs={4000}
+      illustration='<svg viewBox="0 0 480 480"><!-- geometric SVG using #1565c0 #0d47a1 #4488ff #ffffff palette --></svg>'
+    />
+
+    <!-- CodeReveal for API/config changes, or TextMoment if no code diff -->
+    <CodeReveal ... />
+
+    <!-- 1–2 TextMoment scenes for key outcomes -->
+    <TextMoment headline="..." motif="..." durationMs={3500} />
+
+    <ChangelogOutroCard
+      version="<version>"
+      tagline="Keep building."
+      durationMs={3000}
+    />
+
+  </Timegroup>
+</ReleaseVideo>
+\`\`\`
+
+SVG ILLUSTRATION RULES (for illustration prop):
+- viewBox="0 0 480 480", no width/height attributes on the svg element
+- Only use: line, circle, polygon, rect, polyline — no text, no foreignObject, no filters, no gradients
+- Color palette: #1565c0 (primary blue), #0d47a1 (dark blue), #4488ff (bright blue), #ffffff (white)
+- Use rgba() for transparency: rgba(21,101,192,0.2)
+- 8–20 elements, stroke-based, Bauhaus/Swiss geometric style
+- The illustration should visually evoke the release theme (e.g. wires for connectivity, grid for config)
 
 Output ONLY the MDX file content. No preamble, no explanation, no markdown fences.`;
 
@@ -197,6 +289,9 @@ function writeOutput(version: string, mdx: string): string {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
+  const codename = pickCodename();
+  process.stderr.write(`Codename: ${codename}\n`);
+
   const elementsDir = getElementsDir();
 
   // Elements repo: find the previous version bump commit as the range start.
@@ -226,7 +321,13 @@ async function main() {
   const allCommits = [elementsCommits, monoRepoCommits].filter(Boolean).join("\n\n");
 
   process.stderr.write("Calling Anthropic API...\n");
-  const mdx = await draftChangelog(newVersion, allCommits);
+  const rawMdx = await draftChangelog(newVersion, allCommits);
+
+  // Inject the assigned codename (replacing placeholder if present, else appending to frontmatter)
+  const mdx = rawMdx.replace(
+    /codename:\s*"CODENAME_PLACEHOLDER"/,
+    `codename: "${codename}"`,
+  );
 
   const outputPath = writeOutput(newVersion, mdx);
   process.stdout.write(outputPath + "\n");

@@ -1,0 +1,6 @@
+#!/bin/bash
+# Generate an abstract SVG illustration for a changelog release codename
+# Usage: scripts/generate-changelog-illustration <codename> [output.svg]
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+npx tsx "$SCRIPT_DIR/generate-changelog-illustration.ts" "$@"
