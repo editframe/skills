@@ -98,10 +98,19 @@ fi
 
 echo "✅ Telecine full-render tests passed"
 
-# Step 5: Commit and push changes to main
+# Step 5: Draft changelog entry
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "Step 5: Committing and pushing changes to main"
+echo "Step 5: Drafting changelog entry"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+cd "$PROJECT_ROOT"
+CHANGELOG_PATH=$("$PROJECT_ROOT/scripts/draft-changelog" "$VERSION")
+echo "Changelog draft: $CHANGELOG_PATH"
+
+# Step 6: Commit and push changes to main
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Step 6: Committing and pushing changes to main"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 cd "$PROJECT_ROOT/telecine"
 
@@ -125,10 +134,10 @@ fi
 cd "$PROJECT_ROOT"
 "$PROJECT_ROOT/scripts/push-telecine" main
 
-# Step 6: Wait for GitHub Actions workflow to complete
+# Step 7: Wait for GitHub Actions workflow to complete
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "Step 6: Waiting for telecine deployment action to complete"
+echo "Step 7: Waiting for telecine deployment action to complete"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 cd "$PROJECT_ROOT"
 
