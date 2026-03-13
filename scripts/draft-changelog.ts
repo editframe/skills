@@ -146,7 +146,7 @@ FRONTMATTER SCHEMA (all fields required):
 ---
 title: <one-line benefit headline, e.g. "Local dev apiHost now resolves automatically">
 description: <one sentence summary of the most important change>
-date: <today's date in YYYY-MM-DD format>
+date: "<today's date in YYYY-MM-DD format — must be quoted, e.g. \"2026-03-13\">"
 version: "<version number, e.g. 0.46.1>"
 tags: [<2-4 tags from: elements, react, api, cli, vite-plugin, bug-fix, performance, breaking, developer-experience, types>]
 ---
