@@ -266,6 +266,23 @@ function EnhancedScene() {
 - For complex scenes with many animated objects, consider `useFrame` over `useEffect` for time-sensitive updates
 - The `<Canvas>` component creates its own React root — state doesn't cross the boundary without props or context
 
+## Full-Canvas CompositionCanvas in FitScale
+
+`CompositionCanvas` uses `react-use-measure` which calls `getBoundingClientRect()`. Inside a `FitScale`, this returns the **visual (post-transform) size** rather than the composition's CSS layout size. For a 1920×1080 composition scaled to a 798×448 display, the R3F canvas will be sized at 798×448 and positioned at the container's top-left — resulting in 3D content in the top-left quadrant of the composition.
+
+**Fix**: add a CSS class with `!important` overrides to force the canvas to fill its container:
+
+```css
+.cl-canvas-full canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+```
+
+Then pass `containerClassName="cl-canvas-full"` to `CompositionCanvas`. The canvas is CSS-stretched to fill the container visually. Since the composition and display both use 16:9, there is no distortion.
+
+This fix applies **only to full-canvas Three.js scenes**. Canvas regions intentionally sized smaller than the composition (e.g. a 130px-tall codename region) should not use this class.
+
 ## When to Use R3F vs Vanilla Three.js
 
 | Consideration | R3F | Vanilla |
