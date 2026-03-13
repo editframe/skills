@@ -89,29 +89,48 @@ interface VOScript {
 }
 
 async function draftVOScript(version: string, prose: string): Promise<VOScript> {
-  const system = `You are a technical writer turning developer release notes into a natural conversational voiceover script.
+  const system = `You are writing a voiceover script for a developer changelog video. The script will be read aloud by a text-to-speech voice.
 
-Rules:
-- Write like a senior engineer talking at a team standup — casual, direct, no buzzwords.
-- Each segment should be 1–2 short sentences. Total runtime target: 20–35 seconds.
-- First segment MUST be a preamble (discard: true) to absorb TTS warmup: use "Here are the release notes." with last_word "notes".
-- Each segment needs a unique key like "01-intro", "02-change-name", etc.
-- last_word must be the final meaningful word of the segment text (no punctuation), used for whisper alignment.
-- Segments must flow — read them aloud, they should sound like one continuous take.
+WRITING FRAMEWORK — Interactional Metadiscourse
+The script must do more than restate facts. It must position the writer, acknowledge the reader's context, and manage the relationship. Apply these moves:
 
-Return ONLY valid JSON matching this TypeScript type:
+HEDGES AND BOOSTERS — use asymmetrically:
+- Be certain (boost) about outcomes: "This fixes the bug." Not "This should fix the bug."
+- Be precise (hedge) about scope and conditions: "If you're running a local dev server..." Not "All users will see..."
+- The failure mode is the inverse: hedged outcomes + boosted scope. Avoid it.
+
+ATTITUDE MARKERS — reader-referential, not self-referential:
+- Never: "We're excited to announce..." (performance of emotion, not expression of it)
+- Do: acknowledge the reader's probable emotional state — relief at a fix, effort required for a migration
+- Earned enthusiasm is fine; proportionality is required
+
+SELF-MENTION — use "we" consistently:
+- "We fixed..." not "This has been fixed..." or "A fix was implemented..."
+- First-person plural encodes agency and accountability. Passive voice performs institutional evasion.
+
+ENGAGEMENT MARKERS — speak directly to the reader:
+- Use "you" and direct address to assign roles: "If you were relying on X..."
+- Nil-change notices are engagement markers: "No action needed on your end."
+- Clearly distinguish what requires reader action from what requires nothing
+
+PROLEPSIS — preempt the reader's questions:
+- The predictable unasked questions: Will this break my build? Do I need to do anything? How long will this take?
+- Answer them before they arise.
+
+FORMAT CONSTRAINTS:
+- Total runtime: 20–35 seconds
+- Each segment: 1–2 short sentences, written to be spoken aloud (contractions, natural rhythm)
+- First segment MUST be a warmup preamble (discard: true): "Here are the release notes." last_word: "notes"
+- Each segment needs a unique key: "01-intro", "02-change-name", etc.
+- last_word: the final meaningful word of the segment (no punctuation) — used for Whisper alignment
+- Segments must chain — read the whole script aloud before finalizing; it should sound like one continuous take
+
+Return ONLY valid JSON, no markdown fences:
 {
-  version: string;
-  instruct: string;  // voice character description for Qwen TTS
-  segments: Array<{
-    key: string;
-    text: string;
-    last_word: string;
-    discard?: boolean;
-  }>;
-}
-
-No markdown fences, no commentary.`;
+  "version": string,
+  "instruct": string,  // voice character: e.g. "Clear, direct senior engineer. Measured pace. Warm but not effusive."
+  "segments": [{ "key": string, "text": string, "last_word": string, "discard"?: boolean }]
+}`;
 
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-5",
@@ -126,8 +145,10 @@ No markdown fences, no commentary.`;
   });
 
   const text = response.content[0].type === "text" ? response.content[0].text : "";
+  // Strip markdown fences if Claude wrapped the JSON
+  const stripped = text.trim().replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
   try {
-    return JSON.parse(text.trim());
+    return JSON.parse(stripped);
   } catch (e) {
     process.stderr.write(`Failed to parse Claude response as JSON:\n${text}\n`);
     throw e;

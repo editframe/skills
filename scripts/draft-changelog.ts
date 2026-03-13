@@ -237,12 +237,17 @@ COMPOSITION TEMPLATE:
 \`\`\`
 
 SVG ILLUSTRATION RULES (for illustration prop):
-- viewBox="0 0 480 480", no width/height attributes on the svg element
-- Only use: line, circle, polygon, rect, polyline — no text, no foreignObject, no filters, no gradients
+- Style: MISSION PATCH / MERIT BADGE — circular badge shape with decorative border ring
+- viewBox="0 0 480 480", xmlns="http://www.w3.org/2000/svg", no width/height attributes
+- Structure: outer circle border ring → inner circle background fill → central geometric symbol
+- Only use: circle, line, polygon, rect, polyline — no text, no foreignObject, no filters, no gradients
 - Color palette: #1565c0 (primary blue), #0d47a1 (dark blue), #4488ff (bright blue), #ffffff (white)
-- Use rgba() for transparency: rgba(21,101,192,0.2)
-- 8–20 elements, stroke-based, Bauhaus/Swiss geometric style
-- The illustration should visually evoke the release theme (e.g. wires for connectivity, grid for config)
+- Use rgba() for transparency on fills: rgba(13,71,161,0.18), rgba(21,101,192,0.25)
+- 15–25 elements total: 2-3 circles for badge shape, tick marks on the border ring, central symbol (6-12 elements)
+- The central symbol should geometrically evoke the release theme (e.g. circuit for connectivity, prism for rendering)
+- Border ring ticks: short lines radiating outward at regular angular intervals
+- Reference structure from 0.46.1:
+  outer ring → inner filled circle → axis guidelines → central polygon → nodes + edges → detail rect at bottom
 
 Output ONLY the MDX file content. No preamble, no explanation, no markdown fences.`;
 
