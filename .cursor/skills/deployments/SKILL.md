@@ -13,14 +13,10 @@ This monorepo has three deployment paths:
 
 ## Scripts
 
-**Never run `git push <remote>` directly.** Always use the wrapper scripts below. The scripts handle subtree extraction, no-op detection, and remote fetching internally -- running git push directly will fail with "non-fast-forward" errors because the remote history is synthetic.
+`telecine` and `elements` are sibling repos cloned alongside the monorepo under `~/Editframe/worktrees/<branch>/`. Push to them with standard `git push origin` from within the sibling repo directory. There are no subtree push scripts.
 
 | Script | Purpose |
 |---|---|
-| `scripts/push-telecine` | Push telecine to remote |
-| `scripts/push-telecine --wait` | Push + poll CI — may latch onto a previously completed run; prefer push then `wait-for-telecine-action` |
-| `scripts/push-elements` | Push elements to remote |
-| `scripts/push-elements --wait` | Push + poll CI until release completes |
 | `scripts/push-skills` | Generate + push skills to remote |
 | `scripts/wait-for-telecine-action` | Poll telecine deploy CI (30s interval) |
 | `scripts/wait-for-elements-action` | Poll elements release CI (30s interval) |
@@ -34,12 +30,11 @@ This monorepo has three deployment paths:
 | Action | Command |
 |---|---|
 | Deploy telecine | Push branch → open PR → CI must pass → merge to main → `scripts/wait-for-telecine-action` |
-| Push telecine branch | `scripts/push-telecine <branch>` |
+| Push telecine branch | `git push origin <branch>` (from `worktrees/<branch>/telecine/`) |
 | Deploy specific services manually | `telecine/scripts/build-and-push web scheduler-go` |
 | Deploy all services manually | `telecine/scripts/build-and-push-all` |
 | Run Pulumi directly | `cd telecine/deploy && pulumi up` |
-| Prepare elements release | `elements/scripts/prepare-release <version>` |
-| Push elements to remote | `scripts/push-elements` (or `--wait`) |
+| Prepare elements release | `elements/scripts/prepare-release <version>` (from sibling elements repo) |
 | Bump elements to beta | `elements/scripts/prerelease` |
 | Publish elements manually | `elements/scripts/publish` |
 | Publish skills docs | `scripts/push-skills` |

@@ -54,30 +54,21 @@ Defined in `elements/.github/workflows/release.yaml`. Triggered by pushing **any
 
 The workflow builds all packages, runs validation (type check, lint, format, tests -- skipped for beta tags), publishes to npm, and creates a GitHub Release.
 
-## Monorepo Push Workflow
+## Push Workflow
 
-The `elements/scripts/version` script handles pushing to the elements remote. When run from the monorepo:
+`elements` is a standalone sibling repo cloned at `~/Editframe/worktrees/<branch>/elements/`. The `version` script handles pushing directly via `git push` and `git push --tag` from within that repo.
 
-1. Detects the `elements` git remote
-2. Uses `scripts/push-elements` to push the `elements/` tree to the remote
-3. Tags both the `elements` and `telecine` remotes
-4. Tags the monorepo root at HEAD
-
-**You only need to run `prepare-release` from the monorepo root.** The script handles pushing to the standalone elements repo automatically.
+**Run `prepare-release` from inside the sibling elements repo** (`worktrees/<branch>/elements/`). The script commits, tags, and pushes to `origin` automatically.
 
 ## Re-tagging After Post-version Commits
 
-If commits are made to the monorepo after `prepare-release` (e.g. hotfixes), the tag and `elements/main` both need updating. The tag alone is not enough -- GitHub will show "This commit does not belong to any branch" and may not trigger CI.
+If commits are made after `prepare-release` (e.g. hotfixes), delete and recreate the tag on the updated commit:
 
-Steps:
 ```bash
-# From monorepo root -- push the updated tree first
-scripts/push-elements
-# Then delete + recreate the tag on the new remote HEAD
-git fetch elements main
-git push elements :refs/tags/v<version>
-git tag -f v<version> elements/main -m "<version>"
-git push elements v<version>
+# From worktrees/<branch>/elements/
+git push origin :refs/tags/v<version>
+git tag -f v<version> HEAD -m "<version>"
+git push origin v<version>
 ```
 
 Always push the branch commit first, then delete + recreate the tag. Force-pushing a tag without updating the branch first causes CI not to trigger (GitHub deduplicates).
