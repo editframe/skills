@@ -1,0 +1,6 @@
+#!/bin/bash
+# Generate voiceover + captions for a changelog entry
+# Usage: scripts/generate-changelog-media <version>
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+npx tsx "$SCRIPT_DIR/generate-changelog-media.ts" "$@"
