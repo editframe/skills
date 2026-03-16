@@ -239,6 +239,45 @@ linear issue create --help
 
 The CLI has extensive subcommands beyond issues -- `linear team`, `linear project`, `linear document`, `linear label`, `linear milestone`. Run `--help` on any of them.
 
+## Workspace Reference
+
+Use these IDs directly in mutations — no need to query for them first.
+
+### Users
+
+| Name | ID |
+|---|---|
+| Collin Miller | `7fa0b8f1-b1d2-462a-8edd-5365fb5e1d4a` |
+| Jeremy Yudkin | `12ae7fdb-6af1-45fd-b656-a1052b387605` |
+
+### Workflow States (team: EF2)
+
+| State | ID | Type |
+|---|---|---|
+| Backlog | `deceb52d-a969-493a-974c-228d0e595e08` | backlog |
+| Todo | `fb95e2be-9938-42bf-8248-276d4b1af951` | unstarted |
+| In Progress | `ac7b4c8f-d2a9-4e74-a9ff-392506703bd2` | started |
+| In Review | `2717b5fe-9ea0-429f-8edd-cf8eabe0551d` | started |
+| Done | `5fcec8c5-d69d-4cf4-bcad-e73654b2fae2` | completed |
+| Canceled | `1fbe9606-44eb-486c-8521-daf848673435` | canceled |
+| Duplicate | `ec2113c9-0b49-407a-82e1-3d1f39c7037a` | canceled |
+
+### Projects
+
+| Name | ID | State |
+|---|---|---|
+| Editframe 2026 Launch / Bug Fixes | `b43b5d1d-8431-4e19-b4ae-c05760c02996` | planned |
+| App and Dashboard For Launch | `5fbea590-482f-4fcd-89f3-b0e581e43546` | started |
+| Demo Improvements (Pre Launch) | `6c616f08-8bc9-4f8c-9109-26863099ffc3` | started |
+| Dev Rel Catnip | `90b4643c-9b09-43fc-8fd8-9e78de7669a5` | started |
+| Bug Fixes | `9c2beb23-32c3-4c24-a896-ca69eb99da49` | started |
+| Clean Slate Task Collection | `12e632b9-6ce7-4a06-8403-46b419e3f649` | started |
+| Docs/Site Feedback (2025) | `4ccf4054-9b6a-4ccf-85e6-088fe60851e4` | started |
+| EF - Rendering Improvements | `fd8a3df6-e174-41ee-a7f2-b7d49bca6094` | backlog |
+| EF - Preview Improvements | `4772c169-6f0f-4c01-b408-801ebd49bb3a` | backlog |
+| Launch Documentation Beta | `f8babb39-f732-4611-999e-f7db4d0aa48c` | backlog |
+| Stack Trace Project | `e2f37910-6a4f-4f45-a877-889c62526e6b` | planned |
+
 ## When to Use This Skill
 
 - User provides a Linear issue ID and wants to begin work on it
