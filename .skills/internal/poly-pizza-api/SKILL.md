@@ -18,7 +18,8 @@ API lets agents search, filter, and download them programmatically.
 ## Authentication
 
 All requests require an API key obtained from https://poly.pizza/settings/api (requires
-a free account). Pass it as a header:
+a free account). In this environment, the key is available as the `POLY_PIZZA_KEY`
+environment variable. Pass it as a header:
 
 ```
 X-Auth-Token: <your_api_key>
