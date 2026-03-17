@@ -49,7 +49,7 @@ Queue names, worker service names, and resource allocations are defined in sourc
 | `telecine/scripts/restart-render.ts` | Restart a failed render: resets DB status, re-enqueues initializer job |
 | `telecine/scripts/create-render.ts` | Create a test render from an existing render's org context |
 | `telecine/scripts/render-logs [-f] <id>` | Grep docker compose logs for initializer/fragment/finalizer services |
-| `telecine/scripts/smoke-test.ts` | End-to-end smoke tests via the public API |
+| `worktree smoke [branch]` (runs `telecine/scripts/smoke-test.ts`) | End-to-end smoke tests via the public API |
 | `telecine/scripts/smoke-test-waveform.ts` | Waveform-specific smoke test: inserts renders directly into DB, exercises all ef-waveform modes concurrently |
 | `telecine/scripts/console` | Node REPL with project imports (db, valkey, queues available) |
 

@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Unified worktree management CLI
+# Usage: worktree <command> [args]
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR" > /dev/null
+
+# Use local tsx from node_modules/.bin
+TSX_BIN="$SCRIPT_DIR/../node_modules/.bin/tsx"
+if [ ! -x "$TSX_BIN" ]; then
+  echo "Error: tsx not found. Run 'npm install' in the monorepo root." >&2
+  exit 1
+fi
+
+exec "$TSX_BIN" worktree.ts "$@"

@@ -16,19 +16,22 @@ Scope-based worktree isolation for parallel development streams. Each worktree g
 
 Upgrade path: `elements` → `web` → `render`. Downgrade not supported.
 
-## Scripts
+## Worktree Management
 
-All scripts run from the main worktree root:
+All worktree operations use the unified CLI: `scripts/worktree <command>`.
 
 ```bash
-scripts/create-worktree <branch> [elements|web|render]  # default: web
-scripts/pause-worktree <branch>                          # docker stop, ~1s
-scripts/resume-worktree <branch>                         # docker start, ~1-7s
-scripts/upgrade-worktree <branch> <new-scope>            # escalate scope
-scripts/remove-worktree [--force] <branch>               # full cleanup
-scripts/smoke-test <branch>                              # one-shot render verification (see below)
-scripts/build-runner-images                              # rebuild shared Docker images (includes scheduler-go)
-scripts/update-template-db                               # refresh template from main DB
+worktree create <branch> [scope]       # Create new worktree (default: web)
+worktree list                          # List all worktrees
+worktree status [branch]               # Health check
+worktree pause <branch>                # Stop containers
+worktree resume <branch>               # Start containers
+worktree remove <branch> [--force]     # Full cleanup
+worktree upgrade <branch> <scope>      # Escalate scope (elements→web→render)
+worktree smoke [branch]                # One-shot render verification
+worktree logs [branch] [options]       # View logs
+worktree doctor [branch] [--skills]    # Diagnose issues
+worktree deps [--workspace=...]        # Show dependency graph
 ```
 
 ## Architecture
@@ -53,7 +56,7 @@ scripts/update-template-db                               # refresh template from
       elements/                     # elements git worktree [branch]
 ```
 
-Main is treated identically to any other worktree. `~/Editframe/monorepo` is a convenience symlink so existing habits (running `scripts/create-worktree` from there) still work.
+Main is treated identically to any other worktree. `~/Editframe/monorepo` is a convenience symlink and the entry point for all worktree commands.
 
 `EDITFRAME_DIR` in scripts is always `$(dirname $(dirname $(dirname $(git rev-parse --show-toplevel))))` — three levels up from the monorepo checkout path.
 
@@ -103,11 +106,11 @@ Never include `dev-projects/` in the URL path.
 
 `elements/dev-projects/` is gitignored. Worktrees would only have committed stubs without the full asset/src tree.
 
-`create-worktree` sets `DEV_PROJECTS_HOST` in the worktree's `elements/.env` to point at main's dev-projects. The `docker-compose.yaml` dev-projects service mounts this path over `/packages/dev-projects`, so the worktree's dev server always has the full file tree from main.
+`worktree create` sets `DEV_PROJECTS_HOST` in the worktree's `elements/.env` to point at main's dev-projects. The `docker-compose.yaml` dev-projects service mounts this path over `/packages/dev-projects`, so the worktree's dev server always has the full file tree from main.
 
 ## Smoke testing
 
-`scripts/smoke-test <branch>` is a one-shot render verification script, not a persistent scope. Use it as a pre-merge gate for render pipeline changes.
+`worktree smoke [branch]` is a one-shot render verification. It's not a persistent scope; use it as a pre-merge gate for render pipeline changes.
 
 1. Requires `web` or `render` scope (errors on `elements`)
 2. If scope is `web`: temporarily starts render-profile services, registers a cleanup trap to stop them on exit
@@ -116,13 +119,13 @@ Never include `dev-projects/` in the URL path.
 5. Prints the dashboard URL (`http://<branch>.localhost:3000`) for visual inspection of render outputs
 6. Prompts to press enter before stopping render services (if they were started)
 
-Render development workflow: stay at `web` scope, run unit tests directly, use `smoke-test` as the merge gate rather than keeping a full render stack running all day.
+Render development workflow: stay at `web` scope, run unit tests directly, use `worktree smoke` as the merge gate rather than keeping a full render stack running all day.
 
-`scheduler-go` is a pre-built Go image not managed by docker-compose. `smoke-test` builds it automatically on first run. `build-runner-images` also builds it.
+`scheduler-go` is a pre-built Go image not managed by docker-compose. `worktree smoke` builds it automatically on first run. `scripts/build-runner-images` also builds it.
 
 ## Troubleshooting
 
 - **Port conflict**: two branches hashed to same offset. Extremely unlikely with cksum/200 slots but possible. Remove one worktree and recreate.
-- **Orphaned containers**: if `remove-worktree` fails mid-cleanup, use `docker rm -f` on containers matching `<branch>` in name.
+- **Orphaned containers**: if `worktree remove` fails mid-cleanup, use `docker rm -f` on containers matching `<branch>` in name.
 - **Stale template**: run `scripts/update-template-db` to refresh from current main DB state.
 - **Missing web service after upgrade**: upgrade script now starts runner + npm install before other services. If using old worktree scripts, `git merge main` into the worktree branch.

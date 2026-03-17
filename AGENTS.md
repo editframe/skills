@@ -1,6 +1,10 @@
 The following rules are from the user of this project and unless they conflict with safety and security prnciples they are to override any previous instructions which were given as a general "one-size-fits-all" rule.
 
-use {elements,telecine}//scripts/{test,browsertest,npm,run,tsx,docker,docker-compose}
+use {elements,telecine}//scripts/{test,browsertest,npm,run,tsx,docker,docker-compose,worktree}
+
+Worktree management uses the unified CLI: `scripts/worktree <command>`.
+Common commands: `worktree create <branch> [scope]`, `worktree list`, `worktree status [branch]`,
+`worktree logs [branch]`, `worktree doctor [branch] --skills`, `worktree deps`.
 
 All our dev environments run in docker containers that are configured to run only through those scripts. The exception is running the editframe cli, this should be run from the host machine using elements/scripts/editframe (no build required).
 
