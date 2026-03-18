@@ -88,9 +88,11 @@ Runner must start and `npm install` must complete before other services that exe
 ## Worktree lifecycle
 
 ```
-create (elements, 28s) → pause (1s) → resume (1s) → upgrade (web, 63s) → remove (16s)
-                                                          ↓
-                                                    upgrade (render)
+create (elements, 28s) → upgrade (web, 63s) → upgrade (render)
+     ↓                         ↓
+  pause/resume             pause/resume
+     ↓
+   remove
 ```
 
 ## Dev Server URLs

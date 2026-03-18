@@ -1,0 +1,1 @@
+scripts/worktree-config.sh
