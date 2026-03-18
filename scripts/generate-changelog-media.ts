@@ -34,6 +34,9 @@ const PYTHON_SCRIPT = join(TELECINE_DIR, "services", "web", "scripts", "generate
 const GCS_BUCKET = "gs://editframe-assets-7ac794b/changelog";
 const CDN_BASE = "https://assets.editframe.com/changelog";
 
+// Fixed voice profile for consistent TTS across releases
+const VOICE_INSTRUCT = "A calm, clear mid-range voice with neutral American accent. Professional, friendly, and slightly technical. Moderate pace with natural inflection. Consistent volume and tone.";
+
 // ─── Args & env ───────────────────────────────────────────────────────────────
 
 const version = process.argv[2];
@@ -144,15 +147,18 @@ Return ONLY valid JSON, no markdown fences:
     ],
   });
 
-  const text = response.content[0].type === "text" ? response.content[0].text : "";
-  // Strip markdown fences if Claude wrapped the JSON
-  const stripped = text.trim().replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
-  try {
-    return JSON.parse(stripped);
-  } catch (e) {
-    process.stderr.write(`Failed to parse Claude response as JSON:\n${text}\n`);
-    throw e;
-  }
+   const text = response.content[0].type === "text" ? response.content[0].text : "";
+   // Strip markdown fences if Claude wrapped the JSON
+   const stripped = text.trim().replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+   try {
+     const voscript = JSON.parse(stripped) as VOScript;
+     // Enforce consistent voice across all releases
+     voscript.instruct = VOICE_INSTRUCT;
+     return voscript;
+   } catch (e) {
+     process.stderr.write(`Failed to parse Claude response as JSON:\n${text}\n`);
+     throw e;
+   }
 }
 
 // ─── Patch MDX frontmatter ────────────────────────────────────────────────────

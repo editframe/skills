@@ -17,6 +17,16 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
 import { pickCodename } from "./changelog-codenames";
+import { validateMDX } from "./validate-changelog";
+
+function simpleHash(str: string): number {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) - h) + str.charCodeAt(i);
+    h |= 0;
+  }
+  return Math.abs(h);
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = join(__dirname, "..");
@@ -160,22 +170,37 @@ codename: "<CODENAME_PLACEHOLDER>"
 # audioSrc is added by scripts/generate-changelog-media after voiceover is generated
 ---
 
-VIDEO COMPOSITION
+VIDEO COMPOSITION RULES
 Every changelog MDX MUST include a ReleaseVideo composition immediately after the h1 heading.
-The composition uses a vocabulary of 4 components — always include all 4 in this order:
-ChangelogIntroCard → CodeReveal (if there's a code change) or TextMoment → TextMoment (1–2) → ChangelogOutroCard
+The video always has exactly 5 scenes (or 4 scenes if the release has no code changes).
 
-Components are passed via MDX's components prop — do NOT import them. Custom components available:
-Timegroup, ReleaseVideo, ChangelogIntroCard, CodeReveal, TextMoment, ChangelogOutroCard
+SCENE ORDER:
+1. ChangelogIntroCard (version, codename, optional 3D glyph model)
+2. EITHER CodeReveal (if there is at least one user-facing code/API/config change) OR TextMoment (if no code changes)
+3. TextMoment (key outcome)
+4. TextMoment (forward-looking call to action)
+5. ChangelogOutroCard
+
+DECISION GUIDE:
+- CodeReveal: shows a single before→after diff that represents the most important change. Choose a change that requires visual explanation. Provide 4-8 lines of code in each of before and after arrays. Include meaningful lines, not boilerplate.
+- If you use CodeReveal in scene 2, scenes 3 and 4 are both TextMoments. Scene 4 headline should be forward-looking (e.g., "Ready to build?", "Go create something").
+- If you do NOT use CodeReveal (release has no code changes), then all three middle scenes (2,3,4) are TextMoments. Scene 4 remains forward-looking.
+- TextMoment: headline 2-6 words; body optional, max 20 words. Do NOT include motif prop (it's been removed). Background is solid.
+
+CONTENT CAPACITY:
+- Total runtime after voiceover will be ~20-35 seconds.
+- Assume 150 words per minute speaking rate.
+- Keep text concise. Do not write paragraphs.
 
 COMPONENT API:
 
 <ChangelogIntroCard
-  version="0.46.1"           // required — version string
-  codename="Iron Sparrow"    // required — release codename from frontmatter
-  illustration='<svg ...>'   // optional — inline SVG string (480×480, Editframe blue palette)
+  version="0.46.1"           // required — version string from frontmatter
+  codename="Iron Sparrow"    // required — codename from frontmatter
+  title="Local dev apiHost now resolves automatically"  // required — the release title, shown large in right column. Keep to ~6 words max.
   durationMs={4000}          // optional — scene duration ms, default 4000
 />
+// The title is shown as large white typography on the blue ground — the visual anchor of the card.
 
 <CodeReveal
   before={[                  // required — array of CodeLine objects
@@ -188,27 +213,25 @@ COMPONENT API:
   filename="vite.config.ts"  // optional — shown in the window chrome
   beforeLabel="Before"       // optional — default "Before"
   afterLabel="After"         // optional — default "After"
-  durationMs={7000}          // optional — default 8000; allocate more time for longer diffs
+  durationMs={8000}          // optional — default 8000
 />
-// Shows before→after with syntax highlighting. Only use when there's a real API/config change to show.
+// Only show real code changes that users need to understand.
 
 <TextMoment
-  headline="Zero config."    // required — short punchy statement (2–5 words)
-  body="Optional supporting sentence with technical context."  // optional
-  accentColor="#1565c0"      // optional — hex color, default Editframe blue
-  motif="rings"              // optional — "grid" | "rings" | "particles", default "grid"
+  headline="Zero config."    // required — short punchy statement (2–6 words)
+  body="Optional supporting sentence with technical context."  // optional, max 20 words
   durationMs={3500}          // optional — default 3500
 />
-// Use for key outcomes/benefits. motif="rings" for rollout/propagation themes,
-// motif="particles" for isolation/independence themes, motif="grid" for infrastructure.
+// Background is solid dark; no motifs.
 
 <ChangelogOutroCard
   version="0.46.1"           // required — version string
   tagline="Keep building."   // optional — closing line, default "Keep building."
-  durationMs={3000}          // optional — default 4000
+  durationMs={10000}         // optional — default 10000
+  attributions={['"Nature" by 3Donimus CC-BY via Poly Pizza']}  // required — list every 3D model used in the video
 />
 
-COMPOSITION TEMPLATE:
+COMPOSITION TEMPLATE (5 scenes):
 \`\`\`mdx
 # <version>
 
@@ -222,40 +245,37 @@ COMPOSITION TEMPLATE:
     <ChangelogIntroCard
       version="<version>"
       codename="<CODENAME_PLACEHOLDER>"
+      title="<6-word release title from frontmatter title field>"
       durationMs={4000}
-      illustration='<svg viewBox="0 0 480 480"><!-- geometric SVG using #1565c0 #0d47a1 #4488ff #ffffff palette --></svg>'
     />
 
-    <!-- CodeReveal for API/config changes, or TextMoment if no code diff -->
+    <!-- Scene 2: CodeReveal if code changes, otherwise TextMoment -->
     <CodeReveal ... />
 
-    <!-- 1–2 TextMoment scenes for key outcomes -->
-    <TextMoment headline="..." motif="..." durationMs={3500} />
+    <!-- Scene 3: TextMoment outcome -->
+    <TextMoment headline="..." durationMs={3500} />
+
+    <!-- Scene 4: TextMoment call to action -->
+    <TextMoment headline="Ready to build." durationMs={3500} />
 
     <ChangelogOutroCard
       version="<version>"
       tagline="Keep building."
-      durationMs={3000}
+      durationMs={10000}
+      attributions={['"Nature" by 3Donimus CC-BY via Poly Pizza']}
     />
 
   </Timegroup>
 </ReleaseVideo>
-\`\`\`
+    \`\`\`
 
-SVG ILLUSTRATION RULES (for illustration prop):
-- Style: MISSION PATCH / MERIT BADGE — circular badge shape with decorative border ring
-- viewBox="0 0 480 480", xmlns="http://www.w3.org/2000/svg", no width/height attributes
-- Structure: outer circle border ring → inner circle background fill → central geometric symbol
-- Only use: circle, line, polygon, rect, polyline — no text, no foreignObject, no filters, no gradients
-- Color palette: #1565c0 (primary blue), #0d47a1 (dark blue), #4488ff (bright blue), #ffffff (white)
-- Use rgba() for transparency on fills: rgba(13,71,161,0.18), rgba(21,101,192,0.25)
-- 15–25 elements total: 2-3 circles for badge shape, tick marks on the border ring, central symbol (6-12 elements)
-- The central symbol should geometrically evoke the release theme (e.g. circuit for connectivity, prism for rendering)
-- Border ring ticks: short lines radiating outward at regular angular intervals
-- Reference structure from 0.46.1:
-  outer ring → inner filled circle → axis guidelines → central polygon → nodes + edges → detail rect at bottom
+    OUTPUT RULES:
+- Always use exactly the component names and props shown above. Do NOT invent new props.
+- All durationMs must be numbers, not expressions.
+- Always include attributions prop on ChangelogOutroCard listing every 3D model used. The nature scene model is always present: '"Nature" by 3Donimus CC-BY via Poly Pizza'. If you add other models, append them to the array.
+- The MDX must be valid and will be validated by a schema checker.
 
-Output ONLY the MDX file content. No preamble, no explanation, no markdown fences.`;
+Return ONLY the MDX file content. No preamble, no explanation, no markdown fences.`;
 
 async function draftChangelog(version: string, commits: string): Promise<string> {
   const today = new Date().toISOString().split("T")[0];
@@ -334,8 +354,22 @@ async function main() {
   process.stderr.write("Calling Anthropic API...\n");
   const rawMdx = await draftChangelog(newVersion, allCommits);
 
-  // Inject the assigned codename everywhere the placeholder appears (frontmatter + composition body)
-  const mdx = rawMdx.split("CODENAME_PLACEHOLDER").join(codename);
+  // Inject the assigned codename everywhere the placeholder appears
+  let mdx = rawMdx.split("CODENAME_PLACEHOLDER").join(codename);
+
+  // Validate the generated MDX structure
+  process.stderr.write("Validating changelog structure...\n");
+  const validation = validateMDX(mdx, newVersion);
+  if (!validation.valid) {
+    process.stderr.write("Changelog validation failed:\n");
+    for (const err of validation.errors) {
+      process.stderr.write(`  - ${err}\n`);
+    }
+    process.exit(1);
+  }
+  for (const w of validation.warnings) {
+    process.stderr.write(`Warning: ${w}\n`);
+  }
 
   const outputPath = writeOutput(newVersion, mdx);
   process.stdout.write(outputPath + "\n");
