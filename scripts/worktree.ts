@@ -10,8 +10,8 @@
 
 import chalk from 'chalk';
 import ora, { Ora } from 'ora';
-import { readFile, writeFile } from 'fs/promises';
-import { existsSync, readFileSync } from 'fs';
+import { writeFile } from 'fs/promises';
+import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { spawnSync, spawn } from 'child_process';
@@ -48,7 +48,22 @@ function exec(
   };
 }
 
-// For interactive or streaming processes
+function execOrFail(
+  spinner: Ora,
+  command: string,
+  args: string[],
+  options: { cwd?: string; env?: NodeJS.ProcessEnv; label?: string } = {},
+): ExecResult {
+  const result = exec(command, args, { cwd: options.cwd, env: options.env });
+  if (result.exitCode !== 0) {
+    const label = options.label ?? `${command} ${args.join(' ')}`;
+    spinner.fail(chalk.red(`Failed: ${label}`));
+    if (result.stderr.trim()) console.error(chalk.dim(result.stderr.trim()));
+    process.exit(result.exitCode);
+  }
+  return result;
+}
+
 function execInteractive(
   command: string,
   args: string[],
@@ -65,7 +80,6 @@ function execInteractive(
   });
 }
 
-// For long-running silent subprocesses with spinner
 function execSilent(
   command: string,
   args: string[],
@@ -86,6 +100,22 @@ function execSilent(
   });
 }
 
+async function execSilentOrFail(
+  spinner: Ora,
+  command: string,
+  args: string[],
+  options: { cwd?: string; env?: NodeJS.ProcessEnv; label?: string } = {},
+): Promise<ExecResult> {
+  const result = await execSilent(command, args, { cwd: options.cwd, env: options.env });
+  if (result.exitCode !== 0) {
+    const label = options.label ?? `${command} ${args.join(' ')}`;
+    spinner.fail(chalk.red(`Failed: ${label}`));
+    if (result.stderr.trim()) console.error(chalk.dim(result.stderr.trim()));
+    process.exit(result.exitCode);
+  }
+  return result;
+}
+
 // ---------------------------------------------------------------------------
 // Branch/path utilities — must match worktree-config.sh exactly
 // ---------------------------------------------------------------------------
@@ -102,8 +132,8 @@ function sanitizeBranchName(name: string): string {
   return s;
 }
 
-// POSIX cksum — matches the output of the bash `cksum` command used in worktree-config.sh.
-// Uses the unreflected 0x04C11DB7 polynomial with byte-count appended before CRC.
+// POSIX cksum — matches bash `cksum` output exactly.
+// Unreflected 0x04C11DB7 polynomial with byte-count appended before CRC, final XOR 0xFFFFFFFF.
 function posixCksum(str: string): number {
   const table = new Uint32Array(256);
   for (let i = 0; i < 256; i++) {
@@ -146,16 +176,12 @@ interface WorktreeInfo {
   ports: { postgres: number; valkey: number; mailhog: number };
 }
 
-function editframeDir(monorepoRoot: string): string {
-  // monorepo is at worktrees/<branch>/monorepo — three levels up is editframe dir
-  return join(monorepoRoot, '..', '..', '..');
-}
-
 function worktreesDir(monorepoRoot: string): string {
-  return join(editframeDir(monorepoRoot), 'worktrees');
+  // monorepo is at worktrees/<branch>/monorepo — three levels up is editframe dir
+  return join(monorepoRoot, '..', '..', '..', 'worktrees');
 }
 
-async function getWorktrees(): Promise<WorktreeInfo[]> {
+function getWorktrees(): WorktreeInfo[] {
   const { stdout } = exec('git', ['worktree', 'list', '--porcelain']);
   const lines = stdout.split('\n');
   const result: WorktreeInfo[] = [];
@@ -191,6 +217,10 @@ async function getWorktrees(): Promise<WorktreeInfo[]> {
 }
 
 function requireWorktree(worktrees: WorktreeInfo[], branch: string): WorktreeInfo {
+  if (!branch) {
+    console.error(chalk.red('Branch name required'));
+    process.exit(1);
+  }
   const wt = worktrees.find((w) => w.branch === branch);
   if (!wt) {
     console.error(chalk.red(`Worktree not found: ${branch}`));
@@ -199,12 +229,23 @@ function requireWorktree(worktrees: WorktreeInfo[], branch: string): WorktreeInf
   return wt;
 }
 
+// Wait for postgres to be ready (used after starting shared infra)
+async function waitForPostgres(timeoutMs = 30000): Promise<void> {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const r = exec('docker', ['exec', 'editframe-postgres', 'pg_isready', '-U', 'postgres'], { stdio: 'ignore' });
+    if (r.exitCode === 0) return;
+    await new Promise((res) => setTimeout(res, 500));
+  }
+  throw new Error('Postgres did not become ready within 30s');
+}
+
 // ---------------------------------------------------------------------------
 // Commands
 // ---------------------------------------------------------------------------
 
-async function cmdList() {
-  const worktrees = await getWorktrees();
+function cmdList() {
+  const worktrees = getWorktrees();
   const branches = worktrees.filter((w) => !w.isMain);
   const main = worktrees.find((w) => w.isMain);
 
@@ -228,15 +269,15 @@ async function cmdList() {
   }
 }
 
-async function cmdStatus(branch?: string) {
-  const worktrees = await getWorktrees();
+function cmdStatus(branch?: string) {
+  const worktrees = getWorktrees();
   const targets = branch ? [requireWorktree(worktrees, branch)] : worktrees.filter((w) => !w.isMain);
 
   for (const wt of targets) {
     const worktreeContainerDir = join(wt.path, '..');
     console.log(chalk.bold(`${wt.branch}`) + chalk.gray(` (${wt.scope ?? 'unknown'})`));
 
-    // Worktree directories
+    // Files on disk
     const monoOk = existsSync(wt.path);
     const scopeOk = existsSync(join(worktreeContainerDir, '.worktree-scope'));
     const elemEnv = existsSync(join(worktreeContainerDir, 'elements', '.env'));
@@ -246,16 +287,11 @@ async function cmdStatus(branch?: string) {
     console.log(`  ${elemEnv ? chalk.green('✓') : chalk.yellow('○')} elements/.env`);
     console.log(`  ${telEnv ? chalk.green('✓') : chalk.yellow('○')} telecine/.env`);
 
-    // Postgres port (host-accessible)
-    if (!wt.isMain) {
-      const nc = exec('nc', ['-z', '-w1', 'localhost', String(wt.ports.postgres)], { stdio: 'pipe' });
-      console.log(
-        `  ${nc.exitCode === 0 ? chalk.green('✓') : chalk.gray('○')} postgres port ${wt.ports.postgres}: ${nc.exitCode === 0 ? 'reachable' : 'not reachable'}`,
-      );
-    }
-
-    // Docker containers
-    const { stdout: psOut } = exec('docker', ['ps', '--format', '{{.Names}}\t{{.Status}}', '--filter', `name=${wt.sanitized}`]);
+    // Docker containers — filter by sanitized branch name (substring match)
+    const { stdout: psOut } = exec('docker', [
+      'ps', '--format', '{{.Names}}\t{{.Status}}',
+      '--filter', `name=${wt.sanitized}`,
+    ]);
     const containers = psOut.split('\n').filter(Boolean);
     if (containers.length > 0) {
       for (const c of containers) {
@@ -274,7 +310,7 @@ async function cmdStatus(branch?: string) {
         'exec', 'editframe-postgres',
         'psql', '-U', 'postgres', '-tAc',
         `SELECT 1 FROM pg_database WHERE datname='${dbName}'`,
-      ], { stdio: 'pipe' });
+      ]);
       const exists = dbOut.trim() === '1';
       console.log(`  ${exists ? chalk.green('✓') : chalk.red('✗')} database ${dbName}`);
     }
@@ -305,39 +341,37 @@ async function cmdCreate(branch: string, scope: string = 'web') {
 
   const spinner = ora(`Creating worktree: ${branch} (${scope})`).start();
 
-  // 1. Git worktrees
+  // 1. Git worktrees — fail fast if any step fails
   const currentBranch = exec('git', ['branch', '--show-current']).stdout.trim() || 'main';
   const baseBranch = currentBranch === 'HEAD' ? 'main' : currentBranch;
 
   const monoHasRef = exec('git', ['show-ref', '--verify', '--quiet', `refs/heads/${branch}`]).exitCode === 0;
-  exec('git', monoHasRef
+  execOrFail(spinner, 'git', monoHasRef
     ? ['worktree', 'add', monoDir, branch]
-    : ['worktree', 'add', '-b', branch, monoDir, baseBranch]);
+    : ['worktree', 'add', '-b', branch, monoDir, baseBranch],
+    { label: `git worktree add monorepo` });
 
-  const telResult = exec('git', ['show-ref', '--verify', '--quiet', `refs/heads/${branch}`], { cwd: telecineMain });
-  exec('git', telResult.exitCode === 0
+  const telHasRef = exec('git', ['show-ref', '--verify', '--quiet', `refs/heads/${branch}`], { cwd: telecineMain }).exitCode === 0;
+  execOrFail(spinner, 'git', telHasRef
     ? ['worktree', 'add', telecineDir, branch]
     : ['worktree', 'add', '-b', branch, telecineDir, 'main'],
-    { cwd: telecineMain });
+    { cwd: telecineMain, label: `git worktree add telecine` });
 
-  const elemResult = exec('git', ['show-ref', '--verify', '--quiet', `refs/heads/${branch}`], { cwd: elementsMain });
-  exec('git', elemResult.exitCode === 0
+  const elemHasRef = exec('git', ['show-ref', '--verify', '--quiet', `refs/heads/${branch}`], { cwd: elementsMain }).exitCode === 0;
+  execOrFail(spinner, 'git', elemHasRef
     ? ['worktree', 'add', elementsDir, branch]
     : ['worktree', 'add', '-b', branch, elementsDir, 'main'],
-    { cwd: elementsMain });
+    { cwd: elementsMain, label: `git worktree add elements` });
 
   // 2. Scope file + opencode.json
   await writeFile(join(worktreeDir, '.worktree-scope'), scope);
   const ocodeSrc = join(MONOREPO_ROOT, 'opencode.json');
   const ocodeDst = join(monoDir, 'opencode.json');
-  if (existsSync(ocodeSrc) && !existsSync(ocodeDst)) {
-    exec('cp', [ocodeSrc, ocodeDst]);
-  }
+  if (existsSync(ocodeSrc) && !existsSync(ocodeDst)) exec('cp', [ocodeSrc, ocodeDst]);
 
   // 3. Copy .env files
   const elemEnvSrc = join(elementsMain, '.env');
   if (existsSync(elemEnvSrc)) exec('cp', [elemEnvSrc, join(elementsDir, '.env')]);
-
   if (scope !== 'elements') {
     const telEnvSrc = join(telecineMain, '.env');
     if (existsSync(telEnvSrc)) exec('cp', [telEnvSrc, join(telecineDir, '.env')]);
@@ -362,12 +396,19 @@ async function cmdCreate(branch: string, scope: string = 'web') {
   const netCheck = exec('docker', ['network', 'inspect', 'editframe-shared'], { stdio: 'ignore' });
   if (netCheck.exitCode !== 0) {
     spinner.text = 'Starting shared infrastructure...';
-    await execSilent('docker', ['compose', '--project-name', 'editframe', 'up', '-d'], { cwd: MONOREPO_ROOT });
+    await execSilentOrFail(spinner, 'docker', ['compose', '--project-name', 'editframe', 'up', '-d'],
+      { cwd: MONOREPO_ROOT, label: 'docker compose up shared infra' });
   }
 
-  // 7. Database setup (web/render scopes)
+  // 7. Database setup (web/render scopes) — wait for postgres to be ready first
   let templateExists = false;
   if (scope !== 'elements') {
+    spinner.text = 'Waiting for postgres...';
+    try { await waitForPostgres(); } catch (e: any) {
+      spinner.fail(chalk.red(e.message));
+      process.exit(1);
+    }
+
     const dbName = `telecine-${sanitized}`;
     const tmpl = exec('docker', ['exec', 'editframe-postgres', 'psql', '-U', 'postgres', '-tAc',
       "SELECT 1 FROM pg_database WHERE datname = 'telecine-template'"]);
@@ -375,45 +416,48 @@ async function cmdCreate(branch: string, scope: string = 'web') {
 
     if (templateExists) {
       spinner.text = 'Cloning database from template...';
-      exec('docker', ['exec', 'editframe-postgres', 'psql', '-U', 'postgres',
-        '-c', `CREATE DATABASE "${dbName}" TEMPLATE "telecine-template";`], { stdio: 'ignore' });
+      execOrFail(spinner, 'docker', ['exec', 'editframe-postgres', 'psql', '-U', 'postgres',
+        '-c', `CREATE DATABASE "${dbName}" TEMPLATE "telecine-template";`],
+        { label: `create database ${dbName}` });
     }
   }
 
   // 8. Elements runner + install + dev server
   spinner.text = 'Starting elements runner...';
-  await execSilent(join(elementsDir, 'scripts', 'docker-compose'), ['up', '-d', 'runner'], { cwd: elementsDir });
+  await execSilentOrFail(spinner, join(elementsDir, 'scripts', 'docker-compose'), ['up', '-d', 'runner'],
+    { cwd: elementsDir, label: 'elements runner up' });
 
   spinner.text = 'Installing elements dependencies...';
-  await execSilent(join(elementsDir, 'scripts', 'npm'), ['install'], { cwd: elementsDir });
+  await execSilentOrFail(spinner, join(elementsDir, 'scripts', 'npm'), ['install'],
+    { cwd: elementsDir, label: 'elements npm install' });
 
   spinner.text = 'Starting elements dev server...';
-  await execSilent(join(elementsDir, 'scripts', 'docker-compose'), ['up', '-d', 'dev-projects'], { cwd: elementsDir });
+  await execSilentOrFail(spinner, join(elementsDir, 'scripts', 'docker-compose'), ['up', '-d', 'dev-projects'],
+    { cwd: elementsDir, label: 'elements dev-projects up' });
 
   // 9. Telecine containers (web/render)
   if (scope !== 'elements') {
     const profiles = scope === 'render' ? 'render' : '';
 
     spinner.text = 'Starting telecine runner...';
-    await execSilent(join(telecineDir, 'scripts', 'docker-compose'), ['up', '-d', 'runner'], {
-      cwd: telecineDir,
-      env: { ...process.env, COMPOSE_PROFILES: profiles },
-    });
+    await execSilentOrFail(spinner, join(telecineDir, 'scripts', 'docker-compose'), ['up', '-d', 'runner'],
+      { cwd: telecineDir, env: { ...process.env, COMPOSE_PROFILES: profiles }, label: 'telecine runner up' });
 
     spinner.text = 'Installing telecine dependencies...';
-    await execSilent(join(telecineDir, 'scripts', 'npm'), ['install'], { cwd: telecineDir });
+    await execSilentOrFail(spinner, join(telecineDir, 'scripts', 'npm'), ['install'],
+      { cwd: telecineDir, label: 'telecine npm install' });
 
     spinner.text = 'Starting telecine services...';
-    await execSilent(join(telecineDir, 'scripts', 'docker-compose'), ['up', '-d'], {
-      cwd: telecineDir,
-      env: { ...process.env, COMPOSE_PROFILES: profiles },
-    });
+    await execSilentOrFail(spinner, join(telecineDir, 'scripts', 'docker-compose'), ['up', '-d'],
+      { cwd: telecineDir, env: { ...process.env, COMPOSE_PROFILES: profiles }, label: 'telecine services up' });
 
     spinner.text = templateExists ? 'Applying delta migrations...' : 'Running full migrations...';
-    await execSilent(join(telecineDir, 'scripts', 'migrate-db'), [], { cwd: telecineDir });
+    await execSilentOrFail(spinner, join(telecineDir, 'scripts', 'migrate-db'), [],
+      { cwd: telecineDir, label: 'migrate-db' });
 
     if (!templateExists) {
-      await execSilent(join(telecineDir, 'scripts', 'seed'), [], { cwd: telecineDir });
+      await execSilentOrFail(spinner, join(telecineDir, 'scripts', 'seed'), [],
+        { cwd: telecineDir, label: 'seed' });
     }
 
     // Generate EF_TOKEN
@@ -446,7 +490,7 @@ async function cmdCreate(branch: string, scope: string = 'web') {
 }
 
 async function cmdPause(branch: string) {
-  const worktrees = await getWorktrees();
+  const worktrees = getWorktrees();
   const wt = requireWorktree(worktrees, branch);
   const worktreeDir = join(wt.path, '..');
   const telecineDir = join(worktreeDir, 'telecine');
@@ -455,48 +499,46 @@ async function cmdPause(branch: string) {
 
   if (wt.scope !== 'elements') {
     const dc = join(telecineDir, 'scripts', 'docker-compose');
-    if (existsSync(dc)) await execSilent(dc, ['stop'], { cwd: telecineDir });
+    if (existsSync(dc)) await execSilentOrFail(spinner, dc, ['stop'], { cwd: telecineDir, label: 'telecine stop' });
   }
   const eDc = join(elementsDir, 'scripts', 'docker-compose');
-  if (existsSync(eDc)) await execSilent(eDc, ['stop'], { cwd: elementsDir });
+  if (existsSync(eDc)) await execSilentOrFail(spinner, eDc, ['stop'], { cwd: elementsDir, label: 'elements stop' });
 
   spinner.succeed(chalk.green(`Paused: ${branch}`));
 }
 
 async function cmdResume(branch: string) {
-  const worktrees = await getWorktrees();
+  const worktrees = getWorktrees();
   const wt = requireWorktree(worktrees, branch);
   const worktreeDir = join(wt.path, '..');
   const telecineDir = join(worktreeDir, 'telecine');
   const elementsDir = join(worktreeDir, 'elements');
   const spinner = ora(`Resuming: ${branch}`).start();
 
-  // Ensure shared infra
   const netCheck = exec('docker', ['network', 'inspect', 'editframe-shared'], { stdio: 'ignore' });
   if (netCheck.exitCode !== 0) {
     spinner.text = 'Starting shared infrastructure...';
-    await execSilent('docker', ['compose', '--project-name', 'editframe', 'up', '-d'], { cwd: MONOREPO_ROOT });
+    await execSilentOrFail(spinner, 'docker', ['compose', '--project-name', 'editframe', 'up', '-d'],
+      { cwd: MONOREPO_ROOT, label: 'shared infra up' });
   }
 
   if (wt.scope !== 'elements') {
     const profiles = wt.scope === 'render' ? 'render' : '';
     const dc = join(telecineDir, 'scripts', 'docker-compose');
     if (existsSync(dc)) {
-      await execSilent(dc, ['start'], {
-        cwd: telecineDir,
-        env: { ...process.env, COMPOSE_PROFILES: profiles },
-      });
+      await execSilentOrFail(spinner, dc, ['start'],
+        { cwd: telecineDir, env: { ...process.env, COMPOSE_PROFILES: profiles }, label: 'telecine start' });
     }
   }
 
   const eDc = join(elementsDir, 'scripts', 'docker-compose');
-  if (existsSync(eDc)) await execSilent(eDc, ['start'], { cwd: elementsDir });
+  if (existsSync(eDc)) await execSilentOrFail(spinner, eDc, ['start'], { cwd: elementsDir, label: 'elements start' });
 
   spinner.succeed(chalk.green(`Resumed: ${branch}`));
 }
 
 async function cmdRemove(branch: string, force: boolean = false) {
-  const worktrees = await getWorktrees();
+  const worktrees = getWorktrees();
   const wt = requireWorktree(worktrees, branch);
   const worktreeDir = join(wt.path, '..');
   const telecineDir = join(worktreeDir, 'telecine');
@@ -505,7 +547,6 @@ async function cmdRemove(branch: string, force: boolean = false) {
   const telecineMain = join(wdir, 'main', 'telecine');
   const elementsMain = join(wdir, 'main', 'elements');
 
-  // Merge check
   if (!force) {
     const mainBranch = exec('git', ['show-ref', '--verify', '--quiet', 'refs/heads/main']).exitCode === 0 ? 'main' : 'master';
     const hasRef = exec('git', ['show-ref', '--verify', '--quiet', `refs/heads/${branch}`]).exitCode === 0;
@@ -544,11 +585,10 @@ async function cmdRemove(branch: string, force: boolean = false) {
   const monoList = exec('git', ['worktree', 'list']).stdout;
   if (monoList.includes(wt.path)) exec('git', ['worktree', 'remove', '--force', wt.path], { stdio: 'ignore' });
 
-  // Remove directory if still present
   if (existsSync(worktreeDir)) exec('rm', ['-rf', worktreeDir]);
 
   // 3. Delete branch refs
-  for (const [repoDir, label] of [[MONOREPO_ROOT, 'monorepo'], [telecineMain, 'telecine'], [elementsMain, 'elements']] as [string, string][]) {
+  for (const repoDir of [MONOREPO_ROOT, telecineMain, elementsMain]) {
     if (!existsSync(repoDir)) continue;
     const hasRef = exec('git', ['show-ref', '--verify', '--quiet', `refs/heads/${branch}`], { cwd: repoDir }).exitCode === 0;
     if (hasRef) exec('git', ['branch', '-D', branch], { cwd: repoDir, stdio: 'ignore' });
@@ -560,11 +600,11 @@ async function cmdRemove(branch: string, force: boolean = false) {
 async function cmdUpgrade(branch: string, newScope: string) {
   const validScopes = ['elements', 'web', 'render'];
   if (!validScopes.includes(newScope)) {
-    console.error(chalk.red(`Invalid scope: ${newScope}`));
+    console.error(chalk.red(`Invalid scope: ${newScope}. Must be: ${validScopes.join(', ')}`));
     process.exit(1);
   }
 
-  const worktrees = await getWorktrees();
+  const worktrees = getWorktrees();
   const wt = requireWorktree(worktrees, branch);
   const worktreeDir = join(wt.path, '..');
   const telecineDir = join(worktreeDir, 'telecine');
@@ -573,25 +613,28 @@ async function cmdUpgrade(branch: string, newScope: string) {
   const telecineMain = join(wdir, 'main', 'telecine');
   const currentScope = wt.scope ?? 'elements';
   const order = ['elements', 'web', 'render'];
+  const currentIdx = order.indexOf(currentScope);
+  const newIdx = order.indexOf(newScope);
 
-  if (order.indexOf(newScope) <= order.indexOf(currentScope)) {
-    console.error(chalk.red(`Already at scope '${currentScope}'. Cannot downgrade to '${newScope}'.`));
+  if (newIdx === currentIdx) {
+    console.error(chalk.red(`Already at scope '${currentScope}'.`));
+    process.exit(1);
+  }
+  if (newIdx < currentIdx) {
+    console.error(chalk.red(`Cannot downgrade from '${currentScope}' to '${newScope}'.`));
     process.exit(1);
   }
 
   const spinner = ora(`Upgrading ${branch}: ${currentScope} → ${newScope}`).start();
 
   if (currentScope === 'elements') {
-    // Copy telecine .env if missing
     if (!existsSync(join(telecineDir, '.env'))) {
       const src = join(telecineMain, '.env');
       if (existsSync(src)) exec('cp', [src, join(telecineDir, '.env')]);
     }
-    // Copy native build
     const copyNative = join(telecineDir, 'scripts', 'copy-native-build');
     if (existsSync(copyNative)) await execSilent('bash', [copyNative], { cwd: telecineDir });
 
-    // Database
     const dbName = `telecine-${wt.sanitized}`;
     const dbExists = exec('docker', ['exec', 'editframe-postgres', 'psql', '-U', 'postgres', '-tAc',
       `SELECT 1 FROM pg_database WHERE datname = '${dbName}'`]).stdout.trim() === '1';
@@ -599,26 +642,29 @@ async function cmdUpgrade(branch: string, newScope: string) {
       const tmplExists = exec('docker', ['exec', 'editframe-postgres', 'psql', '-U', 'postgres', '-tAc',
         "SELECT 1 FROM pg_database WHERE datname = 'telecine-template'"]).stdout.trim() === '1';
       if (tmplExists) {
-        exec('docker', ['exec', 'editframe-postgres', 'psql', '-U', 'postgres',
-          '-c', `CREATE DATABASE "${dbName}" TEMPLATE "telecine-template";`], { stdio: 'ignore' });
+        execOrFail(spinner, 'docker', ['exec', 'editframe-postgres', 'psql', '-U', 'postgres',
+          '-c', `CREATE DATABASE "${dbName}" TEMPLATE "telecine-template";`],
+          { label: `create database ${dbName}` });
       }
     }
 
     const profiles = newScope === 'render' ? 'render' : '';
     spinner.text = 'Starting telecine runner...';
-    await execSilent(join(telecineDir, 'scripts', 'docker-compose'), ['up', '-d', 'runner'], {
-      cwd: telecineDir, env: { ...process.env, COMPOSE_PROFILES: profiles },
-    });
-    spinner.text = 'Installing telecine dependencies...';
-    await execSilent(join(telecineDir, 'scripts', 'npm'), ['install'], { cwd: telecineDir });
-    spinner.text = 'Starting telecine services...';
-    await execSilent(join(telecineDir, 'scripts', 'docker-compose'), ['up', '-d'], {
-      cwd: telecineDir, env: { ...process.env, COMPOSE_PROFILES: profiles },
-    });
-    spinner.text = 'Applying migrations...';
-    await execSilent(join(telecineDir, 'scripts', 'migrate-db'), [], { cwd: telecineDir });
+    await execSilentOrFail(spinner, join(telecineDir, 'scripts', 'docker-compose'), ['up', '-d', 'runner'],
+      { cwd: telecineDir, env: { ...process.env, COMPOSE_PROFILES: profiles }, label: 'telecine runner up' });
 
-    // Generate EF_TOKEN
+    spinner.text = 'Installing telecine dependencies...';
+    await execSilentOrFail(spinner, join(telecineDir, 'scripts', 'npm'), ['install'],
+      { cwd: telecineDir, label: 'telecine npm install' });
+
+    spinner.text = 'Starting telecine services...';
+    await execSilentOrFail(spinner, join(telecineDir, 'scripts', 'docker-compose'), ['up', '-d'],
+      { cwd: telecineDir, env: { ...process.env, COMPOSE_PROFILES: profiles }, label: 'telecine services up' });
+
+    spinner.text = 'Applying migrations...';
+    await execSilentOrFail(spinner, join(telecineDir, 'scripts', 'migrate-db'), [],
+      { cwd: telecineDir, label: 'migrate-db' });
+
     spinner.text = 'Generating EF_TOKEN...';
     const tokenResult = await execSilent(join(telecineDir, 'scripts', 'run'), [
       'node',
@@ -642,20 +688,17 @@ async function cmdUpgrade(branch: string, newScope: string) {
 
   } else if (currentScope === 'web' && newScope === 'render') {
     spinner.text = 'Starting render pipeline services...';
-    await execSilent(join(telecineDir, 'scripts', 'docker-compose'), ['up', '-d'], {
-      cwd: telecineDir,
-      env: { ...process.env, COMPOSE_PROFILES: 'render' },
-    });
+    await execSilentOrFail(spinner, join(telecineDir, 'scripts', 'docker-compose'), ['up', '-d'],
+      { cwd: telecineDir, env: { ...process.env, COMPOSE_PROFILES: 'render' }, label: 'render services up' });
   }
 
-  // Write new scope
   await writeFile(join(worktreeDir, '.worktree-scope'), newScope);
   spinner.succeed(chalk.green(`Upgraded: ${branch} → ${newScope}`));
 }
 
 async function cmdMerge(branch: string) {
-  const worktrees = await getWorktrees();
-  requireWorktree(worktrees, branch); // validate exists
+  const worktrees = getWorktrees();
+  requireWorktree(worktrees, branch);
   const wdir = worktreesDir(MONOREPO_ROOT);
   const telecineMain = join(wdir, 'main', 'telecine');
   const elementsMain = join(wdir, 'main', 'elements');
@@ -668,8 +711,8 @@ async function cmdMerge(branch: string) {
     if (!hasRef) return;
 
     const mainBranch = exec('git', ['show-ref', '--verify', '--quiet', 'refs/heads/main'], { cwd: repoDir }).exitCode === 0 ? 'main' : 'master';
-    exec('git', ['checkout', mainBranch], { cwd: repoDir, stdio: 'ignore' });
 
+    // Use refs directly rather than checking out, to avoid disturbing running services
     const alreadyMerged = exec('git', ['merge-base', '--is-ancestor', `refs/heads/${branch}`, `refs/heads/${mainBranch}`], { cwd: repoDir }).exitCode === 0;
     if (alreadyMerged) {
       console.log(chalk.gray(`  ${label}: already merged`));
@@ -682,6 +725,7 @@ async function cmdMerge(branch: string) {
       process.exit(1);
     }
 
+    exec('git', ['checkout', mainBranch], { cwd: repoDir, stdio: 'ignore' });
     const result = exec('git', ['merge', '--no-edit', branch], { cwd: repoDir });
     if (result.exitCode !== 0) {
       spinner.fail(chalk.red(`Merge conflict in ${label}`));
@@ -700,7 +744,7 @@ async function cmdMerge(branch: string) {
 }
 
 async function cmdSmoke(branch: string) {
-  const worktrees = await getWorktrees();
+  const worktrees = getWorktrees();
   const wt = requireWorktree(worktrees, branch);
   const worktreeDir = join(wt.path, '..');
   const telecineDir = join(worktreeDir, 'telecine');
@@ -712,22 +756,20 @@ async function cmdSmoke(branch: string) {
     process.exit(1);
   }
 
-  // Build scheduler-go image if missing
   const imgCheck = exec('docker', ['image', 'inspect', 'scheduler-go'], { stdio: 'ignore' });
   if (imgCheck.exitCode !== 0) {
     const spinner = ora('Building scheduler-go image...').start();
     const schedulerDockerfile = join(MONOREPO_ROOT, 'telecine', 'services', 'scheduler-go', 'Dockerfile.dev');
     const schedulerCtx = join(MONOREPO_ROOT, 'telecine', 'services', 'scheduler-go');
-    await execSilent('docker', ['build', '-f', schedulerDockerfile, '-t', 'scheduler-go', schedulerCtx]);
+    await execSilentOrFail(spinner, 'docker', ['build', '-f', schedulerDockerfile, '-t', 'scheduler-go', schedulerCtx],
+      { label: 'build scheduler-go' });
     spinner.succeed('scheduler-go image built');
   }
 
-  // Get EF_TOKEN
   const envPath = join(elementsDir, '.env');
   let efToken = '';
   if (existsSync(envPath)) {
-    const envContent = readFileSync(envPath, 'utf-8');
-    const match = envContent.match(/^EF_TOKEN="?([^"\n]+)"?/m);
+    const match = readFileSync(envPath, 'utf-8').match(/^EF_TOKEN="?([^"\n]+)"?/m);
     if (match) efToken = match[1];
   }
   if (!efToken) {
@@ -737,13 +779,10 @@ async function cmdSmoke(branch: string) {
 
   let startedRender = false;
 
-  // Start render services if at web scope
   if (wt.scope === 'web') {
     const spinner = ora('Starting render services...').start();
-    await execSilent(join(telecineDir, 'scripts', 'docker-compose'), ['up', '-d'], {
-      cwd: telecineDir,
-      env: { ...process.env, COMPOSE_PROFILES: 'render' },
-    });
+    await execSilentOrFail(spinner, join(telecineDir, 'scripts', 'docker-compose'), ['up', '-d'],
+      { cwd: telecineDir, env: { ...process.env, COMPOSE_PROFILES: 'render' }, label: 'render services up' });
     startedRender = true;
     spinner.succeed('Render services started');
   }
@@ -764,7 +803,6 @@ async function cmdSmoke(branch: string) {
   console.log('');
   if (exitCode === 0) console.log(chalk.green('All tests passed'));
   else console.log(chalk.red('Some tests failed'));
-
   console.log(chalk.dim(`\nDashboard: http://${wt.domain}:3000`));
 
   if (startedRender) {
@@ -774,47 +812,46 @@ async function cmdSmoke(branch: string) {
       process.stdin.once('data', () => resolve());
       process.stdin.resume();
     });
-    await execSilent(join(telecineDir, 'scripts', 'docker-compose'), ['stop'], {
-      cwd: telecineDir,
-      env: { ...process.env, COMPOSE_PROFILES: 'render' },
-    });
+    await execSilent(join(telecineDir, 'scripts', 'docker-compose'), ['stop'],
+      { cwd: telecineDir, env: { ...process.env, COMPOSE_PROFILES: 'render' } });
   }
 
   process.exit(exitCode);
 }
 
-async function cmdLogs(branch?: string, service?: string, tail: number = 100, since = '5m') {
-  const worktrees = await getWorktrees();
-  let wt = branch ? requireWorktree(worktrees, branch) : (worktrees.find((w) => !w.isMain) ?? worktrees[0]);
+function cmdLogs(branch?: string, service?: string, tail: number = 100, since = '5m') {
+  const worktrees = getWorktrees();
+  const wt = branch
+    ? requireWorktree(worktrees, branch)
+    : (worktrees.find((w) => !w.isMain) ?? worktrees[0]);
   if (!wt) { console.error(chalk.red('No worktrees found')); process.exit(1); }
 
   const svc = service ?? (wt.scope === 'elements' ? 'dev-projects' : 'web');
-  // Determine pkg from service name: if service contains 'elements' hints or scope is elements
   const pkg = wt.scope === 'elements' ? 'elements' : 'telecine';
   const project = dockerProjectName(wt.sanitized, pkg, wt.isMain);
   const container = `${project}-${svc}-1`;
 
   console.log(chalk.dim(`Container: ${container}  tail:${tail}  since:${since}\n`));
-  const code = await execInteractive('docker', ['logs', container, '--tail', String(tail), '--since', since]);
-  process.exit(code);
+  execInteractive('docker', ['logs', container, '--tail', String(tail), '--since', since])
+    .then((code) => process.exit(code));
 }
 
-async function cmdShell(branch: string, service?: string) {
-  const worktrees = await getWorktrees();
+function cmdShell(branch: string, service?: string) {
+  const worktrees = getWorktrees();
   const wt = requireWorktree(worktrees, branch);
 
-  const svc = service ?? (wt.scope === 'elements' ? 'runner' : 'runner');
+  const svc = service ?? 'runner';
   const pkg = wt.scope === 'elements' ? 'elements' : 'telecine';
   const project = dockerProjectName(wt.sanitized, pkg, wt.isMain);
   const container = `${project}-${svc}-1`;
 
   console.log(chalk.dim(`Shell in: ${container}`));
-  const code = await execInteractive('docker', ['exec', '-it', container, '/bin/bash']);
-  process.exit(code);
+  execInteractive('docker', ['exec', '-it', container, '/bin/bash'])
+    .then((code) => process.exit(code));
 }
 
-async function cmdPorts() {
-  const worktrees = await getWorktrees();
+function cmdPorts() {
+  const worktrees = getWorktrees();
   console.log(chalk.bold('Port Allocation\n'));
   console.log('BRANCH'.padEnd(28) + 'POSTGRES'.padEnd(10) + 'VALKEY'.padEnd(10) + 'MAILHOG');
   console.log('─'.repeat(58));
@@ -837,19 +874,20 @@ async function cmdInfra(action: string = 'status') {
     case 'start':
     case 'up': {
       const spinner = ora('Starting shared infrastructure...').start();
-      await execSilent('docker', [...baseArgs, 'up', '-d']);
+      await execSilentOrFail(spinner, 'docker', [...baseArgs, 'up', '-d'], { label: 'infra up' });
       spinner.succeed(chalk.green('Shared infrastructure started'));
       break;
     }
     case 'stop': {
       const spinner = ora('Stopping shared infrastructure...').start();
-      await execSilent('docker', [...baseArgs, 'down']);
+      // Use 'stop' not 'down' — preserves containers and volumes, avoids destroying postgres data
+      await execSilentOrFail(spinner, 'docker', [...baseArgs, 'stop'], { label: 'infra stop' });
       spinner.succeed(chalk.green('Shared infrastructure stopped'));
       break;
     }
     case 'restart': {
       const spinner = ora('Restarting shared infrastructure...').start();
-      await execSilent('docker', [...baseArgs, 'restart']);
+      await execSilentOrFail(spinner, 'docker', [...baseArgs, 'restart'], { label: 'infra restart' });
       spinner.succeed(chalk.green('Shared infrastructure restarted'));
       break;
     }
@@ -870,33 +908,71 @@ async function cmdInfra(action: string = 'status') {
   }
 }
 
-async function cmdDoctor(branch?: string, showSkills: boolean = false) {
-  const worktrees = await getWorktrees();
+function cmdDoctor(branch?: string, showSkills: boolean = false) {
+  const worktrees = getWorktrees();
   const targets = branch ? [requireWorktree(worktrees, branch)] : worktrees.filter((w) => !w.isMain);
 
   console.log(chalk.bold('Worktree Diagnostics\n'));
+
+  // Reverse scan: find Docker containers whose project names match our prefixes
+  // but whose branch name isn't in the current git worktree list
+  const knownSanitized = new Set(worktrees.map((w) => w.sanitized));
+  const { stdout: allContainers } = exec('docker', ['ps', '-a', '--format', '{{.Names}}']);
+  const orphanedProjects = new Set<string>();
+  // Build the complete set of known project name prefixes for all live worktrees
+  const knownProjects = new Set<string>();
+  for (const wt of worktrees) {
+    knownProjects.add(dockerProjectName(wt.sanitized, 'telecine', wt.isMain));
+    knownProjects.add(dockerProjectName(wt.sanitized, 'elements', wt.isMain));
+  }
+  // Also add the shared infra project
+  knownProjects.add('editframe');
+
+  // A container belongs to an orphaned project if none of the known project names
+  // is a prefix of the container name (container names: <project>-<service>-<n>)
+  const orphanedProjectNames = new Set<string>();
+  for (const name of allContainers.split('\n').filter(Boolean)) {
+    const knownOwner = [...knownProjects].some((p) => name.startsWith(p + '-'));
+    if (!knownOwner) {
+      // Extract project name: everything up to the last dash-digit suffix
+      const m = name.match(/^(.+)-\d+$/);
+      // Walk back through known service names to find the project prefix
+      // Simplest heuristic: anything that starts with telecine- or ef-elements-
+      // but doesn't match a known project is orphaned
+      if (name.match(/^(telecine-|ef-elements-)/)) {
+        orphanedProjectNames.add(name.replace(/-\d+$/, ''));
+      }
+    }
+  }
+
+  if (orphanedProjectNames.size > 0) {
+    console.log(chalk.yellow('⚠ Orphaned containers (no matching git worktree):'));
+    for (const p of orphanedProjectNames) {
+      console.log(chalk.dim(`    ${p}`));
+      console.log(chalk.dim(`    remove: docker rm -f $(docker ps -a --filter name=${p.split('-').slice(-1)[0] === p ? p : p} -q)`));
+    }
+    console.log('');
+  }
 
   for (const wt of targets) {
     const worktreeDir = join(wt.path, '..');
     console.log(chalk.bold(wt.branch));
     const issues: { msg: string; skill?: string; section?: string }[] = [];
 
-    // Port conflict
-    const nc = exec('nc', ['-z', '-w1', 'localhost', String(wt.ports.postgres)]);
-    if (nc.exitCode === 0) {
-      // port open — is it actually our container?
-      const filter = exec('docker', ['ps', '--format', '{{.Names}}', '--filter', `name=${wt.sanitized}`]);
-      const containers = filter.stdout.split('\n').filter(Boolean);
-      if (containers.length === 0) {
-        issues.push({ msg: `Port ${wt.ports.postgres} is in use but no matching container found — likely a port conflict`, skill: 'monorepo-setup-worktrees', section: 'Troubleshooting' });
-      }
+    // Running containers (using docker ps filter — reliable, no false nc positives)
+    const runningContainers = exec('docker', ['ps', '--format', '{{.Names}}', '--filter', `name=${wt.sanitized}`])
+      .stdout.split('\n').filter(Boolean);
+
+    if (existsSync(worktreeDir) && runningContainers.length === 0) {
+      issues.push({ msg: 'No containers running (paused or failed startup)', skill: 'monorepo-setup-worktrees', section: 'Worktree lifecycle' });
     }
 
-    // Orphaned containers (exists on disk but containers stopped)
-    if (existsSync(worktreeDir)) {
-      const running = exec('docker', ['ps', '--format', '{{.Names}}', '--filter', `name=${wt.sanitized}`]).stdout.split('\n').filter(Boolean);
-      if (running.length === 0) {
-        issues.push({ msg: 'Worktree directory exists but no containers running (paused or failed startup)', skill: 'monorepo-setup-worktrees', section: 'Worktree lifecycle' });
+    // Port conflict: another project using our assigned port
+    const { stdout: portOwners } = exec('docker', ['ps', '--format', '{{.Names}}\t{{.Ports}}']);
+    for (const line of portOwners.split('\n').filter(Boolean)) {
+      const [name, ports] = line.split('\t');
+      if (ports?.includes(`:${wt.ports.postgres}->`) && !name.includes(wt.sanitized)) {
+        issues.push({ msg: `Port ${wt.ports.postgres} owned by unrelated container '${name}' — port conflict`, skill: 'monorepo-setup-worktrees', section: 'Troubleshooting' });
       }
     }
 
@@ -908,13 +984,13 @@ async function cmdDoctor(branch?: string, showSkills: boolean = false) {
       if (!exists) {
         issues.push({ msg: `Database '${dbName}' not found`, skill: 'monorepo-setup-worktrees', section: 'Database template' });
       }
-    }
 
-    // Missing template DB
-    const tmpl = exec('docker', ['exec', 'editframe-postgres', 'psql', '-U', 'postgres', '-tAc',
-      "SELECT 1 FROM pg_database WHERE datname='telecine-template'"]).stdout.trim();
-    if (tmpl !== '1' && wt.scope !== 'elements') {
-      issues.push({ msg: "Template database 'telecine-template' missing — run: scripts/update-template-db", skill: 'monorepo-setup-worktrees', section: 'Stale template' });
+      // Missing template DB
+      const tmpl = exec('docker', ['exec', 'editframe-postgres', 'psql', '-U', 'postgres', '-tAc',
+        "SELECT 1 FROM pg_database WHERE datname='telecine-template'"]).stdout.trim();
+      if (tmpl !== '1') {
+        issues.push({ msg: "Template database 'telecine-template' missing — run: scripts/update-template-db", skill: 'monorepo-setup-worktrees', section: 'Stale template' });
+      }
     }
 
     if (issues.length === 0) {
@@ -952,12 +1028,12 @@ ${chalk.bold('Lifecycle:')}
 
 ${chalk.bold('Inspect:')}
   ${chalk.cyan('list')}                         List all worktrees
-  ${chalk.cyan('status')} [branch]              Health check (dirs, containers, db, ports)
+  ${chalk.cyan('status')} [branch]              Health check (dirs, containers, db)
   ${chalk.cyan('ports')}                        Port allocation table
-  ${chalk.cyan('logs')} [branch] [--service=<name>] [--tail=<N>] [--since=<time>]
+  ${chalk.cyan('logs')} <branch> [--service=<name>] [--tail=<N>] [--since=<time>]
   ${chalk.cyan('shell')} <branch> [service]     Open shell in container (default: runner)
   ${chalk.cyan('infra')} [start|stop|restart|status]  Manage shared Traefik/Postgres
-  ${chalk.cyan('doctor')} [branch] [--skills]   Diagnose issues
+  ${chalk.cyan('doctor')} [branch] [--skills]   Diagnose issues + orphaned containers
   ${chalk.cyan('deps')} [--workspace=elements|telecine|all] [--format=text|json|mermaid]
 `);
 }
@@ -979,11 +1055,11 @@ async function main() {
     switch (command) {
       case 'list':
       case 'ls':
-        await cmdList();
+        cmdList();
         break;
 
       case 'status':
-        await cmdStatus(rest[0]);
+        cmdStatus(rest[0]);
         break;
 
       case 'create':
@@ -1022,7 +1098,7 @@ async function main() {
         const sinceArg = rest.find((a) => a.startsWith('--since='));
         const svcArg = rest.find((a) => a.startsWith('--service='));
         const branch = rest.find((a) => !a.startsWith('-'));
-        await cmdLogs(
+        cmdLogs(
           branch,
           svcArg?.split('=')[1],
           tailArg ? parseInt(tailArg.split('=')[1]) : 100,
@@ -1032,11 +1108,11 @@ async function main() {
       }
 
       case 'shell':
-        await cmdShell(rest[0], rest[1]);
+        cmdShell(rest[0], rest[1]);
         break;
 
       case 'ports':
-        await cmdPorts();
+        cmdPorts();
         break;
 
       case 'infra':
@@ -1046,12 +1122,11 @@ async function main() {
       case 'doctor': {
         const showSkills = rest.includes('--skills');
         const branch = rest.find((a) => !a.startsWith('-'));
-        await cmdDoctor(branch, showSkills);
+        cmdDoctor(branch, showSkills);
         break;
       }
 
       case 'deps':
-        // Delegate to standalone deps script
         await execInteractive(join(SCRIPTS_DIR, 'deps'), rest);
         break;
 
