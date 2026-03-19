@@ -69,8 +69,9 @@ function execInteractive(
   args: string[],
   options: { cwd?: string; env?: NodeJS.ProcessEnv } = {},
 ): Promise<number> {
+  const [cmd, cmdArgs] = command.startsWith('/') ? ['bash', [command, ...args]] : [command, args];
   return new Promise((resolve) => {
-    const proc = spawn(command, args, {
+    const proc = spawn(cmd, cmdArgs, {
       cwd: options.cwd ?? MONOREPO_ROOT,
       stdio: 'inherit',
       env: options.env ?? process.env,
@@ -85,8 +86,11 @@ function execSilent(
   args: string[],
   options: { cwd?: string; env?: NodeJS.ProcessEnv } = {},
 ): Promise<ExecResult> {
+  // Route shell scripts through bash to avoid ENOEXEC on macOS when Node's
+  // spawn() calls execve() directly on a script path.
+  const [cmd, cmdArgs] = command.startsWith('/') ? ['bash', [command, ...args]] : [command, args];
   return new Promise((resolve) => {
-    const proc = spawn(command, args, {
+    const proc = spawn(cmd, cmdArgs, {
       cwd: options.cwd ?? MONOREPO_ROOT,
       stdio: 'pipe',
       env: options.env ?? process.env,
@@ -240,6 +244,8 @@ async function waitForPostgres(timeoutMs = 30000): Promise<void> {
   throw new Error('Postgres did not become ready within 30s');
 }
 
+
+
 // ---------------------------------------------------------------------------
 // Shared helpers for commands
 // ---------------------------------------------------------------------------
@@ -261,12 +267,17 @@ async function writeEfToken(
     'scripts/generate-forever-token.ts',
   ], { cwd: telecineDir });
 
-  const token = tokenResult.stdout.trim().split('\n').pop() ?? '';
-  if (!token || token.includes('Error')) {
-    spinner.warn(chalk.yellow(`EF_TOKEN generation failed — elements/.env will not have EF_HOST set correctly`));
-    if (tokenResult.stderr.trim()) console.error(chalk.dim(tokenResult.stderr.trim()));
+  const allOut = tokenResult.stdout.trim();
+  const lastLine = allOut.split('\n').pop() ?? '';
+  // Token must be a non-empty string that looks like a JWT (no whitespace, contains dots)
+  const looksLikeToken = lastLine.length > 20 && !lastLine.includes(' ') && lastLine.split('.').length === 3;
+  if (!looksLikeToken) {
+    spinner.warn(chalk.yellow(`EF_TOKEN generation failed — elements test config will not connect to this worktree's telecine`));
+    const errDetail = (tokenResult.stderr.trim() || allOut.trim()).split('\n').pop() ?? '';
+    if (errDetail) console.error(chalk.dim(`  ${errDetail}`));
     return;
   }
+  const token = lastLine;
 
   const envPath = join(elementsDir, '.env');
   let env = existsSync(envPath) ? readFileSync(envPath, 'utf-8') : '';
@@ -655,6 +666,7 @@ async function cmdUpgrade(branch: string, newScope: string) {
     const dbName = `telecine-${wt.sanitized}`;
     const dbExists = exec('docker', ['exec', 'editframe-postgres', 'psql', '-U', 'postgres', '-tAc',
       `SELECT 1 FROM pg_database WHERE datname = '${dbName}'`]).stdout.trim() === '1';
+    let usedTemplate = false;
     if (!dbExists) {
       const tmplExists = exec('docker', ['exec', 'editframe-postgres', 'psql', '-U', 'postgres', '-tAc',
         "SELECT 1 FROM pg_database WHERE datname = 'telecine-template'"]).stdout.trim() === '1';
@@ -662,6 +674,7 @@ async function cmdUpgrade(branch: string, newScope: string) {
         execOrFail(spinner, 'docker', ['exec', 'editframe-postgres', 'psql', '-U', 'postgres',
           '-c', `CREATE DATABASE "${dbName}" TEMPLATE "telecine-template";`],
           { label: `create database ${dbName}` });
+        usedTemplate = true;
       }
     }
 
@@ -678,9 +691,14 @@ async function cmdUpgrade(branch: string, newScope: string) {
     await execSilentOrFail(spinner, join(telecineDir, 'scripts', 'docker-compose'), ['up', '-d'],
       { cwd: telecineDir, env: { ...process.env, COMPOSE_PROFILES: profiles }, label: 'telecine services up' });
 
-    spinner.text = 'Applying migrations...';
+    spinner.text = !dbExists && !usedTemplate ? 'Running full migrations...' : 'Applying delta migrations...';
     await execSilentOrFail(spinner, join(telecineDir, 'scripts', 'migrate-db'), [],
       { cwd: telecineDir, label: 'migrate-db' });
+
+    if (!dbExists && !usedTemplate) {
+      await execSilentOrFail(spinner, join(telecineDir, 'scripts', 'seed'), [],
+        { cwd: telecineDir, label: 'seed' });
+    }
 
     await writeEfToken(spinner, telecineDir, elementsDir, wt.sanitized);
 
