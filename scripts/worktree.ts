@@ -241,6 +241,45 @@ async function waitForPostgres(timeoutMs = 30000): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Shared helpers for commands
+// ---------------------------------------------------------------------------
+
+// Generate a forever EF_TOKEN from a telecine worktree and write it to elements/.env.
+// Warns (does not fail) if token generation fails — worktree is still usable for
+// elements-only work but browser tests will not connect to the correct telecine instance.
+async function writeEfToken(
+  spinner: Ora,
+  telecineDir: string,
+  elementsDir: string,
+  sanitized: string,
+): Promise<void> {
+  spinner.text = 'Generating EF_TOKEN...';
+  const tokenResult = await execSilent(join(telecineDir, 'scripts', 'run'), [
+    'node',
+    '--import',
+    'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./loader.js", pathToFileURL("./"));',
+    'scripts/generate-forever-token.ts',
+  ], { cwd: telecineDir });
+
+  const token = tokenResult.stdout.trim().split('\n').pop() ?? '';
+  if (!token || token.includes('Error')) {
+    spinner.warn(chalk.yellow(`EF_TOKEN generation failed — elements/.env will not have EF_HOST set correctly`));
+    if (tokenResult.stderr.trim()) console.error(chalk.dim(tokenResult.stderr.trim()));
+    return;
+  }
+
+  const envPath = join(elementsDir, '.env');
+  let env = existsSync(envPath) ? readFileSync(envPath, 'utf-8') : '';
+  env = env.split('\n')
+    .filter((l) => !l.startsWith('EF_TOKEN=') && !l.startsWith('EF_HOST=') && !l.startsWith('VITEST_BROWSER_MODE='))
+    .join('\n').trimEnd();
+  env += `\nEF_TOKEN="${token}"`;
+  env += `\nEF_HOST="http://web:3000"`;
+  env += `\nVITEST_BROWSER_MODE="connect"\n`;
+  await writeFile(envPath, env);
+}
+
+// ---------------------------------------------------------------------------
 // Commands
 // ---------------------------------------------------------------------------
 
@@ -296,8 +335,9 @@ function cmdStatus(branch?: string) {
     if (containers.length > 0) {
       for (const c of containers) {
         const [name, status] = c.split('\t');
-        const up = status?.startsWith('Up');
-        console.log(`  ${up ? chalk.green('✓') : chalk.red('✗')} ${name}: ${status}`);
+        const up = status?.startsWith('Up') && !status.includes('unhealthy');
+        const icon = up ? chalk.green('✓') : status?.startsWith('Up') ? chalk.yellow('⚠') : chalk.red('✗');
+        console.log(`  ${icon} ${name}: ${status}`);
       }
     } else {
       console.log(`  ${chalk.gray('○')} no containers running`);
@@ -387,7 +427,7 @@ async function cmdCreate(branch: string, scope: string = 'web') {
   if (existsSync(join(elementsMain, 'dev-projects'))) {
     const envPath = join(elementsDir, '.env');
     let envContent = existsSync(envPath) ? readFileSync(envPath, 'utf-8') : '';
-    envContent = envContent.split('\n').filter((l) => !l.startsWith('DEV_PROJECTS_HOST=')).join('\n');
+    envContent = envContent.split('\n').filter((l) => !l.startsWith('DEV_PROJECTS_HOST=')).join('\n').trimEnd();
     envContent += `\nDEV_PROJECTS_HOST="${join(elementsMain, 'dev-projects')}"\n`;
     await writeFile(envPath, envContent);
   }
@@ -460,27 +500,7 @@ async function cmdCreate(branch: string, scope: string = 'web') {
         { cwd: telecineDir, label: 'seed' });
     }
 
-    // Generate EF_TOKEN
-    spinner.text = 'Generating EF_TOKEN...';
-    const tokenResult = await execSilent(join(telecineDir, 'scripts', 'run'), [
-      'node',
-      '--import',
-      'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./loader.js", pathToFileURL("./"));',
-      'scripts/generate-forever-token.ts',
-    ], { cwd: telecineDir });
-
-    const token = tokenResult.stdout.trim().split('\n').pop() ?? '';
-    if (token && !token.includes('Error')) {
-      const envPath = join(elementsDir, '.env');
-      let env = existsSync(envPath) ? readFileSync(envPath, 'utf-8') : '';
-      env = env.split('\n')
-        .filter((l) => !l.startsWith('EF_TOKEN=') && !l.startsWith('EF_HOST=') && !l.startsWith('VITEST_BROWSER_MODE='))
-        .join('\n');
-      env += `\nEF_TOKEN="${token}"`;
-      env += `\nEF_HOST="http://telecine-${sanitized}-web-1:3000"`;
-      env += `\nVITEST_BROWSER_MODE="connect"\n`;
-      await writeFile(envPath, env);
-    }
+    await writeEfToken(spinner, telecineDir, elementsDir, sanitized);
   }
 
   spinner.succeed(chalk.green(`Worktree created: ${branch} (${scope})`));
@@ -563,14 +583,11 @@ async function cmdRemove(branch: string, force: boolean = false) {
 
   // 1. Stop and remove Docker containers
   if (wt.scope !== 'elements' && existsSync(join(telecineDir, 'scripts', 'docker-compose'))) {
-    const { stdout: dbName } = exec('bash', ['-c', '. scripts/worktree-config && echo "$WORKTREE_DATABASE"'], { cwd: telecineDir });
     await execSilent(join(telecineDir, 'scripts', 'docker-compose'), ['down', '-v', '--remove-orphans'], { cwd: telecineDir });
-    const db = dbName.trim();
-    if (db && db !== 'telecine-main') {
-      exec('docker', ['exec', 'editframe-postgres', 'psql', '-U', 'postgres',
-        '-c', `SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${db}' AND pid <> pg_backend_pid();`,
-        '-c', `DROP DATABASE IF EXISTS "${db}";`], { stdio: 'ignore' });
-    }
+    const db = `telecine-${wt.sanitized}`;
+    exec('docker', ['exec', 'editframe-postgres', 'psql', '-U', 'postgres',
+      '-c', `SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${db}' AND pid <> pg_backend_pid();`,
+      '-c', `DROP DATABASE IF EXISTS "${db}";`], { stdio: 'ignore' });
   }
   if (existsSync(join(elementsDir, 'scripts', 'docker-compose'))) {
     await execSilent(join(elementsDir, 'scripts', 'docker-compose'), ['down', '-v', '--remove-orphans'], { cwd: elementsDir });
@@ -665,26 +682,7 @@ async function cmdUpgrade(branch: string, newScope: string) {
     await execSilentOrFail(spinner, join(telecineDir, 'scripts', 'migrate-db'), [],
       { cwd: telecineDir, label: 'migrate-db' });
 
-    spinner.text = 'Generating EF_TOKEN...';
-    const tokenResult = await execSilent(join(telecineDir, 'scripts', 'run'), [
-      'node',
-      '--import',
-      'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("./loader.js", pathToFileURL("./"));',
-      'scripts/generate-forever-token.ts',
-    ], { cwd: telecineDir });
-
-    const token = tokenResult.stdout.trim().split('\n').pop() ?? '';
-    if (token && !token.includes('Error')) {
-      const envPath = join(elementsDir, '.env');
-      let env = existsSync(envPath) ? readFileSync(envPath, 'utf-8') : '';
-      env = env.split('\n')
-        .filter((l) => !l.startsWith('EF_TOKEN=') && !l.startsWith('EF_HOST=') && !l.startsWith('VITEST_BROWSER_MODE='))
-        .join('\n');
-      env += `\nEF_TOKEN="${token}"`;
-      env += `\nEF_HOST="http://telecine-${wt.sanitized}-web-1:3000"`;
-      env += `\nVITEST_BROWSER_MODE="connect"\n`;
-      await writeFile(envPath, env);
-    }
+    await writeEfToken(spinner, telecineDir, elementsDir, wt.sanitized);
 
   } else if (currentScope === 'web' && newScope === 'render') {
     spinner.text = 'Starting render pipeline services...';
@@ -712,7 +710,6 @@ async function cmdMerge(branch: string) {
 
     const mainBranch = exec('git', ['show-ref', '--verify', '--quiet', 'refs/heads/main'], { cwd: repoDir }).exitCode === 0 ? 'main' : 'master';
 
-    // Use refs directly rather than checking out, to avoid disturbing running services
     const alreadyMerged = exec('git', ['merge-base', '--is-ancestor', `refs/heads/${branch}`, `refs/heads/${mainBranch}`], { cwd: repoDir }).exitCode === 0;
     if (alreadyMerged) {
       console.log(chalk.gray(`  ${label}: already merged`));
@@ -914,42 +911,27 @@ function cmdDoctor(branch?: string, showSkills: boolean = false) {
 
   console.log(chalk.bold('Worktree Diagnostics\n'));
 
-  // Reverse scan: find Docker containers whose project names match our prefixes
-  // but whose branch name isn't in the current git worktree list
-  const knownSanitized = new Set(worktrees.map((w) => w.sanitized));
-  const { stdout: allContainers } = exec('docker', ['ps', '-a', '--format', '{{.Names}}']);
-  const orphanedProjects = new Set<string>();
-  // Build the complete set of known project name prefixes for all live worktrees
-  const knownProjects = new Set<string>();
+  // Orphaned container scan: use the com.docker.compose.project label (exact project name)
+  // to find containers belonging to projects that have no corresponding git worktree.
+  const knownProjects = new Set<string>(['editframe']);
   for (const wt of worktrees) {
     knownProjects.add(dockerProjectName(wt.sanitized, 'telecine', wt.isMain));
     knownProjects.add(dockerProjectName(wt.sanitized, 'elements', wt.isMain));
   }
-  // Also add the shared infra project
-  knownProjects.add('editframe');
 
-  // A container belongs to an orphaned project if none of the known project names
-  // is a prefix of the container name (container names: <project>-<service>-<n>)
+  const { stdout: labelLines } = exec('docker', [
+    'ps', '-a', '--format', '{{.Label "com.docker.compose.project"}}',
+  ]);
   const orphanedProjectNames = new Set<string>();
-  for (const name of allContainers.split('\n').filter(Boolean)) {
-    const knownOwner = [...knownProjects].some((p) => name.startsWith(p + '-'));
-    if (!knownOwner) {
-      // Extract project name: everything up to the last dash-digit suffix
-      const m = name.match(/^(.+)-\d+$/);
-      // Walk back through known service names to find the project prefix
-      // Simplest heuristic: anything that starts with telecine- or ef-elements-
-      // but doesn't match a known project is orphaned
-      if (name.match(/^(telecine-|ef-elements-)/)) {
-        orphanedProjectNames.add(name.replace(/-\d+$/, ''));
-      }
-    }
+  for (const project of labelLines.split('\n').filter(Boolean)) {
+    if (!knownProjects.has(project)) orphanedProjectNames.add(project);
   }
 
   if (orphanedProjectNames.size > 0) {
     console.log(chalk.yellow('⚠ Orphaned containers (no matching git worktree):'));
     for (const p of orphanedProjectNames) {
       console.log(chalk.dim(`    ${p}`));
-      console.log(chalk.dim(`    remove: docker rm -f $(docker ps -a --filter name=${p.split('-').slice(-1)[0] === p ? p : p} -q)`));
+      console.log(chalk.dim(`    remove: docker rm -f $(docker ps -a --filter label=com.docker.compose.project=${p} -q)`));
     }
     console.log('');
   }

@@ -28,7 +28,7 @@ worktree pause <branch>                # Stop containers
 worktree resume <branch>               # Start containers
 worktree remove <branch> [--force]     # Full cleanup
 worktree upgrade <branch> <scope>      # Escalate scope (elements→web→render)
-worktree smoke [branch]                # One-shot render verification
+worktree smoke <branch>                # One-shot render verification
 worktree logs [branch] [options]       # View logs
 worktree doctor [branch] [--skills]    # Diagnose issues
 worktree deps [--workspace=...]        # Show dependency graph
@@ -112,7 +112,7 @@ Never include `dev-projects/` in the URL path.
 
 ## Smoke testing
 
-`worktree smoke [branch]` is a one-shot render verification. It's not a persistent scope; use it as a pre-merge gate for render pipeline changes.
+`worktree smoke <branch>` is a one-shot render verification. It's not a persistent scope; use it as a pre-merge gate for render pipeline changes.
 
 1. Requires `web` or `render` scope (errors on `elements`)
 2. If scope is `web`: temporarily starts render-profile services, registers a cleanup trap to stop them on exit
@@ -128,6 +128,6 @@ Render development workflow: stay at `web` scope, run unit tests directly, use `
 ## Troubleshooting
 
 - **Port conflict**: two branches hashed to same offset. Extremely unlikely with cksum/200 slots but possible. Remove one worktree and recreate.
-- **Orphaned containers**: if `worktree remove` fails mid-cleanup, use `docker rm -f` on containers matching `<branch>` in name.
+- **Orphaned containers**: `worktree doctor` detects orphaned projects (containers with no matching git worktree) and prints the exact `docker rm -f` command to clean them up.
+- **Partial create failure**: if `worktree create` fails partway through, the worktree directory exists but is incomplete. Run `worktree remove --force <branch>` before retrying.
 - **Stale template**: run `scripts/update-template-db` to refresh from current main DB state.
-- **Missing web service after upgrade**: upgrade script now starts runner + npm install before other services. If using old worktree scripts, `git merge main` into the worktree branch.
