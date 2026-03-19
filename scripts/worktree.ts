@@ -244,6 +244,22 @@ async function waitForPostgres(timeoutMs = 30000): Promise<void> {
   throw new Error('Postgres did not become ready within 30s');
 }
 
+// Wait for a specific container to reach healthy/running state.
+// Used before migrate-db which requires graphql-engine to be accepting connections.
+async function waitForContainer(containerName: string, timeoutMs = 60000): Promise<void> {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const { stdout } = exec('docker', ['inspect', '--format', '{{.State.Status}} {{.State.Health.Status}}', containerName], { stdio: 'pipe' });
+    const parts = stdout.trim().split(' ');
+    const state = parts[0];
+    const health = parts[1];
+    // Accept: running with no health check, or healthy
+    if (state === 'running' && (health === '<nil>' || health === 'healthy')) return;
+    await new Promise((res) => setTimeout(res, 1000));
+  }
+  throw new Error(`Container ${containerName} did not become healthy within ${timeoutMs / 1000}s`);
+}
+
 
 
 // ---------------------------------------------------------------------------
@@ -376,6 +392,14 @@ async function cmdCreate(branch: string, scope: string = 'web') {
     process.exit(1);
   }
 
+  // Validate branch name is git-compatible before doing any work
+  const gitCheck = exec('git', ['check-ref-format', '--branch', branch], { stdio: 'ignore' });
+  if (gitCheck.exitCode !== 0) {
+    console.error(chalk.red(`Invalid branch name: '${branch}'`));
+    console.error(chalk.dim(`  git check-ref-format rejects this name`));
+    process.exit(1);
+  }
+
   const sanitized = sanitizeBranchName(branch);
   const wdir = worktreesDir(MONOREPO_ROOT);
   const worktreeDir = join(wdir, sanitized);
@@ -501,6 +525,12 @@ async function cmdCreate(branch: string, scope: string = 'web') {
     spinner.text = 'Starting telecine services...';
     await execSilentOrFail(spinner, join(telecineDir, 'scripts', 'docker-compose'), ['up', '-d'],
       { cwd: telecineDir, env: { ...process.env, COMPOSE_PROFILES: profiles }, label: 'telecine services up' });
+
+    spinner.text = 'Waiting for graphql-engine...';
+    const dockerProject = `telecine-${sanitized}`;
+    try { await waitForContainer(`${dockerProject}-graphql-engine-1`); } catch (e: any) {
+      spinner.fail(chalk.red(e.message)); process.exit(1);
+    }
 
     spinner.text = templateExists ? 'Applying delta migrations...' : 'Running full migrations...';
     await execSilentOrFail(spinner, join(telecineDir, 'scripts', 'migrate-db'), [],
@@ -690,6 +720,11 @@ async function cmdUpgrade(branch: string, newScope: string) {
     spinner.text = 'Starting telecine services...';
     await execSilentOrFail(spinner, join(telecineDir, 'scripts', 'docker-compose'), ['up', '-d'],
       { cwd: telecineDir, env: { ...process.env, COMPOSE_PROFILES: profiles }, label: 'telecine services up' });
+
+    spinner.text = 'Waiting for graphql-engine...';
+    try { await waitForContainer(`telecine-${wt.sanitized}-graphql-engine-1`); } catch (e: any) {
+      spinner.fail(chalk.red(e.message)); process.exit(1);
+    }
 
     spinner.text = !dbExists && !usedTemplate ? 'Running full migrations...' : 'Applying delta migrations...';
     await execSilentOrFail(spinner, join(telecineDir, 'scripts', 'migrate-db'), [],
