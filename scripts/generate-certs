@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Generate local TLS certs for Traefik using mkcert.
+# mkcert issues certs trusted by Chromium (via NSS store) and macOS.
+#
+# Run once per developer machine, then again if certs expire.
+#
+# Usage: scripts/generate-certs
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CERTS_DIR="$SCRIPT_DIR/certs"
+
+if ! command -v mkcert &>/dev/null; then
+  echo "mkcert not found. Install with: brew install mkcert nss"
+  exit 1
+fi
+
+# Install mkcert CA into system trust stores.
+# This covers: macOS keychain, Chrome NSS store, Firefox.
+# Requires sudo for the macOS System keychain — login keychain is used as fallback.
+if mkcert -install 2>/dev/null; then
+  echo "mkcert CA installed into system trust stores"
+else
+  echo "mkcert -install requires sudo for System keychain. Trying login keychain..."
+  security add-trusted-cert -r trustRoot \
+    -k "$HOME/Library/Keychains/login.keychain-db" \
+    "$(mkcert -CAROOT)/rootCA.pem" 2>/dev/null && echo "Added to login keychain"
+
+  # Install into NSS stores directly (no sudo needed)
+  CAROOT="$(mkcert -CAROOT)"
+  for db in \
+    "$HOME/Library/Application Support/Google/Chrome/Default" \
+    "$HOME/Library/Application Support/Chromium/Default" \
+    "$HOME/.pki/nssdb"; do
+    if [ -d "$db" ]; then
+      certutil -A -d "sql:$db" -t "C,," -n "mkcert local" \
+        -i "$CAROOT/rootCA.pem" 2>/dev/null && echo "Installed into NSS: $db"
+    fi
+  done
+fi
+
+mkdir -p "$CERTS_DIR"
+
+mkcert \
+  -cert-file "$CERTS_DIR/cert.pem" \
+  -key-file "$CERTS_DIR/key.pem" \
+  "*.localhost" localhost 127.0.0.1
+
+echo ""
+echo "Certs written to $CERTS_DIR"
+echo "Restart traefik to pick up new certs: docker restart editframe-traefik"
