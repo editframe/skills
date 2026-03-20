@@ -4,7 +4,8 @@ services:
     container_name: editframe-traefik
     ports:
       - "7777:7777"    # Traefik dashboard
-      - "3000:3000"    # Telecine web
+      - "3000:3000"    # Telecine web (HTTP)
+      - "3443:3443"    # Telecine web (HTTPS)
       - "24678:24678"  # Telecine port
       - "3001:3001"    # Telecine additional port
       - "4321:4321"    # Elements dev server
@@ -23,6 +24,8 @@ services:
       - --providers.docker.network=editframe-shared
       - --providers.file.filename=/etc/traefik/dynamic.yaml
       - --entrypoints.web.address=:3000
+      - --entrypoints.websecure.address=:3443
+      - --entrypoints.websecure.http.tls=true
       - --entrypoints.traefik.address=:7777
       - --entrypoints.port24678.address=:24678
       - --entrypoints.port3001.address=:3001
