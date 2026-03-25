@@ -15,12 +15,9 @@ expect "Choose a starter template"
 sleep 2.0
 send "\r"
 
-# Pause on the skills prompt — let all 3 options be visible
+# Pause on the skills prompt — global is already selected by default
 expect "Install AI agent skills"
 sleep 2.0
-# Arrow down to "Globally (all projects)"
-send "\033\[B"
-sleep 1.2
 send "\r"
 
 expect eof
