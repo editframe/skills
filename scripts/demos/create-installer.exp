@@ -1,0 +1,26 @@
+set timeout 60
+set env(npm_config_user_agent) "npm"
+
+set CREATE_BIN "/Users/collin/Editframe/worktrees/main/monorepo/elements/packages/create/dist/index.js"
+
+spawn node $CREATE_BIN
+
+# Let the directory prompt sit for a beat before typing
+expect "Enter the name of the directory"
+sleep 1.5
+send "my-demo\r"
+
+# Pause on the template select so user can read options
+expect "Choose a starter template"
+sleep 2.0
+send "\r"
+
+# Pause on the skills prompt — let all 3 options be visible
+expect "Install AI agent skills"
+sleep 2.0
+# Arrow down to "Globally (all projects)"
+send "\033\[B"
+sleep 1.2
+send "\r"
+
+expect eof

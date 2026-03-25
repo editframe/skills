@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Record a terminal session to a .cast file using an expect script.
+#
+# Usage: record-cast <script.exp> [output.cast] [--cols N] [--rows N]
+#
+# The expect script is responsible for spawning and driving the session.
+# output.cast defaults to /tmp/out.cast
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+EXP_SCRIPT=""
+OUT="/tmp/out.cast"
+COLS=100
+ROWS=28
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --cols) COLS="$2"; shift 2 ;;
+    --rows) ROWS="$2"; shift 2 ;;
+    -*)     echo "Unknown flag: $1" >&2; exit 1 ;;
+    *)
+      if [[ -z "$EXP_SCRIPT" ]]; then EXP_SCRIPT="$1"
+      else OUT="$1"
+      fi
+      shift ;;
+  esac
+done
+
+if [[ -z "$EXP_SCRIPT" ]]; then
+  echo "Usage: record-cast <script.exp> [output.cast] [--cols N] [--rows N]" >&2
+  exit 1
+fi
+
+asciinema rec "$OUT" \
+  --overwrite \
+  --cols "$COLS" \
+  --rows "$ROWS" \
+  --command "expect $EXP_SCRIPT"
+
+echo "$OUT"

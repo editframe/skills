@@ -1,0 +1,126 @@
+#!/usr/bin/env python3
+# Edit an asciinema v3 cast file.
+#
+# Usage: cast-edit [options] input.cast [output.cast]
+#   output.cast defaults to overwriting input.cast in-place
+#
+# Options:
+#   --strip-first N          Remove the first N output events
+#   --prepend-prompt PROMPT  Prepend a shell prompt + typed command before the session.
+#                            PROMPT format: "DISPLAY_TEXT:COMMAND_TO_TYPE"
+#                            e.g. "~ $ :npm create @editframe@latest"
+#   --prepend-pause SECS     Pause before typing starts (default: 0.8)
+#   --type-speed MIN:MAX     Per-character delay range in seconds (default: 0.04:0.11)
+#   --post-pause SECS        Pause after enter before real session (default: 0.2)
+#   --seed N                 Random seed for typing variation (default: 42)
+
+import argparse, json, random, sys
+
+def parse_args():
+    p = argparse.ArgumentParser()
+    p.add_argument("input")
+    p.add_argument("output", nargs="?")
+    p.add_argument("--strip-first", type=int, default=0, metavar="N")
+    p.add_argument("--prepend-prompt", metavar="PROMPT:CMD")
+    p.add_argument("--prepend-pause", type=float, default=0.8)
+    p.add_argument("--type-speed", default="0.04:0.11")
+    p.add_argument("--post-pause", type=float, default=0.2)
+    p.add_argument("--seed", type=int, default=42)
+    return p.parse_args()
+
+def load(path):
+    lines = open(path).readlines()
+    header = json.loads(lines[0])
+    events = []
+    for line in lines[1:]:
+        line = line.strip()
+        if line and line.startswith("["):
+            events.append(json.loads(line))
+    return header, events
+
+def absolute(events):
+    """Convert relative-delta events to absolute timestamps."""
+    out, t = [], 0.0
+    for e in events:
+        t += e[0]
+        out.append([t, e[1], e[2]])
+    return out
+
+def relative(events):
+    """Convert absolute-timestamp events back to relative deltas."""
+    out, prev = [], 0.0
+    for e in events:
+        out.append([round(e[0] - prev, 6), e[1], e[2]])
+        prev = e[0]
+    return out
+
+def prepend_prompt(events, prompt_cmd, prepend_pause, type_speed, post_pause, seed):
+    rng = random.Random(seed)
+    speed_min, speed_max = (float(x) for x in type_speed.split(":"))
+
+    if ":" in prompt_cmd:
+        prompt, cmd = prompt_cmd.split(":", 1)
+    else:
+        prompt, cmd = "$ ", prompt_cmd
+
+    fake, t = [], 0.0
+
+    # Shell prompt appears instantly
+    fake.append([t, "o", prompt])
+    t += prepend_pause
+
+    # Type command char by char
+    for ch in cmd:
+        fake.append([t, "o", ch])
+        t += rng.uniform(speed_min, speed_max)
+
+    # Enter
+    t += 0.6
+    fake.append([t, "o", "\r\n"])
+    t += post_pause
+
+    # Shift real events
+    for e in events:
+        fake.append([e[0] + t, e[1], e[2]])
+
+    return fake
+
+def write(path, header, events):
+    lines = [json.dumps(header) + "\n"]
+    for e in relative(events):
+        lines.append(json.dumps(e) + "\n")
+    open(path, "w").writelines(lines)
+
+def main():
+    args = parse_args()
+    header, events = load(args.input)
+
+    # Work in absolute time throughout
+    events = absolute(events)
+
+    if args.strip_first:
+        # Only strip output ("o") events; preserve resize/input events
+        stripped = 0
+        kept = []
+        for e in events:
+            if e[1] == "o" and stripped < args.strip_first:
+                stripped += 1
+            else:
+                kept.append(e)
+        events = kept
+
+    if args.prepend_prompt:
+        events = prepend_prompt(
+            events,
+            args.prepend_prompt,
+            args.prepend_pause,
+            args.type_speed,
+            args.post_pause,
+            args.seed,
+        )
+
+    out = args.output or args.input
+    write(out, header, events)
+    print(f"Written: {out}", file=sys.stderr)
+
+main()

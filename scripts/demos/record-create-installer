@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Records the @editframe/create installer demo and renders it to mp4.
+#
+# Usage: scripts/demos/record-create-installer [output.mp4]
+#   output.mp4 defaults to /tmp/create-installer.mp4
+
+set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPTS="$(cd "$SCRIPT_DIR/.." && pwd)"
+MONOREPO="$(cd "$SCRIPTS/.." && pwd)"
+
+OUT_MP4="${1:-/tmp/create-installer.mp4}"
+CAST="$(mktemp /tmp/create-installer-XXXXXX.cast)"
+trap 'rm -f "$CAST"' EXIT
+
+# Clean any leftover demo directories from previous runs
+rm -rf /tmp/my-demo "$MONOREPO/my-demo"
+
+# Record
+"$SCRIPTS/record-cast" \
+  "$SCRIPT_DIR/create-installer.exp" \
+  "$CAST" \
+  --cols 100 \
+  --rows 28
+
+# Strip the "spawn node ..." artifact and prepend a convincing shell prompt
+"$SCRIPTS/cast-edit" \
+  --strip-first 1 \
+  --prepend-prompt $'\x1b[32m~\x1b[0m $ :npm create @editframe@latest' \
+  "$CAST"
+
+# Render to mp4
+node "$SCRIPTS/render-cast" \
+  --title "npm create @editframe@latest" \
+  "$CAST" "$OUT_MP4"
+
+echo "Done: $OUT_MP4"
