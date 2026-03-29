@@ -544,6 +544,12 @@ async function cmdCreate(branch: string, scope: string = 'web') {
     await writeEfToken(spinner, telecineDir, elementsDir, sanitized);
   }
 
+  // Host-side node_modules for editor tooling (TypeScript LSP)
+  if (scope !== 'elements') {
+    await installHostDeps(spinner, telecineDir, 'telecine');
+  }
+  await installHostDeps(spinner, elementsDir, 'elements');
+
   spinner.succeed(chalk.green(`Worktree created: ${branch} (${scope})`));
   console.log(`  Domain:   http://${sanitized}.localhost`);
   if (scope !== 'elements') console.log(`  Telecine: http://${sanitized}.localhost:3000`);
@@ -958,6 +964,49 @@ async function cmdInfra(action: string = 'status') {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Editor tooling: host-side node_modules for TypeScript LSP
+// ---------------------------------------------------------------------------
+
+function hasHostTypes(dir: string): boolean {
+  return existsSync(join(dir, 'node_modules', '@types', 'react', 'index.d.ts'));
+}
+
+async function installHostDeps(spinner: Ora, dir: string, label: string): Promise<void> {
+  if (!existsSync(join(dir, 'package.json'))) return;
+  spinner.text = `Installing host-side deps for ${label}...`;
+  await execSilentOrFail(spinner, 'npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund'],
+    { cwd: dir, label: `npm install (host) ${label}` });
+}
+
+async function cmdEditorDeps(branch?: string): Promise<void> {
+  const worktrees = getWorktrees();
+  const targets = branch ? [requireWorktree(worktrees, branch)] : worktrees.filter((w) => !w.isMain);
+
+  if (targets.length === 0) {
+    console.log(chalk.yellow('No branch worktrees found'));
+    return;
+  }
+
+  const spinner = ora('Installing host-side dependencies for editor tooling...').start();
+
+  for (const wt of targets) {
+    const worktreeDir = join(wt.path, '..');
+    const telecineDir = join(worktreeDir, 'telecine');
+    const elementsDir = join(worktreeDir, 'elements');
+
+    if (wt.scope !== 'elements' && existsSync(telecineDir)) {
+      await installHostDeps(spinner, telecineDir, `${wt.branch}/telecine`);
+    }
+    if (existsSync(elementsDir)) {
+      await installHostDeps(spinner, elementsDir, `${wt.branch}/elements`);
+    }
+  }
+
+  spinner.succeed(chalk.green(`Host-side dependencies installed for: ${targets.map((t) => t.branch).join(', ')}`));
+  console.log(chalk.dim('  TypeScript LSP should now resolve React types and JSX intrinsics'));
+}
+
 function cmdDoctor(branch?: string, showSkills: boolean = false) {
   const worktrees = getWorktrees();
   const targets = branch ? [requireWorktree(worktrees, branch)] : worktrees.filter((w) => !w.isMain);
@@ -1028,6 +1077,16 @@ function cmdDoctor(branch?: string, showSkills: boolean = false) {
       }
     }
 
+    // Missing host-side node_modules (editor tooling)
+    const telecineDir = join(worktreeDir, 'telecine');
+    const elementsDir = join(worktreeDir, 'elements');
+    if (wt.scope !== 'elements' && existsSync(telecineDir) && !hasHostTypes(telecineDir)) {
+      issues.push({ msg: 'telecine/node_modules missing on host — editor TypeScript will fail. Fix: worktree editor-deps ' + wt.branch, skill: 'monorepo-setup-worktrees', section: 'Editor tooling' });
+    }
+    if (existsSync(elementsDir) && !hasHostTypes(elementsDir)) {
+      issues.push({ msg: 'elements/node_modules missing on host — editor TypeScript will fail. Fix: worktree editor-deps ' + wt.branch, skill: 'monorepo-setup-worktrees', section: 'Editor tooling' });
+    }
+
     if (issues.length === 0) {
       console.log(chalk.green('  ✓ No issues\n'));
     } else {
@@ -1069,6 +1128,7 @@ ${chalk.bold('Inspect:')}
   ${chalk.cyan('shell')} <branch> [service]     Open shell in container (default: runner)
   ${chalk.cyan('infra')} [start|stop|restart|status]  Manage shared Traefik/Postgres
   ${chalk.cyan('doctor')} [branch] [--skills]   Diagnose issues + orphaned containers
+  ${chalk.cyan('editor-deps')} [branch]         Install host-side node_modules for editor tooling
   ${chalk.cyan('deps')} [--workspace=elements|telecine|all] [--format=text|json|mermaid]
 `);
 }
@@ -1158,6 +1218,12 @@ async function main() {
         const showSkills = rest.includes('--skills');
         const branch = rest.find((a) => !a.startsWith('-'));
         cmdDoctor(branch, showSkills);
+        break;
+      }
+
+      case 'editor-deps': {
+        const branch = rest.find((a) => !a.startsWith('-'));
+        await cmdEditorDeps(branch);
         break;
       }
 

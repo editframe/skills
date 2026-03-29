@@ -31,6 +31,7 @@ worktree upgrade <branch> <scope>      # Escalate scope (elements→web→render
 worktree smoke <branch>                # One-shot render verification
 worktree logs [branch] [options]       # View logs
 worktree doctor [branch] [--skills]    # Diagnose issues
+worktree editor-deps [branch]          # Install host-side node_modules for editor tooling
 worktree deps [--workspace=...]        # Show dependency graph
 ```
 
@@ -124,6 +125,12 @@ Never include `dev-projects/` in the URL path.
 Render development workflow: stay at `web` scope, run unit tests directly, use `worktree smoke` as the merge gate rather than keeping a full render stack running all day.
 
 `scheduler-go` is a pre-built Go image not managed by docker-compose. `worktree smoke` builds it automatically on first run. `scripts/build-runner-images` also builds it.
+
+## Editor tooling
+
+Docker containers use named volumes for `node_modules`, which are invisible to the host filesystem. The host-side editor (VS Code, Cursor, etc.) needs its own `node_modules` to resolve TypeScript types and JSX intrinsics.
+
+`worktree create` installs host-side deps automatically with `npm install --ignore-scripts`. For existing worktrees missing host types, run `worktree editor-deps <branch>`. `worktree doctor` detects and reports missing host-side types.
 
 ## Troubleshooting
 
