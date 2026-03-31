@@ -4,5 +4,17 @@
     "external_directory": {
       "~/Editframe/worktrees/**": "allow"
     }
+  },
+  "compaction": {
+    "models": {
+      "anthropic/claude-sonnet-4-6": {
+        "token_threshold": 200000,
+        "context_threshold": 0.30
+      },
+      "anthropic/claude-opus  -4-6": {
+        "token_threshold": 200000,
+        "context_threshold": 0.30
+      }
+    }
   }
 }
