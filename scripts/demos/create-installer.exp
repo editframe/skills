@@ -1,18 +1,23 @@
 set timeout 120
 set env(npm_config_user_agent) "npm"
 
-set CREATE_BIN [exec dirname [info script]]/../../../elements/packages/create/dist/index.js
+# CREATE_BIN is passed in from the shell wrapper via the environment
+set CREATE_BIN $env(CREATE_BIN)
 
-# Run from /tmp so the output path is clean and no leftover dir causes an overwrite prompt
-cd /tmp
-exec rm -rf /tmp/my-video-app
+# Run from ~ so output paths show as ~/my-video-app
+cd ~
+exec rm -rf ~/my-video-app
 
 spawn node $CREATE_BIN
 
-# Let the directory prompt sit for a beat before typing
+# Let the directory prompt sit for a beat, then type the name character by character
 expect "Enter the name of the directory"
-sleep 1.5
-send "my-video-app\r"
+sleep 1.2
+foreach ch [split "my-video-app" ""] {
+    send -- $ch
+    after 80
+}
+send "\r"
 
 # Pause on the template select so user can read options
 expect "Choose a starter template"

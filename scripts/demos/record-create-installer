@@ -14,7 +14,10 @@ CAST="$(mktemp /tmp/create-installer-XXXXXX.cast)"
 trap 'rm -f "$CAST"' EXIT
 
 # Clean any leftover demo directories from previous runs
-rm -rf /tmp/my-video-app
+rm -rf ~/my-video-app
+
+# Pass the create binary path to the expect script via env
+export CREATE_BIN="$MONOREPO/elements/packages/create/dist/index.js"
 
 # Record
 "$SCRIPTS/record-cast" \
@@ -23,12 +26,11 @@ rm -rf /tmp/my-video-app
   --cols 100 \
   --rows 28
 
-# Strip "spawn node ..." artifact, scrub /tmp path from output, clamp install gap,
+# Strip "spawn node ..." artifact, collapse the npm install spinner to 0.5s,
 # then prepend a convincing shell prompt
 "$SCRIPTS/cast-edit" \
   --strip-first 1 \
-  --replace "/tmp/my-video-app:~/my-video-app" \
-  --clamp-gaps 0.5 \
+  --collapse-spinner "Installing dependencies with npm:0.5" \
   --prepend-prompt $'\x1b[32m~\x1b[0m $ :npm create @editframe@latest' \
   "$CAST"
 

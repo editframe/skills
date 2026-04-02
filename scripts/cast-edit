@@ -16,8 +16,12 @@
 #   --replace OLD:NEW        Replace all occurrences of OLD with NEW in output text.
 #                            Can be specified multiple times.
 #   --clamp-gaps SECS        Compress any gap longer than SECS to exactly SECS.
+#   --collapse-spinner PAT:SECS
+#                            Find runs of output events whose text contains PAT,
+#                            keep only the first frame of the run, then place the
+#                            next non-matching event SECS after the first frame.
 
-import argparse, json, random, sys
+import argparse, json, random, re, sys
 
 def parse_args():
     p = argparse.ArgumentParser()
@@ -31,6 +35,7 @@ def parse_args():
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--replace", action="append", default=[], metavar="OLD:NEW")
     p.add_argument("--clamp-gaps", type=float, default=None, metavar="SECS")
+    p.add_argument("--collapse-spinner", metavar="PAT:SECS")
     return p.parse_args()
 
 def load(path):
@@ -123,6 +128,49 @@ def clamp_gaps(events, max_gap):
             result.append(events[i][:])
     return result
 
+def collapse_spinner(events, pattern, gap_secs):
+    """Remove all events between the first event containing pattern and the first
+    event that does NOT contain pattern after that, keeping only the first matching
+    frame. Then place the post-spinner event gap_secs after the first frame.
+
+    This handles spinners whose frames are interleaved with control-code-only events
+    by cutting from the first spinner frame up to (but not including) the first event
+    that contains neither the pattern nor only ANSI control codes."""
+    # Heuristic: an event is "part of the spinner region" if it contains the pattern,
+    # OR if it contains only ANSI escape sequences / whitespace (pure control frame)
+    # and appears between spinner frames.
+    import re as _re
+    # Matches strings that are entirely ANSI CSI/OSC sequences, CR, LF, or empty
+    ctrl_only = _re.compile(r'^(\x1b(\[[0-9;?]*[A-Za-z]|\][^\x07]*\x07)|[\r\n])*$')
+
+    result = []
+    i = 0
+    while i < len(events):
+        e = events[i]
+        if e[1] == "o" and pattern in e[2]:
+            # Found the start of a spinner — keep this first frame
+            first_t = e[0]
+            result.append(e)
+            i += 1
+            # Skip everything that is either a spinner frame or a control-only frame
+            while i < len(events):
+                ne = events[i]
+                if ne[1] == "o" and (pattern in ne[2] or ctrl_only.match(ne[2])):
+                    i += 1
+                else:
+                    break
+            # Shift remaining events so the next event lands at first_t + gap_secs
+            if i < len(events):
+                old_t = events[i][0]
+                new_t = first_t + gap_secs
+                shift = old_t - new_t
+                for j in range(i, len(events)):
+                    events[j][0] -= shift
+        else:
+            result.append(e)
+            i += 1
+    return result
+
 def write(path, header, events):
     lines = [json.dumps(header) + "\n"]
     for e in relative(events):
@@ -156,6 +204,12 @@ def main():
 
     if args.clamp_gaps is not None:
         events = clamp_gaps(events, args.clamp_gaps)
+
+    if args.collapse_spinner:
+        idx = args.collapse_spinner.rindex(":")
+        pat = args.collapse_spinner[:idx]
+        secs = float(args.collapse_spinner[idx+1:])
+        events = collapse_spinner(events, pat, secs)
 
     if args.prepend_prompt:
         events = prepend_prompt(
