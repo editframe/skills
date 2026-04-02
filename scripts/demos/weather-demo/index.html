@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" class="h-screen w-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Menlo Oaks Weather</title>
+    <script type="module" src="./src/index.js"></script>
+    <link rel="stylesheet" href="./src/styles.css" />
+    <style>
+      @keyframes fade-up {
+        from { opacity: 0; transform: translateY(32px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes fade-in {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+      }
+      @keyframes bar-grow {
+        from { transform: scaleY(0); }
+        to   { transform: scaleY(1); }
+      }
+      @keyframes slide-right {
+        from { transform: scaleX(0); }
+        to   { transform: scaleX(1); }
+      }
+      @keyframes count-up {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+    </style>
+  </head>
+  <body class="h-full w-full m-0 p-0 bg-black">
+    <ef-timegroup
+      workbench
+      mode="sequence"
+      class="w-[1920px] h-[1080px] bg-[#0a0a0f] relative overflow-hidden font-sans"
+    >
+
+      <!-- Scene 1: Title card -->
+      <ef-timegroup mode="fixed" duration="3s" class="absolute w-full h-full flex flex-col items-center justify-center bg-[#0a0a0f]">
+        <!-- Background gradient blobs -->
+        <div class="absolute inset-0 overflow-hidden">
+          <div class="absolute top-[-200px] left-[-200px] w-[800px] h-[800px] rounded-full bg-[#1a3a6e] opacity-30 blur-[120px]"
+               style="animation: fade-in 1.5s ease-out both;"></div>
+          <div class="absolute bottom-[-200px] right-[-200px] w-[600px] h-[600px] rounded-full bg-[#0e2a4a] opacity-40 blur-[100px]"
+               style="animation: fade-in 2s ease-out 0.3s both;"></div>
+        </div>
+        <ef-text
+          split="word"
+          class="relative text-[120px] font-black tracking-tighter text-white leading-none"
+          style="animation: fade-up 0.7s cubic-bezier(0.16,1,0.3,1) both; animation-delay: calc(var(--ef-word-index) * 120ms);"
+        >MENLO OAKS</ef-text>
+        <ef-text
+          split="word"
+          class="relative text-[48px] font-light tracking-[0.3em] text-[#4a9eff] uppercase mt-4"
+          style="animation: fade-up 0.6s cubic-bezier(0.16,1,0.3,1) both; animation-delay: calc(0.4s + var(--ef-word-index) * 80ms);"
+        >HOURLY FORECAST</ef-text>
+        <div class="relative mt-8 w-48 h-[3px] bg-[#4a9eff] origin-left"
+             style="animation: slide-right 0.8s cubic-bezier(0.16,1,0.3,1) 1s both;"></div>
+        <ef-text
+          class="relative text-2xl text-white/50 mt-6 tracking-widest"
+          style="animation: fade-in 0.6s ease-out 1.4s both;"
+        >CALIFORNIA · TODAY</ef-text>
+      </ef-timegroup>
+
+      <!-- Scene 2: Temperature bars -->
+      <ef-timegroup mode="fixed" duration="8s" class="absolute w-full h-full bg-[#0a0a0f] flex flex-col justify-between px-20 py-16">
+        <div class="flex items-center justify-between">
+          <ef-text class="text-[56px] font-black text-white tracking-tight"
+                   style="animation: fade-up 0.5s cubic-bezier(0.16,1,0.3,1) both;">
+            Temperature
+          </ef-text>
+          <ef-text class="text-2xl text-[#4a9eff] tracking-widest font-light"
+                   style="animation: fade-in 0.5s ease-out 0.2s both;">
+            °F · NEXT 12 HOURS
+          </ef-text>
+        </div>
+
+        <!-- Bar chart -->
+        <div class="flex items-end gap-6 flex-1 mt-8 mb-4">
+          <!-- Hour bars - data baked in by the build script -->
+          <div class="flex flex-col items-center gap-3 flex-1" style="animation: fade-in 0.4s ease-out 0.1s both;">
+            <ef-text class="text-2xl font-bold text-white">57°</ef-text>
+            <div class="w-full bg-[#1a2a4a] rounded-t-lg overflow-hidden" style="height: 280px;">
+              <div class="w-full bg-gradient-to-t from-[#1e5fa8] to-[#4a9eff] rounded-t-lg origin-bottom"
+                   style="height: 52%; animation: bar-grow 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.3s both;"></div>
+            </div>
+            <ef-text class="text-xl text-white/50 font-mono">12am</ef-text>
+          </div>
+          <div class="flex flex-col items-center gap-3 flex-1" style="animation: fade-in 0.4s ease-out 0.2s both;">
+            <ef-text class="text-2xl font-bold text-white">57°</ef-text>
+            <div class="w-full bg-[#1a2a4a] rounded-t-lg overflow-hidden" style="height: 280px;">
+              <div class="w-full bg-gradient-to-t from-[#1e5fa8] to-[#4a9eff] rounded-t-lg origin-bottom"
+                   style="height: 52%; animation: bar-grow 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.4s both;"></div>
+            </div>
+            <ef-text class="text-xl text-white/50 font-mono">1am</ef-text>
+          </div>
+          <div class="flex flex-col items-center gap-3 flex-1" style="animation: fade-in 0.4s ease-out 0.3s both;">
+            <ef-text class="text-2xl font-bold text-white">55°</ef-text>
+            <div class="w-full bg-[#1a2a4a] rounded-t-lg overflow-hidden" style="height: 280px;">
+              <div class="w-full bg-gradient-to-t from-[#1e5fa8] to-[#4a9eff] rounded-t-lg origin-bottom"
+                   style="height: 45%; animation: bar-grow 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.5s both;"></div>
+            </div>
+            <ef-text class="text-xl text-white/50 font-mono">2am</ef-text>
+          </div>
+          <div class="flex flex-col items-center gap-3 flex-1" style="animation: fade-in 0.4s ease-out 0.4s both;">
+            <ef-text class="text-2xl font-bold text-white">55°</ef-text>
+            <div class="w-full bg-[#1a2a4a] rounded-t-lg overflow-hidden" style="height: 280px;">
+              <div class="w-full bg-gradient-to-t from-[#1e5fa8] to-[#4a9eff] rounded-t-lg origin-bottom"
+                   style="height: 42%; animation: bar-grow 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.6s both;"></div>
+            </div>
+            <ef-text class="text-xl text-white/50 font-mono">3am</ef-text>
+          </div>
+          <div class="flex flex-col items-center gap-3 flex-1" style="animation: fade-in 0.4s ease-out 0.5s both;">
+            <ef-text class="text-2xl font-bold text-white">54°</ef-text>
+            <div class="w-full bg-[#1a2a4a] rounded-t-lg overflow-hidden" style="height: 280px;">
+              <div class="w-full bg-gradient-to-t from-[#1e5fa8] to-[#4a9eff] rounded-t-lg origin-bottom"
+                   style="height: 40%; animation: bar-grow 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.7s both;"></div>
+            </div>
+            <ef-text class="text-xl text-white/50 font-mono">4am</ef-text>
+          </div>
+          <div class="flex flex-col items-center gap-3 flex-1" style="animation: fade-in 0.4s ease-out 0.6s both;">
+            <ef-text class="text-2xl font-bold text-white">57°</ef-text>
+            <div class="w-full bg-[#1a2a4a] rounded-t-lg overflow-hidden" style="height: 280px;">
+              <div class="w-full bg-gradient-to-t from-[#1e5fa8] to-[#4a9eff] rounded-t-lg origin-bottom"
+                   style="height: 50%; animation: bar-grow 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.8s both;"></div>
+            </div>
+            <ef-text class="text-xl text-white/50 font-mono">5am</ef-text>
+          </div>
+          <div class="flex flex-col items-center gap-3 flex-1" style="animation: fade-in 0.4s ease-out 0.7s both;">
+            <ef-text class="text-2xl font-bold text-[#ffd700]">56°</ef-text>
+            <div class="w-full bg-[#1a2a4a] rounded-t-lg overflow-hidden" style="height: 280px;">
+              <div class="w-full bg-gradient-to-t from-[#8a6800] to-[#ffd700] rounded-t-lg origin-bottom"
+                   style="height: 48%; animation: bar-grow 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.9s both;"></div>
+            </div>
+            <ef-text class="text-xl text-[#ffd700]/70 font-mono">6am ☀</ef-text>
+          </div>
+          <div class="flex flex-col items-center gap-3 flex-1" style="animation: fade-in 0.4s ease-out 0.8s both;">
+            <ef-text class="text-2xl font-bold text-[#ffd700]">56°</ef-text>
+            <div class="w-full bg-[#1a2a4a] rounded-t-lg overflow-hidden" style="height: 280px;">
+              <div class="w-full bg-gradient-to-t from-[#8a6800] to-[#ffd700] rounded-t-lg origin-bottom"
+                   style="height: 48%; animation: bar-grow 0.6s cubic-bezier(0.34,1.56,0.64,1) 1.0s both;"></div>
+            </div>
+            <ef-text class="text-xl text-[#ffd700]/70 font-mono">7am</ef-text>
+          </div>
+          <div class="flex flex-col items-center gap-3 flex-1" style="animation: fade-in 0.4s ease-out 0.9s both;">
+            <ef-text class="text-2xl font-bold text-[#ffd700]">58°</ef-text>
+            <div class="w-full bg-[#1a2a4a] rounded-t-lg overflow-hidden" style="height: 280px;">
+              <div class="w-full bg-gradient-to-t from-[#8a6800] to-[#ffd700] rounded-t-lg origin-bottom"
+                   style="height: 55%; animation: bar-grow 0.6s cubic-bezier(0.34,1.56,0.64,1) 1.1s both;"></div>
+            </div>
+            <ef-text class="text-xl text-[#ffd700]/70 font-mono">8am</ef-text>
+          </div>
+          <div class="flex flex-col items-center gap-3 flex-1" style="animation: fade-in 0.4s ease-out 1.0s both;">
+            <ef-text class="text-2xl font-bold text-[#ff7c4a]">60°</ef-text>
+            <div class="w-full bg-[#1a2a4a] rounded-t-lg overflow-hidden" style="height: 280px;">
+              <div class="w-full bg-gradient-to-t from-[#8a3000] to-[#ff7c4a] rounded-t-lg origin-bottom"
+                   style="height: 65%; animation: bar-grow 0.6s cubic-bezier(0.34,1.56,0.64,1) 1.2s both;"></div>
+            </div>
+            <ef-text class="text-xl text-[#ff7c4a]/70 font-mono">9am</ef-text>
+          </div>
+          <div class="flex flex-col items-center gap-3 flex-1" style="animation: fade-in 0.4s ease-out 1.1s both;">
+            <ef-text class="text-2xl font-bold text-[#ff7c4a]">62°</ef-text>
+            <div class="w-full bg-[#1a2a4a] rounded-t-lg overflow-hidden" style="height: 280px;">
+              <div class="w-full bg-gradient-to-t from-[#8a3000] to-[#ff7c4a] rounded-t-lg origin-bottom"
+                   style="height: 72%; animation: bar-grow 0.6s cubic-bezier(0.34,1.56,0.64,1) 1.3s both;"></div>
+            </div>
+            <ef-text class="text-xl text-[#ff7c4a]/70 font-mono">10am</ef-text>
+          </div>
+          <div class="flex flex-col items-center gap-3 flex-1" style="animation: fade-in 0.4s ease-out 1.2s both;">
+            <ef-text class="text-2xl font-bold text-[#ff4a4a]">64°</ef-text>
+            <div class="w-full bg-[#1a2a4a] rounded-t-lg overflow-hidden" style="height: 280px;">
+              <div class="w-full bg-gradient-to-t from-[#8a0000] to-[#ff4a4a] rounded-t-lg origin-bottom"
+                   style="height: 82%; animation: bar-grow 0.6s cubic-bezier(0.34,1.56,0.64,1) 1.4s both;"></div>
+            </div>
+            <ef-text class="text-xl text-[#ff4a4a]/70 font-mono">11am</ef-text>
+          </div>
+        </div>
+      </ef-timegroup>
+
+      <!-- Scene 3: Stats card / summary -->
+      <ef-timegroup mode="fixed" duration="4s" class="absolute w-full h-full bg-[#0a0a0f] flex flex-col items-center justify-center gap-12">
+        <div class="absolute inset-0 overflow-hidden">
+          <div class="absolute top-[100px] right-[100px] w-[500px] h-[500px] rounded-full bg-[#1a3a6e] opacity-20 blur-[100px]"></div>
+        </div>
+
+        <ef-text class="relative text-[52px] font-black text-white tracking-tight"
+                 style="animation: fade-up 0.5s cubic-bezier(0.16,1,0.3,1) both;">
+          TODAY'S RANGE
+        </ef-text>
+
+        <div class="relative flex items-center gap-20">
+          <div class="flex flex-col items-center gap-2" style="animation: fade-up 0.5s cubic-bezier(0.16,1,0.3,1) 0.2s both;">
+            <ef-text class="text-[100px] font-black text-[#4a9eff] leading-none">54°</ef-text>
+            <ef-text class="text-2xl text-white/40 tracking-widest">LOW</ef-text>
+          </div>
+          <div class="w-[3px] h-32 bg-white/20 rounded-full" style="animation: fade-in 0.4s ease-out 0.4s both;"></div>
+          <div class="flex flex-col items-center gap-2" style="animation: fade-up 0.5s cubic-bezier(0.16,1,0.3,1) 0.3s both;">
+            <ef-text class="text-[100px] font-black text-[#ff4a4a] leading-none">64°</ef-text>
+            <ef-text class="text-2xl text-white/40 tracking-widest">HIGH</ef-text>
+          </div>
+        </div>
+
+        <div class="relative flex items-center gap-8" style="animation: fade-up 0.5s cubic-bezier(0.16,1,0.3,1) 0.5s both;">
+          <div class="px-8 py-4 bg-[#1a2a4a] rounded-full flex items-center gap-3">
+            <ef-text class="text-2xl text-white">💧 Precip: 5%</ef-text>
+          </div>
+          <div class="px-8 py-4 bg-[#1a2a4a] rounded-full flex items-center gap-3">
+            <ef-text class="text-2xl text-white">☁ Partly Cloudy</ef-text>
+          </div>
+          <div class="px-8 py-4 bg-[#1a2a4a] rounded-full flex items-center gap-3">
+            <ef-text class="text-2xl text-white">📍 Menlo Oaks, CA</ef-text>
+          </div>
+        </div>
+      </ef-timegroup>
+
+    </ef-timegroup>
+  </body>
+</html>

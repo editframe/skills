@@ -1,0 +1,9 @@
+{
+  "name": "weather-demo",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@editframe/elements": "*",
+    "@editframe/vite-plugin": "*"
+  }
+}

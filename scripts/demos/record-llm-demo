@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# Records an LLM demo video in three clips:
+#   clip-1-llm.mp4    — terminal showing Claude prompted + writing + rendering
+#   clip-2-output.mp4 — the actual rendered weather video
+#
+# Usage: scripts/demos/record-llm-demo [output-dir]
+#   output-dir defaults to /tmp/llm-demo
+
+set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPTS="$(cd "$SCRIPT_DIR/.." && pwd)"
+MONOREPO="$(cd "$SCRIPTS/.." && pwd)"
+
+OUT_DIR="${1:-/tmp/llm-demo}"
+mkdir -p "$OUT_DIR"
+
+CREATE_BIN="$MONOREPO/elements/packages/create/dist/index.js"
+WORK_DIR="$OUT_DIR/weather-composition"
+
+# ── 1. Scaffold a fresh project ───────────────────────────────────────────────
+echo "→ Scaffolding project..."
+rm -rf "$WORK_DIR"
+cd "$OUT_DIR"
+node "$CREATE_BIN" --directory weather-composition --yes
+cd "$WORK_DIR"
+
+# ── 2. Fetch live weather data ────────────────────────────────────────────────
+echo "→ Fetching weather data..."
+WEATHER_DATA=$(curl -s \
+  "https://api.open-meteo.com/v1/forecast?latitude=37.45&longitude=-122.18&hourly=temperature_2m,precipitation_probability,weathercode&temperature_unit=fahrenheit&forecast_days=1&timezone=America/Los_Angeles" \
+  | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+h = d['hourly']
+rows = []
+for i in range(12):
+    t = h['time'][i].split('T')[1]
+    temp = int(h['temperature_2m'][i])
+    precip = h['precipitation_probability'][i]
+    rows.append(f'{t}: {temp}F, {precip}% precip')
+print('\n'.join(rows))
+")
+
+# ── 3. Write the prompt file (avoids typing thousands of chars in expect) ─────
+cat > "$WORK_DIR/prompt.txt" << PROMPT_EOF
+You are writing an Editframe HTML video composition. Editframe uses custom HTML elements:
+- ef-timegroup (container, use mode="sequence" for scenes in order, mode="fixed" with duration="Xs" for a scene of fixed length)
+- ef-text (animated text, use split="word" or split="char" with CSS animation-delay: calc(var(--ef-word-index) * 80ms))
+- ef-video, ef-image, ef-audio for media
+The root ef-timegroup must have class="w-[1920px] h-[1080px]" for 1920x1080 output.
+
+Here is today's hourly weather forecast for Menlo Oaks, CA (next 12 hours):
+$WEATHER_DATA
+
+Write a stunning 1920x1080 weather visualization as index.html with 3 scenes:
+1. Title card (3s): Animated "MENLO OAKS / HOURLY FORECAST" with fade-up word stagger, a colored rule, location line
+2. Temperature bar chart (8s): 12 hourly bars growing up with stagger, colored by temp (blue=cool, orange/red=warm), labels
+3. Summary card (4s): Low/high temp reveal, condition pills (precipitation, description, location)
+
+Rules:
+- Dark background #0a0a0f, bold/black typography, CSS glowing gradient blobs for atmosphere
+- All animations: CSS @keyframes with animation-delay for stagger. Use "animation-fill-mode: both" on everything.
+- ef-text with split="word": style="animation: fade-up 0.6s ease both; animation-delay: calc(var(--ef-word-index) * 100ms)"
+- Plain divs: style="animation: bar-grow 0.6s ease both; animation-delay: Xs; transform-origin: bottom"
+- The src/index.js already imports @editframe/elements — do NOT modify it
+- Write ONLY to index.html
+
+Write the complete index.html now.
+PROMPT_EOF
+
+# ── 4. Record Clip 1: LLM prompt + render in single terminal session ──────────
+echo "→ Recording LLM + render session..."
+CAST="$(mktemp /tmp/llm-demo-XXXXXX.cast)"
+trap 'rm -f "$CAST"' EXIT
+
+export WORK_DIR
+export PROMPT_FILE="$WORK_DIR/prompt.txt"
+
+"$SCRIPTS/record-cast" \
+  "$SCRIPT_DIR/llm-demo.exp" \
+  "$CAST" \
+  --cols 120 \
+  --rows 36
+
+"$SCRIPTS/cast-edit" \
+  --strip-first 1 \
+  --collapse-spinner "Installing\|Rendering\|initializ:0.3" \
+  --clamp-gaps 3.0 \
+  "$CAST"
+
+node "$SCRIPTS/render-cast" \
+  --title "Terminal" \
+  --font-px 13 \
+  --idle-limit 3 \
+  "$CAST" \
+  "$OUT_DIR/clip-1-llm.mp4"
+
+# ── 5. Clip 2: the rendered weather video ─────────────────────────────────────
+if [[ -f "$WORK_DIR/output.mp4" ]]; then
+  cp "$WORK_DIR/output.mp4" "$OUT_DIR/clip-2-output.mp4"
+  echo "→ Clip 2: used output from live render"
+else
+  echo "→ Clip 2: Claude output not found — using reference composition"
+  # Use the known-good reference composition
+  cp "$SCRIPT_DIR/weather-demo/index.html" "$WORK_DIR/index.html"
+  sed -i '' 's|./src/weather-demo.ts|./src/index.js|' "$WORK_DIR/index.html" 2>/dev/null || true
+  cd "$WORK_DIR"
+  npx editframe render -o "$OUT_DIR/clip-2-output.mp4"
+fi
+
+echo ""
+echo "✔ Clips ready in $OUT_DIR:"
+ls -lh "$OUT_DIR"/*.mp4

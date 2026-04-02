@@ -1,0 +1,48 @@
+set timeout 120
+set env(npm_config_user_agent) "npm"
+
+set WORK_DIR $env(RENDER_WORK_DIR)
+
+cd $WORK_DIR
+
+spawn bash --norc --noprofile
+
+send "PS1='\\[\\033[32m\\]~\\[\\033[0m\\] \\$ ' && clear\r"
+expect "$ "
+after 800
+
+# Show we're in the project directory
+set cmd "ls"
+foreach ch [split $cmd ""] {
+    send -- $ch
+    after 60
+}
+send "\r"
+expect "$ "
+after 600
+
+# Type the render command
+set render_cmd "npx editframe render -o output.mp4"
+foreach ch [split $render_cmd ""] {
+    send -- $ch
+    after 55
+}
+after 400
+send "\r"
+
+# Wait for render to complete
+expect {
+    -timeout 120
+    "Render complete" {
+        after 2000
+    }
+    "render complete" {
+        after 2000
+    }
+    timeout {
+        send_error "Timed out waiting for render\n"
+    }
+}
+
+send "exit\r"
+expect eof

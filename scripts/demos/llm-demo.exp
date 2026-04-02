@@ -1,0 +1,78 @@
+set timeout 300
+set env(npm_config_user_agent) "npm"
+
+# Set by the caller
+set WORK_DIR $env(WORK_DIR)
+set PROMPT_FILE $env(PROMPT_FILE)
+
+# Unique completion marker that won't appear in model output
+set DONE_MARKER "EF_CLAUDE_DONE_7x9q"
+
+cd $WORK_DIR
+
+spawn bash --norc --noprofile
+
+# Set a clear prompt
+send "PS1='ef> ' && clear\r"
+sleep 0.5
+expect "ef> "
+after 400
+
+# Type the claude command char by char — visible for the recording
+# Use a wrapper that prints the completion marker when done
+set cmd "claude -p --allowedTools Write,Bash --dangerously-skip-permissions < prompt.txt && echo $DONE_MARKER"
+foreach ch [split $cmd ""] {
+    send -- $ch
+    after 45
+}
+after 600
+send "\r"
+
+# Wait for the unique completion marker
+expect {
+    -timeout 300
+    "$DONE_MARKER" {
+        # Claude finished and wrote the file
+    }
+    timeout {
+        send_error "Timed out waiting for claude to finish\n"
+        exit 1
+    }
+}
+
+# Wait for the shell to return to prompt after the echo
+expect {
+    -timeout 10
+    "ef> " {}
+    timeout {}
+}
+after 1000
+
+# Now type and run the render command
+set render_cmd "npx editframe render -o output.mp4"
+foreach ch [split $render_cmd ""] {
+    send -- $ch
+    after 55
+}
+after 500
+send "\r"
+
+# Wait for render to complete
+expect {
+    -timeout 120
+    "Render complete" {
+        after 2000
+    }
+    "render complete" {
+        after 2000
+    }
+    timeout {
+        send_error "Timed out waiting for render\n"
+        exit 1
+    }
+}
+
+after 1500
+
+send "exit\r"
+expect eof

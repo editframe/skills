@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# Produces the full LLM demo video:
+#   1. Records Claude writing + rendering an Editframe weather composition (Clip 1)
+#   2. The rendered weather video itself (Clip 2)
+#   3. Stitches both with title cards using Editframe
+#
+# Usage: scripts/demos/make-demo [output.mp4]
+#   output.mp4 defaults to /tmp/llm-demo/demo.mp4
+
+set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPTS="$(cd "$SCRIPT_DIR/.." && pwd)"
+MONOREPO="$(cd "$SCRIPTS/.." && pwd)"
+
+FINAL_MP4="${1:-/tmp/llm-demo/demo.mp4}"
+OUT_DIR="$(dirname "$FINAL_MP4")"
+mkdir -p "$OUT_DIR"
+
+# ── Step 1: Record the clips ──────────────────────────────────────────────────
+echo "=== Step 1: Recording clips ==="
+"$SCRIPT_DIR/record-llm-demo" "$OUT_DIR"
+
+# ── Step 2: Get durations ─────────────────────────────────────────────────────
+echo ""
+echo "=== Step 2: Building stitch composition ==="
+
+get_duration() {
+  ffprobe -v quiet -show_entries format=duration -of csv=p=0 "$1" | awk '{printf "%.3f", $1}'
+}
+
+DUR1=$(get_duration "$OUT_DIR/clip-1-llm.mp4")
+DUR2=$(get_duration "$OUT_DIR/clip-2-output.mp4")
+
+echo "  Clip 1 (LLM + render terminal): ${DUR1}s"
+echo "  Clip 2 (Weather video output):  ${DUR2}s"
+
+# ── Step 3: Scaffold stitch project ──────────────────────────────────────────
+CREATE_BIN="$MONOREPO/elements/packages/create/dist/index.js"
+STITCH_NAME="stitch-$$"
+STITCH_DIR="/tmp/$STITCH_NAME"
+trap 'rm -rf "$STITCH_DIR"' EXIT
+
+cd /tmp
+node "$CREATE_BIN" --directory "$STITCH_NAME" --yes
+cd "$STITCH_DIR"
+
+# Copy videos into src/assets so vite serves them
+mkdir -p src/assets
+cp "$OUT_DIR/clip-1-llm.mp4"    src/assets/clip-1.mp4
+cp "$OUT_DIR/clip-2-output.mp4" src/assets/clip-2.mp4
+
+# Substitute placeholders in the stitch template
+sed \
+  -e "s|VIDEO_CLIP_1|/assets/clip-1.mp4|g" \
+  -e "s|VIDEO_CLIP_2|/assets/clip-2.mp4|g" \
+  -e "s|CLIP_1_DUR|$DUR1|g" \
+  -e "s|CLIP_2_DUR|$DUR2|g" \
+  "$SCRIPT_DIR/stitch-demo.html" \
+  > "$STITCH_DIR/index.html"
+
+# Remove unused placeholders
+sed -i '' \
+  -e '/VIDEO_CLIP_3/d' \
+  -e '/CLIP_3_DUR/d' \
+  "$STITCH_DIR/index.html" 2>/dev/null || true
+
+# ── Step 4: Render the stitch ─────────────────────────────────────────────────
+echo ""
+echo "=== Step 3: Rendering final composition ==="
+cd "$STITCH_DIR"
+npx editframe render -o "$FINAL_MP4"
+
+echo ""
+echo "✔ Done: $FINAL_MP4"
+ls -lh "$FINAL_MP4"
