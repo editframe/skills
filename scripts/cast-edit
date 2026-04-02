@@ -36,6 +36,8 @@ def parse_args():
     p.add_argument("--replace", action="append", default=[], metavar="OLD:NEW")
     p.add_argument("--clamp-gaps", type=float, default=None, metavar="SECS")
     p.add_argument("--collapse-spinner", metavar="PAT:SECS")
+    p.add_argument("--strip-until", metavar="PAT",
+                   help="Remove all output events before the first one containing PAT")
     return p.parse_args()
 
 def load(path):
@@ -183,6 +185,19 @@ def main():
 
     # Work in absolute time throughout
     events = absolute(events)
+
+    if args.strip_until:
+        pat = args.strip_until
+        # Find the first output event containing the pattern
+        start = 0
+        for i, e in enumerate(events):
+            if e[1] == "o" and pat in e[2]:
+                start = i
+                break
+        # Drop all events before it; shift timestamps so it starts near t=0
+        if start > 0:
+            t0 = events[start][0]
+            events = [[e[0] - t0 + 0.1, e[1], e[2]] for e in events[start:]]
 
     if args.strip_first:
         # Only strip output ("o") events; preserve resize/input events

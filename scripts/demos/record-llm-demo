@@ -43,29 +43,17 @@ print('\n'.join(rows))
 
 # ── 3. Write the prompt file (avoids typing thousands of chars in expect) ─────
 cat > "$WORK_DIR/prompt.txt" << PROMPT_EOF
-You are writing an Editframe HTML video composition. Editframe uses custom HTML elements:
-- ef-timegroup (container, use mode="sequence" for scenes in order, mode="fixed" with duration="Xs" for a scene of fixed length)
-- ef-text (animated text, use split="word" or split="char" with CSS animation-delay: calc(var(--ef-word-index) * 80ms))
-- ef-video, ef-image, ef-audio for media
-The root ef-timegroup must have class="w-[1920px] h-[1080px]" for 1920x1080 output.
-
-Here is today's hourly weather forecast for Menlo Oaks, CA (next 12 hours):
+Write an Editframe HTML weather forecast video for Menlo Oaks CA. Today's data:
 $WEATHER_DATA
 
-Write a stunning 1920x1080 weather visualization as index.html with 3 scenes:
-1. Title card (3s): Animated "MENLO OAKS / HOURLY FORECAST" with fade-up word stagger, a colored rule, location line
-2. Temperature bar chart (8s): 12 hourly bars growing up with stagger, colored by temp (blue=cool, orange/red=warm), labels
-3. Summary card (4s): Low/high temp reveal, condition pills (precipitation, description, location)
+Use ef-timegroup (mode="sequence"), ef-text (split="word"). Root: class="w-[1920px] h-[1080px]".
 
-Rules:
-- Dark background #0a0a0f, bold/black typography, CSS glowing gradient blobs for atmosphere
-- All animations: CSS @keyframes with animation-delay for stagger. Use "animation-fill-mode: both" on everything.
-- ef-text with split="word": style="animation: fade-up 0.6s ease both; animation-delay: calc(var(--ef-word-index) * 100ms)"
-- Plain divs: style="animation: bar-grow 0.6s ease both; animation-delay: Xs; transform-origin: bottom"
-- The src/index.js already imports @editframe/elements — do NOT modify it
-- Write ONLY to index.html
+3 scenes:
+1. Title 3s — huge "MENLO OAKS", "HOURLY FORECAST", gradient rule, date. Word-stagger fade-up.
+2. Bar chart 8s — 12 temp bars staggered grow-up. Scale heights to data range. Blue=cool, orange=warm. Labels above/below.
+3. Summary 4s — giant LOW/HIGH temps with gradient text, condition pills, tagline.
 
-Write the complete index.html now.
+Dark #0a0a0f bg, atmospheric blobs, animation-fill-mode: both. Do not touch src/index.js. No explanation — write ONLY the file, no text before or after.
 PROMPT_EOF
 
 # ── 4. Record Clip 1: LLM prompt + render in single terminal session ──────────
@@ -79,19 +67,29 @@ export PROMPT_FILE="$WORK_DIR/prompt.txt"
 "$SCRIPTS/record-cast" \
   "$SCRIPT_DIR/llm-demo.exp" \
   "$CAST" \
-  --cols 120 \
-  --rows 36
+  --cols 100 \
+  --rows 30
 
+# Strip the shell setup noise, replace internal markers, compress gaps,
+# then prepend a clean human-readable prompt being typed.
+# Strip up to (but not including) the head -40 index.html output showing actual code,
+# then prepend a clean command being typed followed by a "Writing..." line.
 "$SCRIPTS/cast-edit" \
-  --strip-first 1 \
-  --collapse-spinner "Installing\|Rendering\|initializ:0.3" \
-  --clamp-gaps 3.0 \
+  --strip-until "ef-timegroup" \
+  --replace "EF_CLAUDE_DONE_7x9q:" \
+  --clamp-gaps 2.0 \
+  --prepend-prompt $'~/weather-composition $ :claude "make a weather forecast video for Menlo Oaks CA" > index.html' \
+  --prepend-pause 1.0 \
+  --post-pause 0.5 \
   "$CAST"
 
+# Render fullbleed 1920x1080 — terminal fills the entire frame
 node "$SCRIPTS/render-cast" \
-  --title "Terminal" \
-  --font-px 13 \
-  --idle-limit 3 \
+  --theme "dracula" \
+  --font-px 20 \
+  --idle-limit 2 \
+  --width 1920 \
+  --height 1080 \
   "$CAST" \
   "$OUT_DIR/clip-1-llm.mp4"
 

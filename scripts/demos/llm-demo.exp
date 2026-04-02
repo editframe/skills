@@ -1,25 +1,24 @@
 set timeout 300
+set env(TERM) "xterm-256color"
+set env(COLORTERM) "truecolor"
 set env(npm_config_user_agent) "npm"
 
-# Set by the caller
 set WORK_DIR $env(WORK_DIR)
 set PROMPT_FILE $env(PROMPT_FILE)
-
-# Unique completion marker that won't appear in model output
 set DONE_MARKER "EF_CLAUDE_DONE_7x9q"
 
 cd $WORK_DIR
 
-spawn bash --norc --noprofile
+# Use zsh — clean on macOS, no upgrade warnings
+spawn zsh --no-rcs
 
-# Set a clear prompt
-send "PS1='ef> ' && clear\r"
-sleep 0.5
-expect "ef> "
-after 400
+# Set a clean prompt that looks like a real project directory: ~/weather-composition $
+send "PROMPT='%F{green}~/weather-composition%f %# '; setopt PROMPT_SUBST; clear\r"
+sleep 0.4
+expect "% "
+after 500
 
-# Type the claude command char by char — visible for the recording
-# Use a wrapper that prints the completion marker when done
+# Type the claude command char by char
 set cmd "claude -p --allowedTools Write,Bash --dangerously-skip-permissions < prompt.txt && echo $DONE_MARKER"
 foreach ch [split $cmd ""] {
     send -- $ch
@@ -28,27 +27,39 @@ foreach ch [split $cmd ""] {
 after 600
 send "\r"
 
-# Wait for the unique completion marker
+# Wait for the completion marker
 expect {
     -timeout 300
-    "$DONE_MARKER" {
-        # Claude finished and wrote the file
-    }
+    "$DONE_MARKER" {}
     timeout {
-        send_error "Timed out waiting for claude to finish\n"
+        send_error "Timed out waiting for claude\n"
         exit 1
     }
 }
 
-# Wait for the shell to return to prompt after the echo
+# Wait for shell prompt to return
 expect {
     -timeout 10
-    "ef> " {}
+    "% " {}
     timeout {}
 }
-after 1000
+after 600
 
-# Now type and run the render command
+# Show a peek at the written file — viewer sees real HTML code
+set peek_cmd "head -40 index.html"
+foreach ch [split $peek_cmd ""] {
+    send -- $ch
+    after 50
+}
+send "\r"
+expect {
+    -timeout 10
+    "% " {}
+    timeout {}
+}
+after 1200
+
+# Now run the render
 set render_cmd "npx editframe render -o output.mp4"
 foreach ch [split $render_cmd ""] {
     send -- $ch
@@ -57,22 +68,15 @@ foreach ch [split $render_cmd ""] {
 after 500
 send "\r"
 
-# Wait for render to complete
 expect {
     -timeout 120
-    "Render complete" {
-        after 2000
-    }
-    "render complete" {
-        after 2000
-    }
+    "Render complete" { after 2500 }
     timeout {
         send_error "Timed out waiting for render\n"
         exit 1
     }
 }
 
-after 1500
-
+after 1000
 send "exit\r"
 expect eof

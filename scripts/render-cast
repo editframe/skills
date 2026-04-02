@@ -10,6 +10,8 @@
 //   --idle-limit SECS   Compress idle gaps longer than N seconds (default: 3)
 //   --cols N            Override cols (default: from cast header)
 //   --rows N            Override rows (default: from cast header)
+//   --width N           Output video width (fullbleed mode, no window chrome)
+//   --height N          Output video height (fullbleed mode, no window chrome)
 //   --player-dir PATH   Path to asciinema-player bundle dir
 //                       (default: /tmp/ap-pkg/node_modules/asciinema-player/dist/bundle)
 
@@ -47,36 +49,83 @@ const idleLimit = parseFloat(flags["idle-limit"] ?? 3);
 const theme     = flags["theme"]               ?? "monokai";
 const title     = flags["title"]               ?? basename(castFile, ".cast");
 const playerDir = flags["player-dir"]          ?? "/tmp/ap-pkg/node_modules/asciinema-player/dist/bundle";
+const outWidth  = flags["width"]  ? parseInt(flags["width"])  : null;
+const outHeight = flags["height"] ? parseInt(flags["height"]) : null;
+const fullbleed = outWidth != null && outHeight != null;
 
 // Accumulate effective playback duration with idle clamping
 let wallTime = 0;
 for (const line of castData.trim().split("\n").filter((l) => l.startsWith("["))) {
   wallTime += Math.min(JSON.parse(line)[0], idleLimit);
 }
-const castDuration = Math.ceil(wallTime) + 3;
+const castDuration = Math.ceil(wallTime) + 8;
+
+// Sanitize cast data for safe embedding inside a <script> tag:
+// </script> sequences must be escaped so they don't terminate the enclosing script block.
+const castDataSafe = JSON.stringify(castData).replace(/<\/script>/gi, "<\\/script>");
 
 const playerJs  = readFileSync(`${playerDir}/asciinema-player.min.js`, "utf8");
 const playerCss = readFileSync(`${playerDir}/asciinema-player.css`, "utf8");
 
-// Layout constants
-const CHROME_TOP    = 44;
-const CHROME_SIDE   = 20;
-const CHROME_BOTTOM = 20;
-const CORNER        = 12;
-const SHADOW        = 40;
+// --- Layout ---
+let vpW, vpH, html;
 
-// Monospace character dimensions at fontPx
-const CHAR_W = fontPx * 0.601;
-const CHAR_H = fontPx * 1.333;
+if (fullbleed) {
+  // Full-bleed mode: terminal fills the entire frame, no window chrome
+  vpW = outWidth;
+  vpH = outHeight;
+  html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    ${playerCss}
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: ${vpW}px; height: ${vpH}px; overflow: hidden; background: #0d1117; }
+    #player { width: 100%; height: 100%; }
+    .ap-player { --term-font-size: ${fontPx}px !important; width: 100% !important; height: 100% !important; }
+    .ap-wrapper { width: 100% !important; height: 100% !important; }
+    .ap-player .ap-terminal { overflow: hidden !important; }
+  </style>
+</head>
+<body>
+  <div id="player"></div>
+  <script>${playerJs}</script>
+  <script>
+    const blob = new Blob([${castDataSafe}], { type: 'text/plain' });
+    window.__player = AsciinemaPlayer.create(URL.createObjectURL(blob), document.getElementById('player'), {
+      autoPlay: false,
+      speed: 1,
+      theme: ${JSON.stringify(theme)},
+      fit: 'both',
+      cols: ${cols},
+      rows: ${rows},
+      controls: false,
+      idleTimeLimit: ${idleLimit},
+    });
+  </script>
+</body>
+</html>`;
 
-const termW    = Math.ceil(cols * CHAR_W);
-const termH    = Math.ceil(rows * CHAR_H);
-const contentW = termW + CHROME_SIDE * 2;
-const contentH = termH + CHROME_TOP + CHROME_BOTTOM;
-const vpW      = contentW + SHADOW * 2;
-const vpH      = contentH + SHADOW * 2;
+} else {
+  // Window chrome mode (default)
+  const CHROME_TOP    = 44;
+  const CHROME_SIDE   = 20;
+  const CHROME_BOTTOM = 20;
+  const CORNER        = 12;
+  const SHADOW        = 40;
 
-const html = `<!DOCTYPE html>
+  const CHAR_W = fontPx * 0.601;
+  const CHAR_H = fontPx * 1.333;
+
+  const termW    = Math.ceil(cols * CHAR_W);
+  const termH    = Math.ceil(rows * CHAR_H);
+  const contentW = termW + CHROME_SIDE * 2;
+  const contentH = termH + CHROME_TOP + CHROME_BOTTOM;
+  vpW = contentW + SHADOW * 2;
+  vpH = contentH + SHADOW * 2;
+
+  html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -145,7 +194,7 @@ const html = `<!DOCTYPE html>
   </div>
   <script>${playerJs}</script>
   <script>
-    const blob = new Blob([${JSON.stringify(castData)}], { type: 'text/plain' });
+    const blob = new Blob([${castDataSafe}], { type: 'text/plain' });
     window.__player = AsciinemaPlayer.create(URL.createObjectURL(blob), document.getElementById('player'), {
       autoPlay: false,
       speed: 1,
@@ -159,9 +208,10 @@ const html = `<!DOCTYPE html>
   </script>
 </body>
 </html>`;
+} // end else (window chrome mode)
 
 console.log(`${castFile} → ${outFile}`);
-console.log(`  cols=${cols} rows=${rows} ${vpW}x${vpH} ~${castDuration}s`);
+console.log(`  cols=${cols} rows=${rows} ${vpW}x${vpH} ~${castDuration}s${fullbleed ? " [fullbleed]" : ""}`);
 
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({
@@ -171,7 +221,10 @@ const context = await browser.newContext({
 
 const page = await context.newPage();
 await page.setContent(html, { waitUntil: "domcontentloaded" });
-await page.waitForSelector(".ap-player", { timeout: 10000 });
+// Wait for asciinema-player to mount and for __player to be initialized
+await page.waitForFunction(() => !!window.__player, { timeout: 30000 });
+// One more tick to ensure the player has fully rendered its DOM
+await page.evaluate(() => new Promise((r) => setTimeout(r, 500)));
 
 // Two rAF ticks to ensure the window chrome is composited before playback starts
 await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
