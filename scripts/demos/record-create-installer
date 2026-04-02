@@ -14,7 +14,7 @@ CAST="$(mktemp /tmp/create-installer-XXXXXX.cast)"
 trap 'rm -f "$CAST"' EXIT
 
 # Clean any leftover demo directories from previous runs
-rm -rf /tmp/my-demo "$MONOREPO/my-demo"
+rm -rf /tmp/my-video-app
 
 # Record
 "$SCRIPTS/record-cast" \
@@ -23,15 +23,19 @@ rm -rf /tmp/my-demo "$MONOREPO/my-demo"
   --cols 100 \
   --rows 28
 
-# Strip the "spawn node ..." artifact and prepend a convincing shell prompt
+# Strip "spawn node ..." artifact, scrub /tmp path from output, clamp install gap,
+# then prepend a convincing shell prompt
 "$SCRIPTS/cast-edit" \
   --strip-first 1 \
+  --replace "/tmp/my-video-app:~/my-video-app" \
+  --clamp-gaps 0.5 \
   --prepend-prompt $'\x1b[32m~\x1b[0m $ :npm create @editframe@latest' \
   "$CAST"
 
-# Render to mp4
+# Render to mp4 — larger font for readability on landing page
 node "$SCRIPTS/render-cast" \
   --title "npm create @editframe@latest" \
+  --font-px 17 \
   "$CAST" "$OUT_MP4"
 
 echo "Done: $OUT_MP4"

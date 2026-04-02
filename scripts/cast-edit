@@ -13,6 +13,9 @@
 #   --type-speed MIN:MAX     Per-character delay range in seconds (default: 0.04:0.11)
 #   --post-pause SECS        Pause after enter before real session (default: 0.2)
 #   --seed N                 Random seed for typing variation (default: 42)
+#   --replace OLD:NEW        Replace all occurrences of OLD with NEW in output text.
+#                            Can be specified multiple times.
+#   --clamp-gaps SECS        Compress any gap longer than SECS to exactly SECS.
 
 import argparse, json, random, sys
 
@@ -26,6 +29,8 @@ def parse_args():
     p.add_argument("--type-speed", default="0.04:0.11")
     p.add_argument("--post-pause", type=float, default=0.2)
     p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--replace", action="append", default=[], metavar="OLD:NEW")
+    p.add_argument("--clamp-gaps", type=float, default=None, metavar="SECS")
     return p.parse_args()
 
 def load(path):
@@ -85,6 +90,39 @@ def prepend_prompt(events, prompt_cmd, prepend_pause, type_speed, post_pause, se
 
     return fake
 
+def apply_replace(events, replacements):
+    """Replace substrings in all output event text."""
+    result = []
+    for e in events:
+        if e[1] == "o" and replacements:
+            text = e[2]
+            for old, new in replacements:
+                text = text.replace(old, new)
+            result.append([e[0], e[1], text])
+        else:
+            result.append(e)
+    return result
+
+def clamp_gaps(events, max_gap):
+    """Compress any inter-event gap longer than max_gap to exactly max_gap."""
+    if not events:
+        return events
+    result = [events[0][:]]
+    for i in range(1, len(events)):
+        prev_t = events[i - 1][0]
+        curr_t = events[i][0]
+        gap = curr_t - prev_t
+        if gap > max_gap:
+            # Shift this event and all subsequent ones forward by (gap - max_gap)
+            squeeze = gap - max_gap
+            result.append([events[i][0] - squeeze, events[i][1], events[i][2]])
+            # Propagate squeeze to remaining events
+            for j in range(i + 1, len(events)):
+                events[j][0] -= squeeze
+        else:
+            result.append(events[i][:])
+    return result
+
 def write(path, header, events):
     lines = [json.dumps(header) + "\n"]
     for e in relative(events):
@@ -108,6 +146,16 @@ def main():
             else:
                 kept.append(e)
         events = kept
+
+    if args.replace:
+        pairs = []
+        for r in args.replace:
+            idx = r.index(":")
+            pairs.append((r[:idx], r[idx+1:]))
+        events = apply_replace(events, pairs)
+
+    if args.clamp_gaps is not None:
+        events = clamp_gaps(events, args.clamp_gaps)
 
     if args.prepend_prompt:
         events = prepend_prompt(
