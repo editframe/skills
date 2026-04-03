@@ -23,11 +23,6 @@ If you are already inside an Editframe project (i.e. the current directory has a
 |-------------------|-----|
 | Build with HTML/web components | `html` |
 | Build with React/TypeScript | `react` |
-| Integrate an animation library (AnimeJS, GSAP, etc.) | `animejs` (shows `addFrameTask` pattern) |
-| See a working composition with assets | `simple-demo` or `card-poetry` |
-| See a React composition with media | `react-demo` |
-
-**Rule of thumb:** use `html` or `react` as your real project base. Use demos only for reference — they have sample assets you'll want to replace.
 
 ## Quick Start
 
@@ -45,15 +40,6 @@ npx editframe render -o output.mp4
 ## Agent workflow note
 
 Do **not** run `npm start` in an agent context — it starts a long-running dev server that will block execution. Use `npx editframe render` directly to produce output.
-
-## Templates
-
-- `html` — Minimal HTML/CSS/JS starter
-- `react` — Minimal React/TypeScript starter
-- `simple-demo` — HTML demo with sample assets and animations
-- `react-demo` — React demo with card animations
-- `card-poetry` — HTML card animation demo with audio
-- `animejs` — AnimeJS integration demo (best reference for `addFrameTask` pattern)
 
 ## Reference
 
