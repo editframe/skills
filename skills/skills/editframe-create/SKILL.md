@@ -9,48 +9,33 @@ metadata:
   version: "1.0"
 ---
 
-# Create Editframe Project
+# Create an Editframe Project
 
-## When to use this skill
+Requires [Node.js](references/install-node.md) and [FFmpeg](references/install-ffmpeg.md).
 
-**Only use this skill to create a brand-new project from scratch.**
-
-If you are already inside an Editframe project (i.e. the current directory has a `package.json` that depends on `@editframe/elements` or `@editframe/react`, or there is an `index.html` with `<ef-timegroup>`), do **not** run `npm create @editframe`. Edit the existing files instead and use the `editframe-composition` skill.
-
-## Which template?
-
-| If you want to... | Use |
-|-------------------|-----|
-| Build with HTML/web components | `html` |
-| Build with React/TypeScript | `react` |
-
-## Quick Start
+## Create a project
 
 ```bash
-npm create @editframe -- html -d my-project -y
+npm create @editframe@latest
+```
+
+Choose `html` for a simple Vite + TypeScript setup, or `react` for Vite + React. Then:
+
+```bash
 cd my-project
+npm start
 ```
 
-Then edit `index.html` to build your composition and render to video:
+This prints a URL — open it in your browser. Your composition updates as files change.
 
-```bash
-npx editframe render -o output.mp4
-```
+## Build and render
 
-## Agent workflow note
+Put any assets into `src/assets`, or let the agent source material itself. If you know what you want:
 
-Do **not** run `npm start` in an agent context — it starts a long-running dev server that will block execution. Use `npx editframe render` directly to produce output.
+*"Use Editframe best practices to make me a video for [describe your video]."*
 
-## Reference
+Or let the agent help you figure it out:
 
-- [references/getting-started.md](references/getting-started.md) — Zero to rendered video
-- [references/templates.md](references/templates.md) — Template details and project structure
-- [references/agent-skills.md](references/agent-skills.md) — AI agent skills installation
+*"Use Editframe best practices. You're a top motion designer — help me make a launch video for my company for a new product. Ask me questions to get the perfect video, and then let's make it."*
 
-## Next Steps
-
-After creating a project, learn to build compositions:
-
-- **HTML/Web Components**: See the `editframe-composition` skill
-- **React**: See the `editframe-composition` skill
-- **CLI tools**: See the `editframe-cli` skill for rendering, previewing, and more
+Click the render button in the workbench, or run `npx editframe render -o output.mp4`.

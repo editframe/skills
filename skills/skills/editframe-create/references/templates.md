@@ -17,7 +17,7 @@ Available templates when running `npm create @editframe`.
 
 ## html
 
-Minimal HTML/CSS/JavaScript starter. Best for web component compositions.
+Vite + TypeScript starter. Best for web component compositions.
 
 ```
 my-project/
@@ -35,7 +35,7 @@ my-project/
 
 ## react
 
-Minimal React/TypeScript starter. Best for React-based compositions.
+Vite + React starter. Best for React-based compositions.
 
 ```
 my-project/
