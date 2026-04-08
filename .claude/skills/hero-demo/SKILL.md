@@ -161,6 +161,43 @@ Common patterns:
 
 When adding/editing animations, define new keyframes in `landing.css` with the `hero-` prefix.
 
+## Changelog MDX Authoring
+
+Changelog entries live in `telecine/services/web/app/content/changelogs/{version}.mdx`. Each entry uses the same component set as HeroDemo but through MDX props.
+
+### Component API
+
+**`ChangelogIntroCard`** — required props: `version`, `codename`, `title`. The `title` prop is NOT optional even though TypeScript won't enforce it at MDX authoring time. Missing `title` causes `title.trim()` to throw at runtime, breaking hydration and leaving the page as a blank placeholder. The `illustration` prop is a no-op stub kept for MDX compat.
+
+```mdx
+<ChangelogIntroCard
+  version="0.47.0"
+  codename="Mocha Relay"
+  title="Short title for the card display"
+  durationMs={4000}
+/>
+```
+
+**`ReleaseVideo`** — wraps children in its own `<Timegroup mode="contain">`. Pass scene elements as direct children via an inner `<Timegroup mode="sequence">`:
+
+```mdx
+<ReleaseVideo aspect="16/9">
+  <Timegroup mode="sequence" overlapMs={600} style={{ width: 1920, height: 1080, position: "relative" }}>
+    <ChangelogIntroCard ... />
+    <TextMoment ... />
+    <ChangelogOutroCard ... />
+  </Timegroup>
+</ReleaseVideo>
+```
+
+**`ChangelogOutroCard`** — `version` and `tagline` required. `durationMs` defaults exist.
+
+**`TextMoment`** — `headline` and `body` required. `motif`, `accentColor`, `durationMs` optional.
+
+### Pitfall: blank placeholder on page load
+
+If `ReleaseVideo` renders as a blank gray box and never hydrates into a player, the cause is almost always a runtime error in one of the scene components. `ReleaseVideo` uses `isClient` gating, so SSR always shows the placeholder — errors in scene components silently kill client hydration. Check browser console for `TypeError` on the component throwing.
+
 ## Pitfalls
 
 - **TTS CustomVoice model is broken**: Only use VoiceDesign (`generate_voice_design`). CustomVoice produces unintelligible audio.
