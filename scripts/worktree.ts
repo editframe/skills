@@ -414,21 +414,16 @@ async function cmdCreate(branch: string, scope: string = 'web') {
     process.exit(1);
   }
 
-  // Verify main worktree is on main before doing any work
-  const currentBranch = exec('git', ['branch', '--show-current']).stdout.trim();
-  if (currentBranch !== 'main') {
-    console.error(chalk.red(`Main worktree is on branch '${currentBranch || '(detached HEAD)'}', expected 'main'`));
-    console.error(chalk.dim('  New worktrees must be created from the main worktree while it is on main'));
-    process.exit(1);
-  }
-
   const spinner = ora(`Creating worktree: ${branch} (${scope})`).start();
 
   // 1. Git worktrees — fail fast if any step fails
+  const currentBranch = exec('git', ['branch', '--show-current']).stdout.trim() || 'main';
+  const baseBranch = currentBranch === 'HEAD' ? 'main' : currentBranch;
+
   const monoHasRef = exec('git', ['show-ref', '--verify', '--quiet', `refs/heads/${branch}`]).exitCode === 0;
   execOrFail(spinner, 'git', monoHasRef
     ? ['worktree', 'add', monoDir, branch]
-    : ['worktree', 'add', '-b', branch, monoDir, 'main'],
+    : ['worktree', 'add', '-b', branch, monoDir, baseBranch],
     { label: `git worktree add monorepo` });
 
   const telHasRef = exec('git', ['show-ref', '--verify', '--quiet', `refs/heads/${branch}`], { cwd: telecineMain }).exitCode === 0;
@@ -448,8 +443,6 @@ async function cmdCreate(branch: string, scope: string = 'web') {
   const ocodeSrc = join(MONOREPO_ROOT, 'opencode.json');
   const ocodeDst = join(monoDir, 'opencode.json');
   if (existsSync(ocodeSrc) && !existsSync(ocodeDst)) exec('cp', [ocodeSrc, ocodeDst]);
-
-
 
   // 3. Copy .env files
   const elemEnvSrc = join(elementsMain, '.env');
@@ -776,13 +769,6 @@ async function cmdMerge(branch: string) {
 
     const mainBranch = exec('git', ['show-ref', '--verify', '--quiet', 'refs/heads/main'], { cwd: repoDir }).exitCode === 0 ? 'main' : 'master';
 
-    // Assert the repo is on mainBranch — never do a checkout in the main worktree
-    const activeBranch = exec('git', ['branch', '--show-current'], { cwd: repoDir }).stdout.trim();
-    if (activeBranch !== mainBranch) {
-      spinner.fail(chalk.red(`${label}: expected branch '${mainBranch}', got '${activeBranch || '(detached HEAD)'}' — refusing to checkout in main worktree`));
-      process.exit(1);
-    }
-
     const alreadyMerged = exec('git', ['merge-base', '--is-ancestor', `refs/heads/${branch}`, `refs/heads/${mainBranch}`], { cwd: repoDir }).exitCode === 0;
     if (alreadyMerged) {
       console.log(chalk.gray(`  ${label}: already merged`));
@@ -795,6 +781,7 @@ async function cmdMerge(branch: string) {
       process.exit(1);
     }
 
+    exec('git', ['checkout', mainBranch], { cwd: repoDir, stdio: 'ignore' });
     const result = exec('git', ['merge', '--no-edit', branch], { cwd: repoDir });
     if (result.exitCode !== 0) {
       spinner.fail(chalk.red(`Merge conflict in ${label}`));

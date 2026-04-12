@@ -62,18 +62,32 @@ linear issue update ENG-123 -s started
 
 **On deploy to production**: Move to "In Review" only after the change is deployed and visible on the production site. Review happens on production — not on a branch, not after merging alone.
 
-The required sequence is: merge to main → deploy → verify on production → move to "In Review".
+The required sequence:
+1. Push branch to telecine, open PR, enable auto-merge
+2. CI passes → merges to main → deploy runs automatically
+3. `scripts/wait-for-telecine-action` — poll until deploy completes
+4. Verify the change is live on the production site
+5. Move to "In Review" and add a comment
 
 ```bash
-# 1. Move to In Review (use GraphQL -- CLI state names vary)
+# From worktrees/<branch>/telecine/
+git push origin <branch>
+
+# Open PR and enable auto-merge
+gh pr create --title "..." --body "..." 
+gh pr merge --auto --squash
+
+# From monorepo/ — wait for deploy
+scripts/wait-for-telecine-action
+
+# Then move to In Review
 linear api <<'GRAPHQL'
 mutation {
-  issueUpdate(id: "ENG-123", input: { stateId: "2717b5fe-9ea0-429f-8edd-cf8eabe0551d" }) { success }
+  issueUpdate(id: "EF2-123", input: { stateId: "2717b5fe-9ea0-429f-8edd-cf8eabe0551d" }) { success }
 }
 GRAPHQL
 
-# 2. Add a comment
-linear issue comment add ENG-123 -b "Deployed to production. <one-line summary of what changed>"
+linear issue comment add EF2-123 -b "Deployed to production. <one-line summary of what changed>"
 ```
 
 The comment should be a single sentence describing what was implemented or fixed, not a list of commits.
