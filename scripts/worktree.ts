@@ -799,6 +799,231 @@ async function cmdMerge(branch: string) {
   console.log(chalk.dim(`  Next: worktree remove ${branch}`));
 }
 
+// Files where we always accept main's version when merging main → branch.
+// These are generated/auto-bumped files that branches should never maintain independently.
+const AUTO_ACCEPT_MAIN_PATTERNS = [
+  /^package\.json$/,
+  /^package-lock\.json$/,
+  /\/package\.json$/,
+  /\/package-lock\.json$/,
+  /\/src\/VERSION\.ts$/,
+];
+
+function isAutoAcceptMain(file: string): boolean {
+  return AUTO_ACCEPT_MAIN_PATTERNS.some((p) => p.test(file));
+}
+
+/**
+ * Merge main into a single repo worktree directory.
+ * Returns 'ok' | 'skip' | 'conflict:<files>'
+ */
+function mergeMainIntoBranch(
+  repoMain: string,
+  wtDir: string,
+  label: string,
+): { status: 'ok' | 'skip' | 'conflict'; conflictFiles: string[] } {
+  if (!existsSync(wtDir)) return { status: 'skip', conflictFiles: [] };
+
+  const curBranch = exec('git', ['branch', '--show-current'], { cwd: wtDir }).stdout.trim();
+  if (!curBranch || curBranch === 'main') return { status: 'skip', conflictFiles: [] };
+
+  // Already has main
+  const alreadyHasMain = exec('git', ['merge-base', '--is-ancestor', 'main', curBranch], { cwd: repoMain }).exitCode === 0;
+  if (alreadyHasMain) return { status: 'skip', conflictFiles: [] };
+
+  // Branch is ancestor of main — no point merging back
+  const branchInMain = exec('git', ['merge-base', '--is-ancestor', curBranch, 'main'], { cwd: repoMain }).exitCode === 0;
+  if (branchInMain) return { status: 'skip', conflictFiles: [] };
+
+  const dirty = exec('git', ['diff-index', '--quiet', 'HEAD', '--'], { cwd: wtDir }).exitCode !== 0;
+  if (dirty) return { status: 'conflict', conflictFiles: ['(uncommitted changes)'] };
+
+  const mergeResult = exec('git', ['merge', '--no-edit', 'main'], { cwd: wtDir });
+  if (mergeResult.exitCode === 0) return { status: 'ok', conflictFiles: [] };
+
+  // There are conflicts — identify them
+  const conflictedFiles = exec('git', ['diff', '--name-only', '--diff-filter=U'], { cwd: wtDir })
+    .stdout.trim().split('\n').filter(Boolean);
+
+  // Auto-resolve files where we always take main
+  const autoResolved: string[] = [];
+  const remaining: string[] = [];
+  for (const f of conflictedFiles) {
+    if (isAutoAcceptMain(f)) {
+      exec('git', ['checkout', '--theirs', f], { cwd: wtDir });
+      exec('git', ['add', f], { cwd: wtDir });
+      autoResolved.push(f);
+    } else {
+      remaining.push(f);
+    }
+  }
+
+  if (remaining.length === 0) {
+    // All conflicts were auto-resolved
+    exec('git', ['commit', '--no-edit'], { cwd: wtDir });
+    return { status: 'ok', conflictFiles: [] };
+  }
+
+  // Real conflicts remain — abort and report
+  exec('git', ['merge', '--abort'], { cwd: wtDir });
+  return { status: 'conflict', conflictFiles: remaining };
+}
+
+async function cmdPull() {
+  const worktrees = getWorktrees();
+  const wdir = worktreesDir(MONOREPO_ROOT);
+  const telecineMain = join(wdir, 'main', 'telecine');
+  const elementsMain = join(wdir, 'main', 'elements');
+
+  // --- Step 1: fetch upstream for all repos ---
+  const fetchSpinner = ora('Fetching upstream...').start();
+
+  const monoRemotes = exec('git', ['remote']).stdout.trim().split('\n').filter(Boolean);
+  for (const remote of monoRemotes) {
+    exec('git', ['fetch', remote, 'main'], { stdio: 'ignore' });
+  }
+  if (existsSync(telecineMain)) exec('git', ['fetch', 'origin', 'main'], { cwd: telecineMain, stdio: 'ignore' });
+  if (existsSync(elementsMain)) exec('git', ['fetch', 'origin', 'main'], { cwd: elementsMain, stdio: 'ignore' });
+
+  fetchSpinner.succeed('Fetched upstream');
+
+  // --- Step 2: merge origin/main into local main for telecine and elements ---
+  const mainMergeSpinner = ora('Merging origin/main into local main...').start();
+
+  for (const [repoDir, label, remote] of [
+    [telecineMain, 'telecine', 'origin/main'],
+    [elementsMain, 'elements', 'origin/main'],
+  ] as [string, string, string][]) {
+    if (!existsSync(repoDir)) continue;
+    const upToDate = exec('git', ['merge-base', '--is-ancestor', remote, 'main'], { cwd: repoDir }).exitCode === 0;
+    if (upToDate) {
+      mainMergeSpinner.text = `${label}: already up to date`;
+      continue;
+    }
+    const dirty = exec('git', ['diff-index', '--quiet', 'HEAD', '--'], { cwd: repoDir }).exitCode !== 0;
+    if (dirty) {
+      mainMergeSpinner.fail(chalk.red(`${label}/main has uncommitted changes — cannot merge upstream`));
+      process.exit(1);
+    }
+    const result = exec('git', ['merge', '--no-edit', remote], { cwd: repoDir });
+    if (result.exitCode !== 0) {
+      mainMergeSpinner.fail(chalk.red(`Conflict merging ${remote} into ${label}/main`));
+      console.error(chalk.dim(result.stderr));
+      process.exit(1);
+    }
+    mainMergeSpinner.text = `${label}: merged ${remote}`;
+  }
+  mainMergeSpinner.succeed('Local main branches up to date');
+
+  // --- Step 3: merge main → every active worktree branch ---
+  const conflicts: Array<{ branch: string; repo: string; files: string[] }> = [];
+  const merged: string[] = [];
+  const skipped: string[] = [];
+
+  const activeBranches = worktrees.filter((w) => !w.isMain);
+  console.log(chalk.bold(`\nSyncing main → ${activeBranches.length} worktrees...\n`));
+
+  for (const wt of activeBranches) {
+    const worktreeDir = join(wt.path, '..');
+    const telecineDir = join(worktreeDir, 'telecine');
+    const elementsDir = join(worktreeDir, 'elements');
+
+    process.stdout.write(chalk.dim(`  ${wt.branch}...`));
+
+    let anyOk = false;
+    let anyConflict = false;
+
+    for (const [repoMain, wtSubDir, repoLabel] of [
+      [MONOREPO_ROOT, wt.path, 'monorepo'],
+      [telecineMain, telecineDir, 'telecine'],
+      [elementsMain, elementsDir, 'elements'],
+    ] as [string, string, string][]) {
+      const r = mergeMainIntoBranch(repoMain, wtSubDir, repoLabel);
+      if (r.status === 'ok') anyOk = true;
+      if (r.status === 'conflict') {
+        anyConflict = true;
+        conflicts.push({ branch: wt.branch, repo: repoLabel, files: r.conflictFiles });
+      }
+    }
+
+    if (anyConflict) {
+      process.stdout.write(chalk.yellow(' conflict\n'));
+    } else if (anyOk) {
+      process.stdout.write(chalk.green(' ok\n'));
+      merged.push(wt.branch);
+    } else {
+      process.stdout.write(chalk.gray(' up to date\n'));
+      skipped.push(wt.branch);
+    }
+  }
+
+  console.log('');
+  if (merged.length) console.log(chalk.green(`Merged: ${merged.length} branches`));
+  if (skipped.length) console.log(chalk.gray(`Up to date: ${skipped.length} branches`));
+  if (conflicts.length) {
+    console.log(chalk.yellow(`\nConflicts requiring manual resolution (${conflicts.length}):`));
+    for (const c of conflicts) {
+      console.log(chalk.yellow(`  ${c.branch} [${c.repo}]`));
+      for (const f of c.files) console.log(chalk.dim(`    ${f}`));
+    }
+    console.log(chalk.dim('\nResolve conflicts in the listed worktree directories, then commit.'));
+  }
+}
+
+async function cmdPrune(dryRun: boolean = false) {
+  const worktrees = getWorktrees();
+  const wdir = worktreesDir(MONOREPO_ROOT);
+  const telecineMain = join(wdir, 'main', 'telecine');
+  const elementsMain = join(wdir, 'main', 'elements');
+
+  const toRemove: WorktreeInfo[] = [];
+
+  for (const wt of worktrees.filter((w) => !w.isMain)) {
+    const worktreeDir = join(wt.path, '..');
+    const telecineDir = join(worktreeDir, 'telecine');
+    const elementsDir = join(worktreeDir, 'elements');
+
+    let fullyMerged = true;
+
+    for (const [repoMain, wtSubDir] of [
+      [MONOREPO_ROOT, wt.path],
+      [telecineMain, telecineDir],
+      [elementsMain, elementsDir],
+    ] as [string, string][]) {
+      if (!existsSync(wtSubDir)) continue;
+
+      const curBranch = exec('git', ['branch', '--show-current'], { cwd: wtSubDir }).stdout.trim();
+      if (!curBranch) continue;
+
+      const hasRef = exec('git', ['show-ref', '--verify', '--quiet', `refs/heads/${curBranch}`], { cwd: repoMain }).exitCode === 0;
+      if (!hasRef) continue;
+
+      const isMerged = exec('git', ['merge-base', '--is-ancestor', curBranch, 'main'], { cwd: repoMain }).exitCode === 0;
+      if (!isMerged) { fullyMerged = false; break; }
+    }
+
+    if (fullyMerged) toRemove.push(wt);
+  }
+
+  if (toRemove.length === 0) {
+    console.log(chalk.gray('No fully-merged worktrees to prune'));
+    return;
+  }
+
+  const prefix = dryRun ? chalk.dim('[dry-run] ') : '';
+  console.log(chalk.bold(`${dryRun ? 'Would remove' : 'Removing'} ${toRemove.length} fully-merged worktree(s):\n`));
+  for (const wt of toRemove) console.log(`  ${prefix}${wt.branch}`);
+  console.log('');
+
+  if (dryRun) return;
+
+  for (const wt of toRemove) {
+    await cmdRemove(wt.branch, true);
+  }
+
+  console.log(chalk.green(`\nPruned ${toRemove.length} worktree(s)`));
+}
+
 async function cmdSmoke(branch: string) {
   const worktrees = getWorktrees();
   const wt = requireWorktree(worktrees, branch);
@@ -1118,6 +1343,8 @@ ${chalk.bold('Lifecycle:')}
   ${chalk.cyan('remove')} <branch> [--force]    Stop containers, delete worktree + branches
   ${chalk.cyan('upgrade')} <branch> <scope>     Escalate scope (elements→web→render)
   ${chalk.cyan('merge')} <branch>               Merge branch into main across all repos
+  ${chalk.cyan('pull')}                         Fetch upstream, update local main, sync main → all worktrees
+  ${chalk.cyan('prune')} [--dry-run]            Remove worktrees whose branches are fully merged into main
   ${chalk.cyan('smoke')} <branch>               Run smoke test against render pipeline
 
 ${chalk.bold('Inspect:')}
@@ -1183,6 +1410,16 @@ async function main() {
       case 'merge':
         await cmdMerge(rest[0]);
         break;
+
+      case 'pull':
+        await cmdPull();
+        break;
+
+      case 'prune': {
+        const dryRun = rest.includes('--dry-run');
+        await cmdPrune(dryRun);
+        break;
+      }
 
       case 'smoke':
         await cmdSmoke(rest[0]);
