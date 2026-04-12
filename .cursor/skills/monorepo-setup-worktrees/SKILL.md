@@ -57,14 +57,23 @@ worktree deps [--workspace=...]        # Show dependency graph
       elements/                     # elements git worktree [branch]
 ```
 
-**The main worktree (`worktrees/main/`) must always be on the `main` branch.** Never run `git checkout`, `git switch`, or any branch-switching command in the main worktree directories. Checking out a feature branch there displaces the primary source of truth and risks losing work. All feature work goes in a dedicated branch worktree created with `worktree create`.
-
-An LLM agent is most likely to violate this by:
-- Running `git checkout <branch>` directly instead of using `worktree create`
-- Treating the main worktree like a normal single-checkout repo and switching branches to "work on" something
-- Using `git merge` patterns that require a prior checkout (the `worktree merge` command is safe — it asserts the invariant and merges without switching branches)
+**The main worktree (`worktrees/main/`) must always be on the `main` branch.** Never run `git checkout`, `git switch`, or any branch-switching command in the main worktree directories. All feature work lives in a dedicated branch worktree created with `worktree create`. An LLM agent is most likely to violate this by running `git checkout <branch>` directly, treating the main worktree like a normal single-checkout repo, or using merge patterns that require a prior checkout.
 
 `~/Editframe/monorepo` is a convenience symlink and the entry point for all worktree commands.
+
+### Working in a branch worktree as an agent
+
+An agent's working directory is fixed at launch — typically `worktrees/main/monorepo`. **There is no persistent `cd`.** After creating or identifying a branch worktree, every file edit, git command, and script invocation must use the full absolute path rooted at the branch worktree, not a relative path from the agent's cwd.
+
+Given branch `my-feature` the worktree root is `~/Editframe/worktrees/my-feature/monorepo/`. Concrete rules:
+
+- **File reads/edits**: absolute paths under `~/Editframe/worktrees/my-feature/monorepo/`
+- **Git operations**: `git -C ~/Editframe/worktrees/my-feature/monorepo <command>` or use the `workdir` parameter in tool calls
+- **Elements scripts**: `~/Editframe/worktrees/my-feature/elements/scripts/<script>`
+- **Telecine scripts**: `~/Editframe/worktrees/my-feature/telecine/scripts/<script>`
+- **Never** use relative paths or paths under `worktrees/main/` for branch work
+
+To find the root for an existing branch: `git worktree list | grep my-feature`
 
 `EDITFRAME_DIR` in scripts is always `$(dirname $(dirname $(dirname $(git rev-parse --show-toplevel))))` — three levels up from the monorepo checkout path.
 

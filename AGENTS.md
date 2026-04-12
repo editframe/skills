@@ -34,4 +34,6 @@ When using a skill from .skills/internal/ and user feedback reveals the skill wa
 
 Skills have one source of truth: .skills/internal/. The directories .opencode/skills/, .cursor/skills/, and .claude/skills/ are generated sync targets -- never edit them directly. After editing .skills/internal/, always run `npm run skills:sync` and commit all changed files.
 
-Do your work in a dedicated git worktree, not in the main worktree. See the monorepo-setup-worktrees skill for how to create and manage worktrees. The exception is when running deployments from main.
+Do your work in a dedicated git worktree, not in the main worktree. The exception is when running deployments from main.
+
+Worktrees live at `~/Editframe/worktrees/<branch>/`. Your working directory does not change after launch, so all file edits, git commands, and script invocations for branch work must use absolute paths under `~/Editframe/worktrees/<branch>/monorepo/` (or `…/telecine/`, `…/elements/`). Never use relative paths or paths under `worktrees/main/` for branch work. See the monorepo-setup-worktrees skill for the full workflow.
