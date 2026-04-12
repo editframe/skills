@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Enforce that each worktree directory stays on its designated branch.
+#
+# Worktree directories are named after their branch (sanitized: lowercase,
+# non-alphanumeric chars replaced with '-'). A checkout that would put a
+# worktree on a branch other than the one its directory was created for is
+# rejected before the transaction commits.
+#
+# This catches:
+#   - `git checkout -b <other>` (new branch creation — ref transaction fires)
+#   - Any ref creation in a worktree whose path doesn't match the branch
+#
+# Switching to an already-existing branch (HEAD symref update only, no ref
+# transaction) is caught by the post-checkout hook.
+
+STATE="$1"
+[ "$STATE" = "prepared" ] || exit 0
+
+WORKTREE_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+
+# Extract the worktree folder name: the segment just above /monorepo
+# e.g. /Users/.../worktrees/feat-sfx-package/monorepo -> feat-sfx-package
+WORKTREE_DIR="${WORKTREE_ROOT%/monorepo}"
+WORKTREE_NAME="${WORKTREE_DIR##*/}"
+
+sanitize() {
+  local s
+  s="$(echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g; s/^-*//; s/-*$//; s/--*/-/g')"
+  echo "${s:0:63}" | sed 's/-$//'
+}
+
+while IFS=' ' read -r OLD NEW REF; do
+  case "$REF" in
+    refs/heads/*)
+      # Only block creation (old is all-zeros).
+      if [ "$OLD" = "0000000000000000000000000000000000000000" ] && \
+         [ "$NEW" != "0000000000000000000000000000000000000000" ]; then
+        BRANCH="${REF#refs/heads/}"
+        EXPECTED="$(sanitize "$BRANCH")"
+        if [ "$EXPECTED" != "$WORKTREE_NAME" ]; then
+          echo "error: branch '${BRANCH}' does not match worktree directory '${WORKTREE_NAME}'" >&2
+          echo "       (expected directory name: '${EXPECTED}')" >&2
+          echo "       Create a proper worktree instead: scripts/worktree create ${BRANCH}" >&2
+          exit 1
+        fi
+      fi
+      ;;
+  esac
+done

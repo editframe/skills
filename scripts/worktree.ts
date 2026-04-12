@@ -449,6 +449,8 @@ async function cmdCreate(branch: string, scope: string = 'web') {
   const ocodeDst = join(monoDir, 'opencode.json');
   if (existsSync(ocodeSrc) && !existsSync(ocodeDst)) exec('cp', [ocodeSrc, ocodeDst]);
 
+
+
   // 3. Copy .env files
   const elemEnvSrc = join(elementsMain, '.env');
   if (existsSync(elemEnvSrc)) exec('cp', [elemEnvSrc, join(elementsDir, '.env')]);

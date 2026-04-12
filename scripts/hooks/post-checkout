@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Enforce that each worktree stays on its designated branch after a checkout.
+#
+# This catches switching to an already-existing branch, which updates only
+# the HEAD symref without a ref transaction (so reference-transaction doesn't fire).
+#
+# Args: <prev-head> <new-head> <branch-flag>
+# branch-flag is 1 for branch checkout, 0 for file checkout — ignore file checkouts.
+
+BRANCH_FLAG="$3"
+[ "$BRANCH_FLAG" = "1" ] || exit 0
+
+WORKTREE_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+WORKTREE_DIR="${WORKTREE_ROOT%/monorepo}"
+WORKTREE_NAME="${WORKTREE_DIR##*/}"
+
+CURRENT_BRANCH="$(git symbolic-ref --short HEAD 2>/dev/null)"
+[ -n "$CURRENT_BRANCH" ] || exit 0  # detached HEAD — caught separately
+
+sanitize() {
+  local s
+  s="$(echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g; s/^-*//; s/-*$//; s/--*/-/g')"
+  echo "${s:0:63}" | sed 's/-$//'
+}
+
+EXPECTED="$(sanitize "$CURRENT_BRANCH")"
+
+if [ "$EXPECTED" != "$WORKTREE_NAME" ]; then
+  PREV_BRANCH="$(git name-rev --name-only "$1" 2>/dev/null | sed 's|^remotes/[^/]*/||; s|~.*||')"
+  echo "error: branch '${CURRENT_BRANCH}' does not match worktree directory '${WORKTREE_NAME}'" >&2
+  echo "       (expected directory name: '${EXPECTED}')" >&2
+  echo "       Reverting to previous branch..." >&2
+  git checkout "$PREV_BRANCH" 2>/dev/null || git checkout - 2>/dev/null
+  exit 1
+fi
