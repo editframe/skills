@@ -60,26 +60,20 @@ linear issue update ENG-123 -s started
 # or via GraphQL if CLI fails (see Updating Issues below)
 ```
 
-**On merge to main / release / deploy**: Move to "In Review" and add a comment summarizing what was done. Do not wait for a PR — we merge directly.
+**On deploy to production**: Move to "In Review" only after the change is deployed and visible on the production site. Review happens on production — not on a branch, not after merging alone.
+
+The required sequence is: merge to main → deploy → verify on production → move to "In Review".
 
 ```bash
 # 1. Move to In Review (use GraphQL -- CLI state names vary)
 linear api <<'GRAPHQL'
-query {
-  workflowStates(filter: { name: { eq: "In Review" } }) {
-    nodes { id name team { key } }
-  }
-}
-GRAPHQL
-
-linear api <<'GRAPHQL'
 mutation {
-  issueUpdate(id: "ENG-123", input: { stateId: "<state-id>" }) { success }
+  issueUpdate(id: "ENG-123", input: { stateId: "2717b5fe-9ea0-429f-8edd-cf8eabe0551d" }) { success }
 }
 GRAPHQL
 
 # 2. Add a comment
-linear issue comment add ENG-123 -b "Merged to main. <one-line summary of what changed>"
+linear issue comment add ENG-123 -b "Deployed to production. <one-line summary of what changed>"
 ```
 
 The comment should be a single sentence describing what was implemented or fixed, not a list of commits.
