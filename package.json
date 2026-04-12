@@ -7,7 +7,7 @@
     "lint": "oxlint .",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
-    "prepare": "lefthook install",
+    "prepare": "lefthook install && scripts/install-hooks",
     "skills:sync": "./scripts/skills-sync",
     "skills:sync:dry": "./scripts/skills-sync --dry-run",
     "skills:sync:verbose": "./scripts/skills-sync --verbose",

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Install git hooks from scripts/hooks/ into .git/hooks/.
+# Runs automatically via the "prepare" npm script (npm install).
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
+HOOKS_SRC="$SCRIPT_DIR/hooks"
+
+if [ -z "$REPO_ROOT" ]; then
+  echo "install-hooks: not a git repo, skipping" >&2
+  exit 0
+fi
+
+# git-common-dir returns a path relative to the repo root (or absolute).
+# Resolve it against REPO_ROOT to get the main .git dir for all worktrees.
+GIT_COMMON_DIR="$(git -C "$REPO_ROOT" rev-parse --git-common-dir)"
+case "$GIT_COMMON_DIR" in
+  /*) HOOKS_DIR="$GIT_COMMON_DIR/hooks" ;;
+  *)  HOOKS_DIR="$REPO_ROOT/$GIT_COMMON_DIR/hooks" ;;
+esac
+
+for hook in "$HOOKS_SRC"/*; do
+  [ -f "$hook" ] || continue
+  name="$(basename "$hook")"
+  dest="$HOOKS_DIR/$name"
+  cp "$hook" "$dest"
+  chmod +x "$dest"
+done
