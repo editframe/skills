@@ -57,7 +57,14 @@ worktree deps [--workspace=...]        # Show dependency graph
       elements/                     # elements git worktree [branch]
 ```
 
-Main is treated identically to any other worktree. `~/Editframe/monorepo` is a convenience symlink and the entry point for all worktree commands.
+**The main worktree (`worktrees/main/`) must always be on the `main` branch.** Never run `git checkout`, `git switch`, or any branch-switching command in the main worktree directories. Checking out a feature branch there displaces the primary source of truth and risks losing work. All feature work goes in a dedicated branch worktree created with `worktree create`.
+
+An LLM agent is most likely to violate this by:
+- Running `git checkout <branch>` directly instead of using `worktree create`
+- Treating the main worktree like a normal single-checkout repo and switching branches to "work on" something
+- Using `git merge` patterns that require a prior checkout (the `worktree merge` command is safe — it asserts the invariant and merges without switching branches)
+
+`~/Editframe/monorepo` is a convenience symlink and the entry point for all worktree commands.
 
 `EDITFRAME_DIR` in scripts is always `$(dirname $(dirname $(dirname $(git rev-parse --show-toplevel))))` — three levels up from the monorepo checkout path.
 
