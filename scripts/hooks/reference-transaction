@@ -23,6 +23,10 @@ WORKTREE_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
 WORKTREE_DIR="${WORKTREE_ROOT%/monorepo}"
 WORKTREE_NAME="${WORKTREE_DIR##*/}"
 
+# The main worktree is the only place new worktree branches are legitimately
+# created (via `git worktree add -b <branch>`). Enforce nothing there.
+[ "$WORKTREE_NAME" = "main" ] && exit 0
+
 sanitize() {
   local s
   s="$(echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g; s/^-*//; s/-*$//; s/--*/-/g')"
