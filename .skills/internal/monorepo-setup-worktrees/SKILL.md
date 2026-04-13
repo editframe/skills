@@ -28,6 +28,9 @@ worktree pause <branch>                # Stop containers
 worktree resume <branch>               # Start containers
 worktree remove <branch> [--force]     # Full cleanup
 worktree upgrade <branch> <scope>      # Escalate scope (elements→web→render)
+worktree merge <branch>                # Merge branch into main (feature → main)
+worktree pull                          # Fetch upstream, update local main, sync main → all worktrees
+worktree prune [--dry-run]             # Remove worktrees whose branches are fully merged into main
 worktree smoke <branch>                # One-shot render verification
 worktree logs [branch] [options]       # View logs
 worktree doctor [branch] [--skills]    # Diagnose issues
@@ -101,6 +104,30 @@ Worktree services use `cksum`-based port offsets (200 slots, spacing of 100) so 
 
 ### Service startup ordering
 Runner must start and `npm install` must complete before other services that execute application code (web, dev-projects, workers). The create and upgrade scripts handle this: `up -d runner` → `npm install` → `up -d` (remaining services).
+
+## Syncing main into worktrees
+
+After PRs merge to main (which happens frequently), run `worktree pull` from the main worktree:
+
+```bash
+worktree pull
+```
+
+This does three things in sequence:
+1. Fetches upstream remotes for monorepo, telecine, and elements
+2. Merges `origin/main` into local main for telecine and elements (fast-forward when clean)
+3. Merges local main into every active worktree branch
+
+Conflicts in `package.json`, `package-lock.json`, and `VERSION.ts` are auto-resolved by accepting main's version. All other conflicts are reported and skipped — the affected worktree is left untouched for manual resolution.
+
+To clean up worktrees whose branches have been fully merged into main across all three repos:
+
+```bash
+worktree prune           # remove all fully-merged worktrees
+worktree prune --dry-run # preview what would be removed
+```
+
+`prune` checks all three repos before removing anything — a worktree is only pruned when its branch is an ancestor of main in monorepo, telecine, and elements simultaneously.
 
 ## Worktree lifecycle
 

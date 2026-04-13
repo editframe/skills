@@ -4,7 +4,8 @@ use {elements,telecine}//scripts/{test,browsertest,npm,run,tsx,docker,docker-com
 
 Worktree management uses the unified CLI: `scripts/worktree <command>`.
 Common commands: `worktree create <branch> [scope]`, `worktree list`, `worktree status [branch]`,
-`worktree logs [branch]`, `worktree doctor [branch] --skills`, `worktree deps`.
+`worktree logs [branch]`, `worktree doctor [branch] --skills`, `worktree deps`,
+`worktree pull` (fetch upstream + sync main → all worktrees), `worktree prune [--dry-run]` (remove fully-merged worktrees).
 
 All our dev environments run in docker containers that are configured to run only through those scripts. The exception is running the editframe cli, this should be run from the host machine using elements/scripts/editframe (no build required).
 
