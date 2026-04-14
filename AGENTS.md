@@ -38,3 +38,26 @@ Skills have one source of truth: .skills/internal/. The directories .opencode/sk
 Do your work in a dedicated git worktree, not in the main worktree. The exception is when running deployments from main.
 
 Worktrees live at `~/Editframe/worktrees/<branch>/`. Your working directory does not change after launch, so all file edits, git commands, and script invocations for branch work must use absolute paths under `~/Editframe/worktrees/<branch>/monorepo/` (or `…/telecine/`, `…/elements/`). Never use relative paths or paths under `worktrees/main/` for branch work. See the monorepo-setup-worktrees skill for the full workflow.
+
+## Landing page design system
+
+`telecine/services/web/app/components/landing-v5/` uses a strict two-layer system enforced by `npm run validate:design-system` in telecine (OXC AST rules, ~250ms, exits non-zero on violations, blocks deploy).
+
+**Layers:**
+- `"use ef:content"` — sections and routes. No `className`/`style` on native HTML, no inline colors, no top-level `const X = [{ JSX }]` arrays.
+- `"use ef:presentation"` — primitives. No `className` prop passthrough, no arbitrary Tailwind values (`w-[600px]` — use `var(--token)` instead), no non-token colors, no inline `dark:` in JSX (put dark variants in named `Record<Surface, string>` constants).
+- `"use ef:data"` — `.ts` data files. Typed records only, no JSX.
+
+**After editing any file under `landing-v5/`, run:**
+```
+/design-system
+```
+Emits nothing when clean. Emits the full violation report when not. Fix all violations before committing.
+
+**Key patterns:**
+- All colors via `var(--token-name)` — no hex literals, no Tailwind named colors (`text-white`, `bg-black`).
+- Dark mode in named constants: `const COLOR: Record<Surface, string> = { cream: "...", dark: "...", red: "..." }`.
+- `useSurface()` from `SurfaceContext` — text primitives read surface context set by `SectionWrapper`.
+- `SurfaceContext.Provider value="dark"` wraps any component that always renders on a dark background.
+
+When making function calls using tools that accept array or object parameters ensure those are structured using JSON. For example:

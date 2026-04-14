@@ -62,6 +62,10 @@ worktree deps [--workspace=...]        # Show dependency graph
 
 **The main worktree (`worktrees/main/`) must always be on the `main` branch.** Never run `git checkout`, `git switch`, or any branch-switching command in the main worktree directories. All feature work lives in a dedicated branch worktree created with `worktree create`. An LLM agent is most likely to violate this by running `git checkout <branch>` directly, treating the main worktree like a normal single-checkout repo, or using merge patterns that require a prior checkout.
 
+`scripts/worktree.ts` enforces this with two hard guards — do not remove or relax them:
+1. `cmdCreate` asserts the main worktree is on `main` before creating any new worktree, and always bases new branches off `main`.
+2. `cmdMerge` asserts each repo is already on `main` and merges without a checkout — never calls `git checkout` in the main worktree.
+
 `~/Editframe/monorepo` is a convenience symlink and the entry point for all worktree commands.
 
 ### Working in a branch worktree as an agent
