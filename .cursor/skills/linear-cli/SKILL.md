@@ -60,24 +60,15 @@ linear issue update ENG-123 -s started
 # or via GraphQL if CLI fails (see Updating Issues below)
 ```
 
-**On deploy to production**: Move to "In Review" only after the change is deployed and visible on the production site. Review happens on production — not on a branch, not after merging alone.
+**On deploy to production**: Move to "In Review" only after the deploy has fully completed and the change is live on production. Never update Linear state speculatively or immediately after pushing — a reviewer loading the issue will open the production site, which must already reflect the change.
 
 The required sequence:
-1. Push branch to telecine, open PR, enable auto-merge
-2. CI passes → merges to main → deploy runs automatically
-3. `scripts/wait-for-telecine-action` — poll until deploy completes
-4. Verify the change is live on the production site
-5. Move to "In Review" and add a comment
+1. Push to telecine main (or merge PR)
+2. **Block** on `scripts/wait-for-telecine-action` until the deploy job completes successfully
+3. Only then move to "In Review" and add a comment
 
 ```bash
-# From worktrees/<branch>/telecine/
-git push origin <branch>
-
-# Open PR and enable auto-merge
-gh pr create --title "..." --body "..." 
-gh pr merge --auto --squash
-
-# From monorepo/ — wait for deploy
+# From monorepo/ — MUST complete before touching Linear
 scripts/wait-for-telecine-action
 
 # Then move to In Review
