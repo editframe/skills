@@ -1,0 +1,74 @@
+[data-aspect] {
+  --gutter: 5%;
+  --measure: min(1480px, 86%);
+  --stack: row;
+  --display: clamp(40px, 5.2cqw, 96px);
+  --title: clamp(28px, 3.4cqw, 56px);
+}
+
+[data-aspect="portrait"] {
+  --gutter: 8%;
+  --measure: 86%;
+  --stack: column;
+}
+
+[data-aspect="square"] {
+  --gutter: 7%;
+  --measure: 84%;
+  --stack: column;
+}
+
+.frame-root {
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  container-name: frame;
+}
+
+.frame {
+  position: relative;
+  display: flex;
+  height: 100%;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gutter);
+}
+
+.rail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(16px, 2.4cqw, 40px);
+}
+
+[data-aspect="portrait"] .rail,
+[data-aspect="square"] .rail {
+  flex-direction: column;
+}
+
+.measure {
+  width: var(--measure);
+  max-width: 100%;
+}
+
+@container frame (max-width: 1400px) {
+  .w-\[1480px\],
+  .w-\[1040px\],
+  .w-\[980px\],
+  .w-\[920px\] {
+    width: min(100%, var(--measure)) !important;
+    max-width: 100%;
+  }
+}
+
+@container frame (max-width: 1200px) {
+  .px-24 {
+    padding-left: var(--gutter);
+    padding-right: var(--gutter);
+  }
+
+  .text-\[44px\] {
+    font-size: var(--title);
+  }
+}
